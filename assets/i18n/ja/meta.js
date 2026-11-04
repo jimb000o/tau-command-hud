@@ -386,4 +386,5 @@ TauI18n.add({ strings: {
   "Different wallets that made a move or cast a ballot in the last 7 days.": "直近 7 日間に一手を打つか投票した異なるウォレット。",
   "Different wallets that made a move or cast a ballot in the last 30 days.": "直近 30 日間に一手を打つか投票した異なるウォレット。",
   "Every player wallet in the blocks our relay keeps.\nThe island bot's wallets are not counted.": "私たちのリレーが保持するブロック内のすべてのプレイヤーウォレット。\n島ボットのウォレットは数えません。",
+  "People with White Rabbit Key open right now, counted live by the relay: one browser counts once, a tab left in the background for five minutes stops counting. Nobody is identified.": "いま White Rabbit Key を開いている人。中継がリアルタイムで数えます。1 つのブラウザは 1 人、5 分間バックグラウンドにあるタブは数えません。個人は特定しません。",
 } });

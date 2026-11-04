@@ -48,7 +48,7 @@
     wallet:     { t: "Wallet", d: "A testnet account with its own rules: send, take back, co-sign, vote, form a Pakt", i: "◈", h: "wallet/" },
     vote:       { t: "Vote for real", d: "Vote on the real testnet yourself: node, key, ready commands, practised first", i: "✔", h: "vote/" },
     card:       { t: "My Tau card", d: "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post", i: "▣", h: "card/" },
-    rabbit:     { t: "White Rabbit Key", d: "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet", i: `<img src="${ROOT}assets/rabbit-key.webp" alt="">`, h: "rabbit/", live: true },
+    rabbit:     { t: "White Rabbit Key", d: "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet", i: `<img src="${ROOT}assets/rabbit-key.webp" alt="">`, h: "rabbit/", live: true, play: "rabbit" },
     challenge:  { t: "Rule challenge", d: "A small task every Monday, answered with a real rule in your wallet; good answers are shown, no prizes", i: "✎", h: "challenge/" },
     missions:   { t: "Missions", d: "Six short tasks on a practice chain: pass a rule, fail one, survive an outage, switch to proof of stake", i: "★", h: "missions/" },
   };
@@ -363,7 +363,7 @@
   function item(k, page, isHud, tip) {
     const p = P[k], a = el(p.soon ? "div" : "a", "mi" + (k === page ? " here" : "") + (p.soon ? " soon" : ""));
     a.setAttribute("role", "menuitem");
-    a.innerHTML = `<span class="ic">${p.i}</span><b>${p.live ? '<i class="tn-live" aria-hidden="true"></i>' : ""}${esc(p.t)}${p.ext ? ' <span class="ext">↗</span>' : ""}</b><span>${esc(p.d)}</span>`;
+    a.innerHTML = `<span class="ic">${p.i}</span><b>${p.live ? '<i class="tn-live" aria-hidden="true"></i>' : ""}${esc(p.t)}${p.ext ? ' <span class="ext">↗</span>' : ""}${p.play ? `<em class="tn-play" data-play="${p.play}" hidden><i aria-hidden="true"></i><b translate="no"></b> <span>playing now</span></em>` : ""}</b><span>${esc(p.d)}</span>`;
     if (p.soon) { a.setAttribute("aria-disabled", "true"); a.title = "This page is not online yet"; }
     else if (p.ext) { a.href = p.h; a.target = "_blank"; a.rel = "noopener"; }
     else if (p.act === "share") { a.href = "#share"; a.addEventListener("click", e => { e.preventDefault(); closeAll(); openShare(); }); }
@@ -422,7 +422,15 @@
     } catch (e) { return ""; }
   }
   const fmt = n => Number(n).toLocaleString("en-US");
-  const CHAIN = { st: null, polled: false, wsUp: false, online: null, rev: null, fee: null, elig: null, vals: null, switches: 0 };
+  const CHAIN = { st: null, polled: false, wsUp: false, online: null, playing: null, rev: null, fee: null, elig: null, vals: null, switches: 0 };
+  /* the games' live counters in the menu: people with the game open right now, counted by the relay (one browser once) */
+  const playFrom = d => { if (d && d.playing && typeof d.playing === "object") CHAIN.playing = d.playing; };
+  function renderPlay() {
+    document.querySelectorAll(".tn-play[data-play]").forEach(e => {
+      const n = Number((CHAIN.playing || {})[e.dataset.play]); e.hidden = !(n > 0);
+      if (n > 0) { e.querySelector("b").textContent = String(n); e.title = "People with this game open right now, counted live by the community relay; one browser counts once."; }
+    });
+  }
   /* consensus mechanism as the node reports it (eligibility_mode); the genesis spec's constant o7 = 1 also means the fixed list */
   const CONS = { validator_set: ["Proof of authority", "PoA", "a fixed validator list (proof of authority): the listed validators take turns sealing blocks, each seal signed with BLS and checked by the Tau rules"],
     tau_validator_set: ["Validator list in Tau", "Tau list", "a validator list kept in the Tau rules themselves: rule o7 decides who may seal"],
@@ -456,6 +464,7 @@
         d.className = "dot " + (wait ? "none" : !up ? "off" : good ? "" : "behind");
         const a = d.closest("a, button"); if (a) a.dataset.tnt = (wait ? "Checking the community node…" : !up ? (CHAIN.stale ? "Red: no answer from the relay for over a minute." : health === "down" ? `Red: the testnet is down (${hlabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : stalled ? `Amber: connected, but no new blocks right now; the testnet has stalled${st.health && st.health.score != null ? ` (health ${st.health.score} of 100)` : ""}.` : degraded ? `Amber: ${hlabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}.` : "Green: the community node is online and follows the real testnet chain.") + (a.tagName === "A" ? " Opens the HUD in Live mode." : "");
       });
+      renderPlay();
       const n = CHAIN.online; onB.textContent = n == null ? "—" : String(n); onDot.className = "dot " + (n == null ? "none" : n > 0 ? "" : "off"); onChip.classList.toggle("live", n != null && n > 0);
       hB.textContent = st && Number(st.height) > 0 ? "#" + fmt(st.height) : "—";
       revB.textContent = CHAIN.rev == null ? "—" : "rev " + CHAIN.rev;
@@ -511,8 +520,8 @@
       const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);   // a stalled request must not freeze the light at its last colour
       try {
         const r = await fetch(`https://${RELAY}/status`, { cache: "no-store", signal: ctl.signal }); if (!r.ok) throw new Error(r.status);
-        const j = await r.json(); CHAIN.st = j; CHAIN.stale = false; const n = Number(j.online ?? j.clients); if (Number.isFinite(n)) CHAIN.online = n;
-      } catch (e) { CHAIN.st = null; CHAIN.online = null; CHAIN.err = e && e.message || String(e); }
+        const j = await r.json(); CHAIN.st = j; CHAIN.stale = false; const n = Number(j.online ?? j.clients); if (Number.isFinite(n)) CHAIN.online = n; playFrom(j);
+      } catch (e) { CHAIN.st = null; CHAIN.online = null; CHAIN.playing = null; CHAIN.err = e && e.message || String(e); }
       clearTimeout(t); CHAIN.polled = true; CHAIN.at = Date.now(); render();
     };
     poll(); setInterval(() => { if (!document.hidden) poll(); }, 20000);
@@ -554,7 +563,7 @@
         let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; }
         if (!m || m.status !== "ok") return;
         const d = m.data || {};
-        if (m.command === "presence") { const n = Number(d.online ?? d.clients); if (Number.isFinite(n)) CHAIN.online = n; }
+        if (m.command === "presence") { const n = Number(d.online ?? d.clients); if (Number.isFinite(n)) CHAIN.online = n; playFrom(d); }
         if (m.command === "getgovernance" && !SIM) govFrom(d);   // in simulation the chain numbers come from the generator; this socket only counts people
         render();
       };

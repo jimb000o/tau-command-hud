@@ -2288,5 +2288,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-04",
     "html": "Radio Coco: Rico talks about the cruise ships more, the nearer one is. Two or three days before, he mentions them now and then; on the day, more and more often; while a ship is in port, about every third line, fading over the evening after. In port he reports from the island with real numbers only: the passengers’ transactions the node has taken so far and those in the newest block, news of bookings, withdrawals, group bills and refusals as it comes in, how the testnet copes and where most of the passengers are. Spoken, the numbers are rounded (“dozens of”); on screen they are exact. 96 new lines on what the ships are and how they work, with the usual humour, and eight listeners phone in with questions about them."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "A live counter of who is playing right now. The chip on the island shows how many people have the game open (on phones just the number), the Play menu shows it beside the game’s name, and In numbers shows it among the key numbers of the White Rabbit Key view. Counted by our relay: one browser counts once, a tab left in the background for five minutes stops counting, nobody is identified."
   }
 ]

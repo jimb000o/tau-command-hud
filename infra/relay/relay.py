@@ -360,6 +360,7 @@ class Relay:
         self.lease = SlotLease(places=RULE_PLACES)   # fair turns on the personal-rule places (slotlease.py)
         self.island = Island()   # White Rabbit Key: the rival candidates' moves as test transactions (island.py)
         self.isle = Isle()       # White Rabbit Key: every campaign played today, added up and pushed to every page (isle.py)
+        self.isle.people = self.playing   # and how many people have it open now, counted like `online`
         self.load = Load()       # how hard the testnet works, minute by minute: GET /load (load.py)
         self.island.on_tx = lambda: self.load.sent("bot")
         # White Rabbit Key: cruise ships whose simulated passengers send real test transactions in the bot's free slots (cruise.py)
@@ -1783,18 +1784,26 @@ class Relay:
     def online_sites(self) -> dict:
         return {s: self.online(s) for s in SITES}
 
+    def playing(self) -> int:
+        """People with White Rabbit Key open right now: the pages that joined the shared island ("isle join"),
+        one browser's tabs and reconnects counted once, the same way as `online`."""
+        return len({self.visits.person(*self.viewers[w][:2]) if w in self.viewers else id(w) for w in self.isle.subs})
+
     def presence_envelope(self) -> str:
-        return envelope_ok("presence", {"online": self.online(), "sites": self.online_sites(), "pushed": True})
+        return envelope_ok("presence", {"online": self.online(), "sites": self.online_sites(), "playing": {"rabbit": self.playing()}, "pushed": True})
 
     def isle_command(self, args: list[str], ip: str, ws: ServerConnection | None) -> str:
         """The shared island: join / leave / move / end (isle.py has the rules)."""
         sub = args[0].lower() if args else ""
         if sub == "join":
-            if ws is not None:
+            if ws is not None and ws not in self.isle.subs:
                 self.isle.subs.add(ws)
+                self.push_presence()
             return envelope_ok("isle", self.isle.snapshot())
         if sub == "leave":
-            self.isle.subs.discard(ws)
+            if ws in self.isle.subs:
+                self.isle.subs.discard(ws)
+                self.push_presence()
             return envelope_ok("isle", {"left": True})
         a = [x.lower() for x in args[1:]]
         if sub == "board":
@@ -1922,6 +1931,7 @@ class Relay:
             "clients": len(self.clients),
             "online": self.online(),
             "online_sites": self.online_sites(),
+            "playing": {"rabbit": self.playing()},   # people with White Rabbit Key open now
             "community_nodes": len(self.community),
             # the newest chain restarts and reorgs the relay noticed (full lists on /stats)
             "restarts": [{"detected_at": r.get("detected_at"), "old_tip": (r.get("old") or {}).get("tip")}

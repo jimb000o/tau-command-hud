@@ -365,4 +365,5 @@ TauI18n.add({ strings: {
   "Different wallets that made a move or cast a ballot in the last 7 days.": "最近 7 天内走过一步或投过票的不同钱包。",
   "Different wallets that made a move or cast a ballot in the last 30 days.": "最近 30 天内走过一步或投过票的不同钱包。",
   "Every player wallet in the blocks our relay keeps.\nThe island bot's wallets are not counted.": "我们的中继保存的区块中所有玩家钱包。\n不计岛屿机器人的钱包。",
+  "People with White Rabbit Key open right now, counted live by the relay: one browser counts once, a tab left in the background for five minutes stops counting. Nobody is identified.": "此刻打开着 White Rabbit Key 的人，由中继实时统计：同一个浏览器只算一次，在后台放了五分钟的标签页不再计入。不识别任何人。",
 } });

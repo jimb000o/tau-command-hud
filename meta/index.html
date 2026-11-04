@@ -161,6 +161,11 @@ html.fit .row2 { gap: 12px; min-height: 0; }
 .who .sp .note { color: var(--dim); font-size: 12px; margin-top: 2px; }
 .who .sp .cnt { color: var(--text); font: 600 11px var(--display); letter-spacing: .14em; font-style: normal; }
 .who .sp .note b { color: var(--text); font-weight: 600; }
+.kpi.play { border-color: rgba(185,255,214,.35); }
+.kpi.play b { color: #b9ffd6; }
+.kpi.play .pdot { display: inline-block; width: 7px; height: 7px; margin: 0 7px 1px 0; border-radius: 50%; background: #b9ffd6; box-shadow: 0 0 7px rgba(185,255,214,.7); vertical-align: middle; animation: pnow 2.4s ease-in-out infinite; }
+@keyframes pnow { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .kpi.play .pdot { animation: none; } }
 /* where our transactions started: a ring by site and a short ranked list by page */
 .starts { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 4px 14px; align-items: start; margin-top: 6px; }
 .starts svg { width: 76px; height: 76px; display: block; }
@@ -218,6 +223,7 @@ html.fit.wide .col.side { display: contents; }
       <p class="sub" id="sourceLine">Visitors per day, growth since counting began and the pages people open most. Counted without cookies and without storing anything in your browser; only daily totals are kept.</p>
     </div>
     <div class="kpis" aria-label="Key numbers">
+      <span class="kpi play" id="kPlayBox" hidden><i class="pdot" aria-hidden="true"></i><b id="kPlay">–</b>playing now</span>
       <span class="kpi" id="kTodayBox" data-tip="Different people on this site today so far (UTC day).\nThe same person on two pages counts once."><b id="kToday">–</b>visitors today</span>
       <span class="kpi" id="kWeekBox" data-tip="Average visitors per day over the last 7 full days,\ncompared with the 7 days before."><b id="kWeek">–</b>a day, last 7 days</span>
       <span class="kpi" id="kAllBox" data-tip="Every day's visitors added up since counting began.\nSomeone who comes back on another day counts again."><b id="kAll">–</b>visits in total</span>
@@ -938,6 +944,20 @@ function drawDay() {
   rows($("dPages"), list, d[0], false, d[6]);
 }
 
+/* White Rabbit Key, playing now: people with the game open right now (relay /status "playing"), one browser counted
+   once, refreshed every 20 seconds while this view is open; hidden until the relay counts it (before `up`) */
+let playNow = null;
+const PLAY_TIP = "People with White Rabbit Key open right now, counted live by the relay: one browser counts once, a tab left in the background for five minutes stops counting. Nobody is identified.";
+function drawPlaying() {
+  const box = $("kPlayBox"); if (!box) return;
+  box.hidden = !RB() || playNow == null; if (box.hidden) return;
+  $("kPlay").textContent = fmt(playNow); box.dataset.tip = T(PLAY_TIP);
+}
+async function loadPlaying() {
+  if (SAMPLE) playNow = 3;
+  else try { const r = await fetch(`${RELAY}/status`, { cache: "no-store" }); if (r.ok) { const j = await r.json(), n = Number(j && j.playing && j.playing.rabbit); playNow = Number.isFinite(n) ? n : null; } } catch (e) {}
+  drawPlaying();
+}
 /* White Rabbit Key in the range: tiles for its moves, and who made them / who got the ballots */
 function rabbitTotals() {
   const keys = range === 1 ? [data.today] : rangeDays().map(([k]) => k), z = txs.rabbit || {};
@@ -1112,6 +1132,7 @@ function nodesKpis() {
 }
 
 function kpis() {
+  drawPlaying();
   if (NET()) return netKpis();
   if (ND()) return nodesKpis();
   if (RB()) return rabbitKpis();
@@ -1165,12 +1186,13 @@ async function load() {
     txs.totals.rabbit = { 7: 21, 30: 21, all: 21 };
     for (const k of ks.slice(-8)) raw.days[k][3].rabbit = Math.round(raw.days[k][0] * .15);
     agzLatest = { stage_name: "Baby", rounds: [{ category: "Aura", winner: "Emerald" }], open: { category: "Pendant light" } };
-    pickSite(); render(); return; }
+    playNow = 3; pickSite(); render(); return; }
   try {
     const r = await fetch(`${RELAY}/visits/public`, { cache: "no-store" });
     if (!r.ok) throw new Error(r.status);
     raw = await r.json(); failed = false;
     try { const s = await fetch(`${RELAY}/api/v1/sources`, { cache: "no-store" }); if (s.ok) txs = await s.json(); } catch (e) {}
+    await loadPlaying();
     try { const a = await fetch("https://agorzilla.com/chain/latest.json", { cache: "no-store" }); if (a.ok) agzLatest = await a.json(); } catch (e) {}
     try { const [a, b, c] = await Promise.all([fetch(`${RELAY}/nodes/history`, { cache: "no-store" }), fetch(`${RELAY}/peers`, { cache: "no-store" }), fetch(`${RELAY}/setup/stats`, { cache: "no-store" })]); if (a.ok) nh = await a.json(); if (b.ok) peers = await b.json(); if (c.ok) setupSt = await c.json(); } catch (e) {}
     // until the relay counts by site (or when it cannot be reached), the page opens on Tau HUD's visitors
@@ -1227,6 +1249,7 @@ if (SAMPLE) $("sourceLine").textContent = "Sample data: made-up numbers to previ
 fit();
 load();
 setInterval(load, 60000);
+setInterval(() => { if (RB() && !document.hidden) loadPlaying(); }, 20000);
 </script>
 </body>
 </html>
