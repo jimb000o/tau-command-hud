@@ -5,7 +5,8 @@ Two ships call by a timetable on the island's clock (Europe/Berlin):
                                   Ship, the school, the dive shop. It tries the rarer kinds of transaction.
   Saturday 14:00   Queen Mempool  a big luxury liner, 120 passengers: the South Current spa, Bar La Ola, song requests
                                   on Radio Coco, souvenirs. It brings the volume.
-A visit lasts VISIT_MIN minutes: the tenders bring the passengers ashore in the first LANDING, and in the last BOARDING
+A visit lasts VISIT_MIN minutes: the tenders bring the passengers ashore in the first minutes (the ship's "landing", LANDING
+by default; the big liner lands in waves over longer, so its first stops fit the pace), and in the last BOARDING
 they go back aboard. The ship shows on the sea APPROACH minutes before it lands.
 
 Nobody on board is a person. The passengers are made up here, and every page that shows them says so. What they do on
@@ -65,7 +66,7 @@ RATE = 12                  # passenger transactions a minute, at most
 VISIT_MAX = 1200           # transactions a visit, at most
 VISIT_MIN = 90             # minutes in port
 APPROACH = 30              # minutes the ship is seen coming before it lands
-LANDING = 10               # minutes the tenders bring the passengers ashore
+LANDING = 10               # minutes the tenders bring the passengers ashore (a ship's "landing" overrides it)
 BOARDING = 10              # the last minutes: back aboard, no more stops
 LAND_WAIT = 10 * 60        # seconds the ship waits off the island for a calm testnet before it sails on
 MISS = 15 * 60             # an action this late (the ship fell behind) is skipped
@@ -89,7 +90,7 @@ SHIPS = {
         "name": "MS Dry Run", "weekday": 2, "hour": 16, "passengers": 40, "style": "expedition",
         # place: (test AGRS a visit pays there, how much the passengers want to go there)
         "stops": {"book": (2, 3), "ship": (3, 3), "school": (6, 2), "dive": (12, 3), "market": (8, 1), "works": (4, 1), "bar": (5, 1)},
-        "per": (4, 6), "dwell": (10, 18),
+        "per": (4, 6), "dwell": (10, 18), "landing": 10,
         "book": {"share": 0.45, "at": ("dive", "book"), "cancel": 0.3},
         "bill": 0.0, "kinds": ("book",),
     },
@@ -97,6 +98,9 @@ SHIPS = {
         "name": "Queen Mempool", "weekday": 5, "hour": 14, "passengers": 120, "style": "liner",
         "stops": {"south": (20, 4), "bar": (5, 4), "radio": (25, 2), "market": (8, 3), "works": (4, 2), "dive": (12, 1), "book": (2, 1)},
         "per": (3, 5), "dwell": (8, 16),
+        # 120 passengers in 10 minutes would plan ~200 stops there, at most 120 can go out at RATE: the tenders land
+        # them in waves over 30 minutes instead, and every stop goes out on time at full pace (measured 5.11.2026)
+        "landing": 30,
         "book": {"share": 0.2, "at": ("south",), "cancel": 0.1},
         "bill": 0.3, "kinds": ("bill", "book"),
     },
@@ -166,6 +170,11 @@ def calls_near(now: float, days: int = 9) -> list[tuple[int, str]]:
     return sorted(out)
 
 
+def landing(ship: str) -> int:
+    """Minutes the tenders take to bring this ship's passengers ashore."""
+    return int(SHIPS.get(ship, {}).get("landing") or LANDING)
+
+
 def visit_id(t0: int, ship: str) -> str:
     return berlin_day(t0).isoformat() + "-" + ship
 
@@ -182,7 +191,7 @@ def plan(ship: str, t0: int, trial: set | None = None, allowed: set | None = Non
     acts: list[dict] = []
     forced = "book" in trial   # a trial of bookings also tries one withdrawal
     for p in range(S["passengers"]):
-        land = t0 + R.uniform(0, LANDING * 60)
+        land = t0 + R.uniform(0, landing(ship) * 60)
         acts.append({"t": land, "p": p, "kind": "pay", "to": "pier", "amount": 1})
         n = R.randint(*S["per"])
         stops: list[str] = []
@@ -491,7 +500,7 @@ class Cruise:
             return "approach"
         if not v["landed"]:
             return "waiting"
-        if now < t0 + LANDING * 60:
+        if now < t0 + landing(v["ship"]) * 60:
             return "landing"
         if now < t0 + (VISIT_MIN - BOARDING) * 60:
             return "ashore"

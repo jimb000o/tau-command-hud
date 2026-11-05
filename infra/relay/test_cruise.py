@@ -66,6 +66,24 @@ check(0 < len(bills) <= cruise.TRIAL_MAX and all(len(b["to"]) == 3 and b["amount
 check(len([a for a in Q if a["kind"] == "pay" and a["to"] == "pier"]) == 120 and len(Q) <= cruise.VISIT_MAX, "120 passengers, at most VISIT_MAX stops")
 rate = len(Q) / (cruise.VISIT_MIN - cruise.BOARDING)
 check(rate < cruise.RATE, f"the plan fits the pace: {rate:.1f} a minute on average, at most {cruise.RATE}")
+
+
+def queue(acts, gap):
+    """The stops sent one every `gap` seconds in plan order, as step() does: (sent, skipped as too late, worst delay)."""
+    last, now, sent, skipped, worst = -1e9, 0, 0, 0, 0
+    for a in acts:
+        now = max(now, a["t"], last + gap)
+        if now - a["t"] > cruise.MISS:
+            skipped += 1
+            continue
+        worst, last, sent = max(worst, now - a["t"]), now, sent + 1
+    return sent, skipped, worst
+
+
+for name, plan_ in (("MS Dry Run", P1), ("Queen Mempool", Q)):
+    sent, skipped, worst = queue(plan_, 60 / cruise.RATE)
+    check(skipped == 0 and worst <= 3 * 60, f"{name} at full pace: every stop goes out, at most three minutes late ({worst / 60:.1f})")
+check(cruise.landing("queen") > cruise.landing("dryrun") == cruise.LANDING, "the liner lands in waves over longer than the expedition ship")
 at = cruise.where(Q, SAT + 40 * 60, SAT + 80 * 60)
 check(sum(at.values()) == 120 and "pier" not in at or at.get("pier", 0) < 120, "forty minutes in, the passengers are spread over the places")
 check(cruise.where(Q, SAT + 81 * 60, SAT + 80 * 60) == {}, "at boarding everyone is back on the ship")
