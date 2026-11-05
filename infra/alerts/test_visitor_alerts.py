@@ -55,6 +55,12 @@ votes = {"items": {
 }}
 tg = Fake()
 w = alerts.Watcher([tg])
+# since 5 November 2026 the channel gets no simulation posts unless SIM_POSTS=true
+off = Fake()
+asyncio.run(alerts.Watcher([off]).maybe_visitors(T, votes))
+check(not alerts.SIM_POSTS and not off.sent, "no visitor proposal posts by default (SIM_POSTS off)")
+alerts.SIM_POSTS = True
+
 asyncio.run(w.maybe_visitors(T, votes))
 check(len(tg.sent) == 1, f"one post: only the voted-in proposal with enough votes ({len(tg.sent)})")
 text = tg.sent[0][0] if tg.sent else ""

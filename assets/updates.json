@@ -2333,5 +2333,10 @@
     "tag": "Roadmap",
     "on": "2026-11-04",
     "html": "Road to mainnet now keeps in step with IDNI by itself: when IDNI’s own code names one of the items’ GitHub issues, the item lists it under “IDNI’s own work on it” and its status moves: a fix on IDNI’s main makes it “Partly fixed”, a work branch makes it “IDNI at work”. Only what IDNI wrote in its public git history counts, checked every 30 minutes. Also brought up to date: the stop at block 5028, the restart of 1 November with open governance turned off, and the reset IDNI plans in pull request #93."
+  },
+  {
+    "tag": "Alerts",
+    "on": "2026-11-05",
+    "html": "Alerts: the simulation's consensus switches no longer get a Telegram and X post twice a day. One post explains the daily programme instead (11:20 and 17:20 German time, a 7-minute vote), so the channel stays about the real testnet."
   }
 ]

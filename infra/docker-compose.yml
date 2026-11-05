@@ -134,6 +134,7 @@ services:
       X_DAILY_CAP: ${X_DAILY_CAP:-8}
       X_MONTHLY_CAP: ${X_MONTHLY_CAP:-240}
       X_LINKS: ${X_LINKS:-false}
+      SIM_POSTS: ${SIM_POSTS:-false}   # the simulation's switches and visitor rule changes as posts (off since 5 Nov 2026)
       X_SIM: ${X_SIM:-true}
       X_PICTURES: ${X_PICTURES:-true}   # the rule change's card, the live overview or a new page's picture under the post
       # weekly recap image and newspaper (alerts/recap.py, gazette.py): Monday 09:00 German time unless .env says otherwise

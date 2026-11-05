@@ -327,7 +327,7 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
 `docker compose up -d --build alerts donations`.
 - What goes to X, each in its own short text: rule changes on the real chain (not practice
   votes), new nodes, "Testnet today", new pages and features (one line each when several go
-  together), the smaller site changes, the simulation's switches (`X_SIM=false` leaves them out),
+  together), the smaller site changes, the simulation's switches only with `SIM_POSTS=true` (off since 5 November 2026; `X_SIM=false` keeps them off X),
   the Monday recap picture with the headline of the week's paper, donation thank-yous. Not on
   X: health alarms, visitor proposals, and a major with `"x": false` (announced on X by hand, with its link).
 - Site news goes out at fixed times, `SITE_SLOTS` (UTC, default 8,12,16 = 09:00, 13:00, 17:00 German

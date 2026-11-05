@@ -126,7 +126,7 @@ TELEGRAM_BOT_NAME = os.environ.get("TELEGRAM_BOT_USERNAME", "tauhud_alerts_bot")
 X_KEYS = {k: os.environ.get(k, "").strip() for k in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET")}
 # X (@TauHUDcom) is paid per post since 2026: $0.015 a post, $0.20 for one with a link in it. So X gets what Telegram gets
 # (rule changes, new nodes, "Testnet today", the site's news and smaller changes, the weekly recap with the paper's headline,
-# the simulation's switches unless X_SIM=false), each in a short text without a link (the profile carries tauhud.com), and
+# the simulation's switches when SIM_POSTS=true, unless X_SIM=false), each in a short text without a link (the profile carries tauhud.com), and
 # never more than X_DAILY_CAP / X_MONTHLY_CAP posts (240 a month: about $3.60). The simulation and the smaller site changes
 # leave the day's last X_RESERVE posts for the real chain. Not on X: practice votes, health alarms, visitor proposals.
 # Findings (findings.py) go to X only for real-chain incidents (no blocks reaching us, no peers, a reorg, a busy stretch),
@@ -168,6 +168,10 @@ NEWNODE_GROUP = float(os.environ.get("NEWNODE_GROUP_SECONDS", 600))
 # appears, 10 minutes before it is in force; the channel reports the real testnet, so these posts are rare and marked as simulated.
 # SIM_SWITCHES must equal STAKE_SLOT / FIXED_SLOT in assets/sim.js (slot k = proposed at k:20 UTC, in force at k:30 UTC).
 SIM_ON = os.environ.get("SIM_ALERTS", "true").lower() in ("1", "true", "yes")
+# Since 5 November 2026 the switches and the visitors' simulated rule changes no longer get posts of their own: the same
+# post twice a day read like spam in a channel about the real testnet. One planned post (assets/posts-plan.json,
+# "sim-schedule") explains the daily programme instead. SIM_POSTS=true brings the posts back.
+SIM_POSTS = os.environ.get("SIM_POSTS", "false").lower() in ("1", "true", "yes")
 SIM_SWITCHES = (("stake", 10), ("fixed", 16))
 SIM_PROPOSED_AT, SIM_IN_FORCE_AT = 20 * 60, 30 * 60
 SIM_LINK = f"{SITE}/proposals/?mode=sim"
@@ -2198,7 +2202,7 @@ class Watcher:
     async def maybe_sim(self, now: float | None = None):
         """One Telegram post per simulated consensus switch, sent while its proposal is open (the 10 minutes before it is
         in force). A switch missed while the service was down is skipped, never posted late. Pure clock work: no relay needed."""
-        if not SIM_ON:
+        if not (SIM_ON and SIM_POSTS):
             return
         now = now if now is not None else time.time()
         st = self.state.setdefault("sim", {"posted": {}})
@@ -2643,7 +2647,7 @@ class Watcher:
     async def maybe_visitors(self, now: float | None = None, votes: dict | None = None):
         """One Telegram post per visitor proposal that was voted in with enough votes, at most VISITOR_DAILY_CAP a day,
         sent between the close of its vote and the moment it is in force; one missed while the service was down is skipped."""
-        if not SIM_ON:
+        if not (SIM_ON and SIM_POSTS):
             return
         now = now if now is not None else time.time()
         st = self.state.setdefault("visitors", {"posted": {}, "checked": 0})
