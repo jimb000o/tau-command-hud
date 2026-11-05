@@ -871,8 +871,6 @@
       "I'll take it. Cheerio."] },
     { who: "vik", cut: 1, say: ["Rico, quick question about the ghost transac",
       "And he's gone. The phone line runs past Baako's goats. They chew on it."] },
-    { who: "zia", cut: 1, say: ["Rico, can you say hi to my mum? She's",
-      "We lost her! Zia's mum, if you're listening: hi from Zia. And from Rico."] },
     /* islanders call about the cruise ships while one is near (when: the facts of talk.js, game.js shipFacts) */
     { who: "tobias", when: "shipTomorrow+queen", say: ["Rico! Tobias, from the pier. Could you announce my welcome speech? Tomorrow, two o'clock sharp, the moment the Queen ties up.",
       "She doesn't tie up, Tobias. She anchors outside the reef, and the boats bring her passengers in. You'll be speaking to a boat.",

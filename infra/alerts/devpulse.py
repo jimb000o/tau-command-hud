@@ -15,6 +15,8 @@ by Caddy at https://node.tauhud.com/devpulse.json:
   - sync: whether our node keeps up with IDNI: how far tau-testnet main is ahead of our pin, whether IDNI's own
     build still uses our tau-lang commit, and whether each of our node patches still applies to the newest main
     (checked once per new upstream commit on a shallow checkout; `up` prints it)
+  - refs: which IDNI issue and pull request numbers IDNI's own commits name, on main and on work branches, so
+    tauhud.com/roadmap/ moves an item's badge by itself when IDNI fixes it (git only, never guessed)
   - open issues and pull requests, from the public GitHub search API (no token;
     a few requests an hour, far below its limit; left out when it refuses)
 
@@ -295,6 +297,74 @@ def candidates(repo: str, path: str, branch: str, now: int, pin: str | None) -> 
     return items
 
 
+# ---------- refs: IDNI's own work on each issue, for the Road to mainnet page ----------
+REF_DAYS = int(os.environ.get("DEVPULSE_REF_DAYS", 180))
+REF_MAX = 5           # newest commits kept per issue
+BRANCH_NUMS = re.compile(r"(?:^|/)(?:issues?|fix|feat)[/-]((?:\d+-)*\d+)(?=-|$)", re.I)   # "issue/51-75-fee-estimate" -> 51, 75
+
+
+def _mentions(subject: str, body: str) -> tuple[list[int], str] | None:
+    """The issues a commit names, and its kind: 'fix(#78): page header sync' -> [78], fix. GitHub's
+    'Merge pull request #71 from …' names pull request 71 itself plus what its title names: merged. Docs, tests,
+    CI and merging main into a branch never count: a commit only counts when it changes the software."""
+    nums: set[int] = set()
+    m = re.match(r"merge pull request #(\d+)", subject, re.I)
+    if m:
+        nums.add(int(m.group(1)))
+        subject = next((x for x in body.splitlines() if x.strip()), "")
+    h = headline(subject) if subject else None
+    if h:
+        nums.update(h["issues"])
+    elif not m:
+        return None
+    return (sorted(nums), "merged" if m else (h["kind"] if h else "change")) if nums else None
+
+
+def refs_state(repo: str, path: str, branch: str, now: int, pin: str | None) -> dict:
+    """Which IDNI issue and pull request numbers IDNI's own commits name, read from git alone:
+      main:  commits on main (any parent) that name #N, newest first, each with whether our node runs it
+      work:  other branches with commits not yet on main that name #N, or a branch named issue/N-…
+    Only what IDNI wrote in its own history; tauhud.com/roadmap/ shows it beside each item and moves the badge."""
+    since = now - REF_DAYS * 86400
+    items: dict[int, dict] = {}
+    slot = lambda n: items.setdefault(n, {"main": [], "work": []})
+    out = git(path, "log", branch, f"--since=@{since}", "--format=%H%x1f%ct%x1f%s%x1f%b%x1e")
+    for chunk in out.split("\x1e"):
+        if not chunk.strip():
+            continue
+        sha, ct, subject, body = (chunk.strip("\n").split("\x1f") + ["", "", "", ""])[:4]
+        got = _mentions(subject, body)
+        if not got:
+            continue
+        for n in got[0]:
+            lst = slot(n)["main"]
+            if len(lst) < REF_MAX:
+                lst.append({"sha": sha, "ts": int(ct), "kind": got[1], "url": f"https://github.com/{repo}/commit/{sha}",
+                            "runs": bool(pin) and is_ancestor(path, sha, pin)})
+    heads = [x for x in git(path, "for-each-ref", "--format=%(refname:short)", "refs/heads").split() if x != branch]
+    for b in heads:
+        log_ = git(path, "log", f"{branch}..{b}", f"--since=@{since}", "--format=%H%x1f%ct%x1f%s%x1f%b%x1e")
+        nums, tip_ts = set(), 0
+        for chunk in log_.split("\x1e"):
+            if not chunk.strip():
+                continue
+            sha, ct, subject, body = (chunk.strip("\n").split("\x1f") + ["", "", "", ""])[:4]
+            tip_ts = max(tip_ts, int(ct))
+            got = _mentions(subject, body)
+            if got:
+                nums.update(got[0])
+        if not tip_ts:   # nothing beyond main, or nothing recent: no work in progress
+            continue
+        m = BRANCH_NUMS.search(b)
+        if m:
+            nums.update(int(x) for x in m.group(1).split("-"))
+        for n in sorted(nums):
+            slot(n)["work"].append({"branch": b, "ts": tip_ts, "url": f"https://github.com/{repo}/tree/{urllib.parse.quote(b)}"})
+    for v in items.values():
+        v["work"].sort(key=lambda w: -w["ts"])
+    return {"since": since, "items": {str(n): items[n] for n in sorted(items)}}
+
+
 # ---------- headlines: what the new commits mean, written once per commit by a language model ----------
 NEWS_AI_KEY = (os.environ.get("NEWS_AI_KEY") or os.environ.get("CHAT_AI_KEY") or "").strip()
 NEWS_AI_MODEL = os.environ.get("NEWS_AI_MODEL", "").strip() or "claude-sonnet-5-5"
@@ -559,6 +629,11 @@ def build(now: int | None = None, trackers: dict | None = None) -> dict:
             data["sync"] = sync_state(TESTNET, paths[TESTNET], tn["branch"], pin)
         except Exception as e:  # noqa: BLE001
             log.warning("news/sync: %s", e)
+        try:
+            full = (tn.get("runs") or {}).get("sha")
+            data["refs"] = refs_state(TESTNET, paths[TESTNET], tn["branch"], now, full if full and len(full) == 40 else None)
+        except Exception as e:  # noqa: BLE001
+            log.warning("refs: %s", e)
     return data
 
 

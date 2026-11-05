@@ -1032,8 +1032,6 @@ TauI18n.add({ strings: {
   "I'll take it. Cheerio.": "もらっとく。じゃあね。",
   "Rico, quick question about the ghost transac": "リコ、幽霊取引について手短に質問なんだけ",
   "And he's gone. The phone line runs past Baako's goats. They chew on it.": "切れちゃった。電話線はバーコのヤギのそばを通ってるんだ。かじるんだよ。",
-  "Rico, can you say hi to my mum? She's": "リコ、ママにあいさつしてくれる？ママは",
-  "We lost her! Zia's mum, if you're listening: hi from Zia. And from Rico.": "切れた！ジアのママ、聴いてたら：ジアからこんにちは。リコからも。",
   "Rico, Pearl here, I'm new on the island. Who stamps all the blocks? I keep seeing the same signature.": "リコ、パールよ、島に来たばかり。ブロックに全部はんこを押してるのは誰？いつも同じ署名を見るの。",
   "Right now one hand seals every block, Pearl. On the lagoon that's the warm-up act.": "今はひとつの手が全部のブロックを封印してるんだ、パール。ラグーンでは前座ってところさ。",
   "Isn't that a bit lonely?": "ちょっと寂しくない？",
