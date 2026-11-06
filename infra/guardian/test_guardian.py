@@ -207,6 +207,74 @@ class GuardianTest(unittest.TestCase):
         finally:
             guardian.MAX_ACCOUNTS = old
 
+    def settings(self, auto, secret, ip="6.6.6.6", t=None):
+        at = int(time.time())
+        return self.g.settings({"account": OWNER, "at": at, "signature": proof(OWNER_SK, "settings", OWNER, at),
+                                "code": totp_at(secret, t or time.time()), "auto": auto}, ip)
+
+    def test_settings_need_key_and_code(self):
+        secret = self.enrol()
+        self.g.confirm({"account": OWNER, "code": totp_at(secret, time.time() - 30)}, "1.1.1.1")
+        at = int(time.time())
+        with self.assertRaises(guardian.Refused) as c:   # a stranger's key
+            self.g.settings({"account": OWNER, "at": at, "signature": proof(STRANGER_SK, "settings", OWNER, at),
+                             "code": totp_at(secret, time.time()), "auto": {"per": 100, "day": 500}}, "6.6.6.1")
+        self.assertEqual(c.exception.status, 403)
+        with self.assertRaises(guardian.Refused):          # the key, but a wrong code
+            self.g.settings({"account": OWNER, "at": at, "signature": proof(OWNER_SK, "settings", OWNER, at),
+                             "code": "000000" if totp_at(secret, time.time()) != "000000" else "111111", "auto": None}, "6.6.6.2")
+        with self.assertRaises(guardian.Refused):          # per above day
+            self.settings({"per": 600, "day": 500}, secret)
+        self.assertEqual(self.settings({"per": 100, "day": 500}, secret, t=time.time() + 30), {"auto": {"per": 100, "day": 500}})
+        self.assertEqual(self.g.account(OWNER)["auto"], {"per": 100, "day": 500})
+        self.assertEqual(self.g.account(OWNER)["today"]["sum"], 0)
+
+    def test_allowance_signs_small_payments_by_itself_until_the_day_is_spent(self):
+        secret = self.enrol()
+        self.g.confirm({"account": OWNER, "code": totp_at(secret, time.time() - 30)}, "1.1.1.1")
+        self.settings({"per": 100, "day": 250}, secret)
+        self.park(rid="01" * 32); self.node.requests[-1]["amount"] = 100
+        self.park(rid="02" * 32); self.node.requests[-1]["amount"] = 101   # above per: waits for a code
+        self.park(rid="03" * 32); self.node.requests[-1]["amount"] = 100
+        self.park(rid="04" * 32); self.node.requests[-1]["amount"] = 100   # 300 > 250: waits for a code
+        self.g.bot.tick()
+        self.assertEqual([t["request_id"] for t in self.node.sent], ["01" * 32, "03" * 32])
+        self.assertTrue(all(t["reason"] == guardian.AUTO_REASON for t in self.node.sent))
+        today = self.g.account(OWNER)["today"]
+        self.assertEqual((today["sum"], today["count"]), (200, 2))
+        self.g.bot.tick()
+        self.assertEqual(len(self.node.sent), 2)   # nothing signed twice, the two others still wait
+        r = self.g.approve({"request_id": "02" * 32, "code": totp_at(secret, time.time() + 30)}, "1.1.1.1")   # the code still works for them
+        self.assertTrue(r["approved"])
+        self.assertEqual(self.g.account(OWNER)["today"]["sum"], 200)   # a code-confirmed payment does not use the allowance
+
+    def test_a_new_day_starts_the_allowance_afresh_and_always_mode_never_signs_alone(self):
+        secret = self.enrol()
+        self.g.confirm({"account": OWNER, "code": totp_at(secret, time.time() - 30)}, "1.1.1.1")
+        self.settings({"per": 100, "day": 100}, secret)
+        self.park(rid="05" * 32); self.node.requests[-1]["amount"] = 100
+        self.g.bot.tick()
+        self.assertEqual(len(self.node.sent), 1)
+        self.g.clock = lambda: time.time() + 86400   # tomorrow (UTC)
+        self.park(rid="06" * 32); self.node.requests[-1]["amount"] = 100
+        self.g.bot.tick()
+        self.assertEqual(len(self.node.sent), 2)
+        self.g.clock = time.time
+        self.settings(None, secret, t=time.time() + 30)   # every payment wants a code now
+        self.park(rid="07" * 32); self.node.requests[-1]["amount"] = 1
+        self.g.bot.tick()
+        self.assertEqual(len(self.node.sent), 2)
+
+    def test_no_allowance_for_an_account_that_left(self):
+        secret = self.enrol()
+        self.g.confirm({"account": OWNER, "code": totp_at(secret, time.time() - 30)}, "1.1.1.1")
+        self.settings({"per": 100, "day": 100}, secret)
+        at = int(time.time())
+        self.g.remove({"account": OWNER, "at": at, "signature": proof(OWNER_SK, "remove", OWNER, at), "code": totp_at(secret, time.time() + 30)}, "4.4.4.5")
+        self.park(rid="08" * 32); self.node.requests[-1]["amount"] = 10
+        self.g.bot.tick()
+        self.assertEqual(self.node.sent, [])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=1)

@@ -30,6 +30,9 @@ HTTP (Caddy: node.tauhud.com/guardian/*), JSON in and out:
     POST /guardian/confirm  {account, code}                    -> {enrolled: true}
     POST /guardian/approve  {request_id, code}                 -> {approved: true, tx_hash}
     POST /guardian/remove   {account, at, signature, code}     -> {removed: true}
+    POST /guardian/settings {account, at, signature, code, auto: {per, day} | null}   -> {auto}
+        auto: small payments go through by themselves, up to `per` each and `day` in all per UTC day; the rest wait for
+        the code. null: every payment that names the Guardian waits for the code. Changing it takes the key AND a code.
 The signature is BLS over sha256 of the text "tauhud guardian <enroll|remove> <account> <at>", made by the account's key
 in the visitor's browser (wallet/vendor/tau-bls.min.js, the same signing the wallet uses for transactions).
 """
@@ -75,6 +78,12 @@ PENDING_TTL = 15 * 60       # a QR code shown but not confirmed yet
 WRONG_MAX, WRONG_WINDOW = 5, 15 * 60   # five wrong codes for one account: that account waits 15 minutes
 BODY_MAX = 4096
 REASON = "code from the account's authenticator app"
+AUTO_REASON = "within the day's allowance set by the account"
+MAX_AMOUNT = 2 ** 24 - 1
+
+
+def utc_day(t: float) -> str:
+    return time.strftime("%Y-%m-%d", time.gmtime(t))
 
 PK = re.compile(r"^[0-9a-f]{96}$")
 SIG = re.compile(r"^[0-9a-f]{192}$")
@@ -121,6 +130,14 @@ class GuardianBot(idni_totp.TotpBot):
         super().__init__(*args, **kwargs)
         self.vote_lock = threading.Lock()
         self.last_vote: dict = {}
+        self.allowance = None   # (request) -> reason to sign without a code, or None (set by Guardian)
+
+    def decide(self, request: dict):
+        got = super().decide(request)      # a code already typed for it
+        if got is not None or self.allowance is None:
+            return got
+        why = self.allowance(request)      # small and within today's allowance: signed by itself
+        return (True, why) if why else None
 
     def vote(self, request_id: str, approve: bool, reason: str = ""):
         with self.vote_lock:
@@ -163,6 +180,7 @@ class Guardian:
         self.bot = GuardianBot(client or idni_common.NodeClient(NODE_HOST, NODE_PORT, timeout=30.0), signer,
                                store=self.store, poll_seconds=POLL)
         self.pubkey = signer.pubkey
+        self.bot.allowance = self.within_allowance
         self.pending: dict[str, tuple[str, float]] = {}   # account -> (secret shown as QR, when)
         self.wrong: dict[str, list[float]] = {}           # account -> times of wrong codes
         self.ip_codes = idni_totp._RateLimiter(burst=6, refill_per_sec=0.2)
@@ -209,7 +227,70 @@ class Guardian:
         if not PK.match(pk):
             raise Refused(400, "pk must be 96 hex characters.")
         a = self.meta["accounts"].get(pk) or {}
-        return {"enrolled": bool(self.store.secret_for(pk)), "since": a.get("since"), "approvals": a.get("approvals", 0)}
+        today = self._today(a, self.clock())
+        return {"enrolled": bool(self.store.secret_for(pk)), "since": a.get("since"), "approvals": a.get("approvals", 0),
+                "auto": a.get("auto"), "today": {"sum": today["sum"], "count": today["count"], "day": today["day"]}}
+
+    @staticmethod
+    def _today(a: dict, now: float) -> dict:
+        """What went through by itself today (UTC); a new day starts the count afresh."""
+        d = a.get("today") or {}
+        if d.get("day") != utc_day(now):
+            d = {"day": utc_day(now), "sum": 0, "count": 0}
+            a["today"] = d
+        return d
+
+    def within_allowance(self, request: dict):
+        """The reason to co-sign this request without a code, or None: the account set an allowance, the amount is at
+        most `per`, and today's self-signed payments plus this one are at most `day`. Counted at the moment of signing."""
+        sender = str(request.get("sender_pubkey", "")).lower()
+        try:
+            amount = int(request.get("amount"))
+        except (TypeError, ValueError):
+            return None
+        with self.lock:
+            a = self.meta["accounts"].get(sender)
+            auto = (a or {}).get("auto")
+            if not a or not auto or not self.store.secret_for(sender):
+                return None
+            today = self._today(a, self.clock())
+            if amount > int(auto["per"]) or today["sum"] + amount > int(auto["day"]):
+                return None
+            today["sum"] += amount
+            today["count"] += 1
+            a["approvals"] = a.get("approvals", 0) + 1
+            self._save_meta()
+        return AUTO_REASON
+
+    def settings(self, body: dict, ip: str) -> dict:
+        """What the Guardian signs by itself: the key AND a current code, like removing it."""
+        if not self.ip_codes.allow(ip):
+            raise Refused(429, "Too many codes from here; wait a minute.")
+        account = str(body.get("account", "")).lower()
+        if not PK.match(account):
+            raise Refused(400, "account must be 96 hex characters.")
+        auto = body.get("auto")
+        if auto is not None:
+            if not isinstance(auto, dict):
+                raise Refused(400, "auto must be {per, day} or null.")
+            try:
+                per, day = int(auto.get("per")), int(auto.get("day"))
+            except (TypeError, ValueError):
+                raise Refused(400, "per and day must be whole numbers.")
+            if not (1 <= per <= MAX_AMOUNT and 1 <= day <= MAX_AMOUNT) or per > day:
+                raise Refused(400, f"per and day must be between 1 and {MAX_AMOUNT}, and per at most day.")
+            auto = {"per": per, "day": day}
+        now = self.clock()
+        verify_proof("settings", account, body.get("at"), body.get("signature"), now)
+        with self.lock:
+            if not self.store.secret_for(account):
+                raise Refused(404, "This account has no Guardian.")
+            self._check_current_code(account, body.get("code"), now)
+            a = self.meta["accounts"].setdefault(account, {"approvals": 0})
+            a["auto"] = auto
+            self._save_meta()
+        log.info("settings %s: %s", account[:12], "allowance" if auto else "always a code")
+        return {"auto": auto}
 
     # ---------- enrolment ----------
     def _locked(self, account: str, now: float) -> bool:
@@ -332,7 +413,8 @@ class Guardian:
         with self.lock:
             if self._locked(sender, now):
                 raise Refused(429, "Too many wrong codes for this account; wait 15 minutes.")
-        self.bot.decide(req)                     # IDNI's bot: the request is now one it waits on
+        with self.bot._lock:                     # IDNI's bot: the request is now one it waits on
+            self.bot._pending[request_id] = req
         ok, detail = self.bot.submit_code(request_id, code)   # IDNI's check: enrolled, right code, not used before
         if not ok:
             with self.lock:
@@ -424,7 +506,8 @@ def make_handler(g: Guardian):
         def do_POST(self):
             u = urlsplit(self.path)
             route = {"/guardian/enroll": g.enroll, "/guardian/confirm": g.confirm,
-                     "/guardian/approve": g.approve, "/guardian/remove": g.remove}.get(u.path)
+                     "/guardian/approve": g.approve, "/guardian/remove": g.remove,
+                     "/guardian/settings": g.settings}.get(u.path)
             if not route:
                 return self._send(404, {"error": "not here"})
             try:
@@ -459,6 +542,8 @@ def status(g: Guardian) -> int:
         print(f"          payments waiting for a code now: {len(waiting)}")
     except Exception as exc:
         print(f"          node does not answer ({exc!r})")
+    auto = sum(1 for a in g.meta.get("accounts", {}).values() if a.get("auto"))
+    print(f"          accounts with a daily allowance: {auto}; the rest want a code for every payment")
     for a in g.meta.get("approvals", [])[-3:]:
         when = time.strftime("%d.%m. %H:%M UTC", time.gmtime(a["t"]))
         print(f"          co-signed {when}: {a.get('amount')} test AGRS from {a.get('account')}…")
