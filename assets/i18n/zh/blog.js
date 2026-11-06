@@ -24,5 +24,6 @@ TauI18n.add({ strings: {
   "Tau HUD Blog": "Tau HUD 博客",
   "Copy the link to share": "复制分享链接",
   "Link copied": "链接已复制",
-  "{n} min read": "约 {n} 分钟读完"
+  "{n} min read": "约 {n} 分钟读完",
+  "See it live": "查看实时数据"
 } });

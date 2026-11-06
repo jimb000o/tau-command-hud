@@ -79,7 +79,9 @@ exclamation marks, no emoji, no names of people.
 - why: two or three lines, each at most 160 characters, that say at a glance why this visit matters: one for the Tau \
 community, one for IDNI (what a community node under steady everyday traffic shows them), optionally one for everyone.
 - body: Markdown with "## " section headings, short paragraphs and "- " lists. Sections in this order: "What happened", \
-"What the logbook shows", "What is still open". No title in body, no links, no tables.
+"What the logbook shows", "What is still open". No title in body, no tables, no links \
+of your own: name our places as they are called (White Rabbit Key, tauhud.com, the ship's name, Tau Testnet Alpha, \
+our node) and the blog links them to their pages by itself.
 - zh: Simplified Chinese, ja: Japanese, same meaning and the same numbers; keep Tau, IDNI, AGRS, White Rabbit Key and \
 the ship names in Latin letters.
 - x: one post for X, at most 200 characters, no link, no hashtags: the headline point and why it matters.
@@ -308,7 +310,9 @@ def pictures(a: dict) -> dict:
             log.warning("hero for %s: %s", a["id"], e)
     if a.get("facts"):
         figs = blog_pics.visit_charts(a["facts"], os.path.join(IMG, a["id"]))
-        a["figures"] = [{"src": f"{NODE}/blog/img/{os.path.basename(p)}", "caption": cap, "after": i + 1} for i, (p, cap) in enumerate(figs)] \
+        live = {"-stops.png": "/cruise/", "-pace.png": "/load/"}   # each chart leads to the live page it was drawn from
+        a["figures"] = [{"src": f"{NODE}/blog/img/{os.path.basename(p)}", "caption": cap, "after": i + 1,
+                         **{"link": v for k, v in live.items() if p.endswith(k)}} for i, (p, cap) in enumerate(figs)] \
             or a.get("figures") or []   # after the first section the stops, after the second the pace
     return a
 

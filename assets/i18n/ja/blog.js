@@ -24,5 +24,6 @@ TauI18n.add({ strings: {
   "Tau HUD Blog": "Tau HUD ブログ",
   "Copy the link to share": "共有用リンクをコピー",
   "Link copied": "リンクをコピーしました",
-  "{n} min read": "約 {n} 分で読めます"
+  "{n} min read": "約 {n} 分で読めます",
+  "See it live": "ライブで見る"
 } });

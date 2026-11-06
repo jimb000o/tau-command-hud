@@ -102,6 +102,10 @@ figcaption { margin: .7em auto 0; width: var(--col); max-width: 100%; color: var
 .why ul { margin: 0; }
 .src { margin-top: 2.4em; padding-top: 1em; border-top: 1px solid var(--line); color: var(--dim); font: 400 .78em/1.6 var(--display); overflow-wrap: anywhere; }
 .src a { color: var(--dim); }
+#art p a, #art li a { color: #fff; text-decoration: underline; text-decoration-color: var(--accent, #39ff8a); text-underline-offset: .18em; text-decoration-thickness: 1px; }
+#art p a:hover, #art li a:hover { text-decoration-thickness: 2px; }
+figcaption a.live { color: var(--accent, #39ff8a); text-decoration: none; white-space: nowrap; }
+figure.wide > a { display: block; }
 .end { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1.4em; }
 .draft { margin-top: 1em; padding: .8em 1em; border: 1px solid var(--behind); border-radius: 12px; color: var(--behind); font: 400 .85em/1.55 var(--display); }
 .draft code { color: #fff; font-family: var(--mono); }
@@ -164,12 +168,36 @@ footer p { margin: 0; }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const date = on => { try { return new Date(on + "T12:00:00Z").toLocaleDateString(L === "en" ? "en-GB" : L, { day: "numeric", month: "long", year: "numeric" }); } catch (e) { return on; } };
 
-  /* a small, safe Markdown: ## headings, - and 1. lists, **bold**, *italic*, paragraphs; nothing else */
+  /* our own places, linked where an article first names them (any language: the names stay in Latin letters) */
+  const PLACES = [
+    ["White Rabbit Key", "/rabbit/"], ["MS Dry Run", "/cruise/"], ["Queen Mempool", "/cruise/"],
+    ["Tau Testnet Alpha", "/stats/"], ["tauhud.com", "/"],
+    ["our node", "/status/"], ["我们的节点", "/status/"], ["私たちのノード", "/status/"],
+    ["strained", "/load/"], ["吃紧", "/load/"], ["逼迫", "/load/"],
+  ];
+  /* a link the text writes itself: only to our own pages */
+  const okHref = u => /^\/[\w\/-]*(\?[\w=&;.-]*)?$/.test(u) || /^https:\/\/(node\.)?tauhud\.com(\/[\w\/?=&;.-]*)?$/.test(u);
+  let linked = new Set();
+  const place = h => {
+    for (const [name, href] of PLACES) {
+      if (linked.has(href + name) || linked.has(href)) continue;
+      const re = new RegExp(`(?<![\\w.])${name.replace(/\./g, "\\.")}(?![\\w])`);
+      /* never inside a tag or a link already made */
+      const parts = h.split(/(<a [^>]*>.*?<\/a>|<[^>]+>)/);
+      let done = false;
+      h = parts.map(p => (done || p.startsWith("<")) ? p : p.replace(re, m => { done = true; return `<a href="${href}">${m}</a>`; })).join("");
+      if (done) linked.add(href);
+    }
+    return h;
+  };
+
+  /* a small, safe Markdown: ## headings, - and 1. lists, **bold**, *italic*, [links](/our/page/), paragraphs; nothing else */
   function md(text, mark) {
-    const inline = s => {
-      let h = esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>");
+    const inline = (s, head) => {
+      let h = esc(s).replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (all, t, u) => okHref(u) ? `<a href="${u}">${t}</a>` : t)
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>");
       if (mark && mark.length) h = h.replace(/(?<![\w.])\d+(?:[.,]\d+)?(?::\d\d)?/g, n => mark.includes(n.replace(",", ".")) ? `<mark>${n}</mark>` : n);
-      return h;
+      return head ? h : place(h);
     };
     const out = []; let list = null;
     const close = () => { if (list) { out.push(`</${list}>`); list = null; } };
@@ -177,7 +205,7 @@ footer p { margin: 0; }
       const l = raw.trim();
       let m;
       if (!l) { close(); continue; }
-      if ((m = l.match(/^#{2,3}\s+(.*)/))) { close(); out.push(`<h3>${inline(m[1])}</h3>`); continue; }
+      if ((m = l.match(/^#{2,3}\s+(.*)/))) { close(); out.push(`<h3>${inline(m[1], true)}</h3>`); continue; }
       if ((m = l.match(/^[-*]\s+(.*)/)) || (m = l.match(/^\d+[.)]\s+(.*)/))) {
         const kind = /^\d/.test(l) ? "ol" : "ul";
         if (list !== kind) { close(); out.push(`<${kind}>`); list = kind; }
@@ -217,7 +245,8 @@ footer p { margin: 0; }
     return ({ en: "{n} min read", zh: "约 {n} 分钟读完", ja: "約 {n} 分で読めます" }[L] || "{n} min read").replace("{n}", Math.max(1, n));
   };
   const img = (u, alt, cls) => okSrc(u) ? `<img class="${cls}" src="${esc(u)}" alt="${esc(alt)}" loading="lazy" onerror="this.closest('figure,.thumb') ? this.closest('figure,.thumb').remove() : this.remove()">` : "";
-  const fig = f => okSrc(f.src) ? `<figure class="wide">${img(f.src, pick(f.caption), "chart")}<figcaption>${esc(pick(f.caption))}</figcaption></figure>` : "";
+  /* a chart may lead to the live page it was drawn from */
+  const fig = f => okSrc(f.src) ? `<figure class="wide">${f.link && okHref(f.link) ? `<a href="${esc(f.link)}" title="${esc(T("See it live"))}">${img(f.src, pick(f.caption), "chart")}</a>` : img(f.src, pick(f.caption), "chart")}<figcaption>${esc(pick(f.caption))}${f.link && okHref(f.link) ? ` <a class="live" href="${esc(f.link)}">${esc(T("See it live"))} →</a>` : ""}</figcaption></figure>` : "";
 
   /* the body with its charts: a figure with "after": n stands at the end of the n-th section */
   function bodyWith(p, mark) {
@@ -229,6 +258,7 @@ footer p { margin: 0; }
 
   function show(p, mark) {
     $("list").hidden = true; $("one").hidden = false;
+    linked = new Set();
     document.title = pick(p.title) + " · Tau HUD Blog";
     const why = (p.why || []).map(w => `<li>${md(pick(w), mark).replace(/^<p>|<\/p>$/g, "")}</li>`).join("");
     const src = (p.sources || []).map(s => `<a href="${esc(s)}" target="_blank" rel="noopener">${esc(s.replace(/^https:\/\//, ""))}</a>`).join(" · ");
@@ -265,6 +295,7 @@ footer p { margin: 0; }
         show(a, bad);
       } catch (e) {
         $("list").hidden = true; $("one").hidden = false;
+    linked = new Set();
         $("art").innerHTML = `<p>${esc(T("This draft is not there (any more). Published articles are listed on the blog."))}</p>`;
       }
       return;

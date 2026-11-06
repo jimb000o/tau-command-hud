@@ -2385,5 +2385,10 @@
     "tag": "News line",
     "on": "2026-11-06",
     "html": "News line: old things now leave by themselves. A headline goes 14 days after it came on, a new feature and a blog article as well, IDNI’s news after a week; a few standing pointers stay. New things come in by themselves: the newest blog article opens the line by its own headline, as the title story, and the line stands still for five seconds at the start so it can be read; the next cruise ship comes in from three days before it calls, in your own time. A watchtower on our server checks every half hour that something new is on the line and that IDNI’s news still comes in, and tells us privately when not."
+  },
+  {
+    "tag": "Blog",
+    "on": "2026-11-06",
+    "html": "Blog: articles now link our own places where they first name them: White Rabbit Key leads to the game, tauhud.com to the HUD, the ship to its logbook, Tau Testnet Alpha to the stats, our node to its health, a strained testnet to the load page. Each chart leads to the live page it was drawn from (See it live). Articles our server drafts are linked the same way by themselves."
   }
 ]

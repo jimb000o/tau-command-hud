@@ -70,7 +70,8 @@
       "en": "Where the 247 planned stops went: 122 accepted, 8 timeouts (the ship counted them as refusals), 117 skipped.",
       "zh": "计划的 247 个停靠去了哪里：122 个被接受，8 个超时（游轮把它们算成了拒绝），117 个被跳过。",
       "ja": "計画された 247 か所の立ち寄りの行方：122 件受理、8 件はタイムアウト（船はそれを拒否として数えました）、117 件は省略。"
-     }
+     },
+     "link": "/cruise/"
     },
     {
      "src": "/assets/blog/img/dryrun-timeouts.png",
@@ -79,7 +80,8 @@
       "en": "Sends our node did not answer within 20 seconds, per hour, from our relay's log of the last three days.",
       "zh": "我们的节点在 20 秒内没有回答的发送次数（每小时），来自我们中继过去三天的日志。",
       "ja": "私たちのノードが 20 秒以内に返事をしなかった送信の数（1 時間ごと）。リレーの直近 3 日間のログより。"
-     }
+     },
+     "link": "/status/"
     },
     {
      "src": "/assets/blog/img/dryrun-pace.png",
@@ -88,7 +90,8 @@
       "en": "The ship's sends per 10 minutes: mostly at half pace, far below the 120 it may send.",
       "zh": "游轮每 10 分钟的发送数：大多是半速，远低于允许的 120 次。",
       "ja": "船の 10 分ごとの送信数：ほとんど半分の速さで、許される 120 件を大きく下回っています。"
-     }
+     },
+     "link": "/load/"
     }
    ],
    "stats": [
