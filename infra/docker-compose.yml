@@ -212,6 +212,8 @@ services:
     volumes:
       - alerts_state:/state     # /state/blog.json: which visits have a draft, which drafts were posted
       - alerts_public:/public   # /public/blog/posts.json and drafts/, served by Caddy
+      - /opt/sites/rico/art:/art:ro         # the island's paintings: each article's hero picture is made from them
+      - ../rabbit/art/ships:/ships:ro       # the painted ships on that picture
     depends_on: [relay]
     mem_limit: 128m
     restart: unless-stopped

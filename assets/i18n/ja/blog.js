@@ -21,5 +21,8 @@ TauI18n.add({ strings: {
   "Findings": "発見事項",
   "Feedback": "フィードバック",
   "Blog": "ブログ",
-  "Tau HUD Blog": "Tau HUD ブログ"
+  "Tau HUD Blog": "Tau HUD ブログ",
+  "Copy the link to share": "共有用リンクをコピー",
+  "Link copied": "リンクをコピーしました",
+  "{n} min read": "約 {n} 分で読めます"
 } });

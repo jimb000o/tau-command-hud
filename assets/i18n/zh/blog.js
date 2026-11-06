@@ -21,5 +21,8 @@ TauI18n.add({ strings: {
   "Findings": "问题报告",
   "Feedback": "反馈",
   "Blog": "博客",
-  "Tau HUD Blog": "Tau HUD 博客"
+  "Tau HUD Blog": "Tau HUD 博客",
+  "Copy the link to share": "复制分享链接",
+  "Link copied": "链接已复制",
+  "{n} min read": "约 {n} 分钟读完"
 } });

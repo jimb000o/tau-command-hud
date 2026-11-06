@@ -6,6 +6,7 @@
   python blog.py draft <visit-id>     write the draft of that visit (anew, if there is one)
   python blog.py publish <id> [--dry] put the draft on the blog and post it once to Telegram and X (--dry: show only)
   python blog.py unpublish <id>       take a published article off the blog again (the posts stay)
+  python blog.py pictures             make the hero pictures and link-preview pages of all articles anew
 
 How a draft comes about: the relay's public cruise logbook (/cruise/log, /cruise/incidents) is counted here into a
 list of facts (sent, refused, unanswered, skipped, pace, load verdicts, bookings, incidents). A language model
@@ -36,6 +37,10 @@ SITE = os.environ.get("SITE_URL", "https://tauhud.com").rstrip("/")
 NODE = os.environ.get("NODE_URL", "https://node.tauhud.com").rstrip("/")
 AI_KEY = (os.environ.get("NEWS_AI_KEY") or os.environ.get("CHAT_AI_KEY") or "").strip()
 AI_MODEL = os.environ.get("BLOG_AI_MODEL", "").strip() or os.environ.get("NEWS_AI_MODEL", "").strip() or "claude-sonnet-5-5"
+ART = os.environ.get("BLOG_ART", "/art")        # the island's paintings as the game shows them (/opt/sites/rico/art)
+SHIPS = os.environ.get("BLOG_SHIPS", "/ships")  # the painted ships (rabbit/art/ships)
+IMG = os.path.join(PUBLIC, "img")               # hero pictures and charts, node.tauhud.com/blog/img/
+SHARE = os.path.join(PUBLIC, "a")               # one small page per article for link previews, node.tauhud.com/blog/a/<id>.html
 EVERY = 600
 CHECK_WAIT = 3 * 3600      # a visit whose bookings were never checked is drafted this long after it ended
 RETRY_AFTER = 2 * 3600
@@ -72,10 +77,12 @@ community, one for IDNI (what a community node under steady everyday traffic sho
 - zh: Simplified Chinese, ja: Japanese, same meaning and the same numbers; keep Tau, IDNI, AGRS, White Rabbit Key and \
 the ship names in Latin letters.
 - x: one post for X, at most 200 characters, no link, no hashtags: the headline point and why it matters.
+- card: the text on the article's picture, English only: "line", at most 60 characters, the point in one line; \
+"why", three points of at most 52 characters each that say at a glance why it matters (for the community, for IDNI).
 
 Answer with JSON only, no other text:
 {"title":{"en":"","zh":"","ja":""},"dek":{"en":"","zh":"","ja":""},"why":[{"en":"","zh":"","ja":""}],\
-"body":{"en":"","zh":"","ja":""},"x":""}"""
+"body":{"en":"","zh":"","ja":""},"x":"","card":{"line":"","why":["","",""]}}"""
 
 
 # ---------- reading ----------
@@ -256,7 +263,89 @@ def article(facts: dict, out: dict, now: float) -> dict:
             "title": title, "dek": dek, "why": why, "body": body, "x": " ".join(str(out.get("x") or "").split())[:240],
             "sources": [f"{NODE}/cruise/log?visit={vid}", f"{NODE}/cruise/incidents"],
             "facts": facts, "check": {"unknown_numbers": unknown_numbers(en, facts), "hype": sorted({m.group(0) for m in HYPE.finditer(en)})},
-            "written": int(now), "model": AI_MODEL}
+            "card": card_of(out.get("card"), title["en"]), "written": int(now), "model": AI_MODEL}
+
+
+def card_of(c, title: str) -> list[str]:
+    """The lines on the hero picture: title, the point, "Why it matters" and up to three short points, the footer."""
+    c = c if isinstance(c, dict) else {}
+    short = lambda t, n: " ".join(str(t or "").split())[:n]  # noqa: E731
+    lines = [short(title, 60)]
+    if c.get("line"):
+        lines.append(short(c["line"], 64))
+    why = [short(w, 56) for w in (c.get("why") or [])[:3] if w]
+    if why:
+        lines += ["## Why it matters"] + ["- " + w for w in why]
+    return lines + ["Tau HUD blog · community project, not affiliated with IDNI"]
+
+
+# ---------- pictures ----------
+def ship_of(a: dict) -> str:
+    name = str((a.get("facts") or {}).get("ship") or a.get("ship") or "")
+    return "liner" if "queen" in name.lower() or a.get("ship") == "liner" else "expedition"
+
+
+def pictures(a: dict) -> dict:
+    """The hero picture (the island's painting with the ship and the card, made only where the paintings are) and
+    the charts of the visit's numbers; the article gets their addresses. Without paintings, no hero and no error."""
+    import blog_pics
+    os.makedirs(IMG, exist_ok=True)
+    if a.get("card") and os.path.exists(os.path.join(ART, "index.json")):
+        try:
+            blog_pics.hero(ART, SHIPS, a["card"], ship_of(a), os.path.join(IMG, a["id"] + "-hero.jpg"))
+            a["image"] = f"{NODE}/blog/img/{a['id']}-hero.jpg"
+        except Exception as e:  # noqa: BLE001 - an article without its picture beats no article
+            log.warning("hero for %s: %s", a["id"], e)
+    if a.get("facts"):
+        figs = blog_pics.visit_charts(a["facts"], os.path.join(IMG, a["id"]))
+        a["figures"] = [{"src": f"{NODE}/blog/img/{os.path.basename(p)}", "caption": cap, "after": i + 1} for i, (p, cap) in enumerate(figs)] \
+            or a.get("figures") or []   # after the first section the stops, after the second the pace
+    return a
+
+
+def share_page(a: dict) -> str:
+    """A small page whose link preview on Telegram, X and elsewhere shows the article's picture, title and summary;
+    a person who opens it goes on to the article."""
+    import html as h
+    url = f"{SITE}/blog/?p={a['id']}"
+    img = a.get("image") or f"{SITE}/assets/shots/blog.png"
+    t, dek = h.escape(a["title"]["en"]), h.escape(a["dek"]["en"])
+    page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{t} · Tau HUD Blog</title>
+<meta name="description" content="{dek}"><meta property="og:type" content="article"><meta property="og:title" content="{t}">
+<meta property="og:description" content="{dek}"><meta property="og:image" content="{h.escape(img)}"><meta property="og:url" content="{url}">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@TauHUDcom"><meta name="twitter:image" content="{h.escape(img)}">
+<link rel="canonical" href="{url}"><meta http-equiv="refresh" content="0; url={url}"></head>
+<body style="background:#09090a;color:#ebebee;font-family:sans-serif"><p><a style="color:#fff" href="{url}">{t}</a></p></body></html>"""
+    os.makedirs(SHARE, exist_ok=True)
+    with open(os.path.join(SHARE, a["id"] + ".html"), "w", encoding="utf-8") as f:
+        f.write(page)
+    return f"{NODE}/blog/a/{a['id']}.html"
+
+
+def site_pictures(force: bool = False) -> int:
+    """The articles shipped with the site get their hero picture and share page here (the paintings are only on our
+    server); a picture already made is kept unless forced."""
+    try:
+        with urllib.request.urlopen(SITE + "/assets/blog/posts.json", timeout=20) as r:
+            site = json.load(r).get("posts") or []
+    except Exception as e:  # noqa: BLE001
+        log.warning("site posts: %s", e)
+        return 0
+    n = 0
+    for a in site + posts()["posts"]:
+        if not a.get("id") or not ID_RE.match(a["id"]):
+            continue
+        if force or not os.path.exists(os.path.join(SHARE, a["id"] + ".html")) or (a.get("card") and not os.path.exists(os.path.join(IMG, a["id"] + "-hero.jpg"))):
+            if a.get("card") and os.path.exists(os.path.join(ART, "index.json")):
+                import blog_pics
+                try:
+                    os.makedirs(IMG, exist_ok=True)
+                    blog_pics.hero(ART, SHIPS, a["card"], ship_of(a), os.path.join(IMG, a["id"] + "-hero.jpg"))
+                except Exception as e:  # noqa: BLE001
+                    log.warning("hero for %s: %s", a["id"], e)
+            share_page(a)
+            n += 1
+    return n
 
 
 # ---------- files ----------
@@ -312,7 +401,7 @@ def write_draft(vid: str, now: float | None = None) -> str:
     except Exception:  # noqa: BLE001 - the article can do without them
         inc, cr = [], None
     facts = facts_of(entries, inc, cr)
-    a = article(facts, ask_ai(facts), now)
+    a = pictures(article(facts, ask_ai(facts), now))
     st = state()
     name = st["drafts"].get(a["id"]) or f"{a['id']}-{secrets.token_hex(4)}"
     st["drafts"][a["id"]], st["drafted"][vid] = name, a["id"]
@@ -437,7 +526,7 @@ def publish_cli(did: str, dry: bool, force: bool) -> int:
         a = {k: v for k, v in a.items() if k not in ("status", "model", "check")}
         p["posts"] = [a] + [x for x in p["posts"] if x.get("id") != did]
         write_json(os.path.join(PUBLIC, "posts.json"), p)
-        print(f"published: {SITE}/blog/?p={did}")
+        print(f"published: {SITE}/blog/?p={did}  (link preview: {share_page(a)})")
     if did in st.setdefault("announced", []):
         print("already posted to Telegram and X once: not posted again")
         return 0
@@ -476,10 +565,16 @@ def main(argv: list[str]) -> int:
         return publish_cli(args[0], "--dry" in argv, "--force" in argv)
     if cmd == "unpublish" and args and ID_RE.match(args[0]):
         return unpublish_cli(args[0])
+    if cmd == "pictures":
+        n = site_pictures(force=True)
+        print(f"blog:    pictures and link previews made for {n} article{'s' if n != 1 else ''}"
+              + ("" if os.path.exists(os.path.join(ART, "index.json")) else " (no island paintings found: no hero pictures)"))
+        return 0
     if cmd == "loop":
         log.info("blog drafts: %s", "on" if AI_KEY else "off (no NEWS_AI_KEY)")
         while True:
             try:
+                site_pictures()
                 tick()
             except Exception as e:  # noqa: BLE001 - the relay may be restarting
                 log.warning("tick: %s", e)
