@@ -2007,7 +2007,7 @@ TauI18n.add({ strings: {
   "(testnet busy: {n} waiting, {m} sealed in the last hour, {a} sent for the ship)": "（テストネットは忙しい：待機 {n} 件、直近一時間の封印 {m} 件、うち船の送信 {a} 件）",
   "(testnet strained: {n} waiting, {m} sealed in the last hour, {a} sent for the ship)": "（テストネットは苦しい：待機 {n} 件、直近一時間の封印 {m} 件、うち船の送信 {a} 件）",
   "({x}: {n} passengers)": "（{x}：乗客 {n} 人）",
-  "(the logbook: node.tauhud.com/cruise/log)": "（航海日誌：node.tauhud.com/cruise/log）",
+  "(the logbook: tauhud.com/cruise)": "（航海日誌：tauhud.com/cruise）",
   "(preview)": "（プレビュー）",
   "So far: {n} payments, {m} group bills, {a} bookings, {b} withdrawn.": "これまで：支払い {n} 件、まとめ払い {m} 件、予約 {a} 件、取り消し {b} 件。",
   "So far: {n} payments, {a} bookings, {b} withdrawn.": "これまで：支払い {n} 件、予約 {a} 件、取り消し {b} 件。",

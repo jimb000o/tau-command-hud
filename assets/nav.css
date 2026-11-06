@@ -43,7 +43,10 @@
 .tnav .pill.start b { color: #fff; font-weight: 600; margin-left: 2px; }
 .tnav .pill.start:hover { background: var(--tn-ok); border-color: var(--tn-ok); color: #000; }
 .tnav .pill.start:hover b { color: #000; }
-@media (max-width: 1399px) { .tnav .pill.start { display: none; } }   /* the Learn menu has it too; the line stays one line */
+.tnav .pill.start .sh { display: none; }
+@media (max-width: 1399px) { .tnav .pill.start .lg { display: none; } .tnav .pill.start .sh { display: inline; } }   /* short on laptops, so the line stays one line; phones have it first in the Learn sheet */
+.tnav .menu .mi.first b, .tsheet .mi.first b { color: var(--tn-ok); }
+.tsheet .mi.first { border: 1px solid rgba(57,255,138,.45); border-radius: 8px; }
 @media (max-width: 2199px) { .tnav form.tn-search input { width: 96px; } }   /* room for "Follow the chain" on one line at 2000 wide */
 .tnav .pill.tg { border-color: rgba(57,255,138,.6); color: var(--tn-ok); }
 .tnav .pill.tg svg { width: 13px; height: 13px; fill: currentColor; flex: none; }

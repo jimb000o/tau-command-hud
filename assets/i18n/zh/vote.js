@@ -1,5 +1,13 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. Commands and node answers stay as they are. */
 TauI18n.add({ strings: {
+  "Who may vote on a rule change is a setting of the network; the counter on the right says what it admits now.": "谁可以为规则变更投票是网络的一项设置；右侧的计数显示它现在接受谁的投票。",
+  "runs one with the network’s settings.": "会按网络自己的设置运行一个节点。",
+  "Who may vote.": "谁可以投票。",
+  "A setting of the network, read from our node: every account (open admission) or only the validators.": "网络的一项设置，由我们的节点读出：每个账户（开放准入）或仅验证者。",
+  "Who the network lets vote: every account (open admission) or only the validators. A setting of the network, read from our node.": "网络允许谁投票：每个账户（开放准入）或仅验证者。这是网络的一项设置，由我们的节点读出。",
+  "On Tau Testnet Alpha every account may vote on a rule change right now, not only validators.": "目前在 Tau Testnet Alpha 上，每个账户都可以为规则变更投票，不只是验证者。",
+  "Right now the testnet counts only the validators’ votes; a yes from another account is refused at the node. The commands below still work, and the simulation takes every vote.": "目前测试网只计算验证者的投票；其他账户的赞成票会在节点被拒绝。下面的命令仍然可用，模拟接受每一票。",
+  "Open admission is switched off: only an active validator’s yes counts. IDNI switched it off on 1 November 2026 after a proposal passed with one vote.": "开放准入已关闭：只有活跃验证者的赞成票才算数。2026 年 11 月 1 日，一项提案以一票通过后，IDNI 关闭了它。",
   "X @TauHUDcom": "X 账号 @TauHUDcom",
   "Vote on Tau": "在 Tau 上投票",
   "Vote": "投票",

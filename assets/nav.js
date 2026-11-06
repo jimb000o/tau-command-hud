@@ -17,6 +17,7 @@
     state:      { t: "Chain state", d: "Every rule in force right now: fee, agreement threshold, validators, agreed changes, personal rules", i: "≡", h: "#chain-state", act: "state" },
     explorer:   { t: "Explorer", d: "Find any block, transaction or address", i: "⌕", h: "explorer/", view: true },
     stats:      { t: "Stats", d: "Block pace, transactions, validators and rule changes over the whole chain", i: "≋", h: "stats/", view: true },
+    cruise:     { t: "Cruise logbook", d: "What each cruise ship sent to the testnet and what the node answered", i: "🛳", h: "cruise/" },
     load:       { t: "Testnet load", d: "How hard the testnet is working right now: sealed, waiting, time to a block", i: "∿", h: "load/" },
     history:    { t: "Time travel", d: "Step through the chain block by block and see the rules at any height", i: "⟲", h: "history/" },
     account:    { t: "Accounts", d: "Balance, own rules, offers and refusals of any address", i: "@", h: "account/", view: true },
@@ -361,7 +362,7 @@
     SHARE.querySelector(".tn-sh-copy").focus({ preventScroll: true });
   }
   function item(k, page, isHud, tip) {
-    const p = P[k], a = el(p.soon ? "div" : "a", "mi" + (k === page ? " here" : "") + (p.soon ? " soon" : ""));
+    const p = P[k], a = el(p.soon ? "div" : "a", "mi" + (k === page ? " here" : "") + (p.soon ? " soon" : "") + (k === "start" ? " first" : ""));
     a.setAttribute("role", "menuitem");
     a.innerHTML = `<span class="ic">${p.i}</span><b>${p.live ? '<i class="tn-live" aria-hidden="true"></i>' : ""}${esc(p.t)}${p.ext ? ' <span class="ext">↗</span>' : ""}${p.play ? `<em class="tn-play" data-play="${p.play}" hidden><i aria-hidden="true"></i><b translate="no"></b> <span>playing now</span></em>` : ""}</b><span>${esc(p.d)}</span>`;
     if (p.soon) { a.setAttribute("aria-disabled", "true"); a.title = "This page is not online yet"; }
@@ -681,7 +682,8 @@
     /* first visits: one way in, until its four steps are done (start/ keeps the count) */
     const started = (() => { try { return +localStorage.getItem("tauhud-start") || 0; } catch (e) { return 0; } })();
     if (page !== "start" && started < 4) {
-      const go = el("a", "pill start", started ? `Start here <b>${started}/4</b>` : "Start here"); go.href = ROOT + "start/";
+      /* wide screens say "Start here"; narrower ones (every 1366 laptop) keep a short "Start" so the line stays one line */
+      const go = el("a", "pill start", `<span class="lg">Start here</span><span class="sh">Start</span>` + (started ? ` <b>${started}/4</b>` : "")); go.href = ROOT + "start/";
       tip(go, "New here? Try Tau in four steps: a test wallet, a rule of your own that the chain checks, a block that seals it, a meal for Agorzilla. A few minutes, nothing to install.");
       left.append(go);
     }

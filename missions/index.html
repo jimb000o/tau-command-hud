@@ -276,7 +276,7 @@ const MISSIONS = [
       { t: "See it take effect", d: "An agreed change waits three blocks, then it is law.", ok: s => s.f.active },
     ],
     hint: "Bao only supports a lower fee, and Cyr never says yes. Which change gets three votes?",
-    real: { text: "Every real rule change goes the same way: proposed, voted, agreed, then in force at a later block. The Proposals page follows each one. Today the testnet has one validator and lets any account’s yes vote count, so a single vote is enough there.",
+    real: { text: "Every real rule change goes the same way: proposed, voted, agreed, then in force at a later block. The Proposals page follows each one. Today the testnet has one validator; whether other accounts’ votes count is a network setting that the Vote page reads live (it was switched off on 1 November 2026).",
       links: [["Proposals", "../proposals/"], ["Validator seat", "../playground/#seat"]] } },
 
   { id: "door", win: "Tau refused a broken rule before anyone voted, then took a sound one. A bad change never gets near the chain.", title: "Get a rule refused at the door", line: "Tau checks a change before anyone votes.",

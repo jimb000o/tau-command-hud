@@ -585,6 +585,7 @@ TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (
 /* Start here: the first-visit path (start/), its header pill and the wallet's way back */
 TauI18n.add({ strings: {
   "Start here": "ここから始める",
+  "Start": "開始",
   "Try Tau in four steps: a test wallet, a rule of your own, a block that seals it, a meal for Agorzilla": "4 ステップで Tau を試す：テストウォレット、自分だけのルール、それを封じるブロック、Agorzilla へのごはん",
   "New here? Try Tau in four steps: a test wallet, a rule of your own that the chain checks, a block that seals it, a meal for Agorzilla. A few minutes, nothing to install.": "はじめて？4 ステップで Tau を試せます：テストウォレット、チェーンがチェックする自分だけのルール、それを封じるブロック、Agorzilla へのごはん。数分で、インストール不要。",
   "Back to Start here": "「ここから始める」に戻る",

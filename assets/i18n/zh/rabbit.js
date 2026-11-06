@@ -2007,7 +2007,7 @@ TauI18n.add({ strings: {
   "(testnet busy: {n} waiting, {m} sealed in the last hour, {a} sent for the ship)": "（测试网忙碌：{n} 笔等待中，过去一小时封存 {m} 笔，其中为船发送 {a} 笔）",
   "(testnet strained: {n} waiting, {m} sealed in the last hour, {a} sent for the ship)": "（测试网吃紧：{n} 笔等待中，过去一小时封存 {m} 笔，其中为船发送 {a} 笔）",
   "({x}: {n} passengers)": "（{x}：{n} 位乘客）",
-  "(the logbook: node.tauhud.com/cruise/log)": "（航海日志：node.tauhud.com/cruise/log）",
+  "(the logbook: tauhud.com/cruise)": "（航海日志：tauhud.com/cruise）",
   "(preview)": "（预览）",
   "So far: {n} payments, {m} group bills, {a} bookings, {b} withdrawn.": "目前：{n} 笔付款，{m} 张合并账单，{a} 笔预订，{b} 笔撤回。",
   "So far: {n} payments, {a} bookings, {b} withdrawn.": "目前：{n} 笔付款，{a} 笔预订，{b} 笔撤回。",

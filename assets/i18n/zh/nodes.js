@@ -1,5 +1,11 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "then every node follows and checks the chain, which is what the testnet needs most now.": "在此之前，每个节点都在跟随并检查这条链，这正是测试网现在最需要的。",
+  "A chain you follow, not seal.": "一条你跟随、而非封块的链。",
+  "Validator seats are decided on chain by the validators in place; today that is IDNI alone (one validator in the genesis). Running a node is the first step, the seat is their decision.": "验证者席位由现有验证者在链上决定；今天只有 IDNI（创世区块中只有一个验证者）。运行节点是第一步，席位由他们决定。",
+  "Can my node become a validator?": "我的节点能成为验证者吗？",
+  "Not by itself. tau-testnet-v2 starts with one validator, listed in the genesis. A new seat needs a rule change that an existing validator proposes and that reaches the agreement threshold, so it is IDNI’s decision. The kit can carry a validator key for that day (": "不能自动成为。tau-testnet-v2 从创世区块里的一个验证者开始。新席位需要现有验证者提出并达到共识门槛的规则变更，所以这是 IDNI 的决定。套件可以为那一天准备验证者密钥（",
+  "); until then every node follows and checks the chain, which is what the testnet needs most now.": "）；在此之前，每个节点都在跟随并检查这条链，这正是测试网现在最需要的。",
   "(JSON). Nodes report once a minute and only if their operator sets a name; nothing but the name, height, block hash and kit version is sent. A node that stays silent for 30 days leaves the list. ·": "（JSON）。节点每分钟报告一次，且只有在运营者设置了名字时才报告；只发送名字、高度、区块哈希和套件版本。连续 30 天没有报告的节点会离开列表。·",
   "(JSON). Nodes report once a minute and only if their operator sets a name; nothing but the name, height, block hash and kit version is sent. ·": "（JSON）。节点每分钟报告一次，且只有在运营者设置了名字时才报告；只发送名字、高度、区块哈希和套件版本。·",
   "(the badge preview needs the live relay)": "（徽章预览需要在线中继）",

@@ -2333,5 +2333,10 @@
     "tag": "Roadmap",
     "on": "2026-11-04",
     "html": "Road to mainnet now keeps in step with IDNI by itself: when IDNI’s own code names one of the items’ GitHub issues, the item lists it under “IDNI’s own work on it” and its status moves: a fix on IDNI’s main makes it “Partly fixed”, a work branch makes it “IDNI at work”. Only what IDNI wrote in its public git history counts, checked every 30 minutes. Also brought up to date: the stop at block 5028, the restart of 1 November with open governance turned off, and the reset IDNI plans in pull request #93."
+  },
+  {
+    "tag": "Cruise",
+    "on": "2026-11-06",
+    "html": "The cruise ships’ logbook is a page now, tauhud.com/cruise: every transaction a ship’s passengers sent, when, where, how much, and the node’s answer, sealed or refused with the reason, visit by visit, with a link into the Explorer. The game’s “The logbook” button and the Testnet load page lead there instead of to the raw data."
   }
 ]

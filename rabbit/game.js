@@ -1578,7 +1578,7 @@
   const shipName = st => st.q ? "Queen Mempool" : "MS Dry Run";
   const LOADQ = { calm: "(testnet calm: {n} waiting, {m} sealed in the last hour, {a} sent for the ship)", busy: "(testnet busy: {n} waiting, {m} sealed in the last hour, {a} sent for the ship)",
     strained: "(testnet strained: {n} waiting, {m} sealed in the last hour, {a} sent for the ship)" };
-  const LOGQ = "(the logbook: node.tauhud.com/cruise/log)";
+  const LOGQ = "(the logbook: tauhud.com/cruise)";
   /* whether Rico can say a line aloud (with the sound on: its clips are there; a line with a band, every band's clip) */
   const sayable = k => !(SND.on && RICO.voiced) || RICO.voiced(k) !== false;
   /* a line with a number: shown exactly, spoken as a band ({where}: shown as the block, spoken as the latest block) */
@@ -1710,7 +1710,7 @@
           n || v.phase !== "approach" ? el("li", { text: shipSoFar(S, K, true) }) : null,
           where ? el("li", { text: where }) : null),
         el("div", { class: "cv-acts" },
-          btn(T("The logbook"), () => window.open("https://node.tauhud.com/cruise/log", "_blank", "noopener")),
+          btn(T("The logbook"), () => window.open("/cruise/", "_blank", "noopener")),
           btn(T("Testnet load"), () => window.open("/load/", "_blank", "noopener")),
           btn(T("Back to the island"), () => closeCard(), { go: true })));
     });

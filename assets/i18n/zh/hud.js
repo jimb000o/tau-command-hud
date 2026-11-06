@@ -174,6 +174,7 @@ TauI18n.add({ strings: {
   "AGRS or ETH, one address for both · What it pays for: time · server · domain": "AGRS 或 ETH，同一个地址 · 用途：时间 · 服务器 · 域名",
   "AGRS per tx": "AGRS / 笔交易",
   "Alerts": "提醒",
+  "Cruise": "邮轮",
   "Menu": "菜单",
   "All transactions ({n})": "全部交易（{n}）",
   "All transactions ({x1})": "全部交易（{x1}）",
@@ -2312,4 +2313,5 @@ TauI18n.add({ strings: {
   "A new start for White Rabbit Key on laptops and desktops: the four candidates stand large across the island, painted as you meet them in the game, and the one under your pointer steps forward. The title sits above them, the week, the island ballot and the testnet in a quiet strip below. Phones keep the plate with four faces. Fixed: the island ballot showed 100000 for a candidate whose ballot box had no vote yet; it now shows 0.": "白兔礁在笔记本和台式机上的新开场：四位候选人大幅站在小岛前，就是你在游戏里遇到的那幅画，鼠标指向谁，谁就往前一步。标题在他们上方，这一周、小岛选票和测试网的说明放在下方安静的一栏里。手机上仍是带四张脸的面板。修复：一位候选人的票箱还没有任何一票时，小岛选票显示 100000；现在显示 0。",
   "In numbers, Share of the testnet: the panel now leads with our sites’ share of the user transactions, the testnet’s traffic without IDNI’s 11 genesis accounts, which make most of it while IDNI tests. Below it, smaller and with its own bar, the same with everything counted, IDNI’s genesis testing included. Counted in transactions and wallets, not people.": "数据一览，“在测试网中的占比”：面板现在先显示我们网站在用户交易中的占比，也就是不计 IDNI 的 11 个创世账户的测试网流量；IDNI 测试时，大部分流量来自这些账户。下方用较小的字和单独的条形图显示把全部交易都算上、包括 IDNI 创世账户测试时的占比。按交易和钱包统计，不是按人。",
   "Road to mainnet now keeps in step with IDNI by itself: when IDNI’s own code names one of the items’ GitHub issues, the item lists it under “IDNI’s own work on it” and its status moves: a fix on IDNI’s main makes it “Partly fixed”, a work branch makes it “IDNI at work”. Only what IDNI wrote in its public git history counts, checked every 30 minutes. Also brought up to date: the stop at block 5028, the restart of 1 November with open governance turned off, and the reset IDNI plans in pull request #93.": "通往主网之路现在会自动与 IDNI 保持同步：当 IDNI 自己的代码提到某一项的 GitHub 问题编号时，该项会在“IDNI 自己在这上面的工作”下列出，状态也随之变化：IDNI 主分支上的修复会把它标为“部分修复”，工作分支会标为“IDNI 正在处理”。只算 IDNI 在公开 git 历史里写下的内容，每 30 分钟检查一次。同时更新了：第 5028 块的停止、11 月 1 日的重启及开放治理的关闭，以及 IDNI 在拉取请求 #93 中计划的重置。",
+  "The cruise ships’ logbook is a page now, tauhud.com/cruise: every transaction a ship’s passengers sent, when, where, how much, and the node’s answer, sealed or refused with the reason, visit by visit, with a link into the Explorer. The game’s “The logbook” button and the Testnet load page lead there instead of to the raw data.": "邮轮的航海日志现在是一个页面：tauhud.com/cruise。船上乘客发送的每一笔交易：时间、地点、金额，以及节点的回答——封入区块或被拒绝及其原因，按每次到访分列，并附带指向浏览器的链接。游戏里的“航海日志”按钮和“测试网负载”页面现在指向那里，而不是原始数据。",
 } });

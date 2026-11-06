@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#09090a">
 <meta property="og:title" content="Tau HUD · Vote on Tau's rules yourself">
-<meta property="og:description" content="On Tau Testnet Alpha any account's yes vote counts. Five commands, practised first on the simulation.">
+<meta property="og:description" content="Vote on Tau Testnet Alpha's rule changes yourself: five commands, practised first on the simulation.">
 <meta property="og:image" content="https://tauhud.com/assets/og/vote.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -179,12 +179,12 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, 2.2fr) minmax(0, 
   <div class="intro">
     <div>
       <p class="lead">Vote on Tau’s rules yourself.</p>
-      <p class="sub" id="sourceLine">On Tau Testnet Alpha every account may vote on a rule change, not only validators. Five steps with IDNI’s own command line, each ready to copy; practise each one on the simulation first.</p>
+      <p class="sub" id="sourceLine"><span id="whoLine">Who may vote on a rule change is a setting of the network; the counter on the right says what it admits now.</span> Five steps with IDNI’s own command line, each ready to copy; practise each one on the simulation first.</p>
     </div>
     <div class="kpis" aria-label="Key numbers">
       <span class="kpi" id="kOpen" data-tip="Rule changes on the chain right now that still need yes votes."><b id="tOpen">–</b>waiting for votes</span>
       <span class="kpi" id="kNeed" data-tip="Yes votes a rule change needs: two thirds of the validators, rounded up."><b id="tNeed">–</b>yes votes needed</span>
-      <span class="kpi" id="kWho" data-tip="Who the network lets vote. The testnet admits a vote from any account (open admission)."><b id="tWho">–</b>may vote</span>
+      <span class="kpi" id="kWho" data-tip="Who the network lets vote: every account (open admission) or only the validators. A setting of the network, read from our node."><b id="tWho">–</b>may vote</span>
     </div>
   </div>
   <main class="main">
@@ -192,7 +192,7 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, 2.2fr) minmax(0, 
       <h2>On the real testnet <span class="aside" id="realAside">IDNI’s tau-testnet command line</span></h2>
       <div class="stepcols"><ol class="steps">
         <li id="s1"><div><h3>Run your own node <small>about 1.5 h · about €6 a month</small></h3>
-          <p>Votes enter the testnet through a node; no public node takes them (ours only reads). The <a href="/nodes/#join">Tau HUD kit</a> runs one with the network’s settings, <b>open admission</b> included.</p></div></li>
+          <p>Votes enter the testnet through a node; no public node takes them (ours only reads). The <a href="/nodes/#join">Tau HUD kit</a> runs one with the network’s settings.</p></div></li>
         <li id="s2"><div><h3>Open the command line <small>on the server · 10 s</small></h3>
           <p><code>tau</code> becomes short for IDNI’s tau-testnet command line inside your node. Keys are kept in the node’s data volume.</p>
           <div class="copyrow"><pre id="c2">cd /opt/tau-node-kit/kit
@@ -206,7 +206,7 @@ tau status</pre><div class="btns"><button class="copy" type="button" data-copy="
           <p>Each open rule change with its command ready. There is no “no”: a change nobody agrees to expires.</p>
           <div id="openList"></div></div></li>
         <li id="s5"><div><h3>Propose a change <small>advanced · public for good</small></h3>
-          <p>A ready proposal, then your vote on it. <b id="oneYes">With one validator, one yes agrees it for everyone.</b></p>
+          <p>A ready proposal, then your vote on it. <b id="oneYes" hidden>With one validator, one yes agrees it for everyone.</b></p>
           <div class="ctl" role="radiogroup" aria-label="What the proposal changes">
             <label><input type="radio" name="what" value="same" checked> Same rules (no change)</label>
             <label id="feeLbl"><input type="radio" name="what" value="fee"> Base fee <input class="num" id="fee" type="number" min="1" max="100" step="1" value="10" aria-label="New base fee in AGRS"> AGRS</label>
@@ -233,7 +233,7 @@ tau status</pre><div class="btns"><button class="copy" type="button" data-copy="
       <section class="panel facts">
         <h2>Good to know</h2>
         <ul class="facts">
-          <li><span><b>Any account may vote.</b> The testnet runs with open admission: a yes from any key counts, not only from validators.</span></li>
+          <li><span id="fWho"><b>Who may vote.</b> A setting of the network, read from our node: every account (open admission) or only the validators.</span></li>
           <li><span id="fNeed"><b>Two thirds decide.</b> A change needs yes votes from two thirds of the number of validators, rounded up.</span></li>
           <li><span><b>Free, and once.</b> Proposals and votes pay no fee. The node refuses a second yes from the same key, and any vote for a change that is no longer open.</span></li>
           <li><span><b>Never at once.</b> A change takes effect at its activation height, at least as many blocks ahead as there are validators.</span></li>
@@ -327,6 +327,12 @@ function renderKpis() {
   $("kOpen").classList.toggle("hot", !!n);
   $("tNeed").textContent = g ? g.approval_threshold : "–";
   $("tWho").textContent = L.open == null ? "–" : L.open ? T("every account") : T("validators only");
+  /* the sentences about who may vote follow the same network setting as the counter (open admission was switched off on 1 Nov 2026) */
+  if (L.open != null && $("whoLine")) {
+    $("whoLine").textContent = L.open ? T("On Tau Testnet Alpha every account may vote on a rule change right now, not only validators.") : T("Right now the testnet counts only the validators’ votes; a yes from another account is refused at the node. The commands below still work, and the simulation takes every vote.");
+    $("fWho").innerHTML = ""; $("fWho").append(el("b", { text: T("Who may vote.") }), " ", L.open ? T("The testnet runs with open admission: a yes from any key counts, not only from validators.") : T("Open admission is switched off: only an active validator’s yes counts. IDNI switched it off on 1 November 2026 after a proposal passed with one vote."));
+    document.body.classList.toggle("closed-vote", !L.open);
+  }
   if (g) {
     const N = g.active_validator_count ?? (g.active_validators || []).length;
     $("kNeed").dataset.tip = F("{n} yes votes needed: the testnet has {v} validators and agrees with two thirds of them, rounded up.", { n: g.approval_threshold, v: N });
@@ -334,7 +340,7 @@ function renderKpis() {
     $("fNeed").append(el("b", { text: T("Two thirds decide.") }), " ",
       N === 1 ? F("A change needs yes votes from two thirds of the number of validators, rounded up: today one validator, so {n}.", { n: g.approval_threshold })
         : F("A change needs yes votes from two thirds of the number of validators, rounded up: today {v} validators, so {n}.", { v: N, n: g.approval_threshold }));
-    $("oneYes").hidden = g.approval_threshold !== 1;
+    $("oneYes").hidden = g.approval_threshold !== 1 || L.open === false;
   }
 }
 function el(tag, attrs, ...kids) {

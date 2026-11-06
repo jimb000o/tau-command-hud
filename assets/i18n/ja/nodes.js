@@ -1,5 +1,11 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "then every node follows and checks the chain, which is what the testnet needs most now.": "それまでは、すべてのノードがチェーンを追って検証します。それが今のテストネットに最も必要なことです。",
+  "A chain you follow, not seal.": "あなたが追うチェーン、封じるのではなく。",
+  "Validator seats are decided on chain by the validators in place; today that is IDNI alone (one validator in the genesis). Running a node is the first step, the seat is their decision.": "バリデーター席は現在のバリデーターがチェーン上で決めます。今日はそれは IDNI だけです（ジェネシスにバリデーターは 1 人）。ノードを動かすのが第一歩で、席は彼らの判断です。",
+  "Can my node become a validator?": "私のノードはバリデーターになれますか？",
+  "Not by itself. tau-testnet-v2 starts with one validator, listed in the genesis. A new seat needs a rule change that an existing validator proposes and that reaches the agreement threshold, so it is IDNI’s decision. The kit can carry a validator key for that day (": "それだけではなれません。tau-testnet-v2 はジェネシスに記された 1 人のバリデーターで始まります。新しい席には、既存のバリデーターが提案して合意のしきい値に達するルール変更が必要なので、IDNI の判断です。キットはその日のためにバリデーター鍵を持てます（",
+  "); until then every node follows and checks the chain, which is what the testnet needs most now.": "）。それまでは、すべてのノードがチェーンを追って検証します。それが今のテストネットに最も必要なことです。",
   "(JSON). Nodes report once a minute and only if their operator sets a name; nothing but the name, height, block hash and kit version is sent. A node that stays silent for 30 days leaves the list. ·": "（JSON）。ノードは 1 分に 1 回、運用者が名前を設定した場合にだけ報告します。送られるのは名前、高さ、ブロックハッシュ、キットのバージョンだけです。30 日間報告のないノードは一覧から外れます。·",
   "(JSON). Nodes report once a minute and only if their operator sets a name; nothing but the name, height, block hash and kit version is sent. ·": "（JSON）。ノードは 1 分に 1 回、運用者が名前を設定した場合にだけ報告します。送られるのは名前、高さ、ブロックハッシュ、キットのバージョンだけです。·",
   "(the badge preview needs the live relay)": "（バッジのプレビューにはライブのリレーが必要です）",
