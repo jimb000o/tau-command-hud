@@ -1,4 +1,6 @@
-"""The Tau HUD blog (tauhud.com/blog/): learnings articles drafted from our own data, published only by hand.
+"""The Tau HUD blog (tauhud.com/blog/): learnings articles drafted from our own data, published by hand (or, with
+BLOG_AUTO_PUBLISH_HOURS, a clean draft by itself after that many hours); the loop also runs the cruise ships' automatic
+announcements and reports (cruise_crier.py).
 
   python blog.py loop                 every 10 minutes: a cruise ship visit that is over (and whose bookings were
                                       checked) gets one draft; nothing is published
@@ -45,6 +47,9 @@ EVERY = 600
 PICS_VERSION = 3   # raise when the hero picture changes: every article's picture is made anew once (2: numbers and Rico, 3: one story on refusals)
 CHECK_WAIT = 3 * 3600      # a visit whose bookings were never checked is drafted this long after it ended
 RETRY_AFTER = 2 * 3600
+# a draft whose check is clean (every number in the facts, no hype or blame words) goes on the blog by itself this many
+# hours after it was written, with its one post; 0 (the default) keeps publishing by hand: up blog publish <id>
+AUTO_PUBLISH_HOURS = float(os.environ.get("BLOG_AUTO_PUBLISH_HOURS", "0") or 0)
 KINDS = ("pay", "bill", "book", "cancel")
 LANGS = ("en", "zh", "ja")
 ID_RE = re.compile(r"^[a-z0-9-]{3,60}$")
@@ -444,6 +449,7 @@ def write_draft(vid: str, now: float | None = None) -> str:
     st = state()
     name = st["drafts"].get(a["id"]) or f"{a['id']}-{secrets.token_hex(4)}"
     st["drafts"][a["id"]], st["drafted"][vid] = name, a["id"]
+    st.setdefault("drafted_at", {})[a["id"]] = round(now)
     a["status"] = "draft"
     write_json(os.path.join(PUBLIC, "drafts", name + ".json"), a)
     write_json(STATE, st)
@@ -473,6 +479,11 @@ def tick(now: float | None = None) -> None:
         try:
             did = write_draft(vid, now)
             log.info("draft %s written: %s", did, draft_url(state(), did))
+            try:
+                import cruise_crier
+                cruise_crier.tell_draft(did, draft_url(state(), did))
+            except Exception as e:  # noqa: BLE001 - the draft is written all the same; up blog lists it
+                log.warning("draft %s not told: %s", did, e)
         except Exception as e:  # noqa: BLE001 - try again later, nothing half-written is kept
             log.warning("draft for %s: %s", vid, e)
             st = state()
@@ -481,7 +492,33 @@ def tick(now: float | None = None) -> None:
         return   # one draft a round
 
 
+def auto_publish(now: float | None = None) -> str | None:
+    """With BLOG_AUTO_PUBLISH_HOURS: the oldest clean draft that waited that long goes on the blog, with its one post."""
+    if AUTO_PUBLISH_HOURS <= 0:
+        return None
+    now = now or time.time()
+    st = state()
+    live = {p["id"] for p in posts()["posts"]} | set(st.get("announced") or [])
+    for did, at in sorted((st.get("drafted_at") or {}).items(), key=lambda kv: kv[1]):
+        if did in live or did not in st["drafts"] or now - at < AUTO_PUBLISH_HOURS * 3600:
+            continue
+        a = read_json(os.path.join(PUBLIC, "drafts", st["drafts"][did] + ".json"), {})
+        chk = a.get("check") or {}
+        if not a or chk.get("unknown_numbers") or chk.get("hype"):
+            continue   # waits for a look and up blog publish (--force)
+        publish_cli(did, False, False)
+        log.info("draft %s published by itself after %.0f h", did, (now - at) / 3600)
+        return did
+    return None
+
+
 def drafts_cli() -> int:
+    try:
+        import cruise_crier
+        for line in cruise_crier.status_lines():
+            print(line)
+    except Exception as e:  # noqa: BLE001
+        print(f"cruise:  not read ({e})")
     st = state()
     live = {p["id"] for p in posts()["posts"]}
     waiting = [d for d in st["drafts"] if d not in live]
@@ -493,7 +530,7 @@ def drafts_cli() -> int:
         print(f"blog:    draft {did}: {(a.get('title') or {}).get('en', '?')}")
         print(f"         read it: {draft_url(st, did)}")
         print(f"         numbers to check: {', '.join(bad)}" if bad else "         every number is in the logbook facts")
-        print(f"         publish: up blog publish {did}")
+        print(f"         publish: up blog publish {did}" + (f" (or it goes on the blog by itself {AUTO_PUBLISH_HOURS:g} h after it was written, if clean)" if AUTO_PUBLISH_HOURS > 0 else ""))
     return 0
 
 
@@ -620,8 +657,14 @@ def main(argv: list[str]) -> int:
         log.info("blog drafts: %s", "on" if AI_KEY else "off (no NEWS_AI_KEY)")
         while True:
             try:
+                import cruise_crier   # the cruise ships' announcements before and reports after each call
+                cruise_crier.step()
+            except Exception as e:  # noqa: BLE001
+                log.warning("cruise crier: %s", e)
+            try:
                 site_pictures()
                 tick()
+                auto_publish()
             except Exception as e:  # noqa: BLE001 - the relay may be restarting
                 log.warning("tick: %s", e)
             time.sleep(EVERY)

@@ -16,6 +16,8 @@
 #              up idni       what the next daily IDNI progress post would say now (nothing rebuilt, nothing posted);
 #                            up idni send  posts it now, up idni hold  keeps the next one back, up idni release  undoes that
 #              up cruise     a cruise ship's last visit in numbers and the node's timeouts per hour (nothing rebuilt)
+#                            up cruise next  the next call's announcement as it goes out by itself (posts nothing);
+#                            announcements and reports run by themselves every week (alerts/cruise_crier.py)
 #              up owner      the same, then a one-time link: open it in your Telegram, and the news line's watchtower
 #                            warns you there privately (never on the channel); up owner test  sends you one test message
 set -e
@@ -36,6 +38,8 @@ if [ "${1:-}" = "post" ] && [ -n "${2:-}" ]; then
   cp "/tmp/$2.jpg" /opt/sites/rico/art/drafts/
   if [ "${3:-}" = "send" ]; then
     docker compose run --rm -v /opt/tau-command-hud:/repo:ro -v /tmp:/out alerts python /repo/infra/alerts/post_image.py "/out/$2.jpg" "/repo/$J"
+    # posted by hand: today's call is not announced a second time by the blog service (alerts/cruise_crier.py)
+    docker compose run --rm --no-deps -v /opt/tau-command-hud:/repo:ro alerts python /repo/infra/alerts/cruise_crier.py mark "$2" || true
   else
     docker compose run --rm -v /opt/tau-command-hud:/repo:ro -v /tmp:/out alerts python /repo/infra/alerts/post_image.py "/out/$2.jpg" "/repo/$J" --dry
     echo "look: https://node.tauhud.com/rico/art/drafts/$2.jpg   then post it: up post $2 send"
@@ -45,6 +49,15 @@ fi
 # a cruise ship's visit in numbers, nothing rebuilt, nothing sent (cruise-report.py): up cruise  the last visit,
 # up cruise 2026-11-07-queen  that one; then the relay's sendtx timeouts per hour of the last 3 days
 if [ "${1:-}" = "cruise" ]; then
+  # up cruise next: the next call's announcement as it will go out by itself (texts and picture), posts nothing
+  if [ "${2:-}" = "next" ]; then
+    docker compose up -d blog >/dev/null 2>&1 || true
+    docker compose exec -T blog python cruise_crier.py preview ${3:-}
+    docker compose cp blog:/tmp/cruise-dryrun.jpg /opt/sites/rico/art/drafts/ >/dev/null 2>&1 || true
+    docker compose cp blog:/tmp/cruise-queen.jpg /opt/sites/rico/art/drafts/ >/dev/null 2>&1 || true
+    echo "look: https://node.tauhud.com/rico/art/drafts/cruise-queen.jpg (or cruise-dryrun.jpg)"
+    exit 0
+  fi
   docker compose cp cruise-report.py relay:/tmp/cruise-report.py >/dev/null
   docker compose exec -T relay python /tmp/cruise-report.py ${2:-}
   echo "sendtx timeouts per hour (UTC), last 3 days:"
