@@ -62,6 +62,17 @@ f = {x["key"]: x for x in r.health(now)["factors"]}
 check(0 < f["sync"]["points"] < 15 and f["sync"]["value"] == "10 blocks behind", f"lag costs part of sync {f['sync']}")
 r.cache["getgovernance"] = json.dumps({"status": "ok", "data": {"head_number": 120, "network_tip": {"number": 120}}})
 
+# after a chain restart the node still remembers the old run's tip (#1729) while our head (#120)
+# was minted 30 s ago: that tip is not on our chain, so we are in sync, not 1609 behind
+r.cache["getgovernance"] = json.dumps({"status": "ok", "data": {"head_number": 120, "network_tip": {"number": 1729}}})
+f = {x["key"]: x for x in r.health(now)["factors"]}
+check(f["sync"]["points"] == 15 and f["sync"]["value"] == "in sync" and "#1729" in f["sync"]["note"],
+      f"old tip from before a restart is ignored {f['sync']}")
+check(r.tip_height(now) == 120 and r.raw_tip_height() == 1729, "tip_height falls back to our fresh head")
+# the same remembered tip while our head is 20 minutes old: a real lag, still counted
+check(r.tip_height(now + 20 * 60) == 1729, "an old head still counts the peer tip")
+r.cache["getgovernance"] = json.dumps({"status": "ok", "data": {"head_number": 120, "network_tip": {"number": 120}}})
+
 # a restart in the last day costs stability points
 r.state["restarts"].append({"detected_at": now - 3600, "old": {"tip": 50}})
 f = {x["key"]: x for x in r.health(now)["factors"]}
