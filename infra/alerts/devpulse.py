@@ -17,6 +17,8 @@ by Caddy at https://node.tauhud.com/devpulse.json:
     (checked once per new upstream commit on a shallow checkout; `up` prints it)
   - refs: which IDNI issue and pull request numbers IDNI's own commits name, on main and on work branches, so
     tauhud.com/roadmap/ moves an item's badge by itself when IDNI fixes it (git only, never guessed)
+  - digest: once a day, everything IDNI merged since the last one read together as ONE post for Telegram and X
+    (idni_digest.py writes it, alerts.py posts it; quiet days get none)
   - open issues and pull requests, from the public GitHub search API (no token;
     a few requests an hour, far below its limit; left out when it refuses)
 
@@ -25,6 +27,8 @@ counted (how many people committed) but not published.
 
   python devpulse.py                 run, refresh every DEVPULSE_SECONDS (default 30 min)
   python devpulse.py --once OUT      one pass into OUT (used for the page's built-in snapshot)
+  python devpulse.py --digest [send|hold|release]  the day's IDNI progress as one post: preview it, send it now, hold it
+                                     (idni_digest.py; on the server: up idni)
 """
 from __future__ import annotations
 
@@ -605,7 +609,7 @@ def sync_state(repo: str, path: str, branch: str, pins_: dict) -> dict:
     return {"testnet": out, "tau_lang": lang, "patches": patches, "ok": ok}
 
 
-def build(now: int | None = None, trackers: dict | None = None) -> dict:
+def build(now: int | None = None, trackers: dict | None = None, digest: bool = False) -> dict:
     now = int(now or time.time())
     pin = pins()
     repos, paths = [], {}
@@ -629,6 +633,16 @@ def build(now: int | None = None, trackers: dict | None = None) -> dict:
             data["sync"] = sync_state(TESTNET, paths[TESTNET], tn["branch"], pin)
         except Exception as e:  # noqa: BLE001
             log.warning("news/sync: %s", e)
+        try:   # the day's IDNI progress as one post (idni_digest.py; alerts.py posts it), in the running service only
+            import idni_digest
+            if not digest:
+                raise LookupError("not in a one-off pass")
+            full = (tn.get("runs") or {}).get("sha")
+            data["digest"] = idni_digest.step(paths, {r["repo"]: r["branch"] for r in repos}, full if full and len(full) == 40 else None, now)
+        except LookupError:
+            pass
+        except Exception as e:  # noqa: BLE001
+            log.warning("digest: %s", e)
         try:
             full = (tn.get("runs") or {}).get("sha")
             data["refs"] = refs_state(TESTNET, paths[TESTNET], tn["branch"], now, full if full and len(full) == 40 else None)
@@ -646,6 +660,9 @@ def write_atomic(path: str, text: str):
 
 def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+    if len(sys.argv) >= 2 and sys.argv[1] == "--digest":   # up idni: the day's IDNI post by hand (idni_digest.py)
+        import idni_digest
+        sys.exit(idni_digest.cli(sys.argv[2:]))
     if len(sys.argv) == 3 and sys.argv[1] == "--once":
         now = int(time.time())
         data = build(now, {r: tracker(r, now) for r in REPOS})
@@ -660,7 +677,7 @@ def main():
                 fresh = {r: tracker(r, int(started)) for r in REPOS}
                 trackers.update({r: v for r, v in fresh.items() if v})
                 api_at = started
-            data = build(int(started), trackers)
+            data = build(int(started), trackers, digest=True)
             if data["repos"]:
                 write_atomic(PUBLIC_PATH, json.dumps(data, separators=(",", ":")))
                 sy = data.get("sync") or {}

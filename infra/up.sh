@@ -13,6 +13,8 @@
 #              up bust salado  the same, then that portrait (or several) painted anew, talking and blinking too (1 min each);
 #                            up bust --recut salado  cuts the kept painting out again, paints nothing;
 #                            up bust --from infra/rabbit-art/imports/codex hana  takes pictures painted elsewhere
+#              up idni       what the next daily IDNI progress post would say now (nothing rebuilt, nothing posted);
+#                            up idni send  posts it now, up idni hold  keeps the next one back, up idni release  undoes that
 #              up cruise     a cruise ship's last visit in numbers and the node's timeouts per hour (nothing rebuilt)
 #              up owner      the same, then a one-time link: open it in your Telegram, and the news line's watchtower
 #                            warns you there privately (never on the channel); up owner test  sends you one test message
@@ -48,6 +50,15 @@ if [ "${1:-}" = "cruise" ]; then
   echo "sendtx timeouts per hour (UTC), last 3 days:"
   docker compose logs -t --since 72h relay 2>&1 | grep "upstream sendtx failed" | awk '{print substr($3,1,13)}' | sort | uniq -c | sed 's/^/  /'
   exit 0
+fi
+# IDNI's progress of the day as ONE post, nothing rebuilt (alerts/idni_digest.py): up idni  the last ones and what the
+# next would say now (one model call, posts nothing), up idni send  writes it now and the alerts service posts it within a
+# minute (up idni send --force: also when the check marked numbers or wording), up idni hold / up idni release
+if [ "${1:-}" = "idni" ]; then
+  shift
+  docker compose up -d devpulse >/dev/null 2>&1 || true
+  docker compose exec -T devpulse python devpulse.py --digest "$@"
+  exit $?
 fi
 # the blog by hand, nothing rebuilt (alerts/blog.py): up blog  lists the drafts waiting and where to read them,
 # up blog publish <id>  puts one on the blog and posts it once, up blog draft <visit-id>  writes one anew,
@@ -133,6 +144,13 @@ if s is not None:
     ai = s.get("news_ai") or "not running yet"
     heads = [n.get("headline", {}).get("en") for n in s.get("news") or [] if n.get("headline")]
     print(f"         news line: {len(heads)} IDNI headlines in 14 days, writer {ai}" + (f"; newest: {heads[0]}" if heads else ""))
+    dg = s.get("digest") or {}
+    if dg:
+        import datetime as dt2
+        hm = lambda t: dt2.datetime.fromtimestamp(t, dt2.timezone.utc).strftime("%a %d.%m. %H:%M UTC") if t else "?"
+        la = dg.get("last") or {}
+        print(f"         daily post: {dg.get('state')}; next {hm(dg.get('next_at'))}, covering since {hm(dg.get('since'))}"
+              + (f"; last: {la.get('status')} {la.get('title') or ''}".rstrip() if la else "") + " (up idni shows it)")
     if y and not l.get("same"):
         print(f"         tau-lang: IDNI's build uses {short(l.get('idni'))}, ours {short(l.get('ours'))}")
     if p:
@@ -222,4 +240,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up blog, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up idni, up blog, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"

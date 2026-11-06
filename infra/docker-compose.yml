@@ -159,6 +159,8 @@ services:
       DEEPDIVE_HOUR: ${DEEPDIVE_HOUR:-13}
       DEEPDIVE_X_EVERY: ${DEEPDIVE_X_EVERY:-2}
       DEEPDIVE_DAYS: ${DEEPDIVE_DAYS:-0,2,4}   # Monday, Wednesday, Friday
+      IDNI_DIGEST: ${IDNI_DIGEST:-true}   # IDNI's progress of the day as one post (devpulse writes it, here it goes out; up idni)
+      IDNI_DIGEST_LATE_HOURS: ${IDNI_DIGEST_LATE_HOURS:-3}
       ISLAND_CRIER: ${ISLAND_CRIER:-true}
       ISLAND_HOUR: ${ISLAND_HOUR:-7}
       ISLAND_X_EVERY_DAYS: ${ISLAND_X_EVERY_DAYS:-2}
@@ -243,8 +245,12 @@ services:
       NEWS_AI_KEY: ${NEWS_AI_KEY:-}
       CHAT_AI_KEY: ${CHAT_AI_KEY:-}
       NEWS_AI_MODEL: ${NEWS_AI_MODEL:-claude-sonnet-5-5}
+      # once a day at this hour (UTC) everything IDNI merged since the last one is written up as ONE post (idni_digest.py)
+      IDNI_DIGEST_HOUR: ${IDNI_DIGEST_HOUR:-10}
+      IDNI_DIGEST_LATE_HOURS: ${IDNI_DIGEST_LATE_HOURS:-3}
+      IDNI_DIGEST_LANG_ALONE: ${IDNI_DIGEST_LANG_ALONE:-false}   # true: a day with only tau-lang changes gets a post too
     volumes:
-      - alerts_state:/state     # the clones, in /state/devpulse
+      - alerts_state:/state     # the clones, in /state/devpulse; digests.json (the daily IDNI post)
       - alerts_public:/public   # devpulse.json, served by Caddy
       - ./node/Dockerfile:/pins/Dockerfile:ro
       - ./node/patches:/pins/patches:ro   # tried on each new upstream main: do our node patches still apply?
