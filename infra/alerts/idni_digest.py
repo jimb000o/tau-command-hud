@@ -172,6 +172,7 @@ Write ONE post with the combined meaning of the window, the way a good newspaper
 what it adds up to, and why it matters for the testnet, its users or the people running nodes. Rules:
 - Only facts the input shows. Never guess motives, causes, dates, releases, timelines or effects it does not show. \
 Never link a change to a past outage, stall or incident unless the commit message itself says so. No promises about mainnet.
+- Say what works now, not what someone may now do: never word a fix as if miners, validators or anyone gained power or permission ("lets miners change governance" is wrong; "the backup block maker can now make blocks that turn on a rule change" is right). Write "again", "no longer" or "now accepted" only when the input says it worked before or failed before. Never say what a change keeps or protects beyond what its message says.
 - Credit IDNI's work plainly ("IDNI merged", "the testnet now ..."). Never blame or criticise anyone, never call \
 anything broken or careless; a fix is progress, say what it makes work.
 - Plain words. No code names, file names, function names, stream names, flags, package names, commit hashes or \
@@ -308,7 +309,11 @@ def step(paths: dict, branches: dict, pin: str | None, now: int) -> dict:
         else:
             try:
                 pin_ts = int(dp.git(paths[dp.TESTNET], "log", "-1", "--format=%ct", pin)) if pin else None
-                d = write(g, paths, last, slot, pin_ts, now)
+                dr = st.pop("draft", None)   # the text `up idni` showed, when nothing new came in since
+                if dr and dr.get("start") == last and dr.get("shas") == [c["sha"] for c in g["changes"] + g["pending"]]:
+                    d = {**dr, "id": f"idni-{slot}", "end": slot, "built": now, "from_preview": True}
+                else:
+                    d = write(g, paths, last, slot, pin_ts, now)
                 st["items"].append(d)
                 st["last_end"], st["failed_at"] = slot, 0
                 status.update(since=slot, next_at=slot + 86400, state=d["status"])
@@ -364,7 +369,7 @@ def _show(d: dict, x_post) -> None:
     if d.get("title"):
         print("  --- Telegram ---")
         print("  " + tg_text(d).replace("\n", "\n  "))
-        print("  --- X " + ("(posted)" if d.get("x") else "(not posted: a small day, Telegram only)") + " ---")
+        print("  --- X " + ("(would go out on X too)" if d.get("x") else "(would stay off X: a small day, Telegram only)") + " ---")
         print("  " + x_post(x_lines(d), foot=X_FOOT, keep=2).replace("\n", "\n  "))
 
 
@@ -412,7 +417,13 @@ def cli(argv: list[str]) -> int:
     pin_ts = int(dp.git(paths[dp.TESTNET], "log", "-1", "--format=%ct", pin)) if pin else None
     d = write(g, paths, last, now, pin_ts, now)
     print(f"  {len(d['shas'])} changes, {d['house']} housekeeping, {d['lang']} tau-lang")
+    print("  (a preview: nothing was sent)")
     _show(d, alerts.x_post)
+    if what == "preview" and d["status"] in ("ready", "check"):
+        st["draft"] = d   # the post at the slot uses this very text, unless IDNI merges something new before then
+        save(st)
+        print("\nkept: the next post uses exactly this text unless IDNI merges something new first; "
+              "up idni again writes a new one, up idni hold keeps it back")
     if what == "send":
         force = "--force" in argv
         if _alerts_state().get("day") == datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d"):
