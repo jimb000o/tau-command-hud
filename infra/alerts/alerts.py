@@ -40,6 +40,10 @@ It also keeps watch over the HUD's news line (tickerwatch.py): every half hour i
 page does and tells the owner, in a private Telegram chat and never on the channel, when nothing new has come onto it
 for a week, when only a few new items are left, or when IDNI's news stopped coming in (`up owner` sets that chat).
 
+It also posts IDNI's progress (idni_digest.py): once a day, when IDNI merged real changes into the testnet's code,
+devpulse writes everything of that day up as ONE post with the combined meaning; it goes out here once, on Telegram,
+and on X when the day is notable; quiet days (only tests, CI or docs) get no post. `up idni` shows the next one.
+
 It also announces changes to Tau HUD itself, read from the site's own update
 log (assets/updates.json), at the fixed SITE_SLOTS times (UTC): an entry
 with a "major" field gets a post of its own, and when several are waiting
@@ -106,6 +110,7 @@ import explain
 import findings
 import firsts
 import gazette
+import idni_digest
 import recap
 import tickerwatch
 
@@ -181,6 +186,9 @@ SIM_POSTS = os.environ.get("SIM_POSTS", "false").lower() in ("1", "true", "yes")
 SIM_SWITCHES = (("stake", 10), ("fixed", 16))
 SIM_PROPOSED_AT, SIM_IN_FORCE_AT = 20 * 60, 30 * 60
 SIM_LINK = f"{SITE}/proposals/?mode=sim"
+# IDNI's progress of the day (idni_digest.py, written by devpulse into /state/devpulse/digests.json): posted once, within
+# IDNI_DIGEST_LATE_HOURS of its window's end, at most one a UTC day; X only when the writer marks the day as notable.
+IDNI_ON = os.environ.get("IDNI_DIGEST", "true").lower() in ("1", "true", "yes")
 # Changes to Tau HUD itself, from the update log every release appends to. Mark an entry as worth its own post with
 #   "major": {"id": "unique-slug", "title": "…", "text": "one or two plain sentences", "link": "/page/"}
 # plus "image": "/assets/shots/<id>.png", a 16:9 screenshot (PNG or JPEG, at most 5 MB) that goes under the X post,
@@ -2561,6 +2569,60 @@ class Watcher:
             st["slot"] = slot
         self.save_state()
 
+    # ---------- IDNI's progress of the day, one post (idni_digest.py) ----------
+    async def maybe_idni(self, now: float | None = None, digests: list | None = None, hold: dict | None = None):
+        """The newest window devpulse wrote up and marked ready: Telegram, then X when it is notable; once each, at most
+        one a UTC day, never later than IDNI_DIGEST_LATE_HOURS after the window's end; `up idni hold` keeps it back."""
+        if not IDNI_ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("idni", {"posted": {}, "x_posted": {}})
+        if digests is None:
+            if now - st.get("checked", 0) < 60:
+                return
+            st["checked"] = now
+            digests, hold = idni_digest.load()["items"], idni_digest.held()
+        hold = hold or {}
+        day = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
+        d = next((x for x in reversed(digests) if x.get("id") == st.get("current")), None) if st.get("day") == day else None
+        if d is None:
+            if st.get("day") == day:
+                return
+            d = next((x for x in reversed(digests) if x.get("status") == "ready" and x.get("title")
+                      and 0 <= now - x.get("end", 0) <= idni_digest.LATE and x["id"] not in st["posted"]
+                      and x["id"] not in st["x_posted"]), None)
+            if d is None:
+                return
+            if x_end := hold.get("until"):
+                if d["end"] < x_end and not d.get("manual"):
+                    return
+        did = d["id"]
+        tg = self.tg_on()
+        if tg and did not in st["posted"] and st.get("pause_until", 0) <= now:
+            text = idni_digest.tg_text(d)
+            for o in tg:
+                ok, retry, err = await asyncio.to_thread(o.send_text, text, None)
+                if not ok:
+                    st["pause_until"] = now + (retry or 300)
+                    log.warning("idni digest %s failed (%s); trying again later", did, err)
+                    break
+            else:
+                st["posted"][did] = round(now)
+                st["day"], st["current"] = day, did
+                log.info("idni digest: posted %s", d.get("title"))
+            self.save_state()
+        if did not in st["x_posted"] and (did in st["posted"] or self.x_alone(st, now)):
+            st["x_posted"][did] = round(now)
+            st["day"], st["current"] = day, did
+            self.save_state()
+            if d.get("x"):
+                await self.post_x(x_post(idni_digest.x_lines(d), foot=idni_digest.X_FOOT, keep=2), "idni digest", now, spare=True)
+            else:
+                log.info("idni digest %s: Telegram only (a small day)", did)
+        for k in ("posted", "x_posted"):
+            st[k] = {i: t for i, t in st[k].items() if t >= now - 30 * 86400}
+        self.save_state()
+
     # ---------- the Key Crier: White Rabbit Key's shared island, the day before (relay /isle) ----------
     async def maybe_island(self, now: float | None = None, snap: dict | None = None):
         """Keep the island's day as the relay sums it up (the last reading before midnight UTC is the day), and every
@@ -3218,6 +3280,7 @@ class Watcher:
                         await self.maybe_site()
                         await self.maybe_plan()
                         await self.maybe_deepdive()
+                        await self.maybe_idni()
                         await self.maybe_island()
                         await self.maybe_today()
                         await self.maybe_visitors()
@@ -3232,6 +3295,7 @@ class Watcher:
                 await self.maybe_site()    # neither does this
                 await self.maybe_plan()
                 await self.maybe_deepdive()  # the site's pages are there whether the chain runs or not
+                await self.maybe_idni()      # IDNI's code moves whether our relay answers or not
                 await self.maybe_ticker()
                 await asyncio.sleep(10)
 
