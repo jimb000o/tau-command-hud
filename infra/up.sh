@@ -8,6 +8,8 @@
 #              up touch canoe-camp  the same, then two versions of the island with those changes, to look at (not live)
 #              up touch beach 28    the same, from island 28 of the drafts instead of the live island
 #              up keep 27 canoe camp  the same, then island 27 live and those rooms painted anew to match it
+#              up blog       the blog drafts waiting (nothing rebuilt); up blog publish <id>  puts one on tauhud.com/blog/
+#                            and posts it once to Telegram and X; up blog draft <visit>  writes that visit's draft anew
 #              up bust salado  the same, then that portrait (or several) painted anew, talking and blinking too (1 min each);
 #                            up bust --recut salado  cuts the kept painting out again, paints nothing;
 #                            up bust --from infra/rabbit-art/imports/codex hana  takes pictures painted elsewhere
@@ -34,6 +36,16 @@ if [ "${1:-}" = "post" ] && [ -n "${2:-}" ]; then
     echo "look: https://node.tauhud.com/rico/art/drafts/$2.jpg   then post it: up post $2 send"
   fi
   exit 0
+fi
+# the blog by hand, nothing rebuilt (alerts/blog.py): up blog  lists the drafts waiting and where to read them,
+# up blog publish <id>  puts one on the blog and posts it once, up blog draft <visit-id>  writes one anew,
+# up blog unpublish <id>  takes one off again
+if [ "${1:-}" = "blog" ]; then
+  shift
+  [ -n "${1:-}" ] || set -- drafts
+  docker compose up -d blog >/dev/null 2>&1 || true
+  docker compose exec -T blog python blog.py "$@"
+  exit $?
 fi
 cp sites/agorzilla.caddy /opt/sites/ 2>/dev/null || true
 # The pinned tau-testnet commit follows the repo, not the server's old .env (as in setup.sh); a new pin
@@ -120,6 +132,8 @@ if s is not None:
 PY
 # the channels: may the service post at all? (asks Telegram and X, posts nothing; a refused key or a bot without the
 # right to post is named here, so the channel can never go quiet unnoticed), then what the running containers logged
+# the blog: drafts written after a cruise visit wait here for a read and an up blog publish <id>
+docker compose exec -T blog python blog.py drafts 2>/dev/null | tee -a "$NOTE" || true
 echo "channels:" | tee -a "$NOTE"
 docker compose run --rm --no-deps -T alerts python alerts.py --check 2>/dev/null | sed 's/^/         /' | tee -a "$NOTE"
 echo "posts logged by the running containers (a rebuild starts the log afresh):" | tee -a "$NOTE"
@@ -186,4 +200,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up blog, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"

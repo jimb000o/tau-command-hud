@@ -17,6 +17,7 @@
     state:      { t: "Chain state", d: "Every rule in force right now: fee, agreement threshold, validators, agreed changes, personal rules", i: "≡", h: "#chain-state", act: "state" },
     explorer:   { t: "Explorer", d: "Find any block, transaction or address", i: "⌕", h: "explorer/", view: true },
     stats:      { t: "Stats", d: "Block pace, transactions, validators and rule changes over the whole chain", i: "≋", h: "stats/", view: true },
+    cruise:     { t: "Cruise logbook", d: "What each cruise ship sent to the testnet and what the node answered", i: "🛳", h: "cruise/" },
     load:       { t: "Testnet load", d: "How hard the testnet is working right now: sealed, waiting, time to a block", i: "∿", h: "load/" },
     history:    { t: "Time travel", d: "Step through the chain block by block and see the rules at any height", i: "⟲", h: "history/" },
     account:    { t: "Accounts", d: "Balance, own rules, offers and refusals of any address", i: "@", h: "account/", view: true },
@@ -26,6 +27,7 @@
     start:      { t: "Start here", d: "Try Tau in four steps: a test wallet, a rule of your own, a block that seals it, a meal for Agorzilla", i: "➜", h: "start/" },
     tour:       { t: "Guided tour", d: "One minute, eight steps: how rules change by agreement", i: "▸", h: "?tour=1", act: "tour" },
     gazette:    { t: "The Daily Consensus", d: "Tau as a 1920s newspaper, a new edition every Monday: turn the pages with a click or a tap", i: "❡", h: "gazette/" },
+    blog:       { t: "Blog", d: "What we learned running things on the testnet, written from our own logbooks", i: "✎", h: "blog/" },
     chronicle:  { t: "Chronicle", d: "Tau from the first videos in 2014 to the testnet alpha", i: "◷", h: "chronicle/" },
     devpulse:   { t: "Build pulse", d: "How Tau's code is moving: newest commits, which parts change, the version our node runs", i: "⌥", h: "devpulse/" },
     findings:   { t: "Findings", d: "Issues we reported to IDNI, with their live GitHub status", i: "!", h: "findings/" },
@@ -55,14 +57,18 @@
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
     /* grouped by what a visitor came to do (29 Oct); inside each menu small labelled groups (30 Oct), so no menu is one long list */
-    { k: "explore", t: "Explore", groups: [["The chain now", ["state", "explorer", "proposals", "account", "rules", "stats", "load", "history"]], ["Road to mainnet", ["nodes", "status", "findings", "roadmap", "devpulse"]]], tab: "≋" },
-    { k: "learn", t: "Learn", groups: [["First steps", ["start", "tour", "story"]], ["Read and watch", ["gazette", "chronicle", "tau"]]], tab: "▸" },
-    { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "seat", "whatif"]], ["On the real testnet", ["wallet", "vote", "challenge", "card"]], ["Games on the live testnet", ["rabbit", "agorzilla", "deja"]]], id: "btnPlayground", tab: "◇", short: "Play" },
+    /* 6 Nov: fewer doors. Testnet health (Stats, Load, Status) is one group with tabs across the three pages; the guided tour,
+       Tau in 60 seconds and the tour of this page live on Start here, the one way in; anchors (chain state, validator seat)
+       and Déjà stay reachable from their pages and from search */
+    { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "account", "rules", "history"]], ["Testnet health", ["stats", "load", "status"]], ["Road to mainnet", ["nodes", "findings", "roadmap", "devpulse"]]], tab: "≋" },
+    { k: "learn", t: "Learn", groups: [["First steps", ["start"]], ["Read and watch", ["gazette", "blog", "chronicle", "tau"]]], tab: "▸" },
+    { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "whatif"]], ["On the real testnet", ["wallet", "vote", "challenge", "card"]], ["Games on the live testnet", ["rabbit", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
     { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "meta", "legal"]], ["Use our work", ["developers", "press"]]], tab: "i" },
   ];
   SECTIONS.forEach(s => { if (s.groups) s.items = s.groups.flatMap(g => g[1]); });
   const SECTION_OF = { hud: "hud" };
   SECTIONS.forEach(s => (s.items || []).forEach(k => { if (P[k] && !P[k].ext && !P[k].act && !/#/.test(P[k].h)) SECTION_OF[k] = s.k; }));
+  Object.assign(SECTION_OF, { story: "learn", cruise: "explore" });
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken, and what changed lately: the feedback form and the update log, right here. Ideas with the most agreement get built first.",
@@ -87,7 +93,7 @@
     cons: "Consensus: who may seal the next block. Tau has no proof of work. The mechanism is part of the chain state: a fixed validator list (proof of authority), a validator list kept in the Tau rules, or proof of stake. It switches only through an agreed rule change. Opens the chain state in the HUD.",
     hud: "The chain core live: blocks, rules and agreement as they happen.",
     explore: "The chain now: chain state, Explorer, Proposals, Accounts, Rules wall, Stats, Time travel. Road to mainnet: Nodes, Status, Findings, Build pulse.",
-    learn: "First steps: Start here, a tour of this page, the guided tour, Tau in 60 seconds. Read and watch: The Daily Consensus, Chronicle, What is Tau?",
+    learn: "First steps: Start here, a tour of this page, the guided tour, Tau in 60 seconds. Read and watch: The Daily Consensus, Blog, Chronicle, What is Tau?",
     play: "Write your own transfer rule and run the testnet’s own checks on it, take a simulated validator seat, play six short missions on a practice chain, move the levers of a sandbox chain, or vote on the real testnet yourself.",
   };
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -361,7 +367,7 @@
     SHARE.querySelector(".tn-sh-copy").focus({ preventScroll: true });
   }
   function item(k, page, isHud, tip) {
-    const p = P[k], a = el(p.soon ? "div" : "a", "mi" + (k === page ? " here" : "") + (p.soon ? " soon" : ""));
+    const p = P[k], a = el(p.soon ? "div" : "a", "mi" + (k === page ? " here" : "") + (p.soon ? " soon" : "") + (k === "start" ? " first" : ""));
     a.setAttribute("role", "menuitem");
     a.innerHTML = `<span class="ic">${p.i}</span><b>${p.live ? '<i class="tn-live" aria-hidden="true"></i>' : ""}${esc(p.t)}${p.ext ? ' <span class="ext">↗</span>' : ""}${p.play ? `<em class="tn-play" data-play="${p.play}" hidden><i aria-hidden="true"></i><b translate="no"></b> <span>playing now</span></em>` : ""}</b><span>${esc(p.d)}</span>`;
     if (p.soon) { a.setAttribute("aria-disabled", "true"); a.title = "This page is not online yet"; }
@@ -392,7 +398,9 @@
     const brand = el("a", "brand", `${MARK}<span class="bn">Tau HUD</span>`);
     const crumb = el("div", "crumb", (sec ? `<span class="sep">/</span><span class="sec">${esc(sec.t)}</span>` : "") + `<span class="sep">/</span><h1 class="bt">${esc(title)}</h1>`);
     const lang = new URLSearchParams(location.search).get("lang"); brand.href = ROOT + (lang ? "?lang=" + encodeURIComponent(lang) : ""); brand.dataset.tnt = "Back to the HUD";
-    const unoff = el("a", SIM ? "chip unoff sim" : "unoff q", SIM ? "Simulation · no real chain data" : "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.dataset.tnt = SIM ? TIPS.simBadge : TIPS.unoff;
+    /* the game's moves are real test transactions in either mode, so its header keeps the plain note instead of the simulation badge */
+    const gameSim = SIM && page === "rabbit";
+    const unoff = el("a", SIM && !gameSim ? "chip unoff sim" : "unoff q", SIM && !gameSim ? "Simulation · no real chain data" : "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.dataset.tnt = gameSim ? "Your moves in the game are real test transactions, whatever the chain chips show; the chips follow the simulation." : SIM ? TIPS.simBadge : TIPS.unoff;
     const chips = el("div", "chips");
     const chip = (tag, id, cls, html, t) => { const c = el(tag, "chip" + (cls ? " " + cls : ""), html); c.id = id; c.dataset.tnt = t; return c; };
     chips.append(
@@ -404,6 +412,7 @@
       chip("a", "tnRev", "v", "<b>—</b>", TIPS.rev),
       chip("div", "tnFee", "v", "<b>—</b>", TIPS.fee));
     chips.querySelectorAll(".chip.v > b").forEach(b => { b.style.marginLeft = "0"; });   // value-only chips: the name lives in the hover text
+    if (SIM) chips.querySelectorAll(".chip.v:not(#tnMode)").forEach(c => c.append(el("s", "st", "sim")));   // every simulated value says so, also on a screenshot
     chips.querySelector("#tnRev").href = chips.querySelector("#tnCons").href = ROOT + "#chain-state";
     if (!SIM) {   // coming up on the live chain: an agreed rule change that is not yet in force, counted down from the relay's proposals file
       const nx = el("a", "chip next", "<b></b>"); nx.id = "tnNext"; nx.hidden = true; nx.href = ROOT + "proposals/" + (lang ? "?lang=" + encodeURIComponent(lang) : ""); chips.append(nx);
@@ -670,7 +679,7 @@
       sec.groups.forEach(([h, keys]) => {
         const col = el("div", "mcol"); col.setAttribute("role", "group"); col.setAttribute("aria-label", h); col.append(el("h5", "", esc(h)));
         keys.forEach(k => col.append(item(k, page, isHud)));
-        if (sec.k === "learn" && keys.includes("tour") && !isHud) col.insertBefore(pageTour(), col.querySelector(".mi:nth-of-type(2)"));
+        if (sec.k === "learn" && keys.includes("start") && !isHud) col.append(pageTour());
         m.append(col);
       });
       b.addEventListener("click", () => toggle(b, m));
@@ -681,7 +690,8 @@
     /* first visits: one way in, until its four steps are done (start/ keeps the count) */
     const started = (() => { try { return +localStorage.getItem("tauhud-start") || 0; } catch (e) { return 0; } })();
     if (page !== "start" && started < 4) {
-      const go = el("a", "pill start", started ? `Start here <b>${started}/4</b>` : "Start here"); go.href = ROOT + "start/";
+      /* wide screens say "Start here"; narrower ones (every 1366 laptop) keep a short "Start" so the line stays one line */
+      const go = el("a", "pill start", `<span class="lg">Start here</span><span class="sh">Start</span>` + (started ? ` <b>${started}/4</b>` : "")); go.href = ROOT + "start/";
       tip(go, "New here? Try Tau in four steps: a test wallet, a rule of your own that the chain checks, a block that seals it, a meal for Agorzilla. A few minutes, nothing to install.");
       left.append(go);
     }
@@ -850,7 +860,39 @@
     [[TELEGRAM, PLANE, "Telegram"], [XCOM, XLOGO, "X"], [AGZX, `<img src="${ROOT}assets/agorzilla.webp" alt="">`, "Agorzilla"]].forEach(([h, ic, t]) => { const a = el("a", "tn-soc", `${ic}<span>${esc(t)}</span>`); a.href = h; a.target = "_blank"; a.rel = "noopener"; so.append(a); });
     host.append(" ", so);
   }
-  const init = () => { document.querySelectorAll("nav.tnav").forEach(mount); mountFootLinks(); countVisit(); if (location.hash === "#share") setTimeout(openShare, 60); };
+  /* Testnet health: Stats, Testnet load and Status answer the same question, so each carries tabs to the other two */
+  const HEALTH = ["stats", "load", "status"];
+  function healthTabs(nav, page) {
+    if (!HEALTH.includes(page)) return;
+    const lang = new URLSearchParams(location.search).get("lang"), q = lang ? "?lang=" + encodeURIComponent(lang) : "";
+    const t = el("div", "tn-tabs"); t.setAttribute("role", "navigation"); t.setAttribute("aria-label", "Testnet health");
+    t.append(el("span", "lbl", "Testnet health"));
+    HEALTH.forEach(k => { const a = el("a", "tab" + (k === page ? " here" : ""), esc(P[k].t)); a.href = ROOT + P[k].h + q; a.dataset.tnt = P[k].d; if (k === page) a.setAttribute("aria-current", "page"); t.append(a); });
+    nav.after(t);
+  }
+  /* "what is real": today's transactions by sender, one line on the HUD, Stats and In numbers (relay /api/v1/sources). The
+     groups are the relay's: IDNI's genesis accounts, White Rabbit Key (players, the island bot and the cruise ships' simulated
+     passengers, all real transactions), Agorzilla, the Tau HUD pages, every other wallet. Live mode only: the simulation says
+     what it is in its own bar. */
+  const REAL_HOST = { hud: "#simbar", stats: "#sourceLine", meta: "#sourceLine" };
+  function realLine(page) {
+    const sel = REAL_HOST[page]; if (!sel || SIM) return;
+    const host = document.querySelector(sel); if (!host) return;
+    const line = el(page === "hud" ? "p" : "span", "tn-real"); line.id = "realLine"; line.hidden = true;
+    line.dataset.tnt = "Counted by our relay from the blocks it keeps, UTC day; wallets, not people. White Rabbit Key counts the players, the island bot and the cruise ships: simulated passengers, real transactions. Everything else on this page comes from the chain as it is.";
+    if (page === "hud") host.after(line); else host.append(" ", line);
+    const NAMES = [["idni", "IDNI genesis accounts"], ["rabbit", "White Rabbit Key"], ["agorzilla", "Agorzilla"], ["tauhud", "Tau HUD pages"], ["other", "other wallets"]];
+    const fill = j => {
+      const k = new Date().toISOString().slice(0, 10), d = j && j.days && j.days[k];
+      if (!d) { line.hidden = true; return; }
+      const n = Object.values(d).reduce((a, v) => a + (v && v[0] || 0), 0);
+      line.textContent = `What is real · today on the testnet: ${fmt(n)} transactions` + (n ? " · " + NAMES.filter(([g]) => (d[g] || [0])[0]).map(([g, name]) => `${name} ${fmt(d[g][0])}`).join(" · ") : "");
+      line.hidden = false;
+    };
+    const load = () => fetch(`https://${RELAY}/api/v1/sources`, { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(fill, () => { line.hidden = true; });
+    load(); setInterval(() => { if (!document.hidden) load(); }, 300000);
+  }
+  const init = () => { document.querySelectorAll("nav.tnav").forEach(nav => { mount(nav); const pg = nav.dataset.page || "hud"; healthTabs(nav, pg); realLine(pg); }); mountFootLinks(); countVisit(); if (location.hash === "#share") setTimeout(openShare, 60); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
   window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM };
 })();

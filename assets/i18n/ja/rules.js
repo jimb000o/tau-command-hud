@@ -1,5 +1,7 @@
 /* Japanese for /rules/. Keys are the English text; {n} {x} are placeholders. */
 TauI18n.add({ strings: {
+  "Show {n} more": "さらに {n} 件",
+  "{a} of {b} rules": "{b} 件中 {a} 件のルール",
   "Rules wall": "ルールの壁",
   "Rules people gave their own accounts.": "みんなが自分のアカウントに付けたルール。",
   "Every personal rule on Tau Testnet Alpha, read from the blocks. {e1} that is a real transaction, and it counts here.": "Tau Testnet Alpha 上のすべての個人ルールを、ブロックから読み取っています。{e1}それは本物のトランザクションで、ここで数えられます。",

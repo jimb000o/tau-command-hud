@@ -108,6 +108,9 @@ body[data-mode="sim"] .simbar button:hover { background: #ffb13b; border-color: 
 body[data-mode="sim"] .simtag { color: #ffb13b; border-color: rgba(255,177,59,.6); }
 .simtag { position: absolute; top: 6px; right: 8px; font: 600 11px var(--display); letter-spacing: .2em; color: var(--dim); border: 1px solid var(--hair); border-radius: 3px; padding: 1px 4px; }
 body[data-mode="live"] .simtag { display: none; }
+/* every simulated chip value says so, also on a screenshot */
+.chip .st { display: none; text-decoration: none; font: 600 11px var(--display); letter-spacing: .1em; color: #ffb13b; margin-left: 6px; }
+body[data-mode="sim"] .chip .st { display: inline; }
 /* simple vs technical view */
 .stream .lbl.plain, body[data-view="simple"] .stream .lbl.tech { display: none; }
 body[data-view="simple"] .stream .lbl.plain { display: block; }
@@ -524,6 +527,9 @@ html.coreonly #coreFoot { display: block; position: fixed; left: 0; right: 0; bo
 .core canvas { height: 100%; width: auto; max-width: 100%; max-height: 100%; aspect-ratio: 1; display: block; object-fit: contain; }
 /* your own simulated node (assets/simnode.js): a small card in the core's top-left corner, simulation only */
 .core-panel { position: relative; }
+/* simulation mode: a faint word across the core, so a screenshot of the simulated chain cannot pass for the testnet */
+.simmark { display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-24deg); font: 600 clamp(22px, 4.6vw, 64px)/1 var(--display, inherit); letter-spacing: .3em; text-transform: uppercase; color: rgba(255,177,59,.11); pointer-events: none; z-index: 2; white-space: nowrap; }
+body[data-mode="sim"] .simmark { display: block; }
 .mynode { position: absolute; left: 14px; top: 46px; z-index: 3; }
 @media (max-width: 900px) { .mynode { position: static; margin: 0 0 8px; } }
 @media (min-width: 901px) and (max-width: 1599px) { .mynode .sn-card > span { display: none; } }   /* laptops: name and progress only, the core stays visible */
@@ -1050,11 +1056,11 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="chip v" id="chipMode" data-full="Mode. Simulation runs in your browser and shows the documented protocol with made-up data; Live node reads the real testnet through the community relay."><span class="dot sim" id="modeDot"></span><b id="modeTxt">Simulation</b></div>
       <a class="chip next" id="chipNext" href="proposals/" hidden><b></b></a>
       <a class="chip" id="chipOnline" href="meta/?view=tauhud" data-full="People looking at Tau HUD right now, counted by our relay at node.tauhud.com: one person counts once, however many tabs are open.&#10;No cookies and nothing stored in your browser; the relay tells people apart by address and browser, hashed with a daily salt and kept in memory only. Click for Tau HUD in numbers."><span class="dot none" id="onlineDot"></span><b id="onlineN" style="margin-left:0;margin-right:6px">—</b>online</a>
-      <button class="chip v" type="button" id="chipCons"><b><span class="lg" id="consL">Proof of authority</span><span class="sh" id="consS">PoA</span></b></button>
-      <div class="chip v" id="chipNet"><b id="netId">tau-testnet-v2</b></div>
-      <div class="chip v" id="chipHeight"><b id="chipH">#0</b></div>
-      <button class="chip v" type="button" id="btnState"><b id="chipRev">rev 1</b></button>
-      <div class="chip v" id="chipFeeWrap"><b id="chipFee">10 AGRS</b></div>
+      <button class="chip v" type="button" id="chipCons"><b><span class="lg" id="consL">Proof of authority</span><span class="sh" id="consS">PoA</span></b><s class="st">sim</s></button>
+      <div class="chip v" id="chipNet"><b id="netId">tau-testnet-v2</b><s class="st">sim</s></div>
+      <div class="chip v" id="chipHeight"><b id="chipH">#0</b><s class="st">sim</s></div>
+      <button class="chip v" type="button" id="btnState"><b id="chipRev">rev 1</b><s class="st">sim</s></button>
+      <div class="chip v" id="chipFeeWrap"><b id="chipFee">10 AGRS</b><s class="st">sim</s></div>
     </div>
     <nav class="tnav" data-page="hud" aria-label="Pages and tools">
       <div class="seg" role="group" aria-label="Data source" data-slot="source">
@@ -1115,6 +1121,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="mynode" id="myNode" hidden></div>
       <div class="core">
         <div id="coreFoot" aria-hidden="true"></div>
+        <div class="simmark" aria-hidden="true">Simulation</div>
         <canvas id="core" width="1120" height="1120" aria-label="Animated view of validators, their agreement on rule changes, accounts with their own Tau rules, the mempool and block production"></canvas>
         <div class="readout">
           <div id="rHw" data-health="height"><b id="rH">0</b><span>Height<i id="rHs"></i></span></div>
@@ -1481,7 +1488,18 @@ function markSealed(id, h, ts) {   // a card in Transactions and the waiting dot
   if (ts == null && Number.isFinite(h)) ts = (S.byHeight.get(h) || {}).ts;
   if (el && Number.isFinite(h) && Number.isFinite(ts)) { setAge(el, ts, "sealed", h); const feed = $("feed"); if (el.parentNode === feed && !feed.matches(":hover")) placeCard(feed, el); }
   if (!el || el.classList.contains("sealed") || !Number.isFinite(h)) return;
-  el.classList.add("sealed"); if (m) el.classList.add("listed"); const sp = el.querySelector(".top > span"); if (sp) sp.insertAdjacentHTML("afterbegin", `<b class="sl">ghost ✓ #${h}</b> · `);
+  sealMark(el, h);
+}
+/* "✓ #N" = sealed in block N. "ghost ✓ #N" only while a mempool listing that came at least one poll (3 s) after the block still names it
+   (IDNI #81); the getmempool asked together with that block's getblocks may still be from before the block, so it does not count */
+function sealMark(el, h) {
+  el.classList.add("sealed"); el.dataset.h = h; el.dataset.sealedAt = Date.now();
+  const sp = el.querySelector(".top > span"); if (sp && !sp.querySelector(".sl")) sp.insertAdjacentHTML("afterbegin", `<b class="sl">✓ #${h}</b> · `);
+}
+function ghostMark(el, on) {
+  if (el.classList.contains("listed") === on) return;
+  el.classList.toggle("listed", on); el.title = on ? "Ghost transaction: already in a block, still listed by the node (known bug, IDNI #81)" : "";
+  const sl = el.querySelector(".sl"); if (sl) sl.textContent = `${on ? "ghost " : ""}✓ #${el.dataset.h}`;
 }
 /* the relay compares the listed transactions with the whole chain it keeps (/health-score): how many are in fact sealed,
    and how long the oldest really waiting one has waited since the relay first saw it, not since this page opened */
@@ -2358,19 +2376,21 @@ const feedHold = [];
 const cardAt = d => { const a = d.querySelector(".age[data-at]"); return a ? Number(a.dataset.at) || 0 : 0; };
 function placeCard(feed, d) { const at = cardAt(d); feed.insertBefore(d, [...feed.children].find(c => c !== d && cardAt(c) < at) || null); }
 addEventListener("DOMContentLoaded", () => $("feed").addEventListener("mouseleave", () => { const feed = $("feed"); feedHold.splice(0).forEach(d => placeCard(feed, d)); [...feed.children].forEach(d => placeCard(feed, d)); while (feed.children.length > 40) feed.lastChild.remove(); }));
+const txBody = t => t.transfers && t.transfers.length
+  ? t.transfers.map(([f, to, a]) => `${acct(f)} → ${acct(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
+  : (t.note || `sender ${acct(t.sender)}`);
 function txCard(t) {
   const d = document.createElement("div");
   const ruleish = /rule/.test(t.type);
   d.className = "tx" + (t.kind === "gov" ? " gov" : ruleish ? " rl" : "") + (t.rejected ? " rej" : "");
   d.id = "tx_" + t.id.slice(0, 16);
   const label = t.rejected ? (t.refLabel || "✕ " + t.rejected) : testChange(t) ? "§ test change · no effect" : (TYPE_LABEL[t.type] || t.type);
-  const body = t.transfers && t.transfers.length
-    ? t.transfers.map(([f, to, a]) => `${acct(f)} → ${acct(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
-    : (t.note || `sender ${acct(t.sender)}`);
+  const body = txBody(t);
   const txid = S.mode === "live" && t.id && !t.rejected ? `<a class="acct" href="explorer/?tx=${encodeURIComponent(t.id)}" title="Open this transaction in the explorer">${short(t.id)}</a>` : short(t.id);
   if (t.at == null) { t.at = Date.now() / 1000; if (!t.ageKind) t.ageKind = S.mode === "live" ? "seen" : "sim"; }
-  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span><span class="age"></span> · <span class="txid">${txid} · </span>fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
+  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span><span class="age"></span> · <span class="txid">${txid} · </span>${t.feeCap ? "fee ≤ " : "fee "}${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
   setAge(d, t.at, t.ageKind || (t.block != null ? "sealed" : "seen"), t.block);
+  if (S.mode === "live" && !t.rejected && Number.isFinite(t.block)) sealMark(d, t.block);   // first seen in its block: sealed, never a ghost
   d.dataset.ex = exKey(() => explainTx(t)); d.dataset.detail = dtKey(() => detailTx(t));
   if (t.rejected) { bounce(t); S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
   const feed = $("feed");
@@ -2998,7 +3018,7 @@ function normTx(raw, idHint) {
   if (type === "user_tx" && ops["0"]) type = "rule_deploy";
   return {
     id: idHint || raw.tx_hash || hex(64), type, sender: raw.sender_pubkey || raw.sender || "",
-    kind: /consensus_rule/.test(type) ? "gov" : "", fee: raw.estimated_fee ?? raw.fee_limit ?? "—", transfers,
+    kind: /consensus_rule/.test(type) ? "gov" : "", fee: raw.estimated_fee ?? raw.fee_limit ?? "—", feeCap: raw.estimated_fee == null && raw.fee_limit != null, transfers,   // a block lists the signed fee_limit, a cap, not the fee charged
     // co-signature approvals (approvals.md): a request parks a transfer, a transfer_vote signs or declines it
     to: raw.recipient_pubkey || "", amount: Number(raw.amount) || 0, expireAt: Number(raw.expire_at_height) || 0, approve: raw.approve !== false,
     revisions: Array.isArray(raw.rule_revisions) ? raw.rule_revisions : null, patch: raw.host_contract_patch || null,
@@ -3069,6 +3089,7 @@ function liveMessage(ev) {
         // first seen in the mempool, where the node lists only hash and type: now the block says what the rule work was
         const el = $("tx_" + t.id.slice(0, 16)) || feedHold.find(d => d.id === "tx_" + t.id.slice(0, 16));
         if (el && t.note && !t.transfers.length) { el.querySelector(".mid").textContent = t.note; el.dataset.ex = exKey(() => explainTx(t)); el.dataset.detail = dtKey(() => detailTx(t)); }
+        else if (el && t.transfers.length) { el.querySelector(".mid").innerHTML = txBody(t); el.dataset.ex = exKey(() => explainTx(t)); el.dataset.detail = dtKey(() => detailTx(t)); }
         if (el) markSealed(t.id, b.n, b.ts);
       });
       txs.forEach(t => {
@@ -3098,7 +3119,8 @@ function liveMessage(ev) {
     S.mempool.forEach(t => { if (!LIVE.seenTx.has(t.id)) { t.at = Date.now() / 1000; t.ageKind = opening ? "open" : "seen"; LIVE.seenTx.add(t.id); txCard(t); log(`Mempool: ${short(t.id)} pending · est. fee ${esc(t.fee)}`); } const h = sealedAt(t.id); if (h != null) { t.block = typeof h === "number" ? h : t.block; if (typeof h === "number") markSealed(t.id, h); } });
     if (TXST.st.size > 400) { const keep = new Set(S.mempool.map(t => t.id.toLowerCase())); TXST.st.forEach((v, k) => { if (!keep.has(k)) TXST.st.delete(k); }); }
     const listedIds = new Set(S.mempool.map(t => "tx_" + t.id.slice(0, 16)));
-    document.querySelectorAll("#feed .tx.sealed").forEach(el => { const on = listedIds.has(el.id); if (el.classList.contains("listed") !== on) { el.classList.toggle("listed", on); el.title = on ? "Ghost transaction: already in a block, still listed by the node (known bug, IDNI #81)" : ""; } });
+    const ghostNow = Date.now();
+    [...document.querySelectorAll("#feed .tx.sealed"), ...feedHold.filter(el => el.classList.contains("sealed"))].forEach(el => ghostMark(el, listedIds.has(el.id) && ghostNow - Number(el.dataset.sealedAt || 0) > 2000));
     askTxStatus(); pollRelayMem(); scanBack();
     readouts();
   } else if (msg.command === "getgovernance") {

@@ -1,5 +1,6 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Show {n} more": "再显示 {n} 条",
   "scheduled": "已排定",
   "SCHEDULED": "已排定",
   "What happens": "会发生什么",

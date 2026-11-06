@@ -97,7 +97,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .gifts a:hover { border-color: #fff; }
 .gifts .amt { text-align: right; white-space: nowrap; color: #fff; }
 .gifts .fx { grid-column: 2 / -1; color: var(--dim); font-size: 11.5px; }
-.gifts .new { color: var(--ok); font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; margin-left: 6px; }
+.gifts .new { color: var(--ok); font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; margin-left: 6px; }
 .empty { color: var(--dim); }
 .state { display: inline-flex; align-items: center; gap: 8px; color: var(--text); }
 .state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 6px var(--amber); animation: pulse 1.2s ease-in-out infinite; }
@@ -108,6 +108,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 @media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 520px) { .addrbox { grid-template-columns: minmax(0, 1fr); justify-items: start; } .tot b { font-size: 16px; } }
 @media (max-width: 700px) { .b { min-height: 44px; } .gifts a { padding: 10px 0; } }
+@media (min-width: 900px) and (max-height: 800px) { .sub { display: none; } }   /* a 1366 × 768 laptop keeps the page on one screen */
 @media (prefers-reduced-motion: reduce) { .state::before { animation: none; } }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">

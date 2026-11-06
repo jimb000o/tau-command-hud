@@ -1,6 +1,7 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
   "(MIT). Real-time data: the read-only WebSocket": "（MIT）。实时数据：只读 WebSocket",
+  ", any origin may call it (CORS), no key. One line to try:": "，任何来源都可以调用（CORS），无需密钥。试一行：",
   ", any origin may call it (CORS), no key.": "，任何来源都可以调用（CORS），无需密钥。",
   "Active validators": "活跃验证者",
   "all boxes, for a sidebar or a page": "所有框，用于侧栏或页面",

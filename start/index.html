@@ -59,6 +59,8 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .lead { margin: 6px 0 0; font: 600 clamp(24px, 3.4vw, 38px)/1.15 var(--display); color: #fff; }
 .sub { margin: 6px 0 0; color: var(--dim); max-width: 78ch; font-size: 14px; }
 .sub b { color: var(--text); font-weight: 600; }
+.doors { margin: 6px 0 0; color: var(--dim); font-size: 12px; }
+.doors a { color: #fff; }
 .prog { display: grid; gap: 6px; min-width: 260px; }
 .prog .row { display: flex; justify-content: space-between; gap: 12px; color: var(--dim); font-size: 12px; }
 .prog .row b { color: #fff; font: 600 15px var(--display); }
@@ -186,6 +188,7 @@ html.fit .step { overflow: hidden; }
     <div>
       <p class="lead">Try Tau in four steps.</p>
       <p class="sub" id="subLine">On Tau the rules change by agreement, and every account can carry <b>a rule of its own that the chain itself checks</b>. Try it on Tau Testnet Alpha: a few minutes in this browser, nothing to install. Test AGRS have no value.</p>
+      <p class="doors">Rather watch first? <a href="../story/">Tau in 60 seconds</a> · <a href="../?tour=1">Guided tour of the HUD</a> (one minute, eight steps).</p>
     </div>
     <div class="prog" aria-live="polite">
       <div class="row"><span id="progText">Not started yet</span><b id="progNum">0 of 4</b></div>

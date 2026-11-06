@@ -1,6 +1,7 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
   "(MIT). Real-time data: the read-only WebSocket": "（MIT）。リアルタイムデータ：読み取り専用の WebSocket",
+  ", any origin may call it (CORS), no key. One line to try:": "、どのオリジンからも呼び出せます（CORS）、キー不要。まず一行：",
   ", any origin may call it (CORS), no key.": "、どのオリジンからも呼び出せます（CORS）、キー不要。",
   "Active validators": "稼働中のバリデーター",
   "all boxes, for a sidebar or a page": "全ボックス、サイドバーやページ向け",

@@ -5,7 +5,8 @@ Two ships call by a timetable on the island's clock (Europe/Berlin):
                                   Ship, the school, the dive shop. It tries the rarer kinds of transaction.
   Saturday 14:00   Queen Mempool  a big luxury liner, 120 passengers: the South Current spa, Bar La Ola, song requests
                                   on Radio Coco, souvenirs. It brings the volume.
-A visit lasts VISIT_MIN minutes: the tenders bring the passengers ashore in the first LANDING, and in the last BOARDING
+A visit lasts VISIT_MIN minutes: the tenders bring the passengers ashore in the first minutes (the ship's "landing", LANDING
+by default; the big liner lands in waves over longer, so its first stops fit the pace), and in the last BOARDING
 they go back aboard. The ship shows on the sea APPROACH minutes before it lands.
 
 Nobody on board is a person. The passengers are made up here, and every page that shows them says so. What they do on
@@ -65,7 +66,7 @@ RATE = 12                  # passenger transactions a minute, at most
 VISIT_MAX = 1200           # transactions a visit, at most
 VISIT_MIN = 90             # minutes in port
 APPROACH = 30              # minutes the ship is seen coming before it lands
-LANDING = 10               # minutes the tenders bring the passengers ashore
+LANDING = 10               # minutes the tenders bring the passengers ashore (a ship's "landing" overrides it)
 BOARDING = 10              # the last minutes: back aboard, no more stops
 LAND_WAIT = 10 * 60        # seconds the ship waits off the island for a calm testnet before it sails on
 MISS = 15 * 60             # an action this late (the ship fell behind) is skipped
@@ -82,6 +83,10 @@ RETRACT_MARGIN = 6 * 60    # a withdrawal goes out this long before the booking'
                            # to two minutes early, and a feeless retract waits last when blocks are full (docs/retractable.md)
 UNRELEASED = 3 * 60        # a booking still open this long after its time is reported as not released
 REFUSE_STOP, REFUSE_WINDOW = 5, 20   # refusals among the visit's last sends that send the ship away
+QUIET_HOLD = 30            # seconds the ship waits after a send the node did not answer in time (relay UPSTREAM_TIMEOUT)
+QUIET_SLOW = 10 * 60       # and for this long after it, half pace: the node is slow, the ship gives it room
+# MS Dry Run, 4 November 2026: eight sendtx went unanswered within 20 s (two a day on other days), were counted as
+# refusals, and the ship left after 34 minutes although the node had refused nothing. No answer is not a refusal.
 CHECK_BOOKINGS = 10        # passengers whose bookings are checked with the node when a visit ends
 
 SHIPS = {
@@ -89,7 +94,7 @@ SHIPS = {
         "name": "MS Dry Run", "weekday": 2, "hour": 16, "passengers": 40, "style": "expedition",
         # place: (test AGRS a visit pays there, how much the passengers want to go there)
         "stops": {"book": (2, 3), "ship": (3, 3), "school": (6, 2), "dive": (12, 3), "market": (8, 1), "works": (4, 1), "bar": (5, 1)},
-        "per": (4, 6), "dwell": (10, 18),
+        "per": (4, 6), "dwell": (10, 18), "landing": 10,
         "book": {"share": 0.45, "at": ("dive", "book"), "cancel": 0.3},
         "bill": 0.0, "kinds": ("book",),
     },
@@ -97,6 +102,9 @@ SHIPS = {
         "name": "Queen Mempool", "weekday": 5, "hour": 14, "passengers": 120, "style": "liner",
         "stops": {"south": (20, 4), "bar": (5, 4), "radio": (25, 2), "market": (8, 3), "works": (4, 2), "dive": (12, 1), "book": (2, 1)},
         "per": (3, 5), "dwell": (8, 16),
+        # 120 passengers in 10 minutes would plan ~200 stops there, at most 120 can go out at RATE: the tenders land
+        # them in waves over 30 minutes instead, and every stop goes out on time at full pace (measured 5.11.2026)
+        "landing": 30,
         "book": {"share": 0.2, "at": ("south",), "cancel": 0.1},
         "bill": 0.3, "kinds": ("bill", "book"),
     },
@@ -166,6 +174,11 @@ def calls_near(now: float, days: int = 9) -> list[tuple[int, str]]:
     return sorted(out)
 
 
+def landing(ship: str) -> int:
+    """Minutes the tenders take to bring this ship's passengers ashore."""
+    return int(SHIPS.get(ship, {}).get("landing") or LANDING)
+
+
 def visit_id(t0: int, ship: str) -> str:
     return berlin_day(t0).isoformat() + "-" + ship
 
@@ -182,7 +195,7 @@ def plan(ship: str, t0: int, trial: set | None = None, allowed: set | None = Non
     acts: list[dict] = []
     forced = "book" in trial   # a trial of bookings also tries one withdrawal
     for p in range(S["passengers"]):
-        land = t0 + R.uniform(0, LANDING * 60)
+        land = t0 + R.uniform(0, landing(ship) * 60)
         acts.append({"t": land, "p": p, "kind": "pay", "to": "pier", "amount": 1})
         n = R.randint(*S["per"])
         stops: list[str] = []
@@ -271,6 +284,8 @@ class Cruise:
         self.logbook: deque = deque(maxlen=LOG_KEEP)
         self.incidents: list[dict] = []
         self.last_send = 0.0
+        self.hold_until = 0.0     # no send before this (a send went unanswered)
+        self.slow_until = 0.0     # half pace until this
         self._verdict = (0.0, None)
         self._pruned = 0.0
         self.load_state()
@@ -351,7 +366,8 @@ class Cruise:
         cur = None
         if self.cur:
             cur = {k: self.cur.get(k) for k in ("id", "ship", "t0", "landed", "left", "note", "trial", "allowed", "sent", "refused",
-                                                "skipped", "unsent", "brake_half", "wait", "booked", "landed_at")}
+                                                "skipped", "unsent", "brake_half", "wait", "booked", "landed_at",
+                                                "unanswered", "quiet", "quiet_took", "quiet_lost")}
             cur["done"] = sorted(self.cur["done"])
         try:
             tmp = self.state_path + ".tmp"
@@ -445,7 +461,7 @@ class Cruise:
                         "skipped": 0, "unsent": 0, "brake_half": 0, "wait": None, "booked": []}
             saved = getattr(self, "_saved_cur", None)
             if saved and saved.get("id") == vid:   # the relay restarted during this visit: carry on where it was
-                for k in ("landed", "left", "note", "trial", "allowed", "sent", "refused", "skipped", "unsent", "brake_half", "wait", "booked", "landed_at"):
+                for k in ("landed", "left", "note", "trial", "allowed", "sent", "refused", "skipped", "unsent", "brake_half", "wait", "booked", "landed_at", "unanswered", "quiet", "quiet_took", "quiet_lost"):
                     if k in saved:
                         self.cur[k] = saved[k]
                 self.cur["done"] = set(saved.get("done") or [])
@@ -491,7 +507,7 @@ class Cruise:
             return "approach"
         if not v["landed"]:
             return "waiting"
-        if now < t0 + LANDING * 60:
+        if now < t0 + landing(v["ship"]) * 60:
             return "landing"
         if now < t0 + (VISIT_MIN - BOARDING) * 60:
             return "ashore"
@@ -568,6 +584,7 @@ class Cruise:
         s = {"id": v["id"], "ship": v["ship"], "name": SHIPS[v["ship"]]["name"], "t0": v["t0"], "landed": v["landed"],
              "end": v["left"] or v["t0"] + VISIT_MIN * 60, "note": v["note"], "trial": v["trial"],
              "sent": v["sent"], "refused": v["refused"], "skipped": v["skipped"] + unsent, "half": v["brake_half"],
+             "unanswered": v.get("unanswered", 0), "unanswered_took": v.get("quiet_took", 0),
              "passengers": SHIPS[v["ship"]]["passengers"]}
         clean = v["landed"] and not v["left"]
         for k in v["trial"]:
@@ -602,8 +619,9 @@ class Cruise:
             return False
         if state is None:
             return False
-        gap = 60 / RATE * (2 if state == "strained" else 1)
-        if now - self.last_send < gap or not self.budget():
+        slow = state == "strained" or now < self.slow_until
+        gap = 60 / RATE * (2 if slow else 1)
+        if now < self.hold_until or now - self.last_send < gap or not self.budget():
             return False
         act = None
         for a in v["acts"]:
@@ -619,7 +637,7 @@ class Cruise:
             break
         if act is None:
             return False
-        if state == "strained":
+        if slow:
             v["brake_half"] += 1
         v["done"].add(act["i"])
         self.last_send = now
@@ -691,8 +709,25 @@ class Cruise:
         d = st.get("data") or {}
         seq = int(d.get("sequence_number") or 0)   # the node counts what waits in its mempool; nothing cached, so a restarted chain is fine
         tip = int(d.get("tip_height") or 0)
+        quiet = v.setdefault("quiet", {})
+        if name in quiet:   # this passenger's last send went unanswered: did the node take it after all?
+            q = quiet.pop(name)
+            took = seq > q["seq"]
+            v["quiet_took" if took else "quiet_lost"] = v.get("quiet_took" if took else "quiet_lost", 0) + 1
+            self.write({"t": int(self.clock()), "visit": v["id"], "ship": ship, "i": q["i"], "p": act["p"], "kind": "unanswered checked",
+                        "took": took, "note": "the node took it after all (the sequence moved on)" if took else "it did not reach the node"})
         tx = await asyncio.to_thread(self.build, ship, act, seq, tip, base_fee(gov()), rid)
         res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))
+        if res is None:   # no answer in time (or the relay's connection to the node dropped): not a refusal
+            now = self.clock()
+            self.hold_until, self.slow_until = now + QUIET_HOLD, now + QUIET_SLOW
+            v["unanswered"] = v.get("unanswered", 0) + 1
+            v.setdefault("quiet", {})[name] = {"seq": seq, "i": act["i"]}
+            entry.update(seq=seq, height=tip, ok=None, note=f"no answer from the node to sendtx; the ship waits {QUIET_HOLD} s, then goes at half pace")
+            entry["tx"] = tx
+            self.write(entry)
+            log.info("cruise %s %s unanswered", v["id"], act["kind"])
+            return None
         ok = bool(res) and res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False
         entry.update(seq=seq, height=tip, ok=ok, hash=((res or {}).get("data") or {}).get("tx_hash") if ok else None)
         if ok:
