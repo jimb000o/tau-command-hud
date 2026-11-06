@@ -42,7 +42,7 @@ SHIPS = os.environ.get("BLOG_SHIPS", "/ships")  # the painted ships (rabbit/art/
 IMG = os.path.join(PUBLIC, "img")               # hero pictures and charts, node.tauhud.com/blog/img/
 SHARE = os.path.join(PUBLIC, "a")               # one small page per article for link previews, node.tauhud.com/blog/a/<id>.html
 EVERY = 600
-PICS_VERSION = 2   # raise when the hero picture changes: every article's picture is made anew once (2: numbers and Rico)
+PICS_VERSION = 3   # raise when the hero picture changes: every article's picture is made anew once (2: numbers and Rico, 3: one story on refusals)
 CHECK_WAIT = 3 * 3600      # a visit whose bookings were never checked is drafted this long after it ended
 RETRY_AFTER = 2 * 3600
 KINDS = ("pay", "bill", "book", "cancel")
@@ -472,16 +472,23 @@ def numbers_of(f: dict) -> list[str]:
     out = []
     if f.get("simulated passengers"):
         out.append(f"{f['simulated passengers']} simulated passengers, every stop a real transaction")
-    acc, ref = f.get("accepted in all"), f.get("refused in all")
+    # one story everywhere: a send the node never answered is a timeout, even where the old rule logged it as a refusal
+    old = f.get("refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)") or 0
+    acc, ref = f.get("accepted in all"), (f.get("refused in all") or 0) - old
     if acc is not None:
-        out.append(f"{acc} transactions accepted by the node" + (f", {ref} refused" if ref else ", none refused"))
+        out.append(f"{acc} transactions accepted by the node" + (f", {ref} refused" if ref > 0 else ", none refused"))
+    if old:
+        out.append(f"{old} got no answer from our node in time, and the ship counted them as refusals")
     una = f.get("sends our node did not answer in time (not refusals)")
     if una:
         out.append(f"{una} got no answer from our node in time" + (f", {f['of those, reached the chain after all']} of them reached the chain all the same"
                                                                    if f.get("of those, reached the chain after all") else ""))
     left = f.get("left early")
     if isinstance(left, dict) and left.get("minutes in port") is not None:
-        out.append(f"the ship left after {left['minutes in port']} minutes: {left.get('why') or 'no reason logged'}")
+        why = left.get("why") or "no reason logged"
+        if old and "refus" in why and ref <= 0:
+            why = "its brake took the missing answers for refusals"
+        out.append(f"the ship left after {left['minutes in port']} minutes: {why}")
     elif f.get("landed") is False:
         out.append("the ship did not land" + (f": {f['why not landed']}" if f.get("why not landed") else ""))
     if f.get("incidents"):

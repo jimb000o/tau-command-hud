@@ -138,8 +138,11 @@ def hero(art: str, ships: str, card: list[str], ship: str, out: str, stats: list
             od.rounded_rectangle([x, y, x + tw, y + th], radius=16, fill=(8, 12, 24, 228), outline=(57, 255, 138, 110), width=2)
             fn = font(54 if len(str(num)) <= 5 else 40, 700)
             od.text((x + 20, y + 18), str(num), font=fn, fill=(57, 255, 138, 255) if i == 0 else (242, 242, 242, 255))
-            for j, part in enumerate(wrap(od, str(label), font(21, 500), tw - 36)[:2]):
-                od.text((x + 20, y + 88 + j * 26), part, font=font(21, 500), fill=(190, 196, 204, 255))
+            size, lines = 21, wrap(od, str(label), font(21, 500), tw - 36)
+            if len(lines) > 2:   # a longer label gets a smaller type rather than losing its last word
+                size, lines = 18, wrap(od, str(label), font(18, 500), tw - 36)
+            for j, part in enumerate(lines[:2 if size == 21 else 3]):
+                od.text((x + 20, y + (88 if size == 21 else 84) + j * (size + 5)), part, font=font(size, 500), fill=(190, 196, 204, 255))
         pic = Image.alpha_composite(pic, over)
     pic.convert("RGB").save(out, quality=90)
     return out
@@ -176,14 +179,17 @@ def visit_stats(facts: dict) -> list[tuple[str, str]]:
     acc = facts.get("accepted in all")
     if acc is not None:
         out.append((str(acc), "accepted by the node"))
-    una = (facts.get("sends our node did not answer in time (not refusals)") or 0) + \
-        (facts.get("refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)") or 0)
+    old = facts.get("refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)") or 0
+    una = (facts.get("sends our node did not answer in time (not refusals)") or 0) + old
     if una:
-        out.append((str(una), "no answer in time"))
-    ref = (facts.get("refused in all") or 0) - (facts.get("refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)") or 0)
-    out.append((str(max(0, ref)), "refused by the node"))
-    if facts.get("bookings checked after the visit") and len(out) < 4:
-        out.append((str(facts["bookings checked after the visit"] - (facts.get("bookings the chain had not paid out") or 0)), "bookings paid out"))
+        # one story with the article: these were timeouts; say so when the ship's brake counted them as refusals
+        out.append((str(una), "timeouts, counted as refusals" if old else "no answer in time"))
+    ref = (facts.get("refused in all") or 0) - old
+    if ref > 0:
+        out.append((str(ref), "refused by the node"))
+    checked = facts.get("bookings checked after the visit")
+    if checked:
+        out.append((f"{checked - (facts.get('bookings the chain had not paid out') or 0)}/{checked}", "bookings paid out by the chain"))
     return out[:4]
 
 
@@ -198,11 +204,11 @@ def visit_charts(facts: dict, base: str) -> list[tuple[str, dict]]:
     skip = facts.get("stops skipped") or 0
     plan = (facts.get("landed") or {}).get("transactions planned") if isinstance(facts.get("landed"), dict) else None
     if acc or skip:
-        parts = [("accepted by the node", acc, OK), ("no answer in time", una + old, AMBER),
+        parts = [("accepted by the node", acc, OK), ("timeout, no answer", una + old, AMBER),
                  ("refused by the node", ref - old, (255, 77, 109)), ("skipped", skip, (92, 92, 100))]
         t = f"{acc} of {plan} planned stops went through" if plan else f"{acc} stops went through"
-        sub = "refused by the node: none" if ref - old <= 0 else f"refused by the node: {ref - old}"
-        out.append((base + "-stops.png", split([p for p in parts if p[1] > 0], t, f"{facts.get('ship') or 'The ship'}, {facts.get('date', '')} · {sub}"),
+        out.append((base + "-stops.png", split([p for p in parts if p[1] > 0], t, f"{facts.get('ship') or 'The ship'}, {facts.get('date', '')}"
+                                                         + (f" · the ship counted the {old} timeouts as refusals" if old else "")),
                     {"en": "Where the planned stops went, from the ship's logbook.", "zh": "计划的停靠去了哪里，来自游轮日志。",
                      "ja": "計画された立ち寄りの行方（船のログブックより）。"}))
     per = facts.get("sends per 10 minutes") or []
