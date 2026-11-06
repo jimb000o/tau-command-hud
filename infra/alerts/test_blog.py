@@ -108,6 +108,9 @@ check(blog.publish_cli(did, dry=False, force=False) == 1, "a draft with an inven
 d = json.load(open(os.path.join(TMP, "blog", "drafts", st["drafts"][did] + ".json")))
 check(d["image"].endswith(f"/blog/img/{did}-hero.jpg") and os.path.exists(os.path.join(TMP, "blog", "img", f"{did}-hero.jpg")), "the draft has its hero picture")
 check(len(d["figures"]) == 2 and all(os.path.exists(os.path.join(TMP, "blog", "img", os.path.basename(f["src"]))) for f in d["figures"]), "and two charts of the visit")
+import blog_pics  # noqa: E402
+check(blog_pics.visit_stats(f) == [("34/90", "minutes in port"), ("122", "accepted by the node"), ("8", "no answer in time"), ("0", "refused by the node")],
+      "the numbers on the picture come from the facts")
 check(d["card"][0] == "The MS Dry Run left after 34 minutes" and d["card"][-1].startswith("Tau HUD blog"), "the card on the picture")
 share = open(os.path.join(TMP, "blog", "a", did + ".html")).read()
 check('og:image" content="https://node.tauhud.com/blog/img/' in share and "summary_large_image" in share, "publishing writes the link-preview page with the picture")

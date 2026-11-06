@@ -2375,5 +2375,10 @@
     "tag": "Blog",
     "on": "2026-11-06",
     "html": "Blog: every article now has a picture made from the island's own painting, with the ship and a card that says at a glance why it matters; it shows on top of the article, in the list, and in the link preview on Telegram, X and elsewhere (each article has its own share link). Charts drawn from the logbook numbers sit inside the text where they support it. The MS Dry Run article got three: where the 247 planned stops went, how often our node did not answer per hour, and the ship's pace against the 120 sends it may make every 10 minutes. The drafts our server writes after each ship get the same pictures by themselves. The page is laid out for reading now: one centred column of about 70 characters on every screen from phone to 3440 wide, type that grows with the screen, pictures a little wider than the text, a reading time and a thin progress line while you read, and the newest article large on the list."
+  },
+  {
+    "tag": "Blog",
+    "on": "2026-11-06",
+    "html": "Blog: the title picture now joins the game and the data. On a White Rabbit Key article it is the island’s own painting with the ship, the card that says why it matters, the visit’s key numbers as tiles on the water (for the MS Dry Run: 34 of 90 minutes in port, 122 accepted, 8 without an answer in time, 0 refused) and Rico of Radio Coco looking on, painted as in the game. The numbers come from the logbook facts the article was written from; existing pictures are made anew once."
   }
 ]

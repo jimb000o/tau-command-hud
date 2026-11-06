@@ -90,6 +90,24 @@
       "ja": "船の 10 分ごとの送信数：ほとんど半分の速さで、許される 120 件を大きく下回っています。"
      }
     }
+   ],
+   "stats": [
+    [
+     "34/90",
+     "minutes in port"
+    ],
+    [
+     "122",
+     "accepted by the node"
+    ],
+    [
+     "8",
+     "no answer in time"
+    ],
+    [
+     "0",
+     "refused by the node"
+    ]
    ]
   }
  ]
