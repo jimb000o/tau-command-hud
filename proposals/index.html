@@ -109,6 +109,8 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .news li em { font-style: normal; color: var(--dim); }
 .news li a { color: var(--dim); }
 .empty { color: var(--dim); font-size: 13px; padding: 18px 4px; }
+.list > li.morerow { display: flex; align-items: center; gap: 12px; padding: 8px 12px; color: var(--dim); font-size: 12px; }
+.list > li.morerow button { font: 600 11px var(--display); letter-spacing: .08em; text-transform: uppercase; color: #fff; background: transparent; border: 1px solid var(--hair); border-radius: 999px; padding: 8px 14px; cursor: pointer; min-height: 36px; }
 .empty b { color: #fff; }
 .grp { margin: 10px 0 6px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .grp .guess { float: right; color: #ffb13b; text-decoration: none; border: 1px solid rgba(255,177,59,.6); border-radius: 999px; padding: 2px 8px; letter-spacing: .14em; } .grp .guess:hover { background: #ffb13b; color: #000; }
@@ -316,7 +318,7 @@ const DATA = params.get("data") || "https://node.tauhud.com/proposals.json";
 const POLL = SIM ? 3000 : 10000;   // the simulation is local and cheap; live reads the tracker file, rewritten after every block
 const STATUS = { voting: "waiting for votes", agreed: "agreed", active: "in force", dropped: "dropped" };
 const X_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.2 2.3h3.4l-7.4 8.4 8.7 11.5h-6.8l-5.3-7-6.1 7H1.3l7.9-9L.9 2.3h7l4.8 6.4 5.5-6.4zm-1.2 17.9h1.9L7.1 4.2H5.1l11.9 16z"/></svg>';
-let D = null, filter = "decided", failures = 0, hovering = false, pending = false;
+let D = null, filter = "decided", failures = 0, hovering = false, pending = false, SHOWN_ALL = 0;
 
 /* ---------------- one screen on wide displays ---------------- */
 function fit() {
@@ -463,7 +465,8 @@ function render() {
         : `<li class="quiet">No proposal needs votes right now.</li>`}</ul>`) + sched;   // the programme ahead after what is open now
   const shown = P.filter(p => filter === "all" || (filter === "decided" ? p.status === "active" || p.status === "dropped" : p.status === filter));
   $("allCount").textContent = `(${shown.length})`;
-  $("allList").innerHTML = shown.length ? shown.map(rowOf).join("")
+  const first = Math.min(shown.length, SHOWN_ALL || (innerWidth < 700 ? 12 : 40));   // a screenful first on phones, the rest on request
+  $("allList").innerHTML = shown.length ? shown.slice(0, first).map(rowOf).join("") + (first < shown.length ? `<li class="morerow"><button type="button" data-more="${first + 40}">Show ${Math.min(40, shown.length - first)} more</button><span>${first} of ${shown.length}</span></li>` : "")
     : (P.length ? `<li class="empty">None with this filter.</li>` : `<li class="empty">No rule change has been proposed on this chain yet. The genesis rules are in force.</li>${HOWTO}`);
   const E = D.events || [];
   const keyOf = e => e.key || `${e.kind}:${e.h}:${e.headline}`, fresh = k => seenNews && !seenNews.has(k);   // an event that arrived while the page was open flashes once
@@ -696,7 +699,9 @@ document.addEventListener("click", e => {
   const b = e.target.closest("[data-id]"); if (b) openDetail(D.proposals.find(p => p.id === b.dataset.id), true);
   const sc = e.target.closest("[data-sched]"); if (sc) openSched(SCHED[+sc.dataset.sched]);
   const f = e.target.closest("[data-f]");
-  if (f) { filter = f.dataset.f; document.querySelectorAll("#chips button").forEach(x => x.setAttribute("aria-pressed", x === f)); render(); }
+  if (f) { filter = f.dataset.f; SHOWN_ALL = 0; document.querySelectorAll("#chips button").forEach(x => x.setAttribute("aria-pressed", x === f)); render(); }
+  const more = e.target.closest("[data-more]");
+  if (more) { SHOWN_ALL = +more.dataset.more; render(); }
 });
 addEventListener("hashchange", () => openFromHash(true));
 // lists freeze while the pointer is on them, so nothing moves under the reader

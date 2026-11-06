@@ -65,7 +65,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
 .panel h2 { margin: 0 0 10px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .seg { margin-left: auto; display: inline-flex; border: 1px solid var(--hair); border-radius: 999px; overflow: hidden; letter-spacing: .08em; }
-.seg button { font: 600 10px var(--display); letter-spacing: .12em; text-transform: uppercase; background: none; color: var(--dim); border: 0; padding: 5px 12px; cursor: pointer; min-height: 28px; }
+.seg button { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; background: none; color: var(--dim); border: 0; padding: 5px 12px; cursor: pointer; min-height: 28px; }
 .seg button[aria-pressed="true"] { background: #fff; color: #000; }
 /* the wall: one card per rule text */
 .wall { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); align-content: start; }
@@ -76,7 +76,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .card .what div + div { margin-top: 2px; }
 .card .meta { color: var(--dim); font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .card .meta a { color: var(--dim); }
-.chip { display: inline-flex; align-items: center; gap: 6px; font: 600 10px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--ok); border: 1px solid rgba(57,255,138,.45); border-radius: 999px; padding: 2px 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--ok); border: 1px solid rgba(57,255,138,.45); border-radius: 999px; padding: 2px 8px; }
 .chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); }
 .agree { display: flex; align-items: center; gap: 8px; color: var(--dim); font-size: 12px; }
 .agree .dots { display: inline-flex; gap: 3px; flex-wrap: wrap; }
@@ -92,6 +92,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .b.go { color: #000; background: var(--ok); border-color: var(--ok); }
 .b.go:hover { background: #fff; border-color: #fff; }
 .empty { border: 1px dashed var(--hair); border-radius: 8px; padding: 16px; color: var(--dim); }
+.morerow { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; color: var(--dim); font-size: 12px; padding: 4px 0; }
 .empty b { color: var(--text); }
 .skel { height: 150px; border-radius: 8px; border: 1px solid var(--line); background: linear-gradient(90deg, rgba(255,255,255,.02), rgba(255,255,255,.06), rgba(255,255,255,.02)); background-size: 200% 100%; animation: shimmer 1.4s infinite linear; }
 @keyframes shimmer { to { background-position: -200% 0; } }
@@ -284,7 +285,14 @@ function render() {
   $("kWallets").textContent = fmt(new Set(W.rules.flatMap(r => r.users)).size);
   $("kNow").textContent = SIM ? "–" : fmt(W.rules.filter(inForce).length);
   if (!list.length) { wall.replaceChildren(el("div", { class: "empty" }, el("b", { text: T("No rules on the chain yet.") }), " ", T("Be the first: write one in the wallet, and it shows up here after the next block."))); return; }
-  wall.replaceChildren(...list.map((r, i) => card(r, i)));
+  /* a screenful of cards first (a phone showed 900 cards in one 56,000 px page), the rest on request */
+  const first = Math.min(list.length, W.shown || (innerWidth < 700 ? 10 : 24));
+  wall.replaceChildren(...list.slice(0, first).map((r, i) => card(r, i)));
+  if (first < list.length) {
+    const b = el("button", { class: "b more", type: "button", text: F("Show {n} more", { n: Math.min(24, list.length - first) }) });
+    b.addEventListener("click", () => { W.shown = first + 24; render(); });
+    wall.append(el("div", { class: "morerow" }, b, el("span", { text: F("{a} of {b} rules", { a: first, b: list.length }) })));
+  }
 }
 function card(r, i) {
   const rr = readRule(r.text), live = inForce(r), mine = me && r.users.includes(me);

@@ -392,8 +392,8 @@ ITEMS.forEach((it, i) => { it.no = i + 1; });
 /* ---------------- one screen on wide displays ---------------- */
 function fit() {
   const w = innerWidth, h = innerHeight;
-  const on = w >= 1500 && h >= 800 && w / h >= 1.3;   // three panels need room; smaller screens scroll the page
-  const z = on ? Math.max(1, Math.min(2, w / 1600, h / 820)) : 1;
+  const on = w >= 1200 && h >= 700 && w / h >= 1.3;   // three panels need room; a 1366 × 768 laptop scales down a little instead of scrolling
+  const z = on ? Math.max(.84, Math.min(2, w / 1600, h / 820)) : 1;
   const root = document.documentElement;
   root.classList.toggle("fit", on);
   root.style.setProperty("--z", z);

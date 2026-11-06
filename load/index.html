@@ -308,6 +308,7 @@ function roomForShip() {
 }
 
 let LAST = null, FITTED = false;
+const keptLoad = () => { try { const j = JSON.parse(localStorage.getItem("tauhud-load-last")); return j && Array.isArray(j.sealed) && Date.now() / 1000 - (j.generated_at || 0) < 86400 * 3 ? j : null; } catch (e) { return null; } };
 async function tick() {
   const st = $("state");
   if (SAMPLE) { LAST = sample(); st.className = "state snap"; $("stateText").textContent = T("Sample numbers"); render(LAST); fit(); return; }
@@ -316,11 +317,17 @@ async function tick() {
     if (!r.ok) throw new Error(r.status);
     LAST = await r.json();
     if (!LAST || !Array.isArray(LAST.sealed)) throw new Error("empty");
+    try { localStorage.setItem("tauhud-load-last", JSON.stringify(LAST)); } catch (e) {}
     st.className = "state live"; $("stateText").textContent = T("Live from our node");
     render(LAST); if (!FITTED) { FITTED = true; fit(); }
   } catch (e) {
-    st.className = "state snap"; $("stateText").textContent = T("Relay unreachable");
-    if (!LAST) { $("vWord").textContent = "–"; $("vWhy").textContent = T("Our relay does not answer right now; the page tries again every 30 seconds."); }
+    st.className = "state snap";
+    /* the relay is away: the last answer this browser saw stays on the page, marked with its time, instead of empty frames */
+    const kept = LAST || keptLoad();
+    if (kept && !LAST) { LAST = kept; render(LAST); if (!FITTED) { FITTED = true; fit(); } }
+    $("stateText").textContent = kept ? F("Relay unreachable · last seen {t}", { t: hhmm(kept.generated_at || 0) }) : T("Relay unreachable");
+    if (!kept) { $("vWord").textContent = "–"; $("vWhy").textContent = T("Our relay does not answer right now; the page tries again every 30 seconds."); }
+    else { $("vWhy").textContent = F("Our relay does not answer right now; these are the numbers of {t}. The page tries again every 30 seconds.", { t: hhmm(kept.generated_at || 0) }); }
   }
 }
 tick();

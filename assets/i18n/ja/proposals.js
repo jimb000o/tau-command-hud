@@ -1,5 +1,6 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Show {n} more": "さらに {n} 件",
   "scheduled": "予定済み",
   "SCHEDULED": "予定済み",
   "What happens": "何が起きるか",
