@@ -57,6 +57,7 @@ summary { list-style: none; cursor: default; } summary::-webkit-details-marker {
 .panel h2 i { font-style: normal; color: var(--ok); letter-spacing: .04em; }
 .panel h2 .st { margin-left: auto; letter-spacing: .08em; text-transform: none; font: 12px var(--mono); color: var(--dim); }
 .panel h2 .st.ok { color: var(--ok); }
+.panel h2 .st.sim { color: var(--amber); }
 .panel p { margin: 0 0 8px; }
 .panel.done { border-color: rgba(57,255,138,.28); }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; }
@@ -127,7 +128,7 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
     <p class="lead">A second key for your test wallet: a code from your phone before a payment goes out.</p>
     <p class="sub">Your account's own rule says <b>"the Guardian co-signs my payments"</b>. Small ones up to a daily allowance it signs by itself; for the rest you type the 6-digit code from your Authenticator app here, and it co-signs on Tau Testnet Alpha. <b>It can say yes to your payment, never send one</b>, and it holds no key of yours. Test AGRS have no value.</p>
   </div>
-  <p class="note" id="simNote" hidden><b>Simulation is on.</b> The Guardian works only on the real testnet: switch the HUD to Live to connect your app.</p>
+  <p class="note" id="simNote" hidden><b>Simulation is on: a demo with play values.</b> Scan the demo QR code with your app, or use the play code 123456. Nothing goes on the chain and nothing leaves your browser; on Live the same steps act on Tau Testnet Alpha.</p>
   <main class="main">
     <div class="col">
       <section class="panel" id="pWallet" aria-labelledby="hWallet">
@@ -197,7 +198,7 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
 "use strict";
 const $ = id => document.getElementById(id);
 const NODE = "wss://node.tauhud.com", RELAY = "https://node.tauhud.com";
-const SIM = !!(window.TauSim && TauSim.on);
+const SIM = !!(window.TauSim && TauSim.on), DEMO = SIM;   // the simulation plays the whole way through with play values
 if (SIM) document.body.classList.add("sim");
 if (matchMedia("(max-width: 1000px)").matches) $("howD").open = false;
 const T = s => (window.TauI18n ? TauI18n.t(s) : s);
@@ -219,8 +220,57 @@ const WORDS = "acorn amber anchor apple arrow atlas badge baker bamboo banjo bar
 const words = a => { const h = B.sha256(new TextEncoder().encode(a)); return [h[8], h[9], h[10]].map(x => WORDS[x]).join(" · "); };
 const msg = (id, text, cls = "") => { const m = $(id); m.textContent = text || ""; m.className = "msg " + cls; };
 
+/* ---------- the simulation: a demo with play values (nothing on the chain, nothing leaves the browser) ---------- */
+const DEMO_SECRET = "TAUHUDGUARDIANDEMO2026ABCDEFGHIJ", DEMO_G = "de".repeat(48), DEMO_PK = "5a".repeat(48), DEMO_TO = "c0".repeat(48), DEMO_OTHER = "ab".repeat(48);
+let D = { enrolled: false, since: null, approvals: 0, auto: null, today: null, clause: null, reqs: [] };
+try { const d = JSON.parse(sessionStorage.getItem("guardian-demo") || "null"); if (d && typeof d === "object") D = { ...D, ...d }; } catch (e) {}
+const saveDemo = () => { try { sessionStorage.setItem("guardian-demo", JSON.stringify(D)); } catch (e) {} };
+const base32 = t => { const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; let bits = 0, val = 0; const out = []; for (const c of t) { val = (val << 5) | A.indexOf(c); bits += 5; if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; } } return new Uint8Array(out); };
+/* the demo checks a real TOTP for the demo key (RFC 6238, one step either way), or the play code */
+async function demoCode(code) {
+  if (code === "123456") return true;
+  try {
+    const k = await crypto.subtle.importKey("raw", base32(DEMO_SECRET), { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+    const step = Math.floor(Date.now() / 30000);
+    for (const t of [step - 1, step, step + 1]) {
+      const b = new ArrayBuffer(8); new DataView(b).setUint32(4, t >>> 0);
+      const h = new Uint8Array(await crypto.subtle.sign("HMAC", k, b)), o = h[19] & 15;
+      const v = (((h[o] & 0x7f) << 24) | (h[o + 1] << 16) | (h[o + 2] << 8) | h[o + 3]) % 1000000;
+      if (String(v).padStart(6, "0") === code) return true;
+    }
+  } catch (e) {}
+  return false;
+}
+async function demoApi(path, body) {
+  const p = path.split("?")[0], bad = why => ({ ok: false, why: T(why) });
+  await new Promise(r => setTimeout(r, 250));
+  if (p === "info") return { ok: true, data: { pubkey: DEMO_G, slot: SLOT_DEMO, enabled: true, accounts: D.enrolled ? 1 : 0, max_accounts: 50 } };
+  if (p === "account") return { ok: true, data: D.enrolled ? { enrolled: true, since: D.since, approvals: D.approvals, auto: D.auto, today: D.today } : { enrolled: false } };
+  if (p === "enroll") return { ok: true, data: { secret: DEMO_SECRET, uri: `otpauth://totp/Tau%20HUD%20Guardian%20demo:play%20wallet?secret=${DEMO_SECRET}&issuer=Tau%20HUD%20Guardian%20demo` } };
+  if (!(await demoCode(String(body.code || "")))) return bad("Wrong code (demo): use the code your app shows for the demo key, or the play code 123456.");
+  if (p === "confirm") { D.enrolled = true; D.since = Math.floor(Date.now() / 1000); }
+  else if (p === "remove") { D.enrolled = false; D.auto = null; D.today = null; }
+  else if (p === "settings") { D.auto = body.auto; D.today = body.auto ? { sum: Math.min(80, body.auto.day), count: 1, day: utcDay() } : null; }
+  else if (p === "approve") { const i = D.reqs.findIndex(q => q.request_id === body.request_id); if (i < 0) return bad("No such payment waits (demo)."); D.reqs.splice(i, 1); D.approvals += 1; }
+  saveDemo(); return { ok: true, data: p === "settings" ? { auto: D.auto } : {} };
+}
+const SLOT_DEMO = 18, utcDay = () => new Date().toISOString().slice(0, 10);
+function demoRefresh() {
+  W.seq = 7; W.tip = 12345; W.clause = D.clause; W.reqs = { outgoing: D.reqs };
+  const holders = D.clause ? [W.pk, DEMO_OTHER] : [DEMO_OTHER];
+  W.slots = { places: 2, taken: holders.length, holders }; W.lease = { places: 2, taken: holders.length, holders: holders.map(a => ({ addr: a, managed: false, until: null })), waiting: 0, position: null };
+}
+/* a rule in the demo brings one play payment that waits for the code: above the allowance, or above the limit */
+function demoRule(text) {
+  if (text === NEUTRAL) { D.clause = null; D.reqs = []; }
+  else { D.clause = text; const lim = parseInt((/#x([0-9a-f]{6})/i.exec(text) || [])[1] || "0", 16);
+    D.reqs = [{ request_id: "de".repeat(32), amount: Math.max(lim + 250, 750), recipient_pubkey: DEMO_TO, status: "open", expire_at_height: 12345 + 1000, approvers: { "1": { pubkey: DEMO_G, state: "awaiting" } } }]; }
+  saveDemo(); demoRefresh(); setTimeout(loadGuardian, 50); return { ok: true };
+}
+
 /* ---------- the Guardian's door (infra/guardian/guardian.py) ---------- */
 async function api(path, body) {
+  if (DEMO) return demoApi(path, body);
   try {
     const r = await fetch(RELAY + "/guardian/" + path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : { cache: "no-store" });
     const j = await r.json().catch(() => ({}));
@@ -230,6 +280,7 @@ async function api(path, body) {
 }
 /* the account's key signs "tauhud guardian <action> <account> <time>": only the owner can connect or remove an app */
 function proof(action) {
+  if (DEMO) return { account: W.pk, at: 0, signature: "" };
   const at = Math.floor(Date.now() / 1000);
   return { account: W.pk, at, signature: B.bytesToHex(B.sign(new TextEncoder().encode(`tauhud guardian ${action} ${W.pk} ${at}`), W.sk)) };
 }
@@ -316,6 +367,7 @@ function ruleTx(text, seq, life) {
   return { ...tx, signature: B.bytesToHex(B.sign(new TextEncoder().encode(canon(d)), W.sk)) };
 }
 async function sendRule(text) {
+  if (DEMO) return demoRule(text);
   if (W.seq == null) return { ok: false, why: T("Our node has not answered yet; nothing was sent.") };
   const tx = ruleTx(text, W.seq), body = JSON.stringify(tx);
   const chk = await rpc("checktx " + body);
@@ -351,9 +403,9 @@ const waiting = () => (((W.reqs && W.reqs.outgoing) || []).filter(q => q.status 
   .filter(q => Object.values(q.approvers || {}).some(a => a.pubkey === guardPk() && a.state === "awaiting")));
 let shown = null;   // the secret behind the QR code on screen
 function render() {
-  const live = !SIM, have = !!W.pk, enrolled = !!(G.acct && G.acct.enrolled), lim = myLimit();
-  $("simNote").hidden = live;
-  if (have) { $("who").replaceChildren(document.createTextNode(T("This browser's wallet: ")), Object.assign(document.createElement("span"), { className: "words", textContent: words(W.pk), translate: false }), document.createTextNode("  " + short(W.pk))); $("makeRow").hidden = true; }
+  const live = !SIM || DEMO, have = !!W.pk, enrolled = !!(G.acct && G.acct.enrolled), lim = myLimit();
+  $("simNote").hidden = !SIM;
+  if (have) { $("who").replaceChildren(document.createTextNode(T(DEMO && W.pk === DEMO_PK ? "Play wallet (demo): " : "This browser's wallet: ")), Object.assign(document.createElement("span"), { className: "words", textContent: words(W.pk), translate: false }), document.createTextNode("  " + short(W.pk))); $("makeRow").hidden = true; }
   // 1: the app
   const appOk = live && have && !!G.info && G.info.enabled !== false;
   $("pApp").classList.toggle("done", enrolled);
@@ -396,7 +448,7 @@ function render() {
   document.querySelector(".main").classList.toggle("payFirst", list.length > 0); document.body.classList.toggle("busy", list.length > 0);
   if (list.length > 0 && matchMedia("(min-width: 1001px) and (max-height: 820px)").matches && !howTouched) $("howD").open = false;
   const keep = new Map([...$("pay").querySelectorAll("li[data-id]")].map(li => [li.dataset.id, li]));
-  $("pay").replaceChildren(...(list.length ? list.map(q => keep.get(q.request_id) || payRow(q, hit)) : [Object.assign(document.createElement("li"), { className: "fine", textContent: T(!live ? "Nothing to confirm in the simulation." : !have ? "Nothing to confirm without a wallet." : "Nothing waits for your code right now.") })]));
+  $("pay").replaceChildren(...(list.length ? list.map(q => keep.get(q.request_id) || payRow(q, hit)) : [Object.assign(document.createElement("li"), { className: "fine", textContent: T(DEMO && !W.clause ? "The play payment appears once your rule is set (demo)." : !live ? "Nothing to confirm in the simulation." : !have ? "Nothing to confirm without a wallet." : "Nothing waits for your code right now.") })]));
   /* from the wallet's "Enter your code ›": land on that payment with the cursor in its code field, once */
   const row = hit && !jumped && $("pay").querySelector("li.hit"); if (row) { jumped = true; row.scrollIntoView({ block: "center" }); const i = row.querySelector("input"); if (i) i.focus({ preventScroll: true }); }
 }
@@ -435,7 +487,7 @@ function renderLine(full) {
 function payRow(q, want) {
   const li = document.createElement("li"); li.dataset.id = q.request_id; if (q.request_id === want) li.className = "hit";
   const t = document.createElement("div");
-  t.append(Object.assign(document.createElement("b"), { textContent: F("{n} test AGRS to {x}", { n: fmt(q.amount), x: "" }) }), Object.assign(document.createElement("span"), { className: "words", textContent: words(q.recipient_pubkey), translate: false }),
+  t.append(Object.assign(document.createElement("b"), { textContent: F("{n} test AGRS to {x}", { n: fmt(q.amount), x: words(q.recipient_pubkey) }) }),
     Object.assign(document.createElement("small"), { textContent: short(q.recipient_pubkey) + " · " + F("waits for your code for {n} more blocks (until block {a})", { n: fmt(Math.max(0, q.expire_at_height - head())), a: q.expire_at_height }) }));
   const inp = Object.assign(document.createElement("input"), { className: "code", inputMode: "numeric", maxLength: 6, placeholder: "123456", autocomplete: "one-time-code" });
   inp.setAttribute("aria-label", T("Code from the app"));
@@ -447,7 +499,7 @@ function payRow(q, want) {
     btn.disabled = true; m.textContent = T("Checking the code…"); m.className = "msg wait";
     const r = await api("approve", { request_id: q.request_id, code });
     btn.disabled = false; inp.value = "";
-    if (r.ok) { m.textContent = T("Co-signed. The payment goes through with the next block."); m.className = "msg ok"; btn.disabled = true; setTimeout(() => { refresh(); loadGuardian(); }, 5000); }
+    if (r.ok) { m.textContent = T(DEMO ? "Co-signed (demo). On the real testnet the payment would go through with the next block." : "Co-signed. The payment goes through with the next block."); m.className = "msg ok"; btn.disabled = true; setTimeout(() => { if (DEMO) demoRefresh(); refresh(); loadGuardian(); }, DEMO ? 1200 : 5000); }
     else { m.textContent = r.why; m.className = "msg bad"; }
   };
   inp.onkeydown = e => { if (e.key === "Enter") btn.click(); };
@@ -510,7 +562,7 @@ $("btnRule").onclick = async () => {
   $("btnRule").disabled = true; msg("msgRule", T("Signing and sending the rule…"), "wait");
   const r = await sendRule(guardRule(wantLim, guardPk()));
   touched = false;
-  msg("msgRule", r.ok ? T("Sent. Once a block holds the rule, the Guardian works as set here.") : r.why, r.ok ? "ok" : "bad");
+  msg("msgRule", r.ok ? T(DEMO ? "Set (demo). On the real testnet a block would hold the rule now; a play payment waits in step 3." : "Sent. Once a block holds the rule, the Guardian works as set here.") : r.why, r.ok ? "ok" : "bad");
   render();
 };
 $("codeRule").onkeydown = e => { if (e.key === "Enter") $("btnRule").click(); };
@@ -523,12 +575,12 @@ $("btnUnrule").onclick = async () => {
   if (!confirm(T("Remove your rule? Payments then go through without a code, and payments waiting now fail."))) return;
   msg("msgRule", T("Signing and sending…"), "wait");
   const r = await sendRule(NEUTRAL);
-  msg("msgRule", r.ok ? T("Sent. Once a block holds it, your rule place is free again.") : r.why, r.ok ? "ok" : "bad");
+  msg("msgRule", r.ok ? T(DEMO ? "Removed (demo)." : "Sent. Once a block holds it, your rule place is free again.") : r.why, r.ok ? "ok" : "bad");
 };
 
 render();
 if (!SIM) { connect(); loadGuardian(); setInterval(() => { if (!document.hidden) { refresh(); } }, 20000); setInterval(() => { if (!document.hidden) loadGuardian(); }, 60000); }
-else { $("stNode").textContent = T("Simulation"); }
+else { if (!W.pk) W.pk = DEMO_PK; demoRefresh(); $("stNode").textContent = T("Demo with play values"); $("stNode").className = "st sim"; loadGuardian(); }
 </script>
 </body>
 </html>

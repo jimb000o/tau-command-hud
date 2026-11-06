@@ -2,9 +2,6 @@
 TauI18n.add({ strings: {
   "Guardian": "Guardian",
   "It can say yes to your payment, never send one": "あなたの支払いに「はい」と言えるだけで、自分から送ることは決してできません",
-  "{e1} The Guardian works only on the real testnet: switch the HUD to Live to connect your app.": "{e1} Guardian は本物のテストネットでのみ動きます。アプリをつなぐには HUD をライブに切り替えてください。",
-  "Simulation is on.": "シミュレーション中です。",
-  "The Guardian works only on the real testnet: switch the HUD to Live to connect your app.": "Guardian は本物のテストネットでのみ動きます。アプリをつなぐには HUD をライブに切り替えてください。",
   "Your test wallet": "あなたのテストウォレット",
   "Asking our node": "ノードに問い合わせ中",
   "No test wallet in this browser yet.": "このブラウザにはまだテストウォレットがありません。",
@@ -135,5 +132,16 @@ TauI18n.add({ strings: {
   "If our server is down, payments that wait for your code run out unconfirmed; they never go through without the code.": "私たちのサーバーが落ちている間、コードを待つ支払いは確認されないまま期限切れになります。コードなしで通ることはありません。",
   "Connect your app first: otherwise a payment waiting for your code could not be confirmed.": "先にアプリをつないでください。そうしないと、コードを待つ支払いを確認できません。",
   "Connected. Now choose what the Guardian does.": "接続しました。次に Guardian の動作を選んでください。",
-  "waits for your code for {n} more blocks (until block {a})": "あと {n} ブロックの間あなたのコードを待ちます（ブロック {a} まで）"
+  "waits for your code for {n} more blocks (until block {a})": "あと {n} ブロックの間あなたのコードを待ちます（ブロック {a} まで）",
+  "Simulation is on": "シミュレーション中",
+  "a demo with play values.": "これはお試し値のデモです。",
+  "Scan the demo QR code with your app, or use the play code 123456. Nothing goes on the chain and nothing leaves your browser; on Live the same steps act on Tau Testnet Alpha.": "アプリでデモの QR コードを読み取るか、お試しコード 123456 を使ってください。チェーンには何も送られず、ブラウザの外にも何も出ません。Live では同じ手順が Tau Testnet Alpha に作用します。",
+  "Play wallet (demo): ": "お試しウォレット（デモ）：",
+  "The play payment appears once your rule is set (demo).": "ルールを設定すると、お試しの支払いが現れます（デモ）。",
+  "Wrong code (demo): use the code your app shows for the demo key, or the play code 123456.": "コードが違います（デモ）：アプリがデモ用キーに表示するコードか、お試しコード 123456 を使ってください。",
+  "No such payment waits (demo).": "そのような支払いは待っていません（デモ）。",
+  "Co-signed (demo). On the real testnet the payment would go through with the next block.": "共同署名しました（デモ）。本物のテストネットなら、この支払いは次のブロックで通ります。",
+  "Demo with play values": "お試し値のデモ",
+  "Set (demo). On the real testnet a block would hold the rule now; a play payment waits in step 3.": "設定しました（デモ）。本物のテストネットなら、いまブロックにルールが入ります。手順 3 でお試しの支払いが待っています。",
+  "Removed (demo).": "削除しました（デモ）。"
 } });
