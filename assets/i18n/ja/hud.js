@@ -161,6 +161,7 @@ TauI18n.add({ strings: {
   "AGRS or ETH, one address for both · What it pays for: time · server · domain": "AGRS または ETH、両方に同じアドレス · 支払い先：時間 · サーバー · ドメイン",
   "AGRS per tx": "AGRS / tx",
   "Alerts": "通知",
+  "Rabbit": "ホワイトラビット・キー",
   "Cruise": "クルーズ",
   "Menu": "メニュー",
   "All transactions ({n})": "すべてのトランザクション（{n}）",
