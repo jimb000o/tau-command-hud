@@ -27,7 +27,7 @@ def at(day: str, hm: str = "12:00") -> float:
 
 
 NOW = at("2026-11-20")
-cfg = {"days": 14, "headlines": [
+cfg = {"days": 14, "stay": ["kept"], "headlines": [
     {"text": "Old news", "href": "card/", "since": "2026-10-30"},
     {"text": "Fresh news", "href": "rules/", "since": "2026-11-18"},
     {"text": "Pointer", "href": "start/", "keep": True},
@@ -37,6 +37,7 @@ cfg = {"days": 14, "headlines": [
 updates = [{"on": "2026-10-30", "major": {"id": "a", "title": "Old feature", "link": "/a/"}},
            {"on": "2026-11-19", "major": {"id": "b", "title": "New feature", "link": "/b/"}},
            {"on": "2026-11-19", "major": {"id": "c", "title": "Same as a headline", "link": "/rules/"}},
+           {"on": "2026-10-20", "major": {"id": "kept", "title": "Kept feature", "link": "/k/"}},
            {"on": "2026-10-30", "major": {"id": "rabbit", "title": "The game", "link": "/rabbit/"}},
            {"on": "2026-11-19", "major": {"id": "roundup-1", "title": "Round-up", "link": "/"}}]
 blog = [{"id": "p1", "on": "2026-11-07", "title": {"en": "Leaves soon"}}, {"id": "p2", "on": "2026-10-01", "title": {"en": "Long gone"}}]
@@ -46,14 +47,15 @@ pulse = {"generated_at": NOW - 600, "news_ai": "on", "news": [{"ts": NOW - 3 * 8
 ln = tw.line(cfg, updates, blog, pulse, NOW)
 texts = lambda xs: [i["text"] for i in xs]
 check(texts(ln["dated"])[0] in ("New feature",) and "Fresh news" in texts(ln["dated"]), "new items are on the line, newest first")
-check("Old news" in texts(ln["gone"]) and "Old feature" in texts(ln["gone"]) and "Blog: Long gone" in texts(ln["gone"]), "older than 14 days: gone")
+check("Old news" in texts(ln["gone"]) and "Old feature" in texts(ln["gone"]) and "Story: Long gone" in texts(ln["gone"]), "older than 14 days: gone")
 check("Over" in texts(ln["gone"]), "until passed: gone even when young")
+check("Kept feature" in texts(ln["standing"]), "a feature in stay stays")
 check("Pointer" in texts(ln["standing"]) and "The game" in texts(ln["standing"]), "keep and the island game stay")
 check(texts(ln["undated"]) == ["No date"], "a headline without since is undated")
 check("Same as a headline" not in texts(ln["dated"]), "a feature with a headline's link is left out, as on the page")
 check("Round-up" not in texts(ln["dated"] + ln["gone"]), "round-ups never go on the line")
 check("Testnet: IDNI fix" in texts(ln["dated"]) and "Testnet: IDNI old" in texts(ln["gone"]), "IDNI news stays a week")
-check(texts(ln["soon"]) == ["Blog: Leaves soon"], "what leaves within two days is named")
+check(texts(ln["soon"]) == ["Story: Leaves soon"], "what leaves within two days is named")
 
 p = tw.problems(ln, pulse, NOW)
 check(set(p) == {"undated"}, f"fresh line: only the undated headline is a problem ({sorted(p)})")

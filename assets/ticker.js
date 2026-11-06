@@ -67,11 +67,11 @@
   const loadNews = first => (first && window.TauLog ? Promise.resolve(TauLog()) : fetch("assets/updates.json", { cache: "no-cache" }).then(r => r.json())).then(list => {
     const have = new Set((CFG.headlines || []).filter(alive).map(h => path(h.href)));
     const majors = (Array.isArray(list) ? list : []).filter(e => e && e.major && e.major.title && !/^roundup/.test(e.major.id || ""));
-    const pick = majors.slice(-6).reverse().filter(e => !have.has(path(e.major.link)) && young(e.on)).slice(0, 4);   // a feature leaves after "days"
+    const pick = majors.slice(-6).reverse().filter(e => !have.has(path(e.major.link)) && (young(e.on) || (CFG.stay || []).includes(e.major.id))).slice(0, 4);   // a feature leaves after "days", unless ticker.json "stay" keeps it
     const glow = majors.filter(e => path(e.major.link) === GLOW).pop();   // the game stays on the line, first, after newer features
     NEWS = (glow ? [glow, ...pick.filter(e => e !== glow).slice(0, 3)] : pick)
       .map(e => ({ kind: "news", text: String(e.major.title), href: path(e.major.link) === "" ? "" : String(e.major.link).replace(/^\//, ""),
-        fresh: path(e.major.link) === GLOW, tip: gist(e.html), tipRaw: true }));
+        fresh: path(e.major.link) === GLOW, on: e.on, tip: gist(e.html), tipRaw: true }));
   }).catch(() => {});
 
   /* ---------- IDNI's own work: news headlines about what landed on tau-testnet main in the last week, from the build
@@ -140,10 +140,10 @@
     return { kind: on ? "radio" : "note", text: on ? w.on : w.next, href: "rabbit/", raw: true, on, tip: w.tip, tipRaw: true };
   };
 
-  /* ---------- the blog (tauhud.com/blog/): each new article for "days" after it came out, newest first, in the reader's
+  /* ---------- the title story: each new article of the blog (tauhud.com/blog/) by its own headline, no "blog" label,
+     for "days" after it came out, newest first and opening the line, in the reader's
      language (the articles carry their own Chinese and Japanese); the site's copy and our server's, as on the blog ---------- */
   const NODE = "https://node.tauhud.com";
-  const BLT = { en: "Blog: ", zh: "博客：", ja: "ブログ：" };
   let BLOG = [], blogAt = 0;
   const pickLang = o => (o && typeof o === "object" ? String(o[lang] || "") : lang === "en" ? String(o || "") : "");
   const loadBlog = () => Promise.allSettled([fetch("assets/blog/posts.json", { cache: "no-cache" }).then(r => r.json()),
@@ -151,7 +151,7 @@
     const by = new Map();
     for (const g of got) if (g.status === "fulfilled") for (const p of ((g.value || {}).posts || [])) if (p && p.id) by.set(p.id, p);
     BLOG = [...by.values()].filter(p => young(p.on) && pickLang(p.title)).sort((a, b) => String(b.on).localeCompare(String(a.on))).slice(0, 2)
-      .map(p => ({ kind: "news", text: (BLT[lang] || BLT.en) + pickLang(p.title), href: "blog/?p=" + encodeURIComponent(p.id), raw: true,
+      .map(p => ({ kind: "news", text: pickLang(p.title), href: "blog/?p=" + encodeURIComponent(p.id), raw: true, on: p.on,
         tip: pickLang(p.dek), tipRaw: true }));
   }).catch(() => {});
 
@@ -183,7 +183,11 @@
   const SLOTS = ["head", "live", "gazette", "news", "live", "idni", "head", "ship", "night", "blog", "pick", "live", "head", "invite"];
   let slot = 0, headAt = 0, pickAt = 0, inviteAt = 0;
   const from = (list, at) => list.length ? list[at % list.length] : null;
+  /* the line opens with the newest thing on it: the latest title story, else the newest feature */
+  let opened = false;
+  const opener = () => BLOG[0] || NEWS.filter(n => !n.fresh && n.on).sort((a, b) => String(b.on).localeCompare(String(a.on)))[0] || null;
   const next = () => {
+    if (!opened) { opened = true; const o = opener(); if (o && (o.raw || translated(o.text))) return o; }
     /* on the day a new edition comes out, it opens the line and every round after */
     if (slot % SLOTS.length === 0) { const g = gazette(); if (g && g.out) { slot++; return g; } }
     /* in the Night Line's hour, so does the show */
@@ -234,7 +238,8 @@
 
   /* ---------- motion ---------- */
   const SPEED = 46, ZONE = 150, GAP = 18;   // px per second; how far in from the edge a letter is still a glyph; space between items
-  let items = [], last = 0, paused = false, W = 0, dir = -1, tick = 0;
+  let items = [], last = 0, paused = false, W = 0, dir = -1, tick = 0, holdUntil = 0;
+  const HOLD = 5000;   // ms the line stands still when it starts, so the first item can be read from its beginning
   const add = () => {
     const el = build(next()); track.append(el); measure(el);
     const prev = items[items.length - 1];
@@ -245,7 +250,7 @@
   };
   function frame(t) {
     const dt = Math.min(.1, (t - (last || t)) / 1000); last = t;
-    if (!paused) for (const el of items) el._x += dir * SPEED * dt;
+    if (!paused && t > holdUntil) for (const el of items) el._x += dir * SPEED * dt;
     items = items.filter(el => { const gone = dir < 0 ? el._x + el._w < -20 : el._x > W + 20; if (gone) el.remove(); return !gone; });
     const tail = items[items.length - 1];
     if (!tail || (dir < 0 ? tail._x + tail._w < W + 400 : tail._x > -400)) add();
@@ -291,7 +296,7 @@
     const m = (CFG.move || {})[lang] || "left"; dir = m === "right" ? 1 : -1; box.classList.toggle("rtl", dir > 0);
     W = view.clientWidth;
     /* the facts need the page's first readings; give the chain a moment */
-    setTimeout(() => { if (reduced) still(); else requestAnimationFrame(frame); }, 1200);
+    setTimeout(() => { if (reduced) still(); else { holdUntil = performance.now() + HOLD; requestAnimationFrame(frame); } }, 1200);
     setInterval(() => { loadNews(false); loadIdni(); loadBlog(); loadShip(); }, 15 * 60 * 1000);
   });
 })();

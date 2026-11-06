@@ -117,6 +117,9 @@ def line(cfg: dict | None, updates: list | None, blog: list | None, pulse: dict 
         m, at = e["major"], day_ts(e.get("on"))
         if path(m.get("link")) == GLOW:
             continue
+        if m.get("id") in (cfg.get("stay") or []):   # ticker.json "stay": a feature kept on the line
+            standing.append({"what": "feature", "text": str(m["title"]), "at": at, "ends": None})
+            continue
         if path(m.get("link")) in have and path(m.get("link")):
             continue
         it = {"what": "feature", "text": str(m["title"]), "at": at, "ends": at + life if at is not None else None}
@@ -129,7 +132,7 @@ def line(cfg: dict | None, updates: list | None, blog: list | None, pulse: dict 
             continue
         at = day_ts(p.get("on"))
         title = p["title"].get("en") if isinstance(p["title"], dict) else str(p["title"])
-        it = {"what": "blog", "text": "Blog: " + str(title or ""), "at": at, "ends": at + life if at is not None else None}
+        it = {"what": "blog", "text": "Story: " + str(title or ""), "at": at, "ends": at + life if at is not None else None}
         (dated if at is not None and now < at + life else gone).append(it)
     for n in (pulse or {}).get("news") or []:
         if not isinstance(n, dict) or not n.get("headline"):
