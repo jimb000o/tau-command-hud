@@ -443,7 +443,7 @@ function render() {
   const list = live && have && guardPk() ? waiting() : [];
   $("stPay").textContent = list.length ? F("{n} waiting", { n: list.length }) : "";
   const td = G.acct && G.acct.today;
-  $("todayLine").textContent = mode === "allow" && td ? F("Today by itself: {n} payments, {a} of {b} test AGRS.", { n: td.count, a: fmt(td.sum), b: fmt(auto.day) }) : "";
+  $("todayLine").textContent = mode === "allow" && td ? F(td.count === 1 ? "Today by itself: 1 payment, {a} of {b} test AGRS." : "Today by itself: {n} payments, {a} of {b} test AGRS.", { n: td.count, a: fmt(td.sum), b: fmt(auto.day) }) : "";
   const hit = (location.hash.match(/r=([0-9a-f]{64})/) || [])[1];
   document.querySelector(".main").classList.toggle("payFirst", list.length > 0); document.body.classList.toggle("busy", list.length > 0);
   if (list.length > 0 && matchMedia("(min-width: 1001px) and (max-height: 820px)").matches && !howTouched) $("howD").open = false;

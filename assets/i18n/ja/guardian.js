@@ -143,5 +143,6 @@ TauI18n.add({ strings: {
   "Co-signed (demo). On the real testnet the payment would go through with the next block.": "共同署名しました（デモ）。本物のテストネットなら、この支払いは次のブロックで通ります。",
   "Demo with play values": "お試し値のデモ",
   "Set (demo). On the real testnet a block would hold the rule now; a play payment waits in step 3.": "設定しました（デモ）。本物のテストネットなら、いまブロックにルールが入ります。手順 3 でお試しの支払いが待っています。",
-  "Removed (demo).": "削除しました（デモ）。"
+  "Removed (demo).": "削除しました（デモ）。",
+  "Today by itself: 1 payment, {a} of {b} test AGRS.": "今日の自動署名：1 件、{b} 中 {a} テスト AGRS。"
 } });
