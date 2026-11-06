@@ -3,7 +3,8 @@
 The node learns the network's tip at every handshake (peer head_number), in
 every header-sync reply (tip_number) and in every block announce, but keeps
 none of it; RPC clients only see the local canonical head. This records the
-highest peer tip seen in network/service.py and reports it as `network_tip`
+highest peer tip seen (forgotten 10 minutes after it was last reported, so a
+chain restart does not leave the old run's height behind) in network/service.py and reports it as `network_tip`
 {"number", "seen"} in the getgovernance payload (null until a peer was seen),
 so a dashboard can show "catching up: n / tip" during the initial sync.
 
@@ -36,6 +37,7 @@ replace_once(
     "# Highest peer tip this node has heard of (handshake head, header-sync reply,\n"
     "# block announce). Read by commands/getgovernance.py as `network_tip`.\n"
     "_network_tip: Dict[str, Any] = {\"number\": None, \"seen\": None}\n"
+    "NETWORK_TIP_TTL = 600.0\n"
     "\n"
     "\n"
     "def note_network_tip(number: Any) -> None:\n"
@@ -43,7 +45,11 @@ replace_once(
     "        n = int(number)\n"
     "    except (TypeError, ValueError):\n"
     "        return\n"
-    "    if _network_tip[\"number\"] is None or n >= _network_tip[\"number\"]:\n"
+    "    # Highest wins, but only while fresh: after a chain restart the old run's\n"
+    "    # height is forgotten 10 minutes after anyone last reported it.\n"
+    "    seen = _network_tip[\"seen\"]\n"
+    "    if (_network_tip[\"number\"] is None or n >= _network_tip[\"number\"]\n"
+    "            or seen is None or time.time() - seen > NETWORK_TIP_TTL):\n"
     "        _network_tip[\"number\"] = n\n"
     "        _network_tip[\"seen\"] = time.time()\n"
     "\n"
