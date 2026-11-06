@@ -27,18 +27,6 @@
    "image": "/assets/shots/start.png"
   },
   {
-   "id": "sim-schedule",
-   "at": "2026-11-06T09:00:00Z",
-   "tg": "🧪 <b>TAU HUD · the simulation, every day</b>\n<b>Next to the real testnet, Tau HUD runs a simulated Tau chain in your browser, and twice a day you vote on its consensus.</b>\n\n• 11:20 German time: the simulated validators propose proof of stake\n• 17:20 German time: they propose going back to the fixed validator list\n\nEach vote stays open for 7 minutes, and the simulated validators follow the visitors' majority: more no than yes, and the switch is dropped.\n\n<b>Why it matters</b>\nOn Tau even the consensus is a rule like any other: proposed, voted on, then in force. The simulation lets you try that in minutes, without waiting for a real rule change on the testnet.\n\n<i>Simulated: a made-up chain, the same for every visitor. Nothing here happens on the real Tau testnet. From today the channel no longer posts every switch.</i>",
-   "x": [
-    "🧪 Twice a day you can vote on a simulated Tau chain's consensus: 11:20 German time proof of stake, 17:20 back to fixed validators.",
-    "On Tau even consensus is a rule: proposed, voted on, in force. Try it in 7 minutes."
-   ],
-   "foot": "🧪 Simulation, not the real testnet",
-   "link": "/proposals/?mode=sim",
-   "button": "🧪 Watch the simulation"
-  },
-  {
    "id": "challenge-2026-11-06",
    "at": "2026-11-06T14:00:00Z",
    "tg": "✍️ <b>RULE CHALLENGE · last days</b>\n<b>This week's task closes when the next Daily Consensus is printed, Monday 9 November.</b>\n\nWrite a rule that does it, sign it in your test wallet, and it counts on the real testnet. Good answers are shown on the site. No prizes; test AGRS have no value.",
@@ -49,6 +37,18 @@
    "foot": "✨ From Tau HUD",
    "link": "/challenge/",
    "button": "✍️ This week's task"
+  },
+  {
+   "id": "sim-schedule",
+   "at": "2026-11-07T09:00:00Z",
+   "tg": "🧪 <b>TAU HUD · the simulation, every day</b>\n<b>Next to the real testnet, Tau HUD runs a simulated Tau chain in your browser, and twice a day you vote on its consensus.</b>\n\n• 11:20 German time: the simulated validators propose proof of stake\n• 17:20 German time: they propose going back to the fixed validator list\n\nEach vote stays open for 7 minutes, and the simulated validators follow the visitors' majority: more no than yes, and the switch is dropped.\n\n<b>Why it matters</b>\nOn Tau even the consensus is a rule like any other: proposed, voted on, then in force. The simulation lets you try that in minutes, without waiting for a real rule change on the testnet.\n\n<i>Simulated: a made-up chain, the same for every visitor. Nothing here happens on the real Tau testnet. From today the channel no longer posts every switch.</i>",
+   "x": [
+    "🧪 Twice a day you can vote on a simulated Tau chain's consensus: 11:20 German time proof of stake, 17:20 back to fixed validators.",
+    "On Tau even consensus is a rule: proposed, voted on, in force. Try it in 7 minutes."
+   ],
+   "foot": "🧪 Simulation, not the real testnet",
+   "link": "/proposals/?mode=sim",
+   "button": "🧪 Watch the simulation"
   },
   {
    "id": "spot-rules",

@@ -57,6 +57,7 @@ X_FOOT = "🦍 A shared creature on Tau Testnet Alpha · test AGRS, no value"
 X_TAG = "#TauNet $AGRS"   # every Agorzilla post on X carries these two, once, at the end
 SHOTS = os.environ.get("AGORZILLA_SHOTS", "/shots").strip()
 SHOTS_WAIT = float(os.environ.get("AGORZILLA_SHOTS_WAIT", 1500))
+LATE = float(os.environ.get("AGORZILLA_LATE_HOURS", 6)) * 3600   # an evening owed for longer (a restart) is not posted late
 FONTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
 
 
@@ -406,6 +407,12 @@ def step(latest: dict, state: dict, send=post, send_x=post_x, now: float | None 
             known[q] = g["value"]
     for r in rounds:
         if r["n"] <= state["last"] and r["n"] <= state["x_last"]:
+            continue
+        if r.get("t") and now - r["t"] > LATE:   # missed while the service was down: noted, never posted in a burst
+            log.info("evening %s closed %.0f h ago: not posted late", r["n"], (now - r["t"]) / 3600)
+            state["last"], state["x_last"] = max(state["last"], r["n"]), max(state["x_last"], r["n"])
+            if is_rule(r) and r.get("winner"):
+                known[r["rule"]] = r["winner"]
             continue
         png = picture(r)
         if not png and r.get("winner") and not is_rule(r) and r.get("t") and now - r["t"] < SHOTS_WAIT:

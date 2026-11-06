@@ -9,7 +9,8 @@ off, or cannot be told right now; the engine turns that into incidents:
   summary  a busy stretch (see below), in one post afterwards
 
 No repeats: an incident is posted once however long it lasts, and the same detector stays quiet for its `cooldown`
-after one ended. The first run is silent: what is already going on then is how things are, not news.
+after one ended (two days for the ones that are not outages: ghosts, drops, repeated votes). The first run is silent:
+what is already going on then is how things are, not news. Every start post says in one line why it matters.
 
 Spam guard: when FINDINGS_STORM_AT starts come within FINDINGS_STORM_HOURS (someone testing hard, which is what a
 testnet is for), the bot stops posting them one by one. It keeps a list and posts it once, when things have been calm
@@ -49,14 +50,14 @@ DETECTORS = {
                "label": "our node without the IDNI bootnode"},
     "stall":  {"hold": 0, "end_hold": 0, "cooldown": 7200, "x": True, "recovery": True,
                "label": "no new block for 20+ minutes"},
-    "ghost":  {"hold": 900, "end_hold": 1800, "cooldown": 86400, "x": False, "recovery": False,
+    "ghost":  {"hold": 900, "end_hold": 1800, "cooldown": 172800, "x": False, "recovery": False,
                "label": "ghost transactions (IDNI #81)"},
     "reorg":  {"event": True, "cooldown": 1800, "x": True, "label": "blocks replaced (reorg)"},
     "slow":   {"hold": 900, "end_hold": 900, "cooldown": 10800, "x": False, "recovery": True,
                "label": "blocks much slower than usual"},
-    "drops":  {"hold": 0, "end_hold": 3600, "cooldown": 21600, "x": False, "recovery": False,
+    "drops":  {"hold": 0, "end_hold": 3600, "cooldown": 172800, "x": False, "recovery": False,
                "label": "many transactions dropped"},
-    "votes":  {"hold": 0, "end_hold": 3600, "cooldown": 21600, "x": False, "recovery": False,
+    "votes":  {"hold": 0, "end_hold": 3600, "cooldown": 172800, "x": False, "recovery": False,
                "label": "the same proposal again and again"},
     "behind": {"hold": 900, "end_hold": 300, "cooldown": 10800, "x": False, "recovery": True,
                "label": "our node behind the network"},
@@ -205,8 +206,20 @@ def caught_up(blocks: dict, since: float | None, now: float) -> dict:
     return {"n": len(ts), "gap": max(gaps)}
 
 
+WHY = {  # what each finding means to someone who uses the testnet, in one line
+    "peers": "Tau HUD reads the chain through this one node; while it is cut off, the pages show old numbers. The testnet itself may be fine.",
+    "stall": "One validator seals every block; while it makes none, nothing on the testnet moves, and every transaction sent now waits.",
+    "ghost": "A wallet that trusts the waiting list would think its transaction is still open; the block says it is done. Trust the block.",
+    "reorg": "A transaction in a replaced block may land in another one, or not at all; wait for a few more blocks before you trust one.",
+    "slow": "Slow blocks mean slow confirmations: a transaction waits longer than the usual minute.",
+    "drops": "A dropped transaction never reaches a block, so whoever sent it has to send again. On a testnet that is often someone testing the limits on purpose.",
+    "votes": "The vote itself works; many copies of one proposal show someone trying it, not a change of the rules.",
+    "behind": "Tau HUD reads the chain through its own node; until it catches up, the pages show older numbers than the network has.",
+}
+
+
 def start_post(key: str, f: dict, now: float) -> dict:
-    """{"tg": Telegram HTML, "x": [headline, body]} for the start of an incident."""
+    """{"tg": Telegram HTML, "x": [headline, body]} for the start of an incident: what, the facts, why it matters."""
     e = html.escape
     issue = None
     link = (f"{SITE}/status/", "Live status on Tau HUD")
@@ -253,7 +266,7 @@ def start_post(key: str, f: dict, now: float) -> dict:
         what = (f"{plural(f['hour'], 'transaction')} left the waiting list in the last hour without ever reaching a block "
                 "(refused on re-check, expired or replaced). Maybe someone is testing hard.")
         xb = what
-        facts = [f"Usually about {f['usual']:.0f} an hour"]
+        facts = ["Usually fewer than one an hour" if f["usual"] < 1 else f"Usually about {f['usual']:.0f} an hour"]
     elif key == "votes":
         n, k, span = f["n"], f["accounts"], fmt_dur(max(60, f["span"]))
         if f["noop"] and k == 1:
@@ -281,6 +294,8 @@ def start_post(key: str, f: dict, now: float) -> dict:
     lines = [REAL_LINE, f"<b>{e(head)}</b>", e(what)] + [f"• {e(x)}" for x in facts if x]
     if issue:
         lines.append(f"Known issue: <a href=\"{ISSUE}{issue}\">IDNI #{issue}</a>")
+    if key in WHY:
+        lines += ["", "<b>Why it matters</b>", e(WHY[key])]
     lines += ["", f"<i>{e(FOOT)}</i>", f"<a href=\"{link[0]}\">{link[1]}</a>"]
     return {"tg": "\n".join(lines), "x": [head, xb + (f" Known issue IDNI #{issue}." if issue else "")]}
 

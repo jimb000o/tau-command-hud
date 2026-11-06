@@ -145,6 +145,7 @@ RECAP_ON = os.environ.get("RECAP_ENABLED", "true").lower() in ("1", "true", "yes
 RECAP_WEEKDAY = int(os.environ.get("RECAP_WEEKDAY", 0))   # 0 = Monday
 RECAP_HOUR = int(os.environ.get("RECAP_HOUR", 9))         # local time in RECAP_TZ
 RECAP_TZ = ZoneInfo(os.environ.get("RECAP_TZ", "Europe/Berlin"))   # 09:00 in Germany, summer and winter
+RECAP_LATE = float(os.environ.get("RECAP_LATE_HOURS", 3)) * 3600    # a Monday post missed by longer (a restart) is skipped
 # The weekly paper comes out for each language at RECAP_HOUR on RECAP_WEEKDAY in its readers' own time: Japanese first
 # (09:00 Tokyo), then Chinese (09:00 Beijing), then English (09:00 German time). It is printed once, at the first drop;
 # each language's page shows it from its own drop and the edition before until then.
@@ -3153,7 +3154,7 @@ class Watcher:
             st = self.state["recap"] = {"slot": slot, "posted": {}, "r": r,
                                         "file": datetime.fromtimestamp(slot, timezone.utc).strftime("%Y-%m-%d") + ".png"}
             self.save_state()
-        if "r" not in st or time.time() - st["slot"] > 86400:  # nothing drawn, or a day late: skip this week's post
+        if "r" not in st or time.time() - st["slot"] > RECAP_LATE:  # nothing drawn, or hours late: skip this week's post
             return
         for o in self.outlets:
             got = st["posted"].get(o.name)

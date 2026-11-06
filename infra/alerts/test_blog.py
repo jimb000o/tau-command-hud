@@ -80,6 +80,22 @@ p = blog.posts()["posts"]
 check(len(p) == 1 and p[0]["id"] == did and "check" not in p[0] and "status" not in p[0], "published once, without the check fields")
 check(blog.publish_cli(did, dry=False, force=False) == 0 and len(blog.posts()["posts"]) == 1, "publishing again keeps one copy")
 check(blog.state()["announced"] == [did], "posted to the channels once")
+import contextlib
+import io
+buf = io.StringIO()
+with contextlib.redirect_stdout(buf):
+    blog.announce(p[0], dry=True)
+ann = buf.getvalue()
+tg_part, x_part = ann.split("--- x ---")[0], ann.split("--- x ---")[1].split("--- picture")[0]
+check("<b>In numbers</b>" in tg_part and f"• {f['simulated passengers']} simulated passengers" in tg_part
+      and f"• {f['accepted in all']} transactions accepted by the node" in tg_part and "<b>Why it matters</b>" in tg_part and "/blog/?p=" in tg_part,
+      f"the announcement carries the logbook's numbers and the link {tg_part}")
+check("http" not in x_part and "Tau HUD blog" in x_part and __import__("alerts").x_len(x_part.strip()) <= 280, f"the X copy names the blog without a link {x_part}")
+nums = blog.numbers_of({"simulated passengers": 40, "accepted in all": 122, "refused in all": 0, "sends our node did not answer in time (not refusals)": 8,
+                        "of those, reached the chain after all": 5, "left early": {"minutes in port": 61, "why": "the node refused 5 of the last 20"}})
+check(nums == ["40 simulated passengers, every stop a real transaction", "122 transactions accepted by the node, none refused",
+               "8 got no answer from our node in time, 5 of them reached the chain all the same",
+               "the ship left after 61 minutes: the node refused 5 of the last 20"], f"the numbers, as the logbook counts them {nums}")
 blog.ask_ai = lambda facts: bad
 blog.write_draft(V, T0 + 9000)
 check(blog.publish_cli(did, dry=False, force=False) == 1, "a draft with an invented number is not published without --force")

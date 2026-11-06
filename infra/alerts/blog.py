@@ -369,13 +369,41 @@ def drafts_cli() -> int:
     return 0
 
 
+def numbers_of(f: dict) -> list[str]:
+    """The visit in a few lines, straight from the facts counted off the logbook (never from the article's text)."""
+    out = []
+    if f.get("simulated passengers"):
+        out.append(f"{f['simulated passengers']} simulated passengers, every stop a real transaction")
+    acc, ref = f.get("accepted in all"), f.get("refused in all")
+    if acc is not None:
+        out.append(f"{acc} transactions accepted by the node" + (f", {ref} refused" if ref else ", none refused"))
+    una = f.get("sends our node did not answer in time (not refusals)")
+    if una:
+        out.append(f"{una} got no answer from our node in time" + (f", {f['of those, reached the chain after all']} of them reached the chain all the same"
+                                                                   if f.get("of those, reached the chain after all") else ""))
+    left = f.get("left early")
+    if isinstance(left, dict) and left.get("minutes in port") is not None:
+        out.append(f"the ship left after {left['minutes in port']} minutes: {left.get('why') or 'no reason logged'}")
+    elif f.get("landed") is False:
+        out.append("the ship did not land" + (f": {f['why not landed']}" if f.get("why not landed") else ""))
+    if f.get("incidents"):
+        out.append(f"{len(f['incidents'])} incident report{'s' if len(f['incidents']) != 1 else ''} written during the visit")
+    return out
+
+
 def announce(a: dict, dry: bool) -> None:
+    """The one post per article, on Telegram with the link and on X without (a link makes an X post 13 times dearer):
+    the headline, the visit in numbers from the logbook, why it matters, the link."""
     import alerts
     link = f"{SITE}/blog/?p={a['id']}"
-    tg = "\n\n".join([f"📝 <b>{alerts.html.escape(a['title']['en'])}</b>", alerts.html.escape(a["dek"]["en"]),
-                      "<b>Why it matters</b>\n" + "\n".join("• " + alerts.html.escape(w["en"]) for w in a["why"]),
-                      f'<a href="{link}">Read it on the Tau HUD blog</a>'])
-    x = alerts.x_post([a["title"]["en"], a.get("x") or a["dek"]["en"]], foot="📝 Tau HUD blog")
+    nums = numbers_of(a.get("facts") or {})
+    parts = [f"📝 <b>{alerts.html.escape(a['title']['en'])}</b>", alerts.html.escape(a["dek"]["en"])]
+    if nums:
+        parts.append("<b>In numbers</b>\n" + "\n".join("• " + alerts.html.escape(n) for n in nums))
+    parts += ["<b>Why it matters</b>\n" + "\n".join("• " + alerts.html.escape(w["en"]) for w in a["why"]),
+              f'<a href="{link}">Read it on the Tau HUD blog</a>']
+    tg = "\n\n".join(parts)
+    x = alerts.x_post([a["title"]["en"], a.get("x") or a["dek"]["en"], "The whole story is on the Tau HUD blog."], foot="📝 Tau HUD blog", keep=2)
     pic = a.get("image") and (SITE + a["image"] if a["image"].startswith("/") else a["image"])
     if dry:
         print("--- telegram ---\n" + tg + "\n--- x ---\n" + x + f"\n--- picture: {pic or 'none'}")
