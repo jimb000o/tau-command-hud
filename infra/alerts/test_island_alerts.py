@@ -60,20 +60,22 @@ check("38 moves by the players: 15 speeches on the square, 9 laws passed, 5 emba
 check("the law of the day: Night market every Friday, passed 5 times" in t, "the law of the day by its name")
 check("most ran as Hana (6 campaigns)" in t, "who most people ran as")
 check("the islanders made 120 moves of their own, 7 laws passed" in t, "the islanders' own moves")
-check("A campaign is the week" in t and "governor's count on Monday 00:00 German time" in t and "real transaction on Tau Testnet Alpha" in t and "no value" in t, "the standing explanation of the cycle")
+check("A campaign is the week" not in t and t.rstrip().endswith("<i>Every move is one real transaction on Tau Testnet Alpha, with test AGRS that have no value.</i>"),
+      "a weekday says only what is real about it, not the whole cycle")
 x = alerts.island_x(r)
 check(x.startswith("🐇 The Key Crier: yesterday on the island, 3 November") and "12 campaigns, 7 elections: Hana 4, Marisol 2, Tobias 1. 38 moves" in x
       and "Law of the day: Night market every Friday." in x and x.endswith("#TauNet $AGRS") and alerts.x_len(x) <= 280 and "…" not in x, "the X copy fits")
 q = alerts.island_report("2026-11-04", QUIET, 7)
 qt = alerts.island_text(q)
 check("A quiet day on the island" in qt and "the islanders kept their own politics going: 200 moves of their own, 6 laws passed" in qt
-      and "no visitor made a move" in qt and "A campaign is the week" in qt and "The governor's count" not in qt,
+      and "no visitor made a move" in qt and "A campaign is the week" not in qt and "The governor's count" not in qt,
       "a day without players: the islanders' day, no governor's count on a weekday")
 LAST = {"id": "2026-W44", "from": "2026-10-26", "to": "2026-11-01", "campaigns": 9, "finished": 6,
         "wins": {"hana": 3, "marisol": 2, "tobias": 1}, "governor": "hana", "laws": ["boat", "reef"]}
 m = alerts.island_report("2026-11-01", dict(DAY, last=LAST), 7)
 mt = alerts.island_text(m)
 check(m["week"] and m["week"]["governor"] == "Hana" and m["week"]["span"] == "26 October to 1 November", "the governor's count read from the relay's last week")
+check("A campaign is the week" in mt and "governor's count on Monday 00:00 German time" in mt, "Monday: the standing explanation of the cycle, with the count")
 check("<b>The governor's count, 26 October to 1 November</b>" in mt and "• Hana governs the island this week: 3 campaigns won of 6 that reached the election (9 played)" in mt
       and "• the count: Hana 3, Marisol 2, Tobias 1" in mt and "• laws of the island this week: A school boat every morning; Protect the reef: no big ships in the bay" in mt
       and mt.index("governor's count") < mt.index("Yesterday on the island, 1 November"), "Monday's report opens with the count, then Sunday's day")
@@ -99,13 +101,13 @@ check(len(x.sent) == 1 and "3 November" in x.sent[0][0], "on X: real players mov
 asyncio.run(w.maybe_island(at("2026-11-04T08:00:00Z"), QUIET))
 check(len(tg.sent) == 1, "once")
 asyncio.run(w.maybe_island(at("2026-11-05T07:01:00Z"), dict(DAY, day="2026-11-05")))
-check(len(tg.sent) == 2 and "A quiet day on the island, 4 November" in tg.sent[1][0] and len(x.sent) == 1, "the quiet day on Telegram only")
+check(len(tg.sent) == 1 and len(x.sent) == 1 and w.state["island"]["posted"]["2026-11-04"] == 0, "a day nobody played gets no Key Crier")
 asyncio.run(w.maybe_island(at("2026-11-06T07:01:00Z"), dict(DAY, day="2026-11-06")))
-check(len(tg.sent) == 3 and len(x.sent) == 2, "a day with players two days after the last X copy: on X again")
+check(len(tg.sent) == 2 and len(x.sent) == 2, "a day with players two days after the last X copy: on X again")
 asyncio.run(w.maybe_island(at("2026-11-07T07:01:00Z"), dict(DAY, day="2026-11-07")))
-check(len(tg.sent) == 4 and len(x.sent) == 2, "the next day with players: Telegram only, X had the island yesterday")
+check(len(tg.sent) == 3 and len(x.sent) == 2, "the next day with players: Telegram only, X had the island yesterday")
 asyncio.run(w.maybe_island(at("2026-11-08T12:00:00Z"), dict(DAY, day="2026-11-08")))
-check(len(tg.sent) == 4, "a morning missed is not posted at noon")
+check(len(tg.sent) == 3, "a morning missed is not posted at noon")
 
 # Telegram failing: X goes alone, the Telegram retry later does not repeat it on X
 tg2, x2 = Fake("telegram", fail=True), Fake("x")
@@ -130,7 +132,7 @@ asyncio.run(w3.maybe_island(at("2026-11-02T07:00:30Z"), dict(QUIET, day="2026-11
 check(len(tg3.sent) == 1 and "The governor's count, 26 October to 1 November" in tg3.sent[0][0] and "A quiet day on the island, 1 November" in tg3.sent[0][0]
       and len(x3.sent) == 1 and "governor's count" in x3.sent[0][0], "Monday: the count opens the report of a quiet Sunday, on X too")
 asyncio.run(w3.maybe_island(at("2026-11-03T07:00:30Z"), dict(QUIET, day="2026-11-03", last=LAST)))
-check(len(tg3.sent) == 2 and "The governor's count" not in tg3.sent[1][0] and len(x3.sent) == 1, "Tuesday: Monday's quiet day as usual, the count not repeated, not on X")
+check(len(tg3.sent) == 1 and len(x3.sent) == 1, "Tuesday: Monday was quiet, so no report and the count is not repeated")
 
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)

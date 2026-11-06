@@ -11,7 +11,7 @@ import tempfile
 from datetime import datetime, timezone
 
 TMP = tempfile.mkdtemp()
-os.environ.update(STATE_PATH=os.path.join(TMP, "alerts.json"), PUBLIC_DIR=TMP, TELEGRAM_BOT_TOKEN="", X_API_KEY="")
+os.environ.update(STATE_PATH=os.path.join(TMP, "alerts.json"), PUBLIC_DIR=TMP, TELEGRAM_BOT_TOKEN="", X_API_KEY="", DEEPDIVE_DAYS="0,1,2,3,4,5,6")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import alerts  # noqa: E402
 
@@ -73,6 +73,22 @@ asyncio.run(w.maybe_deepdive(at("2026-11-07T13:00:00Z")))
 check(len(tg.sent) == 3, "the file is used up: nothing until a new one is added")
 asyncio.run(w.maybe_deepdive(at("2026-11-07T13:05:00Z"), POSTS + [{"id": "d", "title": "D", "text": "About D.", "x": ["Head D"], "link": "/d/"}]))
 check(len(tg.sent) == 4 and "<b>D</b>" in tg.sent[3][0], "a new entry in the file goes out the same day")
+
+# only on some days of the week (Monday, Wednesday, Friday by default)
+alerts.DEEPDIVE_DAYS = (0, 2, 4)
+tgd, xd = Fake("telegram"), Fake("x")
+wd = alerts.Watcher([tgd, xd])
+wd.state.pop("deepdives", None)
+wd.state.pop("x", None)
+asyncio.run(wd.maybe_deepdive(at("2026-11-03T13:00:00Z"), POSTS))
+check(tgd.sent == [], "Tuesday: no closer look")
+asyncio.run(wd.maybe_deepdive(at("2026-11-04T13:00:00Z")))
+check(len(tgd.sent) == 1 and "<b>A</b>" in tgd.sent[0][0], "Wednesday: the first one")
+asyncio.run(wd.maybe_deepdive(at("2026-11-05T13:00:00Z")))
+check(len(tgd.sent) == 1, "Thursday: none")
+asyncio.run(wd.maybe_deepdive(at("2026-11-06T13:00:00Z")))
+check(len(tgd.sent) == 2 and "<b>B</b>" in tgd.sent[1][0], "Friday: the second")
+alerts.DEEPDIVE_DAYS = tuple(range(7))
 
 # Telegram failing: X goes alone, once; the Telegram retry later does not repeat it on X
 tg2, x2 = Fake("telegram", fail=True), Fake("x")

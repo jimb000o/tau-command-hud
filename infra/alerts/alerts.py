@@ -188,9 +188,13 @@ SITE_MAJOR_MAX_AGE_DAYS = int(os.environ.get("SITE_MAJOR_MAX_AGE_DAYS", 3))
 # last one goes out as one post on Telegram and X; one new page or feature gets its own post with its screenshot.
 SITE_SLOTS = tuple(sorted(int(x) for x in os.environ.get("SITE_SLOTS", "8,12,16").split(",")))
 SITE_SLOT_HOURS = float(os.environ.get("SITE_SLOT_HOURS", 4))  # a slot not used by then is over: nothing new at night
-SITE_DIGEST_MIN = int(os.environ.get("SITE_DIGEST_MIN", 3))       # fewer smaller changes wait for a later slot…
-SITE_DIGEST_MAX_WAIT = float(os.environ.get("SITE_DIGEST_MAX_WAIT_DAYS", 7)) * 86400  # …but not longer than this
-SITE_DIGEST_LINES = 8
+# The smaller changes go out once a week (since 6 November 2026: up to three digests a day read like a changelog), at
+# SITE_DIGEST_HOUR UTC on SITE_DIGEST_WEEKDAY (Friday 17:00 German winter time), at most SITE_DIGEST_LINES of them by
+# name, the rest counted; Telegram only unless SITE_DIGEST_X=true.
+SITE_DIGEST_WEEKDAY = int(os.environ.get("SITE_DIGEST_WEEKDAY", 4))   # 0 = Monday
+SITE_DIGEST_HOUR = int(os.environ.get("SITE_DIGEST_HOUR", 16))        # UTC
+SITE_DIGEST_LINES = int(os.environ.get("SITE_DIGEST_LINES", 5))
+SITE_DIGEST_X = os.environ.get("SITE_DIGEST_X", "false").lower() in ("1", "true", "yes")
 SITE_LOG_LINK = f"{SITE}/#updates"
 # Posts planned ahead (the month's calendar): assets/posts-plan.json on the site, each sent once at its time on Telegram
 # and X, or within PLAN_WINDOW_HOURS after it (a later restart); after that it is over, never posted late.
@@ -208,6 +212,8 @@ DEEPDIVE_ON = os.environ.get("DEEPDIVES", "true").lower() in ("1", "true", "yes"
 DEEPDIVE_URL = os.environ.get("DEEPDIVES_URL", f"{SITE}/assets/deepdives.json")
 DEEPDIVE_HOUR = int(os.environ.get("DEEPDIVE_HOUR", 13))     # UTC (14:00 German winter time)
 DEEPDIVE_X_EVERY = max(1, int(os.environ.get("DEEPDIVE_X_EVERY", 2)))
+# the days of the week a closer look goes out (0 = Monday); Monday, Wednesday and Friday since 6 November 2026
+DEEPDIVE_DAYS = tuple(sorted({int(x) for x in os.environ.get("DEEPDIVE_DAYS", "0,2,4").split(",") if x.strip()}))
 DEEPDIVE_LINE = "🔎 TAU HUD · a closer look"
 DEEPDIVE_FOOT = "🔎 A closer look at Tau HUD"
 # The Key Crier: White Rabbit Key's shared island (relay /isle) summed up every morning for the day before, at
@@ -1111,14 +1117,17 @@ def today_x(r: dict) -> str:
     if w and w["total"]:   # a spike names only its cause, so the meaning still fits
         spike = bool(w.get("ratio")) and w["ratio"] >= 1.5
         out.append(wallets_head(w, short=True) + ": " + ", ".join(wallets_short(w, 1 if spike else 2, new=not spike)) + ".")
-    out += [f"• {h}" for h in r["events"]]
     why = today_why(r, short=True)
-    if why:
-        out.append("Why it matters: " + why)
-    if r["blocks"] and not (why and w and w["total"]):   # room is short: the meaning before the block count
-        out.append(f"{plural(r['blocks'], 'block')}{pace}" + (f", {plural(r['txs'], 'transaction')}" if r["txs"] else ""))
+    blocks = f"{plural(r['blocks'], 'block')}{pace}" + (f", {plural(r['txs'], 'transaction')}" if r["txs"] else "") if r["blocks"] else None
+    # what fits goes in this order; the end is dropped first when room is short, so the meaning comes before the events
+    # (each rule event had its own post when it happened) and, with the wallets told, before the block count
+    if why and w and w["total"]:
+        out += ["Why it matters: " + why] + ([blocks] if blocks else [])
+    else:
+        out += ([blocks] if blocks else []) + (["Why it matters: " + why] if why else [])
     if not r["txs"] and not r["practice"]:
         out += quiet_lines(r)[:2]
+    out += [f"• {h}" for h in r["events"]]
     if r["practice"] and not (w and w["total"]):
         out.append(f"• {plural(r['practice'], 'practice vote')}, the rules stay as they are")
     out += [f"Coming up: {c['title']} at block #{fmt_n(c['at'])}{c['eta']}." for c in r["coming"][:1]]
@@ -1229,6 +1238,15 @@ def catchup_x(majors: list[dict]) -> str:
     return x_post([head] + [f"• {n[:1].upper() + n[1:]}" for n in names], SITE_LOG_LINK, foot=X_SITE_NOTE)
 
 
+def digest_slot(t: float) -> float | None:
+    """The latest weekly digest time (SITE_DIGEST_WEEKDAY at SITE_DIGEST_HOUR UTC) at or before t, within the last week."""
+    d = datetime.fromtimestamp(t, timezone.utc).replace(hour=SITE_DIGEST_HOUR, minute=0, second=0, microsecond=0)
+    d -= timedelta(days=(d.weekday() - SITE_DIGEST_WEEKDAY) % 7)
+    if d.timestamp() > t:
+        d -= timedelta(days=7)
+    return d.timestamp()
+
+
 def digest_x(items: list[dict]) -> str:
     """The smaller changes on X: how many, then a short line each, as many as fit."""
     return x_post([f"🛠 {plural(len(items), 'smaller change')} to Tau HUD"] + [f"• {i['area']}: {i['line']}" for i in items],
@@ -1239,15 +1257,21 @@ def major_buttons(m: dict) -> dict:
     return {"inline_keyboard": [[{"text": "✨ Open it", "url": m["link"]}, {"text": "📜 All updates", "url": SITE_LOG_LINK}]]}
 
 
-def digest_text(items: list[dict], lines: int = SITE_DIGEST_LINES) -> str:
-    """The digest of smaller changes, oldest first; more than `lines` are counted, not listed."""
+def digest_order(items: list[dict]) -> list[dict]:
+    """What a visitor notices first: changes to the pages before the ones to the bot and the alerts, oldest first."""
+    return sorted(items, key=lambda i: (str(i.get("area", "")).lower() in ("alerts", "bot", "infra", "server"), 0))
+
+
+def digest_text(items: list[dict], lines: int | None = None) -> str:
+    """The week's smaller changes, the ones a visitor notices first; more than `lines` are counted, not listed."""
     e = html.escape
+    lines = SITE_DIGEST_LINES if lines is None else lines
+    items = digest_order(items)
     shown, rest = items[:lines], len(items) - lines
-    since = min((i.get("on") or "" for i in items), default="")
-    head = f"<b>{plural(len(items), 'smaller change')} to Tau HUD" + (f" since {e(since)}" if since else "") + "</b>"
+    head = f"<b>This week on Tau HUD: {plural(len(items), 'smaller change')}</b>"
     out = [DIGEST_LINE, head, ""] + [f"• <b>{e(i['area'])}</b>: {e(i['line'])}" for i in shown]
     if rest > 0:
-        out.append(f"…and {plural(rest, 'more change')} in the Updates log.")
+        out.append(f"…and {rest} more in the Updates log.")
     out += ["", f"<a href=\"{e(SITE_LOG_LINK)}\">Read every change in the Updates log</a>", "", f"<i>{e(SITE_NOTICE)}</i>"]
     text = "\n".join(out)
     if len(text) > 3900 and lines > 1:  # Telegram's limit is 4096 characters
@@ -1446,11 +1470,14 @@ def island_text(r: dict) -> str:
     out += [f"• {e(x)}" for x in r["lines"]]
     if not r["players"]:
         out.append("• no visitor made a move; the island waits for you")
-    out += ["", "<i>A campaign is the week, Monday to Sunday, an island day a real day: speeches on the square, laws in "
-                "the hall, pacts at the bar, embassy money and rumours on Radio Coco, then the election on Sunday evening. "
-                "Everyone plays their own campaign and nobody waits for anybody; the island adds up what everyone did that "
-                "day, and every campaign won is a ballot in the governor's count on Monday 00:00 German time. Every move "
-                "is one real transaction on Tau Testnet Alpha, with test AGRS that have no value.</i>"]
+    if w:   # the standing explanation once a week, with the count; the other days say only what is real about it
+        out += ["", "<i>A campaign is the week, Monday to Sunday, an island day a real day: speeches on the square, laws in "
+                    "the hall, pacts at the bar, embassy money and rumours on Radio Coco, then the election on Sunday evening. "
+                    "Everyone plays their own campaign and nobody waits for anybody; the island adds up what everyone did that "
+                    "day, and every campaign won is a ballot in the governor's count on Monday 00:00 German time. Every move "
+                    "is one real transaction on Tau Testnet Alpha, with test AGRS that have no value.</i>"]
+    else:
+        out += ["", "<i>Every move is one real transaction on Tau Testnet Alpha, with test AGRS that have no value.</i>"]
     return "\n".join(out)
 
 
@@ -2488,6 +2515,8 @@ class Watcher:
         slot = datetime.fromtimestamp(now, timezone.utc).replace(hour=DEEPDIVE_HOUR, minute=0, second=0, microsecond=0).timestamp()
         if now < slot or now > slot + 3 * 3600 or st.get("slot", 0) >= slot:
             return
+        if datetime.fromtimestamp(slot, timezone.utc).weekday() not in DEEPDIVE_DAYS:
+            return
         tg = self.tg_on()
         # the day's post: the one started this slot (Telegram or X went first), else the file's next unposted one
         p = next((q for q in st["posts"] if q["id"] == st.get("current") and st.get("current_slot") == slot), None) \
@@ -2529,7 +2558,7 @@ class Watcher:
     # ---------- the Key Crier: White Rabbit Key's shared island, the day before (relay /isle) ----------
     async def maybe_island(self, now: float | None = None, snap: dict | None = None):
         """Keep the island's day as the relay sums it up (the last reading before midnight UTC is the day), and every
-        morning at ISLAND_HOUR UTC report the day before: Telegram when anyone moved, the X copy only for a day real
+        morning at ISLAND_HOUR UTC report the day before: Telegram when a real player moved, the X copy only for a day real
         players moved and at most every ISLAND_X_EVERY_DAYS days; X never waits for Telegram. On Monday the report
         opens with the governor's count of the week just ended (relay `last`), then goes out on X as well."""
         if not ISLAND_ON:
@@ -2558,9 +2587,11 @@ class Watcher:
         if not d or day in st["posted"] and day in st["x_posted"]:
             return
         r = island_report(day, d, st.get("length") or ISLAND_DAYS)
-        if not r["lines"] and not r["week"]:
-            st["posted"][day] = st["x_posted"][day] = 0   # nobody and nothing: no report
+        if not r["players"] and not r["week"]:
+            # nobody played: no report (since 6 November 2026; before, the islanders' own day was reported every morning)
+            st["posted"][day] = st["x_posted"][day] = 0
             self.save_state()
+            log.info("island %s: no visitor moved, no Key Crier", day)
             return
         tg = self.tg_on()
         if tg and day not in st["posted"] and st.get("pause_until", 0) <= now:
@@ -2715,6 +2746,7 @@ class Watcher:
                 self.take_updates(entries, now)
             self.save_state()
         tg = self.tg_on()
+        await self.maybe_digest(now, tg)
         slot = site_slot(now)
         if slot is None or now - slot >= SITE_SLOT_HOURS * 3600:
             return
@@ -2748,21 +2780,33 @@ class Watcher:
                 await self.post_x(text_x, "site " + ", ".join(m["key"] for m in for_x), now, pic)
             self.save_state()
             return
-        if st["pending"] and (len(st["pending"]) >= SITE_DIGEST_MIN or now - st["pending"][0]["at"] >= SITE_DIGEST_MAX_WAIT):
-            items = list(st["pending"])
-            keys = sorted(i.get("key", "") for i in items)
-            if tg_due:
-                if not await self.site_send(tg, digest_text(items), digest_buttons(), now):
-                    return
-                log.info("site updates: digest of %d posted", len(items))
-                st["pending"], st["slot"], st["last_digest"] = [], slot, round(now)
-            st["x_slot"] = slot
-            self.save_state()
+
+    async def maybe_digest(self, now: float, tg: list):
+        """The smaller changes of the week in one post at the weekly digest time (SITE_SLOT_HOURS after it, it is over
+        and they wait for the next week); Telegram, and X only with SITE_DIGEST_X."""
+        st = self.state["site"]
+        ds = digest_slot(now)
+        if not st["pending"] or ds is None or now - ds >= SITE_SLOT_HOURS * 3600:
+            return
+        tg_due = bool(tg) and st.get("pause_until", 0) <= now and st.get("digest_slot", 0) < ds
+        x_due = SITE_DIGEST_X and st.get("x_digest_slot", 0) < ds and (st.get("digest_slot", 0) >= ds or self.x_alone(st, now))
+        if not tg_due and not x_due:
+            return
+        items = list(st["pending"])
+        keys = sorted(i.get("key", "") for i in items)
+        if tg_due:
+            if not await self.site_send(tg, digest_text(items), digest_buttons(), now):
+                return
+            log.info("site updates: the week's digest of %d posted", len(items))
+            st["pending"], st["digest_slot"], st["last_digest"] = [], ds, round(now)
+            x_due = SITE_DIGEST_X and st.get("x_digest_slot", 0) < ds
+        if x_due:
+            st["x_digest_slot"] = ds
             if st.get("x_digest") != keys:   # the same digest, sent alone to X earlier while Telegram failed, not again
                 st["x_digest"] = keys
                 self.save_state()
                 await self.post_x(digest_x(items), "site digest", now, spare=True)
-            self.save_state()
+        self.save_state()
 
     async def site_send(self, tg: list, text: str, buttons: dict, now: float, picture: str | None = None) -> bool:
         st = self.state["site"]

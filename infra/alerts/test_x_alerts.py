@@ -75,7 +75,7 @@ for k, t in texts.items():
     check("\n\n" in t and not t.startswith(alerts.X_REAL), f"{k}: headline first, parts apart")
 check(texts["rule"].startswith("✅ Users agreed: the base fee goes from 20 to 30\n\n"), "rule: headline first, then a blank line")
 check(texts["rule"].endswith(alerts.X_REAL + " · #TauNet $AGRS"), "rule: closes with where it comes from and the hashtag")
-check("• 10,800 blocks, one every 8 seconds\n• 12 transactions" in texts["today"], "today: list lines stay together")
+check("10,800 blocks, one every 8 seconds, 12 transactions\n\nWhy it matters: A rule change on Tau is proposed, voted on and in force, no fork, no restart." in texts["today"], "today: the numbers in one line, then the meaning; a long event line goes before the numbers do")
 check("…" not in texts["rule"].split("\n")[2] or texts["rule"].count(".") >= 1, "rule: why shortened by sentences")
 check(texts["sim"].startswith(alerts.X_SIM_LINE), "sim: marked as simulation first")
 check(alerts.X_SITE_NOTE in texts["major"], "major: says it is a website update, not testnet news")
