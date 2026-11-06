@@ -93,8 +93,10 @@ def split(parts: list[tuple[str, float, tuple]], title: str, sub: str = "") -> I
     return im
 
 
-def hero(art: str, ships: str, card: list[str], ship: str, out: str) -> str:
-    """The island's painting with the ship and the card, via cruise_pic.py (the same picture as the ship's announcement)."""
+def hero(art: str, ships: str, card: list[str], ship: str, out: str, stats: list | None = None, host: str | None = "rico") -> str:
+    """The island's painting with the ship and the card (cruise_pic.py, the same picture as the ship's announcement),
+    then the article's hard numbers as tiles in the free water on the left, and the island's own radio host, painted
+    as in the game, looking on from the sea beside the card: the game's art and the data in one picture."""
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import cruise_pic
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
@@ -103,7 +105,86 @@ def hero(art: str, ships: str, card: list[str], ship: str, out: str) -> str:
         cruise_pic.main(art, ships, f.name, out)
     finally:
         os.unlink(f.name)
+    if not stats and not host:
+        return out
+    pic = Image.open(out).convert("RGBA")
+    d = ImageDraw.Draw(pic)
+    # where the card ends: the first dark row under its top-left corner
+    card_bottom = 470
+    for y in range(90, 700, 4):
+        if sum(pic.getpixel((70, y))[:3]) > 120:
+            card_bottom = y
+            break
+    if host:
+        bust = portrait(art, host)
+        if bust is not None:
+            h = 430
+            bust = bust.resize((round(bust.width * h / bust.height), h), Image.LANCZOS)
+            x = W - bust.width - 24
+            pic.alpha_composite(bust, (x, 18))
+            tag = "Rico · Radio Coco" if host == "rico" else host.title()
+            ft = font(22, 600)
+            tw = d.textlength(tag, font=ft)
+            d.rounded_rectangle([x + bust.width / 2 - tw / 2 - 14, 18 + h - 6, x + bust.width / 2 + tw / 2 + 14, 18 + h + 30], radius=14, fill=(8, 12, 24, 230))
+            d.text((x + bust.width / 2 - tw / 2, 18 + h - 1), tag, font=ft, fill=(235, 235, 238, 255))
+    if stats:
+        over = Image.new("RGBA", pic.size)
+        od = ImageDraw.Draw(over)
+        tiles = stats[:4]
+        tw, th, gap = 214, 150, 14
+        x0, y0 = 56, max(card_bottom + 24, H - 56 - 2 * th - gap)
+        for i, (num, label) in enumerate(tiles):
+            x, y = x0 + (i % 2) * (tw + gap), y0 + (i // 2) * (th + gap)
+            od.rounded_rectangle([x, y, x + tw, y + th], radius=16, fill=(8, 12, 24, 228), outline=(57, 255, 138, 110), width=2)
+            fn = font(54 if len(str(num)) <= 5 else 40, 700)
+            od.text((x + 20, y + 18), str(num), font=fn, fill=(57, 255, 138, 255) if i == 0 else (242, 242, 242, 255))
+            for j, part in enumerate(wrap(od, str(label), font(21, 500), tw - 36)[:2]):
+                od.text((x + 20, y + 88 + j * 26), part, font=font(21, 500), fill=(190, 196, 204, 255))
+        pic = Image.alpha_composite(pic, over)
+    pic.convert("RGB").save(out, quality=90)
     return out
+
+
+def wrap(d, text: str, f, width: float) -> list[str]:
+    out, line = [], ""
+    for w in text.split():
+        t = (line + " " + w).strip()
+        if d.textlength(t, font=f) <= width or not line:
+            line = t
+        else:
+            out.append(line)
+            line = w
+    return out + ([line] if line else [])
+
+
+def portrait(art: str, who: str):
+    """The painted portrait the game shows (paint.py busts: index.json scenes "bust-<who>", cut out), or None."""
+    try:
+        idx = json.load(open(os.path.join(art, "index.json")))
+        name = (idx.get("scenes") or {}).get("bust-" + who)
+        return Image.open(os.path.join(art, name)).convert("RGBA") if name else None
+    except Exception:  # noqa: BLE001 - no portrait: the picture without it
+        return None
+
+
+def visit_stats(facts: dict) -> list[tuple[str, str]]:
+    """Four numbers for the hero picture, straight from the facts."""
+    out = []
+    left = facts.get("left early")
+    if isinstance(left, dict) and left.get("minutes in port") is not None:
+        out.append((f"{left['minutes in port']}/{facts.get('minutes planned in port', 90)}", "minutes in port"))
+    acc = facts.get("accepted in all")
+    if acc is not None:
+        out.append((str(acc), "accepted by the node"))
+    una = (facts.get("sends our node did not answer in time (not refusals)") or 0) + \
+        (facts.get("refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)") or 0)
+    if una:
+        out.append((str(una), "no answer in time"))
+    ref = (facts.get("refused in all") or 0) - (facts.get("refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)") or 0)
+    out.append((str(max(0, ref)), "refused by the node"))
+    if facts.get("bookings checked after the visit") and len(out) < 4:
+        out.append((str(facts["bookings checked after the visit"] - (facts.get("bookings the chain had not paid out") or 0)), "bookings paid out"))
+    return out[:4]
 
 
 def visit_charts(facts: dict, base: str) -> list[tuple[str, dict]]:

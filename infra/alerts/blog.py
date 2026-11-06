@@ -42,6 +42,7 @@ SHIPS = os.environ.get("BLOG_SHIPS", "/ships")  # the painted ships (rabbit/art/
 IMG = os.path.join(PUBLIC, "img")               # hero pictures and charts, node.tauhud.com/blog/img/
 SHARE = os.path.join(PUBLIC, "a")               # one small page per article for link previews, node.tauhud.com/blog/a/<id>.html
 EVERY = 600
+PICS_VERSION = 2   # raise when the hero picture changes: every article's picture is made anew once (2: numbers and Rico)
 CHECK_WAIT = 3 * 3600      # a visit whose bookings were never checked is drafted this long after it ended
 RETRY_AFTER = 2 * 3600
 KINDS = ("pay", "bill", "book", "cancel")
@@ -292,7 +293,8 @@ def pictures(a: dict) -> dict:
     os.makedirs(IMG, exist_ok=True)
     if a.get("card") and os.path.exists(os.path.join(ART, "index.json")):
         try:
-            blog_pics.hero(ART, SHIPS, a["card"], ship_of(a), os.path.join(IMG, a["id"] + "-hero.jpg"))
+            blog_pics.hero(ART, SHIPS, a["card"], ship_of(a), os.path.join(IMG, a["id"] + "-hero.jpg"),
+                           stats=blog_pics.visit_stats(a.get("facts") or {}))
             a["image"] = f"{NODE}/blog/img/{a['id']}-hero.jpg"
         except Exception as e:  # noqa: BLE001 - an article without its picture beats no article
             log.warning("hero for %s: %s", a["id"], e)
@@ -335,15 +337,22 @@ def site_pictures(force: bool = False) -> int:
     for a in site + posts()["posts"]:
         if not a.get("id") or not ID_RE.match(a["id"]):
             continue
-        if force or not os.path.exists(os.path.join(SHARE, a["id"] + ".html")) or (a.get("card") and not os.path.exists(os.path.join(IMG, a["id"] + "-hero.jpg"))):
+        st = state()
+        old = st.setdefault("pics", {}).get(a["id"]) != PICS_VERSION
+        if force or old or not os.path.exists(os.path.join(SHARE, a["id"] + ".html")) or (a.get("card") and not os.path.exists(os.path.join(IMG, a["id"] + "-hero.jpg"))):
             if a.get("card") and os.path.exists(os.path.join(ART, "index.json")):
                 import blog_pics
                 try:
                     os.makedirs(IMG, exist_ok=True)
-                    blog_pics.hero(ART, SHIPS, a["card"], ship_of(a), os.path.join(IMG, a["id"] + "-hero.jpg"))
+                    blog_pics.hero(ART, SHIPS, a["card"], ship_of(a), os.path.join(IMG, a["id"] + "-hero.jpg"),
+                                   stats=a.get("stats") or blog_pics.visit_stats(a.get("facts") or {}))
                 except Exception as e:  # noqa: BLE001
                     log.warning("hero for %s: %s", a["id"], e)
             share_page(a)
+            if a.get("card") and os.path.exists(os.path.join(IMG, a["id"] + "-hero.jpg")):
+                st = state()
+                st.setdefault("pics", {})[a["id"]] = PICS_VERSION
+                write_json(STATE, st)
             n += 1
     return n
 
