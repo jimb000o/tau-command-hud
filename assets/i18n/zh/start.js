@@ -1,5 +1,10 @@
 /* Simplified Chinese for /start/. Keys are the English text; {n} {a} {b} are placeholders. */
 TauI18n.add({ strings: {
+  "Rather watch first?": "想先看看？",
+  "Tau in 60 seconds": "60 秒看懂 Tau",
+  "Guided tour of the HUD": "HUD 导览",
+  "(one minute, eight steps)": "（一分钟，八步）",
+  "one minute, eight steps.": "一分钟，八步。",
   "Start here · Tau HUD": "从这里开始 · Tau HUD",
   "Try Tau in four steps.": "四步试用 Tau。",
   "On Tau the rules change by agreement, and every account can carry a rule of its own that the chain itself checks. Try it on Tau Testnet Alpha: a few minutes in this browser, nothing to install. Test AGRS have no value.": "在 Tau 上，规则经共识而改变，每个账户都可以带一条由链本身来检查的自己的规则。在 Tau Testnet Alpha 上试一试：在这个浏览器里几分钟，无需安装。测试 AGRS 没有价值。",

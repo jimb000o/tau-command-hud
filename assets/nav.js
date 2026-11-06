@@ -56,14 +56,18 @@
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
     /* grouped by what a visitor came to do (29 Oct); inside each menu small labelled groups (30 Oct), so no menu is one long list */
-    { k: "explore", t: "Explore", groups: [["The chain now", ["state", "explorer", "proposals", "account", "rules", "stats", "load", "history"]], ["Road to mainnet", ["nodes", "status", "findings", "roadmap", "devpulse"]]], tab: "≋" },
-    { k: "learn", t: "Learn", groups: [["First steps", ["start", "tour", "story"]], ["Read and watch", ["gazette", "chronicle", "tau"]]], tab: "▸" },
-    { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "seat", "whatif"]], ["On the real testnet", ["wallet", "vote", "challenge", "card"]], ["Games on the live testnet", ["rabbit", "agorzilla", "deja"]]], id: "btnPlayground", tab: "◇", short: "Play" },
+    /* 6 Nov: fewer doors. Testnet health (Stats, Load, Status) is one group with tabs across the three pages; the guided tour,
+       Tau in 60 seconds and the tour of this page live on Start here, the one way in; anchors (chain state, validator seat)
+       and Déjà stay reachable from their pages and from search */
+    { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "account", "rules", "history"]], ["Testnet health", ["stats", "load", "status"]], ["Road to mainnet", ["nodes", "findings", "roadmap", "devpulse"]]], tab: "≋" },
+    { k: "learn", t: "Learn", groups: [["First steps", ["start"]], ["Read and watch", ["gazette", "chronicle", "tau"]]], tab: "▸" },
+    { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "whatif"]], ["On the real testnet", ["wallet", "vote", "challenge", "card"]], ["Games on the live testnet", ["rabbit", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
     { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "meta", "legal"]], ["Use our work", ["developers", "press"]]], tab: "i" },
   ];
   SECTIONS.forEach(s => { if (s.groups) s.items = s.groups.flatMap(g => g[1]); });
   const SECTION_OF = { hud: "hud" };
   SECTIONS.forEach(s => (s.items || []).forEach(k => { if (P[k] && !P[k].ext && !P[k].act && !/#/.test(P[k].h)) SECTION_OF[k] = s.k; }));
+  Object.assign(SECTION_OF, { story: "learn", cruise: "explore" });
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken, and what changed lately: the feedback form and the update log, right here. Ideas with the most agreement get built first.",
@@ -674,7 +678,7 @@
       sec.groups.forEach(([h, keys]) => {
         const col = el("div", "mcol"); col.setAttribute("role", "group"); col.setAttribute("aria-label", h); col.append(el("h5", "", esc(h)));
         keys.forEach(k => col.append(item(k, page, isHud)));
-        if (sec.k === "learn" && keys.includes("tour") && !isHud) col.insertBefore(pageTour(), col.querySelector(".mi:nth-of-type(2)"));
+        if (sec.k === "learn" && keys.includes("start") && !isHud) col.append(pageTour());
         m.append(col);
       });
       b.addEventListener("click", () => toggle(b, m));
@@ -855,7 +859,39 @@
     [[TELEGRAM, PLANE, "Telegram"], [XCOM, XLOGO, "X"], [AGZX, `<img src="${ROOT}assets/agorzilla.webp" alt="">`, "Agorzilla"]].forEach(([h, ic, t]) => { const a = el("a", "tn-soc", `${ic}<span>${esc(t)}</span>`); a.href = h; a.target = "_blank"; a.rel = "noopener"; so.append(a); });
     host.append(" ", so);
   }
-  const init = () => { document.querySelectorAll("nav.tnav").forEach(mount); mountFootLinks(); countVisit(); if (location.hash === "#share") setTimeout(openShare, 60); };
+  /* Testnet health: Stats, Testnet load and Status answer the same question, so each carries tabs to the other two */
+  const HEALTH = ["stats", "load", "status"];
+  function healthTabs(nav, page) {
+    if (!HEALTH.includes(page)) return;
+    const lang = new URLSearchParams(location.search).get("lang"), q = lang ? "?lang=" + encodeURIComponent(lang) : "";
+    const t = el("div", "tn-tabs"); t.setAttribute("role", "navigation"); t.setAttribute("aria-label", "Testnet health");
+    t.append(el("span", "lbl", "Testnet health"));
+    HEALTH.forEach(k => { const a = el("a", "tab" + (k === page ? " here" : ""), esc(P[k].t)); a.href = ROOT + P[k].h + q; a.dataset.tnt = P[k].d; if (k === page) a.setAttribute("aria-current", "page"); t.append(a); });
+    nav.after(t);
+  }
+  /* "what is real": today's transactions by sender, one line on the HUD, Stats and In numbers (relay /api/v1/sources). The
+     groups are the relay's: IDNI's genesis accounts, White Rabbit Key (players, the island bot and the cruise ships' simulated
+     passengers, all real transactions), Agorzilla, the Tau HUD pages, every other wallet. Live mode only: the simulation says
+     what it is in its own bar. */
+  const REAL_HOST = { hud: "#simbar", stats: "#sourceLine", meta: "#sourceLine" };
+  function realLine(page) {
+    const sel = REAL_HOST[page]; if (!sel || SIM) return;
+    const host = document.querySelector(sel); if (!host) return;
+    const line = el(page === "hud" ? "p" : "span", "tn-real"); line.id = "realLine"; line.hidden = true;
+    line.dataset.tnt = "Counted by our relay from the blocks it keeps, UTC day; wallets, not people. White Rabbit Key counts the players, the island bot and the cruise ships: simulated passengers, real transactions. Everything else on this page comes from the chain as it is.";
+    if (page === "hud") host.after(line); else host.append(" ", line);
+    const NAMES = [["idni", "IDNI genesis accounts"], ["rabbit", "White Rabbit Key"], ["agorzilla", "Agorzilla"], ["tauhud", "Tau HUD pages"], ["other", "other wallets"]];
+    const fill = j => {
+      const k = new Date().toISOString().slice(0, 10), d = j && j.days && j.days[k];
+      if (!d) { line.hidden = true; return; }
+      const n = Object.values(d).reduce((a, v) => a + (v && v[0] || 0), 0);
+      line.textContent = `What is real · today on the testnet: ${fmt(n)} transactions` + (n ? " · " + NAMES.filter(([g]) => (d[g] || [0])[0]).map(([g, name]) => `${name} ${fmt(d[g][0])}`).join(" · ") : "");
+      line.hidden = false;
+    };
+    const load = () => fetch(`https://${RELAY}/api/v1/sources`, { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(fill, () => { line.hidden = true; });
+    load(); setInterval(() => { if (!document.hidden) load(); }, 300000);
+  }
+  const init = () => { document.querySelectorAll("nav.tnav").forEach(nav => { mount(nav); const pg = nav.dataset.page || "hud"; healthTabs(nav, pg); realLine(pg); }); mountFootLinks(); countVisit(); if (location.hash === "#share") setTimeout(openShare, 60); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
   window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM };
 })();

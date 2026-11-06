@@ -1,6 +1,6 @@
 /* Tau HUD shared header bar (row 2 on every page). Loaded by assets/nav.js.
    Monochrome, one green accent, nothing truncated, no layout shift when a menu opens. */
-.tnav, .tsheet, .tabbar, header.trail, header.rail { --tn-ok: var(--ok, #39ff8a); --tn-dim: var(--dim, #8a8a94); --tn-hair: var(--hair, rgba(255,255,255,.18)); --tn-line: var(--line, rgba(255,255,255,.09)); --tn-font: var(--display, "Sora", "Segoe UI", sans-serif); --tn-mono: var(--mono, "JetBrains Mono", ui-monospace, Menlo, monospace);
+.tnav, .tsheet, .tabbar, header.trail, header.rail, .tn-tabs, .tn-real { --tn-ok: var(--ok, #39ff8a); --tn-dim: var(--dim, #8a8a94); --tn-hair: var(--hair, rgba(255,255,255,.18)); --tn-line: var(--line, rgba(255,255,255,.09)); --tn-font: var(--display, "Sora", "Segoe UI", sans-serif); --tn-mono: var(--mono, "JetBrains Mono", ui-monospace, Menlo, monospace);
 }
 .tnav { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; flex: 1 1 100%; min-width: 0; position: relative; }
 .tnav-l, .tnav-r { display: flex; align-items: center; gap: 12px; min-width: 0; }
@@ -319,3 +319,15 @@ header.trail .unoff.q:hover, header.rail > button.chip.unoff.unoff:hover { color
 .tnav .tn-lang { display: none; }
 @media (max-width: 1599px) { .tnav .seg.tn-langs { display: none; } .tnav .tn-lang { display: block; } }
 @media (max-width: 700px) { .tnav .seg.tn-langs, .tnav .tn-lang { display: none; } }
+
+/* Testnet health tabs (Stats · Testnet load · Status) under the nav row */
+.tn-tabs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 2px 0 0; font: 500 11px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; }
+.tn-tabs .lbl { color: var(--tn-dim); margin-right: 4px; }
+.tn-tabs .tab { color: var(--tn-dim); text-decoration: none; padding: 5px 12px; min-height: 28px; display: inline-flex; align-items: center; border: 1px solid var(--tn-hair); border-radius: 999px; }
+.tn-tabs .tab:hover { color: #fff; border-color: #fff; }
+.tn-tabs .tab.here { color: var(--tn-ok); border-color: var(--tn-ok); }
+@media (max-width: 700px) { .tn-tabs { gap: 6px; } .tn-tabs .tab { min-height: 44px; padding: 0 14px; } }
+/* "what is real": today's transactions by sender, one quiet line */
+.tn-real { color: var(--tn-dim); font: 500 11px/1.5 var(--tn-mono); }
+p.tn-real { margin: 4px 0 0; padding: 4px 12px; border: 1px solid var(--tn-hair); border-radius: 4px; }
+span.tn-real { display: block; margin-top: 4px; }
