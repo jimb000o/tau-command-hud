@@ -1016,7 +1016,7 @@
   }
   const crowdArt = () => !!CROWD.im && !!S.base?.painted && !/[?&]art=drawn(?:&|$)/.test(location.search);
   const h01 = (...v) => { let h = 2166136261; for (const ch of v.join("|")) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return (h >>> 0) / 4294967296; };
-  /* where a group stands: a loose, slightly uneven lattice on the place's ground (people about 7 units apart, 4 deep
+  /* where a group stands: a loose, slightly uneven lattice on the place's ground (people about a metre apart: 8.6 units, 4.8 deep
      on the screen), nearest the guide first, at most 40 (inPoly: further down, with the click areas) */
   function standSlots(id) {
     const st = SPOT.stand && SPOT.stand[id], c = CROWD.slots[id];
@@ -1025,8 +1025,8 @@
     if (Array.isArray(st) && st.length >= 4 && st.every(p => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite))) {
       const [[gx, gy], ...P] = st, xs = P.map(p => p[0]), ys = P.map(p => p[1]);
       s = [];
-      for (let y = Math.min(...ys) + 1.5, r = 0; y < Math.max(...ys); y += 3.9, r++)
-        for (let x = Math.min(...xs) + 1.5 + (r % 2) * 3.6; x < Math.max(...xs); x += 7.2) {
+      for (let y = Math.min(...ys) + 1.5, r = 0; y < Math.max(...ys); y += 4.8, r++)
+        for (let x = Math.min(...xs) + 1.5 + (r % 2) * 4.3; x < Math.max(...xs); x += 8.6) {
           const px = x + (h01(id, x, y, "x") - 0.5) * 3.2, py = y + (h01(id, x, y, "y") - 0.5) * 1.8, d = Math.hypot(px - gx, (py - gy) * 1.7);
           if (d > 5 && inPoly(P, px, py)) s.push([px, py, d + h01(id, x, y, "d") * 3]);
         }
