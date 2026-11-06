@@ -2338,5 +2338,17 @@
     "tag": "Rabbit",
     "on": "2026-11-06",
     "html": "Cruise ships, after MS Dry Run’s first call: the ship left after 34 minutes because eight transactions our node did not answer in time were counted as refusals; the node had refused nothing. A send without an answer is no refusal now: the ship waits 30 seconds, goes at half pace for ten minutes, and the passenger’s next send shows in the logbook whether the node took it after all. “Strained” on Testnet load is measured against the testnet’s usual block gap (three times it, at least 60 seconds), so one ordinary block of waiting no longer halves the pace. Queen Mempool lands her 120 passengers in waves over 30 minutes, so her first stops fit the pace of 12 a minute."
+  },
+  {
+    "tag": "Blog",
+    "on": "2026-11-06",
+    "html": "Blog: a new page with what we learn from running things on Tau Testnet Alpha. The first article is about the MS Dry Run of 4 November: the ship left after 34 of 90 minutes, because 8 sends our node did not answer in time counted as refusals; 122 transactions went through and all 5 bookings paid out. From now on our server drafts one article after every cruise ship visit, from the facts in the ship’s public logbook, in English, Chinese and Japanese; every number is checked against the logbook, and nothing goes up before a person has read it.",
+    "major": {
+      "id": "blog",
+      "title": "New: the Tau HUD blog",
+      "text": "What we learn running things on the Tau testnet. First: why our MS Dry Run cruise left after 34 of 90 minutes, and what we changed.",
+      "link": "/blog/",
+      "image": "/assets/shots/blog.png"
+    }
   }
 ]
