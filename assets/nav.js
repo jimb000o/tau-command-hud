@@ -395,7 +395,7 @@
     const lang = new URLSearchParams(location.search).get("lang"); brand.href = ROOT + (lang ? "?lang=" + encodeURIComponent(lang) : ""); brand.dataset.tnt = "Back to the HUD";
     /* the game's moves are real test transactions in either mode, so its header keeps the plain note instead of the simulation badge */
     const gameSim = SIM && page === "rabbit";
-    const unoff = el("a", SIM && !gameSim ? "chip unoff sim" : "unoff q", SIM && !gameSim ? "Simulation · no real chain data" : "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.dataset.tnt = gameSim ? "Your moves in the game are real test transactions, whatever the chain chips show; the chips follow the simulation. " + TIPS.unoff : SIM ? TIPS.simBadge : TIPS.unoff;
+    const unoff = el("a", SIM && !gameSim ? "chip unoff sim" : "unoff q", SIM && !gameSim ? "Simulation · no real chain data" : "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.dataset.tnt = gameSim ? "Your moves in the game are real test transactions, whatever the chain chips show; the chips follow the simulation." : SIM ? TIPS.simBadge : TIPS.unoff;
     const chips = el("div", "chips");
     const chip = (tag, id, cls, html, t) => { const c = el(tag, "chip" + (cls ? " " + cls : ""), html); c.id = id; c.dataset.tnt = t; return c; };
     chips.append(
