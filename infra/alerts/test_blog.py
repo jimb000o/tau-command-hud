@@ -64,6 +64,8 @@ check(a["check"]["unknown_numbers"] == [], "every number of a faithful answer is
 bad = dict(answer, body=three("## What happened\n\n150 transactions went through, wow!"))
 b = blog.article(f, bad, T0 + 6000)
 check(b["check"]["unknown_numbers"] == ["150"] and b["check"]["hype"], "an invented number and an exclamation are marked")
+blame = dict(answer, body=three("## What happened\n\nThe testnet was unreliable, IDNI is to blame."))
+check(blog.article(f, blame, T0 + 6000)["check"]["hype"] != [] and a["check"]["hype"] == [], "blame on the testnet or IDNI is marked, a fair answer is not")
 try:
     blog.article(f, dict(answer, title={"en": "only English"}), T0)
     check(False, "a missing language is refused")
