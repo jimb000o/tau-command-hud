@@ -2420,5 +2420,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-06",
     "html": "White Rabbit Key: the cruise passengers are painted now. Where the logbook counts a ship's group, that many figures stand at the place, turned to their guide with the ship's flag, and now and then one points, drinks or takes a picture; nobody walks. They wait on the pier while the tenders come, a group fades in as it arrives and out as it moves on. Sixteen passengers in all, seen from behind, from the front and in profile, among them a boy, a girl and a man in a wheelchair; a grown-up stands about as tall as a door on the island."
+  },
+  {
+    "tag": "Wallet",
+    "on": "2026-11-06",
+    "html": "Guardian (tauhud.com/guardian/), a testnet prototype: connect an Authenticator app to your test wallet and set a limit; a payment above it then waits on the chain until you type the 6-digit code, and our Guardian co-signs. It can say yes to your payment, never send one, and holds no key of yours. Built on the approver bot IDNI ships with the testnet; the wallet links a waiting payment to its code."
   }
 ]

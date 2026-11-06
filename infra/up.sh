@@ -21,6 +21,8 @@
 #              up report     the weekly report for IDNI as it stands (nothing rebuilt, nothing filed): its text, a page
 #                            and a pre-filled GitHub issue link; up report last  last week's; up report send  also to
 #                            your Telegram (it comes there by itself every Sunday 18:00)
+#              up guardian   the Guardian (tauhud.com/guardian/) started or restarted with the code just pulled, and Caddy
+#                            given its door; nothing rebuilt, the node left alone; up guardian status  only its numbers
 #              up owner      the same, then a one-time link: open it in your Telegram, and the news line's watchtower
 #                            warns you there privately (never on the channel); up owner test  sends you one test message
 set -e
@@ -83,6 +85,23 @@ if [ "${1:-}" = "report" ]; then
   docker compose up -d blog >/dev/null 2>&1 || true
   docker compose exec -T blog python idni_report.py "$@"
   exit $?
+fi
+# the Guardian (guardian/guardian.py), nothing rebuilt and the node left alone: it runs in the node image already built and
+# reads its code from this checkout, so a restart takes what was just pulled; Caddy is recreated for its door
+# node.tauhud.com/guardian/* (a few seconds without HTTPS). up guardian status  only prints its numbers.
+if [ "${1:-}" = "guardian" ]; then
+  if [ "${2:-}" != "status" ]; then
+    docker compose up -d --no-deps guardian
+    docker compose restart guardian >/dev/null
+    docker compose up -d --no-deps --force-recreate caddy >/dev/null
+    echo "waiting 8 s…"; sleep 8
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T guardian python /guardian/guardian.py status 2>&1 || docker compose logs --tail 15 guardian 2>&1
+  curl -s -o /dev/null -w "          door https://node.tauhud.com/guardian/info answers %{http_code}\n" https://node.tauhud.com/guardian/info || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
 fi
 # the blog by hand, nothing rebuilt (alerts/blog.py): up blog  lists the drafts waiting and where to read them,
 # up blog publish <id>  puts one on the blog and posts it once, up blog draft <visit-id>  writes one anew,
@@ -266,4 +285,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up idni, up report, up blog, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up idni, up report, up blog, up guardian, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"

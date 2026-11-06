@@ -75,7 +75,7 @@ jobs:
           retention-days: 7
 
   python:
-    name: Server tests (relay, alerts, bot, share)
+    name: Server tests (relay, alerts, bot, share, guardian)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -87,5 +87,12 @@ jobs:
           cache-dependency-path: infra/*/requirements.txt
       - name: Install what the services use
         run: pip install -r infra/relay/requirements.txt -r infra/alerts/requirements.txt -r infra/share/requirements.txt
+      - name: IDNI's tau-testnet at the commit our node runs (the Guardian is built on its approver bot)
+        run: |
+          REF=$(grep '^TAU_TESTNET_REF=' infra/.env.example | cut -d= -f2)
+          git init -q "$RUNNER_TEMP/tau-testnet" && cd "$RUNNER_TEMP/tau-testnet"
+          git fetch -q --depth 1 https://github.com/IDNI/tau-testnet.git "$REF" && git checkout -q FETCH_HEAD
+          pip install blake3==1.0.11
+          echo "TAU_TESTNET_DIR=$RUNNER_TEMP/tau-testnet" >> "$GITHUB_ENV"
       - name: Run the tests
         run: tests/python.sh | tee -a "$GITHUB_STEP_SUMMARY"

@@ -543,4 +543,6 @@ TauI18n.add({ strings: {
   "A holder keeps a place 30 minutes once someone is waiting.": "誰かが待っていれば、持っている人は 30 分だけ枠を保持します。",
   "Telegram alerts": "Telegram 通知",
   "Telegram alerts A message from @tauhud_alerts_bot when this wallet sends, receives or its rule lands in a block. Only your chat id and this address are kept. /stop ends it.": "Telegram 通知 このウォレットが送金・受取したときや、そのルールがブロックに入ったときに @tauhud_alerts_bot がお知らせします。保存するのはチャット ID とこのアドレスだけ。/stop で終了。",
+  "the Guardian": "Guardian",
+  "Enter your code ›": "コードを入力 ›"
 } });

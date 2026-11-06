@@ -51,6 +51,7 @@
     vote:       { t: "Vote for real", d: "Vote on the real testnet yourself: node, key, ready commands, practised first", i: "✔", h: "vote/" },
     card:       { t: "My Tau card", d: "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post", i: "▣", h: "card/" },
     rabbit:     { t: "White Rabbit Key", d: "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet", i: `<img src="${ROOT}assets/rabbit-key.webp" alt="">`, h: "rabbit/", live: true, play: "rabbit" },
+    guardian:   { t: "Guardian", d: "Payments above your own limit wait for a code from your Authenticator app; our Guardian co-signs, never sends", i: "⛨", h: "guardian/" },
     challenge:  { t: "Rule challenge", d: "A small task every Monday, answered with a real rule in your wallet; good answers are shown, no prizes", i: "✎", h: "challenge/" },
     missions:   { t: "Missions", d: "Six short tasks on a practice chain: pass a rule, fail one, survive an outage, switch to proof of stake", i: "★", h: "missions/" },
   };
@@ -62,7 +63,7 @@
        and Déjà stay reachable from their pages and from search */
     { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "account", "rules", "history"]], ["Testnet health", ["stats", "load", "status"]], ["Road to mainnet", ["nodes", "findings", "roadmap", "devpulse"]]], tab: "≋" },
     { k: "learn", t: "Learn", groups: [["First steps", ["start"]], ["Read and watch", ["gazette", "blog", "chronicle", "tau"]]], tab: "▸" },
-    { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "whatif"]], ["On the real testnet", ["wallet", "vote", "challenge", "card"]], ["Games on the live testnet", ["rabbit", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
+    { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "whatif"]], ["On the real testnet", ["wallet", "guardian", "vote", "challenge", "card"]], ["Games on the live testnet", ["rabbit", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
     { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "meta", "legal"]], ["Use our work", ["developers", "press"]]], tab: "i" },
   ];
   SECTIONS.forEach(s => { if (s.groups) s.items = s.groups.flatMap(g => g[1]); });
