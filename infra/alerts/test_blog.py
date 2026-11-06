@@ -10,7 +10,13 @@ import sys
 import tempfile
 
 TMP = tempfile.mkdtemp()
-os.environ.update(PUBLIC_DIR=TMP, BLOG_STATE=os.path.join(TMP, "state.json"), NEWS_AI_KEY="test", CHAT_AI_KEY="",
+ART = os.path.join(TMP, "art")
+os.makedirs(ART)
+from PIL import Image  # noqa: E402
+Image.new("RGB", (1600, 900), (40, 120, 160)).save(os.path.join(ART, "isle.jpg"))
+json.dump({"scenes": {"island": "isle.jpg"}}, open(os.path.join(ART, "index.json"), "w"))
+SHIPS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "rabbit", "art", "ships")
+os.environ.update(BLOG_ART=ART, BLOG_SHIPS=SHIPS, PUBLIC_DIR=TMP, BLOG_STATE=os.path.join(TMP, "state.json"), NEWS_AI_KEY="test", CHAT_AI_KEY="",
                   TELEGRAM_BOT_TOKEN="", X_API_KEY="")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import blog  # noqa: E402
@@ -99,6 +105,12 @@ check(nums == ["40 simulated passengers, every stop a real transaction", "122 tr
 blog.ask_ai = lambda facts: bad
 blog.write_draft(V, T0 + 9000)
 check(blog.publish_cli(did, dry=False, force=False) == 1, "a draft with an invented number is not published without --force")
+d = json.load(open(os.path.join(TMP, "blog", "drafts", st["drafts"][did] + ".json")))
+check(d["image"].endswith(f"/blog/img/{did}-hero.jpg") and os.path.exists(os.path.join(TMP, "blog", "img", f"{did}-hero.jpg")), "the draft has its hero picture")
+check(len(d["figures"]) == 2 and all(os.path.exists(os.path.join(TMP, "blog", "img", os.path.basename(f["src"]))) for f in d["figures"]), "and two charts of the visit")
+check(d["card"][0] == "The MS Dry Run left after 34 minutes" and d["card"][-1].startswith("Tau HUD blog"), "the card on the picture")
+share = open(os.path.join(TMP, "blog", "a", did + ".html")).read()
+check('og:image" content="https://node.tauhud.com/blog/img/' in share and "summary_large_image" in share, "publishing writes the link-preview page with the picture")
 check(blog.unpublish_cli(did) == 0 and blog.posts()["posts"] == [], "unpublish")
 json.dumps(a)
 

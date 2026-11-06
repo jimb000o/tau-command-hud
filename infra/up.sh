@@ -39,7 +39,7 @@ if [ "${1:-}" = "post" ] && [ -n "${2:-}" ]; then
 fi
 # the blog by hand, nothing rebuilt (alerts/blog.py): up blog  lists the drafts waiting and where to read them,
 # up blog publish <id>  puts one on the blog and posts it once, up blog draft <visit-id>  writes one anew,
-# up blog unpublish <id>  takes one off again
+# up blog unpublish <id>  takes one off again, up blog pictures  makes every article's hero picture and link preview anew
 if [ "${1:-}" = "blog" ]; then
   shift
   [ -n "${1:-}" ] || set -- drafts

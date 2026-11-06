@@ -45,6 +45,51 @@
    "sources": [
     "https://node.tauhud.com/cruise/log?visit=2026-11-04-dryrun",
     "https://node.tauhud.com/cruise/incidents"
+   ],
+   "ship": "expedition",
+   "card": [
+    "The MS Dry Run left early. Here is what we learned.",
+    "The testnet was fine: our own brake pulled too early",
+    "## Why it matters",
+    "- Community: the ship never floods the testnet",
+    "- IDNI: a community node under everyday load",
+    "- All 5 bookings paid out by the chain itself",
+    "Tau HUD blog · community project, not affiliated with IDNI"
+   ],
+   "image": "https://node.tauhud.com/blog/img/2026-11-04-dryrun-learnings-hero.jpg",
+   "image_alt": {
+    "en": "MS Dry Run at anchor off White Rabbit Key, painted as in the game",
+    "zh": "MS Dry Run 停泊在白兔礁外，与游戏中的画面相同",
+    "ja": "ゲームと同じ絵で描かれた、ホワイトラビット・キー沖に停泊する MS Dry Run"
+   },
+   "figures": [
+    {
+     "src": "/assets/blog/img/dryrun-stops.png",
+     "after": 1,
+     "caption": {
+      "en": "Where the 247 planned stops went: 122 accepted, 8 without an answer in time, 117 skipped; the node refused none.",
+      "zh": "计划的 247 个停靠去了哪里：122 个被接受，8 个没有及时得到回答，117 个被跳过；节点没有拒绝任何一个。",
+      "ja": "計画された 247 か所の立ち寄りの行方：122 件受理、8 件は時間内に返事なし、117 件は省略。ノードが拒否したものはありません。"
+     }
+    },
+    {
+     "src": "/assets/blog/img/dryrun-timeouts.png",
+     "after": 2,
+     "caption": {
+      "en": "Sends our node did not answer within 20 seconds, per hour, from our relay's log of the last three days.",
+      "zh": "我们的节点在 20 秒内没有回答的发送次数（每小时），来自我们中继过去三天的日志。",
+      "ja": "私たちのノードが 20 秒以内に返事をしなかった送信の数（1 時間ごと）。リレーの直近 3 日間のログより。"
+     }
+    },
+    {
+     "src": "/assets/blog/img/dryrun-pace.png",
+     "after": 2,
+     "caption": {
+      "en": "The ship's sends per 10 minutes: mostly at half pace, far below the 120 it may send.",
+      "zh": "游轮每 10 分钟的发送数：大多是半速，远低于允许的 120 次。",
+      "ja": "船の 10 分ごとの送信数：ほとんど半分の速さで、許される 120 件を大きく下回っています。"
+     }
+    }
    ]
   }
  ]
