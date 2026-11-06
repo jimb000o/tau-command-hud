@@ -98,5 +98,16 @@ TauI18n.add({ strings: {
   "Our node does not answer right now; your payment waits. Try again in a minute.": "ノードが今応答しません。支払いは待機中です。1 分後にもう一度どうぞ。",
   "No payment with this id waits for the Guardian (it may be paid, expired or not in a block yet).": "この ID で Guardian を待つ支払いはありません（支払い済み、期限切れ、またはまだブロックに入っていない可能性があります）。",
   "The Guardian has answered this payment already.": "Guardian はこの支払いにすでに応答しました。",
-  "Code accepted, but our node did not take the signature yet; it is sent again within a minute.": "コードは受け付けましたが、ノードがまだ署名を受け取っていません。1 分以内に再送します。"
+  "Code accepted, but our node did not take the signature yet; it is sent again within a minute.": "コードは受け付けましたが、ノードがまだ署名を受け取っていません。1 分以内に再送します。",
+  "The Guardian works only on the real testnet: switch the HUD to Live.": "Guardian は本物のテストネットでのみ動きます。HUD をライブに切り替えてください。",
+  "Waiting for our node to answer…": "ノードの応答を待っています…",
+  "Get in line for a place": "枠の順番待ちに並ぶ",
+  "Leave the line": "順番待ちをやめる",
+  "You are number {n} in line. While anyone waits, a turn lasts 30 minutes; sign the rule here as soon as a place shows free.": "あなたは {n} 番目です。誰かが待っている間、1 回の番は 30 分です。枠が空いたらすぐここでルールに署名してください。",
+  "Our relay does not answer right now. Try again in a minute.": "中継が今応答しません。1 分後にもう一度どうぞ。",
+  "Both rule places on the testnet are held by other accounts, so the node would refuse a new rule:": "テストネットのルール枠は 2 つとも他のアカウントが使用中のため、ノードは新しいルールを拒否します：",
+  "{x}: fair turn from our wallet, frees at {t} (its owner signed the removal in advance)": "{x}：私たちのウォレットの公平な順番、{t} に空きます（持ち主が解除に事前署名済み）",
+  "{x}: set outside our wallet, only its owner can free it": "{x}：ウォレットの外で設定、持ち主しか空けられません",
+  "{n} waiting. With someone in line, a fair turn ends 30 minutes after it began.": "{n} 人待ち。誰かが並べば、公平な順番は始まって 30 分で終わります。",
+  "Nobody waits. With someone in line, a fair turn ends 30 minutes after it began.": "誰も待っていません。誰かが並べば、公平な順番は始まって 30 分で終わります。"
 } });

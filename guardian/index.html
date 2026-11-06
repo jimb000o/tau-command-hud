@@ -67,6 +67,12 @@ input { font: 15px var(--mono); background: #000; color: #fff; border: 1px solid
 input.code { letter-spacing: .3em; width: 8.2em; }
 input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1px; }
 .msg { margin: 6px 0 0; min-height: 1.5em; color: var(--dim); font-size: 12.5px; }
+.hint { margin: 6px 0 0; color: var(--amber); font-size: 12.5px; }
+.hint:empty { display: none; }
+.msg:empty { min-height: 0; margin: 0; }
+.holders { list-style: none; margin: 4px 0 0; padding: 0; color: var(--dim); font-size: 12px; display: grid; gap: 2px; }
+.holders:empty { display: none; }
+.holders li::before { content: "· "; }
 .msg.bad { color: var(--bad); } .msg.ok { color: var(--ok); } .msg.wait { color: var(--amber); }
 .qr { display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: 14px; align-items: center; margin: 8px 0 4px; }
 .qr .img { background: #fff; border-radius: 6px; padding: 6px; width: 148px; height: 148px; }
@@ -96,7 +102,7 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
 @media (min-width: 2200px) and (min-height: 1200px) { body { zoom: 1.3; } }
 @media (max-width: 1000px) { .main { grid-template-columns: minmax(0, 1fr); } }
 /* a laptop (1366 × 768): everything on one screen */
-@media (min-width: 1001px) and (max-height: 820px) { body { font-size: 12px; padding-top: 6px; } .wrap { gap: 8px; } .lead { font-size: 21px; } .panel { padding: 10px 16px; } .main, .col { gap: 10px; } .how { gap: 4px; } .fine { margin-top: 5px; } .panel p { margin-bottom: 5px; } }
+@media (min-width: 1001px) and (max-height: 820px) { body { font-size: 12px; padding-top: 6px; padding-bottom: 4px; } .wrap { gap: 8px; } .lead { font-size: 21px; } .panel { padding: 10px 16px; } .main, .col { gap: 10px; } .how { gap: 3px; } .fine { margin-top: 4px; } .panel p { margin-bottom: 5px; } }
 @media (max-width: 700px) { .b, input { min-height: 44px; } .qr { grid-template-columns: minmax(0, 1fr); justify-items: start; } .list li { grid-template-columns: minmax(0, 1fr); } }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
@@ -132,6 +138,7 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
           <button class="b go" type="button" id="btnConfirm" hidden>Confirm</button>
           <button class="b" type="button" id="btnRemove" hidden>Disconnect</button>
         </div>
+        <p class="hint" id="hintApp"></p>
         <p class="msg" id="msgApp"></p>
       </section>
       <section class="panel" id="pRule" aria-labelledby="hRule">
@@ -144,7 +151,9 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
           <button class="b go" type="button" id="btnRule">Sign the rule</button>
           <button class="b" type="button" id="btnUnrule" hidden>Remove the rule</button>
         </div>
-        <div class="row"><span class="pips" id="pips"></span></div>
+        <p class="hint" id="whyRule"></p>
+        <ul class="holders" id="holders"></ul>
+        <div class="row"><span class="pips" id="pips"></span><span id="lineRow" class="row" style="margin:0" hidden><button class="b" type="button" id="btnLine">Get in line for a place</button><span class="fine" id="lineText" style="margin:0"></span></span></div>
         <p class="msg" id="msgRule"></p>
       </section>
     </div>
@@ -187,7 +196,7 @@ const hex6 = n => Math.max(0, Math.min(MAX_AMOUNT, Math.floor(n))).toString(16).
 /* the wallet's co-signer rule (wallet/index.html coSignRule) with the Guardian in slot i18, so the wallet reads it back
    and sends a payment above the limit as a co-signature request by itself */
 const guardRule = (limit, g) => `always ( (i1[t]:bv[24] > { #x${hex6(limit)} }:bv[24] && !(i18[t]:bv[384] = { #x${g} }:bv[384])) ? ${BLOCK} : ${ALLOW} ).`;
-const W = { sk: null, pk: null, seq: null, tip: null, gov: null, clause: undefined, reqs: null, slots: null };
+const W = { sk: null, pk: null, seq: null, tip: null, gov: null, clause: undefined, reqs: null, slots: null, lease: null };
 const G = { info: null, acct: null, down: false };
 try { const k = JSON.parse(localStorage.getItem("tauhud-wallet-key") || "null"); if (k && /^[0-9a-f]{64}$/.test(k.sk) && /^[0-9a-f]{96}$/.test(k.pk)) { W.sk = k.sk; W.pk = k.pk; } } catch (e) {}
 const WORDS = "acorn amber anchor apple arrow atlas badge baker bamboo banjo barley basil beacon beaver berry bison blade blossom bonnet bottle bramble breeze brick bridge bronze brook bucket bugle cabin cactus camel candle canoe canyon carbon carrot castle cedar cello chalk cherry chess cider cinder circus clover cobalt comet copper coral cotton cougar crane crater cricket crystal cupola dahlia daisy delta denim desert dingo dolphin dragon drum eagle easel ember emerald engine falcon feather fennel fern fiddle flint forest fossil fox galaxy garden garnet gecko geyser ginger glacier goblet granite grape gravel guitar hammer harbor harp hazel heron hickory honey hornet husky iceberg igloo indigo iris island ivory jackal jade jaguar jasmine jelly jigsaw jungle kayak kernel kettle kiwi koala ladder lagoon lantern laurel lemon lilac lily linen lizard lobster locket lotus magnet mango maple marble meadow melon meteor mint mitten mosaic moss muffin nectar needle nickel nutmeg oak oasis olive onyx orbit orchid otter oyster paddle panda papaya parrot pebble pecan pelican pepper piano pine planet plum pollen poppy prism puffin pumpkin quartz quill rabbit radish raven reef ribbon river robin rocket rose ruby saddle saffron salmon sapphire satin shell sierra silver sparrow spruce squid statue stone summit sunset swan tango teapot thistle thunder tiger timber toucan tractor trumpet tulip tundra turtle umbrella valley velvet violet volcano walnut walrus willow window winter wizard yarrow yogurt zebra zenith zinc basket beetle bobcat cocoa cobra dune elm glove gopher jasper lark mammoth marsh opal osprey parsley quail rhubarb sable sequoia stork tapir topaz trout vanilla wombat yak nomad".split(" ");
@@ -269,8 +278,12 @@ async function refresh() {
     const rq = await lookup(`getapprovalrequests ${W.pk} out`);
     if (rq && rq.status === "ok") W.reqs = rq.data;
   } finally { busy = false; }
-  try { const j = await (await fetch(RELAY + "/rules", { cache: "no-store" })).json(); if (j && j.places) W.slots = j; } catch (e) {}
+  await loadLease();
   render();
+}
+/* the two rule places and the line for them (infra/relay/slotlease.py): who holds one, until when, our place in line */
+async function loadLease() {
+  try { const j = await (await fetch(`${RELAY}/lease?pk=${W.pk}`, { cache: "no-store" })).json(); if (j && j.places) { W.lease = j; W.slots = { places: j.places, taken: j.taken, holders: (j.holders || []).map(h => h.addr) }; } } catch (e) {}
 }
 const head = () => (W.gov && W.gov.head_number != null ? W.gov.head_number : W.tip) || 0;
 const baseFee = () => { const m = /o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)/.exec((W.gov && W.gov.consensus_rules) || ""); return m ? parseInt(m[1], 16) : 10; };
@@ -324,32 +337,54 @@ function render() {
   $("qrBox").hidden = !shown || enrolled;
   $("codeApp").hidden = !(shown || enrolled) ; $("btnConfirm").hidden = !shown || enrolled; $("btnRemove").hidden = !enrolled;
   if (enrolled) $("appText").textContent = G.acct.since ? F("Connected since {d}. Codes confirmed so far: {n}.", { d: new Date(G.acct.since * 1000).toLocaleDateString(LANG === "en" ? "en-GB" : LANG), n: G.acct.approvals || 0 }) : T("Connected.");
-  if (!$("msgApp").textContent) {
-    if (!live) msg("msgApp", "");
-    else if (!have) msg("msgApp", T("Make a test wallet first."));
-    else if (G.down || !G.info) msg("msgApp", T("Our Guardian does not answer right now. Try again in a minute."), "wait");
-    else if (G.info.enabled === false) msg("msgApp", T("The Guardian is switched off on our server right now."), "wait");
-  }
+  const appWhy = !live ? "" : !have ? T("Make a test wallet first.") : (G.down || !G.info) ? T("Our Guardian does not answer right now. Try again in a minute.")
+    : G.info.enabled === false ? T("The Guardian is switched off on our server right now.") : "";
+  $("hintApp").textContent = enrolled ? "" : appWhy; $("btnQr").title = appWhy;
   // 2: the rule
   const s = W.slots, mine = s && (s.holders || []).includes(W.pk);
   $("pRule").classList.toggle("done", lim != null);
   $("stRule").textContent = lim != null ? F("above {n} test AGRS", { n: fmt(lim) }) : ""; $("stRule").className = "st" + (lim != null ? " ok" : "");
   $("btnUnrule").hidden = !W.clause;
   const full = s && !mine && s.taken >= s.places;
-  $("btnRule").disabled = !(live && have && enrolled && W.seq != null && !full);
+  const why = ruleWhy({ live, have, enrolled, full, mine });
+  $("btnRule").disabled = !!why; $("btnRule").title = why;
+  $("whyRule").textContent = why || (W.clause && lim == null ? T("Your account has another rule now. Signing this one replaces it.") : "");
+  renderLine(full && !mine);
   $("btnUnrule").disabled = !(live && have && W.seq != null);
   if (s) { const p = []; for (let i = 0; i < s.places; i++) p.push(Object.assign(document.createElement("span"), { className: "pip " + (i < s.taken ? (mine && i === 0 ? "mine" : "taken") : "") })); p.push(document.createTextNode(F("{a} of {b} rule places taken on the testnet", { a: s.taken, b: s.places }))); $("pips").replaceChildren(...p); }
-  if (!$("msgRule").textContent && live && have) {
-    if (!enrolled) msg("msgRule", T("Connect your app first: otherwise a payment above the limit could not be confirmed."));
-    else if (full) msg("msgRule", T("Both of the testnet's rule places are taken right now. A place frees when its holder removes their rule or their turn ends; the wallet can put you in line."), "wait");
-    else if (W.clause && lim == null) msg("msgRule", T("Your account has another rule now. Signing this one replaces it."), "wait");
-  }
   // 3: payments waiting for the code
   const list = live && have && guardPk() ? waiting() : [];
   $("stPay").textContent = list.length ? F("{n} waiting", { n: list.length }) : "";
   const want = (location.hash.match(/r=([0-9a-f]{64})/) || [])[1];
   const keep = new Map([...$("pay").querySelectorAll("li[data-id]")].map(li => [li.dataset.id, li]));
   $("pay").replaceChildren(...(list.length ? list.map(q => keep.get(q.request_id) || payRow(q, want)) : [Object.assign(document.createElement("li"), { className: "fine", textContent: T(!live ? "Nothing to confirm in the simulation." : !have ? "Nothing to confirm without a wallet." : "Nothing waits for your code right now.") })]));
+}
+/* why "Sign the rule" cannot be pressed now, in words; "" when it can */
+function ruleWhy({ live, have, enrolled, full }) {
+  if (!live) return T("The Guardian works only on the real testnet: switch the HUD to Live.");
+  if (!have) return T("Make a test wallet first.");
+  if (!enrolled) return T("Connect your app first: otherwise a payment above the limit could not be confirmed.");
+  if (W.seq == null) return T("Waiting for our node to answer…");
+  if (full) return T("Both rule places on the testnet are held by other accounts, so the node would refuse a new rule:");
+  return "";
+}
+const hhmm = t => new Date(t * 1000).toLocaleTimeString(LANG === "en" ? "en-GB" : LANG, { hour: "2-digit", minute: "2-digit" });
+function renderLine(full) {
+  const L2 = W.lease;
+  const rows = full && L2 ? (L2.holders || []).filter(h => h.addr !== W.pk).map(h => Object.assign(document.createElement("li"), {
+    textContent: h.managed && h.until ? F("{x}: fair turn from our wallet, frees at {t} (its owner signed the removal in advance)", { x: short(h.addr), t: hhmm(h.until) })
+      : F("{x}: set outside our wallet, only its owner can free it", { x: short(h.addr) }) })) : [];
+  $("holders").replaceChildren(...rows);
+  /* the line only ends turns that their holders agreed to when they set the rule in our wallet (they left the way back with
+     our relay); a rule set anywhere else stays until its owner removes it, and the line changes nothing about it */
+  const agreed = full && L2 && (L2.holders || []).some(h => h.addr !== W.pk && h.managed);
+  $("lineRow").hidden = !agreed && !(L2 && L2.position);
+  if (!full || !L2) return;
+  const inLine = !!L2.position;
+  $("btnLine").textContent = T(inLine ? "Leave the line" : "Get in line for a place");
+  const lt = inLine ? F("You are number {n} in line. While anyone waits, a turn lasts 30 minutes; sign the rule here as soon as a place shows free.", { n: L2.position })
+    : L2.waiting ? F("{n} waiting. With someone in line, a fair turn ends 30 minutes after it began.", { n: L2.waiting }) : T("Nobody waits. With someone in line, a fair turn ends 30 minutes after it began.");
+  $("lineText").textContent = inLine || L2.waiting ? lt : ""; $("btnLine").title = lt;
 }
 function payRow(q, want) {
   const li = document.createElement("li"); li.dataset.id = q.request_id; if (q.request_id === want) li.className = "hit";
@@ -415,6 +450,11 @@ $("btnRule").onclick = async () => {
   $("btnRule").disabled = true; msg("msgRule", T("Signing and sending…"), "wait");
   const r = await sendRule(guardRule(n, guardPk()));
   msg("msgRule", r.ok ? F("Sent. Once a block holds it, payments above {n} test AGRS wait for your code.", { n: fmt(n) }) : r.why, r.ok ? "ok" : "bad");
+  render();
+};
+$("btnLine").onclick = async () => {
+  const on = !(W.lease && W.lease.position);
+  try { const j = await (await fetch(`${RELAY}/lease/${on ? "wait" : "leave"}?pk=${W.pk}`, { cache: "no-store" })).json(); if (j && j.places) W.lease = j; } catch (e) { msg("msgRule", T("Our relay does not answer right now. Try again in a minute."), "bad"); }
   render();
 };
 $("btnUnrule").onclick = async () => {

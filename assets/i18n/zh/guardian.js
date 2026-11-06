@@ -98,5 +98,16 @@ TauI18n.add({ strings: {
   "Our node does not answer right now; your payment waits. Try again in a minute.": "我们的节点现在没有响应；你的付款在等待。请一分钟后再试。",
   "No payment with this id waits for the Guardian (it may be paid, expired or not in a block yet).": "没有这个编号的付款在等 Guardian（可能已付、已过期或尚未进入区块）。",
   "The Guardian has answered this payment already.": "Guardian 已经回应过这笔付款。",
-  "Code accepted, but our node did not take the signature yet; it is sent again within a minute.": "验证码已接受，但我们的节点还没收下签名；一分钟内会重新发送。"
+  "Code accepted, but our node did not take the signature yet; it is sent again within a minute.": "验证码已接受，但我们的节点还没收下签名；一分钟内会重新发送。",
+  "The Guardian works only on the real testnet: switch the HUD to Live.": "Guardian 只在真实测试网上工作：请把 HUD 切换到实时模式。",
+  "Waiting for our node to answer…": "正在等我们的节点响应…",
+  "Get in line for a place": "排队等一个位置",
+  "Leave the line": "退出排队",
+  "You are number {n} in line. While anyone waits, a turn lasts 30 minutes; sign the rule here as soon as a place shows free.": "你排在第 {n} 位。只要有人在等，每轮只有 30 分钟；一显示有空位就在这里签署规则。",
+  "Our relay does not answer right now. Try again in a minute.": "我们的中继现在没有响应。请一分钟后再试。",
+  "Both rule places on the testnet are held by other accounts, so the node would refuse a new rule:": "测试网的两个规则位都被其他账户占用，节点会拒绝新规则：",
+  "{x}: fair turn from our wallet, frees at {t} (its owner signed the removal in advance)": "{x}：来自我们钱包的公平轮换，{t} 空出（主人已预先签好移除）",
+  "{x}: set outside our wallet, only its owner can free it": "{x}：在我们钱包之外设置，只有主人能空出",
+  "{n} waiting. With someone in line, a fair turn ends 30 minutes after it began.": "{n} 人在等。只要有人排队，公平轮换在开始 30 分钟后结束。",
+  "Nobody waits. With someone in line, a fair turn ends 30 minutes after it began.": "没人在等。只要有人排队，公平轮换在开始 30 分钟后结束。"
 } });
