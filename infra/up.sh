@@ -13,6 +13,8 @@
 #              up bust salado  the same, then that portrait (or several) painted anew, talking and blinking too (1 min each);
 #                            up bust --recut salado  cuts the kept painting out again, paints nothing;
 #                            up bust --from infra/rabbit-art/imports/codex hana  takes pictures painted elsewhere
+#              up owner      the same, then a one-time link: open it in your Telegram, and the news line's watchtower
+#                            warns you there privately (never on the channel); up owner test  sends you one test message
 set -e
 cd "$(dirname "$(readlink -f "$0")")"
 ln -sf "$(pwd)/up.sh" /usr/local/bin/up 2>/dev/null && chmod +x up.sh 2>/dev/null || true
@@ -134,6 +136,8 @@ PY
 # right to post is named here, so the channel can never go quiet unnoticed), then what the running containers logged
 # the blog: drafts written after a cruise visit wait here for a read and an up blog publish <id>
 docker compose exec -T blog python blog.py drafts 2>/dev/null | tee -a "$NOTE" || true
+# the HUD's news line (alerts/tickerwatch.py): how many new items it holds, what leaves soon, what is stale
+docker compose exec -T alerts python tickerwatch.py status 2>/dev/null | tee -a "$NOTE" || true
 echo "channels:" | tee -a "$NOTE"
 docker compose run --rm --no-deps -T alerts python alerts.py --check 2>/dev/null | sed 's/^/         /' | tee -a "$NOTE"
 echo "posts logged by the running containers (a rebuild starts the log afresh):" | tee -a "$NOTE"
@@ -190,6 +194,14 @@ if [ "${1:-}" = "bust" ] && [ -n "${2:-}" ]; then
   sh rabbit-art/paint.sh busts "$@" 2>&1 | tee "$V" || true
   { echo "portraits:"; if grep -qE 'Traceback|Error|error|painter|No one called|No portrait|No bust|o painting kept|GEMINI|Keep an island' "$V"; then grep -E 'Traceback|Error|error|painter|No one called|No portrait|No bust|o painting kept|GEMINI|Keep an island' "$V" | tail -3 | sed 's/^/         /'; else echo "         $WHO $DID and live (Ctrl+F5)"; fi; } | tee -a "$NOTE"
 fi
+# the owner's private chat for the news line's watchtower, only when asked for: up owner (then up owner test)
+if [ "${1:-}" = "owner" ]; then
+  if [ "${2:-}" = "test" ]; then
+    docker compose exec -T alerts python tickerwatch.py test 2>&1 | tee -a "$NOTE" || true
+  else
+    docker compose exec -T alerts python tickerwatch.py pair 2>&1 | tee -a "$NOTE" || true
+  fi
+fi
 # a new painted island, only when asked for: up island
 if [ "${1:-}" = "island" ]; then
   sh island.sh auto 2>&1 | tee "$V"
@@ -200,4 +212,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up blog, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up blog, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"

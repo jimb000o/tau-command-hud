@@ -37,6 +37,8 @@ jobs:
           git show "$BASE_REF:assets/updates.json" > "$RUNNER_TEMP/base-updates.json" 2>/dev/null || true
           if [ "${{ github.event_name }}" = "pull_request" ]; then export PR_TITLE="$TITLE"; fi
           BASE="$RUNNER_TEMP/base-updates.json" node tests/updates.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: News line headlines leave by themselves and have their zh and ja
+        run: node tests/ticker.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Shared scripts parse
         run: for f in assets/*.js assets/i18n/*/*.js; do node --check "$f" || exit 1; done
 

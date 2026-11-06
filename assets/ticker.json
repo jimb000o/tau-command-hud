@@ -1,75 +1,88 @@
 {
-  "_how": "The HUD news line (assets/ticker.js). headlines: short news lines (at most about 60 characters, no technical detail) about what is new on the testnet and the site, newest and most important first; a headline with until (an ISO time in UTC) leaves the line at that time; mode live shows a headline only on the real chain, mode sim only in the simulation, no mode in both; mark ghost puts the chain core's ghost symbol in front and the live ghost count in the text; tip: the short hover text with more context (at most about 140 characters, two lines); picks: our X posts worth reposting, {text, href} with href the post's x.com address; invites: Telegram and X. New features also come in by themselves from the \"major\" entries of assets/updates.json. move: per language, left (text enters on the right, the usual way) or right. Every text needs its zh and ja translation in assets/i18n/zh/hud.js and ja/hud.js, or it is left out on those pages. idni: news headlines about what IDNI lands on tau-testnet main come in by themselves for a week (node.tauhud.com/devpulse.json, written per merge by a language model in en, zh and ja); keyed by the first 7 letters of one of its commits, {text, tip} replaces one (zh and ja in hud.js), {skip: true} leaves it out.",
+  "_how": "The HUD news line (assets/ticker.js). headlines: short news lines (at most about 60 characters, no technical detail) about what is new on the testnet and the site, newest and most important first; every headline carries since (the day it went on the line, YYYY-MM-DD) and leaves the line days (below, 14) days later, or keep: true for a standing pointer that stays (use it sparingly: the line is for news); a headline with until (an ISO time in UTC) leaves the line at that time; mode live shows a headline only on the real chain, mode sim only in the simulation, no mode in both; mark ghost puts the chain core's ghost symbol in front and the live ghost count in the text; tip: the short hover text with more context (at most about 140 characters, two lines); picks: our X posts worth reposting, {text, href} with href the post's x.com address; invites: Telegram and X. New features also come in by themselves from the \"major\" entries of assets/updates.json and leave days after their day; so do new blog articles; the next cruise ship comes in three days before it calls. infra/alerts/tickerwatch.py warns the owner privately when nothing new came onto the line for a week. move: per language, left (text enters on the right, the usual way) or right. Every text needs its zh and ja translation in assets/i18n/zh/hud.js and ja/hud.js, or it is left out on those pages. idni: news headlines about what IDNI lands on tau-testnet main come in by themselves for a week (node.tauhud.com/devpulse.json, written per merge by a language model in en, zh and ja); keyed by the first 7 letters of one of its commits, {text, tip} replaces one (zh and ja in hud.js), {skip: true} leaves it out.",
   "move": {
     "en": "left",
     "zh": "left",
     "ja": "left"
   },
+  "days": 14,
   "headlines": [
     {
       "text": "Tau chess engine vs Claude Opus 5.5: 13 won, 5 drawn, 2 lost",
       "href": "https://chess.taumorrow.com/",
       "until": "2026-11-07T00:00:00Z",
-      "tip": "Twenty games on 1 November, ten at effort medium and ten at high, counted for the engine. An independent community project."
+      "tip": "Twenty games on 1 November, ten at effort medium and ten at high, counted for the engine. An independent community project.",
+      "since": "2026-11-03"
     },
     {
       "text": "Rule challenge: a new task for your wallet every Monday",
       "href": "challenge/",
-      "tip": "Every Monday the Daily Consensus sets a small task. You answer it with a real rule in your test wallet."
+      "tip": "Every Monday the Daily Consensus sets a small task. You answer it with a real rule in your test wallet.",
+      "keep": true
     },
     {
       "text": "Ghosts in the waiting room",
       "href": "https://github.com/IDNI/tau-testnet/issues/81",
       "mode": "live",
       "mark": "ghost",
-      "tip": "Ghost transactions are already sealed in a block, but the node still lists them as waiting. A known testnet bug (IDNI #81)."
+      "tip": "Ghost transactions are already sealed in a block, but the node still lists them as waiting. A known testnet bug (IDNI #81).",
+      "keep": true
     },
     {
       "text": "Most network rule changes so far are tests that change nothing",
       "href": "proposals/",
       "mode": "live",
-      "tip": "Most rule changes sent to the network so far were test traffic that left the rules as they were. Proposals shows each one."
+      "tip": "Most rule changes sent to the network so far were test traffic that left the rules as they were. Proposals shows each one.",
+      "since": "2026-10-30"
     },
     {
       "text": "Rules wall: every personal rule on the testnet",
       "href": "rules/",
       "mode": "live",
-      "tip": "Every personal rule accounts gave themselves on the testnet, read from the blocks, one card per rule in plain words."
+      "tip": "Every personal rule accounts gave themselves on the testnet, read from the blocks, one card per rule in plain words.",
+      "keep": true
     },
     {
       "text": "My Tau card: your rules, votes and stamps on one card",
       "href": "card/",
-      "tip": "One picture of what your test wallet did on the testnet: rules written, votes, Agorzilla meals and café stamps."
+      "tip": "One picture of what your test wallet did on the testnet: rules written, votes, Agorzilla meals and café stamps.",
+      "since": "2026-10-30"
     },
     {
       "text": "Road to mainnet: what must be fixed first, as we see it",
       "href": "roadmap/",
-      "tip": "What we found on the testnet that we think should be fixed before mainnet, each item with proof anyone can check."
+      "tip": "What we found on the testnet that we think should be fixed before mainnet, each item with proof anyone can check.",
+      "since": "2026-10-30"
     },
     {
       "text": "Telegram alerts now follow any account or rule change",
       "href": "account/",
-      "tip": "Follow an account or an open rule change, and our Telegram bot writes to you when something happens."
+      "tip": "Follow an account or an open rule change, and our Telegram bot writes to you when something happens.",
+      "since": "2026-10-30"
     },
     {
       "text": "Start here: try Tau in four steps",
       "href": "start/",
-      "tip": "Make a test wallet, give your account a rule every node checks, watch a block seal it, and feed Agorzilla."
+      "tip": "Make a test wallet, give your account a rule every node checks, watch a block seal it, and feed Agorzilla.",
+      "keep": true
     },
     {
       "text": "The Daily Consensus: a new edition every Monday",
       "href": "gazette/",
-      "tip": "Our weekly paper about the testnet. Each language gets its edition on Monday at 09:00 in its own time."
+      "tip": "Our weekly paper about the testnet. Each language gets its edition on Monday at 09:00 in its own time.",
+      "since": "2026-10-30"
     },
     {
       "text": "Agorzilla: one creature the whole testnet feeds",
       "href": "https://agorzilla.com",
-      "tip": "A creature that grows with the testnet: wallets feed it, and every evening visitors vote on how it grows."
+      "tip": "A creature that grows with the testnet: wallets feed it, and every evening visitors vote on how it grows.",
+      "keep": true
     },
     {
       "text": "Your limits hold in every wallet: rules bind the account",
       "href": "playground/",
-      "tip": "A rule binds the account, not the app: every node checks each payment against it, whichever wallet signed it. Try rules in the Playground."
+      "tip": "A rule binds the account, not the app: every node checks each payment against it, whichever wallet signed it. Try rules in the Playground.",
+      "since": "2026-10-31"
     }
   ],
   "picks": [],
