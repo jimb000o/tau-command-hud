@@ -65,6 +65,11 @@ You get a list of facts counted from the ship's public logbook. Rules:
 must appear in the facts. When the facts do not show why something happened, say plainly that we do not know yet.
 - "Our node" and "our relay" are Tau HUD's own, not IDNI's. Never blame the testnet or IDNI for something the facts \
 show on our side. "No answer from the node" is not a refusal; a refusal is the node saying no.
+- Who reads this: the Tau community and the IDNI team, and both should be glad to read it. Choose and frame what you \
+tell so each sees what it gains: for the community what works and what they can try, for IDNI what a community node \
+under real traffic shows them and what held up on their testnet. Stay honest: say what went wrong on our side and own \
+it, credit what the testnet and the chain did right, and never blame, mock or lecture IDNI, Tau or the testnet. Where \
+something on the chain side is not yet clear, say what we will measure, not who is at fault.
 - Plain words for curious readers who are not developers. No code names, file names, function names or field names.
 - No hype or marketing words (huge, exciting, revolutionary, game-changing, finally), no price talk, no coin talk, no \
 exclamation marks, no emoji, no names of people.
@@ -250,6 +255,9 @@ def three(d, cap: int) -> dict | None:
     return out
 
 
+# blame on IDNI or the testnet is marked for a look like hype, so such a draft needs --force (rule of 6 November 2026)
+BLAME = re.compile(r"\b(IDNI|Tau|the testnet|the chain)(['’]s)?\s+(is |was |were )?(at fault|to blame|fault|failed us|broke|broken|"
+                   r"unreliable|unstable|buggy|bug|let us down)\b", re.I)
 HYPE = re.compile(r"\b(huge|exciting|revolutionary|game[- ]chang\w*|moon|pump|to the moon|finally|incredible)\b|!", re.I)
 
 
@@ -263,7 +271,7 @@ def article(facts: dict, out: dict, now: float) -> dict:
     return {"id": f"{vid}-learnings", "on": local(now).strftime("%Y-%m-%d"), "kind": "cruise", "visit": vid,
             "title": title, "dek": dek, "why": why, "body": body, "x": " ".join(str(out.get("x") or "").split())[:240],
             "sources": [f"{NODE}/cruise/log?visit={vid}", f"{NODE}/cruise/incidents"],
-            "facts": facts, "check": {"unknown_numbers": unknown_numbers(en, facts), "hype": sorted({m.group(0) for m in HYPE.finditer(en)})},
+            "facts": facts, "check": {"unknown_numbers": unknown_numbers(en, facts), "hype": sorted({m.group(0) for m in HYPE.finditer(en)} | {m.group(0) for m in BLAME.finditer(en)})},
             "card": card_of(out.get("card"), title["en"]), "written": int(now), "model": AI_MODEL}
 
 
