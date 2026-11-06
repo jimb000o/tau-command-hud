@@ -940,7 +940,105 @@ def today_numbers(stats: dict | None, items: list[dict], props: list[dict], onli
     return {"end": end, "blocks": len(rows), "pace": pace, "txs": sum(r[f["txs"]] for r in rows) if "txs" in f else 0,
             "senders": len(senders), "practice": len(practice), "practice_why": practice_meaning(len(practice), proposers),
             "events": events, "online": online, "last_block": newest if newest and newest < end else None,
-            "coming": sorted(coming, key=lambda c: c["at"])[:2]}
+            "coming": sorted(coming, key=lambda c: c["at"])[:2], "wallets": None}
+
+
+WALLET_WHO = {  # the relay's wallet tags (relay/walletdays.py), in words; our own wallets say so
+    "idni": "IDNI's own test accounts, the ones the testnet started with",
+    "bot": "our island bot's wallets (the islanders of White Rabbit Key)",
+    "cruise": "simulated passengers of {ship}: our own wallets, every stop a real transaction",
+    "rabbit": "White Rabbit Key players",
+    "agorzilla": "wallets that fed Agorzilla",
+    "tauhud": "wallets that sent from a Tau HUD page",
+    "other": "other wallets, not ours and not IDNI's",
+}
+SHIP_NAMES = {"dryrun": "MS Dry Run", "queen": "Queen Mempool"}
+USUAL_DAYS = 7
+
+
+def ships_in(log: list | dict | None, start: float, end: float) -> list[str]:
+    """The cruise ships that landed between start and end, by name, from the relay's logbook (/cruise/log)."""
+    rows = (log or {}).get("entries") if isinstance(log, dict) else log
+    names: list[str] = []
+    for e in rows or []:
+        if not isinstance(e, dict) or e.get("kind") != "landed" or not (start <= (e.get("t") or 0) < end):
+            continue
+        name = SHIP_NAMES.get(str(e.get("ship")), str(e.get("ship") or "a cruise ship"))
+        if name not in names:
+            names.append(name)
+    return names
+
+
+def today_wallets(active: dict | None, day: str, ships: list[str] | None = None) -> dict | None:
+    """Who sent today, from the relay's active-wallets record (/wallets/active, the same source as the Active wallets
+    chart on /stats/): the wallets active on `day` (UTC) by tag, the usual number (the mean of the USUAL_DAYS days
+    before), the wallets seen for the first time today. None when the relay has no record of the day."""
+    if not isinstance(active, dict) or not isinstance(active.get("days"), dict):
+        return None
+    tags, days = list(active.get("tags") or []), active["days"]
+    row = (days.get(day) or {}).get("1")
+    if not tags or not isinstance(row, list) or len(row) != len(tags):
+        return None
+    by = {t: int(n) for t, n in zip(tags, row) if n}
+    before = sorted(d for d in days if d < day)[-USUAL_DAYS:]
+    past = [sum((days[d].get("1") or [0])) for d in before if isinstance(days[d].get("1"), list)]
+    usual = round(sum(past) / len(past)) if past else None
+    new_row = (active.get("new") or {}).get(day) or []
+    new = sum(int(n) for n in new_row) if isinstance(new_row, list) else 0
+    total = sum(by.values())
+    ratio = round(total / usual, 1) if usual else None
+    return {"total": total, "by": by, "usual": usual, "ratio": ratio, "new": new, "ships": list(ships or []),
+            "ours": sum(by.get(t, 0) for t in ("bot", "cruise", "agorzilla", "tauhud", "rabbit"))}
+
+
+def wallets_head(w: dict, short: bool = False) -> str:
+    """"77 wallets sent transactions, 3.5× the usual 22" / "about the usual" / "fewer than usual"; `short` for X."""
+    head = f"{plural(w['total'], 'wallet')} sent {'today' if short else 'transactions'}"
+    u, r = w.get("usual"), w.get("ratio")
+    if not u or r is None:
+        return head
+    if r >= 1.5:
+        return f"{head}, {r:g}× the usual {u}"
+    if r <= 0.6:
+        return f"{head}, fewer than the usual {u}"
+    return f"{head}, about the usual {u}"
+
+
+def wallets_lines(w: dict) -> list[str]:
+    """One line per kind of wallet that sent today, our own named as ours, then the newcomers."""
+    out = []
+    ship = " and ".join(w.get("ships") or []) or "our cruise ships"
+    for t, n in sorted(w["by"].items(), key=lambda kv: -kv[1]):
+        who = WALLET_WHO.get(t, t).format(ship=ship)
+        out.append(f"{n} of them: {who}" if len(w["by"]) > 1 else f"all of them: {who}")
+    if w.get("new"):
+        out.append(f"{plural(w['new'], 'wallet')} nobody had seen before")
+    return out
+
+
+def today_why(r: dict, short: bool = False) -> str | None:
+    """One sentence on what the day's numbers mean, from the facts only; None when there is nothing to say.
+    `short`: the X wording."""
+    w, pace = r.get("wallets"), r.get("pace")
+    steady = bool(r["blocks"]) and pace is not None and pace <= 90
+    if not r["blocks"]:
+        return None   # the quiet lines say it
+    if r["events"]:
+        return "A rule change on Tau is proposed, voted on and in force, no fork, no restart." if short else \
+            "A rule change on Tau is proposed, voted on and in force without a fork or a restart; today's is above."
+    if w and w.get("ratio") and w["ratio"] >= 1.5:
+        kept = "the chain kept one block a minute" if steady else f"the chain slowed to one block every {round(pace)} seconds"
+        return f"Each a real signed transaction the one validator checked; {kept}." if short else \
+            f"Every one of these was a real signed transaction the single validator had to check, and {kept}."
+    if w and w["by"].get("other"):
+        n = w["by"]["other"]
+        return f"{plural(n, 'wallet')} not ours and not IDNI's: people trying the testnet on their own." if short else \
+            f"{plural(n, 'wallet')} that {'is' if n == 1 else 'are'} not ours and not IDNI's sent today: people are trying the testnet on their own."
+    if w and w.get("new"):
+        return "New wallets are people trying the testnet for the first time; the Start page shows them what to do."
+    if steady:
+        return "A quiet day: the chain kept one block a minute without anyone pushing it."
+    return None
 
 
 def today_worth_posting(r: dict) -> bool:
@@ -950,8 +1048,12 @@ def today_worth_posting(r: dict) -> bool:
 
 
 def today_worth_x(r: dict) -> bool:
-    """X gets the day when something happened, or when nothing did at all: a day without a block is news."""
-    return today_worth_posting(r) or not r["blocks"]
+    """X gets only a day worth telling: a rule event, no block at all, many more wallets than usual, or newcomers.
+    An ordinary day with its usual wallets is Telegram's alone (since 6 November 2026; before, every day with a
+    transaction went to X too)."""
+    w = r.get("wallets")
+    unusual = bool(w) and (bool(w.get("ratio")) and w["ratio"] >= 1.5 or w.get("new", 0) >= 3)
+    return bool(r["events"]) or not r["blocks"] or unusual
 
 
 def quiet_lines(r: dict) -> list[str]:
@@ -973,11 +1075,17 @@ def today_text(r: dict) -> str:
     day = datetime.fromtimestamp(r["end"], timezone.utc)
     out = [REAL_LINE, f"📋 <b>Testnet today, {day.day} {day.strftime('%B')}</b>", ""]
     pace = f", one every {round(r['pace'])} seconds" if r["pace"] else ""
+    w = r.get("wallets")
+    if w and w["total"]:
+        out.append(f"<b>{e(wallets_head(w))}</b>")
+        out += [f"• {e(x)}" for x in wallets_lines(w)]
+        out.append("")
     if r["blocks"]:
-        out.append(f"• {plural(r['blocks'], 'block')}{pace}")
-    if r["txs"]:
-        out.append(f"• {plural(r['txs'], 'transaction')} from {plural(r['senders'], 'account')}")
-    elif not r["practice"]:
+        line = f"• {plural(r['blocks'], 'block')}{pace}"
+        if r["txs"]:
+            line += f", {plural(r['txs'], 'transaction')}" + ("" if w and w["total"] else f" from {plural(r['senders'], 'account')}")
+        out.append(line)
+    if not r["txs"] and not r["practice"]:
         out += [e(x) for x in quiet_lines(r)]
     for h in r["events"]:
         out.append(f"• {e(h)}")
@@ -987,6 +1095,9 @@ def today_text(r: dict) -> str:
                    + (f"; {e(r['practice_why'])}." if n > 1 and r.get("practice_why") else ".") + " You can try it on the Vote page.")
     if r["online"]:
         out.append(f"• {plural(r['online'], 'node')} online")
+    why = today_why(r)
+    if why:
+        out += ["", "<b>Why it matters</b>", e(why)]
     for c in r["coming"]:
         out += ["", f"Coming up: {e(c['title'])} at block #{fmt_n(c['at'])}{e(c['eta'])}."]
     return "\n".join(out)
@@ -995,18 +1106,36 @@ def today_text(r: dict) -> str:
 def today_x(r: dict) -> str:
     day = datetime.fromtimestamp(r["end"], timezone.utc)
     pace = f", one every {round(r['pace'])} seconds" if r["pace"] else ""
-    out = [f"📋 Testnet today, {day.day} {day.strftime('%B')}"] + ([f"• {plural(r['blocks'], 'block')}{pace}"] if r["blocks"] else [])
-    if r["txs"]:
-        out.append(f"• {plural(r['txs'], 'transaction')} from {plural(r['senders'], 'account')}")
-    elif not r["practice"]:
-        out += quiet_lines(r)[:2]
+    w = r.get("wallets")
+    out = [f"📋 Testnet today, {day.day} {day.strftime('%B')}"]
+    if w and w["total"]:   # a spike names only its cause, so the meaning still fits
+        spike = bool(w.get("ratio")) and w["ratio"] >= 1.5
+        out.append(wallets_head(w, short=True) + ": " + ", ".join(wallets_short(w, 1 if spike else 2, new=not spike)) + ".")
     out += [f"• {h}" for h in r["events"]]
-    if r["practice"]:
+    why = today_why(r, short=True)
+    if why:
+        out.append("Why it matters: " + why)
+    if r["blocks"] and not (why and w and w["total"]):   # room is short: the meaning before the block count
+        out.append(f"{plural(r['blocks'], 'block')}{pace}" + (f", {plural(r['txs'], 'transaction')}" if r["txs"] else ""))
+    if not r["txs"] and not r["practice"]:
+        out += quiet_lines(r)[:2]
+    if r["practice"] and not (w and w["total"]):
         out.append(f"• {plural(r['practice'], 'practice vote')}, the rules stay as they are")
-    if r["online"]:
-        out.append(f"• {plural(r['online'], 'node')} online")
     out += [f"Coming up: {c['title']} at block #{fmt_n(c['at'])}{c['eta']}." for c in r["coming"][:1]]
     return x_post(out, f"{SITE}/", keep=2)
+
+
+X_WHO = {"idni": "IDNI's test accounts", "bot": "our island bot", "cruise": "passengers of {ship} (ours, simulated)",
+         "rabbit": "White Rabbit Key players", "agorzilla": "Agorzilla feeders", "tauhud": "sent from Tau HUD", "other": "not ours"}
+
+
+def wallets_short(w: dict, top: int = 3, new: bool = True) -> list[str]:
+    """The `top` largest kinds for X, then the newcomers."""
+    ship = " and ".join(w.get("ships") or []) or "our cruise ships"
+    out = [f"{n} {X_WHO.get(t, t).format(ship=ship)}" for t, n in sorted(w["by"].items(), key=lambda kv: -kv[1])[:top]]
+    if new and w.get("new"):
+        out.append(f"{w['new']} new")
+    return out
 
 
 def today_buttons() -> dict:
@@ -2258,6 +2387,9 @@ class Watcher:
         peers, board = await asyncio.to_thread(self.relay_json, "/peers"), await asyncio.to_thread(self.relay_json, "/community/board")
         online = nodes_online(peers, board) if peers is not None or board is not None else None
         r = today_numbers(stats, self.state["items"], getattr(self, "props", []), online, slot, self.last_block_time())
+        active = await asyncio.to_thread(self.relay_json, "/wallets/active")
+        ships = ships_in(await asyncio.to_thread(self.relay_json, "/cruise/log?n=300"), slot - 86400, slot) if active else []
+        r["wallets"] = today_wallets(active, datetime.fromtimestamp(slot, timezone.utc).strftime("%Y-%m-%d"), ships)
         if tg_due:
             for o in tg:
                 ok, retry, err = await asyncio.to_thread(o.send_text, today_text(r), today_buttons())
