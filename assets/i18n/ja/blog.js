@@ -1,0 +1,25 @@
+/* Japanese for the blog page. Keys are the English text; the articles carry their own languages. */
+TauI18n.add({ strings: {
+  "What we learned running things on the testnet.": "テストネットで動かして学んだこと。",
+  "Cruise ships, load and incidents on Tau Testnet Alpha, written from our own public logbooks. Every number comes from them; what we do not know yet, we say.": "Tau Testnet Alpha のクルーズ船、負荷、出来事を、私たち自身の公開ログブックから書いています。数字はすべてそこから。まだわからないことは、わからないと書きます。",
+  "No article yet.": "まだ記事はありません。",
+  "All articles": "すべての記事",
+  "Cruise ship": "クルーズ船",
+  "Learnings": "学び",
+  "Why it matters": "なぜ大事か",
+  "Every number comes from our public logbooks:": "数字はすべて公開ログブックから：",
+  "Draft, not published.": "下書き、未公開。",
+  "Publish it on the server with": "サーバーで公開するには",
+  "Numbers not in the logbook facts, marked in the text:": "ログブックの事実にない数字（本文で強調）：",
+  "Every number is in the logbook facts.": "数字はすべてログブックの事実にあります。",
+  "Words to check:": "確認する言葉：",
+  "The facts the article was written from": "記事の元になった事実",
+  "This draft is not there (any more). Published articles are listed on the blog.": "この下書きは（もう）ありません。公開済みの記事はブログに一覧があります。",
+  "Tau HUD is a community project, not affiliated with IDNI. The articles are drafted from our logbooks with the help of a language model and read by a person before they go up.": "Tau HUD はコミュニティのプロジェクトで、IDNI とは関係ありません。記事はログブックをもとに言語モデルの助けを借りて下書きし、公開前に人が読んで確かめます。",
+  "Ship logbook": "船のログブック",
+  "Testnet load": "テストネット負荷",
+  "Findings": "発見事項",
+  "Feedback": "フィードバック",
+  "Blog": "ブログ",
+  "Tau HUD Blog": "Tau HUD ブログ"
+} });

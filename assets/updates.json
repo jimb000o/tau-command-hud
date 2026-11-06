@@ -2343,5 +2343,17 @@
     "tag": "HUD",
     "on": "2026-11-04",
     "html": "Transactions: “ghost” now marks only what it says, a transaction already in a block that the node still lists as waiting (IDNI #81). Every other sealed transaction shows a plain ✓ with its block number, also when the page first saw it in its block, so a sealed transfer no longer looks as if it were still waiting. A transaction seen waiting first now shows its amounts once its block arrives, and for one first seen in a block the fee reads “fee ≤ 1000”: the block lists the cap the sender signed, not the fee charged."
+  },
+  {
+    "tag": "Blog",
+    "on": "2026-11-06",
+    "html": "Blog: a new page with what we learn from running things on Tau Testnet Alpha. The first article is about the MS Dry Run of 4 November: the ship left after 34 of 90 minutes, because 8 sends our node did not answer in time counted as refusals; 122 transactions went through and all 5 bookings paid out. From now on our server drafts one article after every cruise ship visit, from the facts in the ship’s public logbook, in English, Chinese and Japanese; every number is checked against the logbook, and nothing goes up before a person has read it.",
+    "major": {
+      "id": "blog",
+      "title": "New: the Tau HUD blog",
+      "text": "What we learn running things on the Tau testnet. First: why our MS Dry Run cruise left after 34 of 90 minutes, and what we changed.",
+      "link": "/blog/",
+      "image": "/assets/shots/blog.png"
+    }
   }
 ]

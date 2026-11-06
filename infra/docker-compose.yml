@@ -183,6 +183,32 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  # The blog (alerts/blog.py): after each cruise ship visit, a language model writes one learnings article from the
+  # facts counted out of the ship's public logbook (en, zh, ja), as an unlisted draft. Nothing goes on
+  # tauhud.com/blog/ or to the channels until `up blog publish <id>`; `up blog` lists the drafts waiting.
+  blog:
+    build: ./alerts
+    command: ["python", "blog.py", "loop"]
+    init: true
+    environment:
+      RELAY_HTTP: http://relay:8080
+      NEWS_AI_KEY: ${NEWS_AI_KEY:-}
+      CHAT_AI_KEY: ${CHAT_AI_KEY:-}
+      NEWS_AI_MODEL: ${NEWS_AI_MODEL:-claude-sonnet-5-5}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDcom}
+      X_API_KEY: ${X_API_KEY:-}
+      X_API_SECRET: ${X_API_SECRET:-}
+      X_ACCESS_TOKEN: ${X_ACCESS_TOKEN:-}
+      X_ACCESS_SECRET: ${X_ACCESS_SECRET:-}
+    volumes:
+      - alerts_state:/state     # /state/blog.json: which visits have a draft, which drafts were posted
+      - alerts_public:/public   # /public/blog/posts.json and drafts/, served by Caddy
+    depends_on: [relay]
+    mem_limit: 128m
+    restart: unless-stopped
+    logging: *logging
+
   # Build pulse (alerts/devpulse.py): keeps blob-less clones of IDNI's public
   # repositories and writes devpulse.json for tauhud.com/devpulse/ every 30
   # minutes: newest commits, weekly rhythm, code areas, tags, how far upstream
