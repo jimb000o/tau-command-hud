@@ -68,6 +68,12 @@ check("until 10:27 UTC" in alerts.sim_text(sw[0]) and "majority" in alerts.sim_t
 check("fixed validator list" in alerts.sim_text(sw[1]) and "10:30 UTC" in alerts.sim_text(sw[1]), "the return post names the list and tomorrow's switch")
 check(alerts.sim_buttons()["inline_keyboard"][0][0]["url"].endswith("/proposals/?mode=sim"), "the one button opens the simulation")
 
+# since 5 November 2026 the switches get no posts unless SIM_POSTS=true
+off = Fake()
+asyncio.run(alerts.Watcher([off]).maybe_sim(at("2026-10-28", "10:20")))
+check(not alerts.SIM_POSTS and not off.sent, "no switch posts by default (SIM_POSTS off)")
+alerts.SIM_POSTS = True
+
 # posting: only while the proposal is open, once
 tg = Fake()
 w = alerts.Watcher([tg])

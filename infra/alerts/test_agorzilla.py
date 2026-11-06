@@ -63,6 +63,15 @@ class Evening(unittest.TestCase):
                send_x=lambda m, st, png=None: True, now=LATEST["rounds"][0].get("t", 0) + 7200, picture=lambda r: None)
         self.assertEqual(len(out), 1)
 
+    def test_evenings_missed_for_hours_are_not_posted_late(self):
+        # 2 November 2026: after two days down, the service posted evenings 2, 3 and 4 in one minute; now only the fresh one goes
+        old = [dict(LATEST["rounds"][0], n=n, t=1000 - 86400 * (5 - n)) for n in (2, 3, 4)] + [dict(LATEST["rounds"][1], n=5, t=1000 - 600)]
+        s, out, xs = {"last": 1}, [], []
+        A.step(dict(LATEST, rounds=LATEST["rounds"] + old), s, send=lambda m, png=None: out.append(m) or True,
+               send_x=lambda m, st, png=None: xs.append(m) or True, now=1000)
+        self.assertEqual((len(out), len(xs), s["last"], s["x_last"]), (1, 1, 5, 5))
+        self.assertIn("evening 6", out[0])
+
     def test_failed_send_retries_later(self):
         s = {"last": -1}
         A.step(LATEST, s, send=lambda m: False, send_x=lambda m, st: True)

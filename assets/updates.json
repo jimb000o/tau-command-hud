@@ -2360,5 +2360,15 @@
     "tag": "Cruise",
     "on": "2026-11-06",
     "html": "The cruise ships’ logbook is a page now, tauhud.com/cruise: every transaction a ship’s passengers sent, when, where, how much, and the node’s answer, sealed or refused with the reason, visit by visit, with a link into the Explorer. The game’s “The logbook” button and the Testnet load page lead there instead of to the raw data."
+  },
+  {
+    "tag": "Alerts",
+    "on": "2026-11-05",
+    "html": "Alerts: the simulation's consensus switches no longer get a Telegram and X post twice a day. One post explains the daily programme instead (11:20 and 17:20 German time, a 7-minute vote), so the channel stays about the real testnet."
+  },
+  {
+    "tag": "Alerts",
+    "on": "2026-11-06",
+    "html": "Alerts: the Telegram channel and X get fewer and more telling posts. “Testnet today” now leads with who sent: the wallets of the day by kind (IDNI’s test accounts, our own island bot and cruise passengers named as ours, players, newcomers, others), compared with the usual number, and one line on why it matters; X gets it only on an unusual day. The smaller site changes go out once a week, Friday 17:00 German time, five by name, Telegram only. The Key Crier reports only a day real players moved, with the campaign explanation on Monday alone. A closer look comes on Monday, Wednesday and Friday. Findings say why they matter and repeat at most every two days. After a restart nothing is posted late in a burst. The post after a cruise ship visit is the blog article’s, with the logbook’s numbers."
   }
 ]

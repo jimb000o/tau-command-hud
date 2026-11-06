@@ -134,6 +134,7 @@ services:
       X_DAILY_CAP: ${X_DAILY_CAP:-8}
       X_MONTHLY_CAP: ${X_MONTHLY_CAP:-240}
       X_LINKS: ${X_LINKS:-false}
+      SIM_POSTS: ${SIM_POSTS:-false}   # the simulation's switches and visitor rule changes as posts (off since 5 Nov 2026)
       X_SIM: ${X_SIM:-true}
       X_PICTURES: ${X_PICTURES:-true}   # the rule change's card, the live overview or a new page's picture under the post
       # weekly recap image and newspaper (alerts/recap.py, gazette.py): Monday 09:00 German time unless .env says otherwise
@@ -141,9 +142,15 @@ services:
       RECAP_WEEKDAY: ${RECAP_WEEKDAY:-0}
       RECAP_HOUR: ${RECAP_HOUR:-9}
       RECAP_TZ: ${RECAP_TZ:-Europe/Berlin}
+      RECAP_LATE_HOURS: ${RECAP_LATE_HOURS:-3}   # a Monday post missed by longer (a restart) is skipped, never posted in a burst
       # changes to Tau HUD itself, from assets/updates.json, at fixed times (UTC): everything new since the last one in one post
       SITE_UPDATES: ${SITE_UPDATES:-true}
       SITE_SLOTS: ${SITE_SLOTS:-8,12,16}
+      # the smaller site changes once a week (Friday 16 UTC = 17:00 German winter time), 5 by name, Telegram only
+      SITE_DIGEST_WEEKDAY: ${SITE_DIGEST_WEEKDAY:-4}
+      SITE_DIGEST_HOUR: ${SITE_DIGEST_HOUR:-16}
+      SITE_DIGEST_LINES: ${SITE_DIGEST_LINES:-5}
+      SITE_DIGEST_X: ${SITE_DIGEST_X:-false}
       # "Testnet today": the real chain's day in one evening post; practice votes are counted there, not posted one by one
       TESTNET_TODAY: ${TESTNET_TODAY:-true}
       TESTNET_TODAY_HOUR: ${TESTNET_TODAY_HOUR:-19}
@@ -151,6 +158,7 @@ services:
       DEEPDIVES: ${DEEPDIVES:-true}
       DEEPDIVE_HOUR: ${DEEPDIVE_HOUR:-13}
       DEEPDIVE_X_EVERY: ${DEEPDIVE_X_EVERY:-2}
+      DEEPDIVE_DAYS: ${DEEPDIVE_DAYS:-0,2,4}   # Monday, Wednesday, Friday
       ISLAND_CRIER: ${ISLAND_CRIER:-true}
       ISLAND_HOUR: ${ISLAND_HOUR:-7}
       ISLAND_X_EVERY_DAYS: ${ISLAND_X_EVERY_DAYS:-2}

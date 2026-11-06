@@ -126,7 +126,7 @@ TELEGRAM_BOT_NAME = os.environ.get("TELEGRAM_BOT_USERNAME", "tauhud_alerts_bot")
 X_KEYS = {k: os.environ.get(k, "").strip() for k in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET")}
 # X (@TauHUDcom) is paid per post since 2026: $0.015 a post, $0.20 for one with a link in it. So X gets what Telegram gets
 # (rule changes, new nodes, "Testnet today", the site's news and smaller changes, the weekly recap with the paper's headline,
-# the simulation's switches unless X_SIM=false), each in a short text without a link (the profile carries tauhud.com), and
+# the simulation's switches when SIM_POSTS=true, unless X_SIM=false), each in a short text without a link (the profile carries tauhud.com), and
 # never more than X_DAILY_CAP / X_MONTHLY_CAP posts (240 a month: about $3.60). The simulation and the smaller site changes
 # leave the day's last X_RESERVE posts for the real chain. Not on X: practice votes, health alarms, visitor proposals.
 # Findings (findings.py) go to X only for real-chain incidents (no blocks reaching us, no peers, a reorg, a busy stretch),
@@ -145,6 +145,7 @@ RECAP_ON = os.environ.get("RECAP_ENABLED", "true").lower() in ("1", "true", "yes
 RECAP_WEEKDAY = int(os.environ.get("RECAP_WEEKDAY", 0))   # 0 = Monday
 RECAP_HOUR = int(os.environ.get("RECAP_HOUR", 9))         # local time in RECAP_TZ
 RECAP_TZ = ZoneInfo(os.environ.get("RECAP_TZ", "Europe/Berlin"))   # 09:00 in Germany, summer and winter
+RECAP_LATE = float(os.environ.get("RECAP_LATE_HOURS", 3)) * 3600    # a Monday post missed by longer (a restart) is skipped
 # The weekly paper comes out for each language at RECAP_HOUR on RECAP_WEEKDAY in its readers' own time: Japanese first
 # (09:00 Tokyo), then Chinese (09:00 Beijing), then English (09:00 German time). It is printed once, at the first drop;
 # each language's page shows it from its own drop and the edition before until then.
@@ -168,6 +169,10 @@ NEWNODE_GROUP = float(os.environ.get("NEWNODE_GROUP_SECONDS", 600))
 # appears, 10 minutes before it is in force; the channel reports the real testnet, so these posts are rare and marked as simulated.
 # SIM_SWITCHES must equal STAKE_SLOT / FIXED_SLOT in assets/sim.js (slot k = proposed at k:20 UTC, in force at k:30 UTC).
 SIM_ON = os.environ.get("SIM_ALERTS", "true").lower() in ("1", "true", "yes")
+# Since 5 November 2026 the switches and the visitors' simulated rule changes no longer get posts of their own: the same
+# post twice a day read like spam in a channel about the real testnet. One planned post (assets/posts-plan.json,
+# "sim-schedule") explains the daily programme instead. SIM_POSTS=true brings the posts back.
+SIM_POSTS = os.environ.get("SIM_POSTS", "false").lower() in ("1", "true", "yes")
 SIM_SWITCHES = (("stake", 10), ("fixed", 16))
 SIM_PROPOSED_AT, SIM_IN_FORCE_AT = 20 * 60, 30 * 60
 SIM_LINK = f"{SITE}/proposals/?mode=sim"
@@ -184,9 +189,13 @@ SITE_MAJOR_MAX_AGE_DAYS = int(os.environ.get("SITE_MAJOR_MAX_AGE_DAYS", 3))
 # last one goes out as one post on Telegram and X; one new page or feature gets its own post with its screenshot.
 SITE_SLOTS = tuple(sorted(int(x) for x in os.environ.get("SITE_SLOTS", "8,12,16").split(",")))
 SITE_SLOT_HOURS = float(os.environ.get("SITE_SLOT_HOURS", 4))  # a slot not used by then is over: nothing new at night
-SITE_DIGEST_MIN = int(os.environ.get("SITE_DIGEST_MIN", 3))       # fewer smaller changes wait for a later slot…
-SITE_DIGEST_MAX_WAIT = float(os.environ.get("SITE_DIGEST_MAX_WAIT_DAYS", 7)) * 86400  # …but not longer than this
-SITE_DIGEST_LINES = 8
+# The smaller changes go out once a week (since 6 November 2026: up to three digests a day read like a changelog), at
+# SITE_DIGEST_HOUR UTC on SITE_DIGEST_WEEKDAY (Friday 17:00 German winter time), at most SITE_DIGEST_LINES of them by
+# name, the rest counted; Telegram only unless SITE_DIGEST_X=true.
+SITE_DIGEST_WEEKDAY = int(os.environ.get("SITE_DIGEST_WEEKDAY", 4))   # 0 = Monday
+SITE_DIGEST_HOUR = int(os.environ.get("SITE_DIGEST_HOUR", 16))        # UTC
+SITE_DIGEST_LINES = int(os.environ.get("SITE_DIGEST_LINES", 5))
+SITE_DIGEST_X = os.environ.get("SITE_DIGEST_X", "false").lower() in ("1", "true", "yes")
 SITE_LOG_LINK = f"{SITE}/#updates"
 # Posts planned ahead (the month's calendar): assets/posts-plan.json on the site, each sent once at its time on Telegram
 # and X, or within PLAN_WINDOW_HOURS after it (a later restart); after that it is over, never posted late.
@@ -204,6 +213,8 @@ DEEPDIVE_ON = os.environ.get("DEEPDIVES", "true").lower() in ("1", "true", "yes"
 DEEPDIVE_URL = os.environ.get("DEEPDIVES_URL", f"{SITE}/assets/deepdives.json")
 DEEPDIVE_HOUR = int(os.environ.get("DEEPDIVE_HOUR", 13))     # UTC (14:00 German winter time)
 DEEPDIVE_X_EVERY = max(1, int(os.environ.get("DEEPDIVE_X_EVERY", 2)))
+# the days of the week a closer look goes out (0 = Monday); Monday, Wednesday and Friday since 6 November 2026
+DEEPDIVE_DAYS = tuple(sorted({int(x) for x in os.environ.get("DEEPDIVE_DAYS", "0,2,4").split(",") if x.strip()}))
 DEEPDIVE_LINE = "🔎 TAU HUD · a closer look"
 DEEPDIVE_FOOT = "🔎 A closer look at Tau HUD"
 # The Key Crier: White Rabbit Key's shared island (relay /isle) summed up every morning for the day before, at
@@ -936,7 +947,105 @@ def today_numbers(stats: dict | None, items: list[dict], props: list[dict], onli
     return {"end": end, "blocks": len(rows), "pace": pace, "txs": sum(r[f["txs"]] for r in rows) if "txs" in f else 0,
             "senders": len(senders), "practice": len(practice), "practice_why": practice_meaning(len(practice), proposers),
             "events": events, "online": online, "last_block": newest if newest and newest < end else None,
-            "coming": sorted(coming, key=lambda c: c["at"])[:2]}
+            "coming": sorted(coming, key=lambda c: c["at"])[:2], "wallets": None}
+
+
+WALLET_WHO = {  # the relay's wallet tags (relay/walletdays.py), in words; our own wallets say so
+    "idni": "IDNI's own test accounts, the ones the testnet started with",
+    "bot": "our island bot's wallets (the islanders of White Rabbit Key)",
+    "cruise": "simulated passengers of {ship}: our own wallets, every stop a real transaction",
+    "rabbit": "White Rabbit Key players",
+    "agorzilla": "wallets that fed Agorzilla",
+    "tauhud": "wallets that sent from a Tau HUD page",
+    "other": "other wallets, not ours and not IDNI's",
+}
+SHIP_NAMES = {"dryrun": "MS Dry Run", "queen": "Queen Mempool"}
+USUAL_DAYS = 7
+
+
+def ships_in(log: list | dict | None, start: float, end: float) -> list[str]:
+    """The cruise ships that landed between start and end, by name, from the relay's logbook (/cruise/log)."""
+    rows = (log or {}).get("entries") if isinstance(log, dict) else log
+    names: list[str] = []
+    for e in rows or []:
+        if not isinstance(e, dict) or e.get("kind") != "landed" or not (start <= (e.get("t") or 0) < end):
+            continue
+        name = SHIP_NAMES.get(str(e.get("ship")), str(e.get("ship") or "a cruise ship"))
+        if name not in names:
+            names.append(name)
+    return names
+
+
+def today_wallets(active: dict | None, day: str, ships: list[str] | None = None) -> dict | None:
+    """Who sent today, from the relay's active-wallets record (/wallets/active, the same source as the Active wallets
+    chart on /stats/): the wallets active on `day` (UTC) by tag, the usual number (the mean of the USUAL_DAYS days
+    before), the wallets seen for the first time today. None when the relay has no record of the day."""
+    if not isinstance(active, dict) or not isinstance(active.get("days"), dict):
+        return None
+    tags, days = list(active.get("tags") or []), active["days"]
+    row = (days.get(day) or {}).get("1")
+    if not tags or not isinstance(row, list) or len(row) != len(tags):
+        return None
+    by = {t: int(n) for t, n in zip(tags, row) if n}
+    before = sorted(d for d in days if d < day)[-USUAL_DAYS:]
+    past = [sum((days[d].get("1") or [0])) for d in before if isinstance(days[d].get("1"), list)]
+    usual = round(sum(past) / len(past)) if past else None
+    new_row = (active.get("new") or {}).get(day) or []
+    new = sum(int(n) for n in new_row) if isinstance(new_row, list) else 0
+    total = sum(by.values())
+    ratio = round(total / usual, 1) if usual else None
+    return {"total": total, "by": by, "usual": usual, "ratio": ratio, "new": new, "ships": list(ships or []),
+            "ours": sum(by.get(t, 0) for t in ("bot", "cruise", "agorzilla", "tauhud", "rabbit"))}
+
+
+def wallets_head(w: dict, short: bool = False) -> str:
+    """"77 wallets sent transactions, 3.5× the usual 22" / "about the usual" / "fewer than usual"; `short` for X."""
+    head = f"{plural(w['total'], 'wallet')} sent {'today' if short else 'transactions'}"
+    u, r = w.get("usual"), w.get("ratio")
+    if not u or r is None:
+        return head
+    if r >= 1.5:
+        return f"{head}, {r:g}× the usual {u}"
+    if r <= 0.6:
+        return f"{head}, fewer than the usual {u}"
+    return f"{head}, about the usual {u}"
+
+
+def wallets_lines(w: dict) -> list[str]:
+    """One line per kind of wallet that sent today, our own named as ours, then the newcomers."""
+    out = []
+    ship = " and ".join(w.get("ships") or []) or "our cruise ships"
+    for t, n in sorted(w["by"].items(), key=lambda kv: -kv[1]):
+        who = WALLET_WHO.get(t, t).format(ship=ship)
+        out.append(f"{n} of them: {who}" if len(w["by"]) > 1 else f"all of them: {who}")
+    if w.get("new"):
+        out.append(f"{plural(w['new'], 'wallet')} nobody had seen before")
+    return out
+
+
+def today_why(r: dict, short: bool = False) -> str | None:
+    """One sentence on what the day's numbers mean, from the facts only; None when there is nothing to say.
+    `short`: the X wording."""
+    w, pace = r.get("wallets"), r.get("pace")
+    steady = bool(r["blocks"]) and pace is not None and pace <= 90
+    if not r["blocks"]:
+        return None   # the quiet lines say it
+    if r["events"]:
+        return "A rule change on Tau is proposed, voted on and in force, no fork, no restart." if short else \
+            "A rule change on Tau is proposed, voted on and in force without a fork or a restart; today's is above."
+    if w and w.get("ratio") and w["ratio"] >= 1.5:
+        kept = "the chain kept one block a minute" if steady else f"the chain slowed to one block every {round(pace)} seconds"
+        return f"Each a real signed transaction the one validator checked; {kept}." if short else \
+            f"Every one of these was a real signed transaction the single validator had to check, and {kept}."
+    if w and w["by"].get("other"):
+        n = w["by"]["other"]
+        return f"{plural(n, 'wallet')} not ours and not IDNI's: people trying the testnet on their own." if short else \
+            f"{plural(n, 'wallet')} that {'is' if n == 1 else 'are'} not ours and not IDNI's sent today: people are trying the testnet on their own."
+    if w and w.get("new"):
+        return "New wallets are people trying the testnet for the first time; the Start page shows them what to do."
+    if steady:
+        return "A quiet day: the chain kept one block a minute without anyone pushing it."
+    return None
 
 
 def today_worth_posting(r: dict) -> bool:
@@ -946,8 +1055,12 @@ def today_worth_posting(r: dict) -> bool:
 
 
 def today_worth_x(r: dict) -> bool:
-    """X gets the day when something happened, or when nothing did at all: a day without a block is news."""
-    return today_worth_posting(r) or not r["blocks"]
+    """X gets only a day worth telling: a rule event, no block at all, many more wallets than usual, or newcomers.
+    An ordinary day with its usual wallets is Telegram's alone (since 6 November 2026; before, every day with a
+    transaction went to X too)."""
+    w = r.get("wallets")
+    unusual = bool(w) and (bool(w.get("ratio")) and w["ratio"] >= 1.5 or w.get("new", 0) >= 3)
+    return bool(r["events"]) or not r["blocks"] or unusual
 
 
 def quiet_lines(r: dict) -> list[str]:
@@ -969,11 +1082,17 @@ def today_text(r: dict) -> str:
     day = datetime.fromtimestamp(r["end"], timezone.utc)
     out = [REAL_LINE, f"📋 <b>Testnet today, {day.day} {day.strftime('%B')}</b>", ""]
     pace = f", one every {round(r['pace'])} seconds" if r["pace"] else ""
+    w = r.get("wallets")
+    if w and w["total"]:
+        out.append(f"<b>{e(wallets_head(w))}</b>")
+        out += [f"• {e(x)}" for x in wallets_lines(w)]
+        out.append("")
     if r["blocks"]:
-        out.append(f"• {plural(r['blocks'], 'block')}{pace}")
-    if r["txs"]:
-        out.append(f"• {plural(r['txs'], 'transaction')} from {plural(r['senders'], 'account')}")
-    elif not r["practice"]:
+        line = f"• {plural(r['blocks'], 'block')}{pace}"
+        if r["txs"]:
+            line += f", {plural(r['txs'], 'transaction')}" + ("" if w and w["total"] else f" from {plural(r['senders'], 'account')}")
+        out.append(line)
+    if not r["txs"] and not r["practice"]:
         out += [e(x) for x in quiet_lines(r)]
     for h in r["events"]:
         out.append(f"• {e(h)}")
@@ -983,6 +1102,9 @@ def today_text(r: dict) -> str:
                    + (f"; {e(r['practice_why'])}." if n > 1 and r.get("practice_why") else ".") + " You can try it on the Vote page.")
     if r["online"]:
         out.append(f"• {plural(r['online'], 'node')} online")
+    why = today_why(r)
+    if why:
+        out += ["", "<b>Why it matters</b>", e(why)]
     for c in r["coming"]:
         out += ["", f"Coming up: {e(c['title'])} at block #{fmt_n(c['at'])}{e(c['eta'])}."]
     return "\n".join(out)
@@ -991,18 +1113,39 @@ def today_text(r: dict) -> str:
 def today_x(r: dict) -> str:
     day = datetime.fromtimestamp(r["end"], timezone.utc)
     pace = f", one every {round(r['pace'])} seconds" if r["pace"] else ""
-    out = [f"📋 Testnet today, {day.day} {day.strftime('%B')}"] + ([f"• {plural(r['blocks'], 'block')}{pace}"] if r["blocks"] else [])
-    if r["txs"]:
-        out.append(f"• {plural(r['txs'], 'transaction')} from {plural(r['senders'], 'account')}")
-    elif not r["practice"]:
+    w = r.get("wallets")
+    out = [f"📋 Testnet today, {day.day} {day.strftime('%B')}"]
+    if w and w["total"]:   # a spike names only its cause, so the meaning still fits
+        spike = bool(w.get("ratio")) and w["ratio"] >= 1.5
+        out.append(wallets_head(w, short=True) + ": " + ", ".join(wallets_short(w, 1 if spike else 2, new=not spike)) + ".")
+    why = today_why(r, short=True)
+    blocks = f"{plural(r['blocks'], 'block')}{pace}" + (f", {plural(r['txs'], 'transaction')}" if r["txs"] else "") if r["blocks"] else None
+    # what fits goes in this order; the end is dropped first when room is short, so the meaning comes before the events
+    # (each rule event had its own post when it happened) and, with the wallets told, before the block count
+    if why and w and w["total"]:
+        out += ["Why it matters: " + why] + ([blocks] if blocks else [])
+    else:
+        out += ([blocks] if blocks else []) + (["Why it matters: " + why] if why else [])
+    if not r["txs"] and not r["practice"]:
         out += quiet_lines(r)[:2]
     out += [f"• {h}" for h in r["events"]]
-    if r["practice"]:
+    if r["practice"] and not (w and w["total"]):
         out.append(f"• {plural(r['practice'], 'practice vote')}, the rules stay as they are")
-    if r["online"]:
-        out.append(f"• {plural(r['online'], 'node')} online")
     out += [f"Coming up: {c['title']} at block #{fmt_n(c['at'])}{c['eta']}." for c in r["coming"][:1]]
     return x_post(out, f"{SITE}/", keep=2)
+
+
+X_WHO = {"idni": "IDNI's test accounts", "bot": "our island bot", "cruise": "passengers of {ship} (ours, simulated)",
+         "rabbit": "White Rabbit Key players", "agorzilla": "Agorzilla feeders", "tauhud": "sent from Tau HUD", "other": "not ours"}
+
+
+def wallets_short(w: dict, top: int = 3, new: bool = True) -> list[str]:
+    """The `top` largest kinds for X, then the newcomers."""
+    ship = " and ".join(w.get("ships") or []) or "our cruise ships"
+    out = [f"{n} {X_WHO.get(t, t).format(ship=ship)}" for t, n in sorted(w["by"].items(), key=lambda kv: -kv[1])[:top]]
+    if new and w.get("new"):
+        out.append(f"{w['new']} new")
+    return out
 
 
 def today_buttons() -> dict:
@@ -1096,6 +1239,15 @@ def catchup_x(majors: list[dict]) -> str:
     return x_post([head] + [f"• {n[:1].upper() + n[1:]}" for n in names], SITE_LOG_LINK, foot=X_SITE_NOTE)
 
 
+def digest_slot(t: float) -> float | None:
+    """The latest weekly digest time (SITE_DIGEST_WEEKDAY at SITE_DIGEST_HOUR UTC) at or before t, within the last week."""
+    d = datetime.fromtimestamp(t, timezone.utc).replace(hour=SITE_DIGEST_HOUR, minute=0, second=0, microsecond=0)
+    d -= timedelta(days=(d.weekday() - SITE_DIGEST_WEEKDAY) % 7)
+    if d.timestamp() > t:
+        d -= timedelta(days=7)
+    return d.timestamp()
+
+
 def digest_x(items: list[dict]) -> str:
     """The smaller changes on X: how many, then a short line each, as many as fit."""
     return x_post([f"🛠 {plural(len(items), 'smaller change')} to Tau HUD"] + [f"• {i['area']}: {i['line']}" for i in items],
@@ -1106,15 +1258,21 @@ def major_buttons(m: dict) -> dict:
     return {"inline_keyboard": [[{"text": "✨ Open it", "url": m["link"]}, {"text": "📜 All updates", "url": SITE_LOG_LINK}]]}
 
 
-def digest_text(items: list[dict], lines: int = SITE_DIGEST_LINES) -> str:
-    """The digest of smaller changes, oldest first; more than `lines` are counted, not listed."""
+def digest_order(items: list[dict]) -> list[dict]:
+    """What a visitor notices first: changes to the pages before the ones to the bot and the alerts, oldest first."""
+    return sorted(items, key=lambda i: (str(i.get("area", "")).lower() in ("alerts", "bot", "infra", "server"), 0))
+
+
+def digest_text(items: list[dict], lines: int | None = None) -> str:
+    """The week's smaller changes, the ones a visitor notices first; more than `lines` are counted, not listed."""
     e = html.escape
+    lines = SITE_DIGEST_LINES if lines is None else lines
+    items = digest_order(items)
     shown, rest = items[:lines], len(items) - lines
-    since = min((i.get("on") or "" for i in items), default="")
-    head = f"<b>{plural(len(items), 'smaller change')} to Tau HUD" + (f" since {e(since)}" if since else "") + "</b>"
+    head = f"<b>This week on Tau HUD: {plural(len(items), 'smaller change')}</b>"
     out = [DIGEST_LINE, head, ""] + [f"• <b>{e(i['area'])}</b>: {e(i['line'])}" for i in shown]
     if rest > 0:
-        out.append(f"…and {plural(rest, 'more change')} in the Updates log.")
+        out.append(f"…and {rest} more in the Updates log.")
     out += ["", f"<a href=\"{e(SITE_LOG_LINK)}\">Read every change in the Updates log</a>", "", f"<i>{e(SITE_NOTICE)}</i>"]
     text = "\n".join(out)
     if len(text) > 3900 and lines > 1:  # Telegram's limit is 4096 characters
@@ -1313,11 +1471,14 @@ def island_text(r: dict) -> str:
     out += [f"• {e(x)}" for x in r["lines"]]
     if not r["players"]:
         out.append("• no visitor made a move; the island waits for you")
-    out += ["", "<i>A campaign is the week, Monday to Sunday, an island day a real day: speeches on the square, laws in "
-                "the hall, pacts at the bar, embassy money and rumours on Radio Coco, then the election on Sunday evening. "
-                "Everyone plays their own campaign and nobody waits for anybody; the island adds up what everyone did that "
-                "day, and every campaign won is a ballot in the governor's count on Monday 00:00 German time. Every move "
-                "is one real transaction on Tau Testnet Alpha, with test AGRS that have no value.</i>"]
+    if w:   # the standing explanation once a week, with the count; the other days say only what is real about it
+        out += ["", "<i>A campaign is the week, Monday to Sunday, an island day a real day: speeches on the square, laws in "
+                    "the hall, pacts at the bar, embassy money and rumours on Radio Coco, then the election on Sunday evening. "
+                    "Everyone plays their own campaign and nobody waits for anybody; the island adds up what everyone did that "
+                    "day, and every campaign won is a ballot in the governor's count on Monday 00:00 German time. Every move "
+                    "is one real transaction on Tau Testnet Alpha, with test AGRS that have no value.</i>"]
+    else:
+        out += ["", "<i>Every move is one real transaction on Tau Testnet Alpha, with test AGRS that have no value.</i>"]
     return "\n".join(out)
 
 
@@ -2198,7 +2359,7 @@ class Watcher:
     async def maybe_sim(self, now: float | None = None):
         """One Telegram post per simulated consensus switch, sent while its proposal is open (the 10 minutes before it is
         in force). A switch missed while the service was down is skipped, never posted late. Pure clock work: no relay needed."""
-        if not SIM_ON:
+        if not (SIM_ON and SIM_POSTS):
             return
         now = now if now is not None else time.time()
         st = self.state.setdefault("sim", {"posted": {}})
@@ -2254,6 +2415,9 @@ class Watcher:
         peers, board = await asyncio.to_thread(self.relay_json, "/peers"), await asyncio.to_thread(self.relay_json, "/community/board")
         online = nodes_online(peers, board) if peers is not None or board is not None else None
         r = today_numbers(stats, self.state["items"], getattr(self, "props", []), online, slot, self.last_block_time())
+        active = await asyncio.to_thread(self.relay_json, "/wallets/active")
+        ships = ships_in(await asyncio.to_thread(self.relay_json, "/cruise/log?n=300"), slot - 86400, slot) if active else []
+        r["wallets"] = today_wallets(active, datetime.fromtimestamp(slot, timezone.utc).strftime("%Y-%m-%d"), ships)
         if tg_due:
             for o in tg:
                 ok, retry, err = await asyncio.to_thread(o.send_text, today_text(r), today_buttons())
@@ -2352,6 +2516,8 @@ class Watcher:
         slot = datetime.fromtimestamp(now, timezone.utc).replace(hour=DEEPDIVE_HOUR, minute=0, second=0, microsecond=0).timestamp()
         if now < slot or now > slot + 3 * 3600 or st.get("slot", 0) >= slot:
             return
+        if datetime.fromtimestamp(slot, timezone.utc).weekday() not in DEEPDIVE_DAYS:
+            return
         tg = self.tg_on()
         # the day's post: the one started this slot (Telegram or X went first), else the file's next unposted one
         p = next((q for q in st["posts"] if q["id"] == st.get("current") and st.get("current_slot") == slot), None) \
@@ -2393,7 +2559,7 @@ class Watcher:
     # ---------- the Key Crier: White Rabbit Key's shared island, the day before (relay /isle) ----------
     async def maybe_island(self, now: float | None = None, snap: dict | None = None):
         """Keep the island's day as the relay sums it up (the last reading before midnight UTC is the day), and every
-        morning at ISLAND_HOUR UTC report the day before: Telegram when anyone moved, the X copy only for a day real
+        morning at ISLAND_HOUR UTC report the day before: Telegram when a real player moved, the X copy only for a day real
         players moved and at most every ISLAND_X_EVERY_DAYS days; X never waits for Telegram. On Monday the report
         opens with the governor's count of the week just ended (relay `last`), then goes out on X as well."""
         if not ISLAND_ON:
@@ -2422,9 +2588,11 @@ class Watcher:
         if not d or day in st["posted"] and day in st["x_posted"]:
             return
         r = island_report(day, d, st.get("length") or ISLAND_DAYS)
-        if not r["lines"] and not r["week"]:
-            st["posted"][day] = st["x_posted"][day] = 0   # nobody and nothing: no report
+        if not r["players"] and not r["week"]:
+            # nobody played: no report (since 6 November 2026; before, the islanders' own day was reported every morning)
+            st["posted"][day] = st["x_posted"][day] = 0
             self.save_state()
+            log.info("island %s: no visitor moved, no Key Crier", day)
             return
         tg = self.tg_on()
         if tg and day not in st["posted"] and st.get("pause_until", 0) <= now:
@@ -2579,6 +2747,7 @@ class Watcher:
                 self.take_updates(entries, now)
             self.save_state()
         tg = self.tg_on()
+        await self.maybe_digest(now, tg)
         slot = site_slot(now)
         if slot is None or now - slot >= SITE_SLOT_HOURS * 3600:
             return
@@ -2612,21 +2781,33 @@ class Watcher:
                 await self.post_x(text_x, "site " + ", ".join(m["key"] for m in for_x), now, pic)
             self.save_state()
             return
-        if st["pending"] and (len(st["pending"]) >= SITE_DIGEST_MIN or now - st["pending"][0]["at"] >= SITE_DIGEST_MAX_WAIT):
-            items = list(st["pending"])
-            keys = sorted(i.get("key", "") for i in items)
-            if tg_due:
-                if not await self.site_send(tg, digest_text(items), digest_buttons(), now):
-                    return
-                log.info("site updates: digest of %d posted", len(items))
-                st["pending"], st["slot"], st["last_digest"] = [], slot, round(now)
-            st["x_slot"] = slot
-            self.save_state()
+
+    async def maybe_digest(self, now: float, tg: list):
+        """The smaller changes of the week in one post at the weekly digest time (SITE_SLOT_HOURS after it, it is over
+        and they wait for the next week); Telegram, and X only with SITE_DIGEST_X."""
+        st = self.state["site"]
+        ds = digest_slot(now)
+        if not st["pending"] or ds is None or now - ds >= SITE_SLOT_HOURS * 3600:
+            return
+        tg_due = bool(tg) and st.get("pause_until", 0) <= now and st.get("digest_slot", 0) < ds
+        x_due = SITE_DIGEST_X and st.get("x_digest_slot", 0) < ds and (st.get("digest_slot", 0) >= ds or self.x_alone(st, now))
+        if not tg_due and not x_due:
+            return
+        items = list(st["pending"])
+        keys = sorted(i.get("key", "") for i in items)
+        if tg_due:
+            if not await self.site_send(tg, digest_text(items), digest_buttons(), now):
+                return
+            log.info("site updates: the week's digest of %d posted", len(items))
+            st["pending"], st["digest_slot"], st["last_digest"] = [], ds, round(now)
+            x_due = SITE_DIGEST_X and st.get("x_digest_slot", 0) < ds
+        if x_due:
+            st["x_digest_slot"] = ds
             if st.get("x_digest") != keys:   # the same digest, sent alone to X earlier while Telegram failed, not again
                 st["x_digest"] = keys
                 self.save_state()
                 await self.post_x(digest_x(items), "site digest", now, spare=True)
-            self.save_state()
+        self.save_state()
 
     async def site_send(self, tg: list, text: str, buttons: dict, now: float, picture: str | None = None) -> bool:
         st = self.state["site"]
@@ -2643,7 +2824,7 @@ class Watcher:
     async def maybe_visitors(self, now: float | None = None, votes: dict | None = None):
         """One Telegram post per visitor proposal that was voted in with enough votes, at most VISITOR_DAILY_CAP a day,
         sent between the close of its vote and the moment it is in force; one missed while the service was down is skipped."""
-        if not SIM_ON:
+        if not (SIM_ON and SIM_POSTS):
             return
         now = now if now is not None else time.time()
         st = self.state.setdefault("visitors", {"posted": {}, "checked": 0})
@@ -2973,7 +3154,7 @@ class Watcher:
             st = self.state["recap"] = {"slot": slot, "posted": {}, "r": r,
                                         "file": datetime.fromtimestamp(slot, timezone.utc).strftime("%Y-%m-%d") + ".png"}
             self.save_state()
-        if "r" not in st or time.time() - st["slot"] > 86400:  # nothing drawn, or a day late: skip this week's post
+        if "r" not in st or time.time() - st["slot"] > RECAP_LATE:  # nothing drawn, or hours late: skip this week's post
             return
         for o in self.outlets:
             got = st["posted"].get(o.name)

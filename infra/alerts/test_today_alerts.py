@@ -156,5 +156,51 @@ tg4.send_text = lambda text, buttons=None: (tg4.sent.append((text, buttons)), (T
 asyncio.run(w4.maybe_today(at("2026-10-28", "19:07")))
 check(len(tg4.sent) == 2 and len(x4.sent) == 1, "Telegram back: its post goes out, X not again")
 
+
+# who sent today (relay /wallets/active, the Active wallets chart's source), the usual number, the newcomers, the ship
+TAGS = ["idni", "bot", "cruise", "rabbit", "agorzilla", "tauhud", "other"]
+ACTIVE = {"tags": TAGS, "windows": [1, 7, 30, 90], "new": {"2026-11-04": [0, 0, 52, 1, 0, 2, 6]},
+          "days": {f"2026-10-{d:02d}": {"1": [11, 3, 0, 2, 1, 2, 3]} for d in range(28, 32)}}
+ACTIVE["days"].update({"2026-11-01": {"1": [11, 3, 0, 2, 1, 2, 3]}, "2026-11-02": {"1": [11, 3, 0, 2, 1, 2, 3]},
+                       "2026-11-03": {"1": [11, 3, 0, 2, 1, 2, 3]}, "2026-11-04": {"1": [11, 3, 52, 2, 0, 2, 7]}})
+LOG = [{"t": at("2026-11-04", "15:02"), "kind": "landed", "ship": "dryrun", "visit": "v1"}, {"t": at("2026-11-04", "16:30"), "kind": "left", "ship": "dryrun"}]
+ships = alerts.ships_in(LOG, at("2026-11-03", "19:00"), at("2026-11-04", "19:00"))
+check(ships == ["MS Dry Run"], f"the ship that landed in the window, by name {ships}")
+check(alerts.ships_in(LOG, at("2026-11-05", "19:00"), at("2026-11-06", "19:00")) == [], "no ship on another day")
+w = alerts.today_wallets(ACTIVE, "2026-11-04", ships)
+check(w["total"] == 77 and w["usual"] == 22 and w["ratio"] == 3.5 and w["new"] == 61 and w["by"]["cruise"] == 52, f"77 wallets, 3.5× the usual 22 {w}")
+check(alerts.wallets_head(w) == "77 wallets sent transactions, 3.5× the usual 22", "the head line of a spike")
+lines = alerts.wallets_lines(w)
+check(lines[0] == "52 of them: simulated passengers of MS Dry Run: our own wallets, every stop a real transaction", f"the passengers first, named as ours {lines[0]}")
+check("11 of them: IDNI's own test accounts, the ones the testnet started with" in lines and "7 of them: other wallets, not ours and not IDNI's" in lines
+      and lines[-1] == "61 wallets nobody had seen before", f"IDNI, strangers, newcomers {lines}")
+w3 = alerts.today_wallets(ACTIVE, "2026-11-03")
+check(w3["total"] == 22 and alerts.wallets_head(w3) == "22 wallets sent transactions, about the usual 22", "an ordinary day: about the usual")
+check(alerts.today_wallets(ACTIVE, "2026-11-09") is None and alerts.today_wallets(None, "2026-11-04") is None, "no record of the day: no wallet lines")
+check(alerts.today_wallets({"tags": TAGS, "days": {"2026-11-04": {"1": [1, 0, 0, 0, 0, 0, 0]}}}, "2026-11-04")["usual"] is None, "the first day has no usual")
+T4 = at("2026-11-04", "19:00")
+STATS4 = {"fields": STATS["fields"], "head": 1800, "blocks": [[h, T4 - 86400 + h * 60, 1, 0, 0, 0, [], [h % 3]] for h in range(1, 1440)]}
+r4 = alerts.today_numbers(STATS4, [], PROPS, 2, T4)
+r4["wallets"] = w
+t4 = alerts.today_text(r4)
+check("<b>77 wallets sent transactions, 3.5× the usual 22</b>" in t4 and "• 52 of them: simulated passengers of MS Dry Run" in t4
+      and "from 3 accounts" not in t4, "Testnet today leads with who sent, the stats' account count is not repeated")
+check("<b>Why it matters</b>\nEvery one of these was a real signed transaction the single validator had to check, and the chain kept one block a minute." in t4,
+      f"a spike says why it matters, from the facts {t4}")
+x4 = alerts.today_x(r4)
+check(x4.startswith("📋 Testnet today, 4 November\n\n77 wallets sent today, 3.5× the usual 22: 52 passengers of MS Dry Run (ours, simulated).")
+      and "Why it matters: Each a real signed transaction the one validator checked; the chain kept one block a minute." in x4
+      and alerts.x_len(x4) <= 280, f"the X copy names the passengers as ours and says why it matters {x4}")
+check(alerts.today_worth_x(r4), "a spike goes to X")
+r3 = dict(r4, wallets=w3, events=[])
+check(not alerts.today_worth_x(r3), "an ordinary day with the usual wallets is Telegram's alone")
+check("Why it matters</b>\n3 wallets that are not ours and not IDNI&#x27;s sent today: people are trying the testnet on their own." in alerts.today_text(r3),
+      "an ordinary day with strangers says so")
+r5 = dict(r3, wallets=alerts.today_wallets(dict(ACTIVE, new={}), "2026-11-02"))
+r5["wallets"]["by"] = {"idni": 11, "bot": 3}
+check("A quiet day: the chain kept one block a minute" in alerts.today_text(r5) and not alerts.today_worth_x(r5), "only our own and IDNI's wallets: a quiet day")
+slow = dict(r4, pace=140)
+check("the chain slowed to one block every 140 seconds" in alerts.today_text(slow), "a spike on a slow chain says so, no praise")
+check(alerts.today_worth_x(dict(r3, wallets=dict(w3, new=3))), "three newcomers are news for X")
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)
