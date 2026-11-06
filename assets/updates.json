@@ -2395,5 +2395,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-06",
     "html": "White Rabbit Key: the cruise ship's logbook now notes how long our node took to answer each send, and the blog draft after a visit shows it as a chart. When the ship slows down because our own node answered late, the article says so and no longer calls the testnet strained."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-06",
+    "html": "Chain core: the ring of waiting transactions now holds still while the pointer rests on it, so one dot can be hovered and read; it moves on when the pointer leaves. On a phone a tap holds it for a few seconds."
   }
 ]

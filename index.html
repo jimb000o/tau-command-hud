@@ -3283,6 +3283,14 @@ function originOf(tx) { if (!window.TauOrigin) return null; if (!tx._og || perfo
 const originLine = og => og ? `\nComes from ${og.name}: ${og.what}.` : "";
 /* CORE_MOUSE: where the pointer rests over the core, in canvas units; the frame loop re-runs the hit test there so the hovered element lights up even while it orbits */
 let CORE_MOUSE = null;
+/* the waiting room holds still while the pointer rests on its orbit, so one dot can be read; a short ease stops it and starts it again.
+   On touch a tap holds it for a few seconds. MEM_T is the orbit's own clock and moves only while it runs */
+let MEM_T = 0, MEM_V = 1, MEM_LAST = 0;
+function memHeld(C) {
+  const m = CORE_MOUSE; if (!m) return false;
+  if (m.tap && performance.now() - m.at > 6000) return false;
+  return Math.abs(Math.hypot(m.x, m.y) - C * .44) <= 30;
+}
 function coreHitAt(x, y) {
   let best = null, bd = Infinity;
   for (const h of CORE_HITS) { const d = Math.hypot(h.x - x, h.y - y); if (d <= h.r && d < bd) { best = h; bd = d; } }
@@ -3294,7 +3302,7 @@ function coreHitAt(x, y) {
 function coreHit(e) {
   const b = cv.getBoundingClientRect(); if (!b.width) return null;
   const k = cv.width / b.width, C = cv.width / 2, x = (e.clientX - b.left) * k - C, y = (e.clientY - b.top) * k - C;
-  const h = coreHitAt(x, y); CORE_MOUSE = h ? { x, y } : null;
+  const h = coreHitAt(x, y); CORE_MOUSE = h ? { x, y, at: performance.now(), tap: false } : null;
   return h;
 }
 /* the hovered element glows under its overlay text: a band for a ring, a halo for a dot, the validator or the core; in the colour
@@ -3676,10 +3684,12 @@ function draw(tm) {
 
   // mempool orbit: a faint guide circle shows where the waiting transactions travel, so the ring can be found even when it is empty
   const M = S.mempool.length;
+  const mdt = MEM_LAST ? Math.min((tm - MEM_LAST) / 1000, .1) : 0; MEM_LAST = tm;
+  MEM_V += ((memHeld(C) ? 0 : 1) - MEM_V) * Math.min(1, mdt * 8); MEM_T += mdt * MEM_V; const mt = MEM_T;
   const mlv = CORE_LV.mempool, mcol = mlv === "bad" ? "rgba(255,77,109,.55)" : mlv === "watch" ? "rgba(255,177,59,.4)" : "rgba(255,255,255,.07)";   // the orbit itself warns: amber to watch, red when stuck
   cx.save(); cx.setLineDash([2, 10]); cx.beginPath(); cx.lineWidth = mlv === "ok" ? 1.2 : 2; cx.strokeStyle = mcol; cx.arc(0, 0, C * .44, 0, Math.PI * 2); cx.stroke(); cx.restore();
   S.mempool.forEach((tx, i) => {
-    const a = i / Math.max(M, 1) * Math.PI * 2 + t * .6, r = C * .44 + Math.sin(t * 2 + i) * 8;
+    const a = i / Math.max(M, 1) * Math.PI * 2 + mt * .6, r = C * .44 + Math.sin(mt * 2 + i) * 8;
     const sl = liveChain() && sealedAt(tx.id) != null; focusAt(tx.id, Math.cos(a) * r, Math.sin(a) * r, 16); dotShadow(Math.cos(a) * r, Math.sin(a) * r, 6, C);
     cx.beginPath(); cx.fillStyle = tx.kind === "gov" ? "rgba(255,255,255,.95)" : /rule/.test(tx.type) ? "rgba(57,255,138,.95)" : "rgba(200,200,210,.75)";
     if (sl) {   // sealed but still listed: an amber dot in a small block frame
@@ -4024,7 +4034,7 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
   document.addEventListener("scroll", e => { if (!cur) return; const t = e.target; if (t === document || (t instanceof Element && t.contains(cur))) hide(); }, true);
   document.addEventListener("click", e => { if (!touch) return; if (e.target.closest("[data-detail], button, a, input, select")) { hide(); return; } const el = find(e.target); if (el && el !== cur) show(el, e.clientX, e.clientY); else if (el && Date.now() - shownAt < 700) { /* the tap that opened it */ } else hide(); }, true);
   /* chain core: the drawn elements explain themselves (hit regions come from draw()) */
-  const coreShow = e => { if (typeof CORE_QUIET !== "undefined" && CORE_QUIET) return; const h = coreHit(e); if (h) { cur = cv; shownAt = Date.now(); setOvl(viewText(h.fn()), true); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = h.href || h.open ? "pointer" : "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
+  const coreShow = e => { if (typeof CORE_QUIET !== "undefined" && CORE_QUIET) return; const h = coreHit(e); if (CORE_MOUSE) CORE_MOUSE.tap = touch; if (h) { cur = cv; shownAt = Date.now(); setOvl(viewText(h.fn()), true); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = h.href || h.open ? "pointer" : "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
   cv.addEventListener("mousemove", e => { if (!touch) coreShow(e); });
   cv.addEventListener("mouseleave", () => { cv.style.cursor = ""; CORE_MOUSE = null; if (cur === cv && !touch) hide(); });
   /* a drawn element with a page behind it (the nodes) opens that page on click; on touch the first tap explains, the second opens */
