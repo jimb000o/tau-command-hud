@@ -315,6 +315,12 @@ chk5 = [e for e in C5.logbook if e.get("kind") == "unanswered checked"]
 check(chk5 and any(e["took"] for e in chk5) and any(not e["took"] for e in chk5),
       "the passenger's next send shows whether the node took the unanswered one after all")
 check(not C5.incidents, "no incident report for a slow node")
+check(v5.get("half_node", 0) > 0 and not v5.get("half_strained") and v5["brake_half"] == v5["half_node"],
+      "half pace after an unanswered send is counted as our node being slow, not as a strained testnet")
+check(all(isinstance(e.get("ms"), int) for e in sends5 if e.get("ok") is not None or "sendtx" in (e.get("note") or "")),
+      "every sendtx in the logbook says how long the node took to answer (ms)")
+check(C5.brief(T[0])["now"]["brake"] in ("slow", "none") and (T[0] >= C5.slow_until or C5.brief(T[0])["now"]["brake"] == "slow"),
+      "the pages see the node-slow brake as 'slow', never as the strained 'half'")
 
 # ---------- the testnet load page counts the passengers apart ----------
 L = Load(path=os.path.join(d, "load.json"), clock=lambda: 1_793_804_400.0)

@@ -2390,5 +2390,10 @@
     "tag": "Blog",
     "on": "2026-11-06",
     "html": "Blog: articles now link our own places where they first name them: White Rabbit Key leads to the game, tauhud.com to the HUD, the ship to its logbook, Tau Testnet Alpha to the stats, our node to its health, a strained testnet to the load page. Each chart leads to the live page it was drawn from (See it live). Articles our server drafts are linked the same way by themselves."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-06",
+    "html": "White Rabbit Key: the cruise ship's logbook now notes how long our node took to answer each send, and the blog draft after a visit shows it as a chart. When the ship slows down because our own node answered late, the article says so and no longer calls the testnet strained."
   }
 ]
