@@ -359,6 +359,11 @@ services:
       PUBLIC_URL: https://${RELAY_DOMAIN}
     volumes:
       - alerts_public:/public:ro
+      # Agorzilla's feeder card (/og/agorzilla/<wallet>.png): feeders.json from agorzilla-latest,
+      # the newest evening photograph from agorzilla-shots, the painting from the site's checkout
+      - /opt/sites/agorilla-live:/agz:ro
+      - agorzilla_shots:/shots:ro
+      - /opt/sites/agorilla:/agzrepo:ro
     depends_on: [relay]
     mem_limit: 256m
     restart: unless-stopped
