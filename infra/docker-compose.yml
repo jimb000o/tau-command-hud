@@ -222,8 +222,8 @@ services:
       CRUISE_CRIER: ${CRUISE_CRIER:-true}
       CRUISE_ANNOUNCE_MINUTES: ${CRUISE_ANNOUNCE_MINUTES:-150}
       TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
-      # a clean blog draft on the blog by itself this many hours after it was written; 0 = only by hand (up blog publish)
-      BLOG_AUTO_PUBLISH_HOURS: ${BLOG_AUTO_PUBLISH_HOURS:-0}
+      # a clean blog draft on the blog by itself this many hours after it was written (24 since 6.11.2026); 0 = only by hand (up blog publish)
+      BLOG_AUTO_PUBLISH_HOURS: ${BLOG_AUTO_PUBLISH_HOURS:-24}
     volumes:
       - alerts_state:/state     # /state/blog.json: which visits have a draft, which drafts were posted
       - alerts_public:/public   # /public/blog/posts.json and drafts/, served by Caddy

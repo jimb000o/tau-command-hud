@@ -303,7 +303,11 @@ def tell_draft(did: str, url: str) -> None:
     st = state()
     if did in st["drafts_told"]:
         return
-    msg = f"Blog draft ready: {did}\nRead it: {url}\nPublish it (blog + one post on Telegram and X):\n" + UP.format(f"blog publish {did}")
+    hours = float(os.environ.get("BLOG_AUTO_PUBLISH_HOURS", "0") or 0)
+    msg = f"Blog draft ready: {did}\nRead it: {url}\n" + (
+        f"It goes on the blog by itself in {hours:g} hours (with one post on Telegram and X) if its numbers and wording check out.\n"
+        "If it is not good, tell a thread before then. Publish it now instead:\n" if hours > 0 else
+        "Publish it (blog + one post on Telegram and X):\n") + UP.format(f"blog publish {did}")
     ok, err = tell(msg)
     st["drafts_told"][did] = {"at": round(time.time()), "told": "sent" if ok else f"not sent ({err})"}
     save(st)
