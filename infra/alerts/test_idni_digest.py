@@ -155,6 +155,18 @@ s = idg.step(paths, branches, pin, at("2026-11-09T12:30:00Z"))
 check(s["state"] == "ready" and idg.load()["items"][-1]["start"] == at("2026-11-07T10:00:00Z")
       and idg.load()["items"][-1]["shas"] == [f3], "after two hours it is read anyway; the held day's commit came along")
 
+# the text `up idni` showed is the text that goes out, unless something new came in
+f4 = commit("network/sync.py", "fix(sync): keep syncing after a gap", at("2026-11-09T20:00:00Z"))
+subprocess.run(["git", "-C", path, "fetch", "-q", SRC, "+refs/heads/*:refs/heads/*"], check=True)
+st = idg.load()
+st["draft"] = dict(d, title="Previewed title", start=st["last_end"], shas=[f4])
+idg.save(st)
+asked.clear()
+s = idg.step(paths, branches, pin, at("2026-11-10T12:30:00Z"))
+last = idg.load()["items"][-1]
+check(not asked and last["title"] == "Previewed title" and last["end"] == at("2026-11-10T10:00:00Z") and "draft" not in idg.load(),
+      "the previewed text goes out as it was shown, no new model call")
+
 # ---------- the alerts service posts it ----------
 
 
