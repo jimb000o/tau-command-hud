@@ -163,6 +163,7 @@ TauI18n.add({ strings: {
   "Alerts": "通知",
   "Rabbit": "ホワイトラビット・キー",
   "Cruise": "クルーズ",
+  "News line": "ニュースライン",
   "Menu": "メニュー",
   "All transactions ({n})": "すべてのトランザクション（{n}）",
   "All transactions ({x1})": "すべてのトランザクション（{x1}）",

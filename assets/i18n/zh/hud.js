@@ -176,6 +176,7 @@ TauI18n.add({ strings: {
   "Alerts": "提醒",
   "Rabbit": "白兔礁",
   "Cruise": "邮轮",
+  "News line": "快讯栏",
   "Menu": "菜单",
   "All transactions ({n})": "全部交易（{n}）",
   "All transactions ({x1})": "全部交易（{x1}）",
