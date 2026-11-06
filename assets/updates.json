@@ -2410,5 +2410,10 @@
     "tag": "Alerts",
     "on": "2026-11-06",
     "html": "White Rabbit Key: the cruise ships now announce themselves. A few hours before each call (MS Dry Run on Wednesdays, Queen Mempool on Saturdays) the channel posts the announcement picture with the ship at anchor, written anew each week with the ship's last call as her logbook counts it."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-06",
+    "html": "Relay: the island bot and the cruise ships now send through their own connection to our node. When the node takes long to answer a send, only the ship waits; the HUD, the wallet and every other page keep loading for visitors."
   }
 ]

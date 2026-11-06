@@ -61,7 +61,7 @@ if [ "${1:-}" = "cruise" ]; then
   docker compose cp cruise-report.py relay:/tmp/cruise-report.py >/dev/null
   docker compose exec -T relay python /tmp/cruise-report.py ${2:-}
   echo "sendtx timeouts per hour (UTC), last 3 days:"
-  docker compose logs -t --since 72h relay 2>&1 | grep "upstream sendtx failed" | awk '{print substr($3,1,13)}' | sort | uniq -c | sed 's/^/  /'
+  docker compose logs -t --since 72h relay 2>&1 | grep -E "(upstream|sender) sendtx failed" | awk '{print substr($3,1,13)}' | sort | uniq -c | sed 's/^/  /'
   exit 0
 fi
 # IDNI's progress of the day as ONE post, nothing rebuilt (alerts/idni_digest.py): up idni  the last ones and what the
@@ -113,6 +113,8 @@ if s:
     h = s.get("health") or {}
     print(f"node:    height {s.get('height')} (tip {s.get('tip_height')}), {s.get('clients')} sockets, {s.get('online')} online, "
           f"{h.get('label')} {h.get('score')}, relay up {s.get('uptime_seconds')} s")
+    if s.get("sender_connected") is not None:
+        print(f"         ship+bot connection: {'up' if s.get('sender_connected') else 'DOWN (they borrow the visitors one after 60 s)'}")
 s = read(sys.argv[2], "island:  ")
 if s:
     w = s.get("week") or {}; l = s.get("last") or {}
