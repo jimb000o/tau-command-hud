@@ -29,11 +29,13 @@ Pace and brakes, so a ship never floods the testnet:
 - the ship lands only on a calm or busy testnet (load.py verdict); strained during a visit = half the pace; stalled =
   the ship leaves at once and writes an incident report; so it does when the node refuses REFUSE_STOP of the visit's
   last REFUSE_WINDOW transactions (a changed testnet, a restart, a new rule: the logbook shows what and why);
+- a send our node does not answer in time is no refusal: the ship waits QUIET_HOLD seconds, then goes at half pace for
+  QUIET_SLOW (brief "brake": "slow"; the visit counts these sends apart from those slowed by a strained testnet);
 - a kind the ship has not yet used cleanly (TRIAL: book, bill) goes out at most TRIAL_MAX times on its first visit, and
   only one new kind per visit; it counts as tried once a visit with it ends with no refusal of that kind and no brake.
 
-The logbook: every transaction a passenger sends (kind, place, amount, hash, the node's answer, the chain height, the
-load verdict at that moment) goes to CRUISE_LOG_PATH for LOG_DAYS days, with the signed transaction for the rare kinds
+The logbook: every transaction a passenger sends (kind, place, amount, hash, the node's answer and how many ms it took,
+the chain height, the load verdict at that moment) goes to CRUISE_LOG_PATH for LOG_DAYS days, with the signed transaction for the rare kinds
 and for every refusal; GET /cruise/log shows it. A stall during a visit adds an incident to CRUISE_INCIDENTS_PATH: the
 last INCIDENT_TAIL entries before it, the newest block, the transaction that has waited longest. So if the testnet
 breaks while a ship is in port, the logbook says what it sent; and when it was not the ship, the logbook says that too.
@@ -367,7 +369,7 @@ class Cruise:
         if self.cur:
             cur = {k: self.cur.get(k) for k in ("id", "ship", "t0", "landed", "left", "note", "trial", "allowed", "sent", "refused",
                                                 "skipped", "unsent", "brake_half", "wait", "booked", "landed_at",
-                                                "unanswered", "quiet", "quiet_took", "quiet_lost")}
+                                                "unanswered", "quiet", "quiet_took", "quiet_lost", "half_strained", "half_node")}
             cur["done"] = sorted(self.cur["done"])
         try:
             tmp = self.state_path + ".tmp"
@@ -461,7 +463,7 @@ class Cruise:
                         "skipped": 0, "unsent": 0, "brake_half": 0, "wait": None, "booked": []}
             saved = getattr(self, "_saved_cur", None)
             if saved and saved.get("id") == vid:   # the relay restarted during this visit: carry on where it was
-                for k in ("landed", "left", "note", "trial", "allowed", "sent", "refused", "skipped", "unsent", "brake_half", "wait", "booked", "landed_at", "unanswered", "quiet", "quiet_took", "quiet_lost"):
+                for k in ("landed", "left", "note", "trial", "allowed", "sent", "refused", "skipped", "unsent", "brake_half", "wait", "booked", "landed_at", "unanswered", "quiet", "quiet_took", "quiet_lost", "half_strained", "half_node"):
                     if k in saved:
                         self.cur[k] = saved[k]
                 self.cur["done"] = set(saved.get("done") or [])
@@ -584,6 +586,7 @@ class Cruise:
         s = {"id": v["id"], "ship": v["ship"], "name": SHIPS[v["ship"]]["name"], "t0": v["t0"], "landed": v["landed"],
              "end": v["left"] or v["t0"] + VISIT_MIN * 60, "note": v["note"], "trial": v["trial"],
              "sent": v["sent"], "refused": v["refused"], "skipped": v["skipped"] + unsent, "half": v["brake_half"],
+             "half_strained": v.get("half_strained", 0), "half_node": v.get("half_node", 0),
              "unanswered": v.get("unanswered", 0), "unanswered_took": v.get("quiet_took", 0),
              "passengers": SHIPS[v["ship"]]["passengers"]}
         clean = v["landed"] and not v["left"]
@@ -619,7 +622,8 @@ class Cruise:
             return False
         if state is None:
             return False
-        slow = state == "strained" or now < self.slow_until
+        strained, node_slow = state == "strained", now < self.slow_until
+        slow = strained or node_slow
         gap = 60 / RATE * (2 if slow else 1)
         if now < self.hold_until or now - self.last_send < gap or not self.budget():
             return False
@@ -637,8 +641,10 @@ class Cruise:
             break
         if act is None:
             return False
-        if slow:
+        if slow:   # why half pace: the testnet's load verdict, or our own node answering slowly (a send it left unanswered)
             v["brake_half"] += 1
+            k = "half_strained" if strained else "half_node"
+            v[k] = v.get(k, 0) + 1
         v["done"].add(act["i"])
         self.last_send = now
         try:
@@ -717,7 +723,9 @@ class Cruise:
             self.write({"t": int(self.clock()), "visit": v["id"], "ship": ship, "i": q["i"], "p": act["p"], "kind": "unanswered checked",
                         "took": took, "note": "the node took it after all (the sequence moved on)" if took else "it did not reach the node"})
         tx = await asyncio.to_thread(self.build, ship, act, seq, tip, base_fee(gov()), rid)
+        t_ask = time.monotonic()
         res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))
+        entry["ms"] = int((time.monotonic() - t_ask) * 1000)   # how long our node took to answer (the relay waits in line for it too)
         if res is None:   # no answer in time (or the relay's connection to the node dropped): not a refusal
             now = self.clock()
             self.hold_until, self.slow_until = now + QUIET_HOLD, now + QUIET_SLOW
@@ -785,7 +793,8 @@ class Cruise:
                           "ashore": sum(at.values()), "at": at, "sent": v["sent"], "refused": sum(v["refused"].values()),
                           "skipped": v["skipped"], "planned": len(v["acts"]), "trial": v["trial"], "note": v["note"], "why": self.why(v),
                           "kinds": ["pay"] + list((v.get("allowed") or []) if v["landed"] else self.kinds_for(v["ship"])[1]),
-                          "brake": "stopped" if v["left"] and v["note"].startswith("left") else "half" if self._verdict[1] == "strained" and v["landed"] else "none"}
+                          "brake": "stopped" if v["left"] and v["note"].startswith("left") else "half" if self._verdict[1] == "strained" and v["landed"]
+                          else "slow" if v["landed"] and now < self.slow_until else "none"}
         n = self.next_call(now) if self.enabled else None   # switched off (CRUISE_ENABLED=0): no ship is announced
         if n:
             out["next"] = {"ship": n[1], "name": SHIPS[n[1]]["name"], "t0": n[0]}

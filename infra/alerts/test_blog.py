@@ -119,5 +119,23 @@ check('og:image" content="https://node.tauhud.com/blog/img/' in share and "summa
 check(blog.unpublish_cli(did) == 0 and blog.posts()["posts"] == [], "unpublish")
 json.dumps(a)
 
+# Queen Mempool style (6 November 2026 on): half pace split by why, and the node's answer times
+Q, TQ = "2026-11-07-queen", 1793970000
+ql = [{"t": TQ, "visit": Q, "ship": "queen", "kind": "landed", "verdict": "calm", "plan": 581, "trial": ["bill"]}]
+for i in range(60):
+    ql.append({"t": TQ + 10 + i * 30, "visit": Q, "kind": "pay", "ok": True, "verdict": "calm", "ms": 400 + i * 100})
+ql.append({"t": TQ + 5400, "visit": Q, "kind": "visit over", "summary": {"id": Q, "ship": "queen", "name": "Queen Mempool", "t0": TQ, "landed": True,
+           "end": TQ + 5400, "sent": {"pay": 60}, "refused": {}, "skipped": 0, "half": 40, "half_strained": 0, "half_node": 40, "passengers": 120,
+           "unanswered": 3}})
+fq = blog.facts_of(ql, [])
+check("sends at half pace because the testnet looked strained" not in fq
+      and fq["sends at half pace because our own node had just left a send unanswered (not the testnet)"] == 40,
+      "half pace after our node's timeouts is not put on the testnet")
+check(fq["our node's answer time to a send, seconds"]["slowest"] == 6.3 and len(fq["median answer time per 10 minutes, seconds"]) == 3,
+      "the node's answer times, overall and per 10 minutes")
+import blog_pics  # noqa: E402
+qf = blog_pics.visit_charts(fq, os.path.join(TMP, "q"))
+check(any(p.endswith("-answer.png") for p, _ in qf), "a chart of the node's answer times")
+
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)

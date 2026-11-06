@@ -13,6 +13,7 @@
 #              up bust salado  the same, then that portrait (or several) painted anew, talking and blinking too (1 min each);
 #                            up bust --recut salado  cuts the kept painting out again, paints nothing;
 #                            up bust --from infra/rabbit-art/imports/codex hana  takes pictures painted elsewhere
+#              up cruise     a cruise ship's last visit in numbers and the node's timeouts per hour (nothing rebuilt)
 #              up owner      the same, then a one-time link: open it in your Telegram, and the news line's watchtower
 #                            warns you there privately (never on the channel); up owner test  sends you one test message
 set -e
@@ -37,6 +38,15 @@ if [ "${1:-}" = "post" ] && [ -n "${2:-}" ]; then
     docker compose run --rm -v /opt/tau-command-hud:/repo:ro -v /tmp:/out alerts python /repo/infra/alerts/post_image.py "/out/$2.jpg" "/repo/$J" --dry
     echo "look: https://node.tauhud.com/rico/art/drafts/$2.jpg   then post it: up post $2 send"
   fi
+  exit 0
+fi
+# a cruise ship's visit in numbers, nothing rebuilt, nothing sent (cruise-report.py): up cruise  the last visit,
+# up cruise 2026-11-07-queen  that one; then the relay's sendtx timeouts per hour of the last 3 days
+if [ "${1:-}" = "cruise" ]; then
+  docker compose cp cruise-report.py relay:/tmp/cruise-report.py >/dev/null
+  docker compose exec -T relay python /tmp/cruise-report.py ${2:-}
+  echo "sendtx timeouts per hour (UTC), last 3 days:"
+  docker compose logs -t --since 72h relay 2>&1 | grep "upstream sendtx failed" | awk '{print substr($3,1,13)}' | sort | uniq -c | sed 's/^/  /'
   exit 0
 fi
 # the blog by hand, nothing rebuilt (alerts/blog.py): up blog  lists the drafts waiting and where to read them,

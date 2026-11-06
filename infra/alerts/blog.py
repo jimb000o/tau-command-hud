@@ -164,8 +164,25 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
     v = Counter(e.get("verdict") for e in sends if e.get("verdict"))
     if v:
         f["testnet load at each send"] = dict(v)
-    if s.get("half") is not None:
+    if "half_strained" in s:   # since 6 November 2026 the ship counts why it went at half pace
+        if s.get("half_strained"):
+            f["sends at half pace because the testnet looked strained"] = s["half_strained"]
+        if s.get("half_node"):
+            f["sends at half pace because our own node had just left a send unanswered (not the testnet)"] = s["half_node"]
+    elif s.get("half") is not None:   # before, every half-pace send came from the strained verdict
         f["sends at half pace because the testnet looked strained"] = s.get("half")
+    ms = sorted(e["ms"] for e in sends if isinstance(e.get("ms"), int))
+    if ms:   # how long our node took to answer a sendtx (logged since 6 November 2026), in seconds
+        sec = lambda m: round(m / 1000, 1)  # noqa: E731
+        f["our node's answer time to a send, seconds"] = {"median": sec(ms[len(ms) // 2]), "slowest tenth from": sec(ms[len(ms) * 9 // 10]),
+                                                           "slowest": sec(ms[-1]), "sends timed": len(ms)}
+        a0 = min(e["t"] for e in sends)
+        per: dict = {}
+        for e in sends:
+            if isinstance(e.get("ms"), int):
+                per.setdefault((e["t"] - a0) // 600, []).append(e["ms"])
+        f["median answer time per 10 minutes, seconds"] = [sec(sorted(per[k])[len(per[k]) // 2]) if per.get(k) else 0
+                                                           for k in range(int(max(per)) + 1)]
     if sends:
         a = min(e["t"] for e in sends)
         tens = Counter((e["t"] - a) // 600 for e in sends)
@@ -189,7 +206,8 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
         f["next ship"] = {"name": nxt.get("name"), "date": day(nxt["t0"]), "time": clock(nxt["t0"])}
     f["the ship's brakes"] = {"at most transactions a minute": 12,
                               "it leaves when the node refuses": "5 of the last 20 passenger transactions",
-                              "strained testnet": "half pace", "stalled testnet": "it leaves at once"}
+                              "strained testnet": "half pace", "stalled testnet": "it leaves at once",
+                              "our node does not answer a send within 20 seconds": "no refusal: the ship waits 30 seconds, then half pace for 10 minutes"}
     f["answered sends"] = len(answered)
     return f
 

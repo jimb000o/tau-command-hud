@@ -214,13 +214,25 @@ def visit_charts(facts: dict, base: str) -> list[tuple[str, dict]]:
     per = facts.get("sends per 10 minutes") or []
     if len(per) > 1:
         labels = [f"{i * 10}–{i * 10 + 10}\nmin" for i in range(len(per))]
-        half, logged = facts.get("sends at half pace because the testnet looked strained"), facts.get("sends logged")
-        sub = (f"{half} of {logged} sends went out at half pace (testnet marked strained)" if half and logged
-               else f"first send {facts.get('first send', '')}, last {facts.get('last send', '')}")
+        logged = facts.get("sends logged")
+        half = facts.get("sends at half pace because the testnet looked strained")
+        node = facts.get("sends at half pace because our own node had just left a send unanswered (not the testnet)")
+        why = [w for w in ((half, "testnet marked strained"), (node, "our node slow to answer")) if w[0]]
+        sub = (f"{sum(n for n, _ in why)} of {logged} sends went out at half pace (" + ", ".join(f"{n} {w}" for n, w in why) + ")"
+               if why and logged else f"first send {facts.get('first send', '')}, last {facts.get('last send', '')}")
         out.append((base + "-pace.png", bars(per, labels, f"At most {max(per)} sends per 10 minutes, of 120 allowed", sub,
                                              cap=120, cap_label="allowed: 120 per 10 minutes"),
                     {"en": "The ship's pace in port, sends per 10 minutes.", "zh": "游轮在港口的速度：每 10 分钟的发送数。",
                      "ja": "港での船のペース：10 分ごとの送信数。"}))
+    secs = facts.get("median answer time per 10 minutes, seconds") or []
+    if len(secs) > 1 and any(secs):
+        labels = [f"{i * 10}–{i * 10 + 10}\nmin" for i in range(len(secs))]
+        t = facts.get("our node's answer time to a send, seconds") or {}
+        out.append((base + "-answer.png", bars(secs, labels, "How long our node took to answer a send",
+                                               f"median per 10 minutes · slowest {t.get('slowest', 0):g} s · the relay gives up at 20 s",
+                                               unit=" s", cap=20, cap_label="no answer after 20 s"),
+                    {"en": "Our node's answer time to the ship's sends, from the logbook.", "zh": "我们的节点回应游轮发送所用的时间，来自日志。",
+                     "ja": "船の送信に対する私たちのノードの応答時間（ログブックより）。"}))
     files = []
     for path, im, cap in out:
         im.save(path, optimize=True)

@@ -2,6 +2,7 @@
 
   docker compose cp cruise-report.py relay:/tmp/cr.py && docker compose exec -T relay python /tmp/cr.py [visit-id]
   docker compose logs --since 72h alerts | docker compose exec -T relay python /tmp/cr.py --posts
+  up cruise [visit-id]    the same on the server, with the relay's sendtx timeouts per hour (infra/up.sh)
 
 The first prints the visit's logbook in numbers (sent, refused and why, skipped, pace per 10 minutes, how late the
 stops went out against the plan, load verdicts, bookings), its summary and the incident reports. The second counts
@@ -66,6 +67,15 @@ def report(vid):
         print("per 10 min:", [tens.get(i, 0) for i in range(max(tens) + 1)])
         mins = collections.Counter((r["t"] - t0) // 60 for r in sends)
         print("busiest minute:", max(mins.values()), "| minutes with a send:", len(mins))
+        ms = [r for r in sends if isinstance(r.get("ms"), int)]
+        if ms:   # the node's answer time to sendtx, logged since 6 November 2026
+            per = collections.defaultdict(list)
+            for r in ms:
+                per[(r["t"] - t0) // 600].append(r["ms"])
+            med = lambda xs: sorted(xs)[len(xs) // 2]  # noqa: E731
+            allms = sorted(r["ms"] for r in ms)
+            print(f"node answer time (s): median {allms[len(allms) // 2] / 1000:.1f} p90 {allms[len(allms) * 9 // 10] / 1000:.1f} max {allms[-1] / 1000:.1f}"
+                  " | median per 10 min:", [round(med(per[i]) / 1000, 1) if per.get(i) else None for i in range(max(per) + 1)])
     landed = next((r for r in mine if r.get("kind") == "landed"), None)
     try:
         sys.path.insert(0, "/app")
