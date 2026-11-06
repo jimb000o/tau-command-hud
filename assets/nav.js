@@ -393,7 +393,9 @@
     const brand = el("a", "brand", `${MARK}<span class="bn">Tau HUD</span>`);
     const crumb = el("div", "crumb", (sec ? `<span class="sep">/</span><span class="sec">${esc(sec.t)}</span>` : "") + `<span class="sep">/</span><h1 class="bt">${esc(title)}</h1>`);
     const lang = new URLSearchParams(location.search).get("lang"); brand.href = ROOT + (lang ? "?lang=" + encodeURIComponent(lang) : ""); brand.dataset.tnt = "Back to the HUD";
-    const unoff = el("a", SIM ? "chip unoff sim" : "unoff q", SIM ? "Simulation · no real chain data" : "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.dataset.tnt = SIM ? TIPS.simBadge : TIPS.unoff;
+    /* the game's moves are real test transactions in either mode, so its header keeps the plain note instead of the simulation badge */
+    const gameSim = SIM && page === "rabbit";
+    const unoff = el("a", SIM && !gameSim ? "chip unoff sim" : "unoff q", SIM && !gameSim ? "Simulation · no real chain data" : "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.dataset.tnt = gameSim ? "Your moves in the game are real test transactions, whatever the chain chips show; the chips follow the simulation. " + TIPS.unoff : SIM ? TIPS.simBadge : TIPS.unoff;
     const chips = el("div", "chips");
     const chip = (tag, id, cls, html, t) => { const c = el(tag, "chip" + (cls ? " " + cls : ""), html); c.id = id; c.dataset.tnt = t; return c; };
     chips.append(
@@ -405,6 +407,7 @@
       chip("a", "tnRev", "v", "<b>—</b>", TIPS.rev),
       chip("div", "tnFee", "v", "<b>—</b>", TIPS.fee));
     chips.querySelectorAll(".chip.v > b").forEach(b => { b.style.marginLeft = "0"; });   // value-only chips: the name lives in the hover text
+    if (SIM) chips.querySelectorAll(".chip.v:not(#tnMode)").forEach(c => c.append(el("s", "st", "sim")));   // every simulated value says so, also on a screenshot
     chips.querySelector("#tnRev").href = chips.querySelector("#tnCons").href = ROOT + "#chain-state";
     if (!SIM) {   // coming up on the live chain: an agreed rule change that is not yet in force, counted down from the relay's proposals file
       const nx = el("a", "chip next", "<b></b>"); nx.id = "tnNext"; nx.hidden = true; nx.href = ROOT + "proposals/" + (lang ? "?lang=" + encodeURIComponent(lang) : ""); chips.append(nx);

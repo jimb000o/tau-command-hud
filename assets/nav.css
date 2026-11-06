@@ -99,6 +99,7 @@ header.trail .dot.none { background: var(--tn-dim); box-shadow: none; animation:
 /* simulation mode: amber, the colour of "not the real thing yet"; the badge is striped like the HUD's simulation bar */
 header.trail .chip.sim b { color: #ffb13b; }
 header.trail .dot.sim { background: #ffb13b; box-shadow: 0 0 8px #ffb13b; }
+header.trail .chip .st { text-decoration: none; font: 600 11px var(--tn-font); letter-spacing: .1em; color: #ffb13b; margin-left: 6px; }
 header.trail .chip.unoff.sim { color: #fff; border-color: rgba(255,177,59,.7); background: repeating-linear-gradient(135deg, rgba(255,177,59,.14) 0 10px, rgba(255,177,59,.03) 10px 20px); }
 header.trail .chip.unoff.sim:hover { border-color: #ffb13b; }
 header.trail .chip.next { border-color: rgba(57,255,138,.45); } header.trail .chip.next b { color: var(--tn-ok); } header.trail .chip.next:hover { border-color: var(--tn-ok); }

@@ -1,5 +1,7 @@
 /* Simplified Chinese for the shared header and strings used on several pages. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "sim": "模拟",
+  "Your moves in the game are real test transactions, whatever the chain chips show; the chips follow the simulation.": "你在游戏中的每一步都是真实的测试交易，无论链条芯片显示什么；芯片跟随模拟。",
   "@tauHUDcom: every rule change and chain restart as it happens, a weekly recap, HUD updates": "@tauHUDcom：每次规则变更和链重启实时推送、每周回顾、HUD 更新",
   "@yourhandle": "@你的账号",
   "About": "关于",

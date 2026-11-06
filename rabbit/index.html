@@ -417,6 +417,13 @@ footer a { color: var(--dim); }
   .cv-line { font-size: 14px; }
   .cv-drawer { left: 0; right: 0; top: auto; bottom: 0; width: auto; height: 86%; border-radius: 14px 14px 0 0; }
 }
+/* a phone held upright: the site's chips and the icon row go, so the island gets the screen; one big button plays full screen */
+.playfull { display: none; }
+@media (max-width: 700px) and (orientation: portrait) {
+  html:not(.rk-full) header.trail .unoff, html:not(.rk-full) header.trail .chips, html:not(.rk-full) .wrap > .tnav { display: none !important; }
+  html:not(.rk-full) .playfull { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; margin: 0; border: 1px solid rgba(57,255,138,.55); border-radius: 12px; background: rgba(57,255,138,.08); color: #fff; font: 600 15px var(--display); letter-spacing: .02em; cursor: pointer; }
+  html:not(.rk-full) .playfull span { font-size: 18px; }
+}
 /* phones: the tab bar of the site sits over the bottom of the page; the island ends above it */
 @media (max-width: 700px) { html:not(.rk-full) .wrap { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); } }
 /* a phone held sideways has no height to spare: the island takes the whole screen, as in full screen, with a ⌂ back to
@@ -492,6 +499,7 @@ html.rk-full .wire { left: max(8px, env(safe-area-inset-left, 0px)); bottom: cal
     <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>White Rabbit Key</span></a>
   </header>
   <nav class="tnav" data-page="rabbit" aria-label="Pages and tools"></nav>
+  <button class="playfull" id="cvPlayFull" type="button">Play full screen <span aria-hidden="true">⛶</span></button>
   <main class="stage" id="cvStage">
     <canvas id="cvScene" role="img" aria-label="A small tropical island with a council hall, a market square, a radio station, two embassies, a beach bar, a pier and a lighthouse"></canvas>
     <div class="bar">

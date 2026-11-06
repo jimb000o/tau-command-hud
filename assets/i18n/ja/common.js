@@ -1,5 +1,7 @@
 /* Japanese for the shared header and strings used on several pages. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "sim": "シム",
+  "Your moves in the game are real test transactions, whatever the chain chips show; the chips follow the simulation.": "ゲームでのあなたの一手は、チェーンのチップが何を示していても本物のテスト取引です。チップはシミュレーションに従います。",
   "@tauHUDcom: every rule change and chain restart as it happens, a weekly recap, HUD updates": "@tauHUDcom：すべてのルール変更とチェーンの再起動をリアルタイムで、週次まとめ、HUD の更新情報",
   "@yourhandle": "@あなたのハンドル",
   "About": "概要",

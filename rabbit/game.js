@@ -997,7 +997,7 @@
     if (!FREE && G.day >= todayIdx()) { G.waiting = true; save(); return nightCard(); }
     nextDay();
   }
-  function nextDay() { G.waiting = false; G.day++; G.move = 0; const n = readers(); save(); morning(n); }
+  function nextDay() { G.waiting = false; G.day++; G.move = briefDay() ? MOVES - 1 : 0; const n = readers(); save(); morning(n); }
   /* the day is done and so is the real one: the next island day comes after midnight, German time */
   function nightCard() {
     openCard(null, box => {
@@ -2476,7 +2476,7 @@
     box.append(el("div", { class: "iv-cast" }, el("p", { class: "cv-h", text: T("Which candidate are you?") }), pick));
     const td = todayIdx();
     const camp = [el("b", { text: T("Your campaign:") }), " ", T("this week, Monday to Sunday. An island day is a real day: three moves, a few minutes. Sunday evening the islanders vote."), " ",
-      td === 1 ? T("Today is Monday: the week begins.") : td === DAYS ? T("Today is Sunday: play the whole week now, the vote is tonight.") : Fd("Today is {x}: play Monday to {x} now, then a day a day.", { x: dayName(td) })];
+      td === 1 ? T("Today is Monday: the week begins.") : td === DAYS ? T("Today is Sunday: play the whole week now, the vote is tonight.") : Fd("Today is {x}: catch up Monday to {y} briefly or start today, then a day a day.", { x: dayName(td), y: dayName(td - 1) })];
     const isle = [el("b", { text: T("The island:") }), " ", Fd("every campaign won is a ballot for its candidate; governor’s count {x}, Monday 00:00 German time.", { x: countIn() })];
     /* every move is a real test transaction, always: said plainly here instead of a box to tick */
     const chain = el("p", { class: "cv-chain" }, el("span", { text: T("Every move is real: it is signed into Tau Testnet Alpha from a test wallet made for you in this browser, and paid to the place where you make it (1 test AGRS, a line on Radio Coco 25). Wages and embassy money come back into that wallet. The rivals’ moves go there too. Test AGRS have no value.") }), " ", el("a", { href: "/wallet/", text: T("Your test wallet") }));
@@ -2485,6 +2485,27 @@
       ? el("div", { class: "iv-facts" }, el("p", { class: "cv-note" }, ...camp), el("div", null, el("p", { class: "cv-note" }, ...isle), ballotEl(), isleIntro()), chain)
       : el("div", { class: "iv-facts" }, el("p", { class: "cv-note" }, ...camp, el("br"), ...isle), ballotEl(), isleIntro(), chain));
   }
+  /* once per browser, after the first move signed into the testnet: where that move can be seen, and the two other pages
+     the same test wallet opens. Shown at the first quiet moment, so it never cuts into a scene. */
+  function bridgeCard() {
+    store.set("rabbit-bridged", "1");
+    const pk = myPk(), h = /^[0-9a-f]{64}$/.test(G.picked || "") ? G.picked : null, lang = window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "";
+    const open = u => window.open(u, "_blank", "noopener");
+    openCard(null, box => {
+      box.classList.add("paper");
+      box.append(el("div", { class: "cv-paper" }, el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: T("Extra") }),
+        el("p", { class: "lead", text: T("Your first move is on Tau Testnet Alpha: 1 test AGRS to the Book, signed by the test wallet this browser made for you. The same wallet opens two more pages, and Agorzilla eats transactions like yours.") }),
+        el("ul", null, el("li", { text: T("Explorer: the transaction itself, and the block that sealed it.") }),
+          el("li", { text: T("Your Tau card: one picture of what this wallet did on the testnet, to post or keep.") }),
+          el("li", { text: T("Agorzilla: a creature fed by live testnet transactions, with its own test wallet on agorzilla.com.") }))),
+        el("div", { class: "cv-acts" },
+          btn(T("See it in the Explorer"), () => open(h ? "/explorer/?tx=" + h + lang : "/explorer/?a=" + pk + lang), { go: true }),
+          btn(T("Your Tau card"), () => open("/card/?a=" + pk + lang)),
+          btn(T("Feed Agorzilla"), () => open("https://agorzilla.com/")),
+          btn(T("Back to the island"), () => closeCard())));
+    });
+  }
+  setInterval(() => { if (G && !G.over && G.picked && G.picked !== "…" && myPk() && !store.get("rabbit-bridged") && !UI.card && !drawer && !document.hidden) bridgeCard(); }, 4000);
   function dragHint() {
     if (!matchMedia("(pointer: coarse) and (orientation: portrait)").matches || store.get("rabbit-drag-hint")) return;
     setTimeout(() => { if (G && !UI.card && SC.canPan()) { store.set("rabbit-drag-hint", "1"); toast(T("Drag the island to look around, or turn your phone sideways. ☰ lists every place.")); } }, 3500);
@@ -2492,10 +2513,35 @@
   function begin(c) {
     G = fresh(c); save();
     signUp();
-    news(T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book."), RICO.L.bkWeek);
-    isleRule();
-    closeCard(); hud();
-    welcome();
+    const start = () => {
+      news(T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book."), RICO.L.bkWeek);
+      isleRule();
+      closeCard(); hud();
+      welcome();
+    };
+    const td = todayIdx();
+    if (!FREE && td > 1 && td < DAYS) return lateCard(td, start);
+    start();
+  }
+  /* a campaign begun in the middle of the week: the days before today are either played briefly, one move a day with the
+     rivals moving every night as usual, or skipped, the rivals' nights run and the campaign starts today with three moves.
+     A Sunday start keeps the whole week in one go: the vote is tonight. */
+  const briefDay = () => !!(G && G.brief && !FREE && G.day < todayIdx());
+  function lateCard(td, then) {
+    openCard(null, box => {
+      box.classList.add("paper");
+      box.append(el("div", { class: "cv-paper" }, el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: dayName(td) }),
+        el("p", { class: "lead", text: Fd("It is {x} already: Monday to {y} went by without you. Catch up briefly, or start today with the island as the rivals left it.", { x: dayName(td), y: dayName(td - 1) }) })),
+        el("div", { class: "cv-acts" },
+          btn(T("Catch up briefly"), () => { G.brief = true; if (briefDay()) G.move = MOVES - 1; save(); then(); }, { go: true, sub: Fd("{n} days with one move each, then today with three", { n: td - 1 }) }),
+          btn(T("Play from today"), () => { skipTo(td); then(); }, { sub: T("Three moves today; what the rivals did until now is in the Book") })));
+    });
+  }
+  function skipTo(td) {
+    while (G.day < td) { night(); G.day++; }
+    G.move = 0; G.skipped = td - 1;
+    news(Fd("{x} joined the race on {y}; until then the rivals had the island to themselves.", { x: nm(G.me), y: dayName(td) }), RICO.L.bkWeek);
+    save();
   }
   /* the pick is the campaign's first transaction, with no click of its own: as Old Sam writes the name into the Book, the
      visitor's test wallet (made here if there is none yet) signs 1 test AGRS to the Book's till. Once it is through, the
@@ -2520,7 +2566,8 @@
     hana: "So it is true, Hana: your name is on the list, in my own hand. Four candidates, one governor’s chair under the council tree, and on Sunday night the ten islanders who vote choose who sits in it. You write everything down, so you know how this works. Laws are made in the Council Hall. Everything else is written here.",
   };
   function welcome() {
-    const go = () => { closeCard(); toast(T("Tap a place on the island to begin.")); dragHint(); };
+    const after = () => { toast(T("Tap a place on the island to begin.")); dragHint(); };
+    const go = () => { closeCard(); const pend = G.pending.splice(0); if (pend.length) councilQueue(pend, after); else after(); };   // a campaign begun today: the rivals' laws from the skipped nights come to the council first
     openCard("book", box => {
       box.classList.add("welcome");
       scene(box, "sam", T("Your name in the Book"), T(WELCOME[G.me]), [btn(T("Walk onto the island"), go, { go: true })],
@@ -2688,6 +2735,7 @@
         if (p && p.then) p.then(turn, () => {}); else turn();
       } catch (err) {}
     };
+    const pf = $("cvPlayFull"); if (pf) pf.onclick = e => fs.onclick(e);   // the big button on a phone held upright does what ⛶ does
     ["fullscreenchange", "webkitfullscreenchange"].forEach(n => document.addEventListener(n, () => { if (!fsEl() && canFs) full(false); }));
     if (navigator.standalone || matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches) full(true);   // started from the home screen
     /* ☰: every place as a button (the island is small on a phone, and some quarters sit at its edges) */
