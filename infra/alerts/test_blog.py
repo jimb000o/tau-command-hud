@@ -137,5 +137,16 @@ import blog_pics  # noqa: E402
 qf = blog_pics.visit_charts(fq, os.path.join(TMP, "q"))
 check(any(p.endswith("-answer.png") for p, _ in qf), "a chart of the node's answer times")
 
+# up block: an old draft (no drafted_at) and a marked one never go out by themselves; a clean new one says when
+blog.AUTO_PUBLISH_HOURS = 24
+check(blog.auto_note({"drafted_at": {}}, "old", {}).startswith("never by itself: written before"), "old draft: only by hand")
+check(blog.auto_note({"drafted_at": {"x": T0}}, "x", {"check": {"unknown_numbers": ["9"]}}).startswith("never by itself: the check"), "marked draft: only by hand")
+check(blog.auto_note({"drafted_at": {"x": T0}}, "x", {"check": {}}).startswith("by itself on Thursday, 5 November 2026"), "clean new draft: the day and time it goes out")
+st0 = {"drafts": {"old": "old-1"}, "drafted": {}, "failed_at": 0}
+blog.write_json(blog.STATE, st0)
+blog.write_json(os.path.join(TMP, "blog", "drafts", "old-1.json"), {"id": "old", "check": {}})
+check(blog.auto_publish(T0 + 10 * 86400) is None, "an old draft is never published by itself")
+blog.AUTO_PUBLISH_HOURS = 0
+
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)

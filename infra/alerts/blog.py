@@ -512,6 +512,17 @@ def auto_publish(now: float | None = None) -> str | None:
     return None
 
 
+def auto_note(st: dict, did: str, a: dict) -> str:
+    """Whether this draft goes on the blog by itself (auto_publish), said plainly for the up block."""
+    at = (st.get("drafted_at") or {}).get(did)
+    chk = a.get("check") or {}
+    if not at:
+        return "never by itself: written before drafts published themselves, only by hand"
+    if chk.get("unknown_numbers") or chk.get("hype"):
+        return "never by itself: the check marked numbers or wording (up blog publish --force after a read)"
+    return f"by itself on {day(at + AUTO_PUBLISH_HOURS * 3600)} {clock(at + AUTO_PUBLISH_HOURS * 3600)}, unless published by hand before"
+
+
 def drafts_cli() -> int:
     try:
         import cruise_crier
@@ -536,7 +547,9 @@ def drafts_cli() -> int:
         print(f"blog:    draft {did}: {(a.get('title') or {}).get('en', '?')}")
         print(f"         read it: {draft_url(st, did)}")
         print(f"         numbers to check: {', '.join(bad)}" if bad else "         every number is in the logbook facts")
-        print(f"         publish: up blog publish {did}" + (f" (or it goes on the blog by itself {AUTO_PUBLISH_HOURS:g} h after it was written, if clean)" if AUTO_PUBLISH_HOURS > 0 else ""))
+        print(f"         publish: up blog publish {did}")
+        if AUTO_PUBLISH_HOURS > 0:
+            print("         " + auto_note(st, did, a))
     return 0
 
 
