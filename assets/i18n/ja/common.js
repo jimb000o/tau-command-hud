@@ -1,5 +1,22 @@
 /* Japanese for the shared header and strings used on several pages. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Testnet health": "テストネットの健康",
+  "Rather watch first?": "まず見てみますか？",
+  "Guided tour of the HUD": "HUD のガイドツアー",
+  "(one minute, eight steps)": "（1 分、8 ステップ）",
+  "one minute, eight steps.": "1 分、8 ステップ。",
+  "What is real": "何が本物か",
+  "today on the testnet": "今日のテストネット",
+  "What is real · today on the testnet": "何が本物か · 今日のテストネット",
+  "{n} transactions": "{n} 件の取引",
+  "IDNI genesis accounts {n}": "IDNI ジェネシス口座 {n}",
+  "White Rabbit Key {n}": "White Rabbit Key {n}",
+  "Agorzilla {n}": "Agorzilla {n}",
+  "Tau HUD pages {n}": "Tau HUD のページ {n}",
+  "other wallets {n}": "その他のウォレット {n}",
+  "Counted by our relay from the blocks it keeps, UTC day; wallets, not people. White Rabbit Key counts the players, the island bot and the cruise ships: simulated passengers, real transactions. Everything else on this page comes from the chain as it is.": "私たちのリレーが保持するブロックから数えた UTC の一日。人ではなくウォレットです。White Rabbit Key にはプレイヤー、島のボット、クルーズ船が含まれます。乗客は模擬、取引は本物。このページの他のすべては、チェーンそのままです。",
+  "sim": "シム",
+  "Your moves in the game are real test transactions, whatever the chain chips show; the chips follow the simulation.": "ゲームでのあなたの一手は、チェーンのチップが何を示していても本物のテスト取引です。チップはシミュレーションに従います。",
   "@tauHUDcom: every rule change and chain restart as it happens, a weekly recap, HUD updates": "@tauHUDcom：すべてのルール変更とチェーンの再起動をリアルタイムで、週次まとめ、HUD の更新情報",
   "@yourhandle": "@あなたのハンドル",
   "About": "概要",
@@ -587,6 +604,7 @@ TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (
 /* Start here: the first-visit path (start/), its header pill and the wallet's way back */
 TauI18n.add({ strings: {
   "Start here": "ここから始める",
+  "Start": "開始",
   "Try Tau in four steps: a test wallet, a rule of your own, a block that seals it, a meal for Agorzilla": "4 ステップで Tau を試す：テストウォレット、自分だけのルール、それを封じるブロック、Agorzilla へのごはん",
   "New here? Try Tau in four steps: a test wallet, a rule of your own that the chain checks, a block that seals it, a meal for Agorzilla. A few minutes, nothing to install.": "はじめて？4 ステップで Tau を試せます：テストウォレット、チェーンがチェックする自分だけのルール、それを封じるブロック、Agorzilla へのごはん。数分で、インストール不要。",
   "Back to Start here": "「ここから始める」に戻る",

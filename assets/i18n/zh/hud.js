@@ -174,6 +174,8 @@ TauI18n.add({ strings: {
   "AGRS or ETH, one address for both · What it pays for: time · server · domain": "AGRS 或 ETH，同一个地址 · 用途：时间 · 服务器 · 域名",
   "AGRS per tx": "AGRS / 笔交易",
   "Alerts": "提醒",
+  "Rabbit": "白兔礁",
+  "Cruise": "邮轮",
   "Menu": "菜单",
   "All transactions ({n})": "全部交易（{n}）",
   "All transactions ({x1})": "全部交易（{x1}）",
@@ -2318,4 +2320,5 @@ TauI18n.add({ strings: {
   "Blog: a new page with what we learn from running things on Tau Testnet Alpha. The first article is about the MS Dry Run of 4 November: the ship left after 34 of 90 minutes, because 8 sends our node did not answer in time counted as refusals; 122 transactions went through and all 5 bookings paid out. From now on our server drafts one article after every cruise ship visit, from the facts in the ship’s public logbook, in English, Chinese and Japanese; every number is checked against the logbook, and nothing goes up before a person has read it.": "博客：一个新页面，记录我们在 Tau Testnet Alpha 上运行各种东西学到的经验。第一篇文章讲 11 月 4 日的 MS Dry Run：游轮在 90 分钟里只停了 34 分钟，因为我们的节点有 8 次没有及时回答的发送被算成了拒绝；122 笔交易成功，5 笔预订全部付出。从现在起，每艘游轮停靠后，我们的服务器会根据游轮公开日志中的事实起草一篇文章，有英文、中文和日文；每个数字都与日志核对，发布前一定有人读过。",
   "New: the Tau HUD blog": "新：Tau HUD 博客",
   "What we learn running things on the Tau testnet. First: why our MS Dry Run cruise left after 34 of 90 minutes, and what we changed.": "我们在 Tau 测试网上运行各种东西学到的经验。第一篇：为什么 MS Dry Run 游轮 90 分钟里只停了 34 分钟，以及我们改了什么。",
+  "The cruise ships’ logbook is a page now, tauhud.com/cruise: every transaction a ship’s passengers sent, when, where, how much, and the node’s answer, sealed or refused with the reason, visit by visit, with a link into the Explorer. The game’s “The logbook” button and the Testnet load page lead there instead of to the raw data.": "邮轮的航海日志现在是一个页面：tauhud.com/cruise。船上乘客发送的每一笔交易：时间、地点、金额，以及节点的回答——封入区块或被拒绝及其原因，按每次到访分列，并附带指向浏览器的链接。游戏里的“航海日志”按钮和“测试网负载”页面现在指向那里，而不是原始数据。",
 } });

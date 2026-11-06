@@ -1,5 +1,7 @@
 /* Simplified Chinese for /rules/. Keys are the English text; {n} {x} are placeholders. */
 TauI18n.add({ strings: {
+  "Show {n} more": "再显示 {n} 条",
+  "{a} of {b} rules": "{b} 条规则中的 {a} 条",
   "Rules wall": "规则墙",
   "Rules people gave their own accounts.": "大家给自己账户设的规则。",
   "Every personal rule on Tau Testnet Alpha, read from the blocks. {e1} that is a real transaction, and it counts here.": "Tau Testnet Alpha 上的每一条个人规则，都从区块中读取。{e1}这是一笔真实的交易，会在这里被计入。",

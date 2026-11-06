@@ -2355,5 +2355,10 @@
       "link": "/blog/",
       "image": "/assets/shots/blog.png"
     }
+  },
+  {
+    "tag": "Cruise",
+    "on": "2026-11-06",
+    "html": "The cruise ships’ logbook is a page now, tauhud.com/cruise: every transaction a ship’s passengers sent, when, where, how much, and the node’s answer, sealed or refused with the reason, visit by visit, with a link into the Explorer. The game’s “The logbook” button and the Testnet load page lead there instead of to the raw data."
   }
 ]

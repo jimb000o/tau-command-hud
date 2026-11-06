@@ -108,6 +108,9 @@ body[data-mode="sim"] .simbar button:hover { background: #ffb13b; border-color: 
 body[data-mode="sim"] .simtag { color: #ffb13b; border-color: rgba(255,177,59,.6); }
 .simtag { position: absolute; top: 6px; right: 8px; font: 600 11px var(--display); letter-spacing: .2em; color: var(--dim); border: 1px solid var(--hair); border-radius: 3px; padding: 1px 4px; }
 body[data-mode="live"] .simtag { display: none; }
+/* every simulated chip value says so, also on a screenshot */
+.chip .st { display: none; text-decoration: none; font: 600 11px var(--display); letter-spacing: .1em; color: #ffb13b; margin-left: 6px; }
+body[data-mode="sim"] .chip .st { display: inline; }
 /* simple vs technical view */
 .stream .lbl.plain, body[data-view="simple"] .stream .lbl.tech { display: none; }
 body[data-view="simple"] .stream .lbl.plain { display: block; }
@@ -524,6 +527,9 @@ html.coreonly #coreFoot { display: block; position: fixed; left: 0; right: 0; bo
 .core canvas { height: 100%; width: auto; max-width: 100%; max-height: 100%; aspect-ratio: 1; display: block; object-fit: contain; }
 /* your own simulated node (assets/simnode.js): a small card in the core's top-left corner, simulation only */
 .core-panel { position: relative; }
+/* simulation mode: a faint word across the core, so a screenshot of the simulated chain cannot pass for the testnet */
+.simmark { display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-24deg); font: 600 clamp(22px, 4.6vw, 64px)/1 var(--display, inherit); letter-spacing: .3em; text-transform: uppercase; color: rgba(255,177,59,.11); pointer-events: none; z-index: 2; white-space: nowrap; }
+body[data-mode="sim"] .simmark { display: block; }
 .mynode { position: absolute; left: 14px; top: 46px; z-index: 3; }
 @media (max-width: 900px) { .mynode { position: static; margin: 0 0 8px; } }
 @media (min-width: 901px) and (max-width: 1599px) { .mynode .sn-card > span { display: none; } }   /* laptops: name and progress only, the core stays visible */
@@ -1050,11 +1056,11 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="chip v" id="chipMode" data-full="Mode. Simulation runs in your browser and shows the documented protocol with made-up data; Live node reads the real testnet through the community relay."><span class="dot sim" id="modeDot"></span><b id="modeTxt">Simulation</b></div>
       <a class="chip next" id="chipNext" href="proposals/" hidden><b></b></a>
       <a class="chip" id="chipOnline" href="meta/?view=tauhud" data-full="People looking at Tau HUD right now, counted by our relay at node.tauhud.com: one person counts once, however many tabs are open.&#10;No cookies and nothing stored in your browser; the relay tells people apart by address and browser, hashed with a daily salt and kept in memory only. Click for Tau HUD in numbers."><span class="dot none" id="onlineDot"></span><b id="onlineN" style="margin-left:0;margin-right:6px">—</b>online</a>
-      <button class="chip v" type="button" id="chipCons"><b><span class="lg" id="consL">Proof of authority</span><span class="sh" id="consS">PoA</span></b></button>
-      <div class="chip v" id="chipNet"><b id="netId">tau-testnet-v2</b></div>
-      <div class="chip v" id="chipHeight"><b id="chipH">#0</b></div>
-      <button class="chip v" type="button" id="btnState"><b id="chipRev">rev 1</b></button>
-      <div class="chip v" id="chipFeeWrap"><b id="chipFee">10 AGRS</b></div>
+      <button class="chip v" type="button" id="chipCons"><b><span class="lg" id="consL">Proof of authority</span><span class="sh" id="consS">PoA</span></b><s class="st">sim</s></button>
+      <div class="chip v" id="chipNet"><b id="netId">tau-testnet-v2</b><s class="st">sim</s></div>
+      <div class="chip v" id="chipHeight"><b id="chipH">#0</b><s class="st">sim</s></div>
+      <button class="chip v" type="button" id="btnState"><b id="chipRev">rev 1</b><s class="st">sim</s></button>
+      <div class="chip v" id="chipFeeWrap"><b id="chipFee">10 AGRS</b><s class="st">sim</s></div>
     </div>
     <nav class="tnav" data-page="hud" aria-label="Pages and tools">
       <div class="seg" role="group" aria-label="Data source" data-slot="source">
@@ -1115,6 +1121,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="mynode" id="myNode" hidden></div>
       <div class="core">
         <div id="coreFoot" aria-hidden="true"></div>
+        <div class="simmark" aria-hidden="true">Simulation</div>
         <canvas id="core" width="1120" height="1120" aria-label="Animated view of validators, their agreement on rule changes, accounts with their own Tau rules, the mempool and block production"></canvas>
         <div class="readout">
           <div id="rHw" data-health="height"><b id="rH">0</b><span>Height<i id="rHs"></i></span></div>

@@ -49,6 +49,11 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
 .brand span { color: var(--dim); font: 12px var(--mono); }
 .lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; }
+/* the five things a journalist needs first, on one line above everything else */
+.glance { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.glance li { border: 1px solid var(--line); border-radius: 8px; padding: 8px 11px; background: rgba(16,16,18,.86); font-size: 12px; color: var(--dim); display: grid; gap: 2px; }
+.glance b { font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--text); }
+.glance a { color: #fff; }
 .sub { margin: 4px 0 0; color: var(--dim); max-width: 78em; }
 .sub b { color: var(--text); font-weight: 500; }
 .main { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); align-items: start; }
@@ -61,7 +66,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .copyrow { display: flex; gap: 8px; align-items: stretch; margin-top: 8px; }
 .copyrow > :first-child { flex: 1 1 auto; min-width: 0; }
 pre { margin: 0; background: #050506; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: 12px/1.5 var(--mono); color: #fff; white-space: pre-wrap; word-break: break-word; }
-button.copy { flex: none; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; background: none; color: var(--dim); border: 1px solid var(--hair); border-radius: 6px; padding: 0 10px; cursor: pointer; min-width: 64px; min-height: 32px; }
+button.copy { flex: none; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; background: none; color: var(--dim); border: 1px solid var(--hair); border-radius: 6px; padding: 0 10px; cursor: pointer; min-width: 64px; min-height: 32px; }
 button.copy:hover { color: #000; background: #fff; border-color: #fff; }
 .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
 /* facts: label dim and small, value carries the weight */
@@ -79,7 +84,7 @@ button.copy:hover { color: #000; background: #fff; border-color: #fff; }
 .dl .what { flex: 1 1 auto; min-width: 0; }
 .dl .what b { font-weight: 500; color: #fff; display: block; }
 .dl .what span { color: var(--dim); font-size: 11.5px; }
-.dl a.get, a.get { flex: none; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--text); border: 1px solid var(--hair); border-radius: 6px; padding: 0 12px; min-height: 32px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.dl a.get, a.get { flex: none; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--text); border: 1px solid var(--hair); border-radius: 6px; padding: 0 12px; min-height: 32px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
 a.get:hover { color: #000; background: #fff; border-color: #fff; }
 a.get.all { color: #000; background: #fff; border-color: #fff; }
 a.get.all:hover { background: var(--ok); border-color: var(--ok); }
@@ -200,6 +205,13 @@ footer a { color: var(--dim); }
     <p class="lead">Writing or making a video about Tau? Take what you need.</p>
     <p class="sub"><b>Films</b> with downloads, a ready paragraph, the facts, the <b>logo</b> and <b>screenshots</b>. Free to use for coverage of Tau and Tau HUD; please credit <b>tauhud.com</b>. Unofficial: Tau HUD is a community project, not made or endorsed by IDNI or the Tau team.</p>
   </div>
+  <ul class="glance" aria-label="In ten seconds">
+    <li><b>What</b><span>A live view of Tau Testnet Alpha: blocks, rule changes, votes, validators, accounts, plus games whose moves are real test transactions.</span></li>
+    <li><b>Who</b><span>One community member, unpaid, since October 2026. Not IDNI, not the Tau team; no claim of accuracy.</span></li>
+    <li><b>Numbers</b><span>Live, never from us: visitors and testnet share on <a href="/meta/">In numbers</a>, chain activity on <a href="/stats/">Stats</a>.</span></li>
+    <li><b>Pictures</b><span><a href="tau-hud-press-kit.zip" download>Logo and screenshots, ZIP</a>; films below, free with a credit to tauhud.com.</span></li>
+    <li><b>Contact</b><span><a href="https://t.me/tauHUDcom" target="_blank" rel="noopener">t.me/tauHUDcom</a> · <a href="https://x.com/TauHUDcom" target="_blank" rel="noopener">@TauHUDcom</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&amp;title=%5BPress%5D%20" target="_blank" rel="noopener">GitHub</a></span></li>
+  </ul>
   <main class="main">
     <div class="col cF">
       <section class="panel films-panel" aria-labelledby="hFilms">

@@ -1,5 +1,22 @@
 /* Simplified Chinese for the shared header and strings used on several pages. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Testnet health": "测试网健康",
+  "Rather watch first?": "想先看看？",
+  "Guided tour of the HUD": "HUD 导览",
+  "(one minute, eight steps)": "（一分钟，八步）",
+  "one minute, eight steps.": "一分钟，八步。",
+  "What is real": "什么是真的",
+  "today on the testnet": "今天测试网上",
+  "What is real · today on the testnet": "什么是真的 · 今天测试网上",
+  "{n} transactions": "{n} 笔交易",
+  "IDNI genesis accounts {n}": "IDNI 创世账户 {n}",
+  "White Rabbit Key {n}": "White Rabbit Key {n}",
+  "Agorzilla {n}": "Agorzilla {n}",
+  "Tau HUD pages {n}": "Tau HUD 页面 {n}",
+  "other wallets {n}": "其他钱包 {n}",
+  "Counted by our relay from the blocks it keeps, UTC day; wallets, not people. White Rabbit Key counts the players, the island bot and the cruise ships: simulated passengers, real transactions. Everything else on this page comes from the chain as it is.": "由我们的中继从它保存的区块里统计，按 UTC 日；是钱包，不是人。White Rabbit Key 包括玩家、岛上机器人和游轮：模拟的乘客，真实的交易。本页其他一切都直接来自链。",
+  "sim": "模拟",
+  "Your moves in the game are real test transactions, whatever the chain chips show; the chips follow the simulation.": "你在游戏中的每一步都是真实的测试交易，无论链条芯片显示什么；芯片跟随模拟。",
   "@tauHUDcom: every rule change and chain restart as it happens, a weekly recap, HUD updates": "@tauHUDcom：每次规则变更和链重启实时推送、每周回顾、HUD 更新",
   "@yourhandle": "@你的账号",
   "About": "关于",
@@ -592,6 +609,7 @@ TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (
 /* Start here: the first-visit path (start/), its header pill and the wallet's way back */
 TauI18n.add({ strings: {
   "Start here": "从这里开始",
+  "Start": "开始",
   "Try Tau in four steps: a test wallet, a rule of your own, a block that seals it, a meal for Agorzilla": "四步试用 Tau：一个测试钱包、一条你自己的规则、一个封存它的区块、喂 Agorzilla 一顿饭",
   "New here? Try Tau in four steps: a test wallet, a rule of your own that the chain checks, a block that seals it, a meal for Agorzilla. A few minutes, nothing to install.": "第一次来？四步试用 Tau：一个测试钱包、一条由链来检查的你自己的规则、一个封存它的区块、喂 Agorzilla 一顿饭。几分钟，无需安装。",
   "Back to Start here": "返回“从这里开始”",

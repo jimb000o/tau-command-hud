@@ -161,6 +161,8 @@ TauI18n.add({ strings: {
   "AGRS or ETH, one address for both · What it pays for: time · server · domain": "AGRS または ETH、両方に同じアドレス · 支払い先：時間 · サーバー · ドメイン",
   "AGRS per tx": "AGRS / tx",
   "Alerts": "通知",
+  "Rabbit": "ホワイトラビット・キー",
+  "Cruise": "クルーズ",
   "Menu": "メニュー",
   "All transactions ({n})": "すべてのトランザクション（{n}）",
   "All transactions ({x1})": "すべてのトランザクション（{x1}）",
@@ -2312,4 +2314,5 @@ TauI18n.add({ strings: {
   "Blog: a new page with what we learn from running things on Tau Testnet Alpha. The first article is about the MS Dry Run of 4 November: the ship left after 34 of 90 minutes, because 8 sends our node did not answer in time counted as refusals; 122 transactions went through and all 5 bookings paid out. From now on our server drafts one article after every cruise ship visit, from the facts in the ship’s public logbook, in English, Chinese and Japanese; every number is checked against the logbook, and nothing goes up before a person has read it.": "ブログ：Tau Testnet Alpha で動かして学んだことを書く新しいページです。最初の記事は 11 月 4 日の MS Dry Run について：船は 90 分のうち 34 分で離岸しました。私たちのノードが時間内に返事をしなかった 8 件の送信が拒否として数えられたためです。122 件の取引が通り、予約 5 件はすべて支払われました。これからは、クルーズ船が寄港するたびに、私たちのサーバーが船の公開ログブックの事実から記事を下書きします（英語、中国語、日本語）。数字はすべてログブックと照らし合わせ、人が読むまでは公開しません。",
   "New: the Tau HUD blog": "新着：Tau HUD ブログ",
   "What we learn running things on the Tau testnet. First: why our MS Dry Run cruise left after 34 of 90 minutes, and what we changed.": "Tau テストネットで動かして学んだこと。第一弾：MS Dry Run が 90 分のうち 34 分で離岸した理由と、私たちが変えたこと。",
+  "The cruise ships’ logbook is a page now, tauhud.com/cruise: every transaction a ship’s passengers sent, when, where, how much, and the node’s answer, sealed or refused with the reason, visit by visit, with a link into the Explorer. The game’s “The logbook” button and the Testnet load page lead there instead of to the raw data.": "クルーズ船の航海日誌がページになりました：tauhud.com/cruise。船の乗客が送った取引のひとつひとつ、いつ、どこで、いくら、そしてノードの答え（封入か、理由つきの拒否か）を寄港ごとに並べ、エクスプローラーへのリンクつき。ゲームの「航海日誌」ボタンと「テストネット負荷」ページは生データではなくここへ案内します。",
 } });
