@@ -67,6 +67,7 @@ services:
       CHAT_AI_DAILY: ${CHAT_AI_DAILY:-3000}   # at most this many AI checks per UTC day
       ROADMAP_ENABLED: ${ROADMAP_ENABLED:-1}   # comments on tauhud.com/roadmap/ (relay/roadmap.py, moderated with the troll box); 0 closes them, reading stays
       CRUISE_ENABLED: ${CRUISE_ENABLED:-1}   # cruise ships at White Rabbit Key (relay/cruise.py): simulated passengers, real test transactions; 0 keeps them away
+      SENDER_CONNECTION: ${SENDER_CONNECTION:-1}   # island bot + cruise ships send through their own node connection (relay.py Relay.sender); 0 = share the visitors one as before
     volumes:
       # chain restarts and dropped transactions for /stats (relay.py EVENTS_PATH),
       # availability history for /uptime (UPTIME_PATH)
@@ -224,6 +225,12 @@ services:
       TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
       # a clean blog draft on the blog by itself this many hours after it was written (24 since 6.11.2026); 0 = only by hand (up blog publish)
       BLOG_AUTO_PUBLISH_HOURS: ${BLOG_AUTO_PUBLISH_HOURS:-24}
+      # the weekly report for IDNI (alerts/idni_report.py): counted from our public data, written as an unlisted page with
+      # a pre-filled issue link for IDNI/tau-testnet and told to the owner's private chat (Sunday 18:00 German time);
+      # never filed by itself. IDNI_REPORT=false stops it; up report shows it any time
+      IDNI_REPORT: ${IDNI_REPORT:-true}
+      IDNI_REPORT_WEEKDAY: ${IDNI_REPORT_WEEKDAY:-6}
+      IDNI_REPORT_HOUR: ${IDNI_REPORT_HOUR:-18}
     volumes:
       - alerts_state:/state     # /state/blog.json: which visits have a draft, which drafts were posted
       - alerts_public:/public   # /public/blog/posts.json and drafts/, served by Caddy

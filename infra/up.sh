@@ -18,6 +18,9 @@
 #              up cruise     a cruise ship's last visit in numbers and the node's timeouts per hour (nothing rebuilt)
 #                            up cruise next  the next call's announcement as it goes out by itself (posts nothing);
 #                            announcements and reports run by themselves every week (alerts/cruise_crier.py)
+#              up report     the weekly report for IDNI as it stands (nothing rebuilt, nothing filed): its text, a page
+#                            and a pre-filled GitHub issue link; up report last  last week's; up report send  also to
+#                            your Telegram (it comes there by itself every Sunday 18:00)
 #              up owner      the same, then a one-time link: open it in your Telegram, and the news line's watchtower
 #                            warns you there privately (never on the channel); up owner test  sends you one test message
 set -e
@@ -61,7 +64,7 @@ if [ "${1:-}" = "cruise" ]; then
   docker compose cp cruise-report.py relay:/tmp/cruise-report.py >/dev/null
   docker compose exec -T relay python /tmp/cruise-report.py ${2:-}
   echo "sendtx timeouts per hour (UTC), last 3 days:"
-  docker compose logs -t --since 72h relay 2>&1 | grep "upstream sendtx failed" | awk '{print substr($3,1,13)}' | sort | uniq -c | sed 's/^/  /'
+  docker compose logs -t --since 72h relay 2>&1 | grep -E "(upstream|sender) sendtx failed" | awk '{print substr($3,1,13)}' | sort | uniq -c | sed 's/^/  /'
   exit 0
 fi
 # IDNI's progress of the day as ONE post, nothing rebuilt (alerts/idni_digest.py): up idni  the last ones and what the
@@ -71,6 +74,14 @@ if [ "${1:-}" = "idni" ]; then
   shift
   docker compose up -d devpulse >/dev/null 2>&1 || true
   docker compose exec -T devpulse python devpulse.py --digest "$@"
+  exit $?
+fi
+# the weekly report for IDNI, nothing rebuilt, nothing filed (alerts/idni_report.py): up report  this week so far,
+# up report last  last week, up report send  the page link to the owner's Telegram as well
+if [ "${1:-}" = "report" ]; then
+  shift
+  docker compose up -d blog >/dev/null 2>&1 || true
+  docker compose exec -T blog python idni_report.py "$@"
   exit $?
 fi
 # the blog by hand, nothing rebuilt (alerts/blog.py): up blog  lists the drafts waiting and where to read them,
@@ -113,6 +124,8 @@ if s:
     h = s.get("health") or {}
     print(f"node:    height {s.get('height')} (tip {s.get('tip_height')}), {s.get('clients')} sockets, {s.get('online')} online, "
           f"{h.get('label')} {h.get('score')}, relay up {s.get('uptime_seconds')} s")
+    if s.get("sender_connected") is not None:
+        print(f"         ship+bot connection: {'up' if s.get('sender_connected') else 'DOWN (they borrow the visitors one after 60 s)'}")
 s = read(sys.argv[2], "island:  ")
 if s:
     w = s.get("week") or {}; l = s.get("last") or {}
@@ -253,4 +266,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up idni, up blog, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up idni, up report, up blog, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"

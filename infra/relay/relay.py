@@ -2,9 +2,11 @@
 
 The node's own WebSocket (port 65433) allows 32 connections and rate-limits the
 heavy reads (getblocks, getgovernance, gettaustate) to 0.5/s per connection, so
-it cannot face the public. This relay holds ONE upstream connection, polls the
-node on a fixed schedule, caches the replies and serves every visitor from that
-cache. New blocks, mempool changes and governance changes are pushed to all
+it cannot face the public. This relay holds ONE upstream connection for the
+visitors, polls the node on a fixed schedule, caches the replies and serves every
+visitor from that cache. The island bot and the cruise ships send through a second
+connection of their own (Relay.sender), so a send the node answers late never
+makes the visitors wait. New blocks, mempool changes and governance changes are pushed to all
 visitors as soon as the relay sees them.
 
 Visitors speak the same text protocol as the node ("getblocks 12" in, the
@@ -131,6 +133,9 @@ HEALTH_WEIGHTS = {"node": 20, "sync": 15, "last_block": 20, "pace": 10, "availab
 # this long afterwards (the block poll may still be catching up)
 DROP_GRACE_SECONDS = _env_float("DROP_GRACE_SECONDS", 30)
 UPSTREAM_TIMEOUT = _env_float("UPSTREAM_TIMEOUT_SECONDS", 20)
+# The island bot and cruise ships use a second node connection of their own (Relay.sender); 0 = share the visitors' one
+SENDER_CONNECTION = os.environ.get("SENDER_CONNECTION", "1") != "0"
+SENDER_FALLBACK = _env_float("SENDER_FALLBACK_SECONDS", 60)   # sender down this long -> borrow the visitors' connection
 # The node allows heavy reads at burst 2, 0.5/s per connection; stay just under.
 HEAVY_COMMANDS = frozenset({"getblocks", "getgovernance", "gettaustate", "checktx", "getruleconflict"})
 HEAVY_BURST = 2
@@ -298,8 +303,10 @@ class TokenBucket:
 class Upstream:
     """One connection to the node; requests are strictly sequential."""
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, name: str = "upstream"):
         self.url = url
+        self.name = name                # "upstream" (visitors, polls) or "sender" (island bot + cruise ships)
+        self.down_since = time.time()   # when this connection was last lost (or created): see Relay.ask_sender
         self.ws = None
         self.lock = asyncio.Lock()
         self.connected = asyncio.Event()
@@ -315,14 +322,16 @@ class Upstream:
                     hello = await asyncio.wait_for(ws.recv(), UPSTREAM_TIMEOUT)
                     if not str(hello).startswith("ok"):
                         raise RuntimeError(f"handshake refused: {hello}")
-                    log.info("upstream connected: %s (%s)", self.url, hello)
+                    log.info("%s connected: %s (%s)", self.name, self.url, hello)
                     self.ws = ws
                     self.connected.set()
                     backoff = 1.0
                     await ws.wait_closed()
             except (OSError, ConnectionClosed, RuntimeError, asyncio.TimeoutError) as exc:
-                log.warning("upstream unavailable: %r", exc)
+                log.warning("%s unavailable: %r", self.name, exc)
             finally:
+                if self.ws is not None or self.connected.is_set():
+                    self.down_since = time.time()
                 self.ws = None
                 self.connected.clear()
             await asyncio.sleep(backoff)
@@ -340,18 +349,30 @@ class Upstream:
                 await ws.send(command)
                 raw = await asyncio.wait_for(ws.recv(), UPSTREAM_TIMEOUT)
             except (ConnectionClosed, asyncio.TimeoutError) as exc:
-                log.warning("upstream %s failed: %r", command.split()[0], exc)
+                log.warning("%s %s failed: %r", self.name, command.split()[0], exc)
                 await ws.close()
                 return None
         try:
             msg = json.loads(raw)
         except (TypeError, ValueError):
-            log.warning("upstream sent non-JSON for %s: %.80s", command.split()[0], raw)
+            log.warning("%s sent non-JSON for %s: %.80s", self.name, command.split()[0], raw)
             return None
         return msg if isinstance(msg, dict) else None
 
 
 class Relay:
+    async def ask_sender(self, command: str) -> dict | None:
+        """The island bot's and cruise ships' way to the node: their own connection. Only while that one has been
+        down for SENDER_FALLBACK seconds and the visitors' connection is up do they borrow the visitors' one, so a
+        node that refuses a second connection never silences the bot."""
+        s = self.sender
+        if s is None:
+            return await self.upstream.request(command)
+        if (s.ws is None and self.upstream.ws is not None
+                and time.time() - s.down_since >= SENDER_FALLBACK):
+            return await self.upstream.request(command)
+        return await s.request(command)
+
     def __init__(self, upstream_url: str = UPSTREAM_URL):
         self.upstream = Upstream(upstream_url)
         self.simvotes = SimVotes()   # visitor votes for the simulation (simvotes.py)
@@ -359,6 +380,9 @@ class Relay:
         self.simwallet = SimWallet()   # the testnet wallet's transactions in simulation mode (simwallet.py)
         self.lease = SlotLease(places=RULE_PLACES)   # fair turns on the personal-rule places (slotlease.py)
         self.island = Island()   # White Rabbit Key: the rival candidates' moves as test transactions (island.py)
+        # The island bot and the cruise ships send through their own connection to the node, so a send the node takes
+        # long to answer (up to UPSTREAM_TIMEOUT) never holds the visitors' connection: pages keep loading meanwhile.
+        self.sender = Upstream(upstream_url, "sender") if (SENDER_CONNECTION and self.island.enabled) else None
         self.isle = Isle()       # White Rabbit Key: every campaign played today, added up and pushed to every page (isle.py)
         self.isle.people = self.playing   # and how many people have it open now, counted like `online`
         self.load = Load()       # how hard the testnet works, minute by minute: GET /load (load.py)
@@ -1948,6 +1972,8 @@ class Relay:
         self.expire_community(now)
         return {
             "upstream_connected": self.upstream.connected.is_set(),
+            # the island bot's and cruise ships' own node connection; null when switched off (SENDER_CONNECTION=0)
+            "sender_connected": self.sender.connected.is_set() if self.sender else None,
             "height": self.height(),
             "canonical_height": self.canonical_height(),
             "peer_tip_raw": self.raw_tip_height(),
@@ -2208,7 +2234,8 @@ class Relay:
     async def run(self):
         tasks = [
             asyncio.create_task(self.upstream.run()),
-            asyncio.create_task(self.island.run(self.upstream.request, self.governance)),
+            *([asyncio.create_task(self.sender.run())] if self.sender else []),
+            asyncio.create_task(self.island.run(self.ask_sender, self.governance)),
             asyncio.create_task(self.isle.run(lambda snap: broadcast(self.isle.subs, envelope_ok("isle", snap)))),
             asyncio.create_task(self.poll_loop(BLOCK_POLL, self.poll_blocks)),
             asyncio.create_task(self.poll_loop(MEMPOOL_POLL, lambda: self.poll_cached("getmempool", True))),
