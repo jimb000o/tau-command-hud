@@ -193,6 +193,7 @@ services:
   devpulse:
     build: ./alerts
     command: ["python", "devpulse.py"]
+    init: true   # git leaves helper processes behind; PID 1 python never reaped them (150 zombies on 6.11.2026), tini does
     environment:
       RELAY_HTTP: http://relay:8080
       TAU_TESTNET_REF: ${TAU_TESTNET_REF}
