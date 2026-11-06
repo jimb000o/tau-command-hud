@@ -144,5 +144,5 @@ TauI18n.add({ strings: {
   "Demo with play values": "使用游戏数值的演示",
   "Set (demo). On the real testnet a block would hold the rule now; a play payment waits in step 3.": "已设置（演示）。在真实测试网上，现在会有一个区块记录这条规则；第 3 步有一笔演示付款在等待。",
   "Removed (demo).": "已移除（演示）。",
-  "Today by itself: 1 payment, {a} of {b} test AGRS.": "今天自动签署：1 笔付款，{a} / {b} 测试 AGRS。"
+  "Today by itself: 1 payment, {a} of {b} test AGRS.": "今天自动通过：1 笔，{a} / {b} 测试 AGRS。"
 } });
