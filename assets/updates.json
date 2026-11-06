@@ -2425,5 +2425,10 @@
     "tag": "Wallet",
     "on": "2026-11-06",
     "html": "Guardian (tauhud.com/guardian/), a testnet prototype: connect an Authenticator app to your test wallet and set a limit; a payment above it then waits on the chain until you type the 6-digit code, and our Guardian co-signs. It can say yes to your payment, never send one, and holds no key of yours. Built on the approver bot IDNI ships with the testnet; the wallet links a waiting payment to its code."
+  },
+  {
+    "tag": "Wallet",
+    "on": "2026-11-07",
+    "html": "Guardian: when Sign the rule cannot be pressed, the page now says why, in the panel and on hover, and lists who holds the testnet's two rule places: a fair turn from our wallet shows when it frees, a rule set elsewhere shows that only its owner can free it. Get in line is offered only where a fair turn can end."
   }
 ]
