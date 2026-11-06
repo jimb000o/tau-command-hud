@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Services on the testnet</title>
+<meta name="description" content="A directory of the services running on the Tau testnet: co-signers, rule givers, apps people pay. Found on the chain by itself, with live numbers.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Services on the testnet">
+<meta property="og:description" content="Every service the Tau testnet shows: co-signers, rule givers, apps people pay. Listed by the chain itself, live numbers, nobody signs up.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/services/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 12px; max-width: 1680px; }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.top { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: flex-end; justify-content: space-between; }
+.lead { margin: 4px 0 0; font: 500 clamp(20px, 2.6vw, 28px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 80ch; }
+.sub b { color: var(--text); font-weight: 500; }
+.stats { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-end; }
+.stat { display: grid; }
+.stat b { font: 600 22px/1.1 var(--display); color: #fff; }
+.stat span { color: var(--dim); font-size: 11px; }
+.live { display: inline-flex; align-items: center; gap: 7px; color: var(--dim); font-size: 12px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+.dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.dir { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+aside { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.panel h2 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.search { width: 100%; font: 13px var(--mono); color: #fff; background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 9px 10px; min-height: 40px; }
+.search:focus { outline: none; border-color: #fff; }
+.cats { display: flex; flex-direction: column; gap: 2px; margin: 10px 0 0; padding: 0; list-style: none; }
+.cats button { width: 100%; display: flex; justify-content: space-between; gap: 8px; align-items: center; background: none; border: 0; border-radius: 6px; color: var(--text); font: 13px var(--mono); padding: 5px 8px; cursor: pointer; text-align: left; }
+.cats button:hover { background: rgba(255,255,255,.06); }
+.cats button[aria-pressed="true"] { background: #fff; color: #000; }
+.cats button .n { color: var(--dim); font-size: 12px; }
+.cats button[aria-pressed="true"] .n { color: #000; }
+.steps { margin: 0; padding-left: 18px; }
+.steps li { margin: 0 0 6px; }
+.note { color: var(--dim); font-size: 12px; margin: 6px 0 0; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; text-decoration: none; color: #000; background: #fff; border: 1px solid #fff; border-radius: 6px; padding: 7px 12px; min-height: 32px; cursor: pointer; }
+.btn.ghost { color: var(--text); background: none; border-color: var(--hair); }
+.btn:hover { background: var(--ok); border-color: var(--ok); color: #000; }
+main { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.msg { color: var(--dim); font-size: 12px; margin: 0; }
+.msg b { color: var(--text); font-weight: 500; }
+.grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); align-content: start; }
+.sect { grid-column: 1 / -1; margin: 6px 0 0; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.sect:first-child { margin-top: 0; }
+.card { display: flex; flex-direction: column; gap: 8px; background: rgba(16,16,18,.9); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.card:hover { border-color: var(--hair); }
+.card .hd { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.ic { flex: none; width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; background: #fff; color: #000; font: 700 17px var(--display); overflow: hidden; }
+.ic img { width: 100%; height: 100%; object-fit: cover; }
+.ic.key { background: #16161a; color: var(--ok); border: 1px solid var(--hair); font: 600 12px var(--mono); }
+.card h3 { margin: 0; font: 600 15px/1.25 var(--display); color: #fff; overflow-wrap: anywhere; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.tag { font-size: 11px; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 0 7px; }
+.tag.ours { color: #000; background: var(--text); border-color: var(--text); }
+.card p { margin: 0; color: var(--text); font-size: 12px; }
+.nums { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.nums div { display: grid; }
+.nums b { font: 600 16px/1.2 var(--display); color: #fff; }
+.nums span { font-size: 11px; color: var(--dim); }
+.nums .quiet { color: var(--dim); font-size: 11px; }
+.card .acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 2px; }
+.addr { font-size: 11px; color: var(--dim); word-break: break-all; }
+.empty { grid-column: 1 / -1; color: var(--dim); border: 1px dashed var(--hair); border-radius: 8px; padding: 14px; margin: 0; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer p { margin: 0; }
+footer a { color: var(--dim); }
+[hidden] { display: none !important; }
+@media (min-width: 900px) { .dir { grid-template-columns: 250px minmax(0, 1fr); } }
+/* laptop and up, landscape: one screen; the list scrolls inside, the page does not */
+@media (min-width: 1100px) and (min-aspect-ratio: 4/3) {
+  body { height: 100vh; overflow: hidden; padding-bottom: 10px; }
+  .wrap { height: 100%; }
+  .wrap > .dir { flex: 1 1 0; min-height: 0; }
+  aside { overflow: auto; min-height: 0; }
+  main { min-height: 0; }
+  .grid { flex: 1 1 0; min-height: 0; overflow: auto; padding-right: 4px; }
+}
+/* phone: nothing smaller than 11 px, buttons big enough for a thumb, categories as a row */
+@media (max-width: 899px) {
+  .dir { display: flex; flex-direction: column; }
+  aside { display: contents; }
+  main { order: 2; }
+  #listPanel { order: 3; }
+  .cats { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+  .cats button { width: auto; border: 1px solid var(--hair); min-height: 44px; padding: 0 12px; }
+  .btn, .search { min-height: 44px; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Services</span></a>
+  </header>
+  <nav class="tnav" data-page="services" aria-label="Pages and tools"></nav>
+  <div class="top">
+    <div>
+      <p class="lead">Services on the Tau testnet</p>
+      <p class="sub">What people build on Tau Testnet Alpha, in one directory. An account shows up here <b>by itself</b> once the chain shows it serving other wallets: nobody signs up, nobody approves, the numbers come from the blocks. Ours are listed first and marked.</p>
+    </div>
+    <div class="stats" aria-live="polite">
+      <div class="stat"><b id="nServices">–</b><span>services found</span></div>
+      <div class="stat"><b id="nWallets">–</b><span>wallets served</span></div>
+      <div class="stat"><b id="nSince">–</b><span>read from every block since</span></div>
+      <span class="live"><i class="dot" id="dot"></i><span id="liveTxt">Reading the chain…</span></span>
+      <a class="btn ghost" href="#hList" id="toList">List yours</a>
+    </div>
+  </div>
+  <div class="dir">
+    <aside>
+      <section class="panel" aria-labelledby="hFind">
+        <h2 id="hFind">Find</h2>
+        <input class="search" id="q" type="search" placeholder="Search name, key or what it does" aria-label="Search services">
+        <ul class="cats" id="cats" aria-label="Categories"></ul>
+      </section>
+      <section class="panel" id="listPanel" aria-labelledby="hList">
+        <h2 id="hList">List yours</h2>
+        <ol class="steps">
+          <li><b>Run it on the testnet.</b> Co-sign other wallets' payments, offer a rule they take, or get paid by at least <span id="paidMin">3</span> different wallets. It appears here within a few minutes.</li>
+          <li><b>Add a name and a link.</b> Open a pre-filled request with your key; we add the name once your link shows that key.</li>
+        </ol>
+        <a class="btn" id="claim" href="#" target="_blank" rel="noopener">Request a name</a>
+        <p class="note">A listing says what the chain shows, not who runs an account or whether it is safe. Testnet only, test AGRS have no value. Not affiliated with IDNI.</p>
+      </section>
+    </aside>
+    <main>
+      <div class="grid" id="grid" aria-live="polite"></div>
+    </main>
+  </div>
+  <footer>
+    <p>Data: <a href="https://node.tauhud.com/services" target="_blank" rel="noopener">node.tauhud.com/services</a> (JSON, free, any site may read it), worked out every minute from the blocks our node holds. How each kind is found: <a href="https://github.com/jimb000o/tau-command-hud/blob/main/infra/relay/services.py" target="_blank" rel="noopener">services.py</a> · <a href="/developers/">Developers</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BServices%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+  </footer>
+</div>
+<script>
+"use strict";
+(() => {
+const $ = id => document.getElementById(id);
+const P = new URLSearchParams(location.search);
+const API = P.get("relay") || "https://node.tauhud.com";
+const SAMPLE = P.has("sample");
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const short = a => a ? a.slice(0, 6) + "…" + a.slice(-4) : "";
+const fmt = n => Number(n || 0).toLocaleString("en-US");
+const LANG = window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "";
+
+const CATS = [
+  ["all", "All"],
+  ["cosign", "Co-signers"],
+  ["rules", "Rule givers"],
+  ["terms", "Paid with terms"],
+  ["paid", "Apps people pay"],
+  ["tools", "Tools and data"],
+];
+const KIND_DESC = {
+  cosign: "Co-signs other wallets' payments: their own rule or request names this key.",
+  rules: "Offers a personal rule to other wallets, and they take it.",
+  terms: "Paid with retractable transfers: money that waits until a set time and can be taken back until then.",
+  paid: "Paid by many different wallets.",
+};
+/* ours: always listed, with live numbers where the chain has them */
+const OURS = [
+  { id: "guardian", name: "Guardian", icon: "⛨", cats: ["cosign"], href: "/guardian/", cta: "Open",
+    desc: "A code from your Authenticator app for payments above your own limit. It co-signs, never sends, and holds no key of yours. Built on the approver bot IDNI ships with the testnet." },
+  { id: "rabbit", name: "White Rabbit Key", icon: "<img src='../assets/rabbit-key.webp' alt=''>", cats: ["paid"], href: "/rabbit/", cta: "Play",
+    desc: "An island election game: every move and ballot is a real test payment to the island council or a ballot box." },
+  { id: "agorzilla", name: "Agorzilla", icon: "<img src='../assets/agorzilla.webp' alt=''>", cats: ["paid"], href: "https://agorzilla.com", cta: "Feed it",
+    desc: "One creature the whole testnet feeds: a meal is a test payment to its bowl, a ballot picks tomorrow's change." },
+  { id: "wallet", name: "Tau HUD wallet", icon: "◈", cats: ["tools"], href: "/wallet/", cta: "Open",
+    desc: "A testnet wallet in the browser: send, take back a payment, ask for a co-signature, sign one, give your account a rule. Keys stay in your browser." },
+  { id: "api", name: "Live API and widgets", icon: "{}", cats: ["tools"], href: "/developers/", cta: "Use it",
+    desc: "Free JSON API, live badges and a widget for your own site; this directory is one of its answers. No key, any site may call it." },
+  { id: "rulewall", name: "Rules wall", icon: "▤", cats: ["tools"], href: "/rules/", cta: "Open",
+    desc: "Every personal rule written on the chain, and who took the same rule since; take one for your own account." },
+  { id: "nodes", name: "Node kit", icon: "◍", cats: ["tools"], href: "/nodes/", cta: "Run a node",
+    desc: "Run your own testnet node with our kit; it reports its height and shows up on Nodes with its own badge." },
+];
+
+const S = { data: null, extra: {}, claims: {}, cat: "all", q: "", ok: null };
+
+function claimUrl(key) {
+  const body = `Key (96 hex characters, as shown on tauhud.com/services/):\n${key || ""}\n\nName:\n\nLink (a page or repository that shows this key):\n\nWhat it does, in one line:\n\n---\nWe add the name and link once the link shows the key. The numbers stay what the chain shows.`;
+  return "https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=" + encodeURIComponent("[Services] Name for " + (key ? short(key) : "my service")) + "&body=" + encodeURIComponent(body);
+}
+
+function numsOf(row) {
+  const n = [];
+  if (!row) return n;
+  n.push([row.wallets, "wallets served"]);
+  if (row.cosign) { n.push([row.cosign.approved, "payments signed"]); if (row.cosign.declined) n.push([row.cosign.declined, "declined"]); }
+  if (row.rules) { n.push([row.rules.taken_by, "took its rule"]); n.push([row.rules.offered_to, "were offered it"]); }
+  if (row.terms) { n.push([row.terms.payments, "payments with terms"]); n.push([row.terms.agrs, "test AGRS"]); }
+  if (row.paid) { n.push([row.paid.payments, "payments"]); n.push([row.paid.days, "days with payments"]); }
+  return n;
+}
+
+function cards() {
+  const rows = (S.data && S.data.services) || [];
+  const byApp = {};
+  rows.forEach(r => { if (r.app) byApp[r.app] = r; });
+  const out = OURS.map(o => {
+    const row = byApp[o.id];
+    let nums = numsOf(row);
+    if (o.id === "guardian" && !row && S.extra.guardian != null) nums = [[S.extra.guardian, "accounts connected"]];
+    if (o.id === "rulewall" && S.extra.rules != null) nums = [[S.extra.rules, "rules on the wall"]];
+    if (o.id === "nodes" && S.extra.nodes != null) nums = [[S.extra.nodes, "community nodes reporting"]];
+    if (o.id === "wallet" && S.extra.wallet != null) nums = [[S.extra.wallet, "wallets sent through tauhud.com in 7 days"]];
+    return { ...o, ours: true, row, nums, cats: [...new Set([...o.cats, ...((row && row.kinds) || [])])] };
+  });
+  rows.filter(r => !r.app).forEach(r => {
+    const c = S.claims[r.address] || {};
+    out.push({ id: r.address, name: c.name || "", key: r.address, icon: c.name ? esc(c.name.slice(0, 1).toUpperCase()) : r.address.slice(0, 2),
+      cats: r.kinds, href: c.url || "", desc: c.desc || "", row: r, nums: numsOf(r), idni: r.idni, claimed: !!c.name });
+  });
+  return out;
+}
+
+function matches(c) {
+  if (S.cat !== "all" && !c.cats.includes(S.cat)) return false;
+  if (!S.q) return true;
+  const hay = [c.name, c.key, c.desc, ...c.cats.map(k => KIND_DESC[k] || ""), ...c.cats.map(k => (CATS.find(x => x[0] === k) || [])[1] || "")]
+    .map(x => T(String(x || "")).toLowerCase() + " " + String(x || "").toLowerCase()).join(" ");
+  return S.q.split(/\s+/).every(w => hay.includes(w));
+}
+
+function cardHtml(c) {
+  const catName = k => esc((CATS.find(x => x[0] === k) || [k, k])[1]);
+  const tags = (c.ours ? `<span class="tag ours">by tauhud.com</span>` : c.idni ? `<span class="tag">testnet start account</span>` : "") + c.cats.map(k => `<span class="tag">${catName(k)}</span>`).join("");
+  const desc = c.ours || c.desc ? esc(c.desc) : esc(KIND_DESC[c.cats[0]] || "");
+  const nums = c.nums.length ? c.nums.map(([v, l]) => `<div><b>${fmt(v)}</b><span>${esc(l)}</span></div>`).join("")
+    : `<span class="quiet">${c.ours && !c.cats.includes("tools") ? (S.ok === false ? "Numbers come back when the chain answers." : "No use on the chain yet.") : ""}</span>`;
+  const title = c.name ? esc(c.name) : `<span>Account</span> ${esc(short(c.key))}`;
+  const icon = c.ours ? `<span class="ic">${c.icon}</span>` : `<span class="ic key" aria-hidden="true">${c.icon}</span>`;
+  const acts = [];
+  if (c.href) acts.push(`<a class="btn" href="${esc(c.href)}"${/^https?:/.test(c.href) ? ' target="_blank" rel="noopener"' : ""}>${esc(c.cta || "Open")}</a>`);
+  if (c.key) acts.push(`<a class="btn ghost" href="/account/?a=${esc(c.key)}${LANG}">Look it up</a>`);
+  if (c.key && !c.claimed) acts.push(`<a class="btn ghost" href="${esc(claimUrl(c.key))}" target="_blank" rel="noopener" title="Yours? Ask for a name and a link on this card">Yours? Add a name</a>`);
+  return `<article class="card"><div class="hd">${icon}<div><h3>${title}</h3><div class="tags">${tags}</div></div></div>
+    <p>${desc}</p>${c.key ? `<span class="addr">${esc(c.key)}</span>` : ""}<div class="nums">${nums}</div><div class="acts">${acts.join("")}</div></article>`;
+}
+
+function render() {
+  const all = cards();
+  const count = k => k === "all" ? all.length : all.filter(c => c.cats.includes(k)).length;
+  $("cats").innerHTML = CATS.map(([k, t]) => `<li><button type="button" data-k="${k}" aria-pressed="${S.cat === k}"><span>${esc(t)}</span><span class="n">${count(k)}</span></button></li>`).join("");
+  const shown = all.filter(matches);
+  const ours = shown.filter(c => c.ours), found = shown.filter(c => !c.ours);
+  let html = "";
+  if (ours.length) html += `<h2 class="sect">By tauhud.com</h2>` + ours.map(cardHtml).join("");
+  html += `<h2 class="sect">Found on the chain</h2>`;
+  if (found.length) html += found.map(cardHtml).join("");
+  else if (S.ok === false) html += `<p class="empty">The chain could not be read right now (node.tauhud.com does not answer). Services others run show up here as soon as it does.</p>`;
+  else if (S.ok === null) html += `<p class="empty">Reading the chain…</p>`;
+  else if (S.q || S.cat !== "all") html += `<p class="empty">Nothing found on the chain matches. Try another word or All.</p>`;
+  else html += `<p class="empty">No service by someone else on the chain yet. The first co-signer, rule giver or app that serves other wallets appears here by itself.</p>`;
+  $("grid").innerHTML = html;
+  const d = S.data;
+  $("nServices").textContent = d ? fmt(d.totals.services) : "–";
+  $("nWallets").textContent = d ? fmt(d.totals.wallets) : "–";
+  $("nSince").textContent = d && d.since ? new Date(d.since * 1000).toISOString().slice(0, 10) : "–";
+  if (d && d.rules) $("paidMin").textContent = d.rules.paid_min;
+  $("dot").classList.toggle("on", S.ok === true);
+  $("liveTxt").textContent = S.ok === true ? (SAMPLE ? "Sample data" : "Live, every minute") : S.ok === false ? "Chain not reachable" : "Reading the chain…";
+}
+
+$("cats").addEventListener("click", e => { const b = e.target.closest("button[data-k]"); if (b) { S.cat = b.dataset.k; render(); } });
+$("q").addEventListener("input", e => { S.q = e.target.value.trim().toLowerCase(); render(); });
+$("claim").href = claimUrl("");
+$("toList").addEventListener("click", e => { e.preventDefault(); $("hList").scrollIntoView({ behavior: "smooth", block: "start" }); $("claim").focus({ preventScroll: true }); });
+
+const get = (path, ms = 8000) => {
+  const c = new AbortController(); const t = setTimeout(() => c.abort(), ms);
+  return fetch(API + path, { signal: c.signal, cache: "no-store" }).then(r => r.ok ? r.json() : Promise.reject(r.status)).finally(() => clearTimeout(t));
+};
+
+const SAMPLE_DATA = { since: 1793232000, rules: { terms_min: 2, paid_min: 3 }, totals: { services: 4, wallets: 41 }, services: [
+  { address: "96179f47d33ab65d9922c5652d7686f9e6be9d36ef4b9e9e04bdaac25b6e30d01928182c16da7aaa6dc954cccb88b62b", app: "rabbit", kinds: ["paid"], wallets: 23, paid: { payers: 23, payments: 412, agrs: 980, days: 9 } },
+  { address: "947c2b8988769f9fb7ada19021e27c51f5d855e4e05ad258d2ca2322821987dbff93e0425f281edded5c372b97e6a108", app: "agorzilla", kinds: ["paid"], wallets: 14, paid: { payers: 14, payments: 96, agrs: 210, days: 8 } },
+  { address: "f0".repeat(48), app: null, idni: false, kinds: ["cosign"], wallets: 3, cosign: { named_by: 3, requests: 7, votes: 6, approved: 5, declined: 1, rules: 0 } },
+  { address: "6b".repeat(48), app: null, idni: false, kinds: ["rules"], wallets: 2, rules: { offers: 4, offered_to: 4, taken_by: 2 } },
+] };
+
+async function load() {
+  if (SAMPLE) { S.data = SAMPLE_DATA; S.ok = true; S.extra = { guardian: 1, rules: 12, nodes: 2, wallet: 18 }; render(); return; }
+  try { S.data = await get("/services"); S.ok = true; } catch (e) { S.ok = false; }
+  render();
+}
+async function extras() {
+  if (SAMPLE) return;
+  const tries = [
+    get("/guardian/info").then(j => { S.extra.guardian = j.accounts; }),
+    get("/rulewall").then(j => { S.extra.rules = (j.rules || []).length; }),
+    get("/community").then(j => { S.extra.nodes = (j.nodes || []).length; }),
+    get("/api/v1/sources").then(j => { const t = j.totals && j.totals.tauhud; if (t && t["7"] != null) S.extra.wallet = t["7"]; }),
+  ];
+  await Promise.allSettled(tries);
+  render();
+}
+fetch("../assets/services.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(j => { S.claims = (j && j.claims) || {}; render(); }).catch(() => {});
+render();
+load(); extras();
+setInterval(() => { if (!document.hidden) { load(); extras(); } }, 60000);
+})();
+</script>
+</body>
+</html>

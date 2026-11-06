@@ -9,6 +9,7 @@ TauI18n.add({ strings: {
   "answers": "が答えます",
   "Ask for it": "リクエストする",
   "Atom feed of every proposal, agreement, activation and chain restart.": "すべての提案、合意、施行、チェーン再起動の Atom フィード。",
+  "Services found on the chain: co-signers, rule givers, accounts paid with terms or by many wallets, with their numbers (tauhud.com/services/).": "チェーン上で見つかったサービス：共同署名者、ルールの提供者、条件付きまたは多くのウォレットから支払われるアカウントと、その数字（tauhud.com/services/）。",
   "Availability per hour for 31 days, outages, stalls, restarts.": "31 日間の時間ごとの稼働状況、停止、停滞、再起動。",
   "Background": "背景",
   "badge": "バッジ",

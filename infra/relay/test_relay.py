@@ -610,6 +610,10 @@ async def main():
         src = json.loads(text)
         check(ctype == "application/json" and isinstance(src["days"], dict) and all(set(d) == {"agorzilla", "tauhud", "rabbit", "idni", "other"} for d in src["days"].values()),
               "/api/v1/sources: transactions per day by source")
+        ctype, text = await get("/services")
+        sv = json.loads(text)
+        check(ctype == "application/json" and isinstance(sv["services"], list) and set(sv["totals"]) >= {"services", "cosign", "wallets"},
+              "/services: accounts serving other wallets, from the blocks")
         ctype, text = await get("/api/v1/summary")
         api = json.loads(text)
         check(ctype.startswith("application/json") and api["api"] == "tauhud/v1" and api["height"] >= 1
