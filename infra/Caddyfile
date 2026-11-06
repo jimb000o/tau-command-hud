@@ -33,6 +33,13 @@
 		header Cache-Control "public, max-age=120"
 		file_server
 	}
+	# The Guardian's door for tauhud.com/guardian/ (guardian/guardian.py): enrol an authenticator app, confirm a payment.
+	handle /guardian/* {
+		request_body {
+			max_size 4KB
+		}
+		reverse_proxy guardian:8075
+	}
 	# Everything else is the relay.
 	handle {
 		reverse_proxy relay:8080

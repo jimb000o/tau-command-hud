@@ -543,4 +543,6 @@ TauI18n.add({ strings: {
   "A holder keeps a place 30 minutes once someone is waiting.": "一旦有人排队，占用者只能保留名额 30 分钟。",
   "Telegram alerts": "Telegram 提醒",
   "Telegram alerts A message from @tauhud_alerts_bot when this wallet sends, receives or its rule lands in a block. Only your chat id and this address are kept. /stop ends it.": "Telegram 提醒 这个钱包发送、收到代币或其规则写入区块时，@tauhud_alerts_bot 会发消息给你。只保存你的聊天 ID 和这个地址。发送 /stop 即可结束。",
+  "the Guardian": "Guardian",
+  "Enter your code ›": "输入验证码 ›"
 } });

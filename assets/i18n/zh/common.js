@@ -651,4 +651,5 @@ TauI18n.add({ strings: {
   "Close": "关闭",
   "playing now": "人正在玩",
   "People with this game open right now, counted live by the community relay; one browser counts once.": "此刻打开着这个游戏的人，由社区中继实时统计；同一个浏览器只算一次。",
+  "Payments above your own limit wait for a code from your Authenticator app; our Guardian co-signs, never sends": "超过你自定限额的付款要等身份验证器应用里的验证码；我们的 Guardian 共同签名，从不发送"
 } });

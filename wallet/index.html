@@ -847,6 +847,9 @@ function readRule(text) {
   return r;
 }
 const myRule = () => readRule(W.clause);
+/* the Guardian (tauhud.com/guardian/, infra/guardian/guardian.py): its address, so a payment waiting for it links to the code */
+let GUARD = null;
+if (!SIM) fetch(RELAY + "/guardian/info", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => { if (j && /^[0-9a-f]{96}$/.test(j.pubkey || "")) { GUARD = j.pubkey; if (W.pk) renderAll(); } }).catch(() => {});
 /* what a rule does to one payment: the reasons it stops it, and whether it waits for a co-signature */
 const WHY = { frozen: "your account is frozen", list: "not on your list", cap: "above your limit per payment", date: "before your date" };
 function judge(r, p) {
@@ -1627,9 +1630,11 @@ function inboxItems() {
       el("span", { class: "acts" }, el("button", { class: "b", type: "button", text: T("Co-sign"), onclick: () => answerRequest(q, true) }), el("button", { class: "b quiet", type: "button", text: T("Decline"), onclick: () => answerRequest(q, false) }), bookBtn(q.sender_pubkey)),
       el("span", { class: "m", text: F("To {x}. Free for you; the payment goes through once its rule is met.", { x: tag(q.recipient_pubkey) }) })));
   }
-  for (const q of ((W.reqs && W.reqs.outgoing) || []).filter(q => q.status === "pending")) {
-    const waiting = Object.values(q.approvers || {}).filter(a => a.state === "awaiting").map(a => tag(a.pubkey));
-    items.push(el("div", { class: "item" }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("{n} test AGRS to {x} waits for a co-signature", { n: fmt(q.amount), x: tag(q.recipient_pubkey) }) }), el("span"),
+  for (const q of ((W.reqs && W.reqs.outgoing) || []).filter(q => q.status === "pending" || q.status === "open")) {   // the node says "open", the simulation "pending"
+    const guard = !SIM && GUARD && Object.values(q.approvers || {}).some(a => a.state === "awaiting" && a.pubkey === GUARD);
+    const waiting = Object.values(q.approvers || {}).filter(a => a.state === "awaiting").map(a => a.pubkey === GUARD ? T("the Guardian") : tag(a.pubkey));
+    items.push(el("div", { class: "item" + (guard ? " keep" : "") }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("{n} test AGRS to {x} waits for a co-signature", { n: fmt(q.amount), x: tag(q.recipient_pubkey) }) }),
+      guard ? el("span", { class: "acts" }, el("a", { class: "b", href: "/guardian/#r=" + q.request_id, text: T("Enter your code ›") })) : el("span"),
       el("span", { class: "m", text: (waiting.length ? FX("Waiting for {x}.", {}, { x: waiting.join(", ") }) : "") + " " + F("Expires at block #{a}.", { a: q.expire_at_height }) + (SIM ? " " + T(Object.values(q.approvers || {}).some(a => a.state === "awaiting" && TauSim.isNative(a.pubkey)) ? "In the simulation your co-signer signs two blocks later." : "Another visitor co-signs from their own wallet.") : "") })));
   }
   const rets = ((W.rets && W.rets.retractables) || []);
