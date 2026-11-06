@@ -2,7 +2,11 @@
    live facts read off this page, what IDNI just landed in the testnet's code, the headlines of new features from the Updates log, hand-picked posts of ours and
    now and then Telegram and X. Hand-picked content lives in assets/ticker.json (headlines; picks: our X posts worth
    reposting; invites). Each item decodes out of falling glyphs where it enters the line, then reads as plain text.
-   Hover or focus pauses it; with reduced motion the items change in place instead of moving. */
+   Hover or focus pauses it; with reduced motion the items change in place instead of moving.
+   Old things leave by themselves: a headline "days" (ticker.json, 14) after its "since" (or at its "until"), a feature
+   and a blog article as long after their day, IDNI's news after a week; "keep": true marks a standing pointer. New things
+   come in by themselves: new features, blog articles, IDNI's merges, the next cruise ship. infra/alerts/tickerwatch.py
+   watches that the line stays fresh and tells the owner privately when it does not. */
 (() => {
   "use strict";
   const box = document.getElementById("tick"); if (!box) return;
@@ -18,6 +22,10 @@
     tg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.2 18.4 19c-.2 1-.8 1.3-1.7.8l-4.6-3.4-2.2 2.1c-.3.3-.5.5-1 .5l.3-4.7 8.6-7.8c.4-.3-.1-.5-.6-.2L6.6 12.9 2 11.5c-1-.3-1-1 .2-1.5l18-6.9c.8-.3 1.6.2 1.3 1.1z" fill="currentColor"/></svg>',
   };
   let CFG = { picks: [], notes: [], invites: [], move: {} };
+  /* how long a dated item stays on the line: ticker.json "days" (14 by default) after the day it came on */
+  const life = () => (+CFG.days > 0 ? +CFG.days : 14) * 864e5;
+  const young = d => { const t = Date.parse(String(d || "")); return isFinite(t) && Date.now() - t < life(); };
+  const alive = h => (!h.until || Date.now() < Date.parse(h.until)) && (h.keep || !h.since || young(h.since));
 
   /* ---------- live facts, read from what this page already shows ---------- */
   const txt = id => { const e = document.getElementById(id); return e ? e.textContent.trim() : ""; };
@@ -57,13 +65,13 @@
   };
   /* the first read shares the page's one download of the log (nav.js TauLog); the 15-minute refresh fetches it anew */
   const loadNews = first => (first && window.TauLog ? Promise.resolve(TauLog()) : fetch("assets/updates.json", { cache: "no-cache" }).then(r => r.json())).then(list => {
-    const have = new Set((CFG.headlines || []).map(h => path(h.href)));
+    const have = new Set((CFG.headlines || []).filter(alive).map(h => path(h.href)));
     const majors = (Array.isArray(list) ? list : []).filter(e => e && e.major && e.major.title && !/^roundup/.test(e.major.id || ""));
-    const pick = majors.slice(-6).reverse().filter(e => !have.has(path(e.major.link))).slice(0, 4);
+    const pick = majors.slice(-6).reverse().filter(e => !have.has(path(e.major.link)) && (young(e.on) || (CFG.stay || []).includes(e.major.id))).slice(0, 4);   // a feature leaves after "days", unless ticker.json "stay" keeps it
     const glow = majors.filter(e => path(e.major.link) === GLOW).pop();   // the game stays on the line, first, after newer features
     NEWS = (glow ? [glow, ...pick.filter(e => e !== glow).slice(0, 3)] : pick)
       .map(e => ({ kind: "news", text: String(e.major.title), href: path(e.major.link) === "" ? "" : String(e.major.link).replace(/^\//, ""),
-        fresh: path(e.major.link) === GLOW, tip: gist(e.html), tipRaw: true }));
+        fresh: path(e.major.link) === GLOW, on: e.on, tip: gist(e.html), tipRaw: true }));
   }).catch(() => {});
 
   /* ---------- IDNI's own work: news headlines about what landed on tau-testnet main in the last week, from the build
@@ -132,11 +140,54 @@
     return { kind: on ? "radio" : "note", text: on ? w.on : w.next, href: "rabbit/", raw: true, on, tip: w.tip, tipRaw: true };
   };
 
+  /* ---------- the title story: each new article of the blog (tauhud.com/blog/) by its own headline, no "blog" label,
+     for "days" after it came out, newest first and opening the line, in the reader's
+     language (the articles carry their own Chinese and Japanese); the site's copy and our server's, as on the blog ---------- */
+  const NODE = "https://node.tauhud.com";
+  let BLOG = [], blogAt = 0;
+  const pickLang = o => (o && typeof o === "object" ? String(o[lang] || "") : lang === "en" ? String(o || "") : "");
+  const loadBlog = () => Promise.allSettled([fetch("assets/blog/posts.json", { cache: "no-cache" }).then(r => r.json()),
+    fetch(NODE + "/blog/posts.json", { cache: "no-cache" }).then(r => r.json())]).then(got => {
+    const by = new Map();
+    for (const g of got) if (g.status === "fulfilled") for (const p of ((g.value || {}).posts || [])) if (p && p.id) by.set(p.id, p);
+    BLOG = [...by.values()].filter(p => young(p.on) && pickLang(p.title)).sort((a, b) => String(b.on).localeCompare(String(a.on))).slice(0, 2)
+      .map(p => ({ kind: "news", text: pickLang(p.title), href: "blog/?p=" + encodeURIComponent(p.id), raw: true, on: p.on,
+        tip: pickLang(p.dek), tipRaw: true }));
+  }).catch(() => {});
+
+  /* ---------- the cruise ships at White Rabbit Key (relay /cruise): the next call from three days before, in the reader's
+     own time; while a ship is in port, that it is there. Switched off on the server (CRUISE_ENABLED=0), none is announced ---------- */
+  const SHT = {
+    en: { next: "Next cruise ship: {s}, {d} {t} your time", now: "{s} is in port: simulated passengers, real test txs",
+      tip: "A cruise ship of the island game White Rabbit Key. Its passengers are simulated; what they pay ashore are real test transactions, at most 12 a minute." },
+    zh: { next: "下一艘游轮：{s}，{d} {t}（你的当地时间）", now: "{s} 正在港内：乘客是模拟的，测试交易是真实的",
+      tip: "岛屿游戏 White Rabbit Key 的游轮。乘客是模拟的；他们在岸上的付款是真实的测试交易，每分钟最多 12 笔。" },
+    ja: { next: "次のクルーズ船：{s}、{d} {t}（あなたの時刻）", now: "{s} が入港中：乗客は模擬、テスト取引は本物",
+      tip: "島のゲーム White Rabbit Key のクルーズ船。乗客は模擬ですが、上陸して払うのは本物のテスト取引で、1 分に最大 12 件です。" },
+  };
+  let SHIP = null;
+  const loadShip = () => fetch(NODE + "/cruise", { cache: "no-cache" }).then(r => (r.ok ? r.json() : null)).then(j => { SHIP = j && typeof j === "object" ? j : null; }).catch(() => {});
+  const shipLine = () => {
+    if (!SHIP) return null;
+    const w = SHT[lang] || SHT.en, g = GZT[lang] || GZT.en, v = SHIP.now, n = SHIP.next, now = Date.now();
+    if (v && v.name && v.end * 1000 > now) return { kind: "note", text: w.now.replace("{s}", v.name), href: "cruise/", raw: true, tip: w.tip, tipRaw: true };
+    if (!n || !n.name || !(n.t0 * 1000 > now) || n.t0 * 1000 - now > 3 * 864e5) return null;
+    const at = new Date(n.t0 * 1000), day = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const off = Math.round((day(at) - day(new Date())) / 864e5);
+    const d = off === 0 ? g.today : off === 1 ? g.tomorrow : g.days[at.getDay()];
+    const t = String(at.getHours()).padStart(2, "0") + ":" + String(at.getMinutes()).padStart(2, "0");
+    return { kind: "note", text: w.next.replace("{s}", n.name).replace("{d}", d).replace("{t}", t), href: "cruise/", raw: true, tip: w.tip, tipRaw: true };
+  };
+
   /* ---------- the rotation: facts carry the line, the rest is mixed in ---------- */
-  const SLOTS = ["head", "live", "gazette", "news", "live", "idni", "head", "night", "pick", "live", "head", "invite"];
+  const SLOTS = ["head", "live", "gazette", "news", "live", "idni", "head", "ship", "night", "blog", "pick", "live", "head", "invite"];
   let slot = 0, headAt = 0, pickAt = 0, inviteAt = 0;
   const from = (list, at) => list.length ? list[at % list.length] : null;
+  /* the line opens with the newest thing on it: the latest title story, else the newest feature */
+  let opened = false;
+  const opener = () => BLOG[0] || NEWS.filter(n => !n.fresh && n.on).sort((a, b) => String(b.on).localeCompare(String(a.on)))[0] || null;
   const next = () => {
+    if (!opened) { opened = true; const o = opener(); if (o && (o.raw || translated(o.text))) return o; }
     /* on the day a new edition comes out, it opens the line and every round after */
     if (slot % SLOTS.length === 0) { const g = gazette(); if (g && g.out) { slot++; return g; } }
     /* in the Night Line's hour, so does the show */
@@ -146,9 +197,11 @@
       if (k === "live") it = fact();
       else if (k === "news") it = NEWS.length ? NEWS[newsAt++ % NEWS.length] : null;
       else if (k === "idni") it = IDNI.length ? IDNI[idniAt++ % IDNI.length] : null;
+      else if (k === "blog") it = BLOG.length ? BLOG[blogAt++ % BLOG.length] : null;
+      else if (k === "ship") it = shipLine();
       else if (k === "gazette") { it = gazette(); if (it && it.out) it = null; }
       else if (k === "night") { it = nightLine(); if (it.on) it = null; }
-      else if (k === "head") { const n = from((CFG.headlines || []).filter(h => (!h.until || Date.now() < Date.parse(h.until)) && (!h.mode || (h.mode === "live") !== sim())), headAt++);
+      else if (k === "head") { const n = from((CFG.headlines || []).filter(h => alive(h) && (!h.mode || (h.mode === "live") !== sim())), headAt++);
         it = n && { kind: "note", text: n.text, href: n.href, mark: n.mark, tip: n.tip };
         if (it && n.mark === "ghost") { const g = ghosts(); if (g) { it.text = g === "1" ? "1 ghost in the waiting room" : `${g} ghosts in the waiting room`; if (!translated(it.text)) it.text = n.text; } } }
       else if (k === "pick") { const p = from(CFG.picks, pickAt++); it = p && { kind: "x", text: p.text, href: p.href, quote: true, tip: p.tip }; }
@@ -185,7 +238,8 @@
 
   /* ---------- motion ---------- */
   const SPEED = 46, ZONE = 150, GAP = 18;   // px per second; how far in from the edge a letter is still a glyph; space between items
-  let items = [], last = 0, paused = false, W = 0, dir = -1, tick = 0;
+  let items = [], last = 0, paused = false, W = 0, dir = -1, tick = 0, holdUntil = 0;
+  const HOLD = 5000;   // ms the line stands still when it starts, so the first item can be read from its beginning
   const add = () => {
     const el = build(next()); track.append(el); measure(el);
     const prev = items[items.length - 1];
@@ -196,7 +250,7 @@
   };
   function frame(t) {
     const dt = Math.min(.1, (t - (last || t)) / 1000); last = t;
-    if (!paused) for (const el of items) el._x += dir * SPEED * dt;
+    if (!paused && t > holdUntil) for (const el of items) el._x += dir * SPEED * dt;
     items = items.filter(el => { const gone = dir < 0 ? el._x + el._w < -20 : el._x > W + 20; if (gone) el.remove(); return !gone; });
     const tail = items[items.length - 1];
     if (!tail || (dir < 0 ? tail._x + tail._w < W + 400 : tail._x > -400)) add();
@@ -235,14 +289,14 @@
     .observe(document.body, { attributes: true, attributeFilter: ["data-mode"] });
 
   Promise.all([
-    fetch("assets/ticker.json", { cache: "no-cache" }).then(r => r.json()).then(j => { if (j && typeof j === "object") CFG = { ...CFG, ...j }; }).catch(() => {}).then(() => Promise.all([loadNews(true), loadIdni()])),
+    fetch("assets/ticker.json", { cache: "no-cache" }).then(r => r.json()).then(j => { if (j && typeof j === "object") CFG = { ...CFG, ...j }; }).catch(() => {}).then(() => Promise.all([loadNews(true), loadIdni(), loadBlog(), loadShip()])),
     /* letters are measured once, so wait for the page's monospace font: measured in a fallback font they keep its wider spacing */
     Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), new Promise(r => setTimeout(r, 4000))]),
   ]).then(() => {
     const m = (CFG.move || {})[lang] || "left"; dir = m === "right" ? 1 : -1; box.classList.toggle("rtl", dir > 0);
     W = view.clientWidth;
     /* the facts need the page's first readings; give the chain a moment */
-    setTimeout(() => { if (reduced) still(); else requestAnimationFrame(frame); }, 1200);
-    setInterval(() => { loadNews(false); loadIdni(); }, 15 * 60 * 1000);
+    setTimeout(() => { if (reduced) still(); else { holdUntil = performance.now() + HOLD; requestAnimationFrame(frame); } }, 1200);
+    setInterval(() => { loadNews(false); loadIdni(); loadBlog(); loadShip(); }, 15 * 60 * 1000);
   });
 })();

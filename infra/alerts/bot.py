@@ -48,6 +48,7 @@ import urllib.request
 from websockets.asyncio.client import connect
 
 import follow
+import tickerwatch
 
 log = logging.getLogger("tau-bot")
 
@@ -451,6 +452,8 @@ def parse(text: str, bot_name: str, private: bool) -> tuple[str, str | None] | N
         if m.group(2) and bot_name and m.group(2).lower() != bot_name.lower():
             return None  # a command for another bot in the same group
         cmd, arg = m.group(1).lower(), m.group(3).strip()
+        if cmd == "start" and arg.startswith("owner-"):  # up owner: the news line watchtower's private chat (tickerwatch.py)
+            return ("owner", arg[6:].strip()) if private else None
         if cmd == "start" and arg:  # deep link from a button: t.me/<bot>?start=height
             code = follow.start_code(arg)  # or from tauhud.com: ?start=<address or rule change id, base64url>
             if code:
@@ -609,6 +612,14 @@ class Bot:
             if not b.warned:
                 b.warned = True
                 await self.reply(chat, msg, f"That is a lot of questions. Ask again in {round(USER_REFILL)} seconds.")
+            return
+        if q[0] == "owner":
+            # only a real private chat, never the channel's shared Direct Messages chat
+            ok = chat.get("type") == "private" and tickerwatch.claim(chat["id"], q[1])
+            await self.reply(chat, msg, "Done: the news line watchtower writes to you here, and only to you." if ok else
+                             "That link is no longer valid. Run up owner on the server for a new one.")
+            if ok:
+                log.info("news line watchtower: owner chat set")
             return
         if q[0] in FOLLOW_INTENTS:
             # only a real private chat: the channel's Direct Messages chat is shared by everyone who writes to it

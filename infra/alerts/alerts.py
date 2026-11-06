@@ -36,6 +36,10 @@ It also posts firsts (firsts.py): the first returnable, co-signed or time-locked
 payment the real chain carries, once each, so the HUD's "Money with terms" card
 lights up and the channels hear of it the day it happens.
 
+It also keeps watch over the HUD's news line (tickerwatch.py): every half hour it reads the line the way a visitor's
+page does and tells the owner, in a private Telegram chat and never on the channel, when nothing new has come onto it
+for a week, when only a few new items are left, or when IDNI's news stopped coming in (`up owner` sets that chat).
+
 It also announces changes to Tau HUD itself, read from the site's own update
 log (assets/updates.json), at the fixed SITE_SLOTS times (UTC): an entry
 with a "major" field gets a post of its own, and when several are waiting
@@ -103,6 +107,7 @@ import findings
 import firsts
 import gazette
 import recap
+import tickerwatch
 
 try:
     from blake3 import blake3
@@ -2821,6 +2826,15 @@ class Watcher:
         return True
 
     # ---------- rule changes visitors voted into the simulation ----------
+    async def maybe_ticker(self):
+        """The news line's watchtower (tickerwatch.py): is the HUD's news line still fresh? Tells the owner privately."""
+        if not hasattr(self, "ticker_watch"):
+            self.ticker_watch = tickerwatch.Watch()
+        try:
+            await asyncio.to_thread(self.ticker_watch.step)
+        except Exception:  # noqa: BLE001 - the watchtower must never stop the alerts
+            log.exception("news line watchtower")
+
     async def maybe_visitors(self, now: float | None = None, votes: dict | None = None):
         """One Telegram post per visitor proposal that was voted in with enough votes, at most VISITOR_DAILY_CAP a day,
         sent between the close of its vote and the moment it is in force; one missed while the service was down is skipped."""
@@ -3207,6 +3221,7 @@ class Watcher:
                         await self.maybe_island()
                         await self.maybe_today()
                         await self.maybe_visitors()
+                        await self.maybe_ticker()
                         await asyncio.sleep(POLL_SECONDS)
             except asyncio.CancelledError:
                 raise
@@ -3217,6 +3232,7 @@ class Watcher:
                 await self.maybe_site()    # neither does this
                 await self.maybe_plan()
                 await self.maybe_deepdive()  # the site's pages are there whether the chain runs or not
+                await self.maybe_ticker()
                 await asyncio.sleep(10)
 
 
