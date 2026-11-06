@@ -83,6 +83,10 @@ RETRACT_MARGIN = 6 * 60    # a withdrawal goes out this long before the booking'
                            # to two minutes early, and a feeless retract waits last when blocks are full (docs/retractable.md)
 UNRELEASED = 3 * 60        # a booking still open this long after its time is reported as not released
 REFUSE_STOP, REFUSE_WINDOW = 5, 20   # refusals among the visit's last sends that send the ship away
+QUIET_HOLD = 30            # seconds the ship waits after a send the node did not answer in time (relay UPSTREAM_TIMEOUT)
+QUIET_SLOW = 10 * 60       # and for this long after it, half pace: the node is slow, the ship gives it room
+# MS Dry Run, 4 November 2026: eight sendtx went unanswered within 20 s (two a day on other days), were counted as
+# refusals, and the ship left after 34 minutes although the node had refused nothing. No answer is not a refusal.
 CHECK_BOOKINGS = 10        # passengers whose bookings are checked with the node when a visit ends
 
 SHIPS = {
@@ -280,6 +284,8 @@ class Cruise:
         self.logbook: deque = deque(maxlen=LOG_KEEP)
         self.incidents: list[dict] = []
         self.last_send = 0.0
+        self.hold_until = 0.0     # no send before this (a send went unanswered)
+        self.slow_until = 0.0     # half pace until this
         self._verdict = (0.0, None)
         self._pruned = 0.0
         self.load_state()
@@ -360,7 +366,8 @@ class Cruise:
         cur = None
         if self.cur:
             cur = {k: self.cur.get(k) for k in ("id", "ship", "t0", "landed", "left", "note", "trial", "allowed", "sent", "refused",
-                                                "skipped", "unsent", "brake_half", "wait", "booked", "landed_at")}
+                                                "skipped", "unsent", "brake_half", "wait", "booked", "landed_at",
+                                                "unanswered", "quiet", "quiet_took", "quiet_lost")}
             cur["done"] = sorted(self.cur["done"])
         try:
             tmp = self.state_path + ".tmp"
@@ -454,7 +461,7 @@ class Cruise:
                         "skipped": 0, "unsent": 0, "brake_half": 0, "wait": None, "booked": []}
             saved = getattr(self, "_saved_cur", None)
             if saved and saved.get("id") == vid:   # the relay restarted during this visit: carry on where it was
-                for k in ("landed", "left", "note", "trial", "allowed", "sent", "refused", "skipped", "unsent", "brake_half", "wait", "booked", "landed_at"):
+                for k in ("landed", "left", "note", "trial", "allowed", "sent", "refused", "skipped", "unsent", "brake_half", "wait", "booked", "landed_at", "unanswered", "quiet", "quiet_took", "quiet_lost"):
                     if k in saved:
                         self.cur[k] = saved[k]
                 self.cur["done"] = set(saved.get("done") or [])
@@ -577,6 +584,7 @@ class Cruise:
         s = {"id": v["id"], "ship": v["ship"], "name": SHIPS[v["ship"]]["name"], "t0": v["t0"], "landed": v["landed"],
              "end": v["left"] or v["t0"] + VISIT_MIN * 60, "note": v["note"], "trial": v["trial"],
              "sent": v["sent"], "refused": v["refused"], "skipped": v["skipped"] + unsent, "half": v["brake_half"],
+             "unanswered": v.get("unanswered", 0), "unanswered_took": v.get("quiet_took", 0),
              "passengers": SHIPS[v["ship"]]["passengers"]}
         clean = v["landed"] and not v["left"]
         for k in v["trial"]:
@@ -611,8 +619,9 @@ class Cruise:
             return False
         if state is None:
             return False
-        gap = 60 / RATE * (2 if state == "strained" else 1)
-        if now - self.last_send < gap or not self.budget():
+        slow = state == "strained" or now < self.slow_until
+        gap = 60 / RATE * (2 if slow else 1)
+        if now < self.hold_until or now - self.last_send < gap or not self.budget():
             return False
         act = None
         for a in v["acts"]:
@@ -628,7 +637,7 @@ class Cruise:
             break
         if act is None:
             return False
-        if state == "strained":
+        if slow:
             v["brake_half"] += 1
         v["done"].add(act["i"])
         self.last_send = now
@@ -700,8 +709,25 @@ class Cruise:
         d = st.get("data") or {}
         seq = int(d.get("sequence_number") or 0)   # the node counts what waits in its mempool; nothing cached, so a restarted chain is fine
         tip = int(d.get("tip_height") or 0)
+        quiet = v.setdefault("quiet", {})
+        if name in quiet:   # this passenger's last send went unanswered: did the node take it after all?
+            q = quiet.pop(name)
+            took = seq > q["seq"]
+            v["quiet_took" if took else "quiet_lost"] = v.get("quiet_took" if took else "quiet_lost", 0) + 1
+            self.write({"t": int(self.clock()), "visit": v["id"], "ship": ship, "i": q["i"], "p": act["p"], "kind": "unanswered checked",
+                        "took": took, "note": "the node took it after all (the sequence moved on)" if took else "it did not reach the node"})
         tx = await asyncio.to_thread(self.build, ship, act, seq, tip, base_fee(gov()), rid)
         res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))
+        if res is None:   # no answer in time (or the relay's connection to the node dropped): not a refusal
+            now = self.clock()
+            self.hold_until, self.slow_until = now + QUIET_HOLD, now + QUIET_SLOW
+            v["unanswered"] = v.get("unanswered", 0) + 1
+            v.setdefault("quiet", {})[name] = {"seq": seq, "i": act["i"]}
+            entry.update(seq=seq, height=tip, ok=None, note=f"no answer from the node to sendtx; the ship waits {QUIET_HOLD} s, then goes at half pace")
+            entry["tx"] = tx
+            self.write(entry)
+            log.info("cruise %s %s unanswered", v["id"], act["kind"])
+            return None
         ok = bool(res) and res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False
         entry.update(seq=seq, height=tip, ok=ok, hash=((res or {}).get("data") or {}).get("tx_hash") if ok else None)
         if ok:

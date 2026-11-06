@@ -51,6 +51,21 @@ t[0] += 700
 L._cache = (0, None)
 check(L.snapshot(blocks, 9)["state"] == "stalled", "transactions waiting and no block for ten minutes: stalled")
 
+# a testnet whose blocks come every 80 s: one ordinary block of waiting is not strain (MS Dry Run, 4 November 2026)
+S = load.Load(path=os.path.join(tempfile.mkdtemp(), "l2.json"), clock=clock)
+end = t[0]
+slow_blocks = [(end - 80 * k, 1) for k in range(45, 0, -1)]
+S.sealed_after(85)
+st = S.snapshot(slow_blocks, 2)
+check(st["thresholds"]["usual_gap"] == 80 and st["thresholds"]["wait"] == 240, "strain is measured against the usual block gap (three times 80 s)")
+check(st["state"] == "calm", "a wait of one 80-second block is calm, not strained")
+S._cache = (0, None)
+S.sealed_after(300)
+check(S.snapshot(slow_blocks, 2)["state"] == "strained", "a wait of nearly four blocks is strain")
+F = load.Load(path=os.path.join(tempfile.mkdtemp(), "l3.json"), clock=clock)
+F.sealed_after(61)
+check(F.snapshot([(end - 10 * k, 1) for k in range(60, 0, -1)], 2)["state"] == "strained", "on fast blocks the 60 s floor still holds")
+
 L.saved_at = 0
 L.pool(1)
 M = load.Load(path=path, clock=clock)

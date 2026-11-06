@@ -275,6 +275,47 @@ check(len([e for e in C4.logbook if e.get("kind") in cruise.KINDS]) == cruise.RE
 b4 = C4.brief(T[0])["now"]
 check(b4["phase"] == "gone" and b4["why"] == "refused", "the pages are told it was the refusals, not a stall")
 
+# ---------- the node does not answer in time (MS Dry Run, 4 November 2026): no refusal, the ship waits and slows ----------
+C5 = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s5"), "log_path": os.path.join(d, "l5"), "incidents_path": os.path.join(d, "i5")}, clock=clock,
+                   enabled=True, verdict=lambda: "calm", background=False)
+T[0] = cruise.calls_near(NEXT[0] + 3600)[0][0]
+SEQ: dict = {}
+QUIET = {"n": 0}
+
+
+async def slow(cmd: str):
+    name, _, rest = cmd.partition(" ")
+    if name == "getsequence":
+        return {"status": "ok", "data": {"sequence_number": SEQ.get(rest, 0), "tip_height": 10}}
+    if name == "sendtx":
+        tx = json.loads(rest)
+        QUIET["n"] += 1
+        if QUIET["n"] % 2:   # every other send goes unanswered; the node takes every second of those all the same
+            if QUIET["n"] % 4 == 1:
+                SEQ[tx["sender_pubkey"]] = SEQ.get(tx["sender_pubkey"], 0) + 1
+            return None
+        SEQ[tx["sender_pubkey"]] = SEQ.get(tx["sender_pubkey"], 0) + 1
+        return {"status": "ok", "data": {"ok": True, "tx_hash": hashlib.sha256(rest.encode()).hexdigest()}}
+    return {"status": "ok", "data": {"retractables": []}}
+
+
+start5 = T[0]
+for _ in range(40 * 60):
+    asyncio.run(C5.step(slow, gov))
+    T[0] += 1
+v5 = C5.cur
+quiet5 = [e for e in C5.logbook if e.get("kind") in cruise.KINDS and e.get("ok") is None and "sendtx" in (e.get("note") or "")]
+check(v5 and v5["landed"] and not v5["left"] and sum(v5["refused"].values()) == 0 and len(quiet5) >= 10,
+      f"sends the node did not answer are not refusals: the ship stays ({len(quiet5)} unanswered in 40 minutes)")
+sends5 = [e for e in C5.logbook if e.get("kind") in cruise.KINDS]
+after = [b["t"] - a["t"] for a, b in zip(sends5, sends5[1:]) if a.get("ok") is None and "sendtx" in (a.get("note") or "")]
+check(after and min(after) >= cruise.QUIET_HOLD, f"after an unanswered send the ship waits {cruise.QUIET_HOLD} s ({min(after)})")
+check(len(sends5) <= 40 * cruise.RATE // 2 + 5, f"and goes at half pace while the node is slow ({len(sends5)} in 40 minutes)")
+chk5 = [e for e in C5.logbook if e.get("kind") == "unanswered checked"]
+check(chk5 and any(e["took"] for e in chk5) and any(not e["took"] for e in chk5),
+      "the passenger's next send shows whether the node took the unanswered one after all")
+check(not C5.incidents, "no incident report for a slow node")
+
 # ---------- the testnet load page counts the passengers apart ----------
 L = Load(path=os.path.join(d, "load.json"), clock=lambda: 1_793_804_400.0)
 L.sent("cruise")
