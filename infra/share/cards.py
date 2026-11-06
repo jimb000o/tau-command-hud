@@ -496,3 +496,93 @@ def my_card(c: dict, stamps: int = 0) -> bytes:
     text(d, 64, 482, "Helping test the rules of Tau Testnet Alpha, where rules change by agreement.", font(MONO, 15), TEXT)
     text(d, 64, 510, "Test AGRS have no value. Nothing on this card is priced or promised.", font(MONO, 14), DIM)
     return png(img)
+
+
+# ---------------- Agorzilla feeder card ----------------
+# agorzilla.com's own look (assets/style.css): deep green-black, mint as the one accent, its cream name
+AGZ_BG, AGZ_PANEL, AGZ_LINE, AGZ_MINT, AGZ_CREAM, AGZ_MUTED = (6, 18, 13), (12, 30, 22), (40, 66, 52), (110, 231, 160), (243, 226, 184), (159, 184, 170)
+
+
+def agz_photo(path: str | None, w: int, h: int):
+    """The real in-game picture (an evening photograph, or the painting) cut to w×h (2× pixels), or None."""
+    if not path:
+        return None
+    try:
+        im = Image.open(path).convert("RGB")
+    except (OSError, ValueError):
+        return None
+    k = max(w / im.width, h / im.height)
+    im = im.resize((max(w, round(im.width * k)), max(h, round(im.height * k))), Image.LANCZOS)
+    x, y = (im.width - w) // 2, max(0, min(im.height - h, round((im.height - h) * .55)))
+    return im.crop((x, y, x + w, y + h))
+
+
+def agorzilla(c: dict, photo: str | None) -> bytes:
+    """c: share.agz_numbers() (addr, meals, voted, won [{category, pick}], stage_name, lived, feeders); photo: a picture file.
+    Left: the creature as it looks now (the newest evening photograph from agorzilla.com). Right: what this wallet did
+    and, at a glance, why that matters."""
+    a = c["addr"]
+    img = Image.new("RGB", (W * S, H * S), AGZ_BG)
+    d = ImageDraw.Draw(img)
+    pw = 470
+    pic = agz_photo(photo, sc(pw), sc(H))
+    if pic:
+        img.paste(pic, (0, 0))
+        fw = sc(140)   # the picture fades into the card
+        mask = Image.new("L", (fw, 1))
+        mask.putdata([int(255 * (i / fw) ** 1.4) for i in range(fw)])
+        img.paste(Image.new("RGB", (fw, sc(H)), AGZ_BG), (sc(pw) - fw, 0), mask.resize((fw, sc(H))))
+    x0, x1 = pw + 10, W - 44
+    text(d, x0, 40, "AGORZILLA · FEEDER CARD", font(SORA, 14, 600), AGZ_MINT)
+    fed = c.get("meals") or 0
+    title = "I helped raise Agorzilla" if fed else "Agorzilla"
+    text(d, x0, 66, title, fit(d, title, SORA, 46, 700, x1 - x0), AGZ_CREAM)
+    text(d, x0, 128, f"{words(a)}  ·  {short(a)}", fit(d, f"{words(a)}  ·  {short(a)}", MONO, 15, 400, x1 - x0), AGZ_MUTED)
+
+    won = c.get("won") or []
+    y = 172
+    cols = [(fmt_n(fed), "meals" if fed != 1 else "meal"), (fmt_n(c.get("voted") or 0), "evenings voted" if c.get("voted") != 1 else "evening voted"),
+            (fmt_n(len(won)), "picks that became part of it" if len(won) != 1 else "pick that became part of it")]
+    cw = (x1 - x0 - 2 * 14) / 3
+    for i, (v, lab) in enumerate(cols):
+        bx = x0 + i * (cw + 14)
+        d.rounded_rectangle(B(bx, y, bx + cw, y + 92), radius=sc(12), fill=AGZ_PANEL, outline=AGZ_LINE, width=S)
+        text(d, bx + 16, y + 10, v, font(SORA, 38, 600), AGZ_MINT if i == 2 and won else (255, 255, 255))
+        text(d, bx + 16, y + 62, lab, fit(d, lab, SORA, 14, 500, cw - 28), AGZ_MUTED)
+    y += 112
+    if won:   # the parts of it this wallet chose, as pills
+        x, yy, fp, fc = x0, y - 4, font(SORA, 15, 600), font(SORA, 13, 500)
+        for p in won[:6]:
+            cat, val = str(p.get("category") or ""), str(p.get("pick") or "")
+            wpx = tlen(d, cat, fc) + tlen(d, val, fp) + 34
+            if x + wpx > x1:
+                x, yy = x0, yy + 38
+                if yy > y + 40:
+                    break
+            d.rounded_rectangle(B(x, yy, x + wpx, yy + 30), radius=sc(15), outline=AGZ_LINE, width=S)
+            text(d, x + 12, yy + 7, cat, fc, AGZ_MUTED)
+            text(d, x + 20 + tlen(d, cat, fc), yy + 5, val, fp, (255, 255, 255))
+            x += wpx + 8
+        y = yy + 48
+    else:
+        line = "Fed it on Tau Testnet Alpha." if fed else "One creature everyone feeds and shapes together."
+        text(d, x0, y, line, fit(d, line, SORA, 18, 500, x1 - x0), (235, 235, 238))
+        y += 44
+    # why it matters, at a glance
+    y = max(y, 400)
+    d.rounded_rectangle(B(x0, y, x1, y + 120), radius=sc(12), fill=AGZ_PANEL)
+    d.rectangle(B(x0, y, x0 + 4, y + 120), fill=AGZ_MINT)
+    text(d, x0 + 22, y + 14, "WHY IT MATTERS", font(SORA, 13, 700), AGZ_MINT)
+    lines, f = wrap_fit(d, "No server decided how it looks. Every vote is a testnet transaction, so anyone can replay its life and check it.",
+                        SORA, 19, 500, x1 - x0 - 44, 3)
+    for i, ln in enumerate(lines):
+        text(d, x0 + 22, y + 40 + i * 25, ln, f, (235, 235, 238))
+    now = f"Now {c.get('stage_name') or 'growing'}"
+    if c.get("lived") is not None:
+        now += f" · {plural(c['lived'], 'day')} lived"
+    if c.get("feeders"):
+        now += f" · {plural(c['feeders'], 'wallet')} feeding it"
+    text(d, x0, 556, now, fit(d, now, MONO, 14, 400, x1 - x0), AGZ_MUTED)
+    text(d, x0, 584, "agorzilla.com", font(SORA, 17, 700), (255, 255, 255))
+    text(d, x1, 587, "test AGRS only · nothing priced", font(MONO, 13), AGZ_MUTED, right=True)
+    return png(img)

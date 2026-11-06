@@ -23,7 +23,8 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 TMP = tempfile.mkdtemp()
 os.environ.update(RELAY_URL="ws://127.0.0.1:18781", RELAY_HTTP="http://127.0.0.1:18781", PORT="18782", POLL_SECONDS="0.3",
-                  PROPOSALS_PATH=os.path.join(TMP, "proposals.json"), FONTS_DIR=os.path.join(HERE, "..", "alerts", "fonts"))
+                  PROPOSALS_PATH=os.path.join(TMP, "proposals.json"), FONTS_DIR=os.path.join(HERE, "..", "alerts", "fonts"),
+                  AGZ_LIVE=os.path.join(TMP, "agz"), AGZ_SHOTS=os.path.join(TMP, "shots"), AGZ_ART=os.path.join(TMP, "none.webp"))
 sys.path.insert(0, HERE)
 
 from http import HTTPStatus  # noqa: E402
@@ -123,6 +124,15 @@ def main():
              "proposed_at": 10, "approved_at": 11, "activate_at": 20, "activated_at": 20, "activated_ts": T0 + 240, "rev": 1,
              "explain": {"title": "Base fee 1 → 2 AGRS", "why": "Every transaction would cost 2 AGRS instead of 1.", "changes": [{"topic": "Base fee", "text": "1 → 2 AGRS"}]}},
         ]}, f)
+    # Agorzilla's feeders.json (agorilla tools/archive.cjs) and one evening photograph (agorzilla-shots)
+    os.makedirs(os.path.join(TMP, "agz", "chain")); os.makedirs(os.path.join(TMP, "shots"))
+    with open(os.path.join(TMP, "agz", "chain", "feeders.json"), "w") as f:
+        json.dump({"stage_name": "Grown", "lived": 7, "feeders": 50, "wallets": {D: {"meals": 6, "agrs": 135, "picks": [
+            {"n": 2, "category": "Build", "pick": "Sturdy", "won": True}, {"n": 3, "category": "Plant by the rock", "pick": "Cherry blossom", "won": True},
+            {"n": 4, "category": "Pendant crest", "pick": "Circling sparks", "won": False}, {"n": 8, "category": "Sky", "pick": "Aurora", "won": None}]}}}, f)
+    Image.new("RGB", (1800, 2000), (30, 60, 40)).save(os.path.join(TMP, "shots", "evening-7-after.jpg"))
+    with open(os.path.join(TMP, "shots", "evenings.json"), "w") as f:
+        json.dump([{"n": 6, "after": "evening-6-after.jpg"}, {"n": 7, "after": "evening-7-after.jpg"}], f)
     threading.Thread(target=run_relay, daemon=True).start()
     time.sleep(0.3)
     threading.Thread(target=share.main, daemon=True).start()
@@ -133,7 +143,8 @@ def main():
     for name, path in [("hud", "/og/hud.png"), ("block", "/og/block/322.png"), ("block0", "/og/block/0.png"),
                        ("proposal", f"/og/proposal/{PID[:16]}.png"), ("active", "/og/proposal/99cdcdcd.png"),
                        ("address", f"/og/address/{A}.png"), ("validator", f"/og/address/{VAL}.png"),
-                       ("card", f"/og/card/{D}.png?c=3"), ("card-new", f"/og/card/{C3}.png"), ("missing", "/og/block/99999.png")]:
+                       ("card", f"/og/card/{D}.png?c=3"), ("card-new", f"/og/card/{C3}.png"), ("missing", "/og/block/99999.png"),
+                       ("agorzilla", f"/og/agorzilla/{D}.png"), ("agorzilla-new", f"/og/agorzilla/{C3}.png")]:
         code, ctype, body = get(path)
         assert code == 200 and ctype == "image/png", (path, code, ctype)
         assert Image.open(io.BytesIO(body)).size == (1200, 630), path
@@ -151,6 +162,14 @@ def main():
     card = get(f"/s/card/{D}?c=3")[2].decode()
     assert f"https://tauhud.com/card/?a={D}&amp;c=3" in card and "This wallet wrote 2 rules, cast 2 votes and fed Agorzilla once." in card, card
     assert f"/og/card/{D}.png?c=3" in card
+    z = share.agz_numbers(D)
+    assert (z["meals"], z["voted"], [p["pick"] for p in z["won"]]) == (6, 4, ["Sturdy", "Cherry blossom"]), z
+    assert share.agz_photo().endswith("evening-7-after.jpg")   # the newest photograph that exists
+    assert share.agz_numbers(C3)["meals"] == 0
+    agz = get(f"/s/agorzilla/{D}")[2].decode()
+    for want in [f'location.replace("https://agorzilla.com/?feeder={D}#life")', "helped raise Agorzilla",
+                 "6 meals, 4 evenings voted, 2 picks that became part of it.", f"/og/agorzilla/{D}.png?m=6.2", 'og:site_name" content="Agorzilla"']:
+        assert want in agz, (want, agz)
     n = share.block_numbers(322)
     assert [t["amt"] for t in n["txs"]] == [50, 12, None] and n["txs"][2]["tag"] == "yes" and n["validator"]
 
@@ -165,7 +184,7 @@ def main():
     assert "3 transactions" in get("/s/block/322")[2].decode()
     assert f"https://tauhud.com/explorer/?a={A}" in get(f"/s/address/{A}")[2].decode()
     assert "live at block #329" in get("/s/")[2].decode()
-    for bad in ["/og/block/abc.png", "/og/address/1234.png", "/s/proposal/xyz", "/og/", "/og/nothing.png", "/s/block/1234567890", "/etc/passwd", "/og/card/123.png", "/og/card/123.json"]:
+    for bad in ["/og/block/abc.png", "/og/address/1234.png", "/s/proposal/xyz", "/og/", "/og/nothing.png", "/s/block/1234567890", "/etc/passwd", "/og/card/123.png", "/og/card/123.json", "/og/agorzilla/123.png", "/s/agorzilla/xyz"]:
         assert get(bad)[0] == 404, bad
 
     CUR["chain"] = "b"   # the testnet restarted: a shorter chain with other hashes
