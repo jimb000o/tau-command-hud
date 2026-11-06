@@ -734,7 +734,7 @@ class Relay:
         now = round(now if now is not None else time.time())
         fresh = now - self.updated.get("getblocks", 0) < 3 * max(BLOCK_POLL, UPTIME_SAMPLE / 2)
         node_ok = self.upstream.connected.is_set() and fresh
-        canon, tip = self.canonical_height(), self.tip_height()
+        canon, tip = self.canonical_height(), self.tip_height(now)
         lag = (tip - canon) if node_ok and canon is not None and tip is not None else None
         synced = node_ok and canon is not None and canon > 0 and (lag is None or lag <= SYNC_LAG)
         hour = str(now - now % 3600)
@@ -842,7 +842,7 @@ class Relay:
 
         add("node", "Node answering", 1.0 if node_ok else 0.0, "yes" if node_ok else "no",
             "" if node_ok else "our node does not answer the relay")
-        canon, tip = self.canonical_height(), self.tip_height()
+        canon, tip, raw_tip = self.canonical_height(), self.tip_height(now), self.raw_tip_height()
         lag = (tip - canon) if canon is not None and tip is not None else None
         if not node_ok or not canon:
             add("sync", "In sync with the network", 0.0, "unknown" if not node_ok else "syncing",
@@ -850,7 +850,9 @@ class Relay:
         else:
             add("sync", "In sync with the network", 1.0 if lag is None else lin(lag, SYNC_LAG, 30),
                 "in sync" if lag is None or lag <= 0 else f"{lag} blocks behind",
-                "no peer tip known yet" if lag is None else "")
+                "no peer tip known yet" if lag is None
+                else f"a peer named #{raw_tip}, not on our chain (old run before a restart); our head is new"
+                if raw_tip is not None and tip is not None and raw_tip > tip else "")
         exp = self.expected_block_seconds()
         ordered = [b for b in self.ordered_blocks() if self._height(b) >= 1 and self._ts(b)]
         last_ts = self._ts(ordered[-1]) if ordered else None
@@ -1198,14 +1200,40 @@ class Relay:
         except (KeyError, TypeError, ValueError):
             return None
 
-    def tip_height(self) -> int | None:
+    def raw_tip_height(self) -> int | None:
         """Highest network tip the node has heard from its peers (patched
         getgovernance.network_tip); None until a peer was seen or on an
-        unpatched node."""
+        unpatched node. The node keeps the highest number it ever heard, so
+        after a chain restart this still names the old run's tip."""
         try:
             return int((self.governance().get("network_tip") or {})["number"])
         except (KeyError, TypeError, ValueError):
             return None
+
+    def head_is_fresh(self, now: float | None = None) -> bool:
+        """Is our verified head a block the validator made just now? Then we
+        are at the live tip, whatever a peer claimed earlier."""
+        canon = self.canonical_height()
+        if not canon:
+            return False
+        want = self.head_hash()
+        at = [b for b in self.blocks.values() if self._height(b) == canon]
+        head = next((b for b in at if b.get("block_hash") == want), at[0] if at else None)
+        ts = self._ts(head) if head else None
+        if not ts:
+            return False
+        now = now if now is not None else time.time()
+        return -300 <= now - ts <= max(3 * self.expected_block_seconds(), 180)
+
+    def tip_height(self, now: float | None = None) -> int | None:
+        """The network tip to measure our lag against. A peer tip far above a
+        head the validator minted minutes ago cannot be on our chain: it is the
+        old run's height remembered from before a chain restart (or a peer
+        still on that run). Then our head is the tip."""
+        tip, canon = self.raw_tip_height(), self.canonical_height()
+        if tip is not None and canon is not None and tip - canon > SYNC_LAG and self.head_is_fresh(now):
+            return canon
+        return tip
 
     # ---------- visitor commands ----------
     async def answer(self, message: str, ip: str = "?", ws: ServerConnection | None = None) -> str:
@@ -1922,6 +1950,7 @@ class Relay:
             "upstream_connected": self.upstream.connected.is_set(),
             "height": self.height(),
             "canonical_height": self.canonical_height(),
+            "peer_tip_raw": self.raw_tip_height(),
             "tip_height": self.tip_height(),
             # the page may make Live the default view only while the node follows a real chain
             "live_default": bool(self.upstream.connected.is_set() and (self.canonical_height() or 0) > 0),
