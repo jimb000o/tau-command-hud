@@ -2405,5 +2405,10 @@
     "tag": "Alerts",
     "on": "2026-11-06",
     "html": "Alerts: on a day IDNI merges real changes into the testnet's code, the Tau HUD channel now posts one summary of what they add up to and why it matters: all of that day's merges read together, tests and CI only in passing. Telegram gets it with links to IDNI's commits; X only on notable days. Quiet days get no post."
+  },
+  {
+    "tag": "Alerts",
+    "on": "2026-11-06",
+    "html": "White Rabbit Key: the cruise ships now announce themselves. A few hours before each call (MS Dry Run on Wednesdays, Queen Mempool on Saturdays) the channel posts the announcement picture with the ship at anchor, written anew each week with the ship's last call as her logbook counts it."
   }
 ]

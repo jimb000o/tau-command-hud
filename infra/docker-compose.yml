@@ -216,6 +216,14 @@ services:
       X_API_SECRET: ${X_API_SECRET:-}
       X_ACCESS_TOKEN: ${X_ACCESS_TOKEN:-}
       X_ACCESS_SECRET: ${X_ACCESS_SECRET:-}
+      # the cruise ships by themselves (alerts/cruise_crier.py): each call announced on Telegram and X this many minutes
+      # before it (150: Wednesday 13:30, Saturday 11:30 German time), each visit's numbers to the owner's private chat
+      # after it; CRUISE_CRIER=false stops both (CRUISE_ENABLED=0 keeps the ships themselves away)
+      CRUISE_CRIER: ${CRUISE_CRIER:-true}
+      CRUISE_ANNOUNCE_MINUTES: ${CRUISE_ANNOUNCE_MINUTES:-150}
+      TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
+      # a clean blog draft on the blog by itself this many hours after it was written; 0 = only by hand (up blog publish)
+      BLOG_AUTO_PUBLISH_HOURS: ${BLOG_AUTO_PUBLISH_HOURS:-0}
     volumes:
       - alerts_state:/state     # /state/blog.json: which visits have a draft, which drafts were posted
       - alerts_public:/public   # /public/blog/posts.json and drafts/, served by Caddy
