@@ -2335,9 +2335,26 @@
     "html": "Road to mainnet now keeps in step with IDNI by itself: when IDNI’s own code names one of the items’ GitHub issues, the item lists it under “IDNI’s own work on it” and its status moves: a fix on IDNI’s main makes it “Partly fixed”, a work branch makes it “IDNI at work”. Only what IDNI wrote in its public git history counts, checked every 30 minutes. Also brought up to date: the stop at block 5028, the restart of 1 November with open governance turned off, and the reset IDNI plans in pull request #93."
   },
   {
-    "tag": "Rabbit",
+    "tag": "White Rabbit Key",
     "on": "2026-11-06",
     "html": "Cruise ships, after MS Dry Run’s first call: the ship left after 34 minutes because eight transactions our node did not answer in time were counted as refusals; the node had refused nothing. A send without an answer is no refusal now: the ship waits 30 seconds, goes at half pace for ten minutes, and the passenger’s next send shows in the logbook whether the node took it after all. “Strained” on Testnet load is measured against the testnet’s usual block gap (three times it, at least 60 seconds), so one ordinary block of waiting no longer halves the pace. Queen Mempool lands her 120 passengers in waves over 30 minutes, so her first stops fit the pace of 12 a minute."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-04",
+    "html": "Transactions: “ghost” now marks only what it says, a transaction already in a block that the node still lists as waiting (IDNI #81). Every other sealed transaction shows a plain ✓ with its block number, also when the page first saw it in its block, so a sealed transfer no longer looks as if it were still waiting. A transaction seen waiting first now shows its amounts once its block arrives, and for one first seen in a block the fee reads “fee ≤ 1000”: the block lists the cap the sender signed, not the fee charged."
+  },
+  {
+    "tag": "Blog",
+    "on": "2026-11-06",
+    "html": "Blog: a new page with what we learn from running things on Tau Testnet Alpha. The first article is about the MS Dry Run of 4 November: the ship left after 34 of 90 minutes, because 8 sends our node did not answer in time counted as refusals; 122 transactions went through and all 5 bookings paid out. From now on our server drafts one article after every cruise ship visit, from the facts in the ship’s public logbook, in English, Chinese and Japanese; every number is checked against the logbook, and nothing goes up before a person has read it.",
+    "major": {
+      "id": "blog",
+      "title": "New: the Tau HUD blog",
+      "text": "What we learn running things on the Tau testnet. First: why our MS Dry Run cruise left after 34 of 90 minutes, and what we changed.",
+      "link": "/blog/",
+      "image": "/assets/shots/blog.png"
+    }
   },
   {
     "tag": "Cruise",

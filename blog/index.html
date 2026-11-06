@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Tau HUD Blog</title>
+<meta name="description" content="What we learned running things on Tau Testnet Alpha: cruise ship visits, load and incidents, written from our own public logbooks.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Blog">
+<meta property="og:description" content="What we learned running things on the Tau testnet, written from our own public logbooks.">
+<meta property="og:image" content="https://tauhud.com/assets/shots/blog.png">
+<meta property="og:url" content="https://tauhud.com/blog/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<meta name="twitter:image" content="https://tauhud.com/assets/shots/blog.png">
+<link rel="alternate" type="application/json" href="/assets/blog/posts.json">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber only for a draft. */
+:root {
+  --void: #09090a; --deck: #121214; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.lead { margin: 6px 0 0; font: 500 clamp(20px, 3vw, 28px)/1.25 var(--display); color: #fff; max-width: 30em; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 70ch; }
+.posts { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); }
+.posts a { display: grid; gap: 6px; height: 100%; padding: 16px 18px; background: var(--deck); border: 1px solid var(--line); border-radius: 10px; text-decoration: none; color: var(--text); }
+.posts a:hover { border-color: var(--hair); }
+.posts h2 { margin: 0; font: 600 17px/1.3 var(--display); color: #fff; }
+.posts p { margin: 0; color: var(--dim); }
+.meta { color: var(--dim); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.meta b { color: var(--ok); font-weight: 600; }
+#one { width: 100%; max-width: 74ch; margin: 0 auto; display: grid; gap: 10px; }
+article { display: grid; gap: 4px; }
+article h2.t { margin: 4px 0 0; font: 600 clamp(22px, 3.2vw, 32px)/1.2 var(--display); color: #fff; }
+article .dek { margin: 4px 0 8px; font: 400 16px/1.5 var(--display); color: var(--text); }
+article h3 { margin: 18px 0 4px; font: 600 15px var(--display); color: #fff; letter-spacing: .02em; }
+article p, article li { font: 400 15px/1.65 var(--display); color: var(--text); }
+article p { margin: 6px 0; }
+article ul, article ol { margin: 4px 0; padding-left: 22px; }
+article li { margin: 4px 0; }
+article strong { color: #fff; }
+.why { margin: 6px 0 4px; padding: 12px 16px; border: 1px solid rgba(57,255,138,.35); border-radius: 10px; background: rgba(57,255,138,.04); }
+.why h3 { margin: 0 0 4px; color: var(--ok); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+.why ul { margin: 0; }
+.src { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--dim); font-size: 12px; }
+.src a { color: var(--dim); }
+.back { justify-self: start; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #fff; text-decoration: none; border: 1px solid var(--hair); border-radius: 999px; padding: 8px 14px; min-height: 36px; display: inline-flex; align-items: center; }
+.back:hover { background: #fff; color: #000; }
+.draft { padding: 10px 14px; border: 1px solid var(--behind); border-radius: 10px; color: var(--behind); }
+.draft code { color: #fff; }
+.draft .bad { color: #fff; background: rgba(255,177,59,.25); padding: 0 4px; border-radius: 3px; }
+mark { background: rgba(255,177,59,.3); color: #fff; padding: 0 2px; }
+details.facts { margin-top: 10px; color: var(--dim); }
+details.facts pre { white-space: pre-wrap; font: 12px/1.45 var(--mono); max-height: 50vh; overflow: auto; }
+.empty { color: var(--dim); }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+footer p { margin: 0; }
+@media (max-width: 700px) {
+  article p, article li { font-size: 14px; }
+  .meta { font-size: 11px; }
+  .back { min-height: 44px; }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Blog</span></a>
+  </header>
+  <nav class="tnav" data-page="blog" aria-label="Pages and tools"></nav>
+
+  <section id="list">
+    <p class="lead">What we learned running things on the testnet.</p>
+    <p class="sub">Cruise ships, load and incidents on Tau Testnet Alpha, written from our own public logbooks. Every number comes from them; what we do not know yet, we say.</p>
+    <ul class="posts" id="posts" style="margin-top:14px"></ul>
+    <p class="empty" id="none" hidden>No article yet.</p>
+  </section>
+
+  <section id="one" hidden>
+    <a class="back" href="./">All articles</a>
+    <div class="draft" id="draft" hidden></div>
+    <article id="art" translate="no"></article>
+  </section>
+
+  <footer>
+    <p>Tau HUD is a community project, not affiliated with IDNI. The articles are drafted from our logbooks with the help of a language model and read by a person before they go up. <a href="https://node.tauhud.com/cruise/log" target="_blank" rel="noopener">Ship logbook</a> · <a href="/load/">Testnet load</a> · <a href="/findings/">Findings</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BBlog%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+  </footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const NODE = "https://node.tauhud.com";
+  const L = (window.TauI18n && TauI18n.lang) || "en";
+  const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+  const q = new URLSearchParams(location.search);
+  const $ = id => document.getElementById(id);
+  const pick = o => (o && typeof o === "object" ? o[L] || o.en || "" : String(o || ""));
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const date = on => { try { return new Date(on + "T12:00:00Z").toLocaleDateString(L === "en" ? "en-GB" : L, { day: "numeric", month: "long", year: "numeric" }); } catch (e) { return on; } };
+
+  /* a small, safe Markdown: ## headings, - and 1. lists, **bold**, *italic*, paragraphs; nothing else */
+  function md(text, mark) {
+    const inline = s => {
+      let h = esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>");
+      if (mark && mark.length) h = h.replace(/(?<![\w.])\d+(?:[.,]\d+)?(?::\d\d)?/g, n => mark.includes(n.replace(",", ".")) ? `<mark>${n}</mark>` : n);
+      return h;
+    };
+    const out = []; let list = null;
+    const close = () => { if (list) { out.push(`</${list}>`); list = null; } };
+    for (const raw of String(text || "").split("\n")) {
+      const l = raw.trim();
+      let m;
+      if (!l) { close(); continue; }
+      if ((m = l.match(/^#{2,3}\s+(.*)/))) { close(); out.push(`<h3>${inline(m[1])}</h3>`); continue; }
+      if ((m = l.match(/^[-*]\s+(.*)/)) || (m = l.match(/^\d+[.)]\s+(.*)/))) {
+        const kind = /^\d/.test(l) ? "ol" : "ul";
+        if (list !== kind) { close(); out.push(`<${kind}>`); list = kind; }
+        out.push(`<li>${inline(m[1])}</li>`); continue;
+      }
+      close(); out.push(`<p>${inline(l)}</p>`);
+    }
+    close();
+    return out.join("");
+  }
+
+  async function json(url) {
+    const r = await fetch(url, { cache: "no-cache" });
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  }
+
+  /* the articles shipped with the site, then those published on our server; the server's copy wins */
+  async function all() {
+    const got = await Promise.allSettled([json("../assets/blog/posts.json"), json(NODE + "/blog/posts.json")]);
+    const by = new Map();
+    for (const g of got) if (g.status === "fulfilled") for (const p of (g.value.posts || [])) if (p && p.id) by.set(p.id, p);
+    return [...by.values()].sort((a, b) => String(b.on).localeCompare(String(a.on)));
+  }
+
+  function list(posts) {
+    $("none").hidden = posts.length > 0;
+    $("posts").innerHTML = posts.map(p => `<li><a href="?p=${encodeURIComponent(p.id)}"><span class="meta"><b>${esc(T(p.kind === "cruise" ? "Cruise ship" : "Learnings"))}</b> · ${esc(date(p.on))}</span><h2 translate="no">${esc(pick(p.title))}</h2><p translate="no">${esc(pick(p.dek))}</p></a></li>`).join("");
+  }
+
+  function show(p, mark) {
+    $("list").hidden = true; $("one").hidden = false;
+    document.title = pick(p.title) + " · Tau HUD Blog";
+    const why = (p.why || []).map(w => `<li>${md(pick(w), mark).replace(/^<p>|<\/p>$/g, "")}</li>`).join("");
+    const src = (p.sources || []).map(s => `<a href="${esc(s)}" target="_blank" rel="noopener">${esc(s.replace(/^https:\/\//, ""))}</a>`).join(" · ");
+    $("art").innerHTML = `<span class="meta"><b>${esc(T(p.kind === "cruise" ? "Cruise ship" : "Learnings"))}</b> · ${esc(date(p.on))}</span>
+      <h2 class="t">${esc(pick(p.title))}</h2><p class="dek">${esc(pick(p.dek))}</p>
+      ${p.intro ? md(pick(p.intro), mark) : ""}
+      ${why ? `<div class="why"><h3>${esc(T("Why it matters"))}</h3><ul>${why}</ul></div>` : ""}
+      ${md(pick(p.body), mark)}
+      <p class="src">${esc(T("Every number comes from our public logbooks:"))} ${src}</p>`;
+    const sum = document.querySelector('meta[name="description"]'); if (sum) sum.content = pick(p.dek);
+  }
+
+  async function main() {
+    const d = q.get("draft"), id = q.get("p");
+    if (d && /^[a-z0-9-]{3,80}$/.test(d)) {   // an unlisted draft on our server, for a read before it is published
+      try {
+        const a = await json(`${NODE}/blog/drafts/${d}.json`);
+        const bad = (a.check && a.check.unknown_numbers) || [], hype = (a.check && a.check.hype) || [];
+        $("draft").hidden = false;
+        $("draft").innerHTML = `<b>${esc(T("Draft, not published."))}</b> ${esc(T("Publish it on the server with"))} <code>up blog publish ${esc(a.id)}</code>.
+          ${bad.length ? `<br>${esc(T("Numbers not in the logbook facts, marked in the text:"))} <span class="bad">${bad.map(esc).join(", ")}</span>` : `<br>${esc(T("Every number is in the logbook facts."))}`}
+          ${hype.length ? `<br>${esc(T("Words to check:"))} <span class="bad">${hype.map(esc).join(", ")}</span>` : ""}
+          <details class="facts"><summary>${esc(T("The facts the article was written from"))}</summary><pre translate="no">${esc(JSON.stringify(a.facts, null, 1))}</pre></details>`;
+        show(a, bad);
+      } catch (e) {
+        $("list").hidden = true; $("one").hidden = false;
+        $("art").innerHTML = `<p>${esc(T("This draft is not there (any more). Published articles are listed on the blog."))}</p>`;
+      }
+      return;
+    }
+    const posts = await all();
+    const p = id && posts.find(x => x.id === id);
+    if (p) show(p); else list(posts);
+  }
+  main();
+})();
+</script>
+</body>
+</html>
