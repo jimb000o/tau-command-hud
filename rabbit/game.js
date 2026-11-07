@@ -1141,20 +1141,25 @@
   const savings = () => { try { const v = JSON.parse(store.get(SAVE_KEY) || "null"); if (v && typeof v.coins === "number") return v; } catch (e) {} return { coins: 0, built: {}, campaigns: 0 }; };
   const saveSavings = v => store.set(SAVE_KEY, JSON.stringify(v));
   const BUILDS = {
-    roof: { at: "school", n: 60, t: "Pay for a new roof for the school", line: "paid for a new school roof: 60 coins from the savings", done: "The new roof is on by evening. Families who care about the school will remember who paid.", fx: () => bump(G.me, p => p.cares.includes("school"), 6) },
-    lamp: { at: "book", n: 80, t: "Pay for a new lamp for the lighthouse", line: "paid for a new lighthouse lamp: 80 coins from the savings", done: "The new lamp lights the whole bay. More people find their way to the Book at night.", fx: () => { G.lamp = true; } },
-    stone: { at: "circle", n: 50, t: "Pay for a stone in Tano’s circle", line: "paid for a stone in Tano’s circle: 50 coins from the savings", done: "Tano sets the stone before sunset. Whoever sits on it is listened to a little longer.", fx: () => others(G.me).forEach(c => { G.trust[c] = Math.min(100, G.trust[c] + 10); }) },
+    roof: { at: "school", n: 60, t: "Pay for a new roof for the school", line: "paid for a new school roof: 60 coins", done: "The new roof is on by evening. Families who care about the school will remember who paid.", fx: () => bump(G.me, p => p.cares.includes("school"), 6) },
+    lamp: { at: "book", n: 80, t: "Pay for a new lamp for the lighthouse", line: "paid for a new lighthouse lamp: 80 coins", done: "The new lamp lights the whole bay. More people find their way to the Book at night.", fx: () => { G.lamp = true; } },
+    stone: { at: "circle", n: 50, t: "Pay for a stone in Tano’s circle", line: "paid for a stone in Tano’s circle: 50 coins", done: "Tano sets the stone before sunset. Whoever sits on it is listened to a little longer.", fx: () => others(G.me).forEach(c => { G.trust[c] = Math.min(100, G.trust[c] + 10); }) },
   };
+  /* the price comes from the savings first and the rest from this campaign's purse, so coins won this week can pay too
+     (otherwise a full purse sat next to a greyed-out button). After the campaign the purse is already banked. */
+  const purse = () => (G.over ? 0 : Math.max(0, G.coins[G.me] || 0));
   function buildBtn(k) {
-    const B = BUILDS[k], v = savings(), done = !!(G.built && G.built[k]);
+    const B = BUILDS[k], v = savings(), done = !!(G.built && G.built[k]), have = v.coins + purse();
     return btn(T(B.t), () => {
-      const v = savings(); if (v.coins < B.n || (G.built && G.built[k])) return;
-      v.coins -= B.n; v.built[k] = (v.built[k] || 0) + 1; saveSavings(v);
+      const v = savings(); if (v.coins + purse() < B.n || (G.built && G.built[k])) return;
+      const fromSaved = Math.min(v.coins, B.n), fromPurse = B.n - fromSaved;
+      v.coins -= fromSaved; v.built[k] = (v.built[k] || 0) + 1; saveSavings(v);
+      if (fromPurse) G.coins[G.me] -= fromPurse;
       G.built = G.built || {}; G.built[k] = G.day; B.fx();
       write(G.me, T(B.line), "gift", B.at, B.n, k);
       SND.sfx("coin"); save(); hud(); toast(T(B.done));
       if (UI.card) openCard(B.at, PLACE[B.at]);
-    }, { off: done || v.coins < B.n, sub: done ? T("Done this campaign") : v.coins >= B.n ? Fd("{n} coins from your savings ({m} saved), no move, the island keeps it", { n: B.n, m: v.coins }) : Fd("{n} coins from your savings; you have {m}. The coins left at the end of a campaign are saved.", { n: B.n, m: v.coins }) });
+    }, { off: done || have < B.n, sub: done ? T("Done this campaign") : have >= B.n ? Fd("{n} coins, from your savings first ({m} saved), then from this campaign ({c}); no move, the island keeps it", { n: B.n, m: v.coins, c: purse() }) : Fd("{n} coins; you have {c} in this campaign and {m} saved. The coins left at the end of a campaign are saved.", { n: B.n, m: v.coins, c: purse() }) });
   }
   /* the coins left when the campaign is over go to the savings, once */
   function bank() {
