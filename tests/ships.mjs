@@ -18,6 +18,25 @@ for (const [name, m] of Object.entries(manifest)) {
     assert.ok(point[0] >= 0 && point[0] < width && point[1] >= 0 && point[1] < height, name + " landmark outside image");
   }
   for (const [x0, x1, y] of m.windows || []) assert.ok(x0 <= x1 && x0 >= 0 && x1 < width && y >= 0 && y < height);
+  for (const point of [...(m.deck || []), m.captain].filter(Boolean)) {
+    assert.ok(point.length === 2 && point[0] >= 0 && point[0] < width && point[1] >= 0 && point[1] < height, name + " deck point outside image");
+  }
+  if (m.deck) {   // a crew sheet for the ship, as the game needs it (scene.js crew): a figure for each deck point, the captain
+    const crew = JSON.parse(await readFile(root + "rabbit/art/ships/crew-" + (m.crew || name) + ".json", "utf8"));
+    const sheet = await readFile(root + "rabbit/art/ships/" + crew.src);
+    const sw = sheet.readUIntLE(24, 3) + 1, sh = sheet.readUIntLE(27, 3) + 1;
+    assert.ok(crew.unit > 0 && crew.cols > 0 && crew.cell[0] > 0 && crew.cell[1] > 0, name + " crew sheet geometry");
+    assert.ok(crew.figures.length >= 1 && crew.figures.length >= m.deck.length, name + " needs a figure for each deck point");
+    assert.ok(!m.captain || (crew.guides && crew.guides[m.crew || name]), name + " has a captain point but no captain");
+    for (const f of [...crew.figures, ...Object.values(crew.guides || {})]) {
+      for (const c of [f.a, f.b]) assert.ok(Number.isInteger(c) && (Math.floor(c / crew.cols) + 1) * crew.cell[1] <= sh && (c % crew.cols + 1) * crew.cell[0] <= sw, f.id + " cell outside the sheet");
+      assert.ok(f.foot[0] >= 0 && f.foot[0] <= crew.cell[0] && f.foot[1] >= 0 && f.foot[1] <= crew.cell[1], f.id + " foot outside its cell");
+      assert.ok(/^(back|front|side)$/.test(f.view) && (f.face === 1 || f.face === -1), f.id + " view");
+    }
+    // a pirate is a grown-up: 16 world units from the sheet, so on the ship about 70 of her 1000 px
+    const tall = crew.figures.map(f => f.foot[1] / crew.unit);
+    assert.ok(Math.min(...tall) > 13 && Math.max(...tall) < 19, name + " crew height " + tall.join(","));
+  }
 }
 
 const source = await readFile(root + "rabbit/scene.js", "utf8");
@@ -27,10 +46,11 @@ const ctx = vm.createContext({
   Date: { now: () => now * 1000 }, Math,
   S: { base: { painted: true } }, location: { search: "" }, SPOT: { anchor: [1395, 780] },
   SHIP: { s: { phase: "ashore", t0: 500, end: 1200, style: "liner" } },
+  gesture: () => false, crowdOk: () => false,
 });
 // Exercise the rendering functions directly without adding a testing API to the game.
 vm.runInContext(source.slice(source.indexOf("  const BOATS ="), source.indexOf("  function cruiseShip(")) +
-  ";this.api={BOATS,boatArt,boatPose,boatTransform,shipPos,paintedBoat,paintedTender};", ctx);
+  ";this.api={BOATS,CREW,boatArt,boatPose,boatTransform,shipPos,paintedBoat,paintedTender};", ctx);
 const { api } = ctx;
 for (const [name, m] of Object.entries(manifest)) api.BOATS[name] = { ...m, im: {} };
 assert.ok(api.boatArt("liner"));
@@ -91,6 +111,26 @@ for (const [width, height] of [[1568, 735], [1248, 525]]) {
   assert.equal(pos[0], 1395);
 }
 ctx.S.base.painted = false; assert.equal(api.shipPos(now)[1], 780);
+
+/* The crew on the Black Sequence (scene.js crew): with the sheet loaded, paintedBoat draws the ship and then one figure
+   for each deck point and the captain, each standing inside the ship's painting; without the sheet, the ship alone. */
+{
+  const m = manifest.pirate, crewMan = JSON.parse(await readFile(root + "rabbit/art/ships/crew-pirate.json", "utf8"));
+  const draws = [], g = Object.assign(canvas(), {
+    drawImage(im, ...a) { draws.push([im, a.length === 8 ? [a[4] + a[6] / 2, a[5] + a[7]] : null]); },
+    beginPath() {}, ellipse() {}, arc() {}, fill() {}, stroke() {}, fillRect() {}, set fillStyle(v) {}, set strokeStyle(v) {}, set lineWidth(v) {},
+  });
+  const im = {}; api.BOATS.pirate = { ...m, im };
+  ctx.S.base.painted = true; ctx.SHIP.s.style = "pirate";
+  api.paintedBoat(g, 1395, 828, 1000, "pirate", 1);
+  assert.equal(draws.filter(d => d[0] === im).length, 1, "the ship alone without the crew sheet");
+  const sheet = {}; api.CREW.pirate = { m: crewMan, im: sheet };
+  draws.length = 0; api.paintedBoat(g, 1395, 828, 1000, "pirate", 1);
+  const crew = draws.filter(d => d[0] === sheet);
+  assert.equal(crew.length, m.deck.length + 1, "a figure for each deck point and the captain");
+  for (const [, [fx, fy]] of crew) assert.ok(fx > m.stern[0] - 20 && fx < m.bow[0] + 40 && fy > 300 && fy < m.stern[1], "a pirate stands on the ship (the forecastle may reach past the bow waterline): " + [fx, fy]);
+  delete api.CREW.pirate; ctx.SHIP.s.style = "liner";
+}
 
 /* The islanders' talk about the ships (talk.js RABBIT_SHIP_WHEN): a week in November 2026, German winter time (UTC+1).
    MS Dry Run on Wednesday the 4th at four, Queen Mempool on Saturday the 7th at two. */

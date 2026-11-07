@@ -861,6 +861,31 @@
     }
   }).catch(() => {});
   const boatArt = kind => S.base?.painted && !/[?&]art=drawn(?:&|$)/.test(location.search) && BOATS[kind];
+  /* The crew of the Black Sequence (rabbit/art/ships/crew-pirate.*, cut and laid out from the painted pirates by
+     infra/rabbit-art/tourists.py --set pirates): the pirates never land, so they stand on their ship, one at each "deck"
+     point of her manifest and the captain at "captain", in the painting's own pixels, so they bob, turn and mirror with
+     her; now and then one makes their small gesture (the figure's second frame), as the passengers ashore do. Without
+     the sheet she sails with nobody on deck. */
+  const CREW = {};
+  fetch("/rabbit/art/ships/crew-pirate.json").then(r => r.ok ? r.json() : null).then(m => {
+    if (!crowdOk(m)) return;
+    const im = new Image(); im.decoding = "async";
+    im.onload = () => { CREW.pirate = { m, im }; };
+    im.src = "/rabbit/art/ships/" + m.src;
+  }).catch(() => {});
+  function crew(g, m, scale, t) {
+    const c = CREW[m.crew || "pirate"], deck = Array.isArray(m.deck) ? m.deck.filter(p => Array.isArray(p) && p.length === 2) : [];
+    if (!c || !deck.length) return;
+    const cm = c.m, [cw, ch] = cm.cell, k = 1 / scale / cm.unit, F = cm.figures, cap = cm.guides && cm.guides[m.crew || "pirate"];
+    const who = deck.map((p, i) => [p, F[i % F.length], i]);
+    if (cap && Array.isArray(m.captain) && m.captain.length === 2) who.push([m.captain, cap, "captain"]);
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
+    for (const [[x, y], f, i] of who.sort((a, b) => a[0][1] - b[0][1])) {
+      const fr = gesture("crew", i, t) ? f.b : f.a, sw = (f.sw > 0 ? f.sw : 3) / scale;
+      g.fillStyle = "rgba(20,34,40,.24)"; g.beginPath(); g.ellipse(x + sw * 0.15, y, sw, sw * 0.34, 0, 0, Math.PI * 2); g.fill();
+      g.drawImage(c.im, (fr % cm.cols) * cw, Math.floor(fr / cm.cols) * ch, cw, ch, x - f.foot[0] * k, y - f.foot[1] * k, cw * k, ch * k);
+    }
+  }
   const unit = f => Math.max(0, Math.min(1, f));
   function boatPose(x, y, t, a = 1) {
     const v = SHIP.s, now = Date.now() / 1000, underway = v.phase === "approach" || v.phase === "gone";
@@ -907,6 +932,7 @@
       }
       pixels(); g.drawImage(m.im, 0, 0);
       if (m.flag) blackFlag(g, m.flag[0], m.flag[1], 1 / scale, t);
+      crew(g, m, scale, t);
       if (m.funnel) {
         const [fx, fy] = m.funnel;
         for (let k = 0; k < 4; k++) {

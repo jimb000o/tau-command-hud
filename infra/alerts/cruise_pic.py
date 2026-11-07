@@ -74,6 +74,39 @@ def place_ship(pic, ship, m, anchor, x0, y0, z, big=1.0):
     return Image.alpha_composite(pic, layer)
 
 
+def crew_aboard(ship, m, ships, frame="a"):
+    """The painted crew on the ship's deck, as the game stands them (scene.js crew): the sheet named by the ship's
+    "crew" entry of ships/crew-<kind>.json, one figure for each "deck" point of the ship's manifest and the captain
+    at "captain", each with a soft shadow under the feet, sorted by their feet so the nearer stand in front. The
+    ship comes back as it was when there is no crew."""
+    deck = m.get("deck")
+    try:
+        cm = json.load(open(os.path.join(ships, "crew-%s.json" % m.get("crew", "pirate"))))
+        sheet = Image.open(os.path.join(ships, cm["src"])).convert("RGBA")
+    except (OSError, ValueError, KeyError):
+        return ship
+    if not deck or not cm.get("figures"):
+        return ship
+    (sx, sy), (bx, by) = m["stern"], m["bow"]
+    k = math.hypot(bx - sx, by - sy) / m["length"] / cm["unit"]   # sheet pixels -> ship pixels
+    cw, ch = cm["cell"]
+    who = [(pt, cm["figures"][i % len(cm["figures"])]) for i, pt in enumerate(deck)]
+    cap = (cm.get("guides") or {}).get(m.get("crew", "pirate"))
+    if cap and m.get("captain"):
+        who.append((m["captain"], cap))
+    out = ship.copy()
+    for (x, y), f in sorted(who, key=lambda w: w[0][1]):
+        c = f[frame]
+        cell = sheet.crop(((c % cm["cols"]) * cw, (c // cm["cols"]) * ch, (c % cm["cols"] + 1) * cw, (c // cm["cols"] + 1) * ch))
+        w, h = max(1, round(cw * k)), max(1, round(ch * k))
+        fig = cell.convert("RGBa").resize((w, h), Image.LANCZOS).convert("RGBA")
+        sw = (f.get("sw") or 3) * k * cm["unit"]
+        shadow = Image.new("RGBA", out.size); ImageDraw.Draw(shadow).ellipse([x + sw * 0.15 - sw, y - sw * 0.34, x + sw * 0.15 + sw, y + sw * 0.34], fill=(20, 34, 40, 60))
+        out.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(1)))
+        out.alpha_composite(fig, (round(x - f["foot"][0] * k), round(y - f["foot"][1] * k)))
+    return out
+
+
 def pirate_stand_in(m, ship):
     """MS Dry Run's painting as the pirates' Black Sequence: darkened like tarred wood, a black flag with three white
     chain links on a pole above the funnel (rabbit/scene.js standIn and blackFlag); the manifest moved with the canvas."""
@@ -135,7 +168,7 @@ def main(art, ships, texts, out):
         m, ship = pirate_stand_in(man["expedition"], Image.open(os.path.join(ships, man["expedition"]["src"])).convert("RGBA"))
     else:
         m = man[kind]
-        ship = Image.open(os.path.join(ships, m["src"])).convert("RGBA")
+        ship = crew_aboard(Image.open(os.path.join(ships, m["src"])).convert("RGBA"), m, ships)
     im = Image.open(os.path.join(art, sc["island"])).convert("RGB")
     anchor = tuple((idx.get("layout") or {}).get("anchor") or ANCHOR)
     lo, hi = world_bounds(im)
