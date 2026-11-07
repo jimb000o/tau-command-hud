@@ -111,9 +111,42 @@ d = json.load(open(os.path.join(TMP, "blog", "drafts", st["drafts"][did] + ".jso
 check(d["image"].endswith(f"/blog/img/{did}-hero.jpg") and os.path.exists(os.path.join(TMP, "blog", "img", f"{did}-hero.jpg")), "the draft has its hero picture")
 check(len(d["figures"]) == 2 and all(os.path.exists(os.path.join(TMP, "blog", "img", os.path.basename(f["src"]))) for f in d["figures"]), "and two charts of the visit")
 import blog_pics  # noqa: E402
-check(blog_pics.visit_stats(f) == [("34/90", "minutes in port"), ("122", "accepted by the node"), ("8", "timeouts, counted as refusals")],
+check(blog_pics.visit_stats(f) == [("34/90", "minutes in port"), ("122", "accepted by the node"), ("8", "timeouts, counted as refusals"), ("117", "stops skipped")],
       "the numbers on the picture come from the facts")
 check(d["card"][0] == "The MS Dry Run left after 34 minutes" and d["card"][-1].startswith("Tau HUD blog"), "the card on the picture")
+
+# the Queen Mempool after the MS Dry Run: the article gets the ship before, what changed, and what the numbers mean
+Q = "2026-11-07-queen"
+qlog = [{"t": T0 + 3 * 86400, "visit": Q, "ship": "queen", "kind": "landed", "verdict": "calm", "plan": 581, "trial": ["bill"]}]
+for i in range(409):
+    qlog.append({"t": T0 + 3 * 86400 + 5 + i * 13, "visit": Q, "kind": "bill" if i % 100 == 99 else "pay", "ok": True, "verdict": "calm", "height": 1497 + i // 3, "ms": 6800})
+for i in range(10):
+    qlog.append({"t": T0 + 3 * 86400 + 600 + i * 400, "visit": Q, "kind": "pay", "ok": None, "note": "no answer in 20 s", "verdict": "calm", "ms": 20000})
+qsum = {"id": Q, "ship": "queen", "name": "Queen Mempool", "t0": T0 + 3 * 86400, "landed": True, "end": T0 + 3 * 86400 + 5400,
+        "sent": {"pay": 405, "bill": 4}, "refused": {}, "unanswered": 10, "skipped": 162, "passengers": 120,
+        "changed": [{"what": "its pace", "from": "12 a minute", "to": "11 a minute", "because": "10 sends got no answer in time"}]}
+qlog.append({"t": T0 + 3 * 86400 + 5400, "visit": Q, "kind": "visit over", "summary": qsum})
+qlog.append({"t": T0 + 3 * 86400 + 5500, "visit": Q, "kind": "bookings checked", "checked": 0, "not_released": []})
+qf = blog.facts_of(qlog[::-1], [])
+check(qf["minutes in port"] == 90 and "bookings checked after the visit" not in qf, "a ship that stayed: 90 minutes, and no line for bookings that were never made")
+blog.get = lambda path: ({"entries": log, "visits": [Q, V]} if f"visit={V}" in path else {"entries": qlog, "visits": [Q, V]}) if path.startswith("/cruise/log") else {}
+bf = blog.before_facts(Q, [Q, V], [], None)
+qf = blog.compare_with(qf, bf)
+qf["what the numbers mean"] = blog.meaning_of(qf)
+b = qf["the ship before"]
+check(b["ship"] == "MS Dry Run" and b["minutes in port"] == 34 and b["refused in all"] == 0 and b["sends our node did not answer in time"] == 8,
+      f"the ship before in the same numbers, its timeouts no longer refusals {b}")
+check(any("no longer counts as a refusal" in c for c in b["what we changed after that call"]), "what we changed after the Dry Run")
+check(qf["compared with the ship before"]["minutes in port"] == [34, 90], "side by side: 34 against 90 minutes")
+m = qf["what the numbers mean"]
+check(m["share of the planned stops that went through"] == "70%" and m["sends a minute the node's answer time allows, one at a time"] == 8.8
+      and m["share of the planned time in port"] == "100%", f"what the numbers mean {m}")
+check(blog.unknown_numbers("the slowest answer took 20.0 seconds, the median 6.8", qf) == [], "20.0 seconds is a known number")
+check(blog_pics.visit_stats(qf)[0] == ("90/90", "minutes in port (ship before: 34)"), f"the first tile reads against the ship before {blog_pics.visit_stats(qf)[0]}")
+qfigs = blog_pics.visit_charts(qf, os.path.join(TMP, "queen"))
+check(any(p.endswith("-before.png") for p, _ in qfigs) and all(os.path.exists(p) for p, _ in qfigs), f"a chart against the ship before {[p for p, _ in qfigs]}")
+check("Compared with the ship before" in blog.SYSTEM and "What it means for the testnet" in blog.SYSTEM, "the drafting rules ask for the comparison and the meaning")
+blog.get = lambda path: {"entries": log, "visits": [V]} if path.startswith("/cruise/log") else ({"incidents": inc} if "incidents" in path else {})
 share = open(os.path.join(TMP, "blog", "a", did + ".html")).read()
 check('og:image" content="https://node.tauhud.com/blog/img/' in share and "summary_large_image" in share, "publishing writes the link-preview page with the picture")
 check(blog.unpublish_cli(did) == 0 and blog.posts()["posts"] == [], "unpublish")
