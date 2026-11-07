@@ -2591,5 +2591,10 @@
     "tag": "HUD",
     "on": "2026-11-07",
     "html": "Tau HUD: the first screen now says what is true first: “Tau Testnet Alpha is live.” over a proof line from our own node (block, sealed how long ago, validators). While the page connects it says so; when our node cannot be reached from the visitor’s connection (a VPN, a blocker, a restart) it says that, with the last block this browser saw live, and the simulation stays a labelled fallback in the dashboard, never the first thing on the page. Every door says what you get and why it is Tau: rule changes the validators agreed to, a rule the chain enforces on every payment including your own key, an island election where every move is a real transaction and others play beside you, no sign-up. A tighter sentence, and the door grows with very wide screens."
+  },
+  {
+    "tag": "Agorzilla",
+    "on": "2026-11-07",
+    "html": "Agorzilla: from Monday evening's vote on, keeping is a choice. Box 1 keeps the look it has, a tie keeps it, and the evening post says “Sky stays Aurora” instead of a change that did not happen. The feeders also vote on how hard a change should be, two new questions join (its favourite move and the weather around it), and every look option is now plain to see."
   }
 ]
