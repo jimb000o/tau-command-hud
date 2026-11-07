@@ -68,5 +68,14 @@ check(h2.history()["totals"] == out["totals"] and h2.current_id == "b00000001", 
 check(deep_add({"a": [1, 2], "b": {"c": 1}, "s": "x"}, {"a": [1, 1, 1], "b": {"c": 2, "d": 3}, "s": "y"})
       == {"a": [2, 3, 1], "b": {"c": 3, "d": 3}, "s": "x"}, "deep_add")
 
+from chainhist import split_auto  # noqa: E402
+old = {"days": {"2026-11-04": {"rabbit": [10, 2, 1, 1, 100], "idni": [5, 1, 0, 1, 5]},
+                "2026-11-05": {"rabbit": [3, 1, 0, 1, 3], "cruise": [0, 0, 0, 0, 0], "bot": [0, 0, 0, 0, 0]}},
+       "rabbit": {"2026-11-04": {"cruise": 6, "cruise_agrs": 60, "paid": 1, "paid_agrs": 20}}}
+sa = split_auto(old)["days"]
+check(sa["2026-11-04"]["rabbit"] == [3, 2, 1, 1, 20] and sa["2026-11-04"]["cruise"] == [6, 0, 0, 0, 60] and sa["2026-11-04"]["bot"] == [1, 0, 0, 0, 20]
+      and sa["2026-11-05"] == old["days"]["2026-11-05"] and old["days"]["2026-11-04"]["rabbit"][0] == 10,
+      "an earlier chain's cruise passengers and wages move out of the players' count; newer days and the frozen copy stay")
+
 print("FAILED: %s" % FAILED if FAILED else "all passed")
 sys.exit(1 if FAILED else 0)

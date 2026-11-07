@@ -89,6 +89,28 @@ def deep_add(a, b):
     return a
 
 
+def split_auto(src: dict) -> dict:
+    """An earlier chain's frozen day counts, from before the relay kept the cruise ships and the island bot apart from
+    White Rabbit Key's players (txsources AUTO): their transactions move out of "rabbit" into "cruise" and "bot" where the
+    island's own counts know them (cruise, paid). The rivals' moves stay: a bot transaction can carry several, so the
+    number of its transactions is not known."""
+    days, isle = src.get("days"), src.get("rabbit") or {}
+    if not isinstance(days, dict):
+        return src
+    out = dict(src)
+    out["days"] = {}
+    for day, row in days.items():
+        if not isinstance(row, dict) or "cruise" in row or not isinstance(row.get("rabbit"), list):
+            out["days"][day] = row
+            continue
+        row, r, z = dict(row), list(row["rabbit"]) + [0] * (5 - len(row["rabbit"])), isle.get(day) or {}
+        c, ca, p, pa = (int(z.get(k) or 0) for k in ("cruise", "cruise_agrs", "paid", "paid_agrs"))
+        r[0], r[4] = max(0, r[0] - c - p), max(0, r[4] - ca - pa)
+        row["rabbit"], row["cruise"], row["bot"] = r, [c, 0, 0, 0, ca], [p, 0, 0, 0, pa]
+        out["days"][day] = row
+    return out
+
+
 class ChainHistory:
     def __init__(self, path: str | None = None):
         self.path = path if path is not None else os.environ.get("CHAINHIST_PATH", "/data/chainhist.json")
@@ -267,6 +289,7 @@ class ChainHistory:
             src = c.get("sources")
             if not src or c["id"] == cur:
                 continue
+            src = split_auto(src)
             n += 1
             for k in SOURCE_KEYS:
                 out[k] = deep_add(src.get(k) or {}, out.get(k) or {})
