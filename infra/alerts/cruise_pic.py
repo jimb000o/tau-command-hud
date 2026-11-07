@@ -6,7 +6,8 @@ ship of rabbit/art/ships, placed where the game anchors it:
 The ship sits at the layout's anchor exactly as rabbit/scene.js draws it at anchor (bow to the west, mirrored, the same
 waterline transform), the view is a close crop of the island around it, and a card with the json's "card" lines
 (title, line, line, accent line) sits in the upper left. "ship_scale" draws the ship that many times larger than the
-game does (3 = 200% larger), still at the anchor. "ship" in the json picks the painting (expedition or liner)."""
+game does (3 = 200% larger), still at the anchor. "ship" in the json picks the painting (expedition, liner or pirate;
+the pirate ship is MS Dry Run's painting darkened with a black flag until a pirate.webp of its own exists, as in the game)."""
 import json, math, os, sys
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
@@ -73,6 +74,29 @@ def place_ship(pic, ship, m, anchor, x0, y0, z, big=1.0):
     return Image.alpha_composite(pic, layer)
 
 
+def pirate_stand_in(m, ship):
+    """MS Dry Run's painting as the pirates' Black Sequence: darkened like tarred wood, a black flag with three white
+    chain links on a pole above the funnel (rabbit/scene.js standIn and blackFlag); the manifest moved with the canvas."""
+    from PIL import ImageEnhance
+    k = math.hypot(m["bow"][0] - m["stern"][0], m["bow"][1] - m["stern"][1]) / m["length"]   # sprite pixels per world unit
+    top = int(26 * k)
+    dark = ImageEnhance.Contrast(ImageEnhance.Color(ImageEnhance.Brightness(ship).enhance(0.42)).enhance(0.45)).enhance(1.15)
+    dark.putalpha(ship.getchannel("A"))
+    im = Image.new("RGBA", (ship.width, ship.height + top), (0, 0, 0, 0))
+    im.paste(dark, (0, top), dark)
+    x, y = m["funnel"][0], m["funnel"][1] + top
+    d = ImageDraw.Draw(im)
+    h, w, f = 15 * k, 13 * k, 8 * k
+    d.line([(x, y), (x, y - h - f)], fill=(34, 48, 58, 255), width=max(2, int(1.2 * k)))
+    d.polygon([(x, y - h - f), (x + w, y - h - f), (x + w, y - h), (x, y - h)], fill=(18, 20, 22, 255), outline=(34, 48, 58, 255))
+    for i in range(3):
+        cx, cy = x + w * (0.26 + i * 0.24), y - h - f / 2
+        d.ellipse([cx - 2.1 * k, cy - 1.3 * k, cx + 2.1 * k, cy + 1.3 * k], outline=(242, 239, 230, 255), width=max(1, int(0.9 * k)))
+    mm = {**m, "stern": [m["stern"][0], m["stern"][1] + top], "bow": [m["bow"][0], m["bow"][1] + top]}
+    mm.pop("funnel", None)
+    return mm, im
+
+
 def card(pic, lines):
     """Title, body lines, accent line last. A body line starting with "## " is a small heading (a gap above it),
     one starting with "- " a point under it."""
@@ -107,8 +131,11 @@ def main(art, ships, texts, out):
     t = json.load(open(texts))
     kind = t.get("ship", "expedition")
     man = json.load(open(os.path.join(ships, "ships.json")))
-    m = man[kind]
-    ship = Image.open(os.path.join(ships, m["src"])).convert("RGBA")
+    if kind == "pirate" and "pirate" not in man:
+        m, ship = pirate_stand_in(man["expedition"], Image.open(os.path.join(ships, man["expedition"]["src"])).convert("RGBA"))
+    else:
+        m = man[kind]
+        ship = Image.open(os.path.join(ships, m["src"])).convert("RGBA")
     im = Image.open(os.path.join(art, sc["island"])).convert("RGB")
     anchor = tuple((idx.get("layout") or {}).get("anchor") or ANCHOR)
     lo, hi = world_bounds(im)

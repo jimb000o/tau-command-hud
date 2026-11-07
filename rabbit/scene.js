@@ -826,19 +826,37 @@
   const SHIPS = {
     liner: { L: 186, hull: P.navy, band: P.cream, funnel: P.coral, decks: [0.8, 0.64, 0.44], tall: 9 },
     expedition: { L: 128, hull: "#2f5468", band: "#e9ecea", funnel: P.teal, decks: [0.58, 0.42], tall: 9, crane: true },
+    pirate: { L: 128, hull: "#1f2428", band: "#3a3f45", funnel: "#15181b", decks: [0.5, 0.36], tall: 8 },
   };
+  /* the pirates' Black Sequence: its own painting (pirate.webp) once there is one; until then MS Dry Run's, darkened
+     like tarred wood, with no smoke and a black flag of three white chain links on its mast */
+  const shipKind = v => v.style === "liner" ? "liner" : v.style === "pirate" ? (BOATS.pirate ? "pirate" : "pirateStandIn") : "expedition";
+  function standIn(m) {
+    const c = document.createElement("canvas"); c.width = m.im.naturalWidth; c.height = m.im.naturalHeight;
+    const x = c.getContext("2d"); x.filter = "brightness(0.42) saturate(0.45) contrast(1.15)"; x.drawImage(m.im, 0, 0);
+    const { funnel, ...rest } = m;
+    BOATS.pirateStandIn = { ...rest, im: c, flag: funnel };
+  }
+  function blackFlag(g, x, y, k, t) {   // pole up from (x, y), in the sprite's own pixels (k: pixels per world unit)
+    const h = 15 * k, w = 13 * k, f = 8 * k, wave = Math.sin(t * 0.006) * k;
+    g.strokeStyle = INK; g.lineWidth = 1.2 * k; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - h - f); g.stroke();
+    g.fillStyle = "#121416"; g.beginPath(); g.moveTo(x, y - h - f); g.quadraticCurveTo(x + w / 2, y - h - f - wave, x + w, y - h - f + wave);
+    g.lineTo(x + w, y - h + wave); g.quadraticCurveTo(x + w / 2, y - h - wave, x, y - h); g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = "#f2efe6"; g.lineWidth = 0.9 * k;
+    for (let i = 0; i < 3; i++) { g.beginPath(); g.ellipse(x + w * (0.26 + i * 0.24), y - h - f / 2 + wave * 0.3, 2.1 * k, 1.3 * k, 0, 0, Math.PI * 2); g.stroke(); }
+  }
   /* Painted boats share a single waterline transform, including the dusk pass. A missing
      asset leaves the original drawing below in charge until that particular image loads. */
   const BOATS = {};
   fetch("/rabbit/art/ships/ships.json").then(r => r.ok ? r.json() : {}).then(manifest => {
-    for (const kind of ["liner", "expedition", "tender", "wake"]) {
+    for (const kind of ["liner", "expedition", "pirate", "tender", "wake"]) {
       const m = manifest[kind];
       if (!m || typeof m.src !== "string" || !/^[a-z]+\.webp$/.test(m.src)) continue;
       const point = p => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite);
       if (kind === "wake" ? !point(m.tip) : !point(m.stern) || !point(m.bow) || !(m.length > 0)) continue;
       if (kind !== "wake" && Math.hypot(m.bow[0] - m.stern[0], m.bow[1] - m.stern[1]) < 1) continue;
       const im = new Image(); im.decoding = "async";
-      im.onload = () => { BOATS[kind] = { ...m, im }; };
+      im.onload = () => { BOATS[kind] = { ...m, im }; if (kind === "expedition") standIn(BOATS[kind]); };
       im.src = "/rabbit/art/ships/" + m.src;
     }
   }).catch(() => {});
@@ -888,6 +906,7 @@
         g.beginPath(); g.ellipse(0, 1, m.length * 0.48, 2, 0, 0, Math.PI * 2); g.stroke();
       }
       pixels(); g.drawImage(m.im, 0, 0);
+      if (m.flag) blackFlag(g, m.flag[0], m.flag[1], 1 / scale, t);
       if (m.funnel) {
         const [fx, fy] = m.funnel;
         for (let k = 0; k < 4; k++) {
@@ -907,7 +926,7 @@
   }
   function shipWindows(g, t, light) {
     const pos = shipPos(Date.now() / 1000); if (!pos) return;
-    const m = boatArt(SHIP.s.style === "expedition" ? "expedition" : "liner");
+    const m = boatArt(shipKind(SHIP.s));
     if (!m || !m.windows) return;
     boatTransform(g, m, boatPose(pos[0], pos[1], t, pos[2]), (scale, pixels) => {
       pixels();
@@ -930,7 +949,7 @@
   }
   function cruiseShip(g, x, y, t, kind, light, a) {
     if (paintedBoat(g, x, y, t, kind, a)) return;
-    const D = SHIPS[kind] || SHIPS.liner, L = D.L, bob = Math.sin(t * 0.0012) * 1.2, hh = 15;
+    const D = SHIPS[kind] || SHIPS[/^pirate/.test(kind) ? "pirate" : "liner"], L = D.L, bob = Math.sin(t * 0.0012) * 1.2, hh = 15;
     g.save(); g.globalAlpha = a; g.translate(x, y + bob); g.lineJoin = "round"; g.strokeStyle = INK; g.lineWidth = 1.5;
     g.fillStyle = "rgba(10,30,45,.28)"; g.beginPath(); g.ellipse(4, 4, L * 0.56, 7, 0, 0, Math.PI * 2); g.fill();   // its shadow on the water
     /* the hull: a long low body, the bow raised to the right */
@@ -1090,8 +1109,8 @@
   function shipItems(items, g, t, sky) {
     const now = Date.now() / 1000, pos = shipPos(now), v = SHIP.s;
     if (!pos) return;
-    const [x, y, a] = pos, kind = v.style === "expedition" ? "expedition" : "liner";
-    items.push([y, () => cruiseShip(g, x, y, t, kind, sky.light, a)]);
+    const [x, y, a] = pos, art = shipKind(v), kind = art === "liner" || art === "expedition" ? art : "pirate";
+    items.push([y, () => cruiseShip(g, x, y, t, art, sky.light, a)]);
     tenders(now, x, y).forEach(([tx, ty, d]) => items.push([ty, () => tender(g, tx, ty, t, d)]));
     if (crowdArt()) return crowdItems(items, g, t, v, kind);
     if (["landing", "ashore"].includes(v.phase)) for (const id in v.at || {}) {

@@ -130,5 +130,59 @@ cc.tell_draft("2026-11-04-dryrun-learnings", "https://tauhud.com/blog/?draft=x")
 check(len(told) == 2 and 'up.sh blog publish 2026-11-04-dryrun-learnings"' in told[1], "draft told once with the publish line")
 check(any("announced by itself" in s for s in cc.status_lines(QUEEN - 5 * 3600)), "up block names the next announcement")
 
+# ---------- the pirates (Black Sequence, Tuesday 18:00): Telegram only, the chain's refusals, findings never posted ----------
+TUE = 1794330000   # Tuesday 10 November 2026, 18:00 German time
+check(blog.local(TUE).weekday() == 1 and blog.clock(TUE) == "18:00", "Tuesday 10 November 18:00 German time")
+PV = "2026-11-10-pirates"
+plog = [{"t": TUE, "visit": PV, "ship": "pirates", "kind": "landed", "verdict": "calm", "plan": 80, "trial": []}]
+for i in range(40):
+    plog.append({"t": TUE + 30 + i * 60, "visit": PV, "kind": "pay", "ok": True, "verdict": "calm", "height": 900 + i, "ms": 700})
+codes = {"overspend": "INSUFFICIENT_FUNDS", "replay": "INVALID_SEQUENCE", "expired": "TX_EXPIRED", "forged": "INVALID_SIGNATURE"}
+for i, (k, c) in enumerate(list(codes.items()) * 5):
+    plog.append({"t": TUE + 900 + i * 150, "visit": PV, "kind": "trick", "trick": k, "what": k, "ok": False, "right": True, "code": c})
+ps = {"id": PV, "ship": "pirates", "name": "Black Sequence", "t0": TUE, "landed": True, "end": TUE + 5400, "sent": {"pay": 40}, "refused": {},
+      "skipped": 0, "half": 0, "passengers": 20, "per_min": 12,
+      "changed": [{"what": "overspend tries a visit", "from": 6, "to": 4, "because": "the chain refused it with the right answer on 3 visits in a row"}]}
+plog.append({"t": TUE + 5400, "visit": PV, "kind": "visit over", "summary": ps})
+pf = blog.facts_of(plog, [])
+check(pf["pirate tricks"]["tried"] == 20 and pf["pirate tricks"]["refused with the expected answer"] == 20 and pf["refused in all"] == 0,
+      "facts: 20 tricks, all refused with the expected answer, and they are no refusals of the ship's payments")
+check(pf["the ship changed for its next call"][0]["to"] == 4, "facts: what the ship changed for its next call, and why")
+tg, card, _ = cc.last_lines(pf)
+check("refused 20 of her pirates' 20 tricks" in tg and "Since then she changed overspend tries a visit from 6 to 4, because" in tg,
+      "the next announcement: the tricks refused, and the learning line")
+pt = cc.texts("pirates", TUE + 7 * 86400, pf)
+check(pt["x"] == "" and pt["on_x"] is False and "🏴" in pt["telegram"] and "made up" in pt["telegram"], "the pirates are announced on Telegram only, honestly")
+check(not blog.HYPE.search(pt["telegram"] + " ".join(pt["card"])) and not blog.BLAME.search(pt["telegram"]), "pirates: no hype or blame words")
+check(Image.open(cc.picture(pt, os.path.join(TMP, "pp.jpg"))).size == (1600, 900), "the pirate picture is made (MS Dry Run's painting darkened, a black flag)")
+check(any("20 pirate tricks, 20 refused" in n for n in blog.numbers_of(pf)) and any("changed overspend" in n for n in blog.numbers_of(pf)),
+      "the blog's post lists the tricks and the change")
+# a finding: told privately once, with a ready issue for IDNI and the release line; no draft while it is held
+thr = {"t": TUE + 2000, "visit": PV, "i": 33, "kind": "trick", "trick": "overspend", "what": "pays more than the wallet holds", "ok": True,
+       "through": True, "hash": "ab" * 32, "expect": ["INSUFFICIENT_FUNDS"], "height": 950, "tx": {"sender_pubkey": "cd" * 48}}
+HELD = {"entries": [thr], "released": []}
+blog.get = lambda path: HELD if path == "/cruise/held" else cruise
+n_told = len(told)
+check(cc.held(TUE + 2100, cc.state()) == 1 and len(told) == n_told + 1, "a trick that got through: one private message to the owner")
+msg = told[-1]
+check("github.com/IDNI/tau-testnet/issues/new?" in msg and "cruise release 2026-11-10-pirates" in msg and "security/advisories/new" in msg
+      and "Nothing about it is public" in msg, "with a ready IDNI issue, the private advisory link and the release command")
+check(cc.held(TUE + 2200, cc.state()) == 0 and len(told) == n_told + 1, "told once")
+HELD["released"] = [PV]
+st = cc.state(); st["held_told"] = {}; cc.save(st)
+check(cc.held(TUE + 2300, cc.state()) == 0, "released: not told again")
+bst = blog.state(); bst["failed_at"] = 0; blog.write_json(blog.STATE, bst)
+heldlog = plog + [{"t": TUE + 2000, "visit": PV, "kind": "trick", "held": True, "ok": None}]
+calls = []
+blog.AI_KEY = "x"
+blog.write_draft = lambda vid, now=None: calls.append(vid) or "d"
+blog.get = lambda path: {"visits": [PV]} if path == "/cruise/log?n=1" else {"entries": heldlog} if "visit=" in path else {"posts": []}
+blog.site_ids = lambda: set()
+blog.tick(TUE + 5400 + 4 * 3600)
+check(calls == [], "no blog draft while a finding is held back")
+heldlog = plog
+blog.tick(TUE + 5400 + 4 * 3600)
+check(calls == [PV], "once released, the blog writes the visit")
+
 print("all ok" if not failed else f"{failed} FAILED")
 sys.exit(1 if failed else 0)

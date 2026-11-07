@@ -2048,4 +2048,8 @@ TauI18n.add({ strings: {
   "(sent from tauhud.com)": "（从 tauhud.com 发出）",
   "(sent from the Tau HUD wallet)": "（从 Tau HUD 钱包发出）",
   "(sent from tauhud.com/{x}/)": "（从 tauhud.com/{x}/ 发出）",
+  "🏴 {x} in port: {n} tricks tried, {m} refused by the chain": "🏴 {x} 在港：试了 {n} 个花招，{m} 个被链拒绝",
+  "{n} pirates aboard, in port until {t}: {a} tricks tried so far, {b} refused by the chain.": "{n} 名海盗留在船上，停靠到 {t}：到目前为止试了 {a} 个花招，{b} 个被链拒绝。",
+  "A pirate ship. Its crew stays aboard and trades from the boat: rum at Bar La Ola, supplies at the market. Now and then a pirate tries a trick the chain must refuse.": "一艘海盗船。船员留在船上，从小船上做买卖：在 Bar La Ola 买朗姆酒，在市场买补给。海盗时不时会耍一个链必须拒绝的花招。",
+  "The tricks: paying more than the wallet holds, sending a payment the chain already took a second time, a payment whose time ran out, a payment signed with another pirate’s key. Each one the chain refuses is the chain doing its job; the logbook shows its answer.": "这些花招：支付超过钱包余额的金额、把链已经收下的付款再发一次、发送已过期的付款、用另一个海盗的密钥签名付款。链拒绝的每一个，都说明链在尽职；航海日志会显示它的回答。",
 } });

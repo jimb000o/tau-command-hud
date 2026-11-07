@@ -31,8 +31,9 @@ WED = cruise.berlin_t(dt.date(2026, 11, 4), 16)
 check(WED == 1793804400, "MS Dry Run: Wednesday 4 November 2026, 16:00 in Germany = 15:00 UTC")
 check(cruise.berlin_t(dt.date(2026, 7, 1), 16) == 1782914400, "in summer 16:00 in Germany is 14:00 UTC")
 calls = cruise.calls_near(WED - 86400)
-check([k for t, k in calls][:3] == ["dryrun", "queen", "dryrun"] and calls[1][0] - WED == 3 * 86400 - 7200,
-      "the next calls: Wednesday, then Saturday 14:00, then Wednesday again")
+check([k for t, k in calls][:4] == ["pirates", "dryrun", "queen", "pirates"] and calls[0][0] - WED == -86400 + 7200
+      and calls[2][0] - WED == 3 * 86400 - 7200, "the next calls: Tuesday 18:00 the pirates, Wednesday, then Saturday 14:00, then Tuesday again")
+check(sorted({cruise.berlin_day(t).weekday() for t, k in calls}) == [1, 2, 5], "Monday, Thursday, Friday and Sunday stay quiet: no ship, the baseline")
 check(cruise.visit_id(WED, "dryrun") == "2026-11-04-dryrun", "a visit is named by its day and ship")
 
 # ---------- a passenger's day ----------
@@ -58,7 +59,7 @@ check(all(b["rel"] <= end - 5 * 60 and b["rel"] - b["t"] >= 25 * 60 for b in boo
 check(not any(a["kind"] == "bill" for a in P1), "MS Dry Run sends no group bills")
 full = cruise.plan("dryrun", WED, set(), {"book"})
 check(len([a for a in full if a["kind"] == "book"]) > cruise.TRIAL_MAX, "once bookings are tried, more passengers book")
-SAT = calls[1][0]
+SAT = next(t for t, k in calls if k == "queen")
 Q = cruise.plan("queen", SAT, {"bill"}, {"bill", "book"})
 bills = [a for a in Q if a["kind"] == "bill"]
 check(0 < len(bills) <= cruise.TRIAL_MAX and all(len(b["to"]) == 3 and b["amount"] == sum(x for _, x in b["to"]) for b in bills),
@@ -98,7 +99,7 @@ STATE = ["calm"]
 spent = []
 C = cruise.Cruise(**paths, clock=clock, enabled=True, verdict=lambda: STATE[0], chain=lambda: {"height": 4242, "waiting": 3},
                   spend=lambda: spent.append(1), background=False)
-check(C.ready and len(C.pk) == 160 and len(set(C.pk.values())) == 160, "160 passenger wallets are made on first start")
+check(C.ready and len(C.pk) == 180 and len(set(C.pk.values())) == 180, "180 passenger wallets are made on first start (20 of them pirates)")
 check(stat.S_IMODE(os.stat(paths["keys_path"]).st_mode) == 0o600, "their keys are readable by the relay only")
 check(not set(C.pk.values()) & set(island.PLACES.values()), "no passenger wallet is a place's till")
 again = cruise.Cruise(**{**paths, "log_path": os.path.join(d, "l2"), "state_path": os.path.join(d, "s2")}, clock=clock, enabled=True, background=False)
@@ -321,6 +322,121 @@ check(all(isinstance(e.get("ms"), int) for e in sends5 if e.get("ok") is not Non
       "every sendtx in the logbook says how long the node took to answer (ms)")
 check(C5.brief(T[0])["now"]["brake"] in ("slow", "none") and (T[0] >= C5.slow_until or C5.brief(T[0])["now"]["brake"] == "slow"),
       "the pages see the node-slow brake as 'slow', never as the strained 'half'")
+
+# ---------- Black Sequence, Tuesday 18:00: pirates whose tricks the chain must refuse ----------
+TUE = next(t for t, k in cruise.calls_near(WED + 7 * 86400) if k == "pirates")
+check(cruise.berlin_day(TUE).weekday() == 1 and (TUE - cruise.berlin_t(cruise.berlin_day(TUE), 0)) == 18 * 3600, "the pirates call on Tuesday at 18:00")
+PP = cruise.plan("pirates", TUE, set(), {"trick"})
+tr = [a for a in PP if a["kind"] == "trick"]
+check(len(tr) == 4 * cruise.TRICK_START and {a["trick"] for a in tr} == set(cruise.TRICKS), f"each of the four tricks {cruise.TRICK_START} times a visit at first")
+check(all(b["t"] - a["t"] >= cruise.TRICK_GAP for a, b in zip(tr, tr[1:])), f"at most one trick every {cruise.TRICK_GAP} s")
+check(min(a["t"] for a in tr) >= TUE + (cruise.landing("pirates") + 10) * 60, "the first trick only after every pirate has paid ashore")
+check(cruise.where(PP, TUE + 40 * 60, TUE + 80 * 60, "pirates") == {}, "the pirates stay aboard: no group stands on the island")
+check(len(cruise.plan("pirates", TUE, set(), {"trick"}, {"overspend": 1, "replay": 2, "expired": 2, "forged": 2})) < len(PP), "fewer tricks when it learned so")
+
+CH = {"seq": {}, "hole": False, "sent": []}
+
+
+async def chain(cmd: str):
+    """A fake node that checks what the real one checks for these tricks (tau-testnet commands/sendtx.py)."""
+    name, _, rest = cmd.partition(" ")
+    if name == "getsequence":
+        return {"status": "ok", "data": {"sequence_number": CH["seq"].get(rest, 0), "tip_height": 900}}
+    if name == "getbalance":
+        return {"status": "ok", "data": {"balance": 100000}}
+    if name != "sendtx":
+        return {"status": "ok", "data": {"retractables": []}}
+    tx = json.loads(rest)
+    pk = tx["sender_pubkey"]
+    err = lambda c: {"status": "error", "error": {"code": c, "message": c.lower()}}  # noqa: E731
+    if tx["expiration_time"] < T[0]:
+        return err("TX_EXPIRED")
+    if tx["sequence_number"] != CH["seq"].get(pk, 0):
+        return err("INVALID_SEQUENCE")
+    if not G2Basic.Verify(bytes.fromhex(pk), hashlib.sha256(cruise.signing_bytes(tx)).digest(), bytes.fromhex(tx["signature"])):
+        return err("INVALID_SIGNATURE")
+    amount = sum(int(x[2]) for x in tx.get("operations", {}).get("1", [])) if tx["tx_type"] == "user_tx" else int(tx.get("amount") or 0)
+    if amount > 100000 and not CH["hole"]:
+        return err("INSUFFICIENT_FUNDS")
+    CH["seq"][pk] = CH["seq"].get(pk, 0) + 1
+    CH["sent"].append(tx)
+    return {"status": "ok", "data": {"ok": True, "tx_hash": hashlib.sha256(rest.encode()).hexdigest()}}
+
+
+pd = tempfile.mkdtemp()
+pp = dict(keys_path=paths["keys_path"], log_path=os.path.join(pd, "log"), state_path=os.path.join(pd, "st.json"), incidents_path=os.path.join(pd, "inc"))
+LOADS = []
+P = cruise.Cruise(**pp, clock=clock, enabled=True, verdict=lambda: "calm", background=False)
+P.on_tx = LOADS.append
+T[0] = TUE - 60
+for _ in range(91 * 60 // 2 + 120):
+    asyncio.run(P.step(chain, gov))
+    T[0] += 2
+s1 = P.visits[-1]
+tricks = [e for e in P.logbook if e.get("kind") == "trick" and e.get("ok") is not None]
+check(s1["ship"] == "pirates" and not P.visits[-1]["note"], "the pirate ship stays the whole visit: refused tricks never send it away")
+check(len(tricks) >= 18 and all(e["ok"] is False and e["right"] for e in tricks),
+      f"every trick is refused by the chain, each with the answer it should get ({len(tricks)} tricks)")
+check({e["code"] for e in tricks} == {"INSUFFICIENT_FUNDS", "INVALID_SEQUENCE", "TX_EXPIRED", "INVALID_SIGNATURE"}, "four tricks, four different answers")
+check(all(x is True for x in LOADS) and sum(s1["refused"].values()) == 0, "tricks are no refusals: not for the brakes, not on the load page")
+check(all(c["right"] == c["tried"] > 0 for c in s1["tricks"].values()), "the summary counts each trick: tried, stopped, stopped for the right reason")
+check(s1["per_min"] == cruise.RATE and s1["changed"] == [], "a clean first visit at full pace changes nothing")
+rp = [e for e in tricks if e["trick"] == "replay"]
+check(rp and all(e["tx"] in CH["sent"] for e in rp), "the replay sends a payment the chain already took, byte for byte")
+
+# three visits stopped rightly: a trick comes less often; at most one change a visit, written down
+for k in cruise.TRICKS:
+    P.tune["pirates"]["calm"][k] = cruise.TRICK_CALM - 1
+TUE2 = TUE + 7 * 86400
+T[0] = TUE2 - 60
+for _ in range(91 * 60 // 2 + 120):
+    asyncio.run(P.step(chain, gov))
+    T[0] += 2
+ch = P.visits[-1]["changed"]
+check(len(ch) == 1 and "tries a visit" in ch[0]["what"] and ch[0]["to"] == cruise.TRICK_START - 2 and "3 visits in a row" in ch[0]["because"],
+      "stopped rightly on three visits in a row: that trick comes less often, one change a visit, with its reason")
+check(any(e.get("kind") == "tuned" and e["changes"] == ch for e in P.logbook), "the change is written into the logbook")
+
+# a hole: the chain takes an overspend. Held back from the public, the owner is told privately, tried once a visit from then on
+CH["hole"] = True
+TUE3 = TUE2 + 7 * 86400
+T[0] = TUE3 - 60
+for _ in range(91 * 60 // 2 + 120):
+    asyncio.run(P.step(chain, gov))
+    T[0] += 2
+s3 = P.visits[-1]
+thr = [e for e in P.logbook if e.get("through")]
+check(len(thr) == 1 and thr[0]["trick"] == "overspend", "an overspend the chain takes is a finding, and that trick stops for this visit")
+pub = P.route("/cruise/log", "n=2000")["entries"]
+check(not any(e.get("through") or e.get("trick") == "overspend" and e.get("ok") for e in pub) and any(e.get("held") for e in pub),
+      "the public logbook shows only that a finding is held back, not what it was")
+check(all(not i.get("tx") for i in P.route("/cruise/incidents")["incidents"] if i.get("visit") == s3["id"]), "nor do the public incident reports")
+over = next(e for e in pub if e.get("kind") == "visit over" and e["visit"] == s3["id"])
+check(over["summary"]["tricks"]["overspend"] == {"held": True} and all(c.get("held") or "overspend" not in json.dumps(c) for c in over["summary"]["changed"]),
+      "and the summary hides its count")
+check(P.route("/cruise/held").get("error") and P.route("/cruise/held", "", True)["entries"][0]["tx"]["sender_pubkey"],
+      "/cruise/held answers only inside the server, with the signed transaction")
+check(P.tune["pirates"]["tricks"]["overspend"] == 1, "a trick that got through is tried once a visit from now on")
+with open(P.released_path, "w") as f:
+    json.dump([s3["id"]], f)
+check(any(e.get("through") for e in P.route("/cruise/log", "n=2000")["entries"]), "up cruise release <visit>: then the logbook shows it in full")
+
+# our node slow: the next visit goes one a minute slower, a clean one after it one faster again
+P.tune["pirates"]["rate"] = cruise.RATE
+s_ = {"unanswered": cruise.TUNE_UNANSWERED, "half": 4}
+c_ = P.tune_after({"ship": "pirates", "landed": True, "left": None, "refused": {}, "trial": []}, s_)
+check(c_ and c_[0]["to"] == cruise.RATE - 1 and P.rate_of("pirates") == cruise.RATE - 1 and "no answer" in c_[0]["because"], "unanswered sends: one a minute slower next time")
+c_ = P.tune_after({"ship": "pirates", "landed": True, "left": None, "refused": {}, "trial": []}, {"unanswered": 0, "half": 0})
+check(c_ and c_[0]["to"] == cruise.RATE and P.rate_of("pirates") == cruise.RATE, "a clean visit: back up, never above the limit")
+P.tune["pirates"]["rate"] = 1
+check(P.rate_of("pirates") == cruise.RATE_MIN, f"never below {cruise.RATE_MIN} a minute, whatever the state says")
+P.tune["pirates"]["rate"] = 99
+check(P.rate_of("pirates") == cruise.RATE, f"never above {cruise.RATE} a minute, whatever the state says")
+P.tried["bill"] = "2026-11-07-queen"
+c_ = P.tune_after({"ship": "queen", "landed": True, "left": None, "refused": {"bill": 3}, "trial": []}, {"unanswered": 0})
+check(c_ and P.tried["bill"] is None and "small trial" in c_[0]["to"], "a tried kind the node refuses later goes back to a small trial")
+P2 = cruise.Cruise(**pp, clock=clock, enabled=True, verdict=lambda: "calm", background=False)
+check(P2.tune == P.tune or P2.tune["pirates"]["tricks"] == P.tune["pirates"]["tricks"], "what the ship learned survives a restart")
 
 # ---------- the testnet load page counts the passengers apart ----------
 L = Load(path=os.path.join(d, "load.json"), clock=lambda: 1_793_804_400.0)

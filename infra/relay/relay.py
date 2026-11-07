@@ -2052,7 +2052,7 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "no-store")])
             return Response(code.value, code.phrase, headers, json.dumps(sim[1], separators=(",", ":")).encode())
-        isl = self.island.route(path) if path == "/island" else self.cruise.route(path, query) if path.startswith("/cruise") else self.isle.route(path)
+        isl = self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.isle.route(path)
         if isl is not None:
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, json.dumps(isl, separators=(",", ":")).encode())

@@ -50,6 +50,19 @@ FOOT = "White Rabbit Key · community project, not affiliated with IDNI"
 
 # what each ship is, as the timetable has it (relay/cruise.py SHIPS); the words of the posts of 4 and 7 November 2026
 SHIPS = {
+    "pirates": {
+        "name": "Black Sequence", "file": "cruise-pirates", "art": "pirate", "hour": 18, "passengers": 20, "emoji": "🏴",
+        "on_x": False,   # a new ship is announced on Telegram only; on X it gets its one post when the blog tells the visit
+        "head": "Pirates off White Rabbit Key: Black Sequence drops anchor today at {hh}:00",
+        "story": ("From {hz}:30 German time her dark sails are on the horizon, at {hh}:00 she anchors off the island. "
+                  "Her 20 pirates stay aboard and trade from their boat: rum at Bar La Ola, supplies at the market. And "
+                  "now and then one of them tries a trick: paying more than the wallet holds, sending a payment the chain "
+                  "already took a second time, a payment whose time ran out, a payment signed with another pirate's key. "
+                  "Tau Testnet Alpha is meant to refuse every one, and the logbook shows what it answered."),
+        "x": "",
+        "why": ["- Tests what the chain must refuse: overspends, replays, expired and forged payments",
+                "- Gentle on the testnet: at most 12 a minute, slower when the node is slow"],
+    },
     "dryrun": {
         "name": "MS Dry Run", "file": "cruise-dry-run", "art": "expedition", "hour": 16, "passengers": 40, "emoji": "🚢",
         "head": "Ship ahoy: MS Dry Run drops anchor at White Rabbit Key today at {hh}:00",
@@ -117,6 +130,12 @@ def last_lines(f: dict | None) -> tuple[str, str, str]:
         why = str(f.get("why not landed") or "").removeprefix("no landing: ")
         return (f"On her last call, {date}, she did not land" + (f": {why}." if why else "."),
                 "- Last call: no landing, she waits for a calm testnet", "")
+    tricks = f.get("pirate tricks") or {}
+    if tricks.get("tried"):   # the pirates: what the chain refused, never what got through (that waits for the owner)
+        tg = (f"On her last call, {date}, the chain refused {tricks.get('refused with the expected answer', 0)} of her pirates' "
+              f"{tricks['tried']} tricks with the answer it should give.")
+        card = f"- Last call: {tricks.get('refused with the expected answer', 0)} of {tricks['tried']} tricks refused"
+        return tg + changed_line(f), card, ""
     old = f.get("refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)") or 0
     una = (f.get("sends our node did not answer in time (not refusals)") or 0) + old
     acc, ref = f.get("accepted in all") or 0, (f.get("refused in all") or 0) - old
@@ -134,7 +153,15 @@ def last_lines(f: dict | None) -> tuple[str, str, str]:
         tg += " She stayed the full 90 minutes."
     card = f"- Last call: {acc} accepted" + (f", {ref} refused" if ref > 0 else ", none refused")
     x = f"Last call: {acc} real transactions accepted."
-    return tg, card, x
+    return tg + changed_line(f), card, x
+
+
+def changed_line(f: dict) -> str:
+    """What the ship changed after its last call, by its own rules, and why ("" when nothing)."""
+    ch = [c for c in (f.get("the ship changed for its next call") or []) if not c.get("held")]
+    if not ch:
+        return ""
+    return " Since then she changed " + "; ".join(f"{c['what']} from {c['from']} to {c['to']}, because {c['because']}" for c in ch) + "."
 
 
 def texts(ship: str, t0: float, last: dict | None) -> dict:
@@ -155,10 +182,11 @@ def texts(ship: str, t0: float, last: dict | None) -> dict:
     ])
     # the honest note stays, the last call goes first when the post is too long
     x = alerts.x_post([s["x"].format(**fill), "The passengers are made up. Their transactions are real, on Tau Testnet Alpha.", x_last],
-                      foot="", keep=2)
+                      foot="", keep=2) if s.get("on_x", True) else ""
     card = [f"{s['name']} · today {fill['hh']}:00 German time", f"{s['passengers']} made-up passengers, real transactions on Tau Testnet Alpha",
             "## Why it matters", *s["why"], card_last, FOOT]
-    return {"ship": s["art"], "ship_scale": 3, "card": card, "telegram": tg, "x": x, "date": blog.local(t0).date().isoformat(), "written": "auto"}
+    return {"ship": s["art"], "ship_scale": 3, "card": card, "telegram": tg, "x": x, "date": blog.local(t0).date().isoformat(), "written": "auto",
+            "on_x": s.get("on_x", True)}
 
 
 def hand_written(ship: str, t0: float) -> dict | None:
@@ -170,8 +198,8 @@ def hand_written(ship: str, t0: float) -> dict | None:
             t = json.load(r)
     except Exception:  # noqa: BLE001 - Pages unreachable: the written texts go out
         return None
-    if isinstance(t, dict) and t.get("date") == blog.local(t0).date().isoformat() and t.get("telegram") and t.get("x"):
-        return {**t, "written": "by hand"}
+    if isinstance(t, dict) and t.get("date") == blog.local(t0).date().isoformat() and t.get("telegram") and (t.get("x") or not SHIPS[ship].get("on_x", True)):
+        return {**t, "written": "by hand", "on_x": SHIPS[ship].get("on_x", True)}
     return None
 
 
@@ -205,7 +233,9 @@ def post(t: dict, pic: str) -> list[str]:
             said.append(f"telegram: {e}")
     else:
         said.append("telegram: not set up")
-    if alerts.X().enabled():
+    if t.get("on_x") is False or not t.get("x"):
+        said.append("x: not for this ship (its one X post is the blog's)")
+    elif alerts.X().enabled():
         try:
             said.append("x: " + post_image.x_photo(pic, t["x"]))
         except Exception as e:  # noqa: BLE001
@@ -263,6 +293,13 @@ def report_text(f: dict) -> str:
         lines.append("• testnet load at the sends: " + ", ".join(f"{k} {v}" for k, v in f["testnet load at each send"].items()))
     for k, v in (f.get("refusal answers") or {}).items():
         lines.append(f"• refused {v}x: {k}")
+    tr = f.get("pirate tricks") or {}
+    if tr.get("tried"):
+        lines.append(f"• pirate tricks: {tr['tried']} tried, {tr.get('refused with the expected answer', 0)} refused with the expected answer"
+                     + (f", {tr['refused with another answer']} with another answer" if tr.get("refused with another answer") else "")
+                     + (f", {tr['held back']} HELD BACK (see the separate message)" if tr.get("held back") else ""))
+    for c in f.get("the ship changed for its next call") or []:
+        lines.append("• learned: " + ("a pirate trick, held back" if c.get("held") else f"{c['what']} {c['from']} → {c['to']} ({c['because']})"))
     lines += [f"Logbook: {LOGBOOK}?visit={f.get('visit')}",
               "The blog draft follows within 3 hours, I tell you here.",
               "All numbers: " + UP.format(f"cruise {f.get('visit')}")]
@@ -296,6 +333,49 @@ def report(now: float, st: dict) -> str | None:
         return vid
     save(st)
     return None
+
+
+# ---------- a finding held back: only to the owner, never posted ----------
+IDNI_REPO = "IDNI/tau-testnet"
+
+
+def held_text(e: dict, inc: dict | None) -> str:
+    """The private message about a pirate trick the chain took, with a ready issue for IDNI."""
+    import urllib.parse
+    what = e.get("what") or e.get("trick")
+    tx = json.dumps(e.get("tx") or {}, indent=1)[:2500]
+    title = f"Testnet accepted a transaction it should refuse: a payment that {what}"
+    body = "\n".join([
+        "While testing Tau Testnet Alpha with simulated wallets (a community dashboard, not affiliated with IDNI), our node accepted a",
+        f"transaction it should have refused: the sender {what}. We expected one of: {', '.join(e.get('expect') or [])}.",
+        "", f"- when: {blog.day(e['t'])} {blog.clock(e['t'])} German time, chain height about {e.get('height', '?')}",
+        f"- tx hash: {e.get('hash') or '?'}", "", "Signed transaction as sent:", "```json", tx, "```",
+        "", "We have not published this. Happy to help reproduce it."])
+    url = f"https://github.com/{IDNI_REPO}/issues/new?" + urllib.parse.urlencode({"title": title, "body": body})
+    return "\n".join([
+        f"⚠ A pirate trick got through on {e.get('visit')}: the pirate {what}, and the chain took it (tx {str(e.get('hash') or '?')[:16]}…).",
+        "Nothing about it is public: the logbook shows only 'held back', no post goes out, the blog waits.",
+        "Tell IDNI first. Their issues are public; a private note in the Tau Telegram may be the better first step.",
+        f"Ready issue (public once you submit it):\n{url}",
+        f"Private advisory instead: https://github.com/{IDNI_REPO}/security/advisories/new",
+        "When it may be public, show it in the logbook and let the blog write the visit:",
+        UP.format(f"cruise release {e.get('visit')}")])
+
+
+def held(now: float, st: dict) -> int:
+    """Each finding once to the owner's chat (read from inside the server: /cruise/held answers nobody outside)."""
+    h = blog.get("/cruise/held")
+    told = st.setdefault("held_told", {})
+    n = 0
+    for e in h.get("entries") or []:
+        key = f"{e.get('visit')}#{e.get('i')}"
+        if key in told or e.get("visit") in (h.get("released") or []):
+            continue
+        ok, err = tell(held_text(e, None))
+        told[key] = {"at": round(now), "told": "sent" if ok else f"not sent ({err})"}
+        save(st)
+        n += 1
+    return n
 
 
 def tell_draft(did: str, url: str) -> None:
@@ -332,6 +412,10 @@ def step(now: float | None = None) -> None:
         report(now, st)
     except Exception as e:  # noqa: BLE001
         log.warning("report: %s", e)
+    try:
+        held(now, st)
+    except Exception as e:  # noqa: BLE001
+        log.warning("held findings: %s", e)
 
 
 def status_lines(now: float | None = None) -> list[str]:
