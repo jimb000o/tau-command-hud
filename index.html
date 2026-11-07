@@ -277,6 +277,9 @@ body.calm .simbar, body.calm .thesis, body.calm main.grid, body.calm .community,
 .door-proof { margin: 0; max-width: 64ch; font: 500 clamp(14px, 1.2vw, 20px)/1.45 var(--mono); color: #fff; font-variant-numeric: tabular-nums; }
 .door-proof.warn, .door-proof.off, .door-proof.wait { color: var(--text); font-size: clamp(13px, 1vw, 16px); }
 .door-proof .dot { vertical-align: middle; margin: 0 9px 2px 0; }
+.door-proof .lnk { margin-left: 10px; vertical-align: middle; background: none; border: 1px solid var(--ok); color: #fff; border-radius: 999px; padding: 5px 12px; min-height: 30px; font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.door-proof .lnk:hover { background: rgba(57,255,138,.1); }
+@media (pointer: coarse) { .door-proof .lnk { min-height: 44px; } }
 @media (max-width: 760px) {
   .doors { grid-template-columns: minmax(0, 1fr); gap: 8px; } .door { min-height: 0; padding: 6px 0 12px; gap: 10px; } .door-h { font-size: 36px; } .door .eyebrow { font-size: 10px; letter-spacing: .22em; }
   .door-proof { font-size: 13px; } .door-proof.warn, .door-proof.off, .door-proof.wait { font-size: 12px; } .door-line { font-size: 13px; }
@@ -4204,13 +4207,18 @@ function doorProof() {
     text = v ? `Block #${fmt(S.height)} · sealed ${s} ago · ${v} validators` : `Block #${fmt(S.height)} · sealed ${s} ago`;
     st = ago > 180 ? "warn" : "ok";
     store.set("tau-door-last", JSON.stringify({ h: S.height, at: Date.now() }));
-  } else if (PRESENCE.at && !reach) { st = "off"; text = "No answer from our node right now: your connection may block it (a VPN or a blocker), or the node is down. The dashboard shows a labelled simulation until it is back."; }
+  } else if (store.get("tau-mode") === "sim") { st = "warn"; text = "This browser is set to the simulation, chosen on the dashboard once; our node is reachable."; }
+  else if (PRESENCE.at && !reach) { st = "off"; text = "No answer from our node right now: your connection may block it (a VPN or a blocker), or the node is down. The dashboard shows a labelled simulation until it is back."; }
   else if (PRESENCE.at && !PRESENCE.answering) { st = "warn"; text = "Our node is restarting or does not answer right now; the dashboard shows a labelled simulation meanwhile."; }
   else if (PRESENCE.at && !PRESENCE.liveDefault) { st = "warn"; text = "Our node is still catching up with the chain; the dashboard shows a labelled simulation meanwhile."; }
   else if (PRESENCE.at && LIVE.autoFailedAt && (PRESENCE.height || PRESENCE.canon)) { st = "warn"; text = `Block #${fmt(PRESENCE.height || PRESENCE.canon)} says our node; its live feed can’t be reached from your connection, so the dashboard shows a labelled simulation.`; }
   if (st === "off" || st === "warn") { try { const l = JSON.parse(store.get("tau-door-last") || "null"); if (l && l.h && !live) { const m = Math.max(1, Math.round((Date.now() - l.at) / 60000)); text += ` Last block seen from this browser: #${fmt(l.h)}, ${m} min ago.`; } } catch (e) {} }
   p.className = "door-proof " + st; p.firstElementChild.className = "dot" + (st === "ok" ? "" : st === "off" ? " off" : st === "warn" ? " behind" : " sim");
   if (t.textContent !== text) t.textContent = text;
+  /* a chosen simulation: one button switches this browser back to the live chain (the same as LIVE NODE on the dashboard) */
+  let b = p.querySelector(".lnk");
+  if (store.get("tau-mode") === "sim" && !live) { if (!b) { b = document.createElement("button"); b.type = "button"; b.className = "lnk"; b.textContent = "Show the live chain"; b.onclick = () => $("btnLive").click(); p.append(b); } }
+  else if (b) b.remove();
 }
 setInterval(doorProof, 1000); doorProof();
 document.querySelectorAll(".doors a").forEach(a => a.addEventListener("click", () => leaveCalm(true)));
