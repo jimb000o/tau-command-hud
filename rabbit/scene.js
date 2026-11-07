@@ -1483,6 +1483,9 @@
   const ask = n => fetch(ART.base + "index.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : Promise.reject(r.status))).then(j => {
     ART.box = (j && j.boxes) || {};   // where a talking or blinking frame differs from the still picture
     const scenes = (j && j.scenes) || {};
+    /* each room's own lamps (paint.py lights), only while they were found in the very painting that shows */
+    ART.lights = {};
+    for (const id in (j && j.lights) || {}) { const L = j.lights[id]; if (L && Array.isArray(L.l) && (L.of === scenes[id] || L.of === ((j.orig || {})[id]))) ART.lights[id] = L; }
     if (!scenes.island) settle();
     else { clearTimeout(late); late = setTimeout(settle, 30000); }   // the painting is listed: a large picture on a slow line takes its time
     Object.entries(scenes).forEach(([id, f]) => {
@@ -1552,28 +1555,100 @@
     g.globalCompositeOperation = "source-over";
   }
   /* the light of the hour in a painted place, as on the island: the picture, and whoever stands in it, multiplied with
-     the light of the hour (white at noon, warm at the ends of the day, deep blue at night), with the same blue haze after
-     dark. From dusk the place's lamps are lit: a warm pool round the one you talk to and the room about them, while the
-     corners and the views out stay in the night. The pool is soft, so it is drawn at a quarter of the pixels. */
+     the light of the hour (white at noon, warm at the ends of the day, deep blue at night), with the haze of the place
+     after dark. From dusk every place is lit in its own way (ROOMNIGHT): the lamps painted in it come on (ART.lights,
+     found in the painting by paint.py lights), each lighting the room around it in its own colour and glowing itself,
+     a room keeps a little of its lamps' colour in the dark corners, and the one you talk to stands in a softer pool of
+     the place's light. Out in the open (a hill top, the stone circle) it stays the island's night, the moon the main
+     light. The light map is soft, so it is drawn at a quarter of the pixels. */
   const ROOMLAMP = [255, 200, 146];
-  function roomLight(g, W, H, sky, nt) {
-    const m = sky.mul, n = lampsOn(sky);
+  /* lamp: the colour of the place's light; fill: how much of it falls on the one you talk to; amb: how much of it stays
+     in the room's dark corners; haze: the colour and strength of the night air; out: open air (moonlight) */
+  const ROOMNIGHT = {
+    hall:   { lamp: [255, 196, 128], fill: 0.7, amb: 0.04, out: 1 },              // the Council Tree: lanterns in the branches
+    market: { lamp: [255, 206, 150], fill: 0.85, amb: 0.06, out: 1 },             // the Parasol Café: string lights over the terrace
+    radio:  { lamp: [255, 186, 112], fill: 0.85, amb: 0.14 },                     // a desk lamp and the glow of the dials
+    north:  { lamp: [226, 232, 255], fill: 0.75, amb: 0.1, haze: [10, 22, 60, 0.18] },   // the chandelier, cool and grand
+    south:  { lamp: [255, 180, 150], fill: 0.85, amb: 0.14 },                     // warm and flattering, the pool glowing teal
+    bar:    { lamp: [255, 176, 112], fill: 0.95, amb: 0.2 },                      // the bulbs on their string: the warmest room
+    book:   { lamp: [196, 255, 206], fill: 0.8, amb: 0.08, haze: [6, 26, 30, 0.18] },     // the keeper's lamp throws a green cone
+    pier:   { lamp: [255, 212, 150], fill: 0.6, amb: 0.03, out: 1 },              // the lamp post's square lantern
+    school: { lamp: [236, 226, 200], fill: 0.45, amb: 0.04, haze: [12, 22, 50, 0.2] },   // nobody lights a school at night
+    dive:   { lamp: [140, 232, 255], fill: 0.75, amb: 0.12, haze: [4, 30, 46, 0.16] },   // sensor buoys and the reef screen
+    works:  { lamp: [255, 158, 88], fill: 0.85, amb: 0.14 },                      // the furnace under the chimney
+    camp:   { lamp: [255, 160, 76], fill: 0.9, amb: 0.04, out: 1 },               // the campfire
+    ship:   { lamp: [255, 198, 128], fill: 0.8, amb: 0.12 },                      // oil lamps among the finds
+    ama:    { lamp: [255, 168, 96], fill: 0.9, amb: 0.14 },                       // the hearth
+    canoe:  { lamp: [255, 188, 118], fill: 0.7, amb: 0.06, out: 1 },              // a lantern in the open shed
+    stone:  { lamp: [190, 210, 255], fill: 0.35, amb: 0, out: 1, haze: [8, 18, 56, 0.2] },    // a hill top under the moon
+    drums:  { lamp: [255, 168, 96], fill: 0.6, amb: 0.03, out: 1 },               // a torch by the drum
+    circle: { lamp: [255, 168, 96], fill: 0.6, amb: 0.03, out: 1 },               // torches round the stones
+    grotto: { lamp: [120, 236, 214], fill: 0.7, amb: 0.1, haze: [4, 28, 40, 0.18] },   // the pool's light dancing on the rock
+  };
+  const RLC = { warm: [255, 200, 132], fire: [255, 156, 72], cream: [255, 236, 204], gold: [255, 212, 116], green: [150, 255, 170], teal: [92, 236, 214], cyan: [120, 214, 255], pink: [255, 150, 200], red: [255, 96, 76], moon: [170, 196, 255] };
+  const FLAME = { fire: 1, torch: 1, candle: 1, lantern: 1 };
+  /* where a light of the painting (parts of the picture) stands on the screen: the picture covers the room's rw x RH,
+     the room is drawn at sc, ox, oy */
+  function roomSpot(L, T) {
+    const [sc, ox, oy, rw, im] = T, iw = im ? im.naturalWidth : rw, ih = im ? im.naturalHeight : RH, k = Math.max(rw / iw, RH / ih);
+    const x0 = (RW - rw) / 2 + (rw - iw * k) / 2, y0 = (RH - ih * k) / 2;
+    return [(x0 + L.x * iw * k) * sc + ox, (y0 + L.y * ih * k) * sc + oy, L.w * iw * k * sc, L.h * ih * k * sc];
+  }
+  function roomLight(g, W, H, sky, nt, t, id, T) {
+    const m = sky.mul, n = lampsOn(sky), mood = ROOMNIGHT[id] || { lamp: ROOMLAMP, fill: 0.82, amb: 0 }, found = ART.lights && ART.lights[id];
+    const LL = (found && found.l) || [], out = found ? found.outside : !!mood.out, D = Math.min(W, H);
+    const lit = L => (L.k === "window" ? 0.4 : 1) * (FLAME[L.k] ? flick(t, L.x * 97, L.y * 61) : L.k === "glow" || L.k === "screen" ? 0.94 + 0.06 * Math.sin(t * 0.0011 + L.x * 9) : 1);
     g.setTransform(1, 0, 0, 1, 0, 0);
     if (m[0] + m[1] + m[2] < 762) {
       g.globalCompositeOperation = "multiply";
       if (n > 0) {
         const q = 4, c = S.rlm || (S.rlm = document.createElement("canvas")), w = Math.ceil(W / q), h = Math.ceil(H / q);
         if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
-        const lg = c.getContext("2d"); lg.fillStyle = rgb(m); lg.fillRect(0, 0, w, h);
-        const [X, Y, Z] = S.hostAt || [W / 2, H * 0.3, Math.min(W, H) * 0.7], x = X / q, y = Math.min(H * 0.62, Y + Z * 0.36) / q, r = Math.min(W, H) * 0.62 / q;
-        const gr = lg.createRadialGradient(x, y, 0, x, y, r);
-        gr.addColorStop(0, rgb(mix(m, ROOMLAMP, 0.82 * n))); gr.addColorStop(0.35, rgb(mix(m, ROOMLAMP, 0.55 * n))); gr.addColorStop(0.75, rgb(mix(m, ROOMLAMP, 0.14 * n))); gr.addColorStop(1, rgb(m));
-        lg.fillStyle = gr; lg.fillRect(0, 0, w, h);
+        const lg = c.getContext("2d"), base = out ? m : mix(m, mood.lamp, Math.min(0.35, (mood.amb || 0) * (LL.length ? 1.6 : 1)) * n);
+        lg.globalCompositeOperation = "source-over"; lg.fillStyle = rgb(base); lg.fillRect(0, 0, w, h);
+        const pool = (x, y, r, col, a, sy = 1) => {
+          if (a < 0.01 || r < 1) return; a = Math.min(1, a);
+          lg.save(); lg.translate(x / q, y / q); if (sy !== 1) lg.scale(1, sy);
+          const gr = lg.createRadialGradient(0, 0, 0, 0, 0, r / q);
+          gr.addColorStop(0, rgb(mix(base, col, a))); gr.addColorStop(0.35, rgb(mix(base, col, a * 0.78))); gr.addColorStop(0.7, rgb(mix(base, col, a * 0.32))); gr.addColorStop(1, rgb(base, 0));
+          lg.fillStyle = gr; lg.beginPath(); lg.arc(0, 0, r / q, 0, Math.PI * 2); lg.fill(); lg.restore();
+        };
+        /* the one you talk to, in the place's own light (softer where the room's lamps light it) */
+        const [X, Y, Z] = S.hostAt || [W / 2, H * 0.3, D * 0.7];
+        pool(X, Math.min(H * 0.62, Y + Z * 0.36), D * (LL.length ? 0.5 : 0.62), mood.lamp, (LL.length ? 0.62 : 0.82) * mood.fill * n);
+        lg.globalCompositeOperation = "lighten";
+        for (const L of LL) {
+          const [x, y, sw, sh] = roomSpot(L, T), col = RLC[L.c] || mood.lamp, s = Math.max(sw, sh), a = n * lit(L);
+          if (L.k === "window") pool(x, y, Math.max(s * 0.9, D * 0.15), col, 0.6 * a, Math.min(1.8, Math.max(0.6, sh / Math.max(1, sw))));
+          else if (L.k === "bulbs") pool(x, y + sh * 0.3, Math.max(sw * 0.7, D * 0.2), col, 0.9 * a, Math.min(1, Math.max(0.35, (sh + D * 0.2) / Math.max(1, sw))));
+          else if (L.k === "fire" || L.k === "torch") pool(x, y, Math.max(s * 4, D * 0.32), col, 0.95 * a);
+          else if (L.k === "chandelier") pool(x, y + sh * 0.6, Math.max(s * 3.5, D * 0.4), col, 0.9 * a, 1.1);
+          else if (L.k === "candle") pool(x, y, Math.max(s * 5, D * 0.1), col, 0.75 * a);
+          else if (L.k === "screen" || L.k === "glow") pool(x, y, Math.max(s * 2, D * 0.12), col, 0.75 * a);
+          else pool(x, y + sh * 0.5, Math.max(s * 6, D * 0.42), col, 0.95 * a);   // a lamp, a lantern: light round it and below
+        }
         g.drawImage(c, 0, 0, W, H);
       } else { g.fillStyle = rgb(m); g.fillRect(0, 0, W, H); }
     }
     g.globalCompositeOperation = "source-over";
-    if (nt > 0.01) { g.fillStyle = `rgba(12,20,52,${0.16 * nt})`; g.fillRect(0, 0, W, H); }
+    const hz = mood.haze || [12, 20, 52, 0.16];
+    if (nt > 0.01) { g.fillStyle = rgb(hz, hz[3] * nt * (out ? 1 : 0.75)); g.fillRect(0, 0, W, H); }
+    /* the lamps themselves glow over the night: a bright heart and a halo, flames alive, a string's bulbs in a row */
+    if (n > 0.02 && LL.length) {
+      const on = Math.min(1, n * 1.6);
+      g.globalCompositeOperation = "lighter";
+      const glow = (x, y, r, col, a) => { if (a < 0.01 || r < 0.5) return; const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, rgb(mix(col, [255, 255, 255], 0.35), Math.min(1, a))); gr.addColorStop(0.3, rgb(col, Math.min(1, a) * 0.55)); gr.addColorStop(1, rgb(col, 0)); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); };
+      for (const L of LL) {
+        if (L.k === "window") continue;
+        const [x, y, sw, sh] = roomSpot(L, T), col = RLC[L.c] || mood.lamp, s = Math.max(sw, sh), a = on * lit(L);
+        if (L.k === "bulbs") {   // the string's bulbs: small bright dots along the middle of its box, sagging a little
+          const nb = Math.max(4, Math.min(16, Math.round(sw / Math.max(14, D * 0.03))));
+          for (let i = 0; i < nb; i++) { const u = (i + 0.5) / nb, bx = x - sw / 2 + u * sw, by = y + Math.sin(u * Math.PI) * sh * 0.3 - sh * 0.15; glow(bx, by, Math.max(6, D * 0.018), col, 0.55 * a); }
+        } else if (L.k === "screen" || L.k === "glow") glow(x, y, Math.max(s * 0.8, D * 0.02), col, 0.35 * a);
+        else glow(x, y, Math.max(s * (FLAME[L.k] ? 1.1 : 0.9), D * 0.022), col, (L.k === "fire" ? 0.5 : 0.6) * a);
+      }
+      g.globalCompositeOperation = "source-over";
+    }
   }
   /* the bare picture of a place, without people, at noon: what the server's painter repaints (infra/rabbit-art) */
   /* sky and sea in flat bands, the whole world wide, nothing on them */
@@ -1908,7 +1983,7 @@
         w.setTransform(1, 0, 0, 1, 0, 0); w.drawImage(S.hostC, X - Z / 2, Y, Z, Z); S.hostAt = [X, Y, Z];
       }
       w.setTransform(1, 0, 0, 1, 0, 0);
-      if (painted(S.room)) roomLight(w, W, H, sky, nt);
+      if (painted(S.room)) roomLight(w, W, H, sky, nt, t, S.room, [sc, ox, oy, rw, ART.img[S.room]]);
       else if (sky.tint[3] > 0.01) { w.globalCompositeOperation = "source-atop"; w.fillStyle = rgb(sky.tint, sky.tint[3] * 0.75); w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
       if (sky.light > 0.05 && !painted(S.room)) { w.globalCompositeOperation = "lighter"; const lg = w.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.45, Math.max(W, H) * 0.6); lg.addColorStop(0, `rgba(255,190,110,${0.22 * sky.light})`); lg.addColorStop(1, "rgba(255,190,110,0)"); w.fillStyle = lg; w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
       const [px, py] = S.roomAt || [S.W / 2, S.H / 2], cx = px * S.K, cy = py * S.K, rr = e * Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)) * 1.02;
