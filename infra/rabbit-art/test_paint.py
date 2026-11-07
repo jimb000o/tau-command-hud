@@ -3,6 +3,7 @@ import base64
 import io
 import json
 import os
+import sys
 import tempfile
 import types
 
@@ -222,6 +223,8 @@ if Image:   # a sheet of eight figures on magenta comes out as a strip of eight 
 # each room's own lights for the night: the image model's boxes become parts of the picture, a new painting is looked at again
 seen = []
 def eye(url, data, headers, timeout=150):
+    if "retired" in url:
+        sys.exit("The painter said 404: no longer available")
     body = json.loads(data); seen.append(body)
     assert body["generationConfig"]["responseMimeType"] == "application/json" and "light source" in body["contents"][0]["parts"][0]["text"]
     ans = {"outside": False, "lights": [{"kind": "lamp", "colour": "warm", "box_2d": [200, 300, 260, 340]},
@@ -234,7 +237,8 @@ with tempfile.TemporaryDirectory() as out:
     open(os.path.join(out, "radio-1.webp"), "wb").write(PIC); open(os.path.join(out, "bar-1.webp"), "wb").write(PIC)
     json.dump({"scenes": {"island": "island-1.webp", "radio": "radio-1.webp", "bar": "bar-1.webp"}}, open(os.path.join(out, "index.json"), "w"))
     os.environ["GEMINI_API_KEY"] = "test"
-    paint.cmd_lights(types.SimpleNamespace(out=out, places=["all"], missing=True, model="m"))
+    paint.LIGHT_MODELS = ["retired-model", "m"]   # a retired model: the next one is asked
+    paint.cmd_lights(types.SimpleNamespace(out=out, places=["all"], missing=True, model=None))
     li = json.load(open(os.path.join(out, "index.json")))["lights"]
     assert set(li) == {"radio", "bar"} and li["radio"]["of"] == "radio-1.webp" and len(li["radio"]["l"]) == 2, li
     assert li["radio"]["l"][0] == {"k": "lamp", "c": "warm", "x": 0.32, "y": 0.23, "w": 0.04, "h": 0.06}, li["radio"]["l"][0]
