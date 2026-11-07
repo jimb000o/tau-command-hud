@@ -2482,5 +2482,10 @@
     "tag": "Alerts",
     "on": "2026-11-07",
     "html": "Channel posts, after a review of the first eleven days: the evening post now opens with the day's one story and shows the slowest hour beside the usual pace; a testnet restart is no longer told as a rule change and says what it means for your test wallet; a new node is posted only after six hours online, and the evening count says how many were online at the peak; firsts say whose wallet did it; every chain post gets buttons that fit it; times read \"16:00 DE (15:00 UTC)\"; the weekly digest drops a line told twice; the rule challenge reminder names the task."
+  },
+  {
+    "tag": "Stats",
+    "on": "2026-11-07",
+    "html": "Stats: a new range, All chains. A testnet restart no longer resets the charts: our relay now writes down what every chain held, hour by hour and day by day, and keeps it when the next chain begins. Block time and transactions run as one timeline across restarts, each restart marked; earlier chains we only know by their length are marked “not kept”. The tiles add up blocks and transactions over every chain, and the day counts on In numbers add up across restarts too."
   }
 ]
