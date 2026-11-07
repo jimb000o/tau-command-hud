@@ -440,5 +440,11 @@ TauI18n.add({ strings: {
   "Contract {n} is settled already. To play it again anyway: take {n} again (it counts once).": "任务 {n} 已结算。要再玩一次：take {n} again（只计一次）。",
   "full screen": "全屏",
   "Boot": "启动",
-  "Chapter": "章节"
+  "Chapter": "章节",
+  "Chapters are 1, 2 and 3.": "章节是 1、2、3。",
+  "Chapter {n} is claimed and paid: {h}": "第 {n} 章已领取并已支付：{h}",
+  "The claim for chapter {n} is on the chain ({h}); the purse pays within a few blocks. If nothing comes: claim {n} again": "第 {n} 章的领取已在链上（{h}）；钱袋会在几个区块内支付。若没有到账：claim {n} again",
+  "claim {n} again": "claim {n} again",
+  "No share yet for chapter {n}. The purse pays within minutes while it is on; if it stays out: claim {n} again": "第 {n} 章的份额还没到。钱袋开着时几分钟内就会支付；若一直不到：claim {n} again",
+  "claim the crew’s share at a chapter’s end (the drop pays it back); claim <n> again resends an unpaid one": "在章节结束时领取船员份额（投递点会付回来）；claim <n> again 重发未支付的领取"
 } });
