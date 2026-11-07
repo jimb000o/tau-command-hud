@@ -440,5 +440,11 @@ TauI18n.add({ strings: {
   "Contract {n} is settled already. To play it again anyway: take {n} again (it counts once).": "契約 {n} はもう決着している。それでももう一度やるなら：take {n} again（一度だけ数える）。",
   "full screen": "全画面",
   "Boot": "起動",
-  "Chapter": "章"
+  "Chapter": "章",
+  "Chapters are 1, 2 and 3.": "章は 1、2、3 だ。",
+  "Chapter {n} is claimed and paid: {h}": "第 {n} 章は請求済みで支払い済み：{h}",
+  "The claim for chapter {n} is on the chain ({h}); the purse pays within a few blocks. If nothing comes: claim {n} again": "第 {n} 章の請求はチェーン上にある（{h}）。財布は数ブロック以内に払う。来なければ：claim {n} again",
+  "claim {n} again": "claim {n} again",
+  "No share yet for chapter {n}. The purse pays within minutes while it is on; if it stays out: claim {n} again": "第 {n} 章の分け前はまだ来ていない。財布が動いていれば数分以内に払われる。来ないままなら：claim {n} again",
+  "claim the crew’s share at a chapter’s end (the drop pays it back); claim <n> again resends an unpaid one": "章の終わりにクルーの分け前を請求する（ドロップが払い戻す）。claim <n> again は未払いの請求を送り直す"
 } });

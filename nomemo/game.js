@@ -783,8 +783,16 @@
     $("card").classList.add("show"); snd.ok();
   }
   const cardClose = () => $("card").classList.remove("show");
-  async function claim() {
-    const ch = [...CH].reverse().find(x => chapterDone(x) && !S.chap[x.n]);
+  async function claim(pick, again) {
+    /* the lowest finished chapter first (the hints name that one; the hunt opens with chapter 1); claim <n> picks one, claim <n> again resends an unpaid claim */
+    let ch = pick ? CH.find(x => x.n === pick) : CH.find(x => chapterDone(x) && !S.chap[x.n]);
+    if (pick && !ch) { say("warn", T("Chapters are 1, 2 and 3.")); return; }
+    if (pick && !chapterDone(ch)) { say("sys", F("Nothing to claim yet: chapter {n} is not done.", { n: ch.n })); return; }
+    if (pick && S.chap[ch.n]) {
+      const c = S.chap[ch.n];
+      if (c.paid) { say("sys", F("Chapter {n} is claimed and paid: {h}", { n: ch.n, h: short(c.hash) })); return; }
+      if (!again) { say("sys", F("The claim for chapter {n} is on the chain ({h}); the purse pays within a few blocks. If nothing comes: claim {n} again", { n: ch.n, h: short(c.hash) }), btn(F("claim {n} again", { n: ch.n }), "claim " + ch.n + " again")); watchPayback(ch.n); return; }
+    }
     if (!ch) { const open = CH.find(x => !chapterDone(x)); say("sys", open ? F("Nothing to claim yet: chapter {n} is not done.", { n: open.n }) : T("Every chapter’s share is claimed.")); return; }
     if (RUN.busy) { say("warn", T("A contract is under way; wait for the chain’s answer.")); return; }
     if (S.taken) { say("warn", T("Put the taken contract back first (drop), or finish it.")); return; }
@@ -803,7 +811,7 @@
       const w = await sealed(s.hash, null, s.way);
       if (!w.in) { say("no", F("Not sealed: {x}", { x: w.why })); fail(T("Type claim to try again.")); }
       say("ok", F("Sealed in block {n}. The crew’s purse reads the chain and pays the share back; it can take a few blocks.", { n: fmt(w.block) }), explorer(s.hash));
-      S.chap[ch.n] = { hash: s.hash, block: w.block, at: Date.now(), paid: null }; save(); jobs(); chips();
+      S.chap[ch.n] = { hash: s.hash, block: w.block, at: Date.now(), paid: null, drop: DROP }; save(); jobs(); chips();
       snd.ok(); mood("qm", "glad");
       crew("qm", ch.n === 1 ? "Signed on. The share comes from the drop, and with it the crew’s mark: one test AGRS, the hash of which is your badge on this chain." : ch.n === 2 ? "Second chapter closed. You now know four ways a payment dies before it is one; most wallets never learn the fourth." : "Third chapter closed and the board is clear. The drop pays the last share. From here the real work is on Tuesdays, when the ship is in.", "glad");
       if (!SIM && (!BOARD.data || BOARD.data.enabled === false)) say("warn", T("The crew’s purse on the server is not on yet; the share comes once it is. Your claim is on the chain and counts."));
@@ -826,6 +834,7 @@
         return;
       }
       if (tries < 20) watchPayback(n, tries + 1);
+      else say("warn", F("No share yet for chapter {n}. The purse pays within minutes while it is on; if it stays out: claim {n} again", { n }), btn(F("claim {n} again", { n }), "claim " + n + " again"));
     }, tries < 3 ? 6000 : 15000);
   }
 
@@ -1049,7 +1058,7 @@
       ["run", T("carry out the taken contract: build, sign, send, read the answer")],
       ["back", T("take a waiting payment back (contract 11)")],
       ["drop", T("put the taken contract back")],
-      ["claim", T("claim the crew’s share at a chapter’s end (the drop pays it back)")],
+      ["claim [n]", T("claim the crew’s share at a chapter’s end (the drop pays it back); claim <n> again resends an unpaid one")],
       ["chapter <n>", T("the chapter’s card")],
       ["mail", T("the post from the crew")],
       ["op", T("live ops while the Black Sequence is in port (Tuesdays)")],
@@ -1130,7 +1139,7 @@
     if (c === "go") return opGo();
     if (c === "back" || c === "retract") return back();
     if (c === "drop" || c === "abort") { if (OP.list) { OP.list = null; chips(); return say("sys", T("The op is put down.")); } if (!S.taken) return say("sys", T("No contract taken.")); if (RUN.busy) return say("warn", T("A contract is under way; wait for the chain’s answer.")); S.taken = null; S.deadline = null; S.span = null; RUN.ret = S.ret = null; save(); jobs(); instruments(); topbar(); chips(); return say("sys", T("Back on the board.")); }
-    if (c === "claim") return claim();
+    if (c === "claim") { if (/^\d+$/.test(args[0] || "") && !/^[123]$/.test(args[0])) return say("warn", T("Chapters are 1, 2 and 3.")); return claim(/^[123]$/.test(args[0] || "") ? +args[0] : 0, args.includes("again")); }
     if (c === "chapter" || c === "ch") { const ch = CH[parseInt(args[0], 10) - 1] || CH.find(x => !chapterDone(x)) || CH[2]; return chapterCard(ch); }
     if (c === "mail" || c === "post") return mailOpen();
     if (c === "op" || c === "ops") return op();
