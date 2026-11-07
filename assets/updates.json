@@ -2586,5 +2586,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-07",
     "html": "White Rabbit Key: the island painting comes alive. Once a short clip of it is made (by Kling, an AI video maker), only what moves by nature moves on the island: ripples and glints on the sea, smoke from the chimneys, palm fronds in the breeze, the lamps; every roof, face and outline stays the sharp painting, and the light of the hour falls on it as before. Never with reduced motion, a data saver or ?live=0. The cruise ships' announcements, the pirates' clip and Agorzilla's growth posts can now come as short videos too, and a new island gets a trailer; until a clip is there, every post goes out with its still picture, as before."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-07",
+    "html": "Tau HUD: the first screen now says what is true first: “Tau Testnet Alpha is live.” over a proof line from our own node (block, sealed how long ago, validators). While the page connects it says so; when our node cannot be reached from the visitor’s connection (a VPN, a blocker, a restart) it says that, with the last block this browser saw live, and the simulation stays a labelled fallback in the dashboard, never the first thing on the page. Every door says what you get and why it is Tau: rule changes the validators agreed to, a rule the chain enforces on every payment including your own key, an island election where every move is a real transaction and others play beside you, no sign-up. A tighter sentence, and the door grows with very wide screens."
   }
 ]
