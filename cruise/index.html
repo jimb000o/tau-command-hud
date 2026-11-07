@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Cruise logbook</title>
+<meta name="description" content="The logbook of the cruise ships that call at White Rabbit Key: simulated passengers, real test transactions on Tau Testnet Alpha, every answer of the node, visit by visit.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Cruise logbook">
+<meta property="og:description" content="Simulated passengers, real test transactions: what each cruise ship sent to the testnet and what the node answered.">
+<meta property="og:image" content="https://tauhud.com/assets/og/load.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://tauhud.com/cruise/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<meta name="twitter:image" content="https://tauhud.com/assets/og/load.png">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber for strain, red for a stall. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 12px; }
+.wrap > * { min-width: 0; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.state { display: inline-flex; align-items: center; gap: 7px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+.state.live { color: var(--ok); border-color: rgba(57,255,138,.4); } .state.live i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.snap { color: var(--behind); border-color: rgba(255,177,59,.4); } .state.snap i { background: var(--behind); }
+.lead { margin: 4px 0 0; font: 500 clamp(20px, 2.6vw, 26px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 76ch; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.tile { border: 1px solid var(--line); border-radius: 8px; padding: 9px 13px; background: rgba(16,16,18,.86); min-height: 64px; }
+.tile h3 { margin: 0; font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.tile b { display: block; font: 700 20px var(--display); color: #fff; margin-top: 3px; letter-spacing: .02em; }
+.tile p { margin: 2px 0 0; color: var(--dim); font-size: 11px; }
+.panel { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: rgba(16,16,18,.86); }
+.panel h2 { margin: 0 0 8px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.panel h2 small { font: 11px var(--mono); text-transform: none; letter-spacing: 0; color: var(--dim); }
+.visits { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.visits button { font: 11px var(--mono); color: var(--dim); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 6px 11px; cursor: pointer; min-height: 32px; }
+.visits button.on { color: #fff; border-color: var(--hair); }
+.visits button:hover { border-color: var(--hair); color: #fff; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 12px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+th { font: 600 10px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+td.n { text-align: right; font-variant-numeric: tabular-nums; }
+td .ok { color: var(--ok); } td .no { color: var(--bad); } td .skip { color: var(--behind); } td .ev { color: #fff; font-weight: 600; }
+td .note { color: var(--dim); white-space: normal; max-width: 44ch; display: inline-block; }
+td a { color: var(--dim); } td a:hover { color: #fff; }
+.more { margin: 10px 0 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.more button { font: 600 11px var(--display); letter-spacing: .08em; text-transform: uppercase; color: #fff; background: transparent; border: 1px solid var(--hair); border-radius: 999px; padding: 8px 14px; cursor: pointer; min-height: 36px; }
+.more span { color: var(--dim); font-size: 11px; }
+.empty { color: var(--dim); padding: 12px 0; }
+#escrowPanel { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding: 6px 14px; }
+#escrowPanel h2 { margin: 0; }
+.esc { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+.esc .call { color: #fff; font-weight: 600; margin-right: 4px; }
+.esc .sum { color: var(--dim); margin-right: 6px; }
+.bk { display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; font-size: 11px; color: var(--dim); min-height: 24px; }
+.bk b { font-weight: 600; color: var(--text); }
+.bk.paid { border-color: rgba(57,255,138,.45); } .bk.paid b { color: var(--ok); }
+.bk.back b { color: #fff; } .bk.back { border-color: var(--hair); }
+.bk.bad { border-color: rgba(255,77,109,.45); } .bk.bad b { color: var(--bad); }
+.bk a { color: var(--dim); } .bk a:hover { color: #fff; }
+.note { margin: 10px 0 0; color: var(--dim); font-size: 12px; max-width: 110ch; }
+footer { color: var(--dim); font-size: 12px; padding: 4px 0 0; }
+footer a { color: var(--dim); }
+@media (min-width: 900px) and (max-height: 860px) { .sub { display: none; } .note { display: none; } .wrap { gap: 8px; } .tile { min-height: 0; padding: 7px 12px; } .tile b { font-size: 17px; } th, td { padding: 4px 8px; } }
+@media (max-width: 700px) {
+  body { padding-top: 8px; }
+  .sub { font-size: 12px; }
+  th, td { padding: 8px 6px; font-size: 11px; }
+  .visits button { min-height: 44px; }
+  .bk { min-height: 44px; } .bk a { display: inline-block; min-width: 28px; line-height: 40px; text-align: center; }
+  footer a { display: inline-block; min-height: 44px; line-height: 44px; }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Cruise logbook</span></a>
+    <span class="state" id="state" data-tip="Where these lines come from.\nWritten by our relay as it sends each passenger’s transaction and reads the node’s answer."><i></i><span id="stateText">Reading the relay</span></span>
+  </header>
+  <nav class="tnav" data-page="cruise" aria-label="Pages and tools"></nav>
+  <div>
+    <p class="lead">Simulated passengers, real transactions.</p>
+    <p class="sub">Three ships call at White Rabbit Key: the pirates of Black Sequence on Tuesday at 18:00, MS Dry Run on Wednesday at 16:00 and Queen Mempool on Saturday at 14:00 (German time); the other days are quiet. Their passengers are invented; what they pay is a real test transaction on Tau Testnet Alpha, at most twelve a minute. This logbook keeps every one of them and what the node answered.</p>
+  </div>
+  <div class="tiles" id="tiles"></div>
+  <section class="panel" id="escrowPanel" hidden>
+    <h2 data-tip="Booked ahead, in escrow&#10;Each booking is a retractable transfer of the fare to the ship’s till, released at the arrival. If the call is called off before, our server takes every booking back, at least 6 minutes before the arrival.&#10;Only the sender can take one back, so no third party decides. A refund that is not in a block by the arrival is too late, and the till is paid.">Booked ahead, in escrow <small id="escrowSmall">fares wait for the arrival · only the sender can take one back</small></h2>
+    <div class="esc" id="escrow"></div>
+  </section>
+  <section class="panel">
+    <h2>Logbook <small id="logSmall">the last 30 days</small></h2>
+    <div class="visits" id="visits"></div>
+    <div class="tablewrap"><table id="log"><thead><tr><th>Time</th><th>Ship</th><th>Passenger</th><th>What</th><th>Where</th><th class="n">Test AGRS</th><th>Node’s answer</th></tr></thead><tbody id="rows"></tbody></table></div>
+    <p class="empty" id="empty" hidden>No ship has sent a transaction yet. The next one is announced on the Testnet load page and in the game.</p>
+    <div class="more" id="more" hidden><button type="button" id="moreBtn">Show more</button><span id="moreText"></span></div>
+    <p class="note">What the kinds mean: <b>pays</b> a plain transfer to the place’s till; <b>books</b> a transfer the passenger can take back until a set time (retractable_transfer); <b>cancels</b> takes such a booking back (retract_transfer); <b>bills</b> one transaction that pays several places at once; <b>books ahead</b> a retractable transfer of the fare to the ship’s till days before a call, released at the arrival; <b>refunds</b> takes it back before the arrival; <b>escrow</b> how each booking ended on the chain: paid out to the till or refunded to the passenger; <b>tries a trick</b> a pirate sends something the chain must refuse, and <b>stopped</b> shows that it did, with its answer. A <span style="color:var(--bad)">refused</span> line shows the node’s own reason. <b>landed</b>, <b>no landing</b>, <b>left</b>, <b>called off</b>: the ship’s own events, with the testnet’s state at that moment.</p>
+  </section>
+  <footer>
+    <p>Unofficial, not affiliated with IDNI. The ships send only when the island bot is quiet and never past half of the island’s daily budget; a strained testnet halves their pace, a stalled one sends them away. <a href="https://node.tauhud.com/cruise/log" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="/load/">Testnet load</a> · <a href="/rabbit/">White Rabbit Key</a></p>
+  </footer>
+</div>
+<div id="tip" hidden></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const RELAY = "https://node.tauhud.com";
+const PARAMS = new URLSearchParams(location.search);
+const SAMPLE = PARAMS.has("sample") || !!(window.TauSim && TauSim.on);   // the simulation and ?sample show a made-up visit, marked as such
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const F = (s, o) => T(s.replace(/\{(\w+)\}/g, (_, k) => o[k]));   // filled first: the dictionaries match the numbers in place
+const N = n => n == null ? "–" : Number(n).toLocaleString("en-US");
+const el = (tag, attrs, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs || {})) { if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else if (v != null) e.setAttribute(k, v); } for (const k of kids) if (k != null) e.append(k); return e; };
+const SHIPS = { pirates: "Black Sequence", dryrun: "MS Dry Run", queen: "Queen Mempool" };
+const PLACES = { till: "The ship’s till", hall: "Council Hall", market: "Market square", radio: "Radio Coco", north: "North Wind Embassy", south: "South Current Wellness Resort", bar: "Bar La Ola", book: "The Lighthouse", pier: "The pier", works: "The Coconut Works", school: "The School", dive: "Reef Proof Dive Centre", ship: "The Old Ship" };
+const KINDS = { pay: "pays", book: "books", cancel: "cancels", bill: "bills", trick: "tries a trick", tuned: "learned", landed: "landed", "no landing": "no landing", left: "left",
+  "book ahead": "books ahead", refund: "refunds", "called off": "called off", escrow: "escrow" };
+const TRICKS = { overspend: "pays more than the wallet holds", replay: "sends a payment the chain already took a second time", expired: "sends a payment whose time ran out", forged: "signs a payment with another pirate’s key",
+  impostor: "pays from another pirate’s wallet with their own signature", freeride: "allows no fee at all for a payment", stale: "sends a payment whose block height deadline has passed", giant: "pays more than a transfer can carry" };
+const EVENTS = ["landed", "no landing", "left", "called off", "tuned"];
+const isEvent = r => EVENTS.includes(r.kind) || (r.kind === "escrow" && r.p == null);
+/* a booking ahead: its state, the chip's look, and one line on what it means */
+const BOOKED = {
+  planned: ["books later", "", "This passenger books before the booking time closes, two hours before the arrival."],
+  "in escrow": ["in escrow", "", "The fare waits in escrow. At the arrival the chain pays the ship’s till by itself."],
+  sent: ["sent", "", "Sent, the node did not answer in time. The chain is asked after the arrival."],
+  "refund sent": ["refund sent", "back", "Taken back by the passenger’s wallet. The chain confirms it after the arrival."],
+  refunded: ["refunded", "back", "Taken back before the arrival: the fare is the passenger’s again (the booking fee is not returned)."],
+  "paid out": ["paid out", "paid", "Released to the ship’s till at the arrival."],
+  refused: ["refused", "bad", "The node refused this booking; its reason is in the logbook."],
+  "not booked": ["not booked", "", "This booking never went out."],
+  "not released": ["not released", "bad", "Still in escrow after the arrival: reported as an incident."],
+  unknown: ["unknown", "", "The node did not say how this booking ended."],
+};
+const when = t => { const d = new Date(t * 1000); return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
+
+/* ---------- tooltip: a value line and at most two lines ---------- */
+const tip = $("tip");
+function showTip(ev, lines) {
+  tip.replaceChildren(...lines.map(([c, t]) => { const d = document.createElement("div"); if (c) d.className = c; d.textContent = t; return d; }));
+  tip.hidden = false;
+  const r = tip.getBoundingClientRect();
+  let x = ev.clientX + 14, y = ev.clientY + 14;
+  if (x + r.width > innerWidth - 12) x = ev.clientX - r.width - 14;
+  if (y + r.height > innerHeight - 12) y = ev.clientY - r.height - 14;
+  tip.style.left = Math.max(12, x) + "px"; tip.style.top = Math.max(12, y) + "px";
+}
+const tipOf = d => d.dataset.tip.split(/\\n|\n/).map((l, i, a) => [a.length > 1 && i === 0 ? "tv" : "", T(l)]);
+document.addEventListener("pointerover", e => { const d = e.target.closest && e.target.closest("[data-tip]"); if (d) showTip(e, tipOf(d)); });
+document.addEventListener("pointerout", e => { const d = e.target.closest && e.target.closest("[data-tip]"); if (d && !d.contains(e.relatedTarget)) tip.hidden = true; });
+document.addEventListener("pointermove", e => { if (!tip.hidden) showTip(e, tipOf(e.target.closest("[data-tip]") || { dataset: { tip: "" } })); });
+const css = document.createElement("style"); css.textContent = "#tip { position: fixed; z-index: 50; max-width: 360px; padding: 8px 11px; background: #151517; border: 1px solid var(--hair); border-radius: 6px; font: 12px/1.5 var(--mono); color: var(--text); pointer-events: none; white-space: pre-wrap; } #tip .tv { color: #fff; font-weight: 600; }"; document.head.append(css);
+
+/* ---------- a made-up visit for the simulation: the same shape as the relay's, marked as such ---------- */
+function sample() {
+  const now = Math.floor(Date.now() / 1000), t0 = now - 50 * 60, rows = [], id = "queen-sample";
+  rows.push({ t: t0, visit: id, ship: "queen", kind: "landed", verdict: "calm" });
+  const stops = ["south", "bar", "radio", "market", "works", "dive", "book"], amt = { south: 20, bar: 5, radio: 25, market: 8, works: 4, dive: 12, book: 2 };
+  let r = 7;
+  for (let i = 0; i < 48; i++) { r = (r * 48271) % 2147483647; const p = (r % 120) + 1, to = stops[r % stops.length], kind = r % 9 === 0 ? "book" : "pay";
+    rows.push({ t: t0 + 60 + i * 55, visit: id, ship: "queen", i, p, kind, to, amount: kind === "book" ? amt[to] * 2 : amt[to], ok: r % 23 !== 0, hash: r % 23 !== 0 ? (r * 2654435761 >>> 0).toString(16).padStart(8, "0").repeat(8) : null, err: r % 23 === 0 ? "sender sequence 3 does not match expected 4" : undefined, height: 6800 + i }); }
+  const arr = Math.floor(now / 86400) * 86400 + 5 * 86400 + 15 * 3600, st = ["in escrow", "in escrow", "refunded", "in escrow", "planned"];
+  const escrow = [{ visit: "dryrun-sample", ship: "dryrun", name: "MS Dry Run", arrival: arr, settled: false, called_off: null,
+    count: { "in escrow": 3, refunded: 1, planned: 1 }, bookings: st.map((s, i) => ({ p: [4, 11, 17, 26, 33][i], amount: 10, status: s, withdraw: i === 2,
+      hash: s === "planned" ? null : ((i + 3) * 2654435761 >>> 0).toString(16).padStart(8, "0").repeat(8) })) }];
+  return { simulated: true, days: 30, entries: rows.reverse(), visits: [id], sample: true, escrow };
+}
+
+/* ---------- state ---------- */
+const FIRST = 8;   // a screenful first, never a page that scrolls; the rest on request
+let LOG = null, VISIT = "", SHOWN = FIRST;
+function setState(cls, text) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = text; }
+function visitLabel(id, rows) {
+  const e = rows.find(r => r.visit === id), d = e ? new Date(e.t * 1000) : null;
+  return (e && SHIPS[e.ship] || id) + (d ? " · " + d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "");
+}
+function answer(r) {
+  if (r.kind === "tuned") return el("span", { class: "note" }, (r.changes || []).map(c => c.held ? T("a pirate trick: held back for now") : F("{w}: {a} → {b}", { w: T(c.what), a: c.from, b: c.to }) + " · " + T(c.because || "")).join("; "));
+  if (r.held) return el("span", null, el("span", { class: "skip" }, T("held back")), el("span", { class: "note" }, " · " + T("a finding, reported privately to the team behind the testnet first")));
+  if (r.kind === "trick" && r.ok === false) return el("span", null, el("span", { class: "ok" }, T("stopped by the chain")), el("span", { class: "note" }, " · " + (r.code || "") + (r.right === false ? " · " + T("another answer than expected") : "")));
+  if (r.kind === "trick" && r.ok === true) return el("span", null, el("span", { class: "no" }, T("got through")), r.hash ? el("a", { href: "/explorer/?q=" + r.hash, title: r.hash }, " " + r.hash.slice(0, 8) + "…") : null);
+  if (r.kind === "escrow") {
+    if (r.p == null) return el("span", null, el("span", { class: "ev" }, T(r.status === "settled" ? "settled" : r.status === "bookings open" ? "bookings open" : r.status || "")),
+      r.result ? el("span", { class: "note" }, " · " + Object.entries(r.result).map(([k, n]) => n + " " + T(k)).join(", ")) : r.planned ? el("span", { class: "note" }, " · " + F("{n} planned", { n: r.planned })) : null);
+    const s = BOOKED[r.status] || [r.status, ""];
+    return el("span", null, el("span", { class: s[1] === "paid" ? "ok" : s[1] === "bad" ? "no" : "ev" }, T(s[0])), r.hash ? el("a", { href: "/explorer/?q=" + r.hash, title: r.hash }, " " + r.hash.slice(0, 8) + "…") : null,
+      r.note ? el("span", { class: "note" }, " · " + T(r.note)) : null);
+  }
+  if (r.kind === "called off") return el("span", null, el("span", { class: "ev" }, T("no landing")), r.note ? el("span", { class: "note" }, " · " + T(r.note)) : null);
+  if (["landed", "no landing", "left"].includes(r.kind)) return el("span", null, el("span", { class: "ev" }, F("testnet {s}", { s: T(r.verdict || "–") })), r.note ? el("span", { class: "note" }, " · " + T(r.note)) : null);
+  if (r.ok === true) return el("span", null, el("span", { class: "ok" }, T("sealed")), r.hash ? el("a", { href: "/explorer/?q=" + r.hash, title: r.hash }, " " + r.hash.slice(0, 8) + "…") : null);
+  if (r.ok === false) return el("span", null, el("span", { class: "no" }, T("refused")), r.err ? el("span", { class: "note" }, " · " + String(r.err).replace(/[{}"]/g, " ").replace(/\s+/g, " ").trim().slice(0, 140)) : null);
+  return el("span", null, el("span", { class: "skip" }, T("skipped")), r.note ? el("span", { class: "note" }, " · " + T(r.note)) : null);
+}
+function render() {
+  const all = LOG.entries || [], rows = VISIT ? all.filter(r => r.visit === VISIT) : all;
+  const v = $("visits"); v.replaceChildren();
+  const ids = LOG.visits && LOG.visits.length ? LOG.visits : [...new Set(all.map(r => r.visit))];
+  if (ids.length > 1) {
+    const b0 = el("button", { type: "button", class: VISIT ? "" : "on", text: T("All visits") }); b0.addEventListener("click", () => { VISIT = ""; SHOWN = FIRST; render(); }); v.append(b0);
+    ids.slice(0, 12).forEach(id => { const b = el("button", { type: "button", class: VISIT === id ? "on" : "", text: visitLabel(id, all) }); b.addEventListener("click", () => { VISIT = id; SHOWN = FIRST; render(); }); v.append(b); });
+  }
+  renderEscrow();
+  if (SHOWN === FIRST && LOG.escrow && LOG.escrow.length && innerHeight <= 860) SHOWN = FIRST - 2;   // the strip above takes two rows' room
+  const tb = $("rows"); tb.replaceChildren();
+  rows.slice(0, SHOWN).forEach(r => {
+    const ev = isEvent(r);
+    tb.append(el("tr", null,
+      el("td", { text: when(r.t) }),
+      el("td", { text: SHIPS[r.ship] || r.ship || "" }),
+      el("td", { text: ev ? "" : F("no. {n}", { n: r.p }) }),
+      el("td", null, ev ? el("span", { class: "ev", text: T(KINDS[r.kind] || r.kind) }) : T(KINDS[r.kind] || r.kind)),
+      el("td", { text: r.kind === "trick" && r.trick ? T(TRICKS[r.trick] || r.trick) : r.to ? T(PLACES[r.to] || r.to) : "" }),
+      el("td", { class: "n", text: r.amount != null ? N(r.amount) : "" }),
+      el("td", null, answer(r))));
+  });
+  $("empty").hidden = rows.length > 0;
+  $("more").hidden = rows.length <= SHOWN;
+  $("moreText").textContent = F("{a} of {b} lines", { a: N(Math.min(SHOWN, rows.length)), b: N(rows.length) });
+  $("logSmall").textContent = F("the last {n} days", { n: LOG.days || 30 });
+  const sent = all.filter(r => r.ok === true && r.kind !== "trick").length, ref = all.filter(r => r.ok === false && r.kind !== "trick").length, visits = ids.length;
+  const last = all.find(r => r.kind === "landed");
+  $("tiles").replaceChildren(
+    tile(T("Visits"), N(visits), T("ships that landed or tried to")),
+    tile(T("Sealed"), N(sent), T("passenger transactions the node took")),
+    tile(T("Refused"), N(ref), ref ? T("each with the node’s reason below") : T("none so far")),
+    tile(T("Last landing"), last ? when(last.t) : "–", last ? F("{s}, testnet {v}", { s: SHIPS[last.ship] || last.ship, v: T(last.verdict || "") }) : T("no ship yet")));
+}
+function renderEscrow() {
+  const list = LOG.escrow || [], e = list[0], box = $("escrow");
+  $("escrowPanel").hidden = !e;
+  if (!e) return;
+  const sum = Object.entries(e.count || {}).map(([k, n]) => n + " " + T((BOOKED[k] || [k])[0])).join(" · ");
+  box.replaceChildren(...[
+    el("span", { class: "call", "data-tip": sum }, el("span", { text: SHIPS[e.ship] || e.name }), " · ", el("span", { text: when(e.arrival) })),
+    e.called_off ? el("span", { class: "sum", text: T("called off") + ": " + T(e.called_off.why) }) : null,
+    ...(e.bookings || []).map(b => {
+      const s = BOOKED[b.status] || [b.status, "", ""];
+      const tipText = T(s[0]) + "\n" + T(s[2]) + (b.note ? " " + T(b.note) : "") + (b.withdraw ? "\n" + T("This passenger withdraws their own booking before the call.") : "");
+      const h = b.refund_hash || b.hash;
+      return el("span", { class: "bk " + s[1], "data-tip": tipText }, F("no. {n}", { n: b.p }), el("span", { text: N(b.amount) }), el("b", { text: T(s[0]) }),
+        h ? el("a", { href: "/explorer/?q=" + h, title: h, "aria-label": T("on the explorer") }, "↗") : null);
+    })].filter(Boolean));
+}
+function tile(h, b, p) { return el("div", { class: "tile" }, el("h3", { text: h }), el("b", { text: b }), el("p", { text: p })); }
+$("moreBtn").addEventListener("click", () => { SHOWN += 40; render(); });
+
+async function load() {
+  if (SAMPLE) { LOG = sample(); setState("snap", T("Simulation · sample visit")); render(); return; }
+  try {
+    const r = await fetch(RELAY + "/cruise/log?n=2000", { cache: "no-store" });
+    if (!r.ok) throw new Error("http " + r.status);
+    LOG = await r.json();
+    const q = PARAMS.get("visit"); if (q && (LOG.visits || []).includes(q)) VISIT = q;
+    setState("live", T("Live · from our relay")); render();
+  } catch (e) {
+    if (!LOG) { LOG = { entries: [], visits: [], days: 30 }; render(); }
+    setState("", T("Relay unreachable")); $("empty").textContent = T("Our relay does not answer right now; the page tries again every 30 seconds."); $("empty").hidden = false;
+  }
+}
+load();
+setInterval(load, 30000);
+</script>
+</body>
+</html>

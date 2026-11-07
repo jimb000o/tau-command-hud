@@ -108,6 +108,9 @@ body[data-mode="sim"] .simbar button:hover { background: #ffb13b; border-color: 
 body[data-mode="sim"] .simtag { color: #ffb13b; border-color: rgba(255,177,59,.6); }
 .simtag { position: absolute; top: 6px; right: 8px; font: 600 11px var(--display); letter-spacing: .2em; color: var(--dim); border: 1px solid var(--hair); border-radius: 3px; padding: 1px 4px; }
 body[data-mode="live"] .simtag { display: none; }
+/* every simulated chip value says so, also on a screenshot */
+.chip .st { display: none; text-decoration: none; font: 600 11px var(--display); letter-spacing: .1em; color: #ffb13b; margin-left: 6px; }
+body[data-mode="sim"] .chip .st { display: inline; }
 /* simple vs technical view */
 .stream .lbl.plain, body[data-view="simple"] .stream .lbl.tech { display: none; }
 body[data-view="simple"] .stream .lbl.plain { display: block; }
@@ -524,6 +527,9 @@ html.coreonly #coreFoot { display: block; position: fixed; left: 0; right: 0; bo
 .core canvas { height: 100%; width: auto; max-width: 100%; max-height: 100%; aspect-ratio: 1; display: block; object-fit: contain; }
 /* your own simulated node (assets/simnode.js): a small card in the core's top-left corner, simulation only */
 .core-panel { position: relative; }
+/* simulation mode: a faint word across the core, so a screenshot of the simulated chain cannot pass for the testnet */
+.simmark { display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-24deg); font: 600 clamp(22px, 4.6vw, 64px)/1 var(--display, inherit); letter-spacing: .3em; text-transform: uppercase; color: rgba(255,177,59,.11); pointer-events: none; z-index: 2; white-space: nowrap; }
+body[data-mode="sim"] .simmark { display: block; }
 .mynode { position: absolute; left: 14px; top: 46px; z-index: 3; }
 @media (max-width: 900px) { .mynode { position: static; margin: 0 0 8px; } }
 @media (min-width: 901px) and (max-width: 1599px) { .mynode .sn-card > span { display: none; } }   /* laptops: name and progress only, the core stays visible */
@@ -762,6 +768,8 @@ small { font-size: 11px; }   /* type floor on desktop: nothing under 11px */
 .clause i.k-approval { background: #fff; }
 .clause i.k-heightlock { background: #c4c4cc; }
 .clause span:last-child { color: var(--dim); }
+.clause span:nth-of-type(1) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clause .gen { font: 500 11px var(--mono); font-style: normal; color: var(--dim); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; margin-left: 6px; white-space: nowrap; }   /* one of IDNI's genesis accounts (assets/origins.js) */
 .appr { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--line); display: grid; gap: 4px; }
 .ap { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 12px; cursor: help; }
 .ap i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--amber); }
@@ -1048,11 +1056,11 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="chip v" id="chipMode" data-full="Mode. Simulation runs in your browser and shows the documented protocol with made-up data; Live node reads the real testnet through the community relay."><span class="dot sim" id="modeDot"></span><b id="modeTxt">Simulation</b></div>
       <a class="chip next" id="chipNext" href="proposals/" hidden><b></b></a>
       <a class="chip" id="chipOnline" href="meta/?view=tauhud" data-full="People looking at Tau HUD right now, counted by our relay at node.tauhud.com: one person counts once, however many tabs are open.&#10;No cookies and nothing stored in your browser; the relay tells people apart by address and browser, hashed with a daily salt and kept in memory only. Click for Tau HUD in numbers."><span class="dot none" id="onlineDot"></span><b id="onlineN" style="margin-left:0;margin-right:6px">—</b>online</a>
-      <button class="chip v" type="button" id="chipCons"><b><span class="lg" id="consL">Proof of authority</span><span class="sh" id="consS">PoA</span></b></button>
-      <div class="chip v" id="chipNet"><b id="netId">tau-testnet-v2</b></div>
-      <div class="chip v" id="chipHeight"><b id="chipH">#0</b></div>
-      <button class="chip v" type="button" id="btnState"><b id="chipRev">rev 1</b></button>
-      <div class="chip v" id="chipFeeWrap"><b id="chipFee">10 AGRS</b></div>
+      <button class="chip v" type="button" id="chipCons"><b><span class="lg" id="consL">Proof of authority</span><span class="sh" id="consS">PoA</span></b><s class="st">sim</s></button>
+      <div class="chip v" id="chipNet"><b id="netId">tau-testnet-v2</b><s class="st">sim</s></div>
+      <div class="chip v" id="chipHeight"><b id="chipH">#0</b><s class="st">sim</s></div>
+      <button class="chip v" type="button" id="btnState"><b id="chipRev">rev 1</b><s class="st">sim</s></button>
+      <div class="chip v" id="chipFeeWrap"><b id="chipFee">10 AGRS</b><s class="st">sim</s></div>
     </div>
     <nav class="tnav" data-page="hud" aria-label="Pages and tools">
       <div class="seg" role="group" aria-label="Data source" data-slot="source">
@@ -1113,6 +1121,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="mynode" id="myNode" hidden></div>
       <div class="core">
         <div id="coreFoot" aria-hidden="true"></div>
+        <div class="simmark" aria-hidden="true">Simulation</div>
         <canvas id="core" width="1120" height="1120" aria-label="Animated view of validators, their agreement on rule changes, accounts with their own Tau rules, the mempool and block production"></canvas>
         <div class="readout">
           <div id="rHw" data-health="height"><b id="rH">0</b><span>Height<i id="rHs"></i></span></div>
@@ -1479,7 +1488,18 @@ function markSealed(id, h, ts) {   // a card in Transactions and the waiting dot
   if (ts == null && Number.isFinite(h)) ts = (S.byHeight.get(h) || {}).ts;
   if (el && Number.isFinite(h) && Number.isFinite(ts)) { setAge(el, ts, "sealed", h); const feed = $("feed"); if (el.parentNode === feed && !feed.matches(":hover")) placeCard(feed, el); }
   if (!el || el.classList.contains("sealed") || !Number.isFinite(h)) return;
-  el.classList.add("sealed"); if (m) el.classList.add("listed"); const sp = el.querySelector(".top > span"); if (sp) sp.insertAdjacentHTML("afterbegin", `<b class="sl">ghost ✓ #${h}</b> · `);
+  sealMark(el, h);
+}
+/* "✓ #N" = sealed in block N. "ghost ✓ #N" only while a mempool listing that came at least one poll (3 s) after the block still names it
+   (IDNI #81); the getmempool asked together with that block's getblocks may still be from before the block, so it does not count */
+function sealMark(el, h) {
+  el.classList.add("sealed"); el.dataset.h = h; el.dataset.sealedAt = Date.now();
+  const sp = el.querySelector(".top > span"); if (sp && !sp.querySelector(".sl")) sp.insertAdjacentHTML("afterbegin", `<b class="sl">✓ #${h}</b> · `);
+}
+function ghostMark(el, on) {
+  if (el.classList.contains("listed") === on) return;
+  el.classList.toggle("listed", on); el.title = on ? "Ghost transaction: already in a block, still listed by the node (known bug, IDNI #81)" : "";
+  const sl = el.querySelector(".sl"); if (sl) sl.textContent = `${on ? "ghost " : ""}✓ #${el.dataset.h}`;
 }
 /* the relay compares the listed transactions with the whole chain it keeps (/health-score): how many are in fact sealed,
    and how long the oldest really waiting one has waited since the relay first saw it, not since this page opened */
@@ -1615,6 +1635,8 @@ const agreeHave = (v, thr) => S.mode === "live" ? `${v} of ${thr} needed votes` 
 const votersNote = () => S.mode !== "live" ? "" : S.openVoting === true ? " On this network any account may vote (open governance admission); the threshold comes from the validator count." : S.openVoting === false ? " Only active validators may vote on this network." : " Who may vote is a network setting: validators only, or every account.";
 const threshold = () => { const N = Math.max(1, S.validators.length); return S.quorum === "majority" ? Math.floor(N / 2) + 1 : Math.ceil(2 * N / 3); };
 
+/* the "no opinion" clause (o5 = 1 for every transfer): the node reads it as taking an account's rule away, never as a rule of its own */
+const o5Neutral = text => { const f = String(text || "").replace(/\s+/g, "").replace(/^always\((.*)\)\.?$/, "$1"); return f === "(o5[t]:bv[24]={#x000001}:bv[24])" || f === "o5[t]:bv[24]={#x000001}:bv[24]"; };
 /* ---------- a personal rule as the chain carries it (the text of stream o5), read into the shape the panels know ---------- */
 function policyFromText(text) {
   const s = String(text || "").trim(), num = h => /^#?x?[0-9a-f]+$/i.test(h) && /[a-f]|^#?x/i.test(h) ? parseInt(h.replace(/^#?x/i, ""), 16) : Number(h);
@@ -1774,7 +1796,9 @@ function setRelay(up) {
   const synced = PRESENCE.synced !== false;
   const catching = synced && PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2;
   const sc = PRESENCE.score != null ? ` health ${PRESENCE.score} of 100` : "", why = healthWhy(), sv = stalled ? stallVerdict(sc) : null;
-  $("liveDot").className = "dot " + (up ? (sv && sv[0] === "bad" ? "off" : synced && !catching && !degraded && !sv ? "" : "behind") : "off");
+  // red means one thing: our node or the relay does not answer. A stalled or catching-up chain with our node answering is amber,
+  // so the light turns back from red the moment the node answers again, whatever the relay's score still remembers of the outage
+  $("liveDot").className = "dot " + (up ? (synced && !catching && !degraded && !sv ? "" : "behind") : "off");
   LIVE_TIP = (sv ? verdict(sv[0], sv[1]) : !up ? verdict("bad", PRESENCE.stale ? "Problem: no answer from the relay for over a minute." : PRESENCE.health === "down" ? `Problem: the testnet is down,${sc || " says its health score"}.` : "Problem: the community node is offline, the relay is not answering.")
     : degraded ? verdict("watch", `Watch: testnet${sc || " health"}, degraded.`) : !synced ? verdict("busy", "In progress: online, not synced with the real chain yet.")
     : catching ? verdict("busy", `In progress: catching up, verified to #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}.`) : verdict("ok", sc ? `Normal: testnet${sc}.` : "Normal: online and following the real testnet chain."))
@@ -1797,6 +1821,10 @@ async function pollOnline() {
     PRESENCE.stale = false; PRESENCE.okAt = Date.now();
     PRESENCE.health = j.health && typeof j.health.state === "string" ? j.health.state : null; PRESENCE.healthLabel = j.health && j.health.label ? String(j.health.label) : "";
     PRESENCE.score = j.health && Number.isFinite(+j.health.score) ? Math.round(+j.health.score) : null;
+    const answering = !!j.upstream_connected && Number(j.height) > 0;
+    // back from an outage: forget "our node does not answer" from the last breakdown and ask for a fresh one now, not up to a minute later
+    if (answering && !PRESENCE.answering) { HSC.lost = HSC.lost.filter(x => x.k !== "node"); HSC.at = 0; }
+    PRESENCE.answering = answering;
     if (PRESENCE.health && PRESENCE.health !== "healthy") pollHealthWhy(); else HSC.lost = [];
     const n = Number(j.online ?? j.clients ?? j.presence);   // online = people (one per viewer token); clients = sockets
     setOnline(Number.isFinite(n) ? n : null);
@@ -1806,9 +1834,9 @@ async function pollOnline() {
     if (Array.isArray(j.restarts)) PRESENCE.restarts = j.restarts.map(r => ({ detected_at: Number(r.detected_at) || null, old_tip: r.old_tip ?? (r.old && r.old.tip) ?? null }));
     PRESENCE.tip = Number(j.tip_height ?? j.network_height) || null; PRESENCE.canon = Number.isFinite(Number(j.canonical_height)) ? Number(j.canonical_height) : null;
     PRESENCE.synced = j.live_default === true || (j.live_default === undefined && j.canonical_height === undefined) ? true : Number(j.canonical_height) > 0;
-    setRelay(!!j.upstream_connected && Number(j.height) > 0);
+    setRelay(answering);
     if (PRESENCE.up) { autoLive(); if (S.mode === "live" && Date.now() - NET.at > 55000) pollNodes(); }
-  } catch { setOnline(null); setRelay(false); }
+  } catch { PRESENCE.answering = false; setOnline(null); setRelay(false); }
   finally { clearTimeout(t); PRESENCE.at = Date.now(); }
 }
 const CORE_ONLY = document.documentElement.classList.contains("coreonly"), CORE_QUIET = CORE_ONLY && document.documentElement.classList.contains("corequiet");
@@ -1914,7 +1942,8 @@ const AGZ_LIFE = (() => {
   };
   /* the frames for turns and the ball load once the page has settled; until then he turns the old way, a quick flip */
   const MV = { ok: false };
-  const loadMv = () => { const im = new Image(); im.onload = () => { a.style.setProperty("--agz-mv", `url("${im.src}")`); MV.ok = true; }; im.src = "assets/rig/agz-moves.webp"; };
+  const loadMv = () => { const im = new Image(); im.onload = () => { a.style.setProperty("--agz-mv", `url("${im.src}")`); MV.ok = true; }; im.src = window.AgzLook ? AgzLook.src("assets/rig/agz-moves.webp") : "assets/rig/agz-moves.webp"; };
+  addEventListener("agz-stage", () => { if (MV.ok) loadMv(); });   // he grew up: his turns and rolls in the new frames
   if (document.readyState === "complete") setTimeout(loadMv, 1500); else addEventListener("load", () => setTimeout(loadMv, 1500), { once: true });
   const show = (i, mirror) => { sf.style.backgroundPositionX = i / 6 * 100 + "%"; spr.style.transform = mirror ? "scaleX(-1)" : ""; };
   const sprite = on => { a.classList.toggle("sp", on); if (!on) spr.classList.remove("ball"); };
@@ -2258,6 +2287,8 @@ const policyMeaning = p => !p ? "No own rule: every transfer is allowed." : ({
   heightlock: `Locked until a block: ${p.label}; until the chain reaches it every transfer is refused. A deadline in block heights, not clock time, so no clock can be gamed.`,
   custom: `Own rule on stream o5: ${p.label}. The node answers it on every transfer; 0 means refused, whoever holds the key.`,
 }[p.kind] || p.label);
+/* whose rule it is: an account's own rule binds only that account, so the hover names the wallet first */
+const ruleWhose = (a, p) => `Own rule of wallet ${short(a)}${isGenesis(a) ? " (IDNI genesis)" : ""}: ${p.label}.`;
 const proposalMeaning = u => ({
   fee: `Every transaction would cost ${u.value} AGRS instead of ${S.fee}; the fee rule (o9) in the consensus spec changes.`,
   validator: `A new validator ${short(u.value)} joins the set that seals blocks and votes; the agreement threshold is recomputed from the larger set.`,
@@ -2298,8 +2329,9 @@ function explainOffer(o) {
   const st = { offered: `Waiting for ${short(o.to)}; expires at #${o.expire}.`, accepted: `Now binds ${short(o.to)}’s account.`, rejected: "Declined; nothing changed.", expired: "Expired unanswered." }[o.status] || o.status;
   return `${policyMeaning(o.policy)}\n${o.collides ? "Accepting replaces the recipient’s current rule. " : ""}${st}`;
 }
+const isGenesis = a => { const o = window.TauOrigin && TauOrigin.of(a); return !!o && o.tag === "idni"; };   // assets/origins.js, the same list the account page uses
 function explainClause(acc, p) {
-  return `${policyMeaning(p)}\nChecked on every transfer, at admission and again in the block. Binds the account, not the key.`;
+  return `${isGenesis(acc) ? "IDNI genesis account, one of the 11 the testnet started with. " : ""}${policyMeaning(p)}\nChecked on every transfer, at admission and again in the block. Binds the account, not the key.`;
 }
 function explainBlock(b) {
   if (!b.n) return "Genesis: the starting state, spec revision 1, no transactions.";
@@ -2349,19 +2381,21 @@ const feedHold = [];
 const cardAt = d => { const a = d.querySelector(".age[data-at]"); return a ? Number(a.dataset.at) || 0 : 0; };
 function placeCard(feed, d) { const at = cardAt(d); feed.insertBefore(d, [...feed.children].find(c => c !== d && cardAt(c) < at) || null); }
 addEventListener("DOMContentLoaded", () => $("feed").addEventListener("mouseleave", () => { const feed = $("feed"); feedHold.splice(0).forEach(d => placeCard(feed, d)); [...feed.children].forEach(d => placeCard(feed, d)); while (feed.children.length > 40) feed.lastChild.remove(); }));
+const txBody = t => t.transfers && t.transfers.length
+  ? t.transfers.map(([f, to, a]) => `${acct(f)} → ${acct(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
+  : (t.note || `sender ${acct(t.sender)}`);
 function txCard(t) {
   const d = document.createElement("div");
   const ruleish = /rule/.test(t.type);
   d.className = "tx" + (t.kind === "gov" ? " gov" : ruleish ? " rl" : "") + (t.rejected ? " rej" : "");
   d.id = "tx_" + t.id.slice(0, 16);
   const label = t.rejected ? (t.refLabel || "✕ " + t.rejected) : testChange(t) ? "§ test change · no effect" : (TYPE_LABEL[t.type] || t.type);
-  const body = t.transfers && t.transfers.length
-    ? t.transfers.map(([f, to, a]) => `${acct(f)} → ${acct(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
-    : (t.note || `sender ${acct(t.sender)}`);
+  const body = txBody(t);
   const txid = S.mode === "live" && t.id && !t.rejected ? `<a class="acct" href="explorer/?tx=${encodeURIComponent(t.id)}" title="Open this transaction in the explorer">${short(t.id)}</a>` : short(t.id);
   if (t.at == null) { t.at = Date.now() / 1000; if (!t.ageKind) t.ageKind = S.mode === "live" ? "seen" : "sim"; }
-  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span><span class="age"></span> · <span class="txid">${txid} · </span>fee ${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
+  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span><span class="age"></span> · <span class="txid">${txid} · </span>${t.feeCap ? "fee ≤ " : "fee "}${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
   setAge(d, t.at, t.ageKind || (t.block != null ? "sealed" : "seen"), t.block);
+  if (S.mode === "live" && !t.rejected && Number.isFinite(t.block)) sealMark(d, t.block);   // first seen in its block: sealed, never a ghost
   d.dataset.ex = exKey(() => explainTx(t)); d.dataset.detail = dtKey(() => detailTx(t));
   if (t.rejected) { bounce(t); S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
   const feed = $("feed");
@@ -2532,7 +2566,7 @@ function renderClauses() {
     return `<div class="ap ${a.status}" data-full="${esc(TIP[a.status] || "")}"><i></i><span>${acct(a.from)} → ${acct(a.to)} <b>${fmt(a.amount)} AGRS</b></span><span>${LBL[a.status] || a.status}</span></div>`;
   }).join("")}</div>` : "";
   $("clauses").innerHTML = (entries.length ? entries.slice(0, 8).map(([acc, p]) =>
-    `<div class="clause${p.lastRefused && ruleState(p).hot ? " refused" : ""}" data-ex="${exKey(() => explainClause(acc, p) + (p.lastRefused && ruleState(p).hot ? "\nJust refused a transfer from this account." : ""))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${acct(acc)}</span><span>${p.name}</span></div>`).join("")
+    `<div class="clause${p.lastRefused && ruleState(p).hot ? " refused" : ""}" data-ex="${exKey(() => explainClause(acc, p) + (p.lastRefused && ruleState(p).hot ? "\nJust refused a transfer from this account." : ""))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${acct(acc)}${isGenesis(acc) ? ` <em class="gen">genesis</em>` : ""}</span><span>${p.name}</span></div>`).join("")
     : `<div class="empty">No personal rules yet. Each account can program its own transfer policy in Tau.</div>`) + appr;
   // The node composes all accepted clauses into ONE rule per stream (README · Rule sharing)
   const branches = entries.slice(0, 3).map(([acc, p]) => `(i12[t]:bv[384] = { #x${acc.slice(0, 8)}… }:bv[384]) ? ( ${esc(p.body)} )`);
@@ -2603,8 +2637,8 @@ function readouts() {
   $("rR").textContent = S.clauses.size;
   tickSubs();
   $("rHw").dataset.full = `Height: blocks in the chain since genesis #0.\nBelow: when the last block came and how old the chain is.`;
-  $("rMw").dataset.full = `Waiting: transactions in no block yet.${S.mode === "live" ? "\nGhost transactions, already sealed but still listed by the node, are counted apart (known bug)." : ""}`;
-  $("rRw").dataset.full = `User rules: accounts with their own money rule (o5) in force now.\n“Last at” is the block of the newest one.${S.mode === "live" ? "\nThe live chain has none yet; the simulation shows how they look." : ""}`;
+  $("rMw").dataset.full = `Waiting: the mempool, transactions in no block yet.${S.mode === "live" ? "\nGhost transactions, already sealed but still listed by the node, are counted apart (known bug)." : ""}`;
+  $("rRw").dataset.full = `User rules: wallets with their own money rule (o5) in force now; each binds only its own wallet.\n“Last at” is the block of the newest one.${S.mode === "live" && !S.clauses.size ? "\nThe live chain has none now; the simulation shows how they look." : ""}`;
   $("chipFee").textContent = S.fee + " AGRS";
   $("chipRev").textContent = "rev " + S.specRev;
   { const m = S.mode === "live" ? S.eligMode || "" : "validator_set", c = CONS_CHIP[m], n = S.validators.length;
@@ -2989,7 +3023,7 @@ function normTx(raw, idHint) {
   if (type === "user_tx" && ops["0"]) type = "rule_deploy";
   return {
     id: idHint || raw.tx_hash || hex(64), type, sender: raw.sender_pubkey || raw.sender || "",
-    kind: /consensus_rule/.test(type) ? "gov" : "", fee: raw.estimated_fee ?? raw.fee_limit ?? "—", transfers,
+    kind: /consensus_rule/.test(type) ? "gov" : "", fee: raw.estimated_fee ?? raw.fee_limit ?? "—", feeCap: raw.estimated_fee == null && raw.fee_limit != null, transfers,   // a block lists the signed fee_limit, a cap, not the fee charged
     // co-signature approvals (approvals.md): a request parks a transfer, a transfer_vote signs or declines it
     to: raw.recipient_pubkey || "", amount: Number(raw.amount) || 0, expireAt: Number(raw.expire_at_height) || 0, approve: raw.approve !== false,
     revisions: Array.isArray(raw.rule_revisions) ? raw.rule_revisions : null, patch: raw.host_contract_patch || null,
@@ -3016,7 +3050,12 @@ function liveMessage(ev) {
   presenceFromMessage(d);
   if (msg.command === "getruleoffers") {   // an account's rule in force and the offers it sent or received, from before this page opened
     const a = String(d.address || "").toLowerCase(); let changed = false;
-    (d.accepted_clauses || []).forEach(c => { if (a && c && c.target_stream === "o5" && c.clause_body && !S.clauses.has(a)) { S.clauses.set(a, policyFromText(c.clause_body)); changed = true; } });
+    if (a && Array.isArray(d.accepted_clauses)) {   // the node's answer is the account's rule as it stands now: add it, replace it, or take it away
+      const c = d.accepted_clauses.find(c => c && String(c.target_stream).replace(/^o/, "") === "5" && c.clause_body && !o5Neutral(c.clause_body)), had = S.clauses.get(a);
+      const now = c && policyFromText(c.clause_body);
+      if (now && (!had || had.kind + had.label !== now.kind + now.label)) { S.clauses.set(a, now); changed = true; }
+      else if (!c && had && !(had.seenAt && performance.now() - had.seenAt < 90000)) { S.clauses.delete(a); changed = true; }   // an answer sent before a block that just set the rule is older than that block
+    }
     (d.offers || []).forEach(o => {
       if (!o || !o.offer_id || S.offers.some(x => x.id === o.offer_id)) return;
       S.offers.push({ id: o.offer_id, from: o.offerer_pubkey, to: o.recipient_pubkey, policy: policyFromText(o.rule_text), status: o.status || "offered", expire: Number(o.expire_at_height) || 0, at: Number(o.created_at_height) || 0, collides: false }); changed = true;
@@ -3042,7 +3081,8 @@ function liveMessage(ev) {
       let ruleWork = false;
       txs.forEach(t => {   // what a block says about personal rules and rule sharing (README · Rule sharing): read before the card is drawn
         const fresh = !LIVE.seenTx.has(t.id);
-        if (t.type === "rule_deploy" && t.rule) { t.policy = policyFromText(t.rule); t.note = `${short(t.sender)} now runs “${t.policy.name}” · ${t.policy.label}`; if (fresh) { S.clauses.set(t.sender, t.policy); S.rulesLastBlock = b.n; ruleWork = true; log(`Clause registry: ${short(t.sender)} now runs “${t.policy.name}” · composite o5 rebuilt`, "warn"); } }
+        if (t.type === "rule_deploy" && t.rule && o5Neutral(t.rule)) { t.note = `${short(t.sender)} takes its own rule away`; if (fresh) { S.clauses.delete(t.sender); S.rulesLastBlock = b.n; ruleWork = true; log(`Clause registry: ${short(t.sender)} took its own rule away · composite o5 rebuilt`, "warn"); } }
+        else if (t.type === "rule_deploy" && t.rule) { t.policy = policyFromText(t.rule); t.policy.seenAt = performance.now(); t.policy.since = b.n; t.note = `${short(t.sender)} now runs “${t.policy.name}” · ${t.policy.label}`; if (fresh) { S.clauses.set(t.sender, t.policy); S.rulesLastBlock = b.n; ruleWork = true; log(`Clause registry: ${short(t.sender)} now runs “${t.policy.name}” · composite o5 rebuilt`, "warn"); } }
         else if (t.type === "rule_offer") { t.policy = policyFromText(t.ruleText); let o = S.offers.find(x => x.id === (t.offerId || t.id)); if (!o && fresh) { o = { id: t.offerId || t.id, from: t.sender, to: t.to, policy: t.policy, status: "offered", expire: t.expireAt || b.n + 20, collides: S.clauses.has(t.to), at: b.n, txId: t.id }; S.offers.push(o); ruleWork = true; } t.offer = o; t.note = `${short(t.sender)} → ${short(t.to)} · ${t.policy.name}: ${t.policy.label}`; }
         else if (t.type === "rule_offer_accept" || t.type === "rule_offer_reject") {
           const yes = t.type === "rule_offer_accept", o = S.offers.find(x => x.id === t.offerId); t.offer = o;
@@ -3060,6 +3100,7 @@ function liveMessage(ev) {
         // first seen in the mempool, where the node lists only hash and type: now the block says what the rule work was
         const el = $("tx_" + t.id.slice(0, 16)) || feedHold.find(d => d.id === "tx_" + t.id.slice(0, 16));
         if (el && t.note && !t.transfers.length) { el.querySelector(".mid").textContent = t.note; el.dataset.ex = exKey(() => explainTx(t)); el.dataset.detail = dtKey(() => detailTx(t)); }
+        else if (el && t.transfers.length) { el.querySelector(".mid").innerHTML = txBody(t); el.dataset.ex = exKey(() => explainTx(t)); el.dataset.detail = dtKey(() => detailTx(t)); }
         if (el) markSealed(t.id, b.n, b.ts);
       });
       txs.forEach(t => {
@@ -3089,7 +3130,8 @@ function liveMessage(ev) {
     S.mempool.forEach(t => { if (!LIVE.seenTx.has(t.id)) { t.at = Date.now() / 1000; t.ageKind = opening ? "open" : "seen"; LIVE.seenTx.add(t.id); txCard(t); log(`Mempool: ${short(t.id)} pending · est. fee ${esc(t.fee)}`); } const h = sealedAt(t.id); if (h != null) { t.block = typeof h === "number" ? h : t.block; if (typeof h === "number") markSealed(t.id, h); } });
     if (TXST.st.size > 400) { const keep = new Set(S.mempool.map(t => t.id.toLowerCase())); TXST.st.forEach((v, k) => { if (!keep.has(k)) TXST.st.delete(k); }); }
     const listedIds = new Set(S.mempool.map(t => "tx_" + t.id.slice(0, 16)));
-    document.querySelectorAll("#feed .tx.sealed").forEach(el => { const on = listedIds.has(el.id); if (el.classList.contains("listed") !== on) { el.classList.toggle("listed", on); el.title = on ? "Ghost transaction: already in a block, still listed by the node (known bug, IDNI #81)" : ""; } });
+    const ghostNow = Date.now();
+    [...document.querySelectorAll("#feed .tx.sealed"), ...feedHold.filter(el => el.classList.contains("sealed"))].forEach(el => ghostMark(el, listedIds.has(el.id) && ghostNow - Number(el.dataset.sealedAt || 0) > 2000));
     askTxStatus(); pollRelayMem(); scanBack();
     readouts();
   } else if (msg.command === "getgovernance") {
@@ -3148,6 +3190,21 @@ async function pollDropped() {
     list.forEach(x => { if (!x || !x.tx_hash || DROP.seen.has(x.tx_hash) || LIVE.seenTx.has(x.tx_hash)) return; DROP.seen.add(x.tx_hash); refusedTx(x); });
   } catch (e) {} finally { clearTimeout(timer); }
 }
+/* who holds a personal rule now: the relay checks the rule places every few minutes (GET /rules). Holders this page has not seen are
+   looked up, and an account it shows that the relay no longer lists is asked again, so the inner ring does not depend on when the page opened */
+const RULE_ASK = new Map();
+async function pollRules() {
+  if (S.simfeed || !LIVE.ws || LIVE.ws.readyState !== 1 || $("wsurl").value.trim() !== RELAY) return;
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 8000);
+  try {
+    const r = await fetch(relayBase() + "/rules", { cache: "no-store", signal: ctl.signal }); if (!r.ok) return;
+    const d = await r.json(), holders = (Array.isArray(d.holders) ? d.holders : []).map(a => String(a).toLowerCase()).filter(a => /^[0-9a-f]{96}$/.test(a));
+    if (S.simfeed || S.mode !== "live") return;
+    const ask = a => { const at = RULE_ASK.get(a) || 0; if (Date.now() - at < 300000) return; RULE_ASK.set(a, Date.now()); lookup(`getruleoffers ${a} all`); };   // the lookup is costly for the node: once per account in 5 min
+    holders.forEach(a => { if (!S.clauses.has(a)) ask(a); });
+    [...S.clauses.keys()].forEach(a => { if (!holders.includes(a)) ask(a); });
+  } catch (e) {} finally { clearTimeout(timer); }
+}
 function refusedTx(x) {
   const type = x.type || "user_tx";
   const t = { id: x.tx_hash, type, sender: x.sender || "", kind: /consensus_rule/.test(type) ? "gov" : "", fee: null, transfers: [], dropped: true, seen: x.seen, left: x.left,
@@ -3163,7 +3220,7 @@ function refusedTx(x) {
 /* forget every block and transaction: on connect, and when the relay reports that the node wiped a dead chain ("reset": true) */
 function liveClear() {
   Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, height: 0, updates: [], offers: [], refusedN: 0, approvals: [], reorgs: [], eligMode: "", modeHistory: [] });
-  TXST.st.clear(); TXST.busy = ""; RMEM.at = 0; RMEM.M = 0; SCAN.ids.clear(); SCAN.lo = null; SCAN.want = null;
+  TXST.st.clear(); TXST.busy = ""; RULE_ASK.clear(); RMEM.at = 0; RMEM.M = 0; SCAN.ids.clear(); SCAN.lo = null; SCAN.want = null;
   S.clauses = new Map(); S.byHeight = new Map(); S.memSeen = new Map(); S.chainStart = null; S.rulesLastBlock = null; LIVE.seenBlocks.clear(); LIVE.seenTx.clear(); DROP.seen.clear(); DROP.cards.clear(); DROP.first = true; LIVE.memOnce = false;
   $("ribbon").innerHTML = ""; $("feed").innerHTML = ""; $("feedRej").textContent = "0 refused"; $("feedRej").classList.remove("some");
   RIB.back = false; RIB.target = null; RIB.loading = false; ribbonHold.length = 0;
@@ -3183,12 +3240,13 @@ function liveConnect() {
   ws.onopen = () => {
     LIVE.everConnected = true; LIVE.retryWait = 5000;
     setMode("live", "Connected");
+    if (!S.simfeed) pollOnline();   // reconnected: the light asks the relay at once instead of keeping the outage's red until the next round
     ws.send(helloLine());
     if (!S.simfeed && window.TauChainLoad) TauChainLoad.progress(0, 12);   // the shared "reading the chain" bar until the first blocks are in
     liveSend("getgovernance"); liveSend("getblocks 12"); liveSend("getmempool"); RIB.probe = true; liveSend("getblockrange 1 1");
     LIVE.poll = setInterval(() => { liveSend("getblocks 6"); liveSend("getmempool"); }, 3000);
     LIVE.govPoll = setInterval(() => liveSend("getgovernance"), 15000);
-    setTimeout(pollDropped, 1500); LIVE.dropPoll = setInterval(() => { if (!document.hidden) pollDropped(); }, 30000);
+    setTimeout(pollDropped, 1500); setTimeout(pollRules, 2500); LIVE.dropPoll = setInterval(() => { if (!document.hidden) { pollDropped(); pollRules(); } }, 30000);
     pollNodes(); if (!S.simfeed) pollNext();   // fill the orbit from this feed right away, so a switch from the opening simulation never shows its nodes on the live chain
   };
   ws.onmessage = liveMessage;
@@ -3246,11 +3304,19 @@ const CORE_HITS = [], CORE_RINGS = [];
 /* known origins of waiting transactions (assets/origins.js): ring colour and dash per kind; IDNI dashed grey, our own server wallets dotted,
    simulated cruise passengers amber (simulated), the apps' players solid white */
 const ORIGIN_RING = { idni: ["rgba(170,170,178,.85)", [3, 3]], bot: ["rgba(170,170,178,.85)", [1, 3]], cruise: ["rgba(255,177,59,.9)", [3, 3]],
-  rabbit: ["rgba(255,255,255,.9)", []], agorzilla: ["rgba(255,255,255,.9)", []], deja: ["rgba(255,255,255,.9)", []] };
+  rabbit: ["rgba(185,255,214,.95)", []], agorzilla: ["rgba(255,255,255,.9)", []], deja: ["rgba(255,255,255,.9)", []] };
 function originOf(tx) { if (!window.TauOrigin) return null; if (!tx._og || performance.now() - tx._og.at > 5000) tx._og = { at: performance.now(), o: TauOrigin.of(tx.sender, tx.transfers) }; return tx._og.o; }
 const originLine = og => og ? `\nComes from ${og.name}: ${og.what}.` : "";
 /* CORE_MOUSE: where the pointer rests over the core, in canvas units; the frame loop re-runs the hit test there so the hovered element lights up even while it orbits */
 let CORE_MOUSE = null;
+/* the waiting room holds still while the pointer rests on its orbit, so one dot can be read; a short ease stops it and starts it again.
+   On touch a tap holds it for a few seconds. MEM_T is the orbit's own clock and moves only while it runs */
+let MEM_T = 0, MEM_V = 1, MEM_LAST = 0;
+function memHeld(C) {
+  const m = CORE_MOUSE; if (!m) return false;
+  if (m.tap && performance.now() - m.at > 6000) return false;
+  return Math.abs(Math.hypot(m.x, m.y) - C * .44) <= 30;
+}
 function coreHitAt(x, y) {
   let best = null, bd = Infinity;
   for (const h of CORE_HITS) { const d = Math.hypot(h.x - x, h.y - y); if (d <= h.r && d < bd) { best = h; bd = d; } }
@@ -3262,7 +3328,7 @@ function coreHitAt(x, y) {
 function coreHit(e) {
   const b = cv.getBoundingClientRect(); if (!b.width) return null;
   const k = cv.width / b.width, C = cv.width / 2, x = (e.clientX - b.left) * k - C, y = (e.clientY - b.top) * k - C;
-  const h = coreHitAt(x, y); CORE_MOUSE = h ? { x, y } : null;
+  const h = coreHitAt(x, y); CORE_MOUSE = h ? { x, y, at: performance.now(), tap: false } : null;
   return h;
 }
 /* the hovered element glows under its overlay text: a band for a ring, a halo for a dot, the validator or the core; in the colour
@@ -3628,12 +3694,15 @@ function draw(tm) {
 
   // user-rule ring: every account that runs its own Tau policy
   const R = [...S.clauses.values()], rr = C * .56;
+  ring(rr, 14, () => vt(`Rule ring: wallets with their own money rule, ${R.length ? R.length + " now" : "none now"}.\nEach rule binds only the wallet that set it, never anyone else.`,
+    `Rule ring: senders with their own o5 clause, ${R.length ? R.length + " now" : "none now"}.\nEach clause binds only its own sender; the testnet has 2 places.`));
   const RA = [...S.clauses.keys()];
   R.forEach((p, i) => {
     const a = i / Math.max(R.length, 1) * Math.PI * 2 - t * .12, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
     const st = ruleState(p), held = st.hot && st.refused, col = st.hot ? (held ? "222,222,230" : "57,255,138") : "170,170,178";   // a refusal leaves the account untouched: it stays lit, its shield takes the red
     focusAt(RA[i], x, y, 22);
-    hit(x, y, 24, () => verdict("ok", st.hot ? (st.refused ? "Normal: its rule just refused a transfer; the shield held." : "Normal: it just let a transfer pass.") : "Normal: in force; nothing checked in the last few seconds.") + vt(`${policyMeaning(p)}`, `${policyMeaning(p)}\nAccount ${short(RA[i])}, a branch of the composite o5 program.`));
+    hit(x, y, 24, () => verdict("ok", st.hot ? (st.refused ? "Normal: its rule just refused a transfer; the shield held." : "Normal: it just let a transfer pass.") : p.since != null ? `Normal: in force since block #${fmt(p.since)}.` : "Normal: in force.")
+      + `${p.name}\n${ruleWhose(RA[i], p)}\n` + vt("It binds only this wallet; every other wallet sends as before.", "Its own branch of the composite o5 program; no other wallet is bound."));
     dotShadow(x, y, 9, C);
     cx.beginPath(); cx.arc(x, y, 7, 0, Math.PI * 2);
     cx.fillStyle = `rgba(${col},.9)`; cx.shadowColor = `rgb(${col})`; cx.shadowBlur = st.hot ? 18 : 10; cx.fill();
@@ -3644,10 +3713,12 @@ function draw(tm) {
 
   // mempool orbit: a faint guide circle shows where the waiting transactions travel, so the ring can be found even when it is empty
   const M = S.mempool.length;
+  const mdt = MEM_LAST ? Math.min((tm - MEM_LAST) / 1000, .1) : 0; MEM_LAST = tm;
+  MEM_V += ((memHeld(C) ? 0 : 1) - MEM_V) * Math.min(1, mdt * 8); MEM_T += mdt * MEM_V; const mt = MEM_T;
   const mlv = CORE_LV.mempool, mcol = mlv === "bad" ? "rgba(255,77,109,.55)" : mlv === "watch" ? "rgba(255,177,59,.4)" : "rgba(255,255,255,.07)";   // the orbit itself warns: amber to watch, red when stuck
   cx.save(); cx.setLineDash([2, 10]); cx.beginPath(); cx.lineWidth = mlv === "ok" ? 1.2 : 2; cx.strokeStyle = mcol; cx.arc(0, 0, C * .44, 0, Math.PI * 2); cx.stroke(); cx.restore();
   S.mempool.forEach((tx, i) => {
-    const a = i / Math.max(M, 1) * Math.PI * 2 + t * .6, r = C * .44 + Math.sin(t * 2 + i) * 8;
+    const a = i / Math.max(M, 1) * Math.PI * 2 + mt * .6, r = C * .44 + Math.sin(mt * 2 + i) * 8;
     const sl = liveChain() && sealedAt(tx.id) != null; focusAt(tx.id, Math.cos(a) * r, Math.sin(a) * r, 16); dotShadow(Math.cos(a) * r, Math.sin(a) * r, 6, C);
     cx.beginPath(); cx.fillStyle = tx.kind === "gov" ? "rgba(255,255,255,.95)" : /rule/.test(tx.type) ? "rgba(57,255,138,.95)" : "rgba(200,200,210,.75)";
     if (sl) {   // sealed but still listed: an amber dot in a small block frame
@@ -3661,7 +3732,7 @@ function draw(tm) {
       cx.beginPath(); cx.arc(Math.cos(a) * r, Math.sin(a) * r, sl ? 13 : 11, 0, Math.PI * 2); cx.stroke(); cx.restore();
       if (M <= 8) { const y = Math.sin(a) * r; plate(TauOrigin.label(og.tag), Math.cos(a) * r, y + (y > 0 ? 36 : -20), "500 15px JetBrains Mono, monospace", st[0]); } }   // a few waiting: each says where it comes from
     if (sl) { hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const h = sealedAt(tx.id); return vt(`Ghost transaction: already in ${typeof h === "number" ? `block #${fmt(h)}` : "a block"}, still listed by the node (known bug, see Findings).`, `Mempool: ${short(tx.id)} · ${tx.type} · already in ${typeof h === "number" ? "#" + fmt(h) : "a block"}, still listed by getmempool (IDNI #81).`) + originLine(og); }); return; }
-    hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const what = tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"; return vt(`Waiting for the next block: ${what}. It passed the rule check at the door.`, `Mempool: ${what} ${short(tx.id)} · type ${tx.type} · fee ${tx.fee}. Admitted after the rule check, waiting for the next block.`) + originLine(og); });
+    hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const what = tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"; return vt(`In the mempool: ${what} waiting for the next block. It passed the rule check at the door.`, `Mempool: ${what} ${short(tx.id)} · type ${tx.type} · fee ${tx.fee}. Admitted after the rule check, waiting for the next block.`) + originLine(og); });
   });
   cx.shadowBlur = 0;
   ring(C * .44, 30, () => {   // the waiting room: every dot on this orbit is a transaction the node admitted but no block has sealed yet
@@ -3669,10 +3740,10 @@ function draw(tm) {
     const gov = S.mempool.filter(t => t.kind === "gov").length, rule = S.mempool.filter(t => t.kind !== "gov" && /rule/.test(t.type)).length, xfer = M - gov - rule;
     const mix = [[xfer, "transfer", "transfers"], [rule, "rule work", "rule work"], [gov, "rule-change proposal", "rule-change proposals"]].filter(x => x[0]).map(x => `${x[0]} ${x[0] === 1 ? x[1] : x[2]}`).join(", ");
     const age = (m.pageAge ? "at least " : "") + fmtAge(oldest);
-    return health("mempool") + vt("Waiting transactions\n", "Mempool\n") + (M
+    return health("mempool") + "Mempool · waiting transactions\n" + (M
       ? vt(`${st ? (W ? `${W} really ${W === 1 ? "waits" : "wait"}, the oldest for ${age}.` : "Nothing really waits; the amber framed dots are ghosts.") : `${M} waiting (${mix}), the oldest for ${age}.`}\nClick to see them one by one.`,
            `${M} listed (${mix}), ${st} ghost${st === 1 ? "" : "s"} (IDNI #81), ${W} pending${W ? `, oldest ${age}` : ""}.\nClick to list them.`)
-      : vt(`Waiting transactions orbit here as dots until a block takes them in.\nClick for details.`,
+      : vt(`The node's waiting room: accepted transactions orbit here as dots until a block takes them in.\nClick for details.`,
            `Mempool empty. Admitted transactions orbit here until the proposer seals them.\nClick for details.`));
   }, null, () => showDetail(dtKey(detailMempool)));
 
@@ -3992,7 +4063,7 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
   document.addEventListener("scroll", e => { if (!cur) return; const t = e.target; if (t === document || (t instanceof Element && t.contains(cur))) hide(); }, true);
   document.addEventListener("click", e => { if (!touch) return; if (e.target.closest("[data-detail], button, a, input, select")) { hide(); return; } const el = find(e.target); if (el && el !== cur) show(el, e.clientX, e.clientY); else if (el && Date.now() - shownAt < 700) { /* the tap that opened it */ } else hide(); }, true);
   /* chain core: the drawn elements explain themselves (hit regions come from draw()) */
-  const coreShow = e => { if (typeof CORE_QUIET !== "undefined" && CORE_QUIET) return; const h = coreHit(e); if (h) { cur = cv; shownAt = Date.now(); setOvl(viewText(h.fn()), true); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = h.href || h.open ? "pointer" : "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
+  const coreShow = e => { if (typeof CORE_QUIET !== "undefined" && CORE_QUIET) return; const h = coreHit(e); if (CORE_MOUSE) CORE_MOUSE.tap = touch; if (h) { cur = cv; shownAt = Date.now(); setOvl(viewText(h.fn()), true); ovl.hidden = false; place(e.clientX, e.clientY); cv.style.cursor = h.href || h.open ? "pointer" : "help"; } else { cv.style.cursor = ""; if (cur === cv && !touch) hide(); } };
   cv.addEventListener("mousemove", e => { if (!touch) coreShow(e); });
   cv.addEventListener("mouseleave", () => { cv.style.cursor = ""; CORE_MOUSE = null; if (cur === cv && !touch) hide(); });
   /* a drawn element with a page behind it (the nodes) opens that page on click; on touch the first tap explains, the second opens */

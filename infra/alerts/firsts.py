@@ -94,7 +94,8 @@ def scan(st: dict, blocks: dict[int, dict], chain: str) -> list[dict]:
                 continue
             for k, test, *_ in KINDS:
                 if k in left and test(t):
-                    f = {"key": k, "h": h, "ts": ts_of(b), "tx": ids[i] if i < len(ids) else None}
+                    f = {"key": k, "h": h, "ts": ts_of(b), "tx": ids[i] if i < len(ids) else None,
+                         "from": t.get("sender_pubkey")}
                     st["seen"][k] = f
                     left.remove(k)
                     new.append(f)
@@ -123,14 +124,27 @@ def headline(fs: list[dict]) -> str:
     return "Firsts on the testnet: money with terms"
 
 
-def telegram_text(fs: list[dict], real_line: str) -> str:
+# Whose wallet did it, from the relay's /wallets/tags (walletdays.py). A wallet missing there is not ours and not IDNI's.
+WHO = {"idni": "one of IDNI's own test accounts", "bot": "our own island bot", "cruise": "one of our simulated cruise passengers",
+       "rabbit": "a White Rabbit Key player", "agorzilla": "a wallet that feeds Agorzilla"}
+WHO_OTHER = "a wallet that is not ours and not IDNI's"
+
+
+def who(f: dict, tags: dict | None) -> str:
+    if tags is None or not f.get("from"):
+        return ""
+    return WHO.get(tags.get(f["from"]), WHO_OTHER)
+
+
+def telegram_text(fs: list[dict], real_line: str, tags: dict | None = None) -> str:
     e = html.escape
     out = [real_line, f"🆕 <b>{e(headline(fs))}</b>",
            "Tau Testnet Alpha carried these for the first time:" if len(fs) > 1 else "Tau Testnet Alpha carried this for the first time:", ""]
     for f in fs:
         where = (f'<a href="{e(SITE)}/explorer/?tx={e(f["tx"])}">block #{f["h"]:,}</a>' if f.get("tx")
                  else f'<a href="{e(SITE)}/explorer/?b={f["h"]}">block #{f["h"]:,}</a>')
-        out.append(f"• {e(LINES[f['key']])} In {where}.")
+        by = who(f, tags)
+        out.append(f"• {e(LINES[f['key']])} In {where}" + (f", sent by {e(by)}." if by else "."))
     out += ["", "Until now these were only described in the testnet's code. Now they have happened on the chain.",
             "", f'<a href="{e(SITE)}/">Watch it on Tau HUD</a>']
     return "\n".join(out)

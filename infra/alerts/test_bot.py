@@ -155,6 +155,7 @@ def test_parse():
     assert P("/height") == ("height", None)
     assert P("/start") == ("help", None)
     assert P("/start height") == ("height", None) and P("/start status") == ("status", None)
+    assert P("/start owner-Ab12cd") == ("owner", "Ab12cd") and P("/start owner-Ab12cd", False) is None   # up owner, private only
     assert P("height?") == ("height", None)
     assert P("last proposal?") == ("proposals", None)
     assert P("is my tx in?") == ("tx", None)

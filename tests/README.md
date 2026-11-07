@@ -6,8 +6,10 @@ Every pull request runs `.github/workflows/checks.yml`. The same checks run loca
 |---|---|---|
 | Pages | `npm i --no-save playwright && npx playwright install chromium && node tests/pages.mjs` | a page throws a JavaScript error (simulation, or live with the node offline), a Chinese page shows an English text, or a page scrolls at 2560 × 1440 or 2000 × 1125 |
 | Updates log | `node tests/updates.mjs` | `assets/updates.json` is not valid, lost an entry of the target branch, or an entry has no Chinese text in `assets/i18n/zh/hud.js`; a merge-conflict marker anywhere in the shared files |
+| News line | `node tests/ticker.mjs` | a headline in `assets/ticker.json` has neither `since` nor `keep: true` (it would never leave the line), a bad date, or a text or hover without its Chinese or Japanese |
 | White Rabbit Key, 100 players | `node tests/rabbit-sim.mjs` (by hand, about 30 min; `PLAYERS=10` for a short run) | a player throws a JavaScript error, gets stuck or never reaches the election; the report (`tests/out/rabbit-sim.md`) also lists places out of reach per screen, small text, plates that scroll, who wins by candidate and play style, and the test transactions sent |
-| Server | `tests/python.sh` | any `infra/*/test_*.py` fails (the checker test needs the built engine and runs in the node image) |
+| Live node light | `node tests/live-recover.mjs` (by hand, about 4 min) | the HUD's Live node light does not turn red when a stand-in relay or its node goes offline, stays red once the node answers again, or does not return to green without a reload |
+| Server | `tests/python.sh` | any `infra/*/test_*.py` fails (the checker test needs the built engine and runs in the node image; the Guardian test needs IDNI's tau-testnet checkout in `TAU_TESTNET_DIR`, which the CI job fetches at our node's commit) |
 
 `node tests/pages.mjs vote account` checks only those pages. The browser never leaves the machine: every request outside the
 local server is refused, and the clock is fixed, so the simulation shows the same chain on every run.

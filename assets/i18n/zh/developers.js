@@ -1,6 +1,8 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Tau today for AI assistants and people: the hand-checked facts about Tau with their sources in IDNI's repositories, the live numbers and IDNI's newest commits (Markdown at /tau-today.md, tauhud.com/facts/).": "给 AI 助手和人看的今日 Tau：人工核对的 Tau 事实及其在 IDNI 仓库中的来源、实时数字和 IDNI 的最新提交（Markdown 版在 /tau-today.md，页面 tauhud.com/facts/）。",
   "(MIT). Real-time data: the read-only WebSocket": "（MIT）。实时数据：只读 WebSocket",
+  ", any origin may call it (CORS), no key. One line to try:": "，任何来源都可以调用（CORS），无需密钥。试一行：",
   ", any origin may call it (CORS), no key.": "，任何来源都可以调用（CORS），无需密钥。",
   "Active validators": "活跃验证者",
   "all boxes, for a sidebar or a page": "所有框，用于侧栏或页面",
@@ -8,6 +10,7 @@ TauI18n.add({ strings: {
   "answers": "回答",
   "Ask for it": "提出需求",
   "Atom feed of every proposal, agreement, activation and chain restart.": "每个提案、同意、生效和链重启的 Atom 订阅源。",
+  "Services found on the chain: co-signers, rule givers, accounts paid with terms or by many wallets, with their numbers (tauhud.com/services/).": "链上发现的服务：共同签名者、规则提供者、附条件或被许多钱包付款的账户，以及它们的数字（tauhud.com/services/）。",
   "Availability per hour for 31 days, outages, stalls, restarts.": "31 天内每小时的可用性、中断、停滞、重启。",
   "Background": "背景",
   "badge": "徽章",

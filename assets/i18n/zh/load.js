@@ -1,5 +1,7 @@
 /* Simplified Chinese for the testnet load page (load/). Keys are the English text; {n} {m} … are placeholders. */
 TauI18n.add({ strings: {
+  "Relay unreachable · last seen {t}": "中继无法连接 · 最后更新 {t}",
+  "Our relay does not answer right now; these are the numbers of {t}. The page tries again every 30 seconds.": "我们的中继目前没有回应；这些是 {t} 的数字。页面每 30 秒重试一次。",
   "Testnet load": "测试网负载",
   "Reading the relay": "正在读取中继",
   "Live from our node": "来自我们节点的实时数据",

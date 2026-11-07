@@ -1,5 +1,10 @@
 /* Japanese for /start/. Keys are the English text; {n} {a} {b} are placeholders. */
 TauI18n.add({ strings: {
+  "Rather watch first?": "まず見てみますか？",
+  "Tau in 60 seconds": "60 秒でわかる Tau",
+  "Guided tour of the HUD": "HUD のガイドツアー",
+  "(one minute, eight steps)": "（1 分、8 ステップ）",
+  "one minute, eight steps.": "1 分、8 ステップ。",
   "Start here · Tau HUD": "ここから始める · Tau HUD",
   "Try Tau in four steps.": "4 ステップで Tau を試そう。",
   "On Tau the rules change by agreement, and every account can carry a rule of its own that the chain itself checks. Try it on Tau Testnet Alpha: a few minutes in this browser, nothing to install. Test AGRS have no value.": "Tau ではルールは合意によって変わり、どのアカウントもチェーン自身がチェックする自分だけのルールを持てます。Tau Testnet Alpha で試してみましょう：このブラウザで数分、インストール不要。テスト AGRS に価値はありません。",

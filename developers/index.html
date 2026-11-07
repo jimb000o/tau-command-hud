@@ -198,13 +198,13 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
 
     <section class="panel" aria-labelledby="hApi">
       <h2 id="hApi">JSON API</h2>
-      <p class="step">Everything the site reads is open to you. Base address <code>https://node.tauhud.com</code>, any origin may call it (CORS), no key.</p>
+      <p class="step">Everything the site reads is open to you. Base address <code>https://node.tauhud.com</code>, any origin may call it (CORS), no key. One line to try:</p>
+      <div class="copyrow"><pre id="snipCurl">curl -s https://node.tauhud.com/api/v1/summary</pre><button class="copy" type="button" data-copy="snipCurl">Copy</button></div>
       <table>
         <thead><tr><th>Path</th><th>What you get</th></tr></thead>
         <tbody id="endpoints"></tbody>
       </table>
       <h3>Try it</h3>
-      <div class="copyrow"><pre id="snipCurl">curl -s https://node.tauhud.com/api/v1/summary</pre><button class="copy" type="button" data-copy="snipCurl">Copy</button></div>
       <div class="copyrow"><pre id="snipJs">const s = await (await fetch("https://node.tauhud.com/api/v1/summary")).json();
 console.log(`Tau block #${s.height}, ${s.proposals.waiting} waiting for votes`);</pre><button class="copy" type="button" data-copy="snipJs">Copy</button></div>
       <h3 class="live"><i class="dot" id="jsonDot"></i><span id="jsonHead">Live answer of /api/v1/summary</span></h3>
@@ -307,6 +307,8 @@ const EP = [
   ["/feed.xml", "Atom feed of every proposal, agreement, activation and chain restart."],
   ["/stats", "One row per block of the whole chain: time, transactions, transfers, volume, proposer."],
   ["/uptime", "Availability per hour for 31 days, outages, stalls, restarts."],
+  ["/services", "Services found on the chain: co-signers, rule givers, accounts paid with terms or by many wallets, with their numbers (tauhud.com/services/)."],
+  ["/tau-today.json", "Tau today for AI assistants and people: the hand-checked facts about Tau with their sources in IDNI's repositories, the live numbers and IDNI's newest commits (Markdown at /tau-today.md, tauhud.com/facts/)."],
   ["/devpulse.json", "Tau's code from IDNI's public git history: newest commits, weekly rhythm, code areas, tags, the version our node runs."],
   ["/community/board", "Community nodes run with our kit: uptime, height, same chain or not."],
   ["/og/block/<n>.png", "Link preview pictures; also /og/proposal/<id>.png, /og/address/<hex>.png, /og/hud.png."],

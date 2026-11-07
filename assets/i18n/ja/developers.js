@@ -1,6 +1,8 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Tau today for AI assistants and people: the hand-checked facts about Tau with their sources in IDNI's repositories, the live numbers and IDNI's newest commits (Markdown at /tau-today.md, tauhud.com/facts/).": "AI アシスタントと人のための今日の Tau：人の目で確認した Tau の事実と IDNI のリポジトリ内の出典、最新の数字、IDNI の最新コミット（Markdown は /tau-today.md、ページは tauhud.com/facts/）。",
   "(MIT). Real-time data: the read-only WebSocket": "（MIT）。リアルタイムデータ：読み取り専用の WebSocket",
+  ", any origin may call it (CORS), no key. One line to try:": "、どのオリジンからも呼び出せます（CORS）、キー不要。まず一行：",
   ", any origin may call it (CORS), no key.": "、どのオリジンからも呼び出せます（CORS）、キー不要。",
   "Active validators": "稼働中のバリデーター",
   "all boxes, for a sidebar or a page": "全ボックス、サイドバーやページ向け",
@@ -8,6 +10,7 @@ TauI18n.add({ strings: {
   "answers": "が答えます",
   "Ask for it": "リクエストする",
   "Atom feed of every proposal, agreement, activation and chain restart.": "すべての提案、合意、施行、チェーン再起動の Atom フィード。",
+  "Services found on the chain: co-signers, rule givers, accounts paid with terms or by many wallets, with their numbers (tauhud.com/services/).": "チェーン上で見つかったサービス：共同署名者、ルールの提供者、条件付きまたは多くのウォレットから支払われるアカウントと、その数字（tauhud.com/services/）。",
   "Availability per hour for 31 days, outages, stalls, restarts.": "31 日間の時間ごとの稼働状況、停止、停滞、再起動。",
   "Background": "背景",
   "badge": "バッジ",

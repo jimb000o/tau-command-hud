@@ -826,23 +826,66 @@
   const SHIPS = {
     liner: { L: 186, hull: P.navy, band: P.cream, funnel: P.coral, decks: [0.8, 0.64, 0.44], tall: 9 },
     expedition: { L: 128, hull: "#2f5468", band: "#e9ecea", funnel: P.teal, decks: [0.58, 0.42], tall: 9, crane: true },
+    pirate: { L: 128, hull: "#1f2428", band: "#3a3f45", funnel: "#15181b", decks: [0.5, 0.36], tall: 8 },
   };
+  /* the pirates' Black Sequence: its own painting (pirate.webp) once there is one; until then MS Dry Run's, darkened
+     like tarred wood, with no smoke and a black flag of three white chain links on its mast */
+  const shipKind = v => v.style === "liner" ? "liner" : v.style === "pirate" ? (BOATS.pirate ? "pirate" : "pirateStandIn") : "expedition";
+  function standIn(m) {
+    const c = document.createElement("canvas"); c.width = m.im.naturalWidth; c.height = m.im.naturalHeight;
+    const x = c.getContext("2d"); x.filter = "brightness(0.42) saturate(0.45) contrast(1.15)"; x.drawImage(m.im, 0, 0);
+    const { funnel, ...rest } = m;
+    BOATS.pirateStandIn = { ...rest, im: c, flag: funnel };
+  }
+  function blackFlag(g, x, y, k, t) {   // pole up from (x, y), in the sprite's own pixels (k: pixels per world unit)
+    const h = 15 * k, w = 13 * k, f = 8 * k, wave = Math.sin(t * 0.006) * k;
+    g.strokeStyle = INK; g.lineWidth = 1.2 * k; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - h - f); g.stroke();
+    g.fillStyle = "#121416"; g.beginPath(); g.moveTo(x, y - h - f); g.quadraticCurveTo(x + w / 2, y - h - f - wave, x + w, y - h - f + wave);
+    g.lineTo(x + w, y - h + wave); g.quadraticCurveTo(x + w / 2, y - h - wave, x, y - h); g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = "#f2efe6"; g.lineWidth = 0.9 * k;
+    for (let i = 0; i < 3; i++) { g.beginPath(); g.ellipse(x + w * (0.26 + i * 0.24), y - h - f / 2 + wave * 0.3, 2.1 * k, 1.3 * k, 0, 0, Math.PI * 2); g.stroke(); }
+  }
   /* Painted boats share a single waterline transform, including the dusk pass. A missing
      asset leaves the original drawing below in charge until that particular image loads. */
   const BOATS = {};
   fetch("/rabbit/art/ships/ships.json").then(r => r.ok ? r.json() : {}).then(manifest => {
-    for (const kind of ["liner", "expedition", "tender", "wake"]) {
+    for (const kind of ["liner", "expedition", "pirate", "tender", "wake"]) {
       const m = manifest[kind];
       if (!m || typeof m.src !== "string" || !/^[a-z]+\.webp$/.test(m.src)) continue;
       const point = p => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite);
       if (kind === "wake" ? !point(m.tip) : !point(m.stern) || !point(m.bow) || !(m.length > 0)) continue;
       if (kind !== "wake" && Math.hypot(m.bow[0] - m.stern[0], m.bow[1] - m.stern[1]) < 1) continue;
       const im = new Image(); im.decoding = "async";
-      im.onload = () => { BOATS[kind] = { ...m, im }; };
+      im.onload = () => { BOATS[kind] = { ...m, im }; if (kind === "expedition") standIn(BOATS[kind]); };
       im.src = "/rabbit/art/ships/" + m.src;
     }
   }).catch(() => {});
   const boatArt = kind => S.base?.painted && !/[?&]art=drawn(?:&|$)/.test(location.search) && BOATS[kind];
+  /* The crew of the Black Sequence (rabbit/art/ships/crew-pirate.*, cut and laid out from the painted pirates by
+     infra/rabbit-art/tourists.py --set pirates): the pirates never land, so they stand on their ship, one at each "deck"
+     point of her manifest and the captain at "captain", in the painting's own pixels, so they bob, turn and mirror with
+     her; now and then one makes their small gesture (the figure's second frame), as the passengers ashore do. Without
+     the sheet she sails with nobody on deck. */
+  const CREW = {};
+  fetch("/rabbit/art/ships/crew-pirate.json").then(r => r.ok ? r.json() : null).then(m => {
+    if (!crowdOk(m)) return;
+    const im = new Image(); im.decoding = "async";
+    im.onload = () => { CREW.pirate = { m, im }; };
+    im.src = "/rabbit/art/ships/" + m.src;
+  }).catch(() => {});
+  function crew(g, m, scale, t) {
+    const c = CREW[m.crew || "pirate"], deck = Array.isArray(m.deck) ? m.deck.filter(p => Array.isArray(p) && p.length === 2) : [];
+    if (!c || !deck.length) return;
+    const cm = c.m, [cw, ch] = cm.cell, k = 1 / scale / cm.unit, F = cm.figures, cap = cm.guides && cm.guides[m.crew || "pirate"];
+    const who = deck.map((p, i) => [p, F[i % F.length], i]);
+    if (cap && Array.isArray(m.captain) && m.captain.length === 2) who.push([m.captain, cap, "captain"]);
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
+    for (const [[x, y], f, i] of who.sort((a, b) => a[0][1] - b[0][1])) {
+      const fr = gesture("crew", i, t) ? f.b : f.a, sw = (f.sw > 0 ? f.sw : 3) / scale;
+      g.fillStyle = "rgba(20,34,40,.24)"; g.beginPath(); g.ellipse(x + sw * 0.15, y, sw, sw * 0.34, 0, 0, Math.PI * 2); g.fill();
+      g.drawImage(c.im, (fr % cm.cols) * cw, Math.floor(fr / cm.cols) * ch, cw, ch, x - f.foot[0] * k, y - f.foot[1] * k, cw * k, ch * k);
+    }
+  }
   const unit = f => Math.max(0, Math.min(1, f));
   function boatPose(x, y, t, a = 1) {
     const v = SHIP.s, now = Date.now() / 1000, underway = v.phase === "approach" || v.phase === "gone";
@@ -888,6 +931,8 @@
         g.beginPath(); g.ellipse(0, 1, m.length * 0.48, 2, 0, 0, Math.PI * 2); g.stroke();
       }
       pixels(); g.drawImage(m.im, 0, 0);
+      if (m.flag) blackFlag(g, m.flag[0], m.flag[1], 1 / scale, t);
+      crew(g, m, scale, t);
       if (m.funnel) {
         const [fx, fy] = m.funnel;
         for (let k = 0; k < 4; k++) {
@@ -907,7 +952,7 @@
   }
   function shipWindows(g, t, light) {
     const pos = shipPos(Date.now() / 1000); if (!pos) return;
-    const m = boatArt(SHIP.s.style === "expedition" ? "expedition" : "liner");
+    const m = boatArt(shipKind(SHIP.s));
     if (!m || !m.windows) return;
     boatTransform(g, m, boatPose(pos[0], pos[1], t, pos[2]), (scale, pixels) => {
       pixels();
@@ -930,7 +975,7 @@
   }
   function cruiseShip(g, x, y, t, kind, light, a) {
     if (paintedBoat(g, x, y, t, kind, a)) return;
-    const D = SHIPS[kind] || SHIPS.liner, L = D.L, bob = Math.sin(t * 0.0012) * 1.2, hh = 15;
+    const D = SHIPS[kind] || SHIPS[/^pirate/.test(kind) ? "pirate" : "liner"], L = D.L, bob = Math.sin(t * 0.0012) * 1.2, hh = 15;
     g.save(); g.globalAlpha = a; g.translate(x, y + bob); g.lineJoin = "round"; g.strokeStyle = INK; g.lineWidth = 1.5;
     g.fillStyle = "rgba(10,30,45,.28)"; g.beginPath(); g.ellipse(4, 4, L * 0.56, 7, 0, 0, Math.PI * 2); g.fill();   // its shadow on the water
     /* the hull: a long low body, the bow raised to the right */
@@ -992,12 +1037,141 @@
     g.fillStyle = col; g.beginPath(); g.moveTo(x, y - 24); g.lineTo(x + 12, y - 21 + w); g.lineTo(x, y - 17); g.closePath(); g.fill(); g.stroke();
   }
   const placePt = id => { const p = PLACES[id]; return !p ? null : p.c ? [p.c[0], p.c[1]] : [p.x, p.y - 18]; };
+  /* The passengers ashore, painted (rabbit/art/tourists: one sheet and its manifest, scaled and laid out from the
+     painted figures by infra/rabbit-art/tourists.py, both frames of a figure from their whole canvases alike, so they
+     line up to the pixel). Where the relay counts passengers (v.at), a group stands on the layout's ground for that
+     place (stand: its first point is where the guide stands, the others are the corners of the ground the group may
+     use), one figure for each passenger as far as the ground holds them, filled from the guide outwards and the same
+     for the whole visit. They face their guide, from behind or from the front or in profile as she stands to them, and
+     now and then one of them makes their small gesture (each figure's second frame, swapped in whole: no cross-fade);
+     nobody walks. Those who come appear one by one, those who go on leave one by one; on the pier they wait for the
+     tenders. A grown-up is 16 world units tall, as the painting measures (loungers, doors and umbrellas: about 8.5
+     units to the metre); layout "crowd" scales them. What stands in front of the ground (layout "over": a railing,
+     a bollard, a post, each a polygon with the depth d it stands at) is painted again over the figures behind it, so
+     feet behind a railing stay hidden. Without the art (or with ?art=drawn), and at a place without ground, the
+     guide's pennant shows as before. */
+  const CROWD = { at: {}, cast: {}, slots: {}, t: 0 }, CROWD_STEP = 900;   // ms between two passengers coming or going
+  fetch("/rabbit/art/tourists/tourists.json").then(r => r.ok ? r.json() : null).then(m => {
+    if (!crowdOk(m)) return;
+    const im = new Image(); im.decoding = "async";
+    im.onload = () => { CROWD.m = m; CROWD.im = im; };   // one picture holds both frames of everyone: nothing to load later
+    im.src = "/rabbit/art/tourists/" + m.src;
+  }).catch(() => {});
+  function crowdOk(m) {
+    const num = v => Array.isArray(v) && v.every(Number.isFinite);
+    const fig = f => !!f && Number.isInteger(f.a) && Number.isInteger(f.b) && num(f.foot) && f.foot.length === 2
+      && (f.contacts === undefined || Array.isArray(f.contacts) && f.contacts.every(c => num(c) && c.length === 3));
+    return !!m && typeof m.src === "string" && /^[a-z0-9-]+\.webp$/.test(m.src) && m.unit > 0 && Number.isInteger(m.cols) && m.cols > 0
+      && Array.isArray(m.cell) && m.cell.length === 2 && m.cell.every(v => v > 0) && Array.isArray(m.figures) && m.figures.length > 0
+      && m.figures.every(f => fig(f) && /^(back|front|side)$/.test(f.view) && (f.face === 1 || f.face === -1)) && Object.values(m.guides || {}).every(fig);
+  }
+  const crowdArt = () => !!CROWD.im && !!S.base?.painted && !/[?&]art=drawn(?:&|$)/.test(location.search);
+  const h01 = (...v) => { let h = 2166136261; for (const ch of v.join("|")) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return (h >>> 0) / 4294967296; };
+  /* where a group stands: a loose, slightly uneven lattice on the place's ground (people about 7 units apart, 4 deep
+     on the screen), nearest the guide first, at most 40 (inPoly: further down, with the click areas) */
+  function standSlots(id) {
+    const st = SPOT.stand && SPOT.stand[id], c = CROWD.slots[id];
+    if (c && c.st === st) return c.s;
+    let s = null;
+    if (Array.isArray(st) && st.length >= 4 && st.every(p => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite))) {
+      const [[gx, gy], ...P] = st, xs = P.map(p => p[0]), ys = P.map(p => p[1]);
+      s = [];
+      for (let y = Math.min(...ys) + 1.5, r = 0; y < Math.max(...ys); y += 3.9, r++)
+        for (let x = Math.min(...xs) + 1.5 + (r % 2) * 3.6; x < Math.max(...xs); x += 7.2) {
+          const px = x + (h01(id, x, y, "x") - 0.5) * 3.2, py = y + (h01(id, x, y, "y") - 0.5) * 1.8, d = Math.hypot(px - gx, (py - gy) * 1.7);
+          if (d > 5 && inPoly(P, px, py)) s.push([px, py, d + h01(id, x, y, "d") * 3]);
+        }
+      s = s.sort((p, q) => p[2] - q[2]).slice(0, 40);
+    }
+    CROWD.slots[id] = { st, s };
+    return s;
+  }
+  /* who stands where, for the whole visit: no one twice in a group while there are figures left, each turned towards
+     the guide (from behind when she stands beyond them, from the front when she is nearer to us, else in profile) */
+  function crowdCast(id, visit, slots) {
+    const c = CROWD.cast[id];
+    if (c && c.slots === slots) return c.c;
+    const F = CROWD.m.figures, [gx, gy] = SPOT.stand[id][0], out = [];
+    let left = [];
+    slots.forEach(([x, y], i) => {
+      if (!left.length) left = F.map((f, k) => [f, h01(visit, id, i, k)]).sort((p, q) => p[1] - q[1]).map(p => p[0]);
+      const dx = gx - x, dy = gy - y, face = Math.abs(dx) < 2 ? (h01(visit, id, i) < 0.5 ? -1 : 1) : Math.sign(dx), view = dy < -3 ? "back" : dy > 3 ? "front" : "side";
+      let best = 0, top = -1;
+      left.forEach((f, k) => { const s = (f.face === face ? 2 : 0) + (f.view === view ? 1 : 0); if (s > top) { top = s; best = k; } });
+      out.push(left.splice(best, 1)[0]);
+    });
+    CROWD.cast[id] = { slots, c: out };
+    return out;
+  }
+  /* now and then a small gesture, each figure on its own: its time runs in stretches of its own length (6 to 15 s), in
+     about two of three it gestures once, at a moment of its own, for 1.2 to 3 s, and rests at least 1.6 s between two:
+     never all at once, never a flicker; with reduced motion nobody gestures */
+  function gesture(id, i, t) {
+    if (S.still) return false;
+    const L = 6000 + h01(id, i, "L") * 9000, u = t + h01(i, id, "o") * L, n = Math.floor(u / L);
+    if (h01(id, i, n, "go") > 0.65) return false;
+    const d = 1200 + h01(id, i, n, "d") * 1800, s = 800 + h01(id, i, n, "s") * (L - d - 1600), w = u - n * L;
+    return w >= s && w < s + d;
+  }
+  /* one figure standing at x, y: a faint shadow under it, a darker touch under each foot, wheel or stick that meets the
+     ground (the manifest's contacts), a little to the right, as the light comes from the upper left; then the figure */
+  function tourist(g, f, x, y, b) {
+    const m = CROWD.m, [cw, ch] = m.cell, c = b ? f.b : f.a, sc = SPOT.crowd > 0 ? SPOT.crowd : 1, k = sc / m.unit, [fx, fy] = f.foot;
+    const cs = Array.isArray(f.contacts) && f.contacts.length ? f.contacts : [[fx, fy, 3 * m.unit]];
+    let x0 = Infinity, x1 = -Infinity, yb = -Infinity;
+    for (const [cx, cy, hw] of cs) { x0 = Math.min(x0, cx - hw); x1 = Math.max(x1, cx + hw); yb = Math.max(yb, cy); }
+    const rx = (x1 - x0) / 2 * k + 1.6 * sc;
+    g.fillStyle = "rgba(20,34,40,.13)"; g.beginPath(); g.ellipse(x + ((x0 + x1) / 2 - fx) * k + 0.6 * sc, y + (yb - fy) * k, rx, rx * 0.3, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "rgba(20,34,40,.26)"; g.beginPath();
+    for (const [cx, cy, hw] of cs) {
+      const r = Math.max(0.8 * sc, hw * k * 1.15), ex = x + (cx - fx) * k + 0.3 * sc, ey = y + (cy - fy) * k;
+      g.moveTo(ex + r, ey); g.ellipse(ex, ey, r, Math.max(0.45 * sc, r * 0.36), 0, 0, Math.PI * 2);
+    }
+    g.fill();
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
+    g.drawImage(CROWD.im, (c % m.cols) * cw, Math.floor(c / m.cols) * ch, cw, ch, x - fx * k, y - fy * k, cw * k, ch * k);
+  }
+  function crowdItems(items, g, t, v, kind) {
+    const visit = v.ship + "|" + v.t0, fresh = CROWD.visit !== visit, dt = fresh ? 0 : Math.min(250, Math.max(0, t - CROWD.t)), guide = CROWD.m.guides && CROWD.m.guides[kind];
+    if (fresh) { CROWD.visit = visit; CROWD.at = {}; CROWD.cast = {}; }
+    CROWD.t = t;
+    const here = ["landing", "ashore"].includes(v.phase) ? v.at || {} : {}, landing = v.phase === "landing";
+    for (const id of new Set([...Object.keys(here), ...Object.keys(CROWD.at)])) {
+      const slots = standSlots(id), want = Math.max(0, Math.floor(+here[id] || 0));
+      if (!slots || !slots.length) {   // no ground laid out here: the pennant, as before
+        delete CROWD.at[id];
+        const pt = placePt(id); if (pt && want > 0 && !(id === "pier" && landing)) items.push([pt[1] + 2, () => pennant(g, pt[0] + 16, pt[1] + 4, t, SHIPS[kind].funnel)]);
+        continue;
+      }
+      const n0 = Math.min(slots.length, want), st = CROWD.at[id] || (CROWD.at[id] = { n: fresh || S.still ? n0 : 0 });
+      st.n = S.still ? n0 : st.n + Math.sign(n0 - st.n) * Math.min(Math.abs(n0 - st.n), dt / CROWD_STEP);
+      const shown = Math.min(slots.length, Math.floor(st.n + 1e-6));   // whole figures only: nobody is half there
+      if (!shown) { if (!n0) delete CROWD.at[id]; continue; }
+      const cast = crowdCast(id, visit, slots), [gx, gy] = SPOT.stand[id][0];
+      for (let i = 0; i < shown; i++) {
+        const [x, y] = slots[i], f = cast[i];
+        items.push([y, () => tourist(g, f, x, y, gesture(id, i, t))]);
+      }
+      for (const o of overs(id)) items.push([o.d, () => over(g, o.p)]);
+      if (id === "pier" && landing) continue;   // off the tenders: their guides wait at the places
+      items.push([gy, guide ? () => tourist(g, guide, gx, gy, gesture(id, "guide", t)) : () => pennant(g, gx + 2, gy, t, SHIPS[kind].funnel)]);
+    }
+  }
+  /* what the painting has in front of a place's ground (layout "over": [{d, p}]): drawn again, from the painting, at
+     its own depth, so the figures behind it stay behind it and those in front of it stay in front */
+  const overs = id => (Array.isArray(SPOT.over && SPOT.over[id]) ? SPOT.over[id] : []).filter(o => o && Number.isFinite(o.d)
+    && Array.isArray(o.p) && o.p.length >= 3 && o.p.every(q => Array.isArray(q) && q.length === 2 && q.every(Number.isFinite)));
+  function over(g, p) {
+    g.save(); g.beginPath(); p.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.clip();
+    g.drawImage(S.base, -S.base.e, 0, WW + 2 * S.base.e, WH); g.restore();
+  }
   function shipItems(items, g, t, sky) {
     const now = Date.now() / 1000, pos = shipPos(now), v = SHIP.s;
     if (!pos) return;
-    const [x, y, a] = pos, kind = v.style === "expedition" ? "expedition" : "liner";
-    items.push([y, () => cruiseShip(g, x, y, t, kind, sky.light, a)]);
+    const [x, y, a] = pos, art = shipKind(v), kind = art === "liner" || art === "expedition" ? art : "pirate";
+    items.push([y, () => cruiseShip(g, x, y, t, art, sky.light, a)]);
     tenders(now, x, y).forEach(([tx, ty, d]) => items.push([ty, () => tender(g, tx, ty, t, d)]));
+    if (crowdArt()) return crowdItems(items, g, t, v, kind);
     if (["landing", "ashore"].includes(v.phase)) for (const id in v.at || {}) {
       const pt = placePt(id); if (!pt || !(v.at[id] > 0) || id === "pier" && v.phase === "landing") continue;
       items.push([pt[1] + 2, () => pennant(g, pt[0] + 16, pt[1] + 4, t, SHIPS[kind].funnel)]);
@@ -1070,7 +1244,7 @@
   const RB = { x: 860, y: 690, tx: 860, ty: 690, hop: 0, dir: 1, next: 0 };
   /* the lighthouse lamp, the radio mast's light, where people gather, where the cat walks and where a cruise ship anchors:
      a new layout moves them. The anchor sits high enough that the hull stays clear of the radio bar on a small laptop (1280×720) */
-  const SPOT = { beam: [300, 445], blink: [1112, 299], gather: [790, 640], cat: [370, 700, 1180, 712], anchor: [1395, 780],
+  const SPOT = { beam: [300, 445], blink: [1112, 299], gather: [790, 640], cat: [370, 700, 1180, 712], anchor: [1395, 780], stand: {}, over: {}, crowd: 1,
     jungle: [[760, 235], [985, 205], [455, 440], [1180, 560], [330, 285]] };   // where the legend may look out of the leaves
   function rabbitStep(dt, t) {
     const d = Math.hypot(RB.tx - RB.x, RB.ty - RB.y);
@@ -1342,6 +1516,9 @@
   const ask = n => fetch(ART.base + "index.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : Promise.reject(r.status))).then(j => {
     ART.box = (j && j.boxes) || {};   // where a talking or blinking frame differs from the still picture
     const scenes = (j && j.scenes) || {};
+    /* each room's own lamps (paint.py lights), only while they were found in the very painting that shows */
+    ART.lights = {};
+    for (const id in (j && j.lights) || {}) { const L = j.lights[id]; if (L && Array.isArray(L.l) && (L.of === scenes[id] || L.of === ((j.orig || {})[id]))) ART.lights[id] = L; }
     if (!scenes.island) settle();
     else { clearTimeout(late); late = setTimeout(settle, 30000); }   // the painting is listed: a large picture on a slow line takes its time
     Object.entries(scenes).forEach(([id, f]) => {
@@ -1411,28 +1588,100 @@
     g.globalCompositeOperation = "source-over";
   }
   /* the light of the hour in a painted place, as on the island: the picture, and whoever stands in it, multiplied with
-     the light of the hour (white at noon, warm at the ends of the day, deep blue at night), with the same blue haze after
-     dark. From dusk the place's lamps are lit: a warm pool round the one you talk to and the room about them, while the
-     corners and the views out stay in the night. The pool is soft, so it is drawn at a quarter of the pixels. */
+     the light of the hour (white at noon, warm at the ends of the day, deep blue at night), with the haze of the place
+     after dark. From dusk every place is lit in its own way (ROOMNIGHT): the lamps painted in it come on (ART.lights,
+     found in the painting by paint.py lights), each lighting the room around it in its own colour and glowing itself,
+     a room keeps a little of its lamps' colour in the dark corners, and the one you talk to stands in a softer pool of
+     the place's light. Out in the open (a hill top, the stone circle) it stays the island's night, the moon the main
+     light. The light map is soft, so it is drawn at a quarter of the pixels. */
   const ROOMLAMP = [255, 200, 146];
-  function roomLight(g, W, H, sky, nt) {
-    const m = sky.mul, n = lampsOn(sky);
+  /* lamp: the colour of the place's light; fill: how much of it falls on the one you talk to; amb: how much of it stays
+     in the room's dark corners; haze: the colour and strength of the night air; out: open air (moonlight) */
+  const ROOMNIGHT = {
+    hall:   { lamp: [255, 196, 128], fill: 0.7, amb: 0.04, out: 1 },              // the Council Tree: lanterns in the branches
+    market: { lamp: [255, 206, 150], fill: 0.85, amb: 0.06, out: 1 },             // the Parasol Café: string lights over the terrace
+    radio:  { lamp: [255, 186, 112], fill: 0.85, amb: 0.14 },                     // a desk lamp and the glow of the dials
+    north:  { lamp: [226, 232, 255], fill: 0.75, amb: 0.1, haze: [10, 22, 60, 0.18] },   // the chandelier, cool and grand
+    south:  { lamp: [255, 180, 150], fill: 0.85, amb: 0.14 },                     // warm and flattering, the pool glowing teal
+    bar:    { lamp: [255, 176, 112], fill: 0.95, amb: 0.2 },                      // the bulbs on their string: the warmest room
+    book:   { lamp: [196, 255, 206], fill: 0.8, amb: 0.08, haze: [6, 26, 30, 0.18] },     // the keeper's lamp throws a green cone
+    pier:   { lamp: [255, 212, 150], fill: 0.6, amb: 0.03, out: 1 },              // the lamp post's square lantern
+    school: { lamp: [236, 226, 200], fill: 0.45, amb: 0.04, haze: [12, 22, 50, 0.2] },   // nobody lights a school at night
+    dive:   { lamp: [140, 232, 255], fill: 0.75, amb: 0.12, haze: [4, 30, 46, 0.16] },   // sensor buoys and the reef screen
+    works:  { lamp: [255, 158, 88], fill: 0.85, amb: 0.14 },                      // the furnace under the chimney
+    camp:   { lamp: [255, 160, 76], fill: 0.9, amb: 0.04, out: 1 },               // the campfire
+    ship:   { lamp: [255, 198, 128], fill: 0.8, amb: 0.12 },                      // oil lamps among the finds
+    ama:    { lamp: [255, 168, 96], fill: 0.9, amb: 0.14 },                       // the hearth
+    canoe:  { lamp: [255, 188, 118], fill: 0.7, amb: 0.06, out: 1 },              // a lantern in the open shed
+    stone:  { lamp: [190, 210, 255], fill: 0.35, amb: 0, out: 1, haze: [8, 18, 56, 0.2] },    // a hill top under the moon
+    drums:  { lamp: [255, 168, 96], fill: 0.6, amb: 0.03, out: 1 },               // a torch by the drum
+    circle: { lamp: [255, 168, 96], fill: 0.6, amb: 0.03, out: 1 },               // torches round the stones
+    grotto: { lamp: [120, 236, 214], fill: 0.7, amb: 0.1, haze: [4, 28, 40, 0.18] },   // the pool's light dancing on the rock
+  };
+  const RLC = { warm: [255, 200, 132], fire: [255, 156, 72], cream: [255, 236, 204], gold: [255, 212, 116], green: [150, 255, 170], teal: [92, 236, 214], cyan: [120, 214, 255], pink: [255, 150, 200], red: [255, 96, 76], moon: [170, 196, 255] };
+  const FLAME = { fire: 1, torch: 1, candle: 1, lantern: 1 };
+  /* where a light of the painting (parts of the picture) stands on the screen: the picture covers the room's rw x RH,
+     the room is drawn at sc, ox, oy */
+  function roomSpot(L, T) {
+    const [sc, ox, oy, rw, im] = T, iw = im ? im.naturalWidth : rw, ih = im ? im.naturalHeight : RH, k = Math.max(rw / iw, RH / ih);
+    const x0 = (RW - rw) / 2 + (rw - iw * k) / 2, y0 = (RH - ih * k) / 2;
+    return [(x0 + L.x * iw * k) * sc + ox, (y0 + L.y * ih * k) * sc + oy, L.w * iw * k * sc, L.h * ih * k * sc];
+  }
+  function roomLight(g, W, H, sky, nt, t, id, T) {
+    const m = sky.mul, n = lampsOn(sky), mood = ROOMNIGHT[id] || { lamp: ROOMLAMP, fill: 0.82, amb: 0 }, found = ART.lights && ART.lights[id];
+    const LL = (found && found.l) || [], out = found ? found.outside : !!mood.out, D = Math.min(W, H);
+    const lit = L => (L.k === "window" ? 0.4 : 1) * (FLAME[L.k] ? flick(t, L.x * 97, L.y * 61) : L.k === "glow" || L.k === "screen" ? 0.94 + 0.06 * Math.sin(t * 0.0011 + L.x * 9) : 1);
     g.setTransform(1, 0, 0, 1, 0, 0);
     if (m[0] + m[1] + m[2] < 762) {
       g.globalCompositeOperation = "multiply";
       if (n > 0) {
         const q = 4, c = S.rlm || (S.rlm = document.createElement("canvas")), w = Math.ceil(W / q), h = Math.ceil(H / q);
         if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
-        const lg = c.getContext("2d"); lg.fillStyle = rgb(m); lg.fillRect(0, 0, w, h);
-        const [X, Y, Z] = S.hostAt || [W / 2, H * 0.3, Math.min(W, H) * 0.7], x = X / q, y = Math.min(H * 0.62, Y + Z * 0.36) / q, r = Math.min(W, H) * 0.62 / q;
-        const gr = lg.createRadialGradient(x, y, 0, x, y, r);
-        gr.addColorStop(0, rgb(mix(m, ROOMLAMP, 0.82 * n))); gr.addColorStop(0.35, rgb(mix(m, ROOMLAMP, 0.55 * n))); gr.addColorStop(0.75, rgb(mix(m, ROOMLAMP, 0.14 * n))); gr.addColorStop(1, rgb(m));
-        lg.fillStyle = gr; lg.fillRect(0, 0, w, h);
+        const lg = c.getContext("2d"), base = out ? m : mix(m, mood.lamp, Math.min(0.35, (mood.amb || 0) * (LL.length ? 1.6 : 1)) * n);
+        lg.globalCompositeOperation = "source-over"; lg.fillStyle = rgb(base); lg.fillRect(0, 0, w, h);
+        const pool = (x, y, r, col, a, sy = 1) => {
+          if (a < 0.01 || r < 1) return; a = Math.min(1, a);
+          lg.save(); lg.translate(x / q, y / q); if (sy !== 1) lg.scale(1, sy);
+          const gr = lg.createRadialGradient(0, 0, 0, 0, 0, r / q);
+          gr.addColorStop(0, rgb(mix(base, col, a))); gr.addColorStop(0.35, rgb(mix(base, col, a * 0.78))); gr.addColorStop(0.7, rgb(mix(base, col, a * 0.32))); gr.addColorStop(1, rgb(base, 0));
+          lg.fillStyle = gr; lg.beginPath(); lg.arc(0, 0, r / q, 0, Math.PI * 2); lg.fill(); lg.restore();
+        };
+        /* the one you talk to, in the place's own light (softer where the room's lamps light it) */
+        const [X, Y, Z] = S.hostAt || [W / 2, H * 0.3, D * 0.7];
+        pool(X, Math.min(H * 0.62, Y + Z * 0.36), D * (LL.length ? 0.5 : 0.62), mood.lamp, (LL.length ? 0.62 : 0.82) * mood.fill * n);
+        lg.globalCompositeOperation = "lighten";
+        for (const L of LL) {
+          const [x, y, sw, sh] = roomSpot(L, T), col = RLC[L.c] || mood.lamp, s = Math.max(sw, sh), a = n * lit(L);
+          if (L.k === "window") pool(x, y, Math.max(s * 0.9, D * 0.15), col, 0.6 * a, Math.min(1.8, Math.max(0.6, sh / Math.max(1, sw))));
+          else if (L.k === "bulbs") pool(x, y + sh * 0.3, Math.max(sw * 0.7, D * 0.2), col, 0.9 * a, Math.min(1, Math.max(0.35, (sh + D * 0.2) / Math.max(1, sw))));
+          else if (L.k === "fire" || L.k === "torch") pool(x, y, Math.max(s * 4, D * 0.32), col, 0.95 * a);
+          else if (L.k === "chandelier") pool(x, y + sh * 0.6, Math.max(s * 3.5, D * 0.4), col, 0.9 * a, 1.1);
+          else if (L.k === "candle") pool(x, y, Math.max(s * 5, D * 0.1), col, 0.75 * a);
+          else if (L.k === "screen" || L.k === "glow") pool(x, y, Math.max(s * 2, D * 0.12), col, 0.75 * a);
+          else pool(x, y + sh * 0.5, Math.max(s * 6, D * 0.42), col, 0.95 * a);   // a lamp, a lantern: light round it and below
+        }
         g.drawImage(c, 0, 0, W, H);
       } else { g.fillStyle = rgb(m); g.fillRect(0, 0, W, H); }
     }
     g.globalCompositeOperation = "source-over";
-    if (nt > 0.01) { g.fillStyle = `rgba(12,20,52,${0.16 * nt})`; g.fillRect(0, 0, W, H); }
+    const hz = mood.haze || [12, 20, 52, 0.16];
+    if (nt > 0.01) { g.fillStyle = rgb(hz, hz[3] * nt * (out ? 1 : 0.75)); g.fillRect(0, 0, W, H); }
+    /* the lamps themselves glow over the night: a bright heart and a halo, flames alive, a string's bulbs in a row */
+    if (n > 0.02 && LL.length) {
+      const on = Math.min(1, n * 1.6);
+      g.globalCompositeOperation = "lighter";
+      const glow = (x, y, r, col, a) => { if (a < 0.01 || r < 0.5) return; const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, rgb(mix(col, [255, 255, 255], 0.35), Math.min(1, a))); gr.addColorStop(0.3, rgb(col, Math.min(1, a) * 0.55)); gr.addColorStop(1, rgb(col, 0)); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); };
+      for (const L of LL) {
+        if (L.k === "window") continue;
+        const [x, y, sw, sh] = roomSpot(L, T), col = RLC[L.c] || mood.lamp, s = Math.max(sw, sh), a = on * lit(L);
+        if (L.k === "bulbs") {   // the string's bulbs: small bright dots along the middle of its box, sagging a little
+          const nb = Math.max(4, Math.min(16, Math.round(sw / Math.max(14, D * 0.03))));
+          for (let i = 0; i < nb; i++) { const u = (i + 0.5) / nb, bx = x - sw / 2 + u * sw, by = y + Math.sin(u * Math.PI) * sh * 0.3 - sh * 0.15; glow(bx, by, Math.max(6, D * 0.018), col, 0.55 * a); }
+        } else if (L.k === "screen" || L.k === "glow") glow(x, y, Math.max(s * 0.8, D * 0.02), col, 0.35 * a);
+        else glow(x, y, Math.max(s * (FLAME[L.k] ? 1.1 : 0.9), D * 0.022), col, (L.k === "fire" ? 0.5 : 0.6) * a);
+      }
+      g.globalCompositeOperation = "source-over";
+    }
   }
   /* the bare picture of a place, without people, at noon: what the server's painter repaints (infra/rabbit-art) */
   /* sky and sea in flat bands, the whole world wide, nothing on them */
@@ -1455,7 +1704,7 @@
 
   /* ---------- the stage ---------- */
   const S = { c: null, g: null, W: 0, H: 0, K: 1, base: null, world: null, wg: null, hour: 0, hourT: 0, clockAt: -1e9, cam: { x: 800, y: 450, z: 1 }, camT: { x: 800, y: 450, z: 1 },
-    hover: null, glow: null, locked: new Set(), pan: { x: 0, y: 0 }, gather: 0, room: null, roomA: 0, roomT: 0, cat: null, still: false, onFrame: null, last: 0 };
+    hover: null, locked: new Set(), pan: { x: 0, y: 0 }, gather: 0, room: null, roomA: 0, roomT: 0, cat: null, still: false, onFrame: null, last: 0 };
   function size() {
     const r = S.c.getBoundingClientRect(); S.K = Math.min(2, devicePixelRatio || 1);
     S.W = Math.max(1, r.width); S.H = Math.max(1, r.height);
@@ -1675,14 +1924,6 @@
       w.drawImage(S.base, -S.base.e, 0, WW + 2 * S.base.e, WH);
       islandFx(w, t, sky.light);
     }
-    if (S.glow && !wait) {
-      const p = PLACES[S.glow];
-      if (p.poly) {   // the place's own outline (layout "poly"): a soft light along it and a faint fill inside
-        w.save(); w.beginPath(); p.poly.forEach(([x, y], i) => (i ? w.lineTo(x, y) : w.moveTo(x, y))); w.closePath();
-        w.fillStyle = "rgba(255,255,230,.14)"; w.fill();
-        w.shadowColor = "rgba(255,255,220,.9)"; w.shadowBlur = 8; w.strokeStyle = "rgba(255,255,235,.85)"; w.lineWidth = 1.6; w.lineJoin = "round"; w.stroke(); w.restore();
-      } else { const [x, y, bw, bh] = p.box; w.fillStyle = "rgba(255,255,230,.18)"; w.beginPath(); w.ellipse(x + bw / 2, y + bh * 0.85, bw * 0.62, bh * 0.32, 0, 0, Math.PI * 2); w.fill(); }
-    }
     if (!pi && !wait) { flag(w, 470, 470, t, "#3b5f8a", "#fff", "wind"); flag(w, 606, 425, t + 900, "#c0533f", "#fff", "wave"); boat(w, 1110, 770, t); }
     /* palms and people in depth order */
     const items = pi || wait ? [] : PALMS.map(([x, y], i) => [y, () => palm(w, x, y, t, i)]);
@@ -1775,7 +2016,7 @@
         w.setTransform(1, 0, 0, 1, 0, 0); w.drawImage(S.hostC, X - Z / 2, Y, Z, Z); S.hostAt = [X, Y, Z];
       }
       w.setTransform(1, 0, 0, 1, 0, 0);
-      if (painted(S.room)) roomLight(w, W, H, sky, nt);
+      if (painted(S.room)) roomLight(w, W, H, sky, nt, t, S.room, [sc, ox, oy, rw, ART.img[S.room]]);
       else if (sky.tint[3] > 0.01) { w.globalCompositeOperation = "source-atop"; w.fillStyle = rgb(sky.tint, sky.tint[3] * 0.75); w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
       if (sky.light > 0.05 && !painted(S.room)) { w.globalCompositeOperation = "lighter"; const lg = w.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.45, Math.max(W, H) * 0.6); lg.addColorStop(0, `rgba(255,190,110,${0.22 * sky.light})`); lg.addColorStop(1, "rgba(255,190,110,0)"); w.fillStyle = lg; w.fillRect(0, 0, W, H); w.globalCompositeOperation = "source-over"; }
       const [px, py] = S.roomAt || [S.W / 2, S.H / 2], cx = px * S.K, cy = py * S.K, rr = e * Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)) * 1.02;
@@ -1794,8 +2035,15 @@
   }
 
   const inPoly = (P, x, y) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, yi] = P[i], [xj, yj] = P[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
+  const inBox = (b, x, y) => b && x >= b[0] && x <= b[0] + b[2] && y >= b[1] && y <= b[1] + b[3];
+  /* a quarter that is there but not open yet (S.locked): the game shows only a "?" over it, nothing to click */
+  function lockedAt(px, py) {
+    if (S.roomA > 0.3 || (ART.pending && !(S.base && S.base.painted))) return null;
+    const [x, y] = toWorld(px, py);
+    for (const id of S.locked) { const p = PLACES[id]; if (p && (p.poly ? inPoly(p.poly, x, y) : inBox(p.box, x, y))) return id; }
+    return null;
+  }
   function hit(px, py) {
-    const inBox = (b, x, y) => b && x >= b[0] && x <= b[0] + b[2] && y >= b[1] && y <= b[1] + b[3];
     if (S.roomA > 0.3) return S.roomCat && inBox(S.roomCat.screen, px, py) ? "deja" : null;   // inside a place the island is out of reach
     if (ART.pending && !(S.base && S.base.painted)) return null;   // the painting is on its way: nothing to point at on the bare sea yet
     const [x, y] = toWorld(px, py);
@@ -1879,9 +2127,8 @@
     mount, hit, focus, places: PLACES, toScreen, canPan: () => canPan(),
     setHour(h, now) { if (!LIGHT.game) return; S.hourT = h; if (now) S.hour = h; },   // the light follows the clock in Germany (see CLOCK)
     clock: () => { const m = Math.floor(berlinMinutes()); return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); },
-    glow(id) { S.glow = id; },
     host(fn, tall) { S.hostFn = fn; S.hostTall = !!tall; },
-    lock(ids) { S.locked = new Set(ids); }, locked: id => S.locked.has(id),   // quarters not open yet cannot be clicked
+    lock(ids) { S.locked = new Set(ids); }, locked: id => S.locked.has(id), lockedAt,   // quarters not open yet cannot be clicked, only show a "?"
     hostAt(bottom, left) { S.hostBottom = bottom; S.hostLeft = left || null; },
     gather(v) { S.gather = v; },
     cat(twice) { S.cat = { t0: performance.now(), d: 9000, x0: SPOT.cat[0], y0: SPOT.cat[1], x1: SPOT.cat[2], y1: SPOT.cat[3], twice: !!twice }; },

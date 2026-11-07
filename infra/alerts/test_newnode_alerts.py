@@ -34,7 +34,7 @@ class Fake(alerts.Outlet):
     def enabled(self):
         return True
 
-    def send_text(self, text):
+    def send_text(self, text, *extra):
         self.sent.append(text)
         return True, None, ""
 

@@ -65,6 +65,22 @@ TauI18n.add({ strings: {
   "Build pulse": "開発の鼓動",
   "Feedback": "フィードバック",
 
+  /* IDNI's own work, from the build pulse */
+  "IDNI pull request #93": "IDNI のプルリクエスト #93",
+  "a faucet in a new genesis, which needs a network reset": "新しいジェネシスに蛇口を入れるもので、ネットワークのリセットが必要",
+  "the stop at block 5028 and the restart of 1 November": "ブロック 5028 での停止と 11 月 1 日の再始動",
+  "Open governance again with a vote count one account cannot reach alone.": "一つのアカウントだけでは届かない票数で、オープンガバナンスを再開する。",
+  "IDNI at work": "IDNI が作業中",
+  "IDNI’s own work on it": "IDNI 自身の取り組み",
+  "From IDNI’s public git history, checked every 30 minutes by our": "IDNI の公開 git 履歴から。30 分ごとに確認しているのは私たちの",
+  "From IDNI’s public git history, checked every 30 minutes by our Build pulse.": "IDNI の公開 git 履歴から。私たちのビルドパルスが 30 分ごとに確認しています。",
+  "fix on IDNI’s main, names #{n}": "IDNI の main での修正、#{n} に言及",
+  "merged by IDNI into main, names #{n}": "IDNI が main にマージ、#{n} に言及",
+  "IDNI work branch, not on main yet, names #{n}": "IDNI の作業ブランチ、まだ main にない、#{n} に言及",
+  "our node runs it": "私たちのノードで稼働中",
+  "our node does not run it yet": "私たちのノードではまだ稼働していない",
+  "Status from the public GitHub API, refreshed every 10 minutes, and from IDNI’s own git history: a fix on IDNI’s main that names an item’s issue marks it partly fixed by itself. Quotes from IDNI’s monthly videos on the Tau Net YouTube channel. Comments are kept by the same moderator as the troll box.": "状態は公開の GitHub API（10 分ごとに更新）と IDNI 自身の git 履歴から。項目の issue 番号に言及する IDNI の main での修正があれば、その項目は自動で「一部修正」になります。引用は Tau Net の YouTube チャンネルにある IDNI の月例動画から。コメントはトロールボックスと同じモデレーターが管理します。",
+
   /* relay answers (roadmap.py, chat.py) */
   "At most 600 characters, please.": "600 文字以内でお願いします。",
   "A little more, please: what do you see, or what would you change?": "もう少し書いてください。何が見えますか、何を変えますか？",
@@ -164,8 +180,8 @@ TauI18n.add({ strings: {
   "One test: send, seal, and gettxstatus says sealed.": "テストを一つ：送って、封印して、gettxstatus が封印済みと答える。",
 
   "Restarts from block 0 come unannounced": "ブロック 0 からの再始動が予告なしに来る",
-  "The testnet has restarted on the same genesis without notice; a mainnet cannot start over.": "テストネットは同じジェネシスで予告なく再始動したことがあります。メインネットはやり直せません。",
-  "The testnet has started over from block 0 on the same genesis, without a notice and without anything a node can check. Nodes that missed it kept a dead chain.": "テストネットは同じジェネシスのままブロック 0 からやり直したことがあり、予告も、ノードが確かめられる印もありませんでした。気づかなかったノードは死んだチェーンのままでした。",
+  "The testnet has started over from block 0 without notice, last on 1 November; a mainnet cannot start over.": "テストネットは予告なくブロック 0 からやり直したことがあり、最近では 11 月 1 日です。メインネットはやり直せません。",
+  "The testnet has started over from block 0 on the same genesis, without a notice beforehand and without anything a node can check. The last time was on 1 November, after the chain had stopped at block 5028. Nodes that missed it kept a dead chain. IDNI’s open pull request #93 plans the next restart, with a new genesis.": "テストネットは同じジェネシスのままブロック 0 からやり直したことがあり、事前の予告も、ノードが確かめられる印もありませんでした。最近は 11 月 1 日で、その前にチェーンはブロック 5028 で止まっていました。気づかなかったノードは死んだチェーンのままでした。IDNI の未マージのプルリクエスト #93 は、新しいジェネシスでの次の再始動を予定しています。",
   "A mainnet cannot start over. The way to upgrade a running chain without a restart is best practised on the testnet first.": "メインネットはやり直せません。動いているチェーンを再始動なしで更新する方法は、まずテストネットで練習するのが一番です。",
   "Tau changes its own rules by vote without new node versions. An upgrade that keeps the chain is the same idea for the node software.": "Tau は新しいノードのバージョンなしに、投票で自分のルールを変えます。チェーンを保つ更新は、同じ考えをノードのソフトウェアに使うことです。",
   "Stats page": "統計ページ",
@@ -189,8 +205,8 @@ TauI18n.add({ strings: {
   "Pick the number of build jobs from the free memory, or publish a ready-built image.": "空きメモリからビルドの並列数を決めるか、ビルド済みイメージを公開する。",
 
   "Rule changes are rarely seen on the live chain": "ライブチェーンでルール変更がほとんど見られない",
-  "Three proposals so far, two changing nothing, each 3 to 4 days to apply; no live consensus switch yet.": "これまで提案は三つ、二つは何も変えず、それぞれ適用まで 3〜4 日。ライブのコンセンサス切り替えはまだありません。",
-  "The live chain has seen three rule proposals, two of them changing nothing, each taking 3 to 4 days to apply. The consensus switch IDNI showed in its demos has not run on the public chain.": "ライブチェーンではルール提案が三つあり、うち二つは何も変えず、それぞれ適用まで 3〜4 日かかりました。IDNI がデモで見せたコンセンサスの切り替えは、公開チェーンではまだ動いていません。",
+  "The chain stopped where a rule change passed by one vote was due; open governance is off since 1 November.": "一票で通ったルール変更が効くはずのブロックでチェーンが止まり、11 月 1 日からオープンガバナンスはオフです。",
+  "Before the restart of 1 November the live chain had seen three rule proposals, two of them changing nothing, each taking 3 to 4 days to apply. On 31 October the chain stopped at block 5028, the block where a consensus rule change approved by a single vote was due to take effect. IDNI restarted the chain and said it turned off open governance. The consensus switch IDNI showed in its demos has not run on the public chain.": "11 月 1 日の再始動の前、ライブチェーンではルール提案が三つあり、うち二つは何も変えず、それぞれ適用まで 3〜4 日かかりました。10 月 31 日、チェーンはブロック 5028 で止まりました。一票だけで承認されたコンセンサスルールの変更が効くはずのブロックです。IDNI はチェーンを再始動し、オープンガバナンスをオフにしたと述べました。IDNI がデモで見せたコンセンサスの切り替えは、公開チェーンではまだ動いていません。",
   "Changing the rules by agreement is what makes Tau different. A mainnet should go live after the public has watched it work many times.": "合意でルールを変えることこそが Tau の違いです。メインネットは、それが何度も働くのを皆が見てから始まるべきです。",
   "IDNI wants to show outcomes that appeal to people at once. A rule changing live, watched by visitors, is one.": "IDNI はすぐに人の心に届く成果を見せたいと考えています。訪問者の目の前でライブに変わるルールはその一つです。",
   "Proposals page": "提案ページ",

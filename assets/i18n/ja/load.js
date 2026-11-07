@@ -1,5 +1,7 @@
 /* Japanese for the testnet load page (load/). Keys are the English text; {n} {m} … are placeholders. */
 TauI18n.add({ strings: {
+  "Relay unreachable · last seen {t}": "リレーに接続できません · 最終更新 {t}",
+  "Our relay does not answer right now; these are the numbers of {t}. The page tries again every 30 seconds.": "私たちのリレーが今は応答しません。これは {t} の数値です。ページは 30 秒ごとに再試行します。",
   "Testnet load": "テストネットの負荷",
   "Reading the relay": "リレーを読み込み中",
   "Live from our node": "当ノードからのライブ",

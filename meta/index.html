@@ -161,6 +161,20 @@ html.fit .row2 { gap: 12px; min-height: 0; }
 .who .sp .note { color: var(--dim); font-size: 12px; margin-top: 2px; }
 .who .sp .cnt { color: var(--text); font: 600 11px var(--display); letter-spacing: .14em; font-style: normal; }
 .who .sp .note b { color: var(--text); font-weight: 600; }
+/* our share of the user transactions, the number that leads the panel */
+.who .ours { display: flex; align-items: center; gap: 10px; margin: 0 0 2px; }
+.who .ours + .sp { margin-top: 2px; }
+.who .ours b { color: var(--ok); font: 600 30px/1 var(--display); font-variant-numeric: tabular-nums; }
+.who .ours span { color: var(--text); font-size: 13px; line-height: 1.2; }
+.who .ours em { display: block; color: var(--dim); font-size: 11px; font-style: normal; }
+.who .sp.all { margin-top: 4px; }
+.who .sp.all .note { font-size: 11px; }
+.split.thin { height: 3px; margin: 0 0 2px; }
+.kpi.play { border-color: rgba(185,255,214,.35); }
+.kpi.play b { color: #b9ffd6; }
+.kpi.play .pdot { display: inline-block; width: 7px; height: 7px; margin: 0 7px 1px 0; border-radius: 50%; background: #b9ffd6; box-shadow: 0 0 7px rgba(185,255,214,.7); vertical-align: middle; animation: pnow 2.4s ease-in-out infinite; }
+@keyframes pnow { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .kpi.play .pdot { animation: none; } }
 /* where our transactions started: a ring by site and a short ranked list by page */
 .starts { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 4px 14px; align-items: start; margin-top: 6px; }
 .starts svg { width: 76px; height: 76px; display: block; }
@@ -185,9 +199,21 @@ html.fit body { height: 100vh; overflow: hidden; padding-top: 0; padding-bottom:
 html.fit .wrap { zoom: var(--z); height: var(--fitH); padding: 6px 0 8px; gap: 12px; }
 html.fit #tip { zoom: var(--z); }
 html.fit .wrap > .main { flex: 1 1 0; min-height: 0; gap: 12px; grid-template-columns: minmax(0, 1fr) 440px; }
-html.fit .col { min-height: 0; gap: 12px; grid-template-rows: minmax(0, 1.55fr) minmax(210px, 1fr); }
+html.fit .col { min-height: 0; gap: 12px; grid-template-rows: minmax(0, 1.55fr) minmax(226px, 1fr); }
 html.fit .col.side { grid-template-rows: auto minmax(0, 1fr); }
-html.fit.netv .col:not(.side) { grid-template-rows: minmax(0, 1.2fr) minmax(210px, 1fr); }   /* room for where our transactions started */
+html.fit.netv .col:not(.side) { grid-template-rows: minmax(0, 1fr) minmax(252px, 1fr); }   /* room for where our transactions started */
+/* testnet view on one screen: the share panel gets the wider part, and where our transactions started sits beside the bars as one list, so nothing scrolls */
+html.fit.netv .row2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr); }
+html.fit.wide.netv .row2 { grid-template-columns: minmax(0, 1fr) minmax(0, 2.3fr); }
+html.netv .who { container-type: inline-size; }
+@container (min-width: 440px) {
+  html.netv .whoBody { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 0 20px; align-items: start; }
+  html.netv .whoBody > #starts { grid-column: 2; grid-row: 1 / span 4; }
+  html.netv .whoBody > #starts .sp { margin-top: 0; }
+  html.netv .whoBody > #starts .starts { grid-template-columns: 64px minmax(0, 1fr); gap: 4px 12px; }
+  html.netv .whoBody > #starts .starts svg { width: 64px; height: 64px; }
+  html.netv .whoBody > #starts .starts ol { grid-template-columns: minmax(0, 1fr); gap: 1px; min-height: 64px; }
+}
 html.fit .panel { min-height: 0; }
 html.fit .chart { min-height: 0; }
 html.fit.wide .wrap > .main { grid-template-columns: minmax(0, 1fr) 420px 420px; }
@@ -218,6 +244,7 @@ html.fit.wide .col.side { display: contents; }
       <p class="sub" id="sourceLine">Visitors per day, growth since counting began and the pages people open most. Counted without cookies and without storing anything in your browser; only daily totals are kept.</p>
     </div>
     <div class="kpis" aria-label="Key numbers">
+      <span class="kpi play" id="kPlayBox" hidden><i class="pdot" aria-hidden="true"></i><b id="kPlay">–</b>playing now</span>
       <span class="kpi" id="kTodayBox" data-tip="Different people on this site today so far (UTC day).\nThe same person on two pages counts once."><b id="kToday">–</b>visitors today</span>
       <span class="kpi" id="kWeekBox" data-tip="Average visitors per day over the last 7 full days,\ncompared with the 7 days before."><b id="kWeek">–</b>a day, last 7 days</span>
       <span class="kpi" id="kAllBox" data-tip="Every day's visitors added up since counting began.\nSomeone who comes back on another day counts again."><b id="kAll">–</b>visits in total</span>
@@ -245,10 +272,12 @@ html.fit.wide .col.side { display: contents; }
         </section>
         <section class="panel who">
           <h2><span id="whoTitle">Where it comes from</span> <span class="aside" id="wRange"></span></h2>
-          <div id="splits"></div>
-          <div id="txsplit"></div>
-          <div id="starts"></div>
-          <div id="cross"></div>
+          <div class="whoBody">
+            <div id="splits"></div>
+            <div id="txsplit"></div>
+            <div id="starts"></div>
+            <div id="cross"></div>
+          </div>
         </section>
       </div>
     </div>
@@ -820,7 +849,7 @@ function drawAgorzilla() {
 
 /* where our two sites' transactions started (relay "starts"): Agorzilla's feeding, votes and wishes, Déjà the café cat,
    and for Tau HUD the page that led to the wallet. A ring by site, a ranked list by source; kinds in each row's hover */
-const START_FAM = { agorzilla: ["Agorzilla", "var(--ok)"], deja: ["Déjà", "rgba(57,255,138,.45)"], tauhud: ["Tau HUD", "#fff"], rabbit: ["White Rabbit Key", "rgba(255,255,255,.6)"] };
+const START_FAM = { agorzilla: ["Agorzilla", "var(--ok)"], deja: ["Déjà", "rgba(57,255,138,.45)"], tauhud: ["Tau HUD", "#fff"], rabbit: ["White Rabbit Key", "#b9ffd6"] };
 const KIND_NAMES = { line: "Book lines", ballot: "ballots", meal: "meals", vote: "meals with a vote", wish: "meals with a wish", send: "test AGRS sent", rule: "own rules", vote_net: "network votes", shared: "shared rules", other: "other" };
 const VIA_NAMES = { "": "before 30 Oct", relay: "rule-place turns", direct: "opened directly", wallet: "opened directly", elsewhere: "other sites", agorzilla: "from agorzilla.com", hud: "HUD", start: "Start here", rules: "Rules wall", card: "Tau card", challenge: "Weekly challenge", donate: "Donate" };
 function drawStarts() {
@@ -938,6 +967,20 @@ function drawDay() {
   rows($("dPages"), list, d[0], false, d[6]);
 }
 
+/* White Rabbit Key, playing now: people with the game open right now (relay /status "playing"), one browser counted
+   once, refreshed every 20 seconds while this view is open; hidden until the relay counts it (before `up`) */
+let playNow = null;
+const PLAY_TIP = "People with White Rabbit Key open right now, counted live by the relay: one browser counts once, a tab left in the background for five minutes stops counting. Nobody is identified.";
+function drawPlaying() {
+  const box = $("kPlayBox"); if (!box) return;
+  box.hidden = !RB() || playNow == null; if (box.hidden) return;
+  $("kPlay").textContent = fmt(playNow); box.dataset.tip = T(PLAY_TIP);
+}
+async function loadPlaying() {
+  if (SAMPLE) playNow = 3;
+  else try { const r = await fetch(`${RELAY}/status`, { cache: "no-store" }); if (r.ok) { const j = await r.json(), n = Number(j && j.playing && j.playing.rabbit); playNow = Number.isFinite(n) ? n : null; } } catch (e) {}
+  drawPlaying();
+}
 /* White Rabbit Key in the range: tiles for its moves, and who made them / who got the ballots */
 function rabbitTotals() {
   const keys = range === 1 ? [data.today] : rangeDays().map(([k]) => k), z = txs.rabbit || {};
@@ -963,17 +1006,22 @@ function drawRabbitPages() {
     (reach != null ? c(fmt(reach), "player wallets", "Different wallets that made a move or cast a ballot in this range. The island bot's four wallets are not counted. A wallet is a key, not a person.") : c(fmt(t.n ? Math.round(t.wallets / t.n) : 0), t.n > 1 ? "player wallets a day" : "player wallets", "Different wallets that made a move or cast a ballot, on average per day. The island bot's four wallets are not counted. A wallet is a key, not a person.")) +
     c(fmt(t.new), "first moves", "Wallets that played on the testnet for the first time.") +
     c(peak < 0 ? "–" : `${String(peak).padStart(2, "0")}:00`, "busiest hour", "The UTC hour with the most moves in this range.") + `</div>`;
-  const bar = (title, tipText, ent, names) => {
+  const bar = (title, tipText, ent, names, tips = {}) => {
     const sum = ent.reduce((a, e) => a + e[1], 0);
     return `<div class="sp"><span data-tip="${esc(T(tipText))}">${esc(T(title))}</span><em class="cnt"> · ${fmt(sum)}</em>` + (sum
-      ? `<div class="split tx">${ent.map(([k, v], i) => `<i style="width:${(100 * v / sum).toFixed(1)}%;background:${TX_COLORS[i]}"></i>`).join("")}</div><div class="splitkey">${ent.map(([k, v], i) => `<span><i class="k" style="background:${TX_COLORS[i]}"></i><span${names === CAND_NAMES ? ' translate="no"' : ""}>${esc(T(names[k] || k))}</span> <b>${pct(v, sum)}</b></span>`).join("")}</div>`
+      ? `<div class="split tx">${ent.map(([k, v], i) => `<i style="width:${(100 * v / sum).toFixed(1)}%;background:${TX_COLORS[i]}"></i>`).join("")}</div><div class="splitkey">${ent.map(([k, v], i) => `<span${tips[k] ? ` data-tip="${esc(T(tips[k]))}"` : ""}><i class="k" style="background:${TX_COLORS[i]}"></i><span${names === CAND_NAMES ? ' translate="no"' : ""}>${esc(T(names[k] || k))}</span> <b>${pct(v, sum)}</b></span>`).join("")}</div>`
       : `<div class="note">${esc(T("No moves in this range yet."))}</div>`) + `</div>`;
   };
-  $("splits").innerHTML = bar("Who made the moves", "The island's moves on the testnet: the rivals' (sent by the island bot), the players' own Book lines and their ballots.", [["rivals", t.rivals], ["lines", t.lines], ["votes", t.votes]], { rivals: "rivals", lines: "players' lines", votes: "ballots" });
-  $("txsplit").innerHTML = bar("Ballots by candidate", "Who the players voted for on the testnet in this range. On the island, the eleventh ballot goes to whoever leads here.", Object.keys(CAND_NAMES).map(k => [k, t.cands[k] || 0]).sort((a, b) => b[1] - a[1]), CAND_NAMES);
+  $("splits").innerHTML = bar("Who made the moves", "The island's moves on the testnet: the rivals' (sent by the island bot), the players' own Book lines and their ballots.", [["rivals", t.rivals], ["lines", t.lines], ["votes", t.votes]], { rivals: "rivals", lines: "players' lines", votes: "ballots" }, {
+    rivals: "Moves of the three rival candidates, sent by our island bot.\nOur own server wallets, not players.",
+    lines: "Book lines players signed in their own test wallet:\n1 test AGRS to the island council or a place's till.",
+    votes: "Votes for a governor: 1 test AGRS from a player's wallet\ninto a candidate's ballot box." });
+  $("txsplit").innerHTML = bar("Ballots by candidate", "Who the players voted for on the testnet in this range. On the island, the eleventh ballot goes to whoever leads here.", Object.keys(CAND_NAMES).map(k => [k, t.cands[k] || 0]).sort((a, b) => b[1] - a[1]), CAND_NAMES, {
+    marisol: "Ballots for Marisol, who cares about fish and roads.", tobias: "Ballots for Tobias, who cares about visitors and music.",
+    baako: "Ballots for Baako, who cares about visitors and roads.", hana: "Ballots for Hana, who cares about the school and quiet." });
   $("starts").innerHTML = "";
   $("cross").innerHTML = tot ? `<div class="sp"><span data-tip="${esc(T("Different wallets that made a move or cast a ballot in White Rabbit Key. A wallet is a key, not a person."))}">${esc(T("Player wallets"))}</span>` +
-    `<div class="splitkey"><span>${esc(T("last 7 days"))} <b>${fmt(tot["7"] || 0)}</b></span><span>${esc(T("last 30 days"))} <b>${fmt(tot["30"] || 0)}</b></span><span>${esc(T("all"))} <b>${fmt(tot.all || 0)}</b></span></div></div>` : "";
+    `<div class="splitkey"><span data-tip="${esc(T("Different wallets that made a move or cast a ballot in the last 7 days."))}">${esc(T("last 7 days"))} <b>${fmt(tot["7"] || 0)}</b></span><span data-tip="${esc(T("Different wallets that made a move or cast a ballot in the last 30 days."))}">${esc(T("last 30 days"))} <b>${fmt(tot["30"] || 0)}</b></span><span data-tip="${esc(T("Every player wallet in the blocks our relay keeps.\nThe island bot's wallets are not counted."))}">${esc(T("all"))} <b>${fmt(tot.all || 0)}</b></span></div></div>` : "";
 }
 
 /* setting up a node, step by step (relay /setup/stats): the install command copied on the Nodes page, the install
@@ -1062,7 +1110,7 @@ function drawPages() {
 /* where the testnet's transactions come from (relay /api/v1/sources): the whole testnet, whichever site is chosen */
 const TX_GROUPS = [["agorzilla", "Agorzilla", "meals and votes: payments to Agorzilla's bowl and ballot boxes"], ["tauhud", "Tau HUD", "sent from a Tau HUD page: wallet, playground, vote"], ["rabbit", "White Rabbit Key", "White Rabbit Key, our island game on tauhud.com: the players' lines and ballots, and the rivals' moves and wages the island bot sends. Its wallets count only the players'."], ["idni", "IDNI genesis", "IDNI genesis accounts: sent by the 11 accounts the testnet started with (its genesis file), which IDNI set up and uses for testing. They make most of the testnet's transactions, so a small share for the others can still be many people."], ["other", "others", "everything else: other wallets, scripts and tools"]];
 const TX_COLORS = ["var(--ok)", "#fff", "rgba(255,255,255,.45)", "rgba(255,255,255,.2)"];
-const GROUP_COL = { agorzilla: "var(--ok)", tauhud: "#fff", rabbit: "rgba(255,255,255,.6)", idni: "rgba(255,255,255,.45)", other: "rgba(255,255,255,.2)" };
+const GROUP_COL = { agorzilla: "var(--ok)", tauhud: "#fff", rabbit: "#b9ffd6", idni: "rgba(255,255,255,.45)", other: "rgba(255,255,255,.2)" };
 const share = (a, b) => b && a && 100 * a / b < 1 ? "<1%" : pct(a, b);
 function drawTx() {
   const el = $("txsplit");
@@ -1078,9 +1126,14 @@ function drawTx() {
   const users = all - tot.idni[0], U = TX_GROUPS.filter(([g]) => g !== "idni"), col = g => GROUP_COL[g];
   const tipOf = (g, what) => `${T(what)}\n${fmt(tot[g][0])} ${T("transactions")} · ${fmt(wallets(g))} ${T(n === 1 ? "wallets" : "wallets a day on average")}\n${T("of everything, IDNI's genesis accounts included")}: ${share(tot[g][0], all)}`;
   const ours = tot.agorzilla[0] + tot.tauhud[0] + tot.rabbit[0], idni = TX_GROUPS.find(([g]) => g === "idni");
-  el.innerHTML = `<div class="sp">${head}<em class="cnt"> · ${fmt(users)}</em><div class="split tx">${U.map(([g]) => `<i style="width:${users ? (100 * tot[g][0] / users).toFixed(1) : 0}%;background:${col(g)}"></i>`).join("")}</div>` +
-    `<div class="splitkey">${U.filter(([g]) => g !== "rabbit" || tot.rabbit[0]).map(([g, name, what]) => `<span data-tip="${esc(tipOf(g, what))}"><i class="k" style="background:${col(g)}"></i>${esc(T(name))} <b>${share(tot[g][0], users)}</b></span>`).join("")}</div>` +
-    `<div class="note" data-tip="${esc(tipOf("idni", idni[2]) + `\n${T("all testnet transactions")} ${fmt(all)}, ${T("our two sites")} ${share(ours, all)}`)}">${esc(T("IDNI genesis"))} <b>${fmt(tot.idni[0])}</b> · ${esc(T("all"))} <b>${fmt(all)}</b> · ${esc(T("our sites"))} <b>${share(ours, all)}</b></div></div>`;
+  // the headline: our share of the user transactions (IDNI's genesis testing left out); below, smaller, the same with everything counted
+  const heroTip = `${T("Share of the user transactions in this range that came through our sites: Agorzilla, the Tau HUD pages and White Rabbit Key. User transactions are everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests. Counted in transactions and wallets, not people.")}\n${T("through our sites")} ${fmt(ours)} · ${T("User transactions")} ${fmt(users)}`;
+  const hero = users && NET() ? `<div class="ours" data-tip="${esc(heroTip)}"><b>${share(ours, users)}</b><span>${esc(T("of user transactions via our sites"))}<em>${esc(T("not counting IDNI's genesis testing"))}</em></span></div>` : "";
+  const allBar = [[ours, "var(--ok)"], [tot.idni[0], "rgba(255,255,255,.45)"], [tot.other[0], "rgba(255,255,255,.2)"]];
+  el.innerHTML = hero + `<div class="sp">${head}<em class="cnt"> · ${fmt(users)}</em><div class="split tx">${U.map(([g]) => `<i style="width:${users ? (100 * tot[g][0] / users).toFixed(1) : 0}%;background:${col(g)}"></i>`).join("")}</div>` +
+    `<div class="splitkey">${U.filter(([g]) => g !== "rabbit" || tot.rabbit[0]).map(([g, name, what]) => `<span data-tip="${esc(tipOf(g, what))}"><i class="k" style="background:${col(g)}"></i>${esc(T(name))} <b>${share(tot[g][0], users)}</b></span>`).join("")}</div></div>` +
+    `<div class="sp all" data-tip="${esc(tipOf("idni", idni[2]) + `\n${T("all testnet transactions")} ${fmt(all)}, ${T("our two sites")} ${share(ours, all)}`)}"><div class="split thin">${allBar.map(([v, c]) => `<i style="width:${(100 * v / all).toFixed(1)}%;background:${c}"></i>`).join("")}</div>` +
+    `<div class="note">${esc(T(`With IDNI's genesis testing: our sites ${share(ours, all)} of all ${fmt(all)}`)).replace(esc(share(ours, all)), `<b>${esc(share(ours, all))}</b>`).replace(fmt(all), `<b>${fmt(all)}</b>`)}</div></div>`;
 }
 
 function rabbitKpis() {
@@ -1107,6 +1160,7 @@ function nodesKpis() {
 }
 
 function kpis() {
+  drawPlaying();
   if (NET()) return netKpis();
   if (ND()) return nodesKpis();
   if (RB()) return rabbitKpis();
@@ -1160,12 +1214,13 @@ async function load() {
     txs.totals.rabbit = { 7: 21, 30: 21, all: 21 };
     for (const k of ks.slice(-8)) raw.days[k][3].rabbit = Math.round(raw.days[k][0] * .15);
     agzLatest = { stage_name: "Baby", rounds: [{ category: "Aura", winner: "Emerald" }], open: { category: "Pendant light" } };
-    pickSite(); render(); return; }
+    playNow = 3; pickSite(); render(); return; }
   try {
     const r = await fetch(`${RELAY}/visits/public`, { cache: "no-store" });
     if (!r.ok) throw new Error(r.status);
     raw = await r.json(); failed = false;
     try { const s = await fetch(`${RELAY}/api/v1/sources`, { cache: "no-store" }); if (s.ok) txs = await s.json(); } catch (e) {}
+    await loadPlaying();
     try { const a = await fetch("https://agorzilla.com/chain/latest.json", { cache: "no-store" }); if (a.ok) agzLatest = await a.json(); } catch (e) {}
     try { const [a, b, c] = await Promise.all([fetch(`${RELAY}/nodes/history`, { cache: "no-store" }), fetch(`${RELAY}/peers`, { cache: "no-store" }), fetch(`${RELAY}/setup/stats`, { cache: "no-store" })]); if (a.ok) nh = await a.json(); if (b.ok) peers = await b.json(); if (c.ok) setupSt = await c.json(); } catch (e) {}
     // until the relay counts by site (or when it cannot be reached), the page opens on Tau HUD's visitors
@@ -1222,6 +1277,7 @@ if (SAMPLE) $("sourceLine").textContent = "Sample data: made-up numbers to previ
 fit();
 load();
 setInterval(load, 60000);
+setInterval(() => { if (RB() && !document.hidden) loadPlaying(); }, 20000);
 </script>
 </body>
 </html>

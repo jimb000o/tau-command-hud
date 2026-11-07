@@ -70,10 +70,15 @@ got = []
 for i in range(1, 60):
     got += findings.observe(st, snap(health(sealed=7, waiting=12)), T + 60 * i)
 check([g["what"] for g in got] == ["ghost start"] and got[0]["x"] is None and "IDNI #81" in got[0]["tg"], f"ghost once {got}")
+check("<b>Why it matters</b>\nA wallet that trusts the waiting list" in got[0]["tg"], "a finding says why it matters")
+dp = findings.start_post("drops", {"hour": 12, "usual": 0.3}, T)["tg"]
+check("• Usually fewer than one an hour" in dp and "has to send again" in dp, "drops: no \"about 0 an hour\", and what it means")
+check("• Usually about 2 an hour" in findings.start_post("drops", {"hour": 12, "usual": 2.4}, T)["tg"], "drops: the usual number when there is one")
+check(all(findings.DETECTORS[k]["cooldown"] >= 172800 for k in ("ghost", "drops", "votes")), "the same finding at most every two days")
 for i in range(60, 120):
     got += findings.observe(st, snap(health(sealed=0)), T + 60 * i)
 check(len(got) == 1, "ghost: no recovery post")
-for i in range(120, 160):  # again within its 24 h cooldown: held, not posted
+for i in range(120, 160):  # again within its two-day cooldown: held, not posted
     got += findings.observe(st, snap(health(sealed=7, waiting=12)), T + 60 * i)
 check(len(got) == 1 and st["held"] and st["held"][0]["key"] == "ghost", "ghost again within the cooldown is held")
 

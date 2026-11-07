@@ -1,6 +1,6 @@
 /* Tau HUD shared header bar (row 2 on every page). Loaded by assets/nav.js.
    Monochrome, one green accent, nothing truncated, no layout shift when a menu opens. */
-.tnav, .tsheet, .tabbar, header.trail, header.rail { --tn-ok: var(--ok, #39ff8a); --tn-dim: var(--dim, #8a8a94); --tn-hair: var(--hair, rgba(255,255,255,.18)); --tn-line: var(--line, rgba(255,255,255,.09)); --tn-font: var(--display, "Sora", "Segoe UI", sans-serif); --tn-mono: var(--mono, "JetBrains Mono", ui-monospace, Menlo, monospace);
+.tnav, .tsheet, .tabbar, header.trail, header.rail, .tn-tabs, .tn-real { --tn-ok: var(--ok, #39ff8a); --tn-dim: var(--dim, #8a8a94); --tn-hair: var(--hair, rgba(255,255,255,.18)); --tn-line: var(--line, rgba(255,255,255,.09)); --tn-font: var(--display, "Sora", "Segoe UI", sans-serif); --tn-mono: var(--mono, "JetBrains Mono", ui-monospace, Menlo, monospace);
 }
 .tnav { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; flex: 1 1 100%; min-width: 0; position: relative; }
 .tnav-l, .tnav-r { display: flex; align-items: center; gap: 12px; min-width: 0; }
@@ -43,7 +43,11 @@
 .tnav .pill.start b { color: #fff; font-weight: 600; margin-left: 2px; }
 .tnav .pill.start:hover { background: var(--tn-ok); border-color: var(--tn-ok); color: #000; }
 .tnav .pill.start:hover b { color: #000; }
-@media (max-width: 1399px) { .tnav .pill.start { display: none; } }   /* the Learn menu has it too; the line stays one line */
+.tnav .pill.start .sh { display: none; }
+@media (max-width: 1399px) { .tnav .pill.start .lg { display: none; } .tnav .pill.start .sh { display: inline; } }   /* short on laptops, so the line stays one line; phones have it first in the Learn sheet */
+.tnav .menu .mi.first b, .tsheet .mi.first b { color: var(--tn-ok); }
+.tsheet .mi.first { border: 1px solid rgba(57,255,138,.45); border-radius: 8px; }
+@media (max-width: 700px) { .tnav .pill.start { display: none; } }   /* phones: first in the Learn sheet instead, the header stays short */
 @media (max-width: 2199px) { .tnav form.tn-search input { width: 96px; } }   /* room for "Follow the chain" on one line at 2000 wide */
 .tnav .pill.tg { border-color: rgba(57,255,138,.6); color: var(--tn-ok); }
 .tnav .pill.tg svg { width: 13px; height: 13px; fill: currentColor; flex: none; }
@@ -95,6 +99,7 @@ header.trail .dot.none { background: var(--tn-dim); box-shadow: none; animation:
 /* simulation mode: amber, the colour of "not the real thing yet"; the badge is striped like the HUD's simulation bar */
 header.trail .chip.sim b { color: #ffb13b; }
 header.trail .dot.sim { background: #ffb13b; box-shadow: 0 0 8px #ffb13b; }
+header.trail .chip .st { text-decoration: none; font: 600 11px var(--tn-font); letter-spacing: .1em; color: #ffb13b; margin-left: 6px; }
 header.trail .chip.unoff.sim { color: #fff; border-color: rgba(255,177,59,.7); background: repeating-linear-gradient(135deg, rgba(255,177,59,.14) 0 10px, rgba(255,177,59,.03) 10px 20px); }
 header.trail .chip.unoff.sim:hover { border-color: #ffb13b; }
 header.trail .chip.next { border-color: rgba(57,255,138,.45); } header.trail .chip.next b { color: var(--tn-ok); } header.trail .chip.next:hover { border-color: var(--tn-ok); }
@@ -280,6 +285,11 @@ header.trail .unoff.q:hover, header.rail > button.chip.unoff.unoff:hover { color
 /* games that run on the live testnet: the pulsing green dot the site uses for live things, before the name */
 .mi b .tn-live { display: inline-block; width: 7px; height: 7px; margin: 0 8px 1px 0; vertical-align: middle; border-radius: 50%; background: var(--tn-ok); box-shadow: 0 0 7px var(--tn-ok); animation: tnblink 2.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .mi b .tn-live { animation: none; } }
+/* White Rabbit Key's live counter beside its name: people with the game open now, in the game's pale mint */
+.mi b .tn-play { display: inline-flex; align-items: center; gap: 5px; margin-left: 8px; font: 500 11px var(--tn-font); font-style: normal; color: var(--tn-dim); white-space: nowrap; vertical-align: 1px; }
+.mi b .tn-play[hidden] { display: none; }
+.mi b .tn-play i { width: 6px; height: 6px; border-radius: 50%; background: #b9ffd6; box-shadow: 0 0 6px rgba(185,255,214,.7); }
+.mi b .tn-play b { font: 600 11px var(--tn-font); color: #b9ffd6; font-variant-numeric: tabular-nums; }
 
 /* Radio Coco (assets/radio.js): a switch, monochrome; green only while it plays; a soft glow while it waits for the first click */
 .tnav .tn-radio { display: inline-flex; }
@@ -309,3 +319,15 @@ header.trail .unoff.q:hover, header.rail > button.chip.unoff.unoff:hover { color
 .tnav .tn-lang { display: none; }
 @media (max-width: 1599px) { .tnav .seg.tn-langs { display: none; } .tnav .tn-lang { display: block; } }
 @media (max-width: 700px) { .tnav .seg.tn-langs, .tnav .tn-lang { display: none; } }
+
+/* Testnet health tabs (Stats · Testnet load · Status) under the nav row */
+.tn-tabs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 2px 0 0; font: 500 11px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; }
+.tn-tabs .lbl { color: var(--tn-dim); margin-right: 4px; }
+.tn-tabs .tab { color: var(--tn-dim); text-decoration: none; padding: 5px 12px; min-height: 28px; display: inline-flex; align-items: center; border: 1px solid var(--tn-hair); border-radius: 999px; }
+.tn-tabs .tab:hover { color: #fff; border-color: #fff; }
+.tn-tabs .tab.here { color: var(--tn-ok); border-color: var(--tn-ok); }
+@media (max-width: 700px) { .tn-tabs { gap: 6px; } .tn-tabs .tab { min-height: 44px; padding: 0 14px; } }
+/* "what is real": today's transactions by sender, one quiet line */
+.tn-real { color: var(--tn-dim); font: 500 11px/1.5 var(--tn-mono); }
+p.tn-real { margin: 4px 0 0; padding: 4px 12px; border: 1px solid var(--tn-hair); border-radius: 4px; }
+span.tn-real { display: block; margin-top: 4px; }

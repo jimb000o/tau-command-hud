@@ -67,10 +67,13 @@ services:
       CHAT_AI_DAILY: ${CHAT_AI_DAILY:-3000}   # at most this many AI checks per UTC day
       ROADMAP_ENABLED: ${ROADMAP_ENABLED:-1}   # comments on tauhud.com/roadmap/ (relay/roadmap.py, moderated with the troll box); 0 closes them, reading stays
       CRUISE_ENABLED: ${CRUISE_ENABLED:-1}   # cruise ships at White Rabbit Key (relay/cruise.py): simulated passengers, real test transactions; 0 keeps them away
+      HACK_ENABLED: ${HACK_ENABLED:-1}   # the hack of the week replayed on the testnet, Thursdays 11:00 German time (relay/hackweek.py); 0 stops it
+      SENDER_CONNECTION: ${SENDER_CONNECTION:-1}   # island bot + cruise ships send through their own node connection (relay.py Relay.sender); 0 = share the visitors one as before
     volumes:
       # chain restarts and dropped transactions for /stats (relay.py EVENTS_PATH),
       # availability history for /uptime (UPTIME_PATH)
       - relay_data:/data
+      - ai_usage:/ai-usage   # what the troll box's AI check costs (ai_meter.py), read by the monthly costs post
     depends_on: [tau-node]
     restart: unless-stopped
     logging: *logging
@@ -134,6 +137,7 @@ services:
       X_DAILY_CAP: ${X_DAILY_CAP:-8}
       X_MONTHLY_CAP: ${X_MONTHLY_CAP:-240}
       X_LINKS: ${X_LINKS:-false}
+      SIM_POSTS: ${SIM_POSTS:-false}   # the simulation's switches and visitor rule changes as posts (off since 5 Nov 2026)
       X_SIM: ${X_SIM:-true}
       X_PICTURES: ${X_PICTURES:-true}   # the rule change's card, the live overview or a new page's picture under the post
       # weekly recap image and newspaper (alerts/recap.py, gazette.py): Monday 09:00 German time unless .env says otherwise
@@ -141,9 +145,15 @@ services:
       RECAP_WEEKDAY: ${RECAP_WEEKDAY:-0}
       RECAP_HOUR: ${RECAP_HOUR:-9}
       RECAP_TZ: ${RECAP_TZ:-Europe/Berlin}
+      RECAP_LATE_HOURS: ${RECAP_LATE_HOURS:-3}   # a Monday post missed by longer (a restart) is skipped, never posted in a burst
       # changes to Tau HUD itself, from assets/updates.json, at fixed times (UTC): everything new since the last one in one post
       SITE_UPDATES: ${SITE_UPDATES:-true}
       SITE_SLOTS: ${SITE_SLOTS:-8,12,16}
+      # the smaller site changes once a week (Friday 16 UTC = 17:00 German winter time), 5 by name, Telegram only
+      SITE_DIGEST_WEEKDAY: ${SITE_DIGEST_WEEKDAY:-4}
+      SITE_DIGEST_HOUR: ${SITE_DIGEST_HOUR:-16}
+      SITE_DIGEST_LINES: ${SITE_DIGEST_LINES:-5}
+      SITE_DIGEST_X: ${SITE_DIGEST_X:-false}
       # "Testnet today": the real chain's day in one evening post; practice votes are counted there, not posted one by one
       TESTNET_TODAY: ${TESTNET_TODAY:-true}
       TESTNET_TODAY_HOUR: ${TESTNET_TODAY_HOUR:-19}
@@ -151,12 +161,22 @@ services:
       DEEPDIVES: ${DEEPDIVES:-true}
       DEEPDIVE_HOUR: ${DEEPDIVE_HOUR:-13}
       DEEPDIVE_X_EVERY: ${DEEPDIVE_X_EVERY:-2}
+      DEEPDIVE_DAYS: ${DEEPDIVE_DAYS:-0,2,4}   # Monday, Wednesday, Friday
+      IDNI_DIGEST: ${IDNI_DIGEST:-true}   # IDNI's progress of the day as one post (devpulse writes it, here it goes out; up idni)
+      IDNI_DIGEST_LATE_HOURS: ${IDNI_DIGEST_LATE_HOURS:-3}
       ISLAND_CRIER: ${ISLAND_CRIER:-true}
       ISLAND_HOUR: ${ISLAND_HOUR:-7}
-      ISLAND_X_EVERY_DAYS: ${ISLAND_X_EVERY_DAYS:-2}
+      ISLAND_X_EVERY_DAYS: ${ISLAND_X_EVERY_DAYS:-1}
+      # the news line's watchtower (alerts/tickerwatch.py): a stale HUD news line is told to the owner only, privately
+      # (up owner sets that chat; TICKER_OWNER_CHAT sets a chat id directly), never to the channel
+      TICKER_WATCH: ${TICKER_WATCH:-true}
+      TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
+      TICKER_STALE_DAYS: ${TICKER_STALE_DAYS:-7}
     volumes:
       - alerts_state:/state     # what was seen and posted, so nothing is posted twice
       - alerts_public:/public   # proposals.json, feed.xml and recap/, served by Caddy
+      - ai_usage:/ai-usage      # the Anthropic API's costs per month (ai_meter.py), for the costs post
+      - /opt/sites/rico/art:/art:ro   # the island painting the game shows: the Key Crier's X picture (island_pic.py)
     depends_on: [relay]
     restart: unless-stopped
     logging: *logging
@@ -183,20 +203,84 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  # The blog (alerts/blog.py): after each cruise ship visit, a language model writes one learnings article from the
+  # facts counted out of the ship's public logbook (en, zh, ja), as an unlisted draft. Nothing goes on
+  # tauhud.com/blog/ or to the channels until `up blog publish <id>`; `up blog` lists the drafts waiting.
+  blog:
+    build: ./alerts
+    command: ["python", "blog.py", "loop"]
+    init: true
+    environment:
+      RELAY_HTTP: http://relay:8080
+      NEWS_AI_KEY: ${NEWS_AI_KEY:-}
+      CHAT_AI_KEY: ${CHAT_AI_KEY:-}
+      NEWS_AI_MODEL: ${NEWS_AI_MODEL:-claude-sonnet-5-5}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDcom}
+      X_API_KEY: ${X_API_KEY:-}
+      X_API_SECRET: ${X_API_SECRET:-}
+      X_ACCESS_TOKEN: ${X_ACCESS_TOKEN:-}
+      X_ACCESS_SECRET: ${X_ACCESS_SECRET:-}
+      # the cruise ships by themselves (alerts/cruise_crier.py): each call announced on Telegram and X this many minutes
+      # before it (150: Wednesday 13:30, Saturday 11:30 German time), each visit's numbers to the owner's private chat
+      # after it; CRUISE_CRIER=false stops both (CRUISE_ENABLED=0 keeps the ships themselves away)
+      CRUISE_CRIER: ${CRUISE_CRIER:-true}
+      CRUISE_ANNOUNCE_MINUTES: ${CRUISE_ANNOUNCE_MINUTES:-150}
+      # after each Tuesday call of the pirates, a ~22 s clip of every trick the chain refused, to Telegram and X (alerts/
+      # trick_clip.py; none when a trick got through); X only while the day's X posts leave room. false stops it
+      TRICK_CLIP: ${TRICK_CLIP:-true}
+      X_DAILY_CAP: ${X_DAILY_CAP:-8}
+      TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
+      # a clean blog draft on the blog by itself this many hours after it was written (24 since 6.11.2026); 0 = only by hand (up blog publish)
+      BLOG_AUTO_PUBLISH_HOURS: ${BLOG_AUTO_PUBLISH_HOURS:-24}
+      # the weekly report for IDNI (alerts/idni_report.py): counted from our public data, written as an unlisted page with
+      # a pre-filled issue link for IDNI/tau-testnet and told to the owner's private chat (Sunday 18:00 German time);
+      # never filed by itself. IDNI_REPORT=false stops it; up report shows it any time
+      IDNI_REPORT: ${IDNI_REPORT:-true}
+      IDNI_REPORT_WEEKDAY: ${IDNI_REPORT_WEEKDAY:-6}
+      IDNI_REPORT_HOUR: ${IDNI_REPORT_HOUR:-18}
+    volumes:
+      - alerts_state:/state     # /state/blog.json: which visits have a draft, which drafts were posted
+      - alerts_public:/public   # /public/blog/posts.json and drafts/, served by Caddy
+      - ai_usage:/ai-usage      # what each draft cost (ai_meter.py)
+      - /opt/sites/rico/art:/art:ro         # the island's paintings: each article's hero picture is made from them
+      - ../rabbit/art/ships:/ships:ro       # the painted ships on that picture
+    depends_on: [relay]
+    mem_limit: 384m        # the pirates' clip: Pillow frames into ffmpeg (two threads, 720p) for about a minute a week
+    restart: unless-stopped
+    logging: *logging
+
   # Build pulse (alerts/devpulse.py): keeps blob-less clones of IDNI's public
   # repositories and writes devpulse.json for tauhud.com/devpulse/ every 30
   # minutes: newest commits, weekly rhythm, code areas, tags, how far upstream
-  # is ahead of the commits our node is built from (read from node/Dockerfile).
+  # is ahead of the commits our node is built from (read from node/Dockerfile),
+  # IDNI's news for the HUD's news line, and whether our node patches still
+  # apply to the newest tau-testnet main (`up` prints it as "idni:"), and which
+  # IDNI commits and branches name our issues (moves the Road to mainnet badges). After each pass it writes Tau today
+  # for AI assistants (knowledge.py): node.tauhud.com/tau-today.md and .json, read by tauhud.com/facts/ and llms.txt.
   devpulse:
     build: ./alerts
     command: ["python", "devpulse.py"]
+    init: true   # git leaves helper processes behind; PID 1 python never reaped them (150 zombies on 6.11.2026), tini does
     environment:
       RELAY_HTTP: http://relay:8080
       TAU_TESTNET_REF: ${TAU_TESTNET_REF}
+      # IDNI news headlines: a language model reads each new merge once and writes what it means (en, zh, ja).
+      # NEWS_AI_KEY (an Anthropic API key) falls back to the troll box's CHAT_AI_KEY; without either, no IDNI news.
+      NEWS_AI_KEY: ${NEWS_AI_KEY:-}
+      CHAT_AI_KEY: ${CHAT_AI_KEY:-}
+      NEWS_AI_MODEL: ${NEWS_AI_MODEL:-claude-sonnet-5-5}
+      # once a day at this hour (UTC) everything IDNI merged since the last one is written up as ONE post (idni_digest.py)
+      IDNI_DIGEST_HOUR: ${IDNI_DIGEST_HOUR:-10}
+      IDNI_DIGEST_LATE_HOURS: ${IDNI_DIGEST_LATE_HOURS:-3}
+      IDNI_DIGEST_LANG_ALONE: ${IDNI_DIGEST_LANG_ALONE:-false}   # true: a day with only tau-lang changes gets a post too
     volumes:
-      - alerts_state:/state     # the clones, in /state/devpulse
+      - alerts_state:/state     # the clones, in /state/devpulse; digests.json (the daily IDNI post)
       - alerts_public:/public   # devpulse.json, served by Caddy
+      - ai_usage:/ai-usage      # what the news line and the daily IDNI post cost (ai_meter.py)
       - ./node/Dockerfile:/pins/Dockerfile:ro
+      - ./node/patches:/pins/patches:ro   # tried on each new upstream main: do our node patches still apply?
+      - ../facts:/facts:ro   # the hand-checked facts for Tau today (knowledge.py, tauhud.com/facts/); a folder, so a pull reaches it
     depends_on: [relay]
     mem_limit: 256m
     restart: unless-stopped
@@ -275,7 +359,7 @@ services:
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDcom}
     volumes:
       - alerts_public:/public:ro   # proposals.json, written by alerts
-      - alerts_state:/state        # follows.json: personal alerts, only chat ids and what each follows (alerts/follow.py)
+      - alerts_state:/state        # follows.json: personal alerts, only chat ids and what each follows (alerts/follow.py); owner.json (up owner)
     depends_on: [relay, alerts]
     mem_limit: 128m
     restart: unless-stopped
@@ -294,8 +378,41 @@ services:
       PUBLIC_URL: https://${RELAY_DOMAIN}
     volumes:
       - alerts_public:/public:ro
+      # Agorzilla's feeder card (/og/agorzilla/<wallet>.png): feeders.json from agorzilla-latest,
+      # the newest evening photograph from agorzilla-shots, the painting from the site's checkout
+      - /opt/sites/agorilla-live:/agz:ro
+      - agorzilla_shots:/shots:ro
+      - /opt/sites/agorilla:/agzrepo:ro
     depends_on: [relay]
     mem_limit: 256m
+    restart: unless-stopped
+    logging: *logging
+
+  # Guardian (guardian/guardian.py, tauhud.com/guardian/): a second factor for a testnet account. The account's own rule
+  # says "above N the Guardian co-signs"; the owner types the code from an authenticator app on the page, this service
+  # checks it and co-signs (a feeless transfer_vote). It can only say yes to a payment the account asked for, never
+  # send one, and holds nobody's key. Built on IDNI's reference approver bot (tau-testnet scripts/approval_bot_totp.py),
+  # so it runs in the node image, which carries that code; the code here is mounted, so `up guardian` needs no build
+  # and leaves the node alone. Its own key and the authenticator secrets stay in the guardian_data volume.
+  guardian:
+    image: tau-testnet-standalone:${TAU_TESTNET_REF}
+    pull_policy: never   # built locally by the tau-node service
+    command: ["python", "-u", "/guardian/guardian.py", "serve"]
+    working_dir: /app/tau-testnet
+    environment:
+      GUARDIAN_ENABLED: ${GUARDIAN_ENABLED:-1}   # 0: the page says the Guardian is off; payments above a limit then wait
+      GUARDIAN_MAX_ACCOUNTS: ${GUARDIAN_MAX_ACCOUNTS:-50}
+      NODE_HOST: tau-node
+      NODE_PORT: "65432"
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - ./guardian:/guardian:ro
+      - guardian_data:/data
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 192m
+    pids_limit: 64
     restart: unless-stopped
     logging: *logging
 
@@ -329,6 +446,8 @@ volumes:
   relay_data:
   alerts_state:
   alerts_public:
+  ai_usage:
   agorzilla_shots:
+  guardian_data:
   caddy_data:
   caddy_config:

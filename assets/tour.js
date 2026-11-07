@@ -115,7 +115,7 @@
       { s: "#prop", t: "Propose and vote", x: "Put a change to a vote and win the others over. When enough agree, it becomes law on your chain." },
     ] },
     whatif: { name: "What if", intro: "Move block time, validators and votes needed, and watch a sandbox chain react.", steps: [
-      { s: ".levers", t: "Move a lever", x: "Block time, validators, votes needed, validators offline and network delay. Or start from a preset such as “Real testnet today”." },
+      { s: ".levers", t: "Move a lever", x: "Block time, validators, votes needed, validators offline and network delay. Or start from a preset such as “Like real testnet today”." },
       { s: ".stage", t: "The chain reacts at once", x: "Newest block on the right. When a block arrives too late, two blocks land at one height: a short split that the next block settles. It is not the fork Tau avoids, changing the rules never needs one. Hover a block, click it for its story." },
       { s: "#agree", t: "Rule changes need votes", x: "Every rule change needs yes votes from the validators before its deadline. Raise the bar or take validators offline and see what passes." },
       { s: ".side > section.panel:nth-of-type(1)", t: "What happens, in plain words", x: "One verdict for your settings, in plain words. The panel below counts what changed since your last move." },
@@ -249,7 +249,7 @@
   }
   /* first visit: offer this page's tour once */
   function offer() {
-    if (i >= 0 || store.get(KEY) || innerWidth < 900 || document.querySelector(".modal:not([hidden]), .tn-modal:not([hidden])")) return;
+    if (i >= 0 || store.get(KEY) || innerWidth < 900 || /[?&]walk=/.test(location.search) || document.querySelector(".modal:not([hidden]), .tn-modal:not([hidden])")) return;   // a walk a friend sent has its own steps
     offered = true; target = null; ring.hidden = true;
     card.classList.remove("anchored", "side-top", "side-bottom", "side-left", "side-right"); card.style.left = card.style.top = ""; card.style.zoom = zoom() === 1 ? "" : String(zoom());
     q(".tt-step").textContent = "New here?"; q("h3").textContent = `A short tour of ${T.name}`;

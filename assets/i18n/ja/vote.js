@@ -1,5 +1,13 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Who may vote on a rule change is a setting of the network; the counter on the right says what it admits now.": "ルール変更に誰が投票できるかはネットワークの設定です。右のカウンターが今受け付けている範囲を示します。",
+  "runs one with the network’s settings.": "がネットワークの設定どおりにノードを動かします。",
+  "Who may vote.": "誰が投票できるか。",
+  "A setting of the network, read from our node: every account (open admission) or only the validators.": "ネットワークの設定で、私たちのノードから読み取ります。すべてのアカウント（オープン受付）か、バリデーターのみか。",
+  "Who the network lets vote: every account (open admission) or only the validators. A setting of the network, read from our node.": "ネットワークが投票を認める範囲：すべてのアカウント（オープン受付）かバリデーターのみか。私たちのノードから読み取る設定です。",
+  "On Tau Testnet Alpha every account may vote on a rule change right now, not only validators.": "今、Tau Testnet Alpha ではバリデーターだけでなく、すべてのアカウントがルール変更に投票できます。",
+  "Right now the testnet counts only the validators’ votes; a yes from another account is refused at the node. The commands below still work, and the simulation takes every vote.": "今、テストネットはバリデーターの票だけを数えます。他のアカウントの賛成はノードで拒否されます。下のコマンドは使えますし、シミュレーションはすべての票を受け付けます。",
+  "Open admission is switched off: only an active validator’s yes counts. IDNI switched it off on 1 November 2026 after a proposal passed with one vote.": "オープン受付はオフです。有効なバリデーターの賛成だけが数えられます。2026 年 11 月 1 日、提案が 1 票で可決したあと IDNI がオフにしました。",
   "X @TauHUDcom": "X @TauHUDcom",
   "Vote on Tau": "Tau で投票",
   "Vote": "投票",

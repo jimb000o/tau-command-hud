@@ -327,13 +327,15 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
 `docker compose up -d --build alerts donations`.
 - What goes to X, each in its own short text: rule changes on the real chain (not practice
   votes), new nodes, "Testnet today", new pages and features (one line each when several go
-  together), the smaller site changes, the simulation's switches (`X_SIM=false` leaves them out),
+  together), the smaller site changes, the simulation's switches only with `SIM_POSTS=true` (off since 5 November 2026; `X_SIM=false` keeps them off X),
   the Monday recap picture with the headline of the week's paper, donation thank-yous. Not on
   X: health alarms, visitor proposals, and a major with `"x": false` (announced on X by hand, with its link).
 - Site news goes out at fixed times, `SITE_SLOTS` (UTC, default 8,12,16 = 09:00, 13:00, 17:00 German
-  winter time): one new page or feature gets its own post, several waiting go together in one post,
-  and when none is waiting the smaller changes go out once 3 have gathered (or one has waited a week).
-  A slot unused 4 hours after its time is over, so nothing posts at night.
+  winter time): one new page or feature gets its own post, several waiting go together in one post.
+  A slot unused 4 hours after its time is over, so nothing posts at night. The smaller changes go out
+  once a week, `SITE_DIGEST_WEEKDAY` (4 = Friday) at `SITE_DIGEST_HOUR` (16 UTC = 17:00 German winter
+  time), at most `SITE_DIGEST_LINES` (5) by name with the pages' changes before the bot's, the rest counted,
+  Telegram only unless `SITE_DIGEST_X=true` (since 6 November 2026; before, up to three digests a day).
 - A round-up is a major with `"lines"` ({label, text, link, x} per change: Telegram gets a line and a link
   each, X the short `x` lines that fit) and `"covers"` (the major ids it replaces; they and the digest so far are
   not posted on their own). A major's `"image"` also shows large above its Telegram text.
@@ -349,26 +351,44 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
 - "Testnet today" (`TESTNET_TODAY_HOUR`, 19 UTC) goes out every evening since 2 November 2026, a quiet day included:
   with blocks and no transactions it says so (Telegram only); without a block in 24 hours it says since when the
   chain stands still, and that one goes to X too. A restart and a stall of 20 minutes get their own posts anyway.
+  Since 6 November 2026 it leads with who sent: the wallets active that UTC day by kind, from the relay's
+  `/wallets/active` (IDNI's genesis accounts, our island bot, the cruise ships' simulated passengers by ship name
+  from `/cruise/log`, White Rabbit Key players, Agorzilla's feeders, wallets that sent from a Tau HUD page, others),
+  against the mean of the seven days before ("3.5× the usual 22"), the wallets seen for the first time, and one
+  "Why it matters" line drawn from those facts (a spike, strangers, newcomers, a quiet day, a rule change). X gets
+  it only on a day worth telling: a rule event, no block, 1.5× the usual wallets or more, or three or more newcomers.
 - `docker compose run --rm --no-deps alerts python alerts.py --check` asks each channel, without posting, whether the
   service may post there: Telegram's token and the bot's standing in the channel (it must be an administrator with
   Post messages), Tau HUD's X keys and Agorzilla's (`GET /2/users/me`). The service runs the same check when it
   starts, `up` prints it after every deploy, and the answers, the last good send and the last error of each channel
-  are in `posting.json` next to `proposals.json`. A channel that is on and takes no post for `SILENCE_HOURS` (26)
-  gets a warning in the log and in `posting.json`, so a quiet channel is noticed before someone asks.
+  are in `posting.json` next to `proposals.json`. A channel that is on and takes no post from the alerts service for
+  `SILENCE_HOURS` (26) gets a warning in the log and in `posting.json`, so a quiet channel is noticed before someone
+  asks. The last good send and the last error are kept in the state file, so a restart does not forget them, and
+  `--check` adds when the alerts service last posted to each of its channels. Before 4 November 2026 they lived only
+  in memory, and the first check after `up` counted from the service's very first start ("SILENT for 28 hours"
+  although both channels had posted shortly before).
 - An X copy never waits for Telegram: when the Telegram send fails (a token gone bad, the bot no longer admin in the
   channel) or the channel is off, the X copy goes out alone, once, and the Telegram post follows when the channel is
   back, without a second X post. The same holds for Agorzilla's evenings (`agorzilla.py`). Before 2 November 2026
   one failing Telegram send held every X post back, and both accounts went quiet together.
 - A closer look at one page a day lives in `assets/deepdives.json` (in order, each id once, ever; add new pages at
   the end): Telegram at `DEEPDIVE_HOUR` (13 UTC = 14:00 German winter time) with the page's picture and a button,
-  every `DEEPDIVE_X_EVERY`-th (2nd) one also on X as a spare post. `--deepdives-preview` prints the ones still to
+  every `DEEPDIVE_X_EVERY`-th (2nd) one also on X as a spare post, on the days `DEEPDIVE_DAYS` (0,2,4 = Monday,
+  Wednesday, Friday since 6 November 2026; before, every day). `--deepdives-preview` prints the ones still to
   come; `DEEPDIVES=false` stops them. The file is read from the site, so a new entry needs no server step.
 - The Key Crier (White Rabbit Key): the relay's `/isle` summary is read every `ISLAND_POLL_SECONDS` (600) and the
   last reading of a UTC day is that day; at `ISLAND_HOUR` (7 UTC = 08:00 German winter time) Telegram gets the day
   before (campaigns, elections and who won, the players' moves by kind, the law of the day, the islanders' own
-  moves) with the standing explanation of the campaign cycle, whose length is read from `rabbit/game.js`
-  (`ISLAND_DAYS`, 5, when unreachable). X gets it only for a day real players moved and at most every
-  `ISLAND_X_EVERY_DAYS` (2) days, as a spare post. `--island-preview` prints today's so far; `ISLAND_CRIER=false` stops it.
+  moves), only for a day a real player moved (since 6 November 2026; a day nobody played gets no report, the
+  islanders' own politics are not news), with the standing explanation of the campaign cycle on Monday only, with
+  the governor's count; its length is read from `rabbit/game.js` (`ISLAND_DAYS`, 5, when unreachable). X gets it
+  only for a day with a story (an election won or a law passed by real players, since 7 November 2026; a day of moves
+  alone stays on Telegram), told as that story with the live island painting, at most every `ISLAND_X_EVERY_DAYS` (1)
+  days, as a spare post; the Monday governor's count always.
+  `--island-preview` prints today's so far; `ISLAND_CRIER=false` stops it.
+- Nothing is posted late in a burst after a restart: the Monday recap is skipped once it is `RECAP_LATE_HOURS` (3)
+  late, Agorzilla's evenings older than `AGORZILLA_LATE_HOURS` (6) are noted and not posted (on 2 November 2026 the
+  service came back after two days and posted the recap, the day and three evenings in one minute).
 - Posts planned ahead live in `assets/posts-plan.json` (the month's calendar: a spotlight on a page on Wednesdays,
   the rule challenge's last days on Fridays, dated events): each is sent once at its `at` time (UTC) on Telegram and
   X, or within 3 hours after it, never later. `--plan-preview` prints the ones still to come; `POSTS_PLAN=false` stops them.
@@ -469,11 +489,13 @@ at the end.
 **Findings** (`alerts/findings.py`): once a minute the watcher also looks for unusual
 things on the real chain and posts each incident once when it starts and once when it
 is over: our node without the IDNI bootnode or any peer (10 min), no new block while
-connected (20 min), ghost transactions (IDNI #81, at most once a day, no recovery post),
+connected (20 min), ghost transactions (IDNI #81, no recovery post),
 a reorg of 2+ blocks, blocks at under half the usual pace for an hour, a spike of
 dropped transactions, our node 30+ blocks behind (IDNI #78). After a peer outage the
 recovery post says, from the caught-up blocks' timestamps, whether the testnet kept
-going or really paused. The same detector stays quiet for a while after an incident.
+going or really paused. Every start post says in one line why it matters to someone using the
+testnet. The same detector stays quiet for a while after an incident: two days for ghosts,
+dropped transactions and repeated votes (since 6 November 2026), hours for the outages.
 From the 4th start in 6 hours on (`FINDINGS_STORM_AT`, `FINDINGS_STORM_HOURS`) nothing
 is posted one by one; the list goes out once, after 2 calm hours or at 21:00 UTC.
 On X: peer outages without any peer, stalls, reorgs and busy-stretch summaries, at most

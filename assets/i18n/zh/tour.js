@@ -175,7 +175,7 @@ TauI18n.add({ strings: {
   "What if": "如果……会怎样",
   "Move block time, validators and votes needed, and watch a sandbox chain react.": "调整出块时间、验证者和所需票数，看一条沙盒链如何反应。",
   "Move a lever": "拨动一个控制杆",
-  "Block time, validators, votes needed, validators offline and network delay. Or start from a preset such as “Real testnet today”.": "出块时间、验证者、所需票数、离线的验证者和网络延迟。也可以从“今天的真实测试网”等预设开始。",
+  "Block time, validators, votes needed, validators offline and network delay. Or start from a preset such as “Like real testnet today”.": "出块时间、验证者、所需票数、离线的验证者和网络延迟。也可以从“像今天的真实测试网”等预设开始。",
   "The chain reacts at once": "链立即作出反应",
   "Newest block on the right. When a block arrives too late, two blocks land at one height: a short split that the next block settles. It is not the fork Tau avoids, changing the rules never needs one. Hover a block, click it for its story.": "最新区块在右侧。当区块到达太晚时，同一高度会出现两个区块：这是短暂分岔，下一个区块就会把它解决。它不是 Tau 所避免的分叉，改变规则从不需要分叉。悬停区块，点击可看它的故事。",
   "Rule changes need votes": "规则变更需要投票",

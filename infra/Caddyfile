@@ -10,13 +10,18 @@
 		reverse_proxy checker:8090
 	}
 	# Proposal tracker data, the Atom feed, the weekly recap images (alerts/alerts.py),
-	# the donation list read by About (alerts/donations.py) and the build pulse (alerts/devpulse.py).
-	@alerts path /proposals.json /feed.xml /recap/* /donations.json /devpulse.json
+	# the donation list read by About (alerts/donations.py), the build pulse (alerts/devpulse.py) and the blog's
+	# articles, unlisted drafts, pictures and link-preview pages (alerts/blog.py), and the weekly report for IDNI
+	# as unlisted pages with the pre-filled issue link (alerts/idni_report.py), and Tau today for AI assistants
+	# (alerts/knowledge.py: sourced facts, live numbers, IDNI's latest work; read by tauhud.com/facts/ and llms.txt), and the
+	# island painting the game shows now, as the posts carry it (alerts/island_pic.py: /island/today.jpg, /island/crier.jpg).
+	@alerts path /proposals.json /feed.xml /recap/* /donations.json /devpulse.json /blog/posts.json /blog/drafts/* /blog/img/* /blog/a/* /idni-report/* /tau-today.md /tau-today.json /island/*
 	handle @alerts {
 		root * /srv/alerts
 		header Access-Control-Allow-Origin *
 		header Cache-Control "public, max-age=10"
 		header /feed.xml Content-Type "application/atom+xml; charset=utf-8"
+		header /tau-today.md Content-Type "text/markdown; charset=utf-8"
 		file_server
 	}
 	# Share previews: link pictures and the link pages that carry them (share/share.py).
@@ -30,6 +35,13 @@
 		header Access-Control-Allow-Origin *
 		header Cache-Control "public, max-age=120"
 		file_server
+	}
+	# The Guardian's door for tauhud.com/guardian/ (guardian/guardian.py): enrol an authenticator app, confirm a payment.
+	handle /guardian/* {
+		request_body {
+			max_size 4KB
+		}
+		reverse_proxy guardian:8075
 	}
 	# Everything else is the relay.
 	handle {

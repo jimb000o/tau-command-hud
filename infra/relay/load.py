@@ -120,11 +120,20 @@ class Load:
                 "busiest_minute_hour": max(sealed[hour]) if sealed else 0,
             },
             "records": dict(self.top),
-            "thresholds": {"wait": STRAIN_WAIT, "gap": STRAIN_GAP},
+            "thresholds": self.thresholds(gaps),
         }
         out["state"] = self.verdict(out, now)
         self._cache = (now, out)
         return out
+
+    @staticmethod
+    def thresholds(gaps: list) -> dict:
+        """Strain starts at STRAIN_WAIT / STRAIN_GAP, or at three times the testnet's usual block gap of the last hour
+        when that is longer: a transaction that waits one ordinary block is not strain (MS Dry Run, 4 November 2026,
+        went at half pace for its whole visit on a 93-second gap with two transactions waiting)."""
+        hour = sorted(g for g in gaps[-60:] if g > 0)
+        usual = hour[len(hour) // 2] if hour else 0
+        return {"wait": max(STRAIN_WAIT, round(3 * usual)), "gap": max(STRAIN_GAP, round(3 * usual)), "usual_gap": round(usual)}
 
     @staticmethod
     def verdict(s: dict, now: float) -> str:
@@ -133,8 +142,9 @@ class Load:
         recent = slice(-10, None)
         if n["waiting"] and n["last_block_age"] is not None and n["last_block_age"] > 600:
             return "stalled"
+        th = s.get("thresholds") or {"wait": STRAIN_WAIT, "gap": STRAIN_GAP}
         waits = [w for w in s["wait_max"][recent] if w is not None]
-        if (waits and max(waits) > STRAIN_WAIT) or max(s["gap"][recent] or [0]) > STRAIN_GAP and n["waiting"] \
+        if (waits and max(waits) > th["wait"]) or max(s["gap"][recent] or [0]) > th["gap"] and n["waiting"] \
                 or sum(s["refused"][recent]) > 5:
             return "strained"
         if sum(s["sealed"][recent]) >= 100:

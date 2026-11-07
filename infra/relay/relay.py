@@ -2,9 +2,11 @@
 
 The node's own WebSocket (port 65433) allows 32 connections and rate-limits the
 heavy reads (getblocks, getgovernance, gettaustate) to 0.5/s per connection, so
-it cannot face the public. This relay holds ONE upstream connection, polls the
-node on a fixed schedule, caches the replies and serves every visitor from that
-cache. New blocks, mempool changes and governance changes are pushed to all
+it cannot face the public. This relay holds ONE upstream connection for the
+visitors, polls the node on a fixed schedule, caches the replies and serves every
+visitor from that cache. The island bot and the cruise ships send through a second
+connection of their own (Relay.sender), so a send the node answers late never
+makes the visitors wait. New blocks, mempool changes and governance changes are pushed to all
 visitors as soon as the relay sees them.
 
 Visitors speak the same text protocol as the node ("getblocks 12" in, the
@@ -43,11 +45,14 @@ from simvotes import SimVotes, name_of
 from simwallet import SimWallet
 from slotlease import SlotLease
 from cruise import Cruise
+from hackweek import HackWeek
 from island import Island
 from isle import Isle
 from load import Load
 from txsources import TxSources, deja as deja_day
 from walletdays import WalletDays
+from chainhist import ChainHistory
+from services import Services
 from nodehist import NodeHistory
 from setupfunnel import SetupFunnel
 from visits import OWN_HOSTS, SITES, Visits
@@ -131,6 +136,9 @@ HEALTH_WEIGHTS = {"node": 20, "sync": 15, "last_block": 20, "pace": 10, "availab
 # this long afterwards (the block poll may still be catching up)
 DROP_GRACE_SECONDS = _env_float("DROP_GRACE_SECONDS", 30)
 UPSTREAM_TIMEOUT = _env_float("UPSTREAM_TIMEOUT_SECONDS", 20)
+# The island bot and cruise ships use a second node connection of their own (Relay.sender); 0 = share the visitors' one
+SENDER_CONNECTION = os.environ.get("SENDER_CONNECTION", "1") != "0"
+SENDER_FALLBACK = _env_float("SENDER_FALLBACK_SECONDS", 60)   # sender down this long -> borrow the visitors' connection
 # The node allows heavy reads at burst 2, 0.5/s per connection; stay just under.
 HEAVY_COMMANDS = frozenset({"getblocks", "getgovernance", "gettaustate", "checktx", "getruleconflict"})
 HEAVY_BURST = 2
@@ -298,8 +306,10 @@ class TokenBucket:
 class Upstream:
     """One connection to the node; requests are strictly sequential."""
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, name: str = "upstream"):
         self.url = url
+        self.name = name                # "upstream" (visitors, polls) or "sender" (island bot + cruise ships)
+        self.down_since = time.time()   # when this connection was last lost (or created): see Relay.ask_sender
         self.ws = None
         self.lock = asyncio.Lock()
         self.connected = asyncio.Event()
@@ -315,14 +325,16 @@ class Upstream:
                     hello = await asyncio.wait_for(ws.recv(), UPSTREAM_TIMEOUT)
                     if not str(hello).startswith("ok"):
                         raise RuntimeError(f"handshake refused: {hello}")
-                    log.info("upstream connected: %s (%s)", self.url, hello)
+                    log.info("%s connected: %s (%s)", self.name, self.url, hello)
                     self.ws = ws
                     self.connected.set()
                     backoff = 1.0
                     await ws.wait_closed()
             except (OSError, ConnectionClosed, RuntimeError, asyncio.TimeoutError) as exc:
-                log.warning("upstream unavailable: %r", exc)
+                log.warning("%s unavailable: %r", self.name, exc)
             finally:
+                if self.ws is not None or self.connected.is_set():
+                    self.down_since = time.time()
                 self.ws = None
                 self.connected.clear()
             await asyncio.sleep(backoff)
@@ -340,18 +352,30 @@ class Upstream:
                 await ws.send(command)
                 raw = await asyncio.wait_for(ws.recv(), UPSTREAM_TIMEOUT)
             except (ConnectionClosed, asyncio.TimeoutError) as exc:
-                log.warning("upstream %s failed: %r", command.split()[0], exc)
+                log.warning("%s %s failed: %r", self.name, command.split()[0], exc)
                 await ws.close()
                 return None
         try:
             msg = json.loads(raw)
         except (TypeError, ValueError):
-            log.warning("upstream sent non-JSON for %s: %.80s", command.split()[0], raw)
+            log.warning("%s sent non-JSON for %s: %.80s", self.name, command.split()[0], raw)
             return None
         return msg if isinstance(msg, dict) else None
 
 
 class Relay:
+    async def ask_sender(self, command: str) -> dict | None:
+        """The island bot's and cruise ships' way to the node: their own connection. Only while that one has been
+        down for SENDER_FALLBACK seconds and the visitors' connection is up do they borrow the visitors' one, so a
+        node that refuses a second connection never silences the bot."""
+        s = self.sender
+        if s is None:
+            return await self.upstream.request(command)
+        if (s.ws is None and self.upstream.ws is not None
+                and time.time() - s.down_since >= SENDER_FALLBACK):
+            return await self.upstream.request(command)
+        return await s.request(command)
+
     def __init__(self, upstream_url: str = UPSTREAM_URL):
         self.upstream = Upstream(upstream_url)
         self.simvotes = SimVotes()   # visitor votes for the simulation (simvotes.py)
@@ -359,14 +383,21 @@ class Relay:
         self.simwallet = SimWallet()   # the testnet wallet's transactions in simulation mode (simwallet.py)
         self.lease = SlotLease(places=RULE_PLACES)   # fair turns on the personal-rule places (slotlease.py)
         self.island = Island()   # White Rabbit Key: the rival candidates' moves as test transactions (island.py)
+        # The island bot and the cruise ships send through their own connection to the node, so a send the node takes
+        # long to answer (up to UPSTREAM_TIMEOUT) never holds the visitors' connection: pages keep loading meanwhile.
+        self.sender = Upstream(upstream_url, "sender") if (SENDER_CONNECTION and self.island.enabled) else None
         self.isle = Isle()       # White Rabbit Key: every campaign played today, added up and pushed to every page (isle.py)
+        self.isle.people = self.playing   # and how many people have it open now, counted like `online`
         self.load = Load()       # how hard the testnet works, minute by minute: GET /load (load.py)
         self.island.on_tx = lambda: self.load.sent("bot")
         # White Rabbit Key: cruise ships whose simulated passengers send real test transactions in the bot's free slots (cruise.py)
         self.cruise = Cruise(verdict=self.load_word, chain=self.chain_view, spend=self.island_spend,
                              budget=lambda: self.island.today + len(self.island.queue) < self.island.daily // 2)
         self.cruise.on_tx = lambda ok: self.load.sent("cruise" if ok else "refused")
-        self.island.idle = self.cruise.step
+        # the hack of the week, replayed on the testnet with our own wallets, after the ships in the bot's free slots (hackweek.py)
+        self.hack = HackWeek(verdict=self.load_word)
+        self.hack.on_tx = lambda ok: self.load.sent("cruise" if ok else "refused")
+        self.island.idle = self.idle_step
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
         self.simpredict = SimPredict(os.environ.get("SIMPREDICT_PATH", "/data/simpredict.json"), votes=self.simvotes, names=name_of)
         self.visits = Visits()   # cookie-free visitor numbers for the site owner (visits.py)
@@ -402,7 +433,7 @@ class Relay:
         self.sources = TxSources()              # which transactions came through this relay, for /api/v1/sources
         self.sources.bots = {pk: c for c, pk in self.island.pk.items()}   # White Rabbit Key's rival moves
         self.sources.purses = {pk: p for p, pk in self.island.ppk.items()}   # and the money it pays the visitors
-        self.sources.passengers = lambda: self.cruise.who   # and the cruise ships' simulated passengers
+        self.sources.passengers = self.simulated   # and the cruise ships' simulated passengers
         self.sources_text, self.sources_at = None, 0.0
         self.uptime = self._load_uptime()       # hourly availability buckets and outages
         self.uptime_text: str | None = None
@@ -419,6 +450,16 @@ class Relay:
         self.wallets.add_blocks(self.ordered_blocks(), self.sources.sent)
         self.wallets.save(force=True)
         self.wallets_text, self.wallets_at = None, 0.0
+        # what every chain held per hour and day, kept across testnet restarts, for /history (chainhist.py)
+        self.chainhist = ChainHistory()
+        self.chainhist.seed(self.state.get("restarts") or [])
+        self.chainhist.observe(self.ordered_blocks(), force=True)
+        self.history_text, self.history_at = None, 0.0
+        # accounts that serve other wallets, found in the blocks alone, for tauhud.com/services/ (services.py)
+        self.services = Services()
+        self.services.bots = self.wallets.bots
+        self.services.passengers = self.simulated
+        self.services_text, self.services_at = None, 0.0
         self.mempool_seen: dict[str, dict] = {}  # tx_hash -> summary, while in the mempool
         self.left_mempool: dict[str, dict] = {}  # tx_hash -> summary, waiting for a block
         self.stats_text: str | None = None
@@ -443,7 +484,8 @@ class Relay:
         self.rules_text: str | None = None      # /rules, refreshed by poll_rules
         # last: the cruise ships' passenger wallets are made in the background; tagged as simulated once known
         self.cruise.on_ready = self.tag_passengers
-        if self.cruise.ready:
+        self.hack.on_ready = self.tag_passengers
+        if self.cruise.ready or self.hack.ready:
             self.tag_passengers()
 
     # ---------- polling ----------
@@ -490,11 +532,13 @@ class Relay:
             # The node wiped its chain data (testnet restarted on the same genesis):
             # everything cached belongs to a dead chain.
             log.warning("chain reset: node has %s blocks, had %s; dropping cached blocks", total, self.total_blocks)
+            self._archive_chain()
             self.blocks.clear()
             reset = True
         elif full and self.blocks and self._other_chain(fetched):
             # typically right after a relay start: the blocks on disk are from a chain that is gone
             log.warning("held blocks belong to an earlier chain; dropping them")
+            self._archive_chain()
             self.blocks.clear()
             dropped = True
             if self.state.get("chain"):
@@ -535,6 +579,10 @@ class Relay:
         self.note_chain()
         if self.wallets.add_blocks(fresh, self.sources.sent):   # before a restart can drop them: days only grow
             self.wallets.save()
+        if self.chainhist.due() or rewrite:
+            if self.chainhist.observe(self.ordered_blocks(), force=True):
+                self.sources_text = None   # a new chain began: the merged day counts change
+            self.history_text = None
         self.stats_text = self.community_text = self.board_text = None
         if len(fresh) > 5:
             log.info("new blocks: %s..%s (%s)", self._height(fresh[0]), self._height(fresh[-1]), len(fresh))
@@ -545,6 +593,18 @@ class Relay:
             "blocks": fresh, "total": self.total_blocks, "truncated": True, "pushed": True,
             # reset: the chain restarted, drop everything you had before these blocks
             **({"reset": True} if reset else {})}))
+
+    def _archive_chain(self):
+        """Right before the blocks of a chain are dropped: count them one last time and freeze that chain's
+        per-day source counts with it (chainhist.py), so long-term charts keep them after the restart."""
+        blocks = self.ordered_blocks()
+        if not blocks:
+            return
+        try:
+            self.chainhist.observe(blocks, force=True, sources=self.sources.by_day(blocks))
+        except Exception:
+            log.exception("could not archive the chain before a restart")
+        self.history_text = self.sources_text = None
 
     def _other_chain(self, fetched: list[dict]) -> bool:
         """True when the node's blocks contradict the ones loaded from disk
@@ -688,6 +748,9 @@ class Relay:
         self.state["restarts"].append({"detected_at": round(time.time()), "old": old, "new_block1_ts": new_block1_ts})
         self.state["restarts"] = self.state["restarts"][-EVENTS_MAX:]
         self._save_state()
+        if getattr(self, "chainhist", None):   # a chain that ended while the relay was away: at least its tip
+            self.chainhist.seed(self.state["restarts"][-1:])
+            self.history_text = None
 
     # ---------- availability history: /uptime ----------
     def _load_uptime(self) -> dict:
@@ -733,7 +796,7 @@ class Relay:
         now = round(now if now is not None else time.time())
         fresh = now - self.updated.get("getblocks", 0) < 3 * max(BLOCK_POLL, UPTIME_SAMPLE / 2)
         node_ok = self.upstream.connected.is_set() and fresh
-        canon, tip = self.canonical_height(), self.tip_height()
+        canon, tip = self.canonical_height(), self.tip_height(now)
         lag = (tip - canon) if node_ok and canon is not None and tip is not None else None
         synced = node_ok and canon is not None and canon > 0 and (lag is None or lag <= SYNC_LAG)
         hour = str(now - now % 3600)
@@ -841,7 +904,7 @@ class Relay:
 
         add("node", "Node answering", 1.0 if node_ok else 0.0, "yes" if node_ok else "no",
             "" if node_ok else "our node does not answer the relay")
-        canon, tip = self.canonical_height(), self.tip_height()
+        canon, tip, raw_tip = self.canonical_height(), self.tip_height(now), self.raw_tip_height()
         lag = (tip - canon) if canon is not None and tip is not None else None
         if not node_ok or not canon:
             add("sync", "In sync with the network", 0.0, "unknown" if not node_ok else "syncing",
@@ -849,7 +912,9 @@ class Relay:
         else:
             add("sync", "In sync with the network", 1.0 if lag is None else lin(lag, SYNC_LAG, 30),
                 "in sync" if lag is None or lag <= 0 else f"{lag} blocks behind",
-                "no peer tip known yet" if lag is None else "")
+                "no peer tip known yet" if lag is None
+                else f"a peer named #{raw_tip}, not on our chain (old run before a restart); our head is new"
+                if raw_tip is not None and tip is not None and raw_tip > tip else "")
         exp = self.expected_block_seconds()
         ordered = [b for b in self.ordered_blocks() if self._height(b) >= 1 and self._ts(b)]
         last_ts = self._ts(ordered[-1]) if ordered else None
@@ -1096,8 +1161,18 @@ class Relay:
         passengers are simulated, so they are counted apart from real wallets, from before the first one sends."""
         w = getattr(self, "wallets", None)
         if w is not None and hasattr(w, "retag"):
-            w.cruise = {pk.lower() for pk in self.cruise.who}
+            w.cruise = {pk.lower() for pk in self.simulated()}
             w.retag()
+
+    def simulated(self) -> dict:
+        """Our simulated wallets: the cruise ships' passengers and the hack of the week's four (pubkey -> who)."""
+        return {**self.cruise.who, **getattr(getattr(self, "hack", None), "who", {})}
+
+    async def idle_step(self, ask, gov) -> bool:
+        """The island bot's free slot: a cruise ship first, then the hack of the week (never both in one slot)."""
+        if await self.cruise.step(ask, gov):
+            return True
+        return await self.hack.step(ask, gov)
 
     def island_spend(self):
         self.island.today += 1   # a passenger's transaction comes out of the island's day budget (ISLAND_DAILY)
@@ -1197,14 +1272,40 @@ class Relay:
         except (KeyError, TypeError, ValueError):
             return None
 
-    def tip_height(self) -> int | None:
+    def raw_tip_height(self) -> int | None:
         """Highest network tip the node has heard from its peers (patched
         getgovernance.network_tip); None until a peer was seen or on an
-        unpatched node."""
+        unpatched node. The node keeps the highest number it ever heard, so
+        after a chain restart this still names the old run's tip."""
         try:
             return int((self.governance().get("network_tip") or {})["number"])
         except (KeyError, TypeError, ValueError):
             return None
+
+    def head_is_fresh(self, now: float | None = None) -> bool:
+        """Is our verified head a block the validator made just now? Then we
+        are at the live tip, whatever a peer claimed earlier."""
+        canon = self.canonical_height()
+        if not canon:
+            return False
+        want = self.head_hash()
+        at = [b for b in self.blocks.values() if self._height(b) == canon]
+        head = next((b for b in at if b.get("block_hash") == want), at[0] if at else None)
+        ts = self._ts(head) if head else None
+        if not ts:
+            return False
+        now = now if now is not None else time.time()
+        return -300 <= now - ts <= max(3 * self.expected_block_seconds(), 180)
+
+    def tip_height(self, now: float | None = None) -> int | None:
+        """The network tip to measure our lag against. A peer tip far above a
+        head the validator minted minutes ago cannot be on our chain: it is the
+        old run's height remembered from before a chain restart (or a peer
+        still on that run). Then our head is the tip."""
+        tip, canon = self.raw_tip_height(), self.canonical_height()
+        if tip is not None and canon is not None and tip - canon > SYNC_LAG and self.head_is_fresh(now):
+            return canon
+        return tip
 
     # ---------- visitor commands ----------
     async def answer(self, message: str, ip: str = "?", ws: ServerConnection | None = None) -> str:
@@ -1783,18 +1884,26 @@ class Relay:
     def online_sites(self) -> dict:
         return {s: self.online(s) for s in SITES}
 
+    def playing(self) -> int:
+        """People with White Rabbit Key open right now: the pages that joined the shared island ("isle join"),
+        one browser's tabs and reconnects counted once, the same way as `online`."""
+        return len({self.visits.person(*self.viewers[w][:2]) if w in self.viewers else id(w) for w in self.isle.subs})
+
     def presence_envelope(self) -> str:
-        return envelope_ok("presence", {"online": self.online(), "sites": self.online_sites(), "pushed": True})
+        return envelope_ok("presence", {"online": self.online(), "sites": self.online_sites(), "playing": {"rabbit": self.playing()}, "pushed": True})
 
     def isle_command(self, args: list[str], ip: str, ws: ServerConnection | None) -> str:
         """The shared island: join / leave / move / end (isle.py has the rules)."""
         sub = args[0].lower() if args else ""
         if sub == "join":
-            if ws is not None:
+            if ws is not None and ws not in self.isle.subs:
                 self.isle.subs.add(ws)
+                self.push_presence()
             return envelope_ok("isle", self.isle.snapshot())
         if sub == "leave":
-            self.isle.subs.discard(ws)
+            if ws in self.isle.subs:
+                self.isle.subs.discard(ws)
+                self.push_presence()
             return envelope_ok("isle", {"left": True})
         a = [x.lower() for x in args[1:]]
         if sub == "board":
@@ -1911,8 +2020,11 @@ class Relay:
         self.expire_community(now)
         return {
             "upstream_connected": self.upstream.connected.is_set(),
+            # the island bot's and cruise ships' own node connection; null when switched off (SENDER_CONNECTION=0)
+            "sender_connected": self.sender.connected.is_set() if self.sender else None,
             "height": self.height(),
             "canonical_height": self.canonical_height(),
+            "peer_tip_raw": self.raw_tip_height(),
             "tip_height": self.tip_height(),
             # the page may make Live the default view only while the node follows a real chain
             "live_default": bool(self.upstream.connected.is_set() and (self.canonical_height() or 0) > 0),
@@ -1922,6 +2034,7 @@ class Relay:
             "clients": len(self.clients),
             "online": self.online(),
             "online_sites": self.online_sites(),
+            "playing": {"rabbit": self.playing()},   # people with White Rabbit Key open now
             "community_nodes": len(self.community),
             # the newest chain restarts and reorgs the relay noticed (full lists on /stats)
             "restarts": [{"detected_at": r.get("detected_at"), "old_tip": (r.get("old") or {}).get("tip")}
@@ -1981,7 +2094,7 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "no-store")])
             return Response(code.value, code.phrase, headers, json.dumps(sim[1], separators=(",", ":")).encode())
-        isl = self.island.route(path) if path == "/island" else self.cruise.route(path, query) if path.startswith("/cruise") else self.isle.route(path)
+        isl = self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.hack.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/hack") else self.isle.route(path)
         if isl is not None:
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, json.dumps(isl, separators=(",", ":")).encode())
@@ -2005,6 +2118,14 @@ class Relay:
                                ("Cache-Control", f"public, max-age={int(STATS_CACHE_SECONDS)}")])
             code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
             return Response(code.value, code.phrase, headers, body)
+        if path == "/history":   # every chain's hours and days, across testnet restarts (chainhist.py)
+            if self.history_text is None or time.monotonic() - self.history_at >= 60:
+                self.history_text = json.dumps(self.chainhist.history(), separators=(",", ":"))
+                self.history_at = time.monotonic()
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=60")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.history_text.encode())
         if path == "/community/board":
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),
@@ -2093,9 +2214,30 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", f"public, max-age={int(API_CACHE_SECONDS)}")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.wallets_text.encode())
+        if path == "/api/v1/sources/recent":   # who sent the last 12 blocks' transactions, totals only (Rico's chain weather)
+            if getattr(self, "recent_text", None) is None or time.monotonic() - self.recent_at >= 20:
+                self.recent_text = json.dumps(self.sources.recent(self.ordered_blocks()), separators=(",", ":"))
+                self.recent_at = time.monotonic()
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=20")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.recent_text.encode())
+        if path in ("/services", "/api/v1/services"):   # accounts serving other wallets, from the blocks alone (services.py)
+            self.services.refresh_guardian()
+            if self.services_text is None or time.monotonic() - self.services_at >= 60:
+                out = self.services.scan(self.ordered_blocks())
+                self.services_text = json.dumps({**out, "height": self.height(), "generated_at": round(time.time())},
+                                                separators=(",", ":"))
+                self.services_at = time.monotonic()
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=60")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.services_text.encode())
         if path == "/api/v1/sources":
             if self.sources_text is None or time.monotonic() - self.sources_at >= 60:
-                self.sources_text = json.dumps(self.sources.by_day(self.ordered_blocks()), separators=(",", ":"))
+                # earlier chains' day counts are added in (chainhist.py), so a testnet restart does not reset them
+                self.sources_text = json.dumps(self.chainhist.merge_sources(self.sources.by_day(self.ordered_blocks())),
+                                               separators=(",", ":"))
                 self.sources_at = time.monotonic()
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),
@@ -2161,7 +2303,8 @@ class Relay:
     async def run(self):
         tasks = [
             asyncio.create_task(self.upstream.run()),
-            asyncio.create_task(self.island.run(self.upstream.request, self.governance)),
+            *([asyncio.create_task(self.sender.run())] if self.sender else []),
+            asyncio.create_task(self.island.run(self.ask_sender, self.governance)),
             asyncio.create_task(self.isle.run(lambda snap: broadcast(self.isle.subs, envelope_ok("isle", snap)))),
             asyncio.create_task(self.poll_loop(BLOCK_POLL, self.poll_blocks)),
             asyncio.create_task(self.poll_loop(MEMPOOL_POLL, lambda: self.poll_cached("getmempool", True))),

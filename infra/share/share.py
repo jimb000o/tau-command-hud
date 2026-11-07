@@ -13,6 +13,8 @@ fills the gap on node.tauhud.com:
                                      live in the visitor's browser, so the link
                                      carries them as c)
   GET /og/card/<96 hex>.json         the same numbers, for the card page
+  GET /og/agorzilla/<96 hex>.png    Agorzilla's feeder card: what one wallet fed and chose, beside the
+                                     newest evening photograph (agorzilla.com's feeders.json and /evenings/)
   GET /s/  /s/block/<n>  /s/proposal/<id>  /s/address/<hex>  /s/card/<hex>
                                      a tiny page with og:/twitter: tags for that
                                      picture that sends people on to the real page
@@ -52,7 +54,7 @@ CACHE_MAX = 400
 
 ADDR = re.compile(r"^[0-9a-f]{96}$")
 PROP = re.compile(r"^[0-9a-f]{8,64}$")
-ROUTE = re.compile(r"^/(og|s)(?:/(block|proposal|address|card)/([0-9a-z]+?))?(?:\.png)?/?$")
+ROUTE = re.compile(r"^/(og|s)(?:/(block|proposal|address|card|agorzilla)/([0-9a-z]+?))?(?:\.png)?/?$")
 CARD_JSON = re.compile(r"^/og/card/([0-9a-f]{96})\.json$")
 
 TRANSFERISH = {"user_tx", "retractable_transfer", "approval_request"}
@@ -65,6 +67,13 @@ BOXES = ("931c4e3b949dd5a77c226e2409f617aa9603f15075f20902c849855f24fb5439113afa
          "92cfce4449523a48ab02f88d5acfa85b74860c87eaf501c48320c99a8a142191ba022199c3b20474ff19f7b72f4563a4",
          "afbdeb43eb62d4a95f2f679686488a14a033cbddb45dec0ac7181d40a668f4af3c8b1c9df05b3b2bc33e664a2a8dd98b")
 AGZ_BORN, MEAL_COOLDOWN = 1793296800, 3600   # 29 Oct 2026 18:00 UTC
+# The feeder card reads what agorzilla.com's archive service (agorzilla-latest, the agorilla repo's tools/archive.cjs --live)
+# writes every 10 minutes: feeders.json, each wallet's meals and votes, worked out by the creature's own rules. The picture
+# is the newest evening photograph (agorzilla-shots), or the painting from the site's checkout.
+AGZ_LIVE = os.environ.get("AGZ_LIVE", "/agz")
+AGZ_SHOTS = os.environ.get("AGZ_SHOTS", "/shots")
+AGZ_ART = os.environ.get("AGZ_ART", "/agzrepo/assets/agorilla.webp")
+AGZ_SITE = os.environ.get("AGZ_SITE", "https://agorzilla.com").rstrip("/")
 
 
 def low(v) -> str:
@@ -352,6 +361,44 @@ def card_numbers(a: str) -> dict:
     return c
 
 
+_agz: dict = {"mtime": None, "data": {}}
+
+
+def agz_feeders() -> dict:
+    f = os.path.join(AGZ_LIVE, "chain", "feeders.json")
+    try:
+        m = os.path.getmtime(f)
+        if m != _agz["mtime"]:
+            with open(f, encoding="utf-8") as fh:
+                _agz["data"], _agz["mtime"] = json.load(fh), m
+    except (OSError, ValueError):
+        pass
+    return _agz["data"]
+
+
+def agz_numbers(a: str) -> dict:
+    """One wallet on the feeder card: counted meals, evenings it voted in, the picks that became part of Agorzilla."""
+    data = agz_feeders()
+    w = (data.get("wallets") or {}).get(a) or {}
+    picks = w.get("picks") or []
+    return {"addr": a, "meals": w.get("meals") or 0, "voted": len(picks), "won": [p for p in picks if p.get("won")],
+            "stage_name": data.get("stage_name"), "lived": data.get("lived"), "feeders": data.get("feeders"), "seen": bool(w)}
+
+
+def agz_photo() -> str | None:
+    """The newest evening photograph, which shows Agorzilla as it looks now; else the painting."""
+    try:
+        with open(os.path.join(AGZ_SHOTS, "evenings.json"), encoding="utf-8") as fh:
+            shots = json.load(fh)
+        for e in sorted((x for x in shots if isinstance(x, dict) and x.get("after")), key=lambda x: x.get("n", -1), reverse=True):
+            p = os.path.join(AGZ_SHOTS, os.path.basename(str(e["after"])))
+            if os.path.isfile(p):
+                return p
+    except (OSError, ValueError, TypeError):
+        pass
+    return AGZ_ART if os.path.isfile(AGZ_ART) else None
+
+
 def stamps_of(query: str) -> int:
     """Café stamps from ?c=0..4 (they are kept in the visitor's browser, not on the chain)."""
     m = re.search(r"(?:^|&)c=([0-4])(?:&|$)", query or "")
@@ -365,14 +412,16 @@ _render = threading.Semaphore(2)
 
 def picture(kind: str | None, arg: str | None, stamps: int = 0) -> tuple[bytes, int]:
     """PNG bytes and how long they may be cached (seconds)."""
-    key = f"{kind}:{arg}:{stamps}:{CHAIN.head}"
+    key = f"{kind}:{arg}:{stamps}:{CHAIN.head}:{_agz['mtime'] if kind == 'agorzilla' else ''}"
     hit = _cache.get(key)
     if hit and hit[0] > time.monotonic():
         return hit[1], 60
     with _render:
         try:
             ttl = 60
-            if not CHAIN.ready:
+            if kind == "agorzilla":   # needs no chain: the archive service worked it out
+                img, ttl = cards.agorzilla(agz_numbers(arg), agz_photo()), 300
+            elif not CHAIN.ready:
                 img, ttl = cards.generic(), 30
             elif kind is None:
                 img = cards.hud(hud_numbers())
@@ -420,6 +469,14 @@ def page(kind: str | None, arg: str | None, stamps: int = 0) -> str:
         target, title = f"{SITE}/card/{q}", f"{cards.words(arg)} · My Tau card"
         desc = cards.card_line(n) + " Test AGRS only, nothing priced or promised."
         img = f"{PUBLIC}/og/card/{arg}.png?c={stamps}&h={CHAIN.head}"
+    elif kind == "agorzilla":
+        n = agz_numbers(arg)
+        target = f"{AGZ_SITE}/?feeder={arg}#life"
+        title = f"{cards.words(arg)} helped raise Agorzilla" if n["meals"] else "Agorzilla"
+        desc = ((f"{cards.plural(n['meals'], 'meal')}, {cards.plural(n['voted'], 'evening')} voted"
+                 + (f", {cards.plural(len(n['won']), 'pick')} that became part of it" if n["won"] else "") + ". ") if n["meals"] else "") \
+            + "One creature on Tau Testnet Alpha that everyone feeds and shapes together. Test AGRS only."
+        img = f"{PUBLIC}/og/agorzilla/{arg}.png?m={n['meals']}.{len(n['won'])}"
     else:
         target, title = f"{SITE}/explorer/?a={arg}", f"Address {cards.short(arg)} · Tau HUD"
         desc = "Balance, transactions and rules of an account on the Tau Testnet Alpha."
@@ -431,7 +488,7 @@ def page(kind: str | None, arg: str | None, stamps: int = 0) -> str:
 <meta name="description" content="{e(desc)}">
 <meta name="robots" content="noindex">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Tau HUD">
+<meta property="og:site_name" content="{'Agorzilla' if kind == 'agorzilla' else 'Tau HUD'}">
 <meta property="og:title" content="{e(title)}">
 <meta property="og:description" content="{e(desc)}">
 <meta property="og:url" content="{e(url)}">
@@ -478,7 +535,7 @@ def parse(path: str):
         return None
     if kind == "proposal" and not PROP.match(arg):
         return None
-    if kind in ("address", "card") and not ADDR.match(arg):
+    if kind in ("address", "card", "agorzilla") and not ADDR.match(arg):
         return None
     return what, kind, arg
 

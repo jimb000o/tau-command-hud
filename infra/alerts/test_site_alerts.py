@@ -72,7 +72,7 @@ log = old + [small("2026-10-28", "Stats", "Stats: the chart is calmer. More text
 m = alerts.major_item(log[3])
 check(m["text"] == "New page: The Daily Consensus & more. Second." and m["link"] == "https://tauhud.com/gazette/", "major: text from the entry's first two sentences, link made absolute")
 t = alerts.major_text(m)
-check(t.startswith("✨ <b>TAU HUD · new on the site</b>") and "not news from the testnet" in t, "first line marks a site update, last says it is not chain news")
+check(t.startswith("✨ <b>TAU HUD · new on the site</b>") and "not news from the testnet" not in t, "first line marks a site update; no footer line since 7 Nov 2026 (the header says it)")
 check(alerts.major_buttons(m)["inline_keyboard"][0][0]["url"] == "https://tauhud.com/gazette/", "button opens the page")
 check("Open it on tauhud.com</a>" in t, "the link names tauhud.com for a page of its own")
 ext = alerts.major_item(major("2026-10-29", "Agorzilla", "New: Agorzilla.", "agorzilla", title="New: Agorzilla", link="https://agorzilla.com", x=False))
@@ -83,8 +83,12 @@ check(d == {"area": "Stats", "line": "The chart is calmer.", "on": "2026-10-28"}
 check(alerts.digest_item(log[0])["area"] == "HUD", "a version tag counts as the HUD")
 many = [{"area": "HUD", "line": f"Change {i}.", "on": "2026-10-2" + str(i % 9)} for i in range(11)]
 dt = alerts.digest_text(many)
-check(dt.startswith("🛠 <b>TAU HUD · smaller site updates</b>") and "11 smaller changes to Tau HUD since 2026-10-20" in dt, "digest headline counts and dates")
-check(dt.count("• ") == 8 and "…and 3 more changes" in dt, "eight lines, the rest counted")
+check(dt.startswith("🛠 <b>TAU HUD · smaller site updates</b>") and "This week on Tau HUD: 11 smaller changes" in dt, "digest headline: the week's count")
+check(dt.count("• ") == 5 and "…and 6 more in the Updates log" in dt, "five lines, the rest counted")
+mixed = [{"area": "Alerts", "line": "Bot first.", "on": "2026-10-20"}] + many[:4]
+check(alerts.digest_text(mixed).index("<b>Alerts</b>") > alerts.digest_text(mixed).index("Change 3."), "changes to the bot come after what a visitor sees")
+check(alerts.digest_slot(at("2026-10-30", "16:00")) == at("2026-10-30", "16:00") and alerts.digest_slot(at("2026-11-05", "08:00")) == at("2026-10-30", "16:00")
+      and alerts.digest_slot(at("2026-10-30", "15:59")) == at("2026-10-23", "16:00"), "the digest time: Friday 16:00 UTC, the latest one")
 check(len(alerts.digest_text([{"area": "HUD", "line": "x" * 900, "on": "2026-10-28"}] * 8)) <= 4096, "a long digest stays under Telegram's limit")
 
 # first run: history, except recent majors
@@ -111,27 +115,33 @@ run(w, at("2026-10-29", "12:05"))
 check(len(tg.sent) == 2 and "Vote" in tg.sent[1][0] and "TAU HUD · new on the site" in tg.sent[1][0], "12:00: one major, its own post")
 check(len(st["pending"]) == 2, "smaller changes wait for the digest")
 run(w, at("2026-10-29", "16:05"))
-check(len(tg.sent) == 2, "two smaller changes are not enough for a digest")
+check(len(tg.sent) == 2, "Thursday: smaller changes wait for the week's digest")
 log3 = log2 + [small("2026-10-29", "Press", "Press: three.")]
 run(w, at("2026-10-29", "20:30"), log3)
 check(len(tg.sent) == 2, "the 16:00 slot is over by 20:00: nothing at night")
 run(w, at("2026-10-30", "03:00"))
 check(len(tg.sent) == 2, "still nothing at night")
 run(w, at("2026-10-30", "08:01"))
-check(len(tg.sent) == 3 and "3 smaller changes" in tg.sent[2][0] and "<b>Press</b>: Three." in tg.sent[2][0], "08:00: one digest of the three")
-run(w, at("2026-10-30", "12:00"), log3)
-check(len(tg.sent) == 3 and st["pending"] == [] and st["majors"] == [], "never twice")
+check(len(tg.sent) == 2 and len(st["pending"]) == 3, "Friday morning: still waiting for 16:00 UTC")
 log3b = log3 + [major("2026-10-30", "Late", "New page: late.", "late", title="Late")]
 run(w, at("2026-10-30", "13:30"), log3b)
-check(len(tg.sent) == 4 and "Late" in tg.sent[3][0], "a slot no one used yet: a new major goes out as soon as it is seen")
+check(len(tg.sent) == 3 and "Late" in tg.sent[2][0], "a slot no one used yet: a new major goes out as soon as it is seen")
+run(w, at("2026-10-30", "16:00"), log3b)
+check(len(tg.sent) == 4 and "This week on Tau HUD: 3 smaller changes" in tg.sent[3][0] and "<b>Press</b>: Three." in tg.sent[3][0],
+      "Friday 16:00 UTC: the week's digest of the three")
+run(w, at("2026-10-30", "16:30"), log3b)
+check(len(tg.sent) == 4 and st["pending"] == [] and st["majors"] == [], "never twice")
 
-# a single small change is posted after a week of waiting
+# a single small change goes out with the next week's digest, alone
 log4 = log3b + [small("2026-10-30", "Stats", "Stats: lonely.")]
-run(w, at("2026-10-30", "14:00"), log4)
+run(w, at("2026-10-30", "17:00"), log4)
 run(w, at("2026-11-06", "08:00"))
 check(len(tg.sent) == 4, "one change waits")
 run(w, at("2026-11-06", "16:00"))
-check(len(tg.sent) == 5 and "1 smaller change " in tg.sent[4][0], "after a week it goes out alone")
+check(len(tg.sent) == 5 and "1 smaller change" in tg.sent[4][0], "next Friday it goes out alone")
+run(w, at("2026-11-13", "20:30"), log4 + [small("2026-11-13", "Stats", "Stats: late.")])
+run(w, at("2026-11-14", "08:00"))
+check(len(tg.sent) == 5 and len(st["pending"]) == 1, "a Friday slot missed by four hours: the change waits a week")
 
 # a failed post pauses and is retried
 tg2 = Fake(fail=1)
@@ -208,15 +218,20 @@ check(len(tgx.sent) == 2 and "Alpha" in tgx.sent[1][0] and len(xx.sent) == 2 and
       and xx.sent[1].startswith("New on Tau HUD: Beta"), "X: a major marked \"x\": false stays off X, the other gets its own post")
 wx.state["site"]["pending"] = [{"key": str(i), "at": at("2026-10-29", "09:00"), "area": "HUD", "line": f"Change {i}.", "on": "2026-10-29"}
                                for i in range(3)]
-wx.state["x"]["today"] = alerts.X_DAILY_CAP - alerts.X_RESERVE
-run(wx, at("2026-10-29", "16:00"))
-check(len(tgx.sent) == 3 and len(xx.sent) == 2, "X: the digest leaves the day's last posts for the real chain")
-wx.state["site"]["pending"] = wx.state["site"]["pending"] or [{"key": "z" + str(i), "at": at("2026-10-30", "07:00"), "area": "Stats",
-                                                               "line": "Calmer.", "on": "2026-10-30"} for i in range(3)]
 wx.state["x"]["today"] = 0
-run(wx, at("2026-10-30", "08:00"))
+run(wx, at("2026-10-30", "16:00"))
+check(len(tgx.sent) == 3 and len(xx.sent) == 2, "the week's digest is Telegram's alone")
+wx.state["site"]["pending"] = [{"key": "z" + str(i), "at": at("2026-11-02", "07:00"), "area": "Stats", "line": "Calmer.", "on": "2026-11-02"} for i in range(3)]
+alerts.SITE_DIGEST_X = True
+wx.state["x"].update(day="2026-11-06", today=alerts.X_DAILY_CAP - alerts.X_RESERVE)
+run(wx, at("2026-11-06", "16:00"))
+check(len(tgx.sent) == 4 and len(xx.sent) == 2, "SITE_DIGEST_X: the digest leaves the day's last posts for the real chain")
+wx.state["site"]["pending"] = [{"key": "y" + str(i), "at": at("2026-11-09", "07:00"), "area": "Stats", "line": "Calmer.", "on": "2026-11-09"} for i in range(3)]
+wx.state["x"].update(day="2026-11-13", today=0)
+run(wx, at("2026-11-13", "16:00"))
 check(len(xx.sent) == 3 and xx.sent[2].startswith("🛠 3 smaller changes to Tau HUD") and xx.sent[2].endswith("#TauNet $AGRS"),
-      "X: the digest, a line each, with room")
+      "SITE_DIGEST_X with room: the digest on X, a line each")
+alerts.SITE_DIGEST_X = False
 
 # a round-up: one post with a line and a link per change; the majors it covers and the digest so far are not posted
 class FakePic(Fake):

@@ -2263,5 +2263,308 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-04",
     "html": "White Rabbit Key: the islanders talk about the cruise ships now, from three days before a ship comes until the evening it leaves, and each of them sees the ships their own way. Rico announces the ships on Radio Coco, and islanders phone in about them."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "White Rabbit Key: Hana’s and Lola’s portraits have proper hands now. Hana holds her exercise books against her side with one hand flat on top, and her pencil sits behind her ear instead of seeming to run on into her cheek. Lola holds her cocktail shaker in one hand and rests the other arm across her waist."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-04",
+    "html": "News line: when IDNI lands a fix or a change on the testnet’s code, it comes onto the news line by itself for a week, with a link to the commit. The hover says whether our node already runs it. Changes to docs, tests and build scripts only stay off the line."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-04",
+    "html": "News line: IDNI’s news now reads like news. A language model reads each new change in the testnet’s code once, with what it changes, and writes one headline about what it means for people using the testnet, in English, Chinese and Japanese. Raw commit titles no longer run, and changes nobody would notice are left out."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "Radio Coco: Rico teases the wellness investor more often now. Twelve new lines about Salado and his resort, between the songs and on air, a call from Salado himself, and one from Lola about his visit to the bar."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "Radio Coco: Rico talks about the cruise ships more, the nearer one is. Two or three days before, he mentions them now and then; on the day, more and more often; while a ship is in port, about every third line, fading over the evening after. In port he reports from the island with real numbers only: the passengers’ transactions the node has taken so far and those in the newest block, news of bookings, withdrawals, group bills and refusals as it comes in, how the testnet copes and where most of the passengers are. Spoken, the numbers are rounded (“dozens of”); on screen they are exact. 96 new lines on what the ships are and how they work, with the usual humour, and eight listeners phone in with questions about them."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "A live counter of who is playing right now. The chip on the island shows how many people have the game open (on phones just the number), the Play menu shows it beside the game’s name, and In numbers shows it among the key numbers of the White Rabbit Key view. Counted by our relay: one browser counts once, a tab left in the background for five minutes stops counting, nobody is identified."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "The troll box is on the island now, as the Coconut Wire: on wide screens it sits on the dark water at the lower left of White Rabbit Key, always open, with the newest messages at the bottom. It is the same room as the troll box on the HUD, with your same name and the same rules. It steps aside while you talk to someone, and smaller screens and phones keep the island to themselves."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "Radio Coco: Rico's chain weather now says who is sending. When every transaction in the last blocks comes from a sender we know (IDNI's founding wallets, White Rabbit Key, the cruise ship, Agorzilla and Déjà, or the Tau HUD wallet with the page it was sent from), he names it instead of calling the testnet busy."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-04",
+    "html": "Live node light: after the node or the relay was offline, the light turns green again by itself as soon as the node answers, without reloading the page. Red now means only that the node or the relay does not answer; a chain that stalls or catches up shows amber."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-04",
+    "html": "What if: the preset is now called “Like real testnet today”, because it copies the testnet’s rules (one validator, a block about every minute), not its blocks. Beside the sandbox chain the real testnet’s current block now shows, so block #85 in the sandbox is not mistaken for a chain restart."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-04",
+    "html": "A new start for White Rabbit Key on laptops and desktops: the four candidates stand large across the island, painted as you meet them in the game, and the one under your pointer steps forward. The title sits above them, the week, the island ballot and the testnet in a quiet strip below. Phones keep the plate with four faces. Fixed: the island ballot showed 100000 for a candidate whose ballot box had no vote yet; it now shows 0."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-04",
+    "html": "In numbers, Share of the testnet: the panel now leads with our sites’ share of the user transactions, the testnet’s traffic without IDNI’s 11 genesis accounts, which make most of it while IDNI tests. Below it, smaller and with its own bar, the same with everything counted, IDNI’s genesis testing included. Counted in transactions and wallets, not people."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-04",
+    "html": "Personal money rules: an account that is one of IDNI's genesis accounts (the 11 the testnet started with) now carries a small “genesis” tag, and its hover says so. Every other account stays unnamed."
+  },
+  {
+    "tag": "Roadmap",
+    "on": "2026-11-04",
+    "html": "Road to mainnet now keeps in step with IDNI by itself: when IDNI’s own code names one of the items’ GitHub issues, the item lists it under “IDNI’s own work on it” and its status moves: a fix on IDNI’s main makes it “Partly fixed”, a work branch makes it “IDNI at work”. Only what IDNI wrote in its public git history counts, checked every 30 minutes. Also brought up to date: the stop at block 5028, the restart of 1 November with open governance turned off, and the reset IDNI plans in pull request #93."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-06",
+    "html": "Cruise ships, after MS Dry Run’s first call: the ship left after 34 minutes because eight transactions our node did not answer in time were counted as refusals; the node had refused nothing. A send without an answer is no refusal now: the ship waits 30 seconds, goes at half pace for ten minutes, and the passenger’s next send shows in the logbook whether the node took it after all. “Strained” on Testnet load is measured against the testnet’s usual block gap (three times it, at least 60 seconds), so one ordinary block of waiting no longer halves the pace. Queen Mempool lands her 120 passengers in waves over 30 minutes, so her first stops fit the pace of 12 a minute."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-04",
+    "html": "Transactions: “ghost” now marks only what it says, a transaction already in a block that the node still lists as waiting (IDNI #81). Every other sealed transaction shows a plain ✓ with its block number, also when the page first saw it in its block, so a sealed transfer no longer looks as if it were still waiting. A transaction seen waiting first now shows its amounts once its block arrives, and for one first seen in a block the fee reads “fee ≤ 1000”: the block lists the cap the sender signed, not the fee charged."
+  },
+  {
+    "tag": "Blog",
+    "on": "2026-11-06",
+    "html": "Blog: a new page with what we learn from running things on Tau Testnet Alpha. The first article is about the MS Dry Run of 4 November: the ship left after 34 of 90 minutes, because 8 sends our node did not answer in time counted as refusals; 122 transactions went through and all 5 bookings paid out. From now on our server drafts one article after every cruise ship visit, from the facts in the ship’s public logbook, in English, Chinese and Japanese; every number is checked against the logbook, and nothing goes up before a person has read it.",
+    "major": {
+      "id": "blog",
+      "title": "New: the Tau HUD blog",
+      "text": "What we learn running things on the Tau testnet. First: why our MS Dry Run cruise left after 34 of 90 minutes, and what we changed.",
+      "link": "/blog/",
+      "image": "/assets/shots/blog.png"
+    }
+  },
+  {
+    "tag": "Cruise",
+    "on": "2026-11-06",
+    "html": "The cruise ships’ logbook is a page now, tauhud.com/cruise: every transaction a ship’s passengers sent, when, where, how much, and the node’s answer, sealed or refused with the reason, visit by visit, with a link into the Explorer. The game’s “The logbook” button and the Testnet load page lead there instead of to the raw data."
+  },
+  {
+    "tag": "Alerts",
+    "on": "2026-11-05",
+    "html": "Alerts: the simulation's consensus switches no longer get a Telegram and X post twice a day. One post explains the daily programme instead (11:20 and 17:20 German time, a 7-minute vote), so the channel stays about the real testnet."
+  },
+  {
+    "tag": "Alerts",
+    "on": "2026-11-06",
+    "html": "Alerts: the Telegram channel and X get fewer and more telling posts. “Testnet today” now leads with who sent: the wallets of the day by kind (IDNI’s test accounts, our own island bot and cruise passengers named as ours, players, newcomers, others), compared with the usual number, and one line on why it matters; X gets it only on an unusual day. The smaller site changes go out once a week, Friday 17:00 German time, five by name, Telegram only. The Key Crier reports only a day real players moved, with the campaign explanation on Monday alone. A closer look comes on Monday, Wednesday and Friday. Findings say why they matter and repeat at most every two days. After a restart nothing is posted late in a burst. The post after a cruise ship visit is the blog article’s, with the logbook’s numbers."
+  },
+  {
+    "tag": "Blog",
+    "on": "2026-11-06",
+    "html": "Blog: every article now has a picture made from the island's own painting, with the ship and a card that says at a glance why it matters; it shows on top of the article, in the list, and in the link preview on Telegram, X and elsewhere (each article has its own share link). Charts drawn from the logbook numbers sit inside the text where they support it. The MS Dry Run article got three: where the 247 planned stops went, how often our node did not answer per hour, and the ship's pace against the 120 sends it may make every 10 minutes. The drafts our server writes after each ship get the same pictures by themselves. The page is laid out for reading now: one centred column of about 70 characters on every screen from phone to 3440 wide, type that grows with the screen, pictures a little wider than the text, a reading time and a thin progress line while you read, and the newest article large on the list."
+  },
+  {
+    "tag": "Blog",
+    "on": "2026-11-06",
+    "html": "Blog: the title picture now joins the game and the data. On a White Rabbit Key article it is the island’s own painting with the ship, the card that says why it matters, the visit’s key numbers as tiles on the water (for the MS Dry Run: 34 of 90 minutes in port, 122 accepted, 8 timeouts that the ship counted as refusals, 5 of 5 bookings paid out) and Rico of Radio Coco looking on, painted as in the game. The numbers come from the logbook facts the article was written from; existing pictures are made anew once."
+  },
+  {
+    "tag": "News line",
+    "on": "2026-11-06",
+    "html": "News line: old things now leave by themselves. A headline goes 14 days after it came on, a new feature and a blog article as well, IDNI’s news after a week; a few standing pointers stay. New things come in by themselves: the newest blog article opens the line by its own headline, as the title story, and the line stands still for five seconds at the start so it can be read; the next cruise ship comes in from three days before it calls, in your own time. A watchtower on our server checks every half hour that something new is on the line and that IDNI’s news still comes in, and tells us privately when not."
+  },
+  {
+    "tag": "Blog",
+    "on": "2026-11-06",
+    "html": "Blog: articles now link our own places where they first name them: White Rabbit Key leads to the game, tauhud.com to the HUD, the ship to its logbook, Tau Testnet Alpha to the stats, our node to its health, a strained testnet to the load page. Each chart leads to the live page it was drawn from (See it live). Articles our server drafts are linked the same way by themselves."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-06",
+    "html": "White Rabbit Key: the cruise ship's logbook now notes how long our node took to answer each send, and the blog draft after a visit shows it as a chart. When the ship slows down because our own node answered late, the article says so and no longer calls the testnet strained."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-06",
+    "html": "Chain core: the ring of waiting transactions now holds still while the pointer rests on it, so one dot can be hovered and read; it moves on when the pointer leaves. On a phone a tap holds it for a few seconds."
+  },
+  {
+    "tag": "Alerts",
+    "on": "2026-11-06",
+    "html": "Alerts: on a day IDNI merges real changes into the testnet's code, the Tau HUD channel now posts one summary of what they add up to and why it matters: all of that day's merges read together, tests and CI only in passing. Telegram gets it with links to IDNI's commits; X only on notable days. Quiet days get no post."
+  },
+  {
+    "tag": "Alerts",
+    "on": "2026-11-06",
+    "html": "White Rabbit Key: the cruise ships now announce themselves. A few hours before each call (MS Dry Run on Wednesdays, Queen Mempool on Saturdays) the channel posts the announcement picture with the ship at anchor, written anew each week with the ship's last call as her logbook counts it."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-06",
+    "html": "Relay: the island bot and the cruise ships now send through their own connection to our node. When the node takes long to answer a send, only the ship waits; the HUD, the wallet and every other page keep loading for visitors."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-06",
+    "html": "White Rabbit Key: the cruise passengers are painted now. Where the logbook counts a ship's group, that many figures stand at the place, turned to their guide with the ship's flag, and now and then one points, drinks or takes a picture; nobody walks. They wait on the pier while the tenders come, a group fades in as it arrives and out as it moves on. Sixteen passengers in all, seen from behind, from the front and in profile, among them a boy, a girl and a man in a wheelchair; a grown-up stands about as tall as a door on the island."
+  },
+  {
+    "tag": "Wallet",
+    "on": "2026-11-06",
+    "html": "Guardian (tauhud.com/guardian/), a testnet prototype: connect an Authenticator app to your test wallet and set a limit; a payment above it then waits on the chain until you type the 6-digit code, and our Guardian co-signs. It can say yes to your payment, never send one, and holds no key of yours. Built on the approver bot IDNI ships with the testnet; the wallet links a waiting payment to its code."
+  },
+  {
+    "tag": "Wallet",
+    "on": "2026-11-07",
+    "html": "Guardian: when Sign the rule cannot be pressed, the page now says why, in the panel and on hover, and lists who holds the testnet's two rule places: a fair turn from our wallet shows when it frees, a rule set elsewhere shows that only its owner can free it. Get in line is offered only where a fair turn can end."
+  },
+  {
+    "tag": "Wallet",
+    "on": "2026-11-07",
+    "html": "Guardian: a daily allowance. A limit per payment alone does not stop many small payments, so the rule now sends every payment to the Guardian and it signs by itself what you allow: at most X per payment and Y per day (UTC); the rest waits for your code. Two other settings stay selectable: every payment waits for your code, or only payments above a limit (with the honest note that small ones are not stopped). Changing the setting needs your wallet key and the current code."
+  },
+  {
+    "tag": "Wallet",
+    "on": "2026-11-07",
+    "html": "Guardian, after a simulated run of 100 visitors: on a phone the QR code can be opened in the Authenticator app directly or the key copied; the wallet's \"Enter your code\" link lands on that payment with the cursor in its code field, and a waiting payment comes first on a phone; the page fits a 1366×768 laptop in every state (the explainer folds while payments wait); a waiting payment names its recipient with the three wallet words and says how many blocks remain; the wording follows the three settings; \"What it can do\" folds on phones."
+  },
+  {
+    "tag": "Wallet",
+    "on": "2026-11-07",
+    "html": "Guardian demo in the simulation: with the HUD on Simulation, tauhud.com/guardian/ plays the whole way through with play values. Scan the demo QR code with your Authenticator app (a real TOTP check in your browser) or use the play code 123456, choose what the Guardian does, and a play payment waits for your code in step 3. Nothing goes on the chain, nothing leaves your browser; amber marks it as a demo."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-07",
+    "html": "Chain core: the ring of waiting transactions now says that it is the mempool, and a wallet's own rule on the inner ring says whose it is: it binds only that wallet, never anyone else. Hover the inner ring for what it holds. The rules it shows no longer depend on when the page was opened: the page asks the relay who holds a rule now, and a rule a wallet took away leaves the ring."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-07",
+    "major": {
+      "id": "cruise-pirates",
+      "image": "/assets/shots/cruise-pirates.jpg",
+      "title": "New: pirates on Tuesdays at White Rabbit Key, and ships that learn",
+      "text": "Black Sequence anchors every Tuesday at 18:00 German time. Her made-up pirates try what Tau Testnet Alpha must refuse: paying more than the wallet holds, the same payment twice, an expired one, a wrong key. The logbook shows each answer. Every ship now adjusts its own pace and tests from its last call, by fixed rules within the same limits, and says what it changed and why.",
+      "link": "/cruise/"
+    },
+    "html": "White Rabbit Key: a third ship. On Tuesdays at 18:00 German time the pirates of Black Sequence anchor off the island; they stay aboard and now and then try a trick the chain must refuse: paying more than the wallet holds, sending the same payment twice, a payment whose time ran out, a payment signed with the wrong key. The logbook shows each answer; a trick that got through is reported privately first. Every ship now learns from its last call by fixed rules (its pace, how often each kind is tried), within the same limits, and says what it changed and why. The other weekdays stay quiet."
+  },
+  {
+    "tag": "Cruise",
+    "on": "2026-11-07",
+    "html": "Cruise bookings in escrow: from MS Dry Run on 11 November, five simulated passengers book the call days ahead with a retractable transfer of the fare to the ship's till, released when she arrives; one of them takes theirs back. If the call is called off before (ships switched off, or a stalled testnet 20 minutes before the arrival), our server takes every booking back at least 6 minutes ahead. tauhud.com/cruise/ shows each booking as in escrow, paid out or refunded. Only the sender can take a retractable transfer back, so there is no third party who decides."
+  },
+  {
+    "tag": "Services",
+    "on": "2026-11-07",
+    "html": "Services on the testnet (tauhud.com/services/): a directory of what runs on Tau Testnet Alpha, with categories and search. Accounts appear by themselves once the chain shows them serving other wallets: co-signers others name for their payments, rule givers whose rules get taken, accounts paid with terms (retractable transfers) or by many different wallets. Numbers come straight from the blocks, every minute; nobody signs up. Ours (Guardian, White Rabbit Key, Agorzilla, wallet, API, rules wall, node kit) are listed first and marked. A builder can ask for a name and a link with a pre-filled request. Also open to other sites as JSON: node.tauhud.com/services."
+  },
+  {
+    "tag": "Agorzilla",
+    "on": "2026-11-07",
+    "html": "Agorzilla grows up on Tau HUD too: the HUD header, your My Tau card, /start/ and the menus now show him at the stage he has reached on agorzilla.com (Grown right now), not as the baby he was. Smaller eyes, a darker face, the head higher on a broader back, and the back and muzzle the feeders voted for; each new stage shows by itself."
+  },
+  {
+    "tag": "Alerts",
+    "on": "2026-11-07",
+    "html": "Channel posts, after a review of the first eleven days: the evening post now opens with the day's one story and shows the slowest hour beside the usual pace; a testnet restart is no longer told as a rule change and says what it means for your test wallet; a new node is posted only after six hours online, and the evening count says how many were online at the peak; firsts say whose wallet did it; every chain post gets buttons that fit it; times read \"16:00 DE (15:00 UTC)\"; the weekly digest drops a line told twice; the rule challenge reminder names the task."
+  },
+  {
+    "tag": "Stats",
+    "on": "2026-11-07",
+    "html": "Stats: a new range, All chains. A testnet restart no longer resets the charts: our relay now writes down what every chain held, hour by hour and day by day, and keeps it when the next chain begins. Block time and transactions run as one timeline across restarts, each restart marked; earlier chains we only know by their length are marked “not kept”. The tiles add up blocks and transactions over every chain, and the day counts on In numbers add up across restarts too."
+  },
+  {
+    "tag": "Alerts",
+    "on": "2026-11-07",
+    "html": "Channel that tunes itself: every tauhud.com link in a Telegram post now says which kind of post it came from, and the relay counts only those page opens, by kind (no one's data). Each Sunday the owner gets a private note of posts and opens per kind; a closer look or weekly digest that nobody opened for four weeks posts every other time until someone does, and every such change is logged with its reason. Also new: a weekly channel poll on which page gets the next closer look, a post on the 1st of each month with the running costs as billed and the donations so far, and the pirate ship's report says what an all-refused call shows."
+  },
+  {
+    "tag": "Node",
+    "on": "2026-11-07",
+    "html": "Node: our node moves to IDNI’s newest testnet software (668fbf4, 5 November). One change reaches a running node: when a miner’s fallback block proposal needs a fresh evaluator, it can now start one; IDNI writes that without it, mining a block that activates governance or revises a policy composite failed. Our node does not mine, so the HUD shows the same chain as before. The rest is tests and build. All seven of our own node fixes carry over unchanged."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-07",
+    "html": "White Rabbit Key: the pirates of Black Sequence are painted now, one for each trick she tries (an empty purse, two identical receipts, a stopped pocket watch, a wax seal, a false moustache, an empty hat, a calendar with its pages torn off, a sack of coins too big to move) and their captain with the chain-link flag; they stand on her deck while she lies at anchor and never come ashore. Her own painting replaces the darkened stand-in on tauhud.com/rabbit/ and in her announcement pictures."
+  },
+  {
+    "tag": "Rabbit Key",
+    "on": "2026-11-07",
+    "html": "White Rabbit Key: at night every place you walk into is lit in its own way. The lamps painted in it come on and light the room around them: the desk lamp at Radio Coco, the string of bulbs at Bar La Ola, the green lamp over the Book, a campfire, a hearth, the pool's light in the grotto. Each place has its own colour of night, and out in the open the moon stays the main light."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-07",
+    "html": "White Rabbit Key: the cruise passengers, second pass. Both frames of a figure are now scaled as one canvas, so a gesture never moves the feet; each foot and each wheel has its own soft shadow; the pink the cut had left on the boy's shirt is gone. Gestures come in varied pauses, each figure on its own beat, never all at once; a group arrives and leaves one figure at a time, whole, never half see-through, and holds still under reduced motion. What the painting has in front of the ground is painted again over the figures behind it: the pier's bollards, the radio deck's railing and its mast post, so feet behind a railing stay hidden. The ground keeps clear of the pier's bollards, and at the bar of the water and the lifeguard tower. One passenger stands still until his gesture frame is repainted."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-07",
+    "html": "White Rabbit Key: the cruise ships now plan only as many stops as our node can answer. The Queen Mempool lost 162 of 581 planned stops on 7 November because our node took 6.8 s per answer and each send waits for the last one; from now on each visit measures that time, and the next plan leaves the extra stops out before landing, window by window. The logbook says how many and why; at most 12 a minute stays."
+  },
+  {
+    "tag": "Learn",
+    "on": "2026-11-07",
+    "major": {
+      "id": "facts",
+      "image": "/assets/shots/facts.png",
+      "title": "New: Tau facts for your AI assistant",
+      "text": "AI assistants often only know old Tau. tauhud.com/facts/ lists what is true today, each fact linked to the lines in IDNI's own code it comes from, plus live numbers and IDNI's newest commits. Paste one sentence before your question and your assistant reads it first.",
+      "link": "/facts/"
+    },
+    "html": "Tau facts for your AI (tauhud.com/facts/): AI assistants often answer about Tau from old training data. This page lists what is true today, 24 facts in English, Chinese and Japanese, each linked to the exact lines in IDNI's own repositories it was read from, next to the live chain numbers and IDNI's newest commits, with a sentence to paste before your question. The same list is at tauhud.com/llms.txt, and with the live part, regenerated every 30 minutes, at node.tauhud.com/tau-today.md. When IDNI changes a file a fact was read from, that fact is marked to check again until a person reads it anew."
+  },
+  {
+    "tag": "Wallet",
+    "on": "2026-11-07",
+    "html": "Wallet: ready-made rules, one click each. Five of them, built from what people asked for in the Tau chats: Starter shield (at most 5,000 test AGRS per payment, and the way back on for new addresses and anything above 1,000), Only my people (payments only to names in your address book), Savings lock (nothing leaves before a date 90 days out), Second signature (above 1,000 a friend or the Guardian co-signs), and Way back by default (payments to new addresses and above 1,000 go with a way back of 30 blocks; no rule place needed, a habit of this wallet). Each card says what it keeps off and, in amber, what it does not: whoever holds your key can replace the rule, and a rule sees one payment at a time, so there is a limit per payment and no daily limit. Every card has a link to pass on that fills the same blocks for whoever opens it, nothing signed. New walk for someone a friend sent, /wallet/?walk=friend: make a test account, turn the way back on, pay a stranger, take it back, then a line to pass on. Opens of those links are counted by their tag only, nothing about who, and show up in the Sunday channel note.",
+    "major": {
+      "id": "wallet-presets",
+      "title": "New: ready-made wallet rules, one click each",
+      "text": "Five rules built from what people asked for: a limit per payment with the way back on, only to your address book, a savings lock, a second signature from a friend or the Guardian, and the way back by default. Each card says what it keeps off and what it does not. Plus a five-minute walk for a friend: pay a wrong address, take it back.",
+      "link": "/wallet/",
+      "image": "/assets/shots/wallet-presets.png"
+    }
+  },
+  {
+    "tag": "Wallet",
+    "on": "2026-11-07",
+    "html": "Wallet: the hack of the week, replayed on the testnet. Every Thursday at 11:00 German time four simulated wallets replay a real kind of attack against a wallet safety setting, starting with address poisoning: a lookalike address that starts and ends like one you pay often sends you a tiny amount, and a payment copied from your history goes to it. One wallet pays with a 30-minute take-back window and takes the money back, its twin pays without and the money is gone. The bot posts the outcome with what the window does not protect; if the chain itself ever does something it must not, nothing is posted and IDNI is told first."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-07",
+    "html": "White Rabbit Key: after each Tuesday call of Black Sequence, a clip of about 20 seconds goes to Telegram and X by itself: each trick her pirates tried, one pirate at a time, and what the chain answered, with every number from that evening's logbook. If a trick ever gets through, there is no clip for that evening."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-07",
+    "html": "White Rabbit Key: the start screen now says in one breath what the game is, what you are after and why it is on Tau: run for governor against three rivals the island plays, ten islanders vote on Sunday night, every move a real transaction on Tau Testnet Alpha from a test wallet the browser makes for you, and other people play beside you all week, counted live. After the pick, signs stand over the places until the first move, the council hall marked as the place to start. From feedback in the Tau Telegram: nobody should need a tour to get this in twenty seconds."
+  },
+  {
+    "tag": "Blog",
+    "on": "2026-11-07",
+    "html": "Blog: every article now reads against the ship before it. A new chart sets this call beside the last one (minutes in port, accepted, unanswered, skipped), the first number tile on the title picture always shows the minutes in port with the ship before's number, and the same four tiles appear on every ship's picture. The drafting rules now ask for what improved and what did not since the last call and why, for what the numbers come to rather than the numbers alone (shares, the pace our node's answer time allows, blocks sealed during the call), and for one or two sentences on what the call means for the testnet as a whole. A line for a thing that never happened (bookings on a day without bookings) is no longer written, and the picture's second line no longer repeats the title."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-07",
+    "html": "White Rabbit Key: the islanders and Rico now talk about the pirate ship Black Sequence, but only from the moment she is in sight: before that, nobody on the island knows she is coming. At anchor Rico tells each trick the chain refuses, named by the pirate who tried it, and the islanders react through the evening and the day after, by lantern light after dark. After every ship Rico also says what her logbook shows: stops skipped because our node took its time answering, sends it left unanswered, a day without one refusal, and what she changes for her next call. The Telegram post about the pirates goes out when she is in sight, no longer hours before. 119 new voice lines."
   }
 ]

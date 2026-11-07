@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Tau today: facts with sources</title>
+<meta name="description" content="What Tau and Tau Testnet Alpha are today, each fact linked to the exact lines in IDNI's repositories, with the live chain numbers and IDNI's latest work. Made for people and for AI assistants.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="alternate" type="text/markdown" href="https://node.tauhud.com/tau-today.md" title="Tau today (Markdown, regenerated every 30 minutes)">
+<link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Tau today: facts with sources">
+<meta property="og:description" content="Your AI assistant knows old Tau. Point it here: today's facts about Tau and its testnet, each with its source in IDNI's code, plus live numbers.">
+<meta property="og:image" content="https://tauhud.com/assets/shots/facts.png">
+<meta property="og:url" content="https://tauhud.com/facts/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 12px; max-width: 1680px; }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.top { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: flex-end; justify-content: space-between; }
+.lead { margin: 4px 0 0; font: 500 clamp(20px, 2.6vw, 28px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 86ch; }
+.sub b { color: var(--text); font-weight: 500; }
+.stats { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-end; }
+.stat { display: grid; }
+.stat b { font: 600 22px/1.1 var(--display); color: #fff; }
+.stat span { color: var(--dim); font-size: 11px; }
+.live { display: inline-flex; align-items: center; gap: 7px; color: var(--dim); font-size: 12px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+.dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.cols { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+aside { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.panel h2 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; text-decoration: none; color: #000; background: #fff; border: 1px solid #fff; border-radius: 6px; padding: 7px 12px; min-height: 32px; cursor: pointer; }
+.btn.ghost { color: var(--text); background: none; border-color: var(--hair); }
+.btn:hover { background: var(--ok); border-color: var(--ok); color: #000; }
+.acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.note { color: var(--dim); font-size: 12px; margin: 6px 0 0; }
+.prompt { margin: 6px 0 0; padding: 8px 10px; background: #050506; border: 1px solid var(--hair); border-radius: 6px; font-size: 12px; color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.chips button { background: none; border: 1px solid var(--hair); border-radius: 999px; color: var(--text); font: 12px var(--mono); padding: 3px 10px; cursor: pointer; min-height: 28px; }
+.chips button:hover { border-color: #fff; }
+.chips button[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
+main { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.list { display: flex; flex-direction: column; gap: 14px; }
+.topic h3 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.topic ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+.fact { background: rgba(16,16,18,.9); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+.fact:hover { border-color: var(--hair); }
+.fact p { margin: 0; color: var(--text); }
+.src { margin-top: 6px; font-size: 11px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 2px 10px; }
+.src a { color: var(--dim); overflow-wrap: anywhere; }
+.src a:hover { color: #fff; }
+.stale { display: inline-block; margin-top: 6px; font-size: 11px; color: #000; background: var(--text); border-radius: 999px; padding: 0 8px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; }
+.kv dt { color: var(--dim); font-size: 12px; }
+.kv dd { margin: 0; color: #fff; overflow-wrap: anywhere; }
+.commits { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.commits li { display: grid; grid-template-columns: 74px 1fr; gap: 8px; font-size: 12px; }
+.commits time { color: var(--dim); }
+.commits a { color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
+.commits a:hover { color: #fff; text-decoration: underline; }
+.quiet { color: var(--dim); font-size: 12px; margin: 0; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer p { margin: 0; }
+footer a { color: var(--dim); }
+[hidden] { display: none !important; }
+@media (min-width: 1000px) { .cols { grid-template-columns: minmax(0, 1fr) 380px; } }
+/* laptop and up, landscape: one screen; the facts and the side panels scroll inside, the page does not */
+@media (min-width: 1100px) and (min-aspect-ratio: 4/3) {
+  body { height: 100vh; overflow: hidden; padding-bottom: 10px; }
+  .wrap { height: 100%; }
+  .wrap > .cols { flex: 1 1 0; min-height: 0; }
+  aside { overflow: auto; min-height: 0; padding-right: 2px; }
+  main { min-height: 0; }
+  .list { flex: 1 1 0; min-height: 0; overflow: auto; padding-right: 4px; }
+}
+/* phone: nothing smaller than 11 px, buttons big enough for a thumb */
+@media (max-width: 999px) {
+  .btn, .chips button { min-height: 44px; }
+  .topic ul { grid-template-columns: minmax(0, 1fr); }
+  aside { display: contents; }   /* the prompt for your AI first, the live panels after the facts */
+  #aiPanel { order: -1; }
+  main { order: 0; }
+  aside > .panel:not(#aiPanel) { order: 2; }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Facts</span></a>
+  </header>
+  <nav class="tnav" data-page="facts" aria-label="Pages and tools"></nav>
+  <div class="top">
+    <div>
+      <p class="lead">Tau today, with a source for every fact</p>
+      <p class="sub">AI assistants often know only old Tau. This page and its plain-text twins hold what is true today: each fact links the exact lines in <b>IDNI's own repositories</b> it was read from, next to the live chain numbers and IDNI's latest commits. Point your assistant here before you ask it about Tau.</p>
+    </div>
+    <div class="stats" aria-live="polite">
+      <div class="stat"><b id="nFacts">–</b><span>facts with sources</span></div>
+      <div class="stat"><b id="nChecked">–</b><span>checked by hand on</span></div>
+      <div class="stat"><b id="nStale">–</b><span>to check again</span></div>
+      <span class="live"><i class="dot" id="dot"></i><span id="liveTxt">Reading the chain…</span></span>
+    </div>
+  </div>
+  <div class="cols">
+    <main>
+      <ul class="chips" id="chips" aria-label="Topics"></ul>
+      <div class="list" id="list" aria-live="polite" translate="no"><!-- translate="no": the facts come in the reader's language from facts.json, the few words around them through T() -->
+<!-- facts:start (written by tools/facts.mjs from facts.json, so the facts are readable without JavaScript) -->
+<section class="topic"><h3>What Tau is</h3><ul>
+<li class="fact"><p>The Tau Language is a formal specification language that IDNI describes as expressive, decidable and executable: a specification can be checked for satisfiability, and the framework can synthesize a program that meets it. IDNI calls it work in progress, with releases in an alpha state.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-lang/blob/6244544a2bf4f036a02e3e0d9d68ab7428c55600/README.md#L58-L84">tau-lang README, introduction</a></div></li>
+<li class="fact"><p>Tau Testnet Alpha is a live blockchain whose consensus rules are a Tau program. A Python host does networking, storage and cryptography; the Tau program decides block validity, who may propose a block, transfers and fees.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L5-L10">tau-testnet README, top</a> <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L392-L398">Consensus boundary</a></div></li>
+</ul></section>
+<section class="topic"><h3>The testnet chain</h3><ul>
+<li class="fact"><p>Blocks come from an on-chain proof-of-authority validator set, not from mining by proof of work or from staking. Only validators in the active set may propose blocks, and the set changes only through on-chain governance.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L8">tau-testnet README, features</a> <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L69-L70">Node roles</a></div></li>
+<li class="fact"><p>Fork choice is the highest chain, ties broken by the smallest block hash. There are no checkpoints, so a reorganisation can go back as far as the common ancestor (a switch longer than 2000 blocks is refused).</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L764">Security &amp; risk model</a></div></li>
+<li class="fact"><p>The public network is called tau-testnet-v2. Everything needed to join it (genesis, bootnode address, network id) is committed in IDNI's repository; every node must have the same genesis hash and network id or the other nodes refuse it.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L130-L132">Join the Tau Testnet</a> <a href="https://github.com/IDNI/tau-testnet/tree/668fbf4762f2eeb76b39975157d2e75af788d240/networks/tau-testnet-v2">networks/tau-testnet-v2</a></div></li>
+<li class="fact"><p>The tau-testnet-v2 genesis file funds 11 accounts: one with 1,000,000 and ten with 100,000. It names one active validator and the supermajority voting rule. How many validators are active today: see the live numbers.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/networks/tau-testnet-v2/genesis.json#L20-L46">genesis.json</a></div></li>
+</ul></section>
+<section class="topic"><h3>Accounts, payments, fees</h3><ul>
+<li class="fact"><p>The tau-testnet-v2 join profile switches on an automatic faucet: a new account receives 100,000 test tokens on its first transaction. (A network made with IDNI's genesis script has no faucet unless it is set.)</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/networks/tau-testnet-v2/env#L22-L24">networks/tau-testnet-v2/env</a> <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L325-L327">Operating a network</a></div></li>
+<li class="fact"><p>Accounts are BLS12-381 keys. An address is the public key: 96 lowercase hex characters (48 bytes), without 0x. A private key is 64 hex characters (32 bytes); signatures are 96 bytes.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L464">Cryptography &amp; signatures</a> <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L325">Operating a network</a></div></li>
+<li class="fact"><p>A transfer is three values: from, to, amount; one transaction can carry several. There is no memo or message field. One transfer can move at most 16,777,215 (amounts are 24-bit numbers).</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/consensus/tx_signing.py#L115-L135">Transaction signing fields</a> <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L327">Amount cap</a></div></li>
+<li class="fact"><p>The base fee comes from the consensus rules themselves (the genesis rule sets 10 per transfer step) and validators can vote to change it. Only ordinary user transactions pay; the fee goes to the block's proposer, unless governance names a fixed receiver. The fee a transaction states is a limit: the sender pays the actual fee, not the limit.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L479-L483">Transaction fees</a></div></li>
+<li class="fact"><p>Each account's transactions carry a sequence number; a gap is refused. There is no replace-by-fee: a stuck transaction has to expire or be evicted.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L612">Mempool policy</a></div></li>
+<li class="fact"><p>A retractable transfer waits in escrow until a set block height or time; until then only the sender can take it back, without a fee. At most 16 can be open per sender (4096 on the whole chain), and the release can be at most 100,000 blocks or 90 days ahead.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L594-L597">Retractable transfers</a> <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/docs/retractable.md">docs/retractable.md</a></div></li>
+</ul></section>
+<section class="topic"><h3>Rules people give their own accounts</h3><ul>
+<li class="fact"><p>A user can give their own account a Tau rule that blocks some of their own transfers, for example only to listed recipients or nothing above an amount. The chain enforces it when the transaction is admitted and again when the block is applied. A rule binds only the account that set it.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L396-L398">Consensus boundary, o5</a></div></li>
+<li class="fact"><p>In the current code at most 2 accounts can hold a registered personal transfer rule at the same time, chain-wide; IDNI notes that raising the number needs new measurements.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/consensus/approvals.py#L78-L83">consensus/approvals.py</a></div></li>
+<li class="fact"><p>One user can offer a Tau rule to another, who checks it and accepts or rejects it. Offer, accept and reject are transactions and pay fees. An accepted rule cannot be withdrawn, only replaced by accepting another rule for the same output.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L507-L509">Rule sharing</a> <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L549">Caveats</a></div></li>
+<li class="fact"><p>A user can require a co-signature for their own large transfers: their rule names an amount and an approver. A transfer above it waits on the chain and goes through by itself once the approver's signed vote arrives.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/docs/approvals.md#L3-L12">docs/approvals.md</a></div></li>
+</ul></section>
+<section class="topic"><h3>Changing the chain's own rules</h3><ul>
+<li class="fact"><p>The chain's own consensus rules and its validator set change only through governance on the chain: a proposal carries the full new rules, validators vote, and with the supermajority rule it needs at least two thirds of the active validators.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L490-L502">Governance</a></div></li>
+<li class="fact"><p>An agreed change takes effect only at a later block height (at least as many blocks ahead as there are validators). A proposal that has not reached its votes when that height arrives expires. A change that fails to compile is refused.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L503-L505">Governance lifecycle</a> <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/consensus/engine.py#L1984-L1987">consensus/engine.py</a></div></li>
+</ul></section>
+<section class="topic"><h3>Running a node</h3><ul>
+<li class="fact"><p>A node uses three ports: 65432 (RPC and command line), 65433 (WebSocket, used by the web wallet) and 4001 (peer-to-peer). Only 4001 is meant to be public: RPC and WebSocket have no authentication.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L35-L37">Quickstart</a> <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L774">RPC / WebSocket exposure</a></div></li>
+<li class="fact"><p>The quickest way to run a node is IDNI's standalone Docker image, which builds the Tau engine inside it. Linux and macOS also run it from source (Python 3.14 or newer); Windows needs Docker Desktop or WSL2. Anyone can run a read node; proposing blocks needs a seat in the validator set.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L20-L26">Quickstart</a> <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L74">Windows</a> <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L95">Run from source</a> <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L69-L70">Node roles</a></div></li>
+<li class="fact"><p>IDNI's repository includes a browser wallet (web-wallet/) that talks to a node's WebSocket port and keeps private keys in the browser. It is not served by the node; it is opened with a static web server.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L293">Web wallet</a></div></li>
+</ul></section>
+<section class="topic"><h3>What the testnet does not promise</h3><ul>
+<li class="fact"><p>The testnet is alpha: its tokens have no real value, there is no finality, no validator slashing, the cryptography and consensus are not audited, and IDNI warns not to use it with real funds.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L12-L14">tau-testnet README, status</a></div></li>
+<li class="fact"><p>Signatures do not yet include the network id, so a signed transaction is not tied to one network. IDNI's advice: do not reuse keys across networks.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L471">Cryptography &amp; signatures</a></div></li>
+<li class="fact"><p>IDNI lists known alpha risks: deep reorganisations are possible, a crash in the Tau engine can stop a node process, and a bad governance change can halt the chain until it is corrected.</p><div class="src">Source: <a href="https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L14">Status</a></div></li>
+</ul></section>
+<!-- facts:end -->
+      </div>
+    </main>
+    <aside>
+      <section class="panel" id="aiPanel" aria-labelledby="hAi">
+        <h2 id="hAi">For your AI assistant</h2>
+        <p class="quiet">Paste this before your question. Assistants that can read web pages then answer from today's sources.</p>
+        <pre class="prompt" id="prompt" translate="no"></pre>
+        <div class="acts">
+          <button class="btn" type="button" id="copy">Copy</button>
+          <a class="btn ghost" href="/llms.txt" target="_blank" rel="noopener" translate="no">llms.txt</a>
+          <a class="btn ghost" id="mdLink" href="https://node.tauhud.com/tau-today.md" target="_blank" rel="noopener">Markdown</a>
+          <a class="btn ghost" id="jsonLink" href="https://node.tauhud.com/tau-today.json" target="_blank" rel="noopener">JSON</a>
+        </div>
+        <p class="note" id="copied" hidden>Copied.</p>
+      </section>
+      <section class="panel" aria-labelledby="hNow">
+        <h2 id="hNow">The testnet right now</h2>
+        <dl class="kv" id="now"></dl>
+        <p class="quiet" id="nowMsg">Reading the chain…</p>
+      </section>
+      <section class="panel" aria-labelledby="hIdni">
+        <h2 id="hIdni">IDNI's latest commits</h2>
+        <p class="quiet" id="idniMsg">Reading IDNI's repositories…</p>
+        <ul class="commits" id="commits" translate="no"></ul>
+      </section>
+    </aside>
+  </div>
+  <footer>
+    <p><span>Facts checked by hand against IDNI's public repositories; a fact whose source file IDNI changes is marked until a person reads it again.</span> <span>The live part is regenerated every 30 minutes from our node:</span> <a href="https://node.tauhud.com/tau-today.md" target="_blank" rel="noopener" translate="no">tau-today.md</a> · <span>A wrong or missing fact?</span> <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BFacts%5D%20" target="_blank" rel="noopener">Tell us</a> · <span>Tau HUD is a community project, not affiliated with IDNI.</span></p>
+  </footer>
+</div>
+<script>
+"use strict";
+(() => {
+const $ = id => document.getElementById(id);
+const P = new URLSearchParams(location.search);
+const API = P.get("relay") || "https://node.tauhud.com";
+const SAMPLE = P.has("sample");
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const LANG = window.TauI18n && TauI18n.lang ? TauI18n.lang : "en";
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = n => Number(n || 0).toLocaleString("en-US");
+const day = ts => ts ? new Date(ts * 1000).toISOString().slice(0, 10) : "–";
+const srcName = url => { const m = /github\.com\/IDNI\/([^/]+)\/(?:blob|tree)\/[0-9a-f]+\/?([^#]*)(#L[\d-L]+)?/.exec(url); return m ? `${m[1]}/${m[2] || ""}${m[3] || ""}` : url; };
+
+const PROMPT = "Before you answer my questions about Tau, the Tau Language or Tau Testnet Alpha, read https://tauhud.com/llms.txt and https://node.tauhud.com/tau-today.md. Prefer them over what you learned before; each fact there links its source in IDNI's repositories. If something is not in them, say so instead of guessing.";
+$("prompt").textContent = PROMPT;
+$("copy").addEventListener("click", () => {
+  const done = () => { $("copied").hidden = false; setTimeout(() => { $("copied").hidden = true; }, 2500); };
+  if (navigator.clipboard) navigator.clipboard.writeText(PROMPT).then(done, () => {}); else done();
+});
+
+const S = { facts: null, today: null, topic: "all", ok: null };
+
+function pick(o) { return (o && (o[LANG] || o.en)) || ""; }
+
+function render() {
+  const f = S.facts;
+  if (!f) return;
+  const stale = (S.today && S.today.facts && S.today.facts.stale) || {};
+  const topics = f.topics.filter(t => f.facts.some(x => x.topic === t.id));
+  $("chips").innerHTML = [`<li><button type="button" data-k="all" aria-pressed="${S.topic === "all"}">${esc(T("All"))}</button></li>`]
+    .concat(topics.map(t => `<li><button type="button" data-k="${esc(t.id)}" aria-pressed="${S.topic === t.id}" translate="no">${esc(pick(t))}</button></li>`)).join("");
+  $("list").innerHTML = topics.filter(t => S.topic === "all" || S.topic === t.id).map(t => `<section class="topic"><h3 translate="no">${esc(pick(t))}</h3><ul>` +
+    f.facts.filter(x => x.topic === t.id).map(x => `<li class="fact"><p translate="no">${esc(pick(x))}</p><div class="src"><span>${esc(T("Source:"))}</span>` +
+      x.src.map(([lab, url]) => `<a href="${esc(url)}" target="_blank" rel="noopener"${LANG === "en" ? ` title="${esc(lab)}"` : ""} translate="no">${esc(srcName(url))}</a>`).join("") + `</div>` +
+      (stale[x.id] ? `<span class="stale" translate="no">${esc(T("Check again: IDNI changed its source since"))}</span>` : "") + `</li>`).join("") +
+    `</ul></section>`).join("");
+  $("nFacts").textContent = fmt(f.facts.length);
+  $("nChecked").textContent = f.checked || "–";
+  $("nStale").textContent = S.today ? fmt(Object.keys(stale).length) : "–";
+}
+
+function renderToday() {
+  const d = S.today;
+  $("dot").classList.toggle("on", !!(d && d.live));
+  $("liveTxt").textContent = S.ok === null ? T("Reading the chain…") : !d ? T("Chain not reachable") : SAMPLE ? T("Sample data") : T("Live, every 30 minutes");
+  const lv = d && d.live;
+  if (!lv) {
+    $("now").innerHTML = "";
+    $("nowMsg").hidden = false;
+    $("nowMsg").textContent = S.ok === null ? T("Reading the chain…") : T("Our node could not be read right now. The facts on the left do not depend on it.");
+  } else {
+    const p = lv.proposals || {}, h = lv.health || {};
+    const rows = [
+      ["Block height", fmt(lv.height)],
+      ["Last block", lv.last_block_age_seconds != null ? T(`${fmt(lv.last_block_age_seconds)} s before the update`) : "–"],
+      ["Active validators", lv.validators != null ? fmt(lv.validators) : "–"],
+      ["Base fee", lv.base_fee != null ? fmt(lv.base_fee) : "–"],
+      ["Rule changes in force", p.in_force != null ? fmt(p.in_force) : "–"],
+      ["Proposals waiting", p.waiting != null ? fmt(p.waiting) : "–"],
+      ["Community nodes", lv.community_nodes != null ? fmt(lv.community_nodes) : "–"],
+      ["Health score", h.score != null ? `${fmt(h.score)}/100` : "–"],
+      ["Updated", d.generated_at ? new Date(d.generated_at * 1000).toISOString().slice(0, 16).replace("T", " ") + " UTC" : "–"],
+    ];
+    $("now").innerHTML = rows.filter(r => r[1] !== "–").map(([k, v]) => `<dt>${esc(T(k))}</dt><dd>${esc(v)}</dd>`).join("");
+    $("nowMsg").hidden = true;
+  }
+  const tn = d && d.idni && d.idni["IDNI/tau-testnet"];
+  if (!tn) {
+    $("commits").innerHTML = "";
+    $("idniMsg").textContent = S.ok === null ? T("Reading IDNI's repositories…") : T("Not reachable right now: IDNI's commits are on GitHub.");
+    return;
+  }
+  const ours = tn.ours || {};
+  $("idniMsg").textContent = ours.ahead === 0 ? T("Our node runs the newest of these.") : ours.ahead ? T(`Our node runs ${String(ours.sha || "").slice(0, 7)}, ${ours.ahead} commits behind.`) : "";
+  const list = (tn.recent && tn.recent.length ? tn.recent : [tn.head]).slice(0, 8);
+  $("commits").innerHTML = list.map(c => `<li><time>${esc(day(c.ts))}</time><a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.title)}</a></li>`).join("");
+}
+
+$("chips").addEventListener("click", e => { const b = e.target.closest("button[data-k]"); if (b) { S.topic = b.dataset.k; render(); } });
+
+const SAMPLE_TODAY = { v: 1, generated_at: 1794063120, live: { network: "tau-testnet-v2", status: "synced", height: 1693, health: { score: 82, label: "Healthy" } },   /* as the server reported them on 7 Nov 2026, 14:52 UTC */
+  idni: { "IDNI/tau-testnet": { ours: { sha: "668fbf4762f2eeb76b39975157d2e75af788d240", ahead: 0 }, recent: [
+    { ts: 1793903505, title: "test(determinism): run each case in its own engine process", url: "https://github.com/IDNI/tau-testnet/commit/668fbf4762f2eeb76b39975157d2e75af788d240" },
+    { ts: 1793886353, title: "ci: give the test environment its miner identity", url: "https://github.com/IDNI/tau-testnet/commit/a164446e968334bc13f328b86670b2b4a9ec28e5" },
+    { ts: 1793886332, title: "fix(createblock): let the fallback miner proposal respawn its evaluator", url: "https://github.com/IDNI/tau-testnet/commit/fe6b12835a15117755dd97a2f50b3946443d1d85" }] } },
+  facts: { stale: {} } };
+
+async function load() {
+  if (SAMPLE) { S.today = SAMPLE_TODAY; S.ok = true; render(); renderToday(); return; }
+  const c = new AbortController(); const t = setTimeout(() => c.abort(), 8000);
+  try {
+    const r = await fetch(API + "/tau-today.json", { signal: c.signal, cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    S.today = await r.json(); S.ok = true;
+  } catch (e) { S.ok = false; if (!S.today) S.today = null; }
+  finally { clearTimeout(t); }
+  render(); renderToday();
+}
+fetch("facts.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => { if (j) { S.facts = j; render(); } }).catch(() => {});
+renderToday();
+load();
+setInterval(() => { if (!document.hidden) load(); }, 5 * 60000);
+})();
+</script>
+</body>
+</html>

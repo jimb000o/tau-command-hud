@@ -1,0 +1,17 @@
+{
+ "date": "2026-11-07",
+ "ship": "liner",
+ "ship_scale": 3,
+ "card": [
+  "Queen Mempool · today 14:00 German time",
+  "120 made-up passengers, real transactions on Tau Testnet Alpha",
+  "## Why it matters",
+  "- The volume test: up to 580 real transactions in 90 minutes",
+  "- New: one transaction that pays three places at once",
+  "- Gentle on the testnet: at most 12 a minute, slower when the node is slow",
+  "- Every transaction logged with the node's answer, open to all",
+  "White Rabbit Key · community project, not affiliated with IDNI"
+ ],
+ "telegram": "🛳 <b>Queen Mempool calls at White Rabbit Key today at 14:00</b>\n\nThe big one. From 13:30 German time she is on the horizon, at 14:00 she anchors and the tenders bring 120 passengers ashore in waves. For 90 minutes they fill the island: the South Current spa, Bar La Ola, song requests on Radio Coco, souvenirs at the market. Some tables settle their evening with one bill that pays the bar, the radio and the Coconut Works in a single transaction, a first for the cruise ships.\n\nHonest note: the passengers are made up. Their transactions are real: up to 580 on Tau Testnet Alpha, never more than 12 a minute, and fewer when the node is slow. On Wednesday MS Dry Run left after 34 minutes because our own brake counted a slow answer as a refusal. That is fixed: a slow node now makes the ship wait, not leave. Every transaction goes into the logbook: https://node.tauhud.com/cruise/log\n\nWatch from the pier in your browser, sound on: https://tauhud.com/rabbit/",
+ "x": "Queen Mempool anchors at White Rabbit Key today, 14:00 German time. 120 passengers for 90 minutes: spa, bar, radio requests, one bill paying three places in one transaction.\n\nThe passengers are made up. Their up to 580 transactions are real, on Tau Testnet Alpha.\n\n#TauNet $AGRS"
+}

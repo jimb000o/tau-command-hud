@@ -310,12 +310,13 @@
   }
   /* every portrait on screen is redrawn each frame while visible */
   const FACES = new Set();
-  function portrait(id, size = 96, mood = 0) {
+  /* bare: the whole figure as it stands in a room (no disc behind it), sized by the page's CSS */
+  function portrait(id, size = 96, mood = 0, bare = false) {
     const c = el("canvas", { class: "face", width: size * 2, height: size * 2, "aria-hidden": "true" });
-    c.style.width = c.style.height = size + "px";
-    const f = { c, g: c.getContext("2d"), id, talk: 0, mood }; c._f = f; FACES.add(f); return c;
+    if (!bare) c.style.width = c.style.height = size + "px";
+    const f = { c, g: c.getContext("2d"), id, talk: 0, mood, bare }; c._f = f; FACES.add(f); return c;
   }
-  SC.onFrame(t => { for (const f of FACES) { if (!f.c.isConnected) { FACES.delete(f); continue; } face(f.g, f.id, t, t < f.talk, f.mood); } });
+  SC.onFrame(t => { for (const f of FACES) { if (!f.c.isConnected) { FACES.delete(f); continue; } face(f.g, f.id, t, t < f.talk, f.mood, f.bare); } });
   const say = (c, ms) => { if (c && c._f) c._f.talk = performance.now() + ms; };
 
   /* ---------- the game state, kept in this browser ---------- */
@@ -496,7 +497,7 @@
     if (G && place) { G.seen = G.seen || {}; if (!G.seen[place]) { G.seen[place] = 1; save(); } setTimeout(locks, 0); }
     /* the conversation always sits in the same place: a plate at the bottom middle, the person standing above it */
     const side = 0;
-    if (place) { SC.focus(place, side); SND.set({ place, amb: place === "pier" || place === "book" ? 1.7 : place === "market" || place === "cafe" || place === "bar" ? 1 : 0.6 }); } SC.glow(place);
+    if (place) { SC.focus(place, side); SND.set({ place, amb: place === "pier" || place === "book" ? 1.7 : place === "market" || place === "cafe" || place === "bar" ? 1 : 0.6 }); }
     const box = el("section", { class: "cv-card talk", "data-place": place || "", role: "dialog", "aria-modal": "false" });
     box._visit = place && build === PLACE[place] ? place : null;   // a visit to a place, not the card after a move
     const close = el("button", { type: "button", class: "cv-x", "aria-label": T("Back to the island"), onclick: () => closeCard(), text: "✕" });
@@ -530,6 +531,10 @@
     FIT.busy = true;
     try {
       box.classList.remove("tight", "tight2", "tight3", "paged", "tall"); box.style.removeProperty("--fz");
+      /* the start card turned between wide and narrow (a window resized, a tablet turned): built again for its new shape */
+      if (box.matches(".intro") && box._wide != null && box._wide !== wideIntro()) { setTimeout(() => { if (UI.card === box) openCard(null, introCard); }, 0); return; }
+      /* wide, the figures take the room that is left (CSS): only the strip of facts tightens, and the pitches go last */
+      if (box.matches(".intro.wide")) { box.classList.toggle("low", $("cvStage").clientHeight < 760); const over = () => box.scrollHeight > box.clientHeight + 3; if (over()) box.classList.add("tight"); if (over()) box.classList.add("tight2"); return; }
       if (innerWidth >= 760) box._tall = false;
       if (box._tall) box.classList.add("tall");
       box.querySelectorAll(".cv-tabs, .cv-pager").forEach(e => e.remove());
@@ -621,7 +626,7 @@
   if (window.screen && screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener("change", replaceHost);
   function closeCard(keep) {
     if (UI.card) { UI.card.remove(); UI.card = null; } UI.at = null; $("cvStage").classList.remove("carded"); SC.host(null);
-    if (!keep) { SC.focus(null); SC.glow(null); SND.set({ radio: false, tense: false, place: null, amb: 1 }); if (performance.now() > UI.airUntil) { SND.hush(); if (RICO.stop) RICO.stop(); } }   // a line on air is heard to its end
+    if (!keep) { SC.focus(null); SND.set({ radio: false, tense: false, place: null, amb: 1 }); if (performance.now() > UI.airUntil) { SND.hush(); if (RICO.stop) RICO.stop(); } }   // a line on air is heard to its end
   }
   /* a card: who speaks, what they say (aloud, in their own voice, when the server has the clip), what you can do;
      the buttons are never read out. A line is text, or a list of parts as RICO.speak takes them. */
@@ -677,7 +682,14 @@
     /* what has happened to the island this campaign: eventBoiler, eventStorm, eventCoup, eventCatch, eventRoof */
     events().forEach(e => { if (e.day <= G.day) f["event" + e.id[0].toUpperCase() + e.id.slice(1)] = true; });
     /* a cruise ship near: which one, and whether it comes in a few days, tomorrow, today, is here or has left (shipFacts) */
+    f.dark = darkNow();
     return Object.assign(f, shipFacts());
+  }
+  /* after dark in Germany (the island's own sky: ?hour=22:00 too): roughly half an hour after sunset to sunrise, by month */
+  const SUNSET = [16.6, 17.4, 18.3, 20.1, 20.9, 21.5, 21.4, 20.7, 19.6, 18.5, 16.6, 16.1], SUNRISE = [8.2, 7.6, 6.6, 6.5, 5.4, 4.8, 5.0, 5.8, 6.7, 7.5, 7.3, 8.1];
+  function darkNow() {
+    const b = berlin(), q = /^(\d{1,2}):(\d{2})$/.exec(QS.get("hour") || ""), h = q ? +q[1] + q[2] / 60 : b.h + b.m / 60;
+    return h >= SUNSET[b.mo - 1] + 0.5 || h < SUNRISE[b.mo - 1];
   }
   /* of a list of [when, line]: the first that holds and has not been heard yet, else they take turns.
      A "when" of "a+b" holds when both hold, "!a" when a does not */
@@ -723,7 +735,7 @@
   const did = k => { G.did = G.did || {}; G.did[k] = 1; };
   const movesLeft = () => G.move < MOVES && !G.over;
   /* a move is used up, unless the evening bell kept one for the visitor (BELL) */
-  const useMove = () => { if (G.spare) G.spare--; else G.move++; };
+  const useMove = () => { if (G.spare) G.spare--; else G.move++; if (!store.get(SIGNED)) { store.set(SIGNED, "1"); signsOff(); } };
   /* a move is spent: the sun goes on, and after the evening the night comes */
   function spend() {
     useMove(); save(); hud();
@@ -1007,7 +1019,7 @@
     if (!FREE && G.day >= todayIdx()) { G.waiting = true; save(); return nightCard(); }
     nextDay();
   }
-  function nextDay() { G.waiting = false; G.day++; G.move = 0; const n = readers(); save(); morning(n); }
+  function nextDay() { G.waiting = false; G.day++; G.move = briefDay() ? MOVES - 1 : 0; const n = readers(); save(); morning(n); }
   /* the day is done and so is the real one: the next island day comes after midnight, German time */
   function nightCard() {
     openCard(null, box => {
@@ -1151,20 +1163,25 @@
   const savings = () => { try { const v = JSON.parse(store.get(SAVE_KEY) || "null"); if (v && typeof v.coins === "number") return v; } catch (e) {} return { coins: 0, built: {}, campaigns: 0 }; };
   const saveSavings = v => store.set(SAVE_KEY, JSON.stringify(v));
   const BUILDS = {
-    roof: { at: "school", n: 60, t: "Pay for a new roof for the school", line: "paid for a new school roof: 60 coins from the savings", done: "The new roof is on by evening. Families who care about the school will remember who paid.", fx: () => bump(G.me, p => p.cares.includes("school"), 6) },
-    lamp: { at: "book", n: 80, t: "Pay for a new lamp for the lighthouse", line: "paid for a new lighthouse lamp: 80 coins from the savings", done: "The new lamp lights the whole bay. More people find their way to the Book at night.", fx: () => { G.lamp = true; } },
-    stone: { at: "circle", n: 50, t: "Pay for a stone in Tano’s circle", line: "paid for a stone in Tano’s circle: 50 coins from the savings", done: "Tano sets the stone before sunset. Whoever sits on it is listened to a little longer.", fx: () => others(G.me).forEach(c => { G.trust[c] = Math.min(100, G.trust[c] + 10); }) },
+    roof: { at: "school", n: 60, t: "Pay for a new roof for the school", line: "paid for a new school roof: 60 coins", done: "The new roof is on by evening. Families who care about the school will remember who paid.", fx: () => bump(G.me, p => p.cares.includes("school"), 6) },
+    lamp: { at: "book", n: 80, t: "Pay for a new lamp for the lighthouse", line: "paid for a new lighthouse lamp: 80 coins", done: "The new lamp lights the whole bay. More people find their way to the Book at night.", fx: () => { G.lamp = true; } },
+    stone: { at: "circle", n: 50, t: "Pay for a stone in Tano’s circle", line: "paid for a stone in Tano’s circle: 50 coins", done: "Tano sets the stone before sunset. Whoever sits on it is listened to a little longer.", fx: () => others(G.me).forEach(c => { G.trust[c] = Math.min(100, G.trust[c] + 10); }) },
   };
+  /* the price comes from the savings first and the rest from this campaign's purse, so coins won this week can pay too
+     (otherwise a full purse sat next to a greyed-out button). After the campaign the purse is already banked. */
+  const purse = () => (G.over ? 0 : Math.max(0, G.coins[G.me] || 0));
   function buildBtn(k) {
-    const B = BUILDS[k], v = savings(), done = !!(G.built && G.built[k]);
+    const B = BUILDS[k], v = savings(), done = !!(G.built && G.built[k]), have = v.coins + purse();
     return btn(T(B.t), () => {
-      const v = savings(); if (v.coins < B.n || (G.built && G.built[k])) return;
-      v.coins -= B.n; v.built[k] = (v.built[k] || 0) + 1; saveSavings(v);
+      const v = savings(); if (v.coins + purse() < B.n || (G.built && G.built[k])) return;
+      const fromSaved = Math.min(v.coins, B.n), fromPurse = B.n - fromSaved;
+      v.coins -= fromSaved; v.built[k] = (v.built[k] || 0) + 1; saveSavings(v);
+      if (fromPurse) G.coins[G.me] -= fromPurse;
       G.built = G.built || {}; G.built[k] = G.day; B.fx();
       write(G.me, T(B.line), "gift", B.at, B.n, k);
       SND.sfx("coin"); save(); hud(); toast(T(B.done));
       if (UI.card) openCard(B.at, PLACE[B.at]);
-    }, { off: done || v.coins < B.n, sub: done ? T("Done this campaign") : v.coins >= B.n ? Fd("{n} coins from your savings ({m} saved), no move, the island keeps it", { n: B.n, m: v.coins }) : Fd("{n} coins from your savings; you have {m}. The coins left at the end of a campaign are saved.", { n: B.n, m: v.coins }) });
+    }, { off: done || have < B.n, sub: done ? T("Done this campaign") : have >= B.n ? Fd("{n} coins, from your savings first ({m} saved), then from this campaign ({c}); no move, the island keeps it", { n: B.n, m: v.coins, c: purse() }) : Fd("{n} coins; you have {c} in this campaign and {m} saved. The coins left at the end of a campaign are saved.", { n: B.n, m: v.coins, c: purse() }) });
   }
   /* the coins left when the campaign is over go to the savings, once */
   function bank() {
@@ -1315,9 +1332,6 @@
     L.push({ k: "tips", parts: [Q("{x}, you have {n} coins.", { x: nm(G.me), n: G.coins[G.me] }), V("tips")] });
     isleLines().forEach(l => L.push(l));
     dejaLines().forEach(l => L.push(l));
-    const sh = shipAir(), fresh = sh.filter(l => !SAID.includes(l.k));   // a cruise ship near: news before the rest, until said
-    if (fresh.length && Math.random() < 0.5) return fresh;
-    sh.forEach(l => L.push(l));
     return L;
   }
   /* Rico reads the real testnet (or the simulation, in simulation mode) every minute and a half: the newest blocks and
@@ -1490,46 +1504,282 @@
      transactions (the card says which). The island shows the ship, its tenders, a guide's pennant where a
      group is, and a ring at a place whenever one of their transactions is sealed in a block.
      ?ship=dryrun or ?ship=queen shows a made-up visit, marked as a preview; it sends nothing. ---------- */
-  const SHIPV = { v: null, next: null, last: null };
+  const SHIPV = { v: null, next: null, last: null, lastOf: {}, escrow: [] };
   const SHIPAT = { works: "The Coconut Works", school: "The School", dive: "Reef Proof Dive Centre", ship: "The Old Ship" };   // places only a painted island's layout brings
   const berlinHM = s => { try { return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(new Date(s * 1000)); } catch (e) { return new Date(s * 1000).toISOString().slice(11, 16); } };
-  /* &phase=soon, tomorrow or today: no ship on the sea yet, only the islanders and Rico talking about it (shipFacts);
-     &phase=cut: it sailed on without landing */
+  /* &phase=soon, tomorrow, today or close (two hours or less): no ship on the sea yet, only the islanders and Rico
+     talking about it (shipFacts); approach, wait (off the reef, for a calm lagoon), land (the tenders), turn (back aboard),
+     gone; cut: it sailed on without landing (&why=stalled or refused: it left early) */
   function shipPreview(k) {
-    const now = Math.floor(Date.now() / 1000), q = k === "queen", phase = new URLSearchParams(location.search).get("phase");
-    if (phase === "soon" || phase === "tomorrow" || phase === "today") return null;
-    return { ship: k, name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition", phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : "ashore",
-      why: phase === "cut" ? "no landing" : "",
-      t0: phase === "approach" ? now + 90 : now - 1800, end: phase === "gone" || phase === "cut" ? now : phase === "turn" ? now + 90 : now + 3600, passengers: q ? 120 : 40,
+    const now = Math.floor(Date.now() / 1000), q = k === "queen", qs = new URLSearchParams(location.search), phase = qs.get("phase");
+    if (phase === "soon" || phase === "tomorrow" || phase === "today" || phase === "close") return null;
+    const why = phase === "cut" ? (/^(stalled|refused)$/.test(qs.get("why") || "") ? qs.get("why") : "no landing") : "";
+    if (k === "pirates" && phase === "next") return null;   // the day after: only the talk about her
+    if (k === "pirates") return { ship: k, name: "Black Sequence", style: "pirate", why,   // the pirates stay aboard: nobody ashore
+      phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : phase === "wait" ? "waiting" : phase === "land" ? "landing" : "ashore",
+      t0: phase === "approach" ? now + 90 : phase === "wait" ? now - 120 : phase === "land" ? now - 240 : now - 1800,
+      end: phase === "gone" || phase === "cut" ? now : phase === "turn" ? now + 90 : now + 3600, passengers: 20, ashore: 0, at: {},
+      sent: { pay: 38, bill: 0, book: 0, cancel: 0 }, refused: 0, tricks: { tried: 9, stopped: 9, by: { overspend: 2, replay: 2, expired: 1, forged: 1, impostor: 1, freeride: 1, giant: 1 } }, kinds: ["pay", "trick"], preview: true };
+    return { ship: k, name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition",
+      phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : phase === "wait" ? "waiting" : phase === "land" ? "landing" : "ashore",
+      why, t0: phase === "approach" ? now + 90 : phase === "wait" ? now - 120 : phase === "land" ? now - 240 : now - 1800,
+      end: phase === "gone" || phase === "cut" ? now : phase === "turn" ? now + 90 : now + 3600, passengers: q ? 120 : 40,
       ashore: q ? 96 : 34, at: q ? { south: 30, bar: 26, radio: 12, market: 18, works: 6, pier: 4 } : { book: 8, ship: 9, school: 6, dive: 8, pier: 3 },
       sent: { pay: q ? 214 : 96, bill: q ? 5 : 0, book: q ? 21 : 5, cancel: q ? 2 : 1 }, refused: 0, kinds: q ? ["pay", "bill", "book"] : ["pay", "book"], preview: true };
   }
   function shipFetch() {
     const k = new URLSearchParams(location.search).get("ship");
-    if (k === "dryrun" || k === "queen") { if (!SHIPV.v?.preview) SHIPV.v = shipPreview(k); return shipShow(); }
+    if (k === "dryrun" || k === "queen" || k === "pirates") { if (!SHIPV.v?.preview) SHIPV.v = shipPreview(k); return shipShow(); }
     if (window.TauSim && TauSim.on) return;
     fetch("https://node.tauhud.com/cruise", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => {
       if (!j) return;
       SRC.ship = new Set([].concat(...Object.values(j.wallets || {})).map(lc));
-      SHIPV.v = j.now || null; SHIPV.next = j.next || null; SHIPV.last = j.last || null;
-      shipShow();
+      SHIPV.v = j.now || null; SHIPV.next = j.next || null; SHIPV.last = j.last || null; SHIPV.lastOf = j.last_of || {}; SHIPV.escrow = j.escrow || [];
+      shipShow(); shipNews(SHIPV.v); shipLoad();
     }, () => {});
   }
   /* the ships' week as the islanders and Rico talk about it (talk.js RABBIT_SHIP_WHEN): from the relay's timetable, or
      from the preview (?ship=queen or dryrun, &phase=soon, tomorrow, today, approach, turn, gone or cut; none: ashore) */
-  const SHIP_SAY = { soon: "shipSoon", tomorrow: "shipTomorrow", today: "shipToday", approach: "shipToday", turn: "shipHere", gone: "shipGone", cut: "shipCut" };
+  const SHIP_SAY = { soon: "shipSoon", tomorrow: "shipTomorrow", today: "shipToday", close: "shipToday", approach: "shipToday", wait: "shipToday", land: "shipHere", turn: "shipHere", gone: "shipGone", cut: "shipCut" };
   function shipFacts() {
     const W = window.RABBIT_SHIP_WHEN, k = QS.get("ship"); if (!W) return {};
     if (k === "dryrun" || k === "queen") return W.mark(k, SHIP_SAY[QS.get("phase")] || "shipHere");
+    if (k === "pirates" && W.pirate) return W.pirate(QS.get("phase") || "here", (SHIPV.v || {}).tricks);
     return W({ now: SHIPV.v, next: SHIPV.next, last: SHIPV.last }, Date.now() / 1000);
   }
-  /* Rico on the ships (rico.js sq_* for the Queen, sd_* for MS Dry Run, s_cut for one that did not stay): one line for
-     where the week stands; djLines puts it on air before the rest of the game talk until he has said it */
-  function shipAir() {
-    const f = shipFacts(); if (!f.ship) return [];
-    const w = f.shipCut ? null : ["Soon", "Tomorrow", "Today", "Here", "Gone"].find(x => f["ship" + x]);
-    const k = w ? (f.queen ? "sq_" : "sd_") + w.toLowerCase() : "s_cut";
-    return RICO.L[k] ? [{ k, parts: [V(k)] }] : [];
+  /* ---------- Rico on the ships: the nearer a ship, the more he talks about it (rico.js SETS ship*) ----------
+     shipStage says where the week stands: soon (in two or three days), tomorrow, today, close (two hours or less), then
+     the visit (approach: in sight; wait: off the reef until the lagoon is calm or busy; land: the tenders; here: ashore;
+     board: the last ten minutes) and the rest of that day (gone, or cut, with the logbook's reason). shipOdds makes that
+     the share of Rico's lines about the ship: about one in twenty-five two or three days before, more and more through
+     the last day, four or five in ten while she is in, fading over the evening after. Before she lands he never says two
+     in a row, in port two at most; now and then a listener calls about her instead.
+     In port he says what the testnet shows, the numbers shown exactly and spoken as a band (rico.js NUMERIC): the
+     passengers' transactions the node has taken so far and those in the newest block, a booking, a withdrawal, a group
+     bill or a refusal since the last look (relay GET /cruise every minute, shipNews), the brakes, how the lagoon copes
+     (GET /load every two minutes while she is in) and where most of the passengers are. A preview (?ship=) has made-up
+     numbers, and every line of it says preview. */
+  const SHIPLIVE = { visit: null, sent: null, refused: 0, brake: "none", ev: [], block: null, load: null, loadAt: 0, top: null, said: {}, recap: null };
+  const SHIP_P = { approach: 0.4, wait: 0.45, land: 0.45, here: 0.4, board: 0.45 };
+  const shipOdds = st => !st ? 0 : SHIP_P[st.stage] != null ? SHIP_P[st.stage]
+    : st.after != null ? 0.05 + 0.3 * Math.exp(-st.after / 1.5) : Math.min(0.35, 0.04 + 0.45 * Math.exp(-st.h / 8));
+  const shipWhy = note => /^no landing/.test(note || "") ? "no landing" : /^left early/.test(note || "") ? (/refused/.test(note) ? "refused" : "stalled") : "";
+  function shipStage() {
+    const f = shipFacts(); if (!f.ship) return null;
+    const now = Date.now() / 1000, ship = f.queen ? "queen" : "dryrun", v = SHIPV.v && SHIPV.v.style !== "pirate" ? SHIPV.v : null, pv = QS.get("ship") === ship;
+    const st = { ship, q: ship === "queen", preview: pv }, PH = { approach: "approach", waiting: "wait", landing: "land", ashore: "here", boarding: "board" };
+    if (v && PH[v.phase]) return Object.assign(st, { stage: PH[v.phase], v, h: Math.max(0, (v.t0 - now) / 3600) });
+    if (v && v.phase === "gone") return Object.assign(st, { stage: v.why ? "cut" : "gone", why: v.why || "", v, after: Math.max(0, (now - v.end) / 3600) });
+    if (f.shipAfter) { const l = SHIPV.last || {}; return Object.assign(st, { stage: f.shipCut ? "cut" : "gone", why: shipWhy(l.note), v: SHIPV.last, after: Math.max(0, (now - (l.end || now)) / 3600) }); }
+    const n = SHIPV.next, h = pv ? { soon: 52, tomorrow: 26, today: 5, close: 1.2 }[QS.get("phase")] || 5 : n && n.t0 ? Math.max(0, (n.t0 - now) / 3600) : null;
+    if (h == null) return null;
+    return Object.assign(st, { stage: f.shipToday ? (h <= 2 ? "close" : "today") : f.shipTomorrow ? "tomorrow" : "soon", h, t0: pv ? null : n.t0 });
+  }
+  /* what changed since the last look at the ship in port: bookings, withdrawals, group bills, refusals, the brakes
+     (the first look at a visit only sets the counts, so nobody hears old news) */
+  function shipNews(v) {
+    if (!v || v.preview || !v.visit) return;
+    const L = SHIPLIVE, S = v.sent || {};
+    const by = { ...((v.tricks || {}).by || {}) };   // the pirates: each trick the chain refused (never one that got through)
+    if (L.visit !== v.visit) { Object.assign(L, { visit: v.visit, sent: { ...S }, refused: v.refused || 0, brake: v.brake || "none", by, ev: [], block: null, top: null, said: {} }); return; }
+    const was = L.sent || {}, add = k => { if (!L.ev.some(e => e.k === k)) L.ev.push({ k, at: Date.now() }); };
+    if ((S.book || 0) > (was.book || 0)) add("book");
+    if ((S.cancel || 0) > (was.cancel || 0)) add("cancel");
+    if ((S.bill || 0) > (was.bill || 0)) add("bill");
+    if ((v.refused || 0) > L.refused) add(v.refused >= 3 ? "ref3" : "ref1");
+    if (v.brake === "half" && L.brake !== "half") add("half");
+    if (L.brake === "half" && v.brake === "none") add("full");
+    if (v.brake === "slow" && L.brake !== "slow") add("slow");
+    for (const k in by) if ((by[k] || 0) > ((L.by || {})[k] || 0)) add("trick:" + k);
+    L.sent = { ...S }; L.refused = v.refused || 0; L.brake = v.brake || "none"; L.by = by;
+  }
+  /* how the testnet copes while the passengers are ashore (relay GET /load: the verdict of the last ten minutes) */
+  function shipLoad() {
+    const v = SHIPV.v; if (!v || v.preview || !/^(landing|ashore|boarding)$/.test(v.phase) || Date.now() - SHIPLIVE.loadAt < 110000) return;
+    SHIPLIVE.loadAt = Date.now();
+    fetch("https://node.tauhud.com/load", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => {
+      if (!j || !j.now || !/^(calm|busy|strained)$/.test(j.state)) return;
+      const was = SHIPLIVE.load && SHIPLIVE.load.state;
+      SHIPLIVE.load = { state: j.state, waiting: Number(j.now.waiting) || 0, sealed: Number(j.now.sealed_hour) || 0, cruise: Number(j.now.cruise_hour) || 0, at: Date.now(), changed: !!was && was !== j.state };
+    }, () => {});
+  }
+  /* the passengers' transactions so far, shown beside the spoken band (and on the ship's card) */
+  function shipSoFar(S, K, card) {
+    const book = K.includes("book") || S.book > 0, bill = K.includes("bill") || S.bill > 0, c = { n: S.pay || 0, m: S.bill || 0, a: S.book || 0, b: S.cancel || 0 };
+    return F(card ? (book && bill ? "So far: {n} payments, {m} group bills, {a} bookings, {b} withdrawn." : book ? "So far: {n} payments, {a} bookings, {b} withdrawn." : bill ? "So far: {n} payments, {m} group bills." : "So far: {n} payments.")
+      : book && bill ? "({n} payments, {m} group bills, {a} bookings, {b} withdrawn)" : book ? "({n} payments, {a} bookings, {b} withdrawn)" : bill ? "({n} payments, {m} group bills)" : "({n} payments)", c);
+  }
+  /* the weekday in Germany, in English: a shown line is translated whole, its weekday and place name with it (a filled-in
+     word already in Chinese or Japanese would stop the translation of the line) */
+  const shipDay = t => { try { return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", weekday: "long" }).format(new Date(t * 1000)); } catch (e) { return ""; } };
+  const shipName = st => st.q ? "Queen Mempool" : "MS Dry Run";
+  const LOADQ = { calm: "(testnet calm: {n} waiting, {m} sealed in the last hour, {a} sent for the ship)", busy: "(testnet busy: {n} waiting, {m} sealed in the last hour, {a} sent for the ship)",
+    strained: "(testnet strained: {n} waiting, {m} sealed in the last hour, {a} sent for the ship)" };
+  const LOGQ = "(the logbook: tauhud.com/cruise)";
+  /* whether Rico can say a line aloud (with the sound on: its clips are there; a line with a band, every band's clip) */
+  const sayable = k => !(SND.on && RICO.voiced) || RICO.voiced(k) !== false;
+  /* a line with a number: shown exactly, spoken as a band ({where}: shown as the block, spoken as the latest block) */
+  const banded = (k, n, h) => ({ t: F(RICO.L[k], h != null ? { n, where: "block " + h } : { n }), v: RICO.fill(RICO.L[k], { n: band(n), ...RICO.BLOCK }) });
+  function shipLine() {
+    const ps = pirateStage();   // the pirates first; after they left, the week's other ship may be talked about too
+    if (ps) { const l = pirateLine(ps); if (l || !/^(gone|next|cut)$/.test(ps.stage)) return l; }
+    const st = shipStage(), p = shipOdds(st); if (!p) return null;
+    const run = ROT.shipAt === ROT.n - 1 ? ROT.shipRun || 0 : 0, port = /^(land|here|board)$/.test(st.stage);
+    if (run >= (port ? 2 : 1) || Math.random() >= p) return null;
+    const l = shipPick(st); if (!l) return null;
+    ROT.shipRun = run + 1; ROT.shipAt = ROT.n; ROT.callLast = !!l.call;
+    if (st.preview && !l.call) l.parts.push(Q("(preview)"));
+    return l;
+  }
+  function shipPick(st) {
+    const stage = st.stage, v = st.v || {}, r = Math.random(), port = /^(land|here|board)$/.test(stage);
+    const line = (keys, ...more) => { keys = (keys || []).filter(k => RICO.L[k]); if (!keys.some(sayable)) return null; const k = pickLine(keys); return { k, parts: [V(k), ...more] }; };
+    const why = () => { const l = line(RICO.SETS.shipWhy); if (l && l.k === "sw5") l.parts.push(Q(LOGQ)); return l; };
+    const pool = n => RICO.SETS[n + (st.q ? "Q" : "D")] || RICO.SETS[n];
+    if (port) { const l = shipPort(st, line); if (l) return l; }
+    /* after the visit: her day in numbers, once */
+    if ((stage === "gone" || stage === "cut") && v.sent) {
+      const S = v.sent, n = Object.values(S).reduce((a, b) => a + (Number(b) || 0), 0), id = v.visit || v.id || v.t0;
+      const rf = typeof v.refused === "number" ? v.refused : Object.values(v.refused || {}).reduce((a, b) => a + (Number(b) || 0), 0);
+      if (n >= 2 && SHIPLIVE.recap !== id && sayable("sl_recap")) {
+        SHIPLIVE.recap = id;
+        return { k: "sl_recap", parts: [banded("sl_recap", n), { t: shipSoFar(S, v.kinds || Object.keys(S).filter(x => S[x] > 0), false), v: null }, ...(rf ? [Q("({n} refused by the node)", { n: rf })] : [])] };
+      }
+    }
+    const CALL = { soon: 0.15, tomorrow: 0.15, today: 0.15, close: 0.15, approach: 0.1, here: 0.2, gone: 0.15, cut: 0.1 }[stage] || 0;
+    const WHY = { soon: 0.35, tomorrow: 0.35, today: 0.35, close: 0.3, approach: 0.2, wait: 0.25, land: 0.15, here: 0.35, gone: 0.15 }[stage] || 0;
+    const when = /^(soon|tomorrow|today|close)$/.test(stage) ? [Q("({x}: {y}, {t} German time)", st.t0 ? { x: shipName(st), y: shipDay(st.t0), t: berlinHM(st.t0) }
+        : { x: shipName(st), y: shipDay(Date.UTC(2026, 10, st.q ? 7 : 4, 12) / 1000), t: st.q ? "14:00" : "16:00" })]   // a preview: the ship's weekday and hour
+      : stage === "approach" ? [Q("Lands at {t}, German time, with {n} simulated passengers.", { t: berlinHM(v.t0), n: v.passengers })]
+      : port && v.passengers ? [Q("{a} of {n} passengers ashore, in port until {t}.", { a: v.ashore || 0, n: v.passengers, t: berlinHM(v.end) })] : [];
+    const own = () => stage === "cut" ? line(RICO.SETS[{ "no landing": "shipCutLand", stalled: "shipCutStall", refused: "shipCutRefused" }[st.why] || "shipCut"], Q(LOGQ))
+      : line(pool({ soon: "shipSoon", tomorrow: "shipTomorrow", today: "shipToday", close: "shipClose", approach: "shipApproach", wait: "shipWait", land: "shipLand", here: "shipHere", board: "shipBoard", gone: "shipGone" }[stage]), ...when);
+    const learn = r >= CALL + WHY && r < CALL + WHY + 0.3 ? learnLine(st, line) : null;
+    return (r < CALL ? shipCall() : r < CALL + WHY ? why() : null) || learn || own() || why();
+  }
+  /* ---------- the pirates on air (rico.js pp_*): they come unannounced ----------
+     Nothing before she is in sight. Then a bulletin (after dark, lanterns), at anchor the pirate watch and one line for
+     each trick the chain just refused (relay /cruise now.tricks.by, which never counts a trick that got through), weighing
+     anchor, and after: her evening in numbers (only the refused tricks), "every trick refused" only when the logbook's
+     summary says so, the day after now and then. A trick that got through is held back and never mentioned. */
+  function pirateStage() {
+    const f = shipFacts(); if (!f.pirates) return null;
+    const pv = QS.get("ship") === "pirates", v = SHIPV.v && SHIPV.v.style === "pirate" ? SHIPV.v : null, now = Date.now() / 1000;
+    const st = { pirate: true, preview: pv, f, dark: darkNow(), v: v || SHIPV.last };
+    if (f.pirateSight) return Object.assign(st, { stage: "approach" });
+    if (f.pirateHere) return Object.assign(st, { stage: v && v.phase === "boarding" ? "board" : "here" });
+    const end = (st.v || {}).end || now;
+    return Object.assign(st, { stage: f.pirateCut && f.pirateGone ? "cut" : f.pirateNext ? "next" : "gone", after: Math.max(0, (now - end) / 3600) });
+  }
+  function pirateLine(st) {
+    const p = st.stage === "next" ? 0.06 : shipOdds(st); if (!p) return null;
+    const run = ROT.shipAt === ROT.n - 1 ? ROT.shipRun || 0 : 0, port = /^(here|board)$/.test(st.stage);
+    if (run >= (port ? 2 : 1)) return null;
+    const ev = port ? SHIPLIVE.ev.filter(e => /^trick:/.test(e.k) && Date.now() - e.at < 240000) : [];
+    if (!ev.length && Math.random() >= p) return null;
+    const line = (keys, ...more) => { keys = (keys || []).filter(k => RICO.L[k]); if (!keys.some(sayable)) return null; const k = pickLine(keys); return { k, parts: [V(k), ...more] }; };
+    /* live (relay now.tricks): {tried, stopped, by}; after (the logbook's summary): each trick's counts, one that got through only {held} */
+    const v = st.v || {}, T = v.tricks || {}, stopped = T.stopped != null ? Number(T.stopped) || 0
+      : Object.values(T).reduce((a, c) => a + (c && !c.held && !c.through ? Number(c.stopped) || 0 : 0), 0);
+    const done = l => { if (!l) return null; ROT.shipRun = run + 1; ROT.shipAt = ROT.n; ROT.callLast = !!l.call; if (st.preview && !l.call) l.parts.push(Q("(preview)")); return l; };
+    /* a trick the chain just refused: named by the pirate's prop */
+    while (ev.length) {
+      const e = ev.shift(); SHIPLIVE.ev = SHIPLIVE.ev.filter(x => x !== e);
+      const k = e.k.slice(6), l = line(["pp_t_" + k + "1", "pp_t_" + k + "2"], Q("({n} tricks refused by the chain so far)", { n: stopped }));
+      if (l) return done(l);
+    }
+    const r = Math.random(), S = RICO.SETS, id = v.visit || v.id || v.t0;
+    if (st.stage === "approach") return done(line(st.dark ? S.pirSightN : S.pirSight, ...(v.t0 && !st.preview ? [Q("Anchors at {t}, German time.", { t: berlinHM(v.t0) })] : [])));
+    if (st.stage === "here") return done((r < 0.2 ? shipCall() : null) || line(st.dark ? S.pirHereN : S.pirHere, ...(stopped ? [Q("({n} tricks refused by the chain so far)", { n: stopped })] : [])));
+    if (st.stage === "board") return done(line(S.pirBoard));
+    if (st.stage === "cut") return done(line(S.pirCut, Q(LOGQ)));
+    /* after: her evening in numbers once, the refused tricks only */
+    if (st.stage === "gone" && stopped >= 2 && SHIPLIVE.recap !== id && sayable("pp_recap")) {
+      SHIPLIVE.recap = id;
+      return done({ k: "pp_recap", parts: [banded("pp_recap", stopped), Q("({n} tricks refused by the chain)", { n: stopped }), Q(LOGQ)] });
+    }
+    return done((r < 0.15 ? shipCall() : null) || (st.f.pirateClean && st.stage === "gone" && r < 0.5 ? line(S.pirClean, Q(LOGQ)) : null)
+      || line(st.stage === "next" ? S.pirNext : S.pirGone));
+  }
+  /* ---------- what a ship learned (rico.js sk_*, ex_*): from her logbook, each thing once ----------
+     Before her next call: what she changed for it, and why (the relay's tune log, "last_of" her last visit). After a
+     visit: the stops she skipped (our node's answers took their time), the sends it left unanswered in time, a day with
+     no refusal. MS Dry Run: the fares paid days ahead into escrow, one taken back on purpose, paid out at the arrival. */
+  const LEARNQ = "(her logbook: {x} from {y} to {z}, because {w})";
+  function learnLine(st, line) {
+    const once = (k, l) => { if (!l || SHIPLIVE.said[k]) return null; SHIPLIVE.said[k] = Date.now(); return l; };
+    const ahead = /^(soon|tomorrow|today|close)$/.test(st.stage), after = st.stage === "gone" || st.stage === "cut";
+    const esc = (SHIPV.escrow || []).find(e => e.ship === st.ship && (ahead ? st.t0 && e.arrival === st.t0 : (st.v || {}).t0 === e.arrival));
+    if (esc && (ahead || after || /^(land|here|board)$/.test(st.stage))) {
+      const n = esc.count || {}, q = Q("(bookings ahead: {n} in escrow, {m} taken back, {a} paid out)", { n: (n["in escrow"] || 0) + (n.sent || 0), m: (n.refunded || 0) + (n["refund sent"] || 0), a: n["paid out"] || 0 });
+      const k = esc.called_off ? "ex_off" : (n["paid out"] || 0) > 0 ? "ex_paid" : ahead && ((n.refunded || 0) + (n["refund sent"] || 0)) > 0 ? "ex_back" : ahead && ((n["in escrow"] || 0) + (n.sent || 0)) > 0 ? "ex_open" : null;
+      const l = k && once("ex:" + esc.visit + ":" + k, line([k], q)); if (l) return l;
+    }
+    if (ahead) {
+      const lo = (SHIPV.lastOf || {})[st.ship] || {}, c = (lo.changed || []).find(x => x && !x.held && x.what);
+      if (!c) return null;
+      const k = c.what === "transactions a minute" ? (Number(c.to) < Number(c.from) ? "sk_rate_down" : "sk_rate_up") : c.what === "stops planned a minute" ? "sk_plan" : / kind$/.test(c.what) ? "sk_trial" : null;
+      return k ? once("sk:" + (lo.id || "") + ":" + k, line([k], Q(LEARNQ, { x: c.what, y: String(c.from), z: String(c.to), w: c.because || "" }))) : null;
+    }
+    if (!after) return null;
+    const v = st.v || {}, id = v.id || v.visit, sum = (SHIPV.last && SHIPV.last.id === id) ? SHIPV.last : null;   // the logbook's summary of that visit
+    if (!sum || !sum.landed) return null;
+    const rf = Object.values(sum.refused || {}).reduce((a, b) => a + (Number(b) || 0), 0), sent = Object.values(sum.sent || {}).reduce((a, b) => a + (Number(b) || 0), 0);
+    const skip = Number(sum.skipped) || 0, una = Number(sum.unanswered) || 0;
+    /* skipped stops: the lines name our node's answer time as the cause, so not when a strained testnet slowed her */
+    if (skip >= 2 && !(Number(sum.half_strained) > 0)) { const ks = RICO.SETS.shipSkip.filter(sayable); if (ks.length && !SHIPLIVE.said["sk:skip:" + id]) { const k = pickLine(ks); SHIPLIVE.said["sk:skip:" + id] = 1; return { k, parts: [banded(k, skip), Q("({n} of {m} planned stops skipped)", { n: skip, m: Number(sum.planned) || skip + sent })] }; } }
+    if (una >= 2 && sayable("sk_quiet") && !SHIPLIVE.said["sk:quiet:" + id]) { SHIPLIVE.said["sk:quiet:" + id] = 1; return { k: "sk_quiet", parts: [banded("sk_quiet", una), Q("({n} sends without an answer in time)", { n: una })] }; }
+    if (!rf && sent > 0 && st.stage === "gone") { const l = once("sk:clean:" + id, line(["sk_clean"], Q(LOGQ))); if (l) return l; }
+    const c = (sum.changed || []).find(x => x && !x.held && x.what);
+    if (c) {
+      const k = c.what === "transactions a minute" ? (Number(c.to) < Number(c.from) ? "sk_rate_down" : "sk_rate_up") : c.what === "stops planned a minute" ? "sk_plan" : / kind$/.test(c.what) ? "sk_trial" : null;
+      if (k) return once("sk:" + id + ":" + k, line([k], Q(LEARNQ, { x: c.what, y: String(c.from), z: String(c.to), w: c.because || "" })));
+    }
+    return null;
+  }
+  /* what Rico reports while the passengers are ashore, the newest first; null: nothing new, so a line of the stage */
+  function shipPort(st, line) {
+    const v = st.v || {}, S = v.sent || {}, L = SHIPLIVE, now = Date.now(), ago = k => now - (L.said[k] || 0);
+    L.ev = L.ev.filter(e => now - e.at < 240000);
+    while (L.ev.length) {
+      const e = L.ev.shift(), keys = { book: RICO.SETS.shipBook, cancel: RICO.SETS.shipCancel, bill: RICO.SETS.shipBill, half: ["ss_strain"], full: ["se_full"], slow: ["se_slow"], ref1: ["se_ref1"], ref3: ["se_ref3"] }[e.k];
+      if (!keys) continue;   // a pirate trick: pirateLine tells it
+      const more = e.k === "book" ? [Q("({n} bookings so far)", { n: S.book || 0 })] : e.k === "cancel" ? [Q("({n} withdrawn so far)", { n: S.cancel || 0 })]
+        : e.k === "bill" ? [Q("({n} group bills so far)", { n: S.bill || 0 })] : /^ref/.test(e.k) ? [Q("({n} refused so far)", { n: v.refused || 0 })] : [];
+      const l = line(keys, ...more); if (l) return l;
+    }
+    /* the newest block holds a few of their transactions (the blocks Rico reads anyway, shipSeen) */
+    const b = L.block;
+    if (b && !b.said && now - b.at < 180000 && ago("block") > 120000) {
+      const ks = RICO.SETS.shipBlock.filter(sayable);
+      if (ks.length) { const k = pickLine(ks); b.said = 1; L.said.block = now; return { k, parts: [banded(k, b.n, b.h)] }; }
+    }
+    /* how the lagoon copes: when that changed, or every twelve minutes */
+    const ld = L.load;
+    if (ld && now - ld.at < 300000 && (ld.changed || ago("load") > 720000)) {
+      const l = line(ld.state === "calm" ? RICO.SETS.shipCalm : ld.state === "busy" ? RICO.SETS.shipBusy : ["ss_strain"], Q(LOADQ[ld.state], { n: ld.waiting, m: ld.sealed, a: ld.cruise }));
+      if (l) { ld.changed = false; L.said.load = now; return l; }
+    }
+    /* the tally, every six minutes or so */
+    const total = (S.pay || 0) + (S.bill || 0) + (S.book || 0) + (S.cancel || 0);
+    if (total >= 2 && ago("total") > 360000 && Math.random() < 0.6) {
+      const ks = RICO.SETS.shipTotal.filter(sayable);
+      if (ks.length) { const k = pickLine(ks); L.said.total = now; return { k, parts: [banded(k, total), { t: shipSoFar(S, v.kinds || ["pay"], true), v: null }] }; }
+    }
+    /* where most of them are: when that changed, or every ten minutes */
+    const top = Object.entries(v.at || {}).filter(([id, n]) => id !== "pier" && n >= 2 && RICO.L["sa_" + id]).sort((a, b) => b[1] - a[1])[0];
+    if (st.stage === "here" && top && (top[0] !== L.top || ago("place") > 600000) && Math.random() < 0.7) {
+      const l = line(["sa_" + top[0]], Q("({x}: {n} passengers)", { x: (SC.places[top[0]] || {}).name || SHIPAT[top[0]] || top[0], n: top[1] }));
+      if (l) { L.top = top[0]; L.said.place = now; return l; }
+    }
+    return null;
+  }
+  /* a listener (or an islander) calls about the ship near: each call once, until Rico has said a lot of other things */
+  function shipCall() {
+    if (ROT.callLast) return null;
+    const sf = shipFacts(), keys = RICO.CALLS.map((c, i) => (c.when && /ship|queen|dryrun|pirate/.test(c.when) && holds(sf, c.when) ? "call:" + i : null))
+      .filter(x => x && !SAID.includes(x) && sayable(x));
+    return keys.length ? dial(keys[Math.floor(Math.random() * keys.length)]) : null;
   }
   function shipShow() {
     if (SC.ship) SC.ship(SHIPV.v);
@@ -1540,22 +1790,29 @@
     b.textContent = (ph === "approach" ? F("🛳 {x} at {t}", { x: v.name, t: berlinHM(v.t0) })
       : ph === "waiting" ? F("🛳 {x} waits offshore", { x: v.name })
       : ph === "gone" ? F("🛳 {x} has left", { x: v.name })
+      : v.style === "pirate" ? F("🏴 {x} at anchor: {m} tricks refused by the chain", { x: v.name, m: (v.tricks || {}).stopped || 0 })
       : F("🛳 {x}: {n} ashore", { x: v.name, n: v.ashore || 0 })) + (v.preview ? " · " + T("preview") : "");
   }
-  /* a ring at the place each passenger transaction in a new block paid (a booking: the place it is for) */
+  /* a ring at the place each passenger transaction in a new block paid (a booking: the place it is for); a block with a
+     few of them is news for Rico's ship report (shipPort) */
   function shipSeen(nb) {
-    if (!SRC.ship.size || !SC.ping) return;
-    for (const b of nb) for (const tx of b.transactions || []) {
-      if (!SRC.ship.has(lc(tx.sender_pubkey))) continue;
-      const k = txKind(tx), tos = k === "user_tx" ? (((tx.operations || {})["1"]) || []).map(op => lc(op && op[1])) : k === "retractable_transfer" ? [lc(tx.recipient_pubkey)] : [];
-      tos.forEach(to => { const j = jarName(to); if (j && j !== "council") SC.ping(j); });
+    if (!SRC.ship.size) return;
+    for (const b of nb) {
+      let n = 0;
+      for (const tx of b.transactions || []) {
+        if (!SRC.ship.has(lc(tx.sender_pubkey))) continue;
+        n++;
+        const k = txKind(tx), tos = k === "user_tx" ? (((tx.operations || {})["1"]) || []).map(op => lc(op && op[1])) : k === "retractable_transfer" ? [lc(tx.recipient_pubkey)] : [];
+        if (SC.ping) tos.forEach(to => { const j = jarName(to); if (j && j !== "council") SC.ping(j); });
+      }
+      if (n >= 2) SHIPLIVE.block = { n, h: b.header.block_number, at: Date.now() };
     }
   }
   function shipCard() {
     const v = SHIPV.v; if (!v) return;
     openCard("pier", box => {
       const S = v.sent || {}, n = Object.values(S).reduce((a, b) => a + (Number(b) || 0), 0), K = v.kinds || ["pay"];
-      const book = K.includes("book") || S.book > 0, bill = K.includes("bill") || S.bill > 0, c = { p: S.pay || 0, g: S.bill || 0, b: S.book || 0, c: S.cancel || 0 };
+      const book = K.includes("book") || S.book > 0, bill = K.includes("bill") || S.bill > 0;
       const where = Object.entries(v.at || {}).filter(([, k]) => k > 0).sort((a, b) => b[1] - a[1])
         .map(([id, k]) => T((SC.places[id] || {}).name || SHIPAT[id] || id) + " " + k).join(" · ");
       const now = v.phase === "approach" ? F("Lands at {t}, German time, with {n} simulated passengers.", { t: berlinHM(v.t0), n: v.passengers })
@@ -1563,20 +1820,21 @@
         : v.phase === "gone" ? T(v.why === "no landing" ? "It sailed on without landing: the testnet was not calm."
           : v.why === "refused" ? "It left early: the node refused its passengers’ transactions, and the ship took them back at once."
           : "It left early: the testnet stalled, and the ship took its passengers back at once.")
+        : v.style === "pirate" ? F("{n} pirates aboard, at anchor until {t}: {b} tricks refused by the chain so far.", { n: v.passengers, t: berlinHM(v.end), b: (v.tricks || {}).stopped || 0 })
         : F("{a} of {n} passengers ashore, in port until {t}.", { a: v.ashore || 0, n: v.passengers, t: berlinHM(v.end) });
       box.append(el("h3", { text: v.name + (v.preview ? " · " + T("preview") : "") }),
-        el("p", { text: T(v.style === "expedition" ? "A small expedition ship with curious passengers: the lighthouse, Captain Wren’s Old Ship, the school, a dive on the reef." : "A big luxury liner: the spa at the South Current resort, Bar La Ola, song requests on Radio Coco, souvenirs.") }),
+        el("p", { text: T(v.style === "pirate" ? "A pirate ship. Its crew stays aboard and trades from the boat: rum at Bar La Ola, supplies at the market. Now and then a pirate tries a trick the chain must refuse." : v.style === "expedition" ? "A small expedition ship with curious passengers: the lighthouse, Captain Wren’s Old Ship, the school, a dive on the reef." : "A big luxury liner: the spa at the South Current resort, Bar La Ola, song requests on Radio Coco, souvenirs.") }),
         el("ul", { class: "cv-help" },
           el("li", { text: T("Nobody on board is a real person: our relay makes the passengers up. What they do here is real: every stop is a test transaction on Tau Testnet Alpha to the till of the place.") }),
+          v.style === "pirate" ? el("li", { text: T("The tricks: paying more than the wallet holds, sending a payment the chain already took a second time, a payment whose time ran out, a payment signed with another pirate’s key. Each one the chain refuses is the chain doing its job; the logbook shows its answer.") }) : null,
           book ? el("li", { text: T("Some book a dive or a treatment with the right to withdraw: the money waits in escrow until its time, then the chain pays the place by itself. A few change their minds and take it back.") }) : null,
           bill ? el("li", { text: T("At Bar La Ola a table pays one bill: a single transaction that pays the bar, Radio Coco and the Coconut Works at once.") }) : null,
           el("li", { text: T("At most twelve transactions a minute, only when the island bot has nothing to send; half as many while the testnet strains, and the ship leaves at once if it stalls. Its logbook keeps every one.") }),
           el("li", { text: now }),
-          n || v.phase !== "approach" ? el("li", { text: F(book && bill ? "So far: {p} payments, {g} group bills, {b} bookings, {c} withdrawn." : book ? "So far: {p} payments, {b} bookings, {c} withdrawn."
-            : bill ? "So far: {p} payments, {g} group bills." : "So far: {p} payments.", c) }) : null,
+          n || v.phase !== "approach" ? el("li", { text: shipSoFar(S, K, true) }) : null,
           where ? el("li", { text: where }) : null),
         el("div", { class: "cv-acts" },
-          btn(T("The logbook"), () => window.open("https://node.tauhud.com/cruise/log", "_blank", "noopener")),
+          btn(T("The logbook"), () => window.open("/cruise/", "_blank", "noopener")),
           btn(T("Testnet load"), () => window.open("/load/", "_blank", "noopener")),
           btn(T("Back to the island"), () => closeCard(), { go: true })));
     });
@@ -1627,7 +1885,7 @@
       for (const tx of txs) {
         const k = txKind(tx), paid = k === "user_tx" ? ((tx.operations || {})["1"] || []).reduce((a, x) => a + (Number(x && x[2]) || 0), 0) : Number(tx.amount) || 0;
         if (paid >= 100000) heard("whale", n);
-        if (KIND[k]) heard(KIND[k], n);
+        if (KIND[k] && !SRC.ship.has(lc(tx.sender_pubkey))) heard(KIND[k], n);   // a passenger's booking or withdrawal: Rico's ship report has it (shipNews)
         else if (k === "consensus_rule_update") heard(s.sim ? "lawSim" : "law", n);
       }
       if (s.sim) for (const d of TauSim.chain.dropped(n) || []) heard(d.type === "consensus_rule_update" ? "refusedLaw" : /o5|own rule|its rule/i.test(d.why || "") ? "refusedOwn" : "refused", n);
@@ -1679,7 +1937,12 @@
     const w = [V(s.sim ? "wxSim" : "wxChain")], band = set => { const k = pickLine(RICO.SETS[set]); markSaid(k); w.push(V(k)); };
     if (s.age > 10) { band(s.age >= 720 ? "fogDay" : s.age >= 180 ? "fogLong" : s.age >= 60 ? "fogHour" : "fog"); w.push(ago(at, s.age)); }
     else if (!txs) { band("calm"); w.push(Q("({n} empty blocks, up to block {y})", { n: s.bs.length, y: at })); }
-    else { band(txs <= s.bs.length / 2 ? "breeze" : "choppy"); w.push(Q("({n} transactions in the last {m} blocks, up to block {y})", { n: txs, m: s.bs.length, y: at })); }
+    else {
+      /* every sender known (relay /api/v1/sources/recent, for about the same blocks): who it is, not just "busy" */
+      const r = SRC.recent, who = r && r.to != null && Math.abs(r.to - s.h) <= 3 && RICO.wxSource ? RICO.wxSource(r.n) : null;
+      band(who ? who.set : txs <= s.bs.length / 2 ? "breeze" : "choppy"); w.push(Q("({n} transactions in the last {m} blocks, up to block {y})", { n: txs, m: s.bs.length, y: at }));
+      if (who && who.page) w.push(who.page === "hud" ? Q("(sent from tauhud.com)") : /^(direct|elsewhere)$/.test(who.page) ? Q("(sent from the Tau HUD wallet)") : Q("(sent from tauhud.com/{x}/)", { x: who.page }));
+    }
     const rules = s.bs.filter(b => (b.transactions || []).some(tx => txKind(tx) === "rule_deploy")).map(b => b.header.block_number);
     if (rules.length) w.push(V("rule"), Q("(block {y})", { y: String(rules[rules.length - 1]) }));
     band(s.wait ? "showers" : "clear"); if (s.wait) w.push(Q("({n} waiting)", { n: s.wait }));
@@ -1691,14 +1954,16 @@
   /* a listener phones in: Rico picks up, the caller asks in their own voice (through the telephone), Rico answers */
   /* a call is a little conversation: the caller, Rico, the caller again, a goodbye, and Rico signs off (rico.js CALLS) */
   function phoneIn() {
-    /* when: solo or fresh (the chain), or the cruise ships' week like talk.js ("shipTomorrow+queen") */
-    const sf = shipFacts(), ok = c => !c.when || (c.when === "solo" ? RADAR.solo : c.when === "fresh" ? RADAR.fresh : holds(sf, c.when));
+    /* when: solo or fresh (the chain). The calls about the cruise ships ("shipTomorrow+queen", like talk.js) come with
+       Rico's ship talk instead (shipLine), as often as a ship is near */
+    const ok = c => !c.when || (c.when === "solo" ? RADAR.solo : c.when === "fresh" ? RADAR.fresh : false);
     const keys = RICO.CALLS.map((c, i) => ok(c) ? "call:" + i : null).filter(Boolean);
     if (SND.on && RICO.voiced && !keys.some(x => RICO.voiced(x) !== false)) return null;   // no call has its voices yet: something Rico can say aloud instead
-    /* an islander calling about the ship near goes first, once (with the sound on: once its voices are there) */
-    const ship = keys.filter(x => /ship/.test(RICO.CALLS[+x.slice(5)].when || "") && !SAID.includes(x) && !(SND.on && RICO.voiced && RICO.voiced(x) === false));
-    const k = ship.length ? ship[Math.floor(Math.random() * ship.length)] : pickLine(keys), c = RICO.CALLS[+k.slice(5)];
-    const ring = pickLine(RICO.SETS.ring), bye = pickLine(RICO.SETS.bye); markSaid(ring); if (!c.cut) markSaid(bye);
+    return dial(pickLine(keys));
+  }
+  /* the phone rings, the conversation, Rico's goodbye */
+  function dial(k) {
+    const c = RICO.CALLS[+k.slice(5)], ring = pickLine(RICO.SETS.ring), bye = pickLine(RICO.SETS.bye); markSaid(ring); if (!c.cut) markSaid(bye);
     return { k, parts: RICO.call(c, ring, bye), call: true };
   }
   /* chain news as a host tells it: big moments with a sting before and a word after, small ones now and then */
@@ -1725,6 +1990,8 @@
     ROT.newsLast = false;
     /* a new song on the radio: Rico says what it is */
     if (DJ.songNew && RICO.L["sn_" + DJ.songNew] && !(SND.on && RICO.voiced && RICO.voiced("sn_" + DJ.songNew) === false)) { const k = "sn_" + DJ.songNew; DJ.songNew = null; return { k, parts: [V(k)] }; }
+    /* a cruise ship near: Rico talks about it, the more the nearer it is, and reports from the island while she is in */
+    const sh = shipLine(); if (sh) return sh;
     /* in between: the game, a joke now and then, the phone-in, Tau corner, a word between songs, the jungle legend, the island's habits */
     /* the chain has stood still for an hour or more: Rico talks about it now and then, not only in the weather */
     const st = RADAR.snap;
@@ -1732,7 +1999,7 @@
     const r = Math.random();
     if (r < 0.26) { const L = djLines(), c = unsaid(L.map(l => l.k)), k = c[Math.floor(Math.random() * c.length)]; const l = L.find(x => x.k === k); if (l) return l; }
     /* the phone-in is the busiest part of the show: about one line in three, never two calls in a row */
-    const set = r < 0.42 ? "joke" : r < 0.72 ? (ROT.callLast ? "net" : "call") : r < 0.76 ? "corner" : r < 0.81 ? (Math.random() < 0.25 ? "dunno" : "lagoon") : r < 0.85 ? "segue" : r < 0.89 ? "legend" : r < 0.93 ? "mainland" : r < 0.96 ? "net" : "general";
+    const set = r < 0.35 ? "joke" : r < 0.42 ? "salado" : r < 0.72 ? (ROT.callLast ? "net" : "call") : r < 0.76 ? "corner" : r < 0.81 ? (Math.random() < 0.25 ? "dunno" : "lagoon") : r < 0.85 ? "segue" : r < 0.89 ? "legend" : r < 0.93 ? "mainland" : r < 0.96 ? "net" : "general";
     ROT.callLast = false;
     /* a thank-you to the builders now and then reads the title of their latest change, shown between two spoken halves */
     if (set === "lagoon" && SRC.title && Math.random() < 0.3 && !SAID.slice(-40).includes("bld4a")) return { k: "bld4a", parts: [V("bld4a"), Q("“{x}”", { x: SRC.title }), V("bld4b")] };
@@ -1745,7 +2012,10 @@
   readChain(); setInterval(() => { if (!away()) readChain(); }, 90000);
   dejaFetch(); setInterval(() => { if (!away()) dejaFetch(); }, 600000);
   srcFetch(); setInterval(() => { if (!away()) srcFetch(); }, 600000);
-  if (QS.get("rico") === "sources") window.__sources = { sources, share, call, SRC, RADAR, story, nextLine };   // the headless check (tests)
+  /* who sent the last blocks' transactions (totals only), for the chain weather */
+  const recentFetch = () => { if (window.TauSim && TauSim.on) return; fetch("https://node.tauhud.com/api/v1/sources/recent", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => { if (j && j.n) SRC.recent = j; }, () => {}); };
+  recentFetch(); setInterval(() => { if (!away()) recentFetch(); }, 60000);
+  if (QS.get("rico") === "sources") window.__sources = { sources, share, call, SRC, RADAR, story, nextLine, markSaid, shipStage, shipOdds, shipLine, shipPick, SHIPLIVE, SHIPV, ROT };   // the headless check (tests)
   setInterval(() => {
     if (!G || G.over || G.counting || away() || performance.now() < DJ.next || SND.gap) return;
     /* the Night Line's hour belongs to the callers between the songs (the show's opener still comes first) */
@@ -1968,7 +2238,7 @@
         if (m.command === "isle") { if (m.status === "ok" && m.data && m.data.day) onIsle(m.data); else if (m.status === "ok" && m.data && m.data.board && typeof m.data.board === "object") onBoard(m.data.board); return; }   // the shared island: pushes and acks, never an answer someone waits for
         const q = CHAIN.wait.get(m.command); if (q && q.length) q.shift()(m);
       };
-      ws.onerror = ws.onclose = () => { if (CHAIN.ws === ws) CHAIN.ws = null; res(null); };
+      ws.onerror = ws.onclose = () => { if (CHAIN.ws === ws) CHAIN.ws = null; res(null); isleRetry(); };
     });
   }
   async function ask(cmd, ms = 12000) {
@@ -2070,12 +2340,18 @@
       let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; }
       if (m.command !== "getbalance") return;
       const d = m.data || {}, c = Object.keys(CANDS).find(k => ADDR[k] === String(d.address || "").toLowerCase());
-      if (m.status === "ok" && c) { BAL.n[c] = Math.floor(Number(d.balance) || 0); todo.splice(todo.indexOf(c), 1); }
+      if (m.status === "ok" && c) { BAL.n[c] = votesIn(d.balance); todo.splice(todo.indexOf(c), 1); }
       if (!todo.length) { BAL.state = "ok"; clearTimeout(stop); try { ws.close(); } catch (e) {} ballotLine(); return; }
       setTimeout(ask, m.status === "ok" ? 300 : 1500);
     };
     ws.onerror = () => { BAL.state = "off"; ballotLine(); };
   }
+  /* the testnet runs with its auto-faucet on: an account it has never seen answers getbalance with the faucet's 100,000
+     test AGRS, though nothing was ever sent to it. A ballot box has no key and never sends, and the first vote into it
+     counts from 0, so a box that reads exactly the faucet amount has had no vote yet (a box with real votes would need
+     100,000 of them to read that). */
+  const FAUCET = 100000;
+  const votesIn = bal => { const n = Math.floor(Number(bal) || 0); return n === FAUCET ? 0 : n; };
   /* the visitors' choice: the candidate whose box holds the most, if one leads */
   const visitorsPick = () => { if (BAL.state !== "ok") return null; const s = Object.keys(CANDS).sort((a, b) => (BAL.n[b] || 0) - (BAL.n[a] || 0)); return (BAL.n[s[0]] || 0) > (BAL.n[s[1]] || 0) ? s[0] : null; };
   function ballotLine() {
@@ -2104,11 +2380,24 @@
   }
   /* the visitor's test wallet address, if this browser has one (never made here: the first signed move makes it) */
   const myPk = () => { try { const k = JSON.parse(store.get(WKEY) || "null"); return k && /^[0-9a-f]{96}$/.test(k.pk || "") ? k.pk : null; } catch (e) { return null; } };
-  function isleJoin() { ISLE.want = true; relay().then(ws => { if (ws) try { ws.send("isle join"); } catch (e) {} }); }
+  function isleJoin() { ISLE.want = true; relay().then(ws => { if (ws) try { ws.send("isle join"); ISLE.wait = 0; } catch (e) {} }); }
+  /* "playing now" counts the games that are open: a dropped socket joins again by itself (15 s, then slower), and a tab
+     left in the background for five minutes leaves the island until someone looks at it again */
+  function isleRetry() {
+    if (!ISLE.want || ISLE.retry) return;
+    ISLE.wait = Math.min(120000, (ISLE.wait || 7500) * 2);
+    ISLE.retry = setTimeout(() => { ISLE.retry = null; if (ISLE.want) isleJoin(); }, ISLE.wait);
+  }
+  document.addEventListener("visibilitychange", () => {
+    clearTimeout(ISLE.idle);
+    if (document.hidden) ISLE.idle = setTimeout(() => { if (!ISLE.want) return; ISLE.want = false; ISLE.away = true; if (CHAIN.ws && CHAIN.ws.readyState === 1) try { CHAIN.ws.send("isle leave"); } catch (e) {} }, 300000);
+    else if (ISLE.away) { ISLE.away = false; isleJoin(); }
+  });
   function onIsle(s) {
     ISLE.s = s; ISLE.at = Date.now();
     isleRule(); isleChip();
     document.querySelectorAll(".cv-isle-intro").forEach(p => p.replaceWith(isleIntro()));
+    document.querySelectorAll(".cv-isle-gov").forEach(p => p.replaceChildren(...isleGov()));
     const bd = UI.card && UI.card._board && UI.card.querySelector(".cv-board"); if (bd && s.board) { bd.replaceWith(boardBody(s.board)); fitCard(UI.card); }
   }
   const isleTop = (o, n = 1) => Object.keys(o || {}).sort((a, b) => o[b] - o[a]).slice(0, n);
@@ -2153,24 +2442,25 @@
   }
   const isleLine = e => e.k === "won" ? F("{x} won a campaign played as {y}", { x: nm(e.c), y: nm(e.x) }) : isleWho(e) + " " + isleText(e);
   const isleAgo = t => { const m = Math.max(0, Math.round((Date.now() / 1000 - t) / 60)); return m < 1 ? T("just now") : m < 120 ? F("{n} min ago", { n: m }) : F("{n} h ago", { n: Math.round(m / 60) }); };
+  /* the live counter: people with the game open right now, you included, counted by the relay (one browser once) */
   function isleChip() {
     const b = $("cvIsle"); if (!b) return;
     const s = ISLE.s; b.hidden = !s; if (!s) return;
-    const n = s.players.campaigns, here = s.here || 0;
-    const t = here > 1 ? F("{n} on the island now", { n: here }) : n ? F("{n} campaigns today", { n }) : T("The island today");
-    b.replaceChildren(el("i", { class: "dot" + (s.lastHour ? " on" : "") }), el("span", { text: t }));
-    b.title = T("Every campaign played today on this island, added up");
+    const n = s.players.campaigns, here = Math.max(1, s.here || 0);
+    b.replaceChildren(el("i", { class: "dot now", "aria-hidden": "true" }), el("b", { class: "num", text: String(here) }), el("span", { class: "lb", text: T("playing now") }));
+    b.title = F("{n} playing now, you included: people with White Rabbit Key open, counted live by the relay.", { n: here }) + "\n" + (n ? F("{n} campaigns today. Click: the island today.", { n }) : T("Click: the island today."));
+    b.setAttribute("aria-label", F("{n} playing now", { n: here }));
   }
-  /* on the start card: who else is on the island today */
+  /* on the start card: a chip that says the island is shared, and who else is on it right now (counted live by the
+     relay; until it answers, the words alone), and a line under the four with this week's governor */
   function isleIntro() {
-    const s = ISLE.s, p = el("p", { class: "cv-isle-intro cv-note" }); if (!s) return p;
-    const n = s.players.campaigns, here = s.here || 0;
-    p.append(el("b", { text: T("The island today:") }), " ", n
-      ? F("{n} campaigns so far, {m} finished.", { n, m: s.players.finished }) + (here > 1 ? " " + F("{n} people on the island right now.", { n: here }) : "")
-      : T("no visitor has campaigned yet today. The islanders are at it already; yours would be the first campaign."));
-    const last = isleLast(); if (last) p.append(" ", Fd("{x} governs the island this week.", { x: nm(last.governor) }));
-    return p;
+    const s = ISLE.s, c = el("span", { class: "ivc cv-isle-intro", title: T("Everyone this week plays the same island, each their own campaign against the island’s three rivals; every finished campaign counts for its candidate. The relay counts who has the page open right now.") });
+    const n = s ? s.players.campaigns : 0, here = s ? Math.max(1, s.here || 0) : 1;
+    c.append(el("i", { class: "dot" + (here > 1 ? " now" : ""), "aria-hidden": "true" }), el("span", { text: !s ? T("Shared island: everyone plays the same week")
+      : (here > 1 ? F("{n} playing now", { n: here }) : T("Shared island")) + " · " + (n ? F("{n} campaigns today", { n }) : T("yours would be the first campaign today")) }));
+    return c;
   }
+  function isleGov() { const last = isleLast(); return last ? [el("b", { text: T("The island:") }), " ", Fd("{x} governs the island this week.", { x: nm(last.governor) })] : []; }
   /* each morning the paper says what the whole island talks about, and people who care about it lean a little toward
      whoever has that law in force in this game: the same nudge whether one campaign or a thousand were played */
   function isleMorning() {
@@ -2290,23 +2580,90 @@
   /* ---------- the start: pick your candidate ---------- */
   function start() {
     G = load();
-    if (G) { G.onchain = true; hud(); if (G.picked === "…") G.picked = null; signUp(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); return; }
+    if (G) { G.onchain = true; hud(); if (G.picked === "…") G.picked = null; signUp(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); setTimeout(signsOn, 800); return; }
     SC.setHour(0, true); hud();
+    openCard(null, introCard);
+  }
+  /* ---------- signs at the places until the first move: a newcomer sees at once where to go, and that a tap is a move ----------
+     The names stand over the buildings, the council hall marked as the place to start. They follow the island when it is
+     panned on a phone, hide behind every card, and never come back once a move was made in this browser. */
+  const SIGNS = ["hall", "market", "radio", "north", "south", "bar", "book"], SIGNED = "rabbit-first-move";
+  let signsRaf = 0;
+  function signsOn() {
+    if (store.get(SIGNED) || !G || G.over || G.move >= MOVES || $("cvSigns")) return;
+    const host = el("div", { class: "signs", id: "cvSigns", "aria-label": T("Places on the island") });
+    const few = $("cvStage").clientWidth < 700;   // a phone: the four that matter first, the embassies and the bar stay in ☰
+    SIGNS.filter(id => SC.places[id] && PLACE[id] && !SC.locked(id) && !(few && /^(north|south|bar)$/.test(id))).forEach(id => {
+      const b = el("button", { type: "button", class: "sign" + (id === "hall" ? " go" : ""), "data-id": id, onclick: e => { e.stopPropagation(); wake(); if (G && !UI.card) openCard(id, PLACE[id]); } }, el("b", { text: T(SC.places[id].name) }));
+      if (id === "hall") b.append(el("small", { text: T("Start here: propose a law") }));
+      host.append(b);
+    });
+    $("cvStage").append(host);
+    /* each sign hangs under its place's ground point; one that would cover another slides down, one at the edge slides in */
+    const place = () => {
+      if (!host.isConnected) { signsRaf = 0; return; }
+      const W = host.clientWidth, put = [];
+      for (const b of host.querySelectorAll(".sign")) {
+        const p = SC.places[b.dataset.id] || {}, w = b.offsetWidth, h = b.offsetHeight; let [x, y] = SC.toScreen(p.x, p.y);
+        x = Math.max(w / 2 + 4, Math.min(W - w / 2 - 4, x)); y += 10;
+        const base = y;   // a sign in another's way moves up when its place stands higher on the island, else down, until it is clear
+        for (let n = 0, moved = true; moved && n < 8; n++) { moved = false; for (const o of put) if (Math.abs(o.x - x) < (o.w + w) / 2 + 6 && y < o.y + o.h + 6 && y + h + 6 > o.y) { y = base < o.base ? o.y - h - 8 : o.y + o.h + 8; moved = true; } }
+        put.push({ x, y, w, h, base }); b.style.left = x + "px"; b.style.top = y + "px";
+      }
+      signsRaf = requestAnimationFrame(place);
+    };
+    place();
+  }
+  function signsOff() { const s = $("cvSigns"); if (s) s.remove(); if (signsRaf) { cancelAnimationFrame(signsRaf); signsRaf = 0; } }
+  /* a laptop or a desktop: the four candidates stand large across the island at dusk, as in a game's opening scene, the
+     facts in a quiet strip below them. A phone, or a screen too low for that, keeps the plate with four small faces. */
+  const wideIntro = () => { const st = $("cvStage"); return !LAND.matches && innerWidth >= 900 && st.clientWidth >= 860 && st.clientHeight >= 480; };
+  function introCard(box) {
+    const wide = wideIntro(), stH = $("cvStage").clientHeight;
+    box.classList.add("intro"); box.classList.toggle("wide", wide); box.classList.toggle("low", wide && stH < 760); box._wide = wide;
+    /* the first twenty seconds, before the four faces: what the game is, what you are after, who the rivals are and why
+       every move is on Tau; three chips under it say the same in three words each, one of them counted live */
+    box.append(el("div", { class: "iv-head" }, el("p", { class: "kick", text: T("An election game on Tau Testnet Alpha") }), el("h2", { text: T("White Rabbit Key") }),
+      el("p", { class: "cv-line", text: T("Run for governor of a small island. Your three rivals are played by the island; ten islanders vote on Sunday night, and whoever wins more of them governs next week. Three moves a day, each one a real transaction on Tau Testnet Alpha from a test wallet this browser makes for you. Other people play beside you this week: on Sunday night every campaign counts.") }),
+      el("div", { class: "iv-chips" },
+        el("span", { class: "ivc", title: T("1 test AGRS per move, paid to the place where you make it. Wages and embassy money come back into your wallet; the rivals’ moves go on chain too. Test AGRS have no value.") }, el("i", { class: "dot", "aria-hidden": "true" }), el("span", { text: T("Every move: a real testnet transaction") })),
+        isleIntro(),
+        el("span", { class: "ivc", title: T("Ten islanders vote in every campaign. Every campaign won this week is a ballot for its candidate; the one with the most governs the island next week.") }, el("i", { class: "dot", "aria-hidden": "true" }), el("span", { text: Fd("Election Sunday night · count {x}", { x: countIn() }) })))));
+    const pick = el("div", { class: "cv-pick" });
+    /* wide: a canvas as large as the figure will stand (about half the stage high), drawn at twice that for sharpness */
+    const big = Math.max(240, Math.min(640, Math.round(stH * 0.6)));
+    Object.keys(CANDS).forEach(c => pick.append(el("button", { type: "button", class: "cv-cand", title: wide ? nm(c) + " · " + T(CANDS[c].role) : null, onclick: () => begin(c) },
+      wide ? el("span", { class: "fig" }, portrait(c, big, 0, true)) : portrait(c, innerWidth < 760 || innerHeight < 520 ? 56 : 96),
+      el("span", { class: "plate" }, el("b", { translate: "no", text: nm(c) }), el("small", { text: T(CANDS[c].role) }), el("em", { text: T(CANDS[c].pitch) })))));
+    box.append(el("div", { class: "iv-cast" }, el("p", { class: "cv-h", text: T("Which candidate are you?") }), pick));
+    /* under the four: the week in one line, who governs, the island's ballot as the chain shows it, the wallet */
+    const td = todayIdx();
+    const camp = [el("b", { text: T("Your campaign:") }), " ", T("this week, Monday to Sunday. An island day is a real day: three moves, a few minutes. Sunday evening the islanders vote."), " ",
+      td === 1 ? T("Today is Monday: the week begins.") : td === DAYS ? T("Today is Sunday: play the whole week now, the vote is tonight.") : Fd("Today is {x}: catch up Monday to {y} briefly or start today, then a day a day.", { x: dayName(td), y: dayName(td - 1) })];
+    box.append(el("div", { class: "iv-facts" }, el("p", { class: "cv-note" }, ...camp), el("p", { class: "cv-note cv-isle-gov" }, ...isleGov()), ballotEl(),
+      el("p", { class: "cv-note cv-chain" }, el("a", { href: "/wallet/", text: T("Your test wallet") }), " · ", el("span", { text: T("Test AGRS have no value.") }))));
+  }
+  /* once per browser, after the first move signed into the testnet: where that move can be seen, and the two other pages
+     the same test wallet opens. Shown at the first quiet moment, so it never cuts into a scene. */
+  function bridgeCard() {
+    store.set("rabbit-bridged", "1");
+    const pk = myPk(), h = /^[0-9a-f]{64}$/.test(G.picked || "") ? G.picked : null, lang = window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "";
+    const open = u => window.open(u, "_blank", "noopener");
     openCard(null, box => {
-      box.classList.add("intro");
-      box.append(el("p", { class: "kick", text: T("Sunday night the island elects a governor") }), el("h2", { text: T("White Rabbit Key") }),
-        el("p", { class: "cv-line", text: T("Four islanders stand for governor, and you are one of them. Each day you have three moves: propose laws, talk to people, buy a line on the radio, take an embassy’s money, make pacts. Everything anyone does is written into the Book in the lighthouse, where anyone can read it.") }));
-      const pick = el("div", { class: "cv-pick" });
-      Object.keys(CANDS).forEach(c => pick.append(el("button", { type: "button", class: "cv-cand", onclick: () => begin(c) }, portrait(c, innerWidth < 760 || innerHeight < 520 ? 56 : 96), el("b", { translate: "no", text: nm(c) }), el("small", { text: T(CANDS[c].role) }), el("em", { text: T(CANDS[c].pitch) }))));
-      box.append(el("p", { class: "cv-h", text: T("Which candidate are you?") }), pick);
-      const td = todayIdx();
-      box.append(el("p", { class: "cv-note" }, el("b", { text: T("Your campaign:") }), " ", T("this week, Monday to Sunday. An island day is a real day: three moves, a few minutes. Sunday evening the islanders vote."), " ",
-        td === 1 ? T("Today is Monday: the week begins.") : td === DAYS ? T("Today is Sunday: play the whole week now, the vote is tonight.") : Fd("Today is {x}: play Monday to {x} now, then a day a day.", { x: dayName(td) }),
-        el("br"), el("b", { text: T("The island:") }), " ", Fd("every campaign won is a ballot for its candidate; governor’s count {x}, Monday 00:00 German time.", { x: countIn() })), ballotEl(), isleIntro());
-      /* every move is a real test transaction, always: said plainly here instead of a box to tick */
-      box.append(el("p", { class: "cv-chain" }, el("span", { text: T("Every move is real: it is signed into Tau Testnet Alpha from a test wallet made for you in this browser, and paid to the place where you make it (1 test AGRS, a line on Radio Coco 25). Wages and embassy money come back into that wallet. The rivals’ moves go there too. Test AGRS have no value.") }), " ", el("a", { href: "/wallet/", text: T("Your test wallet") })));
+      box.classList.add("paper");
+      box.append(el("div", { class: "cv-paper" }, el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: T("Extra") }),
+        el("p", { class: "lead", text: T("Your first move is on Tau Testnet Alpha: 1 test AGRS to the Book, signed by the test wallet this browser made for you. The same wallet opens two more pages, and Agorzilla eats transactions like yours.") }),
+        el("ul", null, el("li", { text: T("Explorer: the transaction itself, and the block that sealed it.") }),
+          el("li", { text: T("Your Tau card: one picture of what this wallet did on the testnet, to post or keep.") }),
+          el("li", { text: T("Agorzilla: a creature fed by live testnet transactions, with its own test wallet on agorzilla.com.") }))),
+        el("div", { class: "cv-acts" },
+          btn(T("See it in the Explorer"), () => open(h ? "/explorer/?tx=" + h + lang : "/explorer/?a=" + pk + lang), { go: true }),
+          btn(T("Your Tau card"), () => open("/card/?a=" + pk + lang)),
+          btn(T("Feed Agorzilla"), () => open("https://agorzilla.com/")),
+          btn(T("Back to the island"), () => closeCard())));
     });
   }
+  setInterval(() => { if (G && !G.over && G.picked && G.picked !== "…" && myPk() && !store.get("rabbit-bridged") && !UI.card && !drawer && !document.hidden) bridgeCard(); }, 4000);
   function dragHint() {
     if (!matchMedia("(pointer: coarse) and (orientation: portrait)").matches || store.get("rabbit-drag-hint")) return;
     setTimeout(() => { if (G && !UI.card && SC.canPan()) { store.set("rabbit-drag-hint", "1"); toast(T("Drag the island to look around, or turn your phone sideways. ☰ lists every place.")); } }, 3500);
@@ -2314,10 +2671,35 @@
   function begin(c) {
     G = fresh(c); save();
     signUp();
-    news(T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book."), RICO.L.bkWeek);
-    isleRule();
-    closeCard(); hud();
-    welcome();
+    const start = () => {
+      news(T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book."), RICO.L.bkWeek);
+      isleRule();
+      closeCard(); hud();
+      welcome();
+    };
+    const td = todayIdx();
+    if (!FREE && td > 1 && td < DAYS) return lateCard(td, start);
+    start();
+  }
+  /* a campaign begun in the middle of the week: the days before today are either played briefly, one move a day with the
+     rivals moving every night as usual, or skipped, the rivals' nights run and the campaign starts today with three moves.
+     A Sunday start keeps the whole week in one go: the vote is tonight. */
+  const briefDay = () => !!(G && G.brief && !FREE && G.day < todayIdx());
+  function lateCard(td, then) {
+    openCard(null, box => {
+      box.classList.add("paper");
+      box.append(el("div", { class: "cv-paper" }, el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: dayName(td) }),
+        el("p", { class: "lead", text: Fd("It is {x} already: Monday to {y} went by without you. Catch up briefly, or start today with the island as the rivals left it.", { x: dayName(td), y: dayName(td - 1) }) })),
+        el("div", { class: "cv-acts" },
+          btn(T("Catch up briefly"), () => { G.brief = true; if (briefDay()) G.move = MOVES - 1; save(); then(); }, { go: true, sub: Fd("{n} days with one move each, then today with three", { n: td - 1 }) }),
+          btn(T("Play from today"), () => { skipTo(td); then(); }, { sub: T("Three moves today; what the rivals did until now is in the Book") })));
+    });
+  }
+  function skipTo(td) {
+    while (G.day < td) { night(); G.day++; }
+    G.move = 0; G.skipped = td - 1;
+    news(Fd("{x} joined the race on {y}; until then the rivals had the island to themselves.", { x: nm(G.me), y: dayName(td) }), RICO.L.bkWeek);
+    save();
   }
   /* the pick is the campaign's first transaction, with no click of its own: as Old Sam writes the name into the Book, the
      visitor's test wallet (made here if there is none yet) signs 1 test AGRS to the Book's till. Once it is through, the
@@ -2342,7 +2724,8 @@
     hana: "So it is true, Hana: your name is on the list, in my own hand. Four candidates, one governor’s chair under the council tree, and on Sunday night the ten islanders who vote choose who sits in it. You write everything down, so you know how this works. Laws are made in the Council Hall. Everything else is written here.",
   };
   function welcome() {
-    const go = () => { closeCard(); toast(T("Tap a place on the island to begin.")); dragHint(); };
+    const after = () => { toast(T("Tap a sign for your first move: a real transaction on Tau Testnet Alpha.")); signsOn(); dragHint(); };
+    const go = () => { closeCard(); const pend = G.pending.splice(0); if (pend.length) councilQueue(pend, after); else after(); };   // a campaign begun today: the rivals' laws from the skipped nights come to the council first
     openCard("book", box => {
       box.classList.add("welcome");
       scene(box, "sam", T("Your name in the Book"), T(WELCOME[G.me]), [btn(T("Walk onto the island"), go, { go: true })],
@@ -2441,18 +2824,25 @@
     const where = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
     cv.addEventListener("pointermove", e => {
       if (UI.card) { tip.hidden = true; cv.style.cursor = SC.hit(...where(e)) === "deja" ? "pointer" : "default"; return; }
-      const id = SC.hit(...where(e)); SC.glow(SC.places[id] ? id : null); cv.style.cursor = id ? "pointer" : "default";
-      if (!id) { tip.hidden = true; return; }
-      tip.hidden = false; tip.textContent = id === "rabbit" ? T("The white rabbit: follow it") : id === "agorzilla" ? T("Something moves in the jungle") : id === "deja" ? T("Déjà, the café cat") : T(SC.places[id].name);
-      const r = $("cvStage").getBoundingClientRect(); tip.style.left = Math.min(r.width - 180, e.clientX - r.left + 14) + "px"; tip.style.top = (e.clientY - r.top + 14) + "px";
+      const id = SC.hit(...where(e)); cv.style.cursor = id ? "pointer" : "default";   // only the name and the hand: the painting itself never lights up under the mouse
+      UI.q = false;
+      if (!id) { if (SC.lockedAt(...where(e))) tipAt(e, "?"); else tip.hidden = true; return; }   // a quarter not open yet: only a "?"
+      tipAt(e, id === "rabbit" ? T("The white rabbit: follow it") : id === "agorzilla" ? T("Something moves in the jungle") : id === "deja" ? T("Déjà, the café cat") : T(SC.places[id].name));
     });
-    cv.addEventListener("pointerleave", () => { tip.hidden = true; if (!UI.card) SC.glow(null); });
+    function tipAt(e, text) {   // the label next to the pointer
+      tip.hidden = false; tip.textContent = text;
+      const r = $("cvStage").getBoundingClientRect(); tip.style.left = Math.min(r.width - 180, e.clientX - r.left + 14) + "px"; tip.style.top = (e.clientY - r.top + 14) + "px";
+    }
+    cv.addEventListener("pointerleave", () => { tip.hidden = true; });
+    cv.addEventListener("pointerdown", e => { UI.touch = e.pointerType !== "mouse"; });
     cv.addEventListener("click", e => {
       wake();
       if (!G) return;
       if (SC.hit(...where(e)) === "deja") { deja(); return; }   // she may sit in a room while its card is open
       if (UI.card) { if (!UI.card.classList.contains("intro") && !UI.card.classList.contains("paper") && !UI.card.classList.contains("end") && !UI.card.classList.contains("locked")) closeCard(); return; }
       const id = SC.hit(...where(e)); tip.hidden = true;
+      /* a tap on a quarter not open yet (a phone has no hover): the "?" for a moment */
+      if (!id && SC.lockedAt(...where(e))) { tipAt(e, "?"); if (UI.touch) { UI.q = true; clearTimeout(UI.qt); UI.qt = setTimeout(() => { if (UI.q) tip.hidden = true; }, 1400); } return; }
       if (id === "rabbit") { if (G.over || G.move >= MOVES) return; const [to, line] = hint(); toast(line); SND.sfx("tap"); setTimeout(() => openCard(to, PLACE[to]), 700); return; }
       if (id === "agorzilla") { legend(); return; }
       if (id && PLACE[id]) openCard(id, PLACE[id]);
@@ -2503,6 +2893,7 @@
         if (p && p.then) p.then(turn, () => {}); else turn();
       } catch (err) {}
     };
+    const pf = $("cvPlayFull"); if (pf) pf.onclick = e => fs.onclick(e);   // the big button on a phone held upright does what ⛶ does
     ["fullscreenchange", "webkitfullscreenchange"].forEach(n => document.addEventListener(n, () => { if (!fsEl() && canFs) full(false); }));
     if (navigator.standalone || matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches) full(true);   // started from the home screen
     /* ☰: every place as a button (the island is small on a phone, and some quarters sit at its edges) */

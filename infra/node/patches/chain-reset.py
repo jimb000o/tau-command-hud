@@ -5,8 +5,8 @@ On a PoA testnet with a single bootnode the operators restart the chain
 now and then (2026-10-27: twice). The restarted chain keeps the genesis
 but every later block differs, and a node that stored blocks of the old
 run sees the bootnode's head below its own height and concludes "nothing
-to sync" forever. When the configured bootnode's head is lower than our
-stored height and we do not have the block it names, this patch writes
+to sync" forever. When the configured bootnode's head (at the handshake, or in
+its head announces while we stay connected) is lower than our stored height and we do not have the block it names, this patch writes
 /data/chain-reset and exits; start.sh wipes the chain data (identity kept)
 and the container restarts onto the live chain.
 
@@ -33,6 +33,8 @@ replace_once(
     "\n"
     "\n"
     "CHAIN_RESET_MARKER = os.environ.get(\"TAU_CHAIN_RESET_MARKER\", \"/data/chain-reset\")\n"
+    "# a reorg replaces at most a few blocks; a restart drops the whole run\n"
+    "CHAIN_RESET_MARGIN = 3\n"
     "\n"
     "\n"
     "def highest_stored_block() -> int:\n"
@@ -100,6 +102,30 @@ replace_once(
     "\n"
     "    def _self_advertised_addrs(self) -> List[str]:\n",
     "bootstrap helper",
+)
+replace_once(
+    "        # Already have the announced tip (e.g. a head re-announce heartbeat\n",
+    "        # The bootnode announces its head every few seconds. When it names a block\n"
+    "        # we never saw, well below our highest stored block, the chain was restarted\n"
+    "        # while we stayed connected (the handshake check never runs again then).\n"
+    "        try:\n"
+    "            remote_n = int(payload.get(\"tip_number\"))\n"
+    "        except (TypeError, ValueError):\n"
+    "            remote_n = None\n"
+    "        if remote_n is not None and remote_tip and origin and self._is_bootstrap_peer(origin):\n"
+    "            try:\n"
+    "                import db\n"
+    "                stored_height = highest_stored_block()\n"
+    "                if (remote_n + CHAIN_RESET_MARGIN < stored_height\n"
+    "                        and db.get_block_by_hash(str(remote_tip)) is None):\n"
+    "                    request_chain_reset(\n"
+    "                        f\"bootnode {origin} announces head #{remote_n} {str(remote_tip)[:16]}, \"\n"
+    "                        f\"below our stored height #{stored_height} and unknown to us\")\n"
+    "            except Exception:\n"
+    "                logger.debug(\"chain reset check on announce failed\", exc_info=True)\n"
+    "\n"
+    "        # Already have the announced tip (e.g. a head re-announce heartbeat\n",
+    "gossip head check",
 )
 replace_once("\nimport logging\n", "\nimport logging\nimport os\n", "os import")
 service.write_text(src)

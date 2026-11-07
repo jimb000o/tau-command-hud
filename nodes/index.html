@@ -121,7 +121,7 @@ tr.off .name { color: var(--text); font-weight: 400; }
 .agree.behind { color: #ffb13b; font-weight: 600; }
 .bar { display: inline-block; width: 54px; height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; margin-right: 8px; vertical-align: 1px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: #fff; }
-.tag { display: inline-block; margin-left: 8px; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; vertical-align: 1px; }
+.tag { display: inline-block; margin-left: 8px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; vertical-align: 1px; }
 tr.ref td { background: rgba(255,255,255,.025); }
 /* free places: what the board looks like with you on it */
 tr.free td { color: rgba(255,255,255,.22); border-bottom: 1px dashed rgba(255,255,255,.07); }
@@ -263,7 +263,7 @@ html.fit.wide .col3 > .faq { flex: 1 1 0; }
             <li><span><b>Your name on this board</b>, ranked by how long and how steadily your node runs.</span></li>
             <li><span><b>A live badge</b> for your README or website.</span></li>
             <li><span><b>A chain you checked yourself</b>, block for block.</span></li>
-            <li><span><b>A head start for a validator seat.</b> Seats are decided on chain.</span></li>
+            <li><span><b>A chain you follow, not seal.</b> Validator seats are decided on chain by the validators in place; today that is IDNI alone (one validator in the genesis). Running a node is the first step, the seat is their decision.</span></li>
             <li class="no"><span>No tokens or payment: this is a testnet.</span></li>
           </ul>
         </section>
@@ -272,6 +272,7 @@ html.fit.wide .col3 > .faq { flex: 1 1 0; }
           <details><summary>Is it safe for my server?</summary><p>It opens only SSH and the peer port 4001. The node’s own interfaces stay inside Docker; nothing on the server is shared.</p></details>
           <details><summary>Does it need looking after?</summary><p>No. It restarts by itself and resyncs when the testnet restarts. To update, run the same command again.</p></details>
           <details><summary>What does tauhud.com learn?</summary><p>The name, height, latest block hash and kit version, once a minute, and during setup which step it reached, with a random install id. No address, no keys. Leave the name empty and nothing is sent.</p></details>
+          <details><summary>Can my node become a validator?</summary><p>Not by itself. tau-testnet-v2 starts with one validator, listed in the genesis. A new seat needs a rule change that an existing validator proposes and that reaches the agreement threshold, so it is IDNI’s decision. The kit can carry a validator key for that day (<code>tau-validator-key</code>); until then every node follows and checks the chain, which is what the testnet needs most now.</p></details>
           <details><summary>How do I stop?</summary><p><code>cd /opt/tau-node-kit/kit &amp;&amp; docker compose down</code></p></details>
         </section>
       </div>
