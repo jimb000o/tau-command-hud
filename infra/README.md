@@ -251,6 +251,35 @@ repeated texts. The container uses the node's image (nothing extra to compile), 
 outbound network, a read-only filesystem, no capabilities, 512 MB, 1 CPU and 64 processes.
 `GET /check/health` answers `{"ok": true}`.
 
+## Node follows IDNI main
+
+`follow/idni_follow.py` keeps the node on the newest IDNI tau-testnet main by itself. Every `up` installs a systemd timer
+(`tau-idni-follow.timer`, minute 05 and 35 of every hour); nothing else schedules it. One check:
+
+1. Asks GitHub for IDNI/tau-testnet main. Same commit as the node runs: done.
+2. Waits while a ship window is on or starts within 90 minutes (`IDNI_FOLLOW_QUIET`, German time, default
+   `sat 12-17,tue 16-20,wed 14-18,thu 10-12`) and while a ship is in port or due within 2 hours (relay `/cruise`).
+3. Leaves a commit whose IDNI `Dockerfile.standalone` moved to another tau-lang for a repin by hand (a tau-lang rebuild
+   takes hours on a CAX11).
+4. Builds the node image of the new commit next to the running one; our node patches must still apply, otherwise the
+   build stops and the note names the patch.
+5. Starts a trial node from that image with an empty chain on the live testnet (no published ports, 1 CPU, 1.5 GB): it
+   must sync from genesis to the live tip within `IDNI_FOLLOW_TRIAL_MINUTES` (45) and hold the same blocks as our node.
+6. Switches: stops the node, copies its chain data to the volume `tau-follow-snapshot`, sets `TAU_TESTNET_REF` in `.env`,
+   `docker compose up -d --no-build`, then the node must answer and be within 3 blocks of the network tip, twice,
+   3 minutes apart.
+7. If not: the old image and the copied chain data go back, and the commit is not tried again (the next IDNI commit is).
+
+The owner's private Telegram chat (`up owner`) hears about every switch and once about every commit held back.
+`up` shows it under `idni:` as `auto-follow:`. State and log: `/var/lib/tau-idni-follow/`.
+
+The followed commit outlives `up`: `up` builds it as long as `.env.example`'s pin is the one it followed from. A repin
+merged here wins.
+
+Turn it off: `up follow off` (or `IDNI_FOLLOW=0` in `.env` and `up`). The node stays on the commit it runs. On again:
+`up follow on`. One check now: `up follow now`. Back to the repo pin by hand: `up follow off`, then
+`rm /var/lib/tau-idni-follow/state.json` and `up`.
+
 ## Validator seat
 
 tau-testnet-v2 is proof of authority: only keys in the on-chain validator set propose

@@ -13,6 +13,8 @@
 #              up bust salado  the same, then that portrait (or several) painted anew, talking and blinking too (1 min each);
 #                            up bust --recut salado  cuts the kept painting out again, paints nothing;
 #                            up bust --from infra/rabbit-art/imports/codex hana  takes pictures painted elsewhere
+#              up follow     the node following IDNI tau-testnet main by itself: its state; up follow now  one check at once,
+#                            up follow off / on  stops / starts it (nothing rebuilt, the node left alone)
 #              up idni       what the next daily IDNI progress post would say now (nothing rebuilt, nothing posted);
 #                            up idni send  posts it now, up idni hold  keeps the next one back, up idni release  undoes that
 #              up cruise     a cruise ship's last visit in numbers and the node's timeouts per hour (nothing rebuilt)
@@ -296,6 +298,21 @@ print("preview: " + str(alerts.island_picture(alerts.island_card(r), "preview.jp
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
+# the node following IDNI tau-testnet main by itself (follow/idni_follow.py, a systemd timer every 30 min that every up
+# installs): up follow  its state and last log lines, up follow now  one check at once (in the background),
+# up follow off  stops following (the node stays on the commit it runs), up follow on  starts again; nothing rebuilt
+if [ "${1:-}" = "follow" ]; then
+  case "${2:-}" in
+    now|on|off) python3 follow/idni_follow.py "$2" ;;
+    *) python3 follow/idni_follow.py install >/dev/null 2>&1 || true ;;
+  esac
+  echo "---------------- copy from here into the chat ----------------"
+  echo "idni:    node follow"
+  python3 follow/idni_follow.py status
+  python3 follow/idni_follow.py log | sed 's/^/         /'
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 # the blog by hand, nothing rebuilt (alerts/blog.py): up blog  lists the drafts waiting and where to read them,
 # up blog publish <id>  puts one on the blog and posts it once, up blog draft <visit-id>  writes one anew,
 # up blog unpublish <id>  takes one off again, up blog pictures  makes every article's hero picture and link preview anew
@@ -309,7 +326,10 @@ fi
 cp sites/agorzilla.caddy /opt/sites/ 2>/dev/null || true
 # The pinned tau-testnet commit follows the repo, not the server's old .env (as in setup.sh); a new pin
 # rebuilds and restarts the node (a few minutes, tau-lang itself stays cached).
-REF=$(grep '^TAU_TESTNET_REF=' .env.example | cut -d= -f2)
+# Auto-follow (follow/idni_follow.py) may have moved the node to a newer IDNI main since: that commit stays while the
+# repo pin is the one it followed from; a repin merged here wins over it.
+REF=$(python3 follow/idni_follow.py ref 2>/dev/null || true)
+[ -n "$REF" ] || REF=$(grep '^TAU_TESTNET_REF=' .env.example | cut -d= -f2)
 [ -n "$REF" ] && [ -f .env ] && sed -i "s/^TAU_TESTNET_REF=.*/TAU_TESTNET_REF=${REF}/" .env
 docker compose up -d --build
 # Node images of older pins are several GB each and are never used again (the disk filled up on 2026-10-27).
@@ -402,6 +422,9 @@ if s is not None:
         elif t.get("ahead"):
             print(f"         all {len(p.get('results') or [])} node patches apply to main {short(p.get('sha'))}: a pin bump can be built (then test it)")
 PY
+# the node following IDNI main by itself (follow/idni_follow.py): its timer (made anew by every up), what it follows, held back
+python3 follow/idni_follow.py install >/dev/null 2>&1 || true
+python3 follow/idni_follow.py status 2>/dev/null | tee -a "$NOTE" || true
 # Tau today for AI assistants (alerts/knowledge.py): how many facts, which to check again because IDNI changed their source
 python3 - <<'PY' | tee -a "$NOTE"
 import json, time, urllib.request
@@ -501,4 +524,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up idni, up report, up blog, up hack, up guardian, up services, up knowledge, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up guardian, up services, up knowledge, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
