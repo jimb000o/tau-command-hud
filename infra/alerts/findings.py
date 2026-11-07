@@ -26,6 +26,7 @@ import html
 import os
 import re
 import time
+from zoneinfo import ZoneInfo
 from datetime import datetime, timezone
 
 REAL_LINE = "⛓ <b>TESTNET ALPHA · live chain</b>"
@@ -41,7 +42,7 @@ STALL_MIN = float(os.environ.get("FINDINGS_STALL_SECONDS", 1200))
 VOTES_BURST = int(os.environ.get("FINDINGS_VOTES_BURST", 5))  # the same proposal this often within an hour
 OUTBOX_MAX_AGE = 2 * 3600
 ISSUE = "https://github.com/IDNI/tau-testnet/issues/"
-FOOT = "🔎 Seen by the Tau HUD read node. We share findings because they help the testnet."
+FOOT = "🔎 Seen by our read node; we share what helps the testnet."
 
 # hold / end_hold / cooldown in seconds; x: the start may go to X (a function of the facts, or a bool);
 # recovery: the end gets a post of its own. Events (reorg) have no duration and no end.
@@ -78,10 +79,15 @@ def fmt_dur(s: float) -> str:
     return f"{h} h {m} min" if m else plural(h, "hour")
 
 
+DE = ZoneInfo("Europe/Berlin")
+
+
 def hm(t: float, now: float | None = None) -> str:
+    """One way to write a time in every post (7 November 2026): German time first, UTC in brackets, "16:00 DE (15:00 UTC)"."""
     d = datetime.fromtimestamp(t, timezone.utc)
     same = now is None or d.date() == datetime.fromtimestamp(now, timezone.utc).date()
-    return d.strftime("%H:%M UTC") if same else d.strftime("%-d %b %H:%M UTC")
+    de = d.astimezone(DE).strftime("%H:%M")
+    return f"{de} DE ({d.strftime('%H:%M')} UTC)" if same else f"{d.astimezone(DE).strftime('%-d %b')} {de} DE ({d.strftime('%H:%M')} UTC)"
 
 
 def block_ts(b: dict) -> int | None:

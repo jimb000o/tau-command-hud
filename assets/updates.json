@@ -2477,5 +2477,10 @@
     "tag": "Agorzilla",
     "on": "2026-11-07",
     "html": "Agorzilla grows up on Tau HUD too: the HUD header, your My Tau card, /start/ and the menus now show him at the stage he has reached on agorzilla.com (Grown right now), not as the baby he was. Smaller eyes, a darker face, the head higher on a broader back, and the back and muzzle the feeders voted for; each new stage shows by itself."
+  },
+  {
+    "tag": "Alerts",
+    "on": "2026-11-07",
+    "html": "Channel posts, after a review of the first eleven days: the evening post now opens with the day's one story and shows the slowest hour beside the usual pace; a testnet restart is no longer told as a rule change and says what it means for your test wallet; a new node is posted only after six hours online, and the evening count says how many were online at the peak; firsts say whose wallet did it; every chain post gets buttons that fit it; times read \"16:00 DE (15:00 UTC)\"; the weekly digest drops a line told twice; the rule challenge reminder names the task."
   }
 ]
