@@ -134,5 +134,36 @@ check(len(tg3.sent) == 1 and "The governor's count, 26 October to 1 November" in
 asyncio.run(w3.maybe_island(at("2026-11-03T07:00:30Z"), dict(QUIET, day="2026-11-03", last=LAST)))
 check(len(tg3.sent) == 1 and len(x3.sent) == 1, "Tuesday: Monday was quiet, so no report and the count is not repeated")
 
+# the X picture: the island painting the game shows now (index.json "scenes" "island"), never the old repo screenshot
+from PIL import Image  # noqa: E402
+
+art = os.path.join(TMP, "art")
+os.makedirs(art)
+alerts.ISLAND_ART, alerts.ISLAND_PIC_DIR = art, os.path.join(TMP, "island")
+check(alerts.island_picture() is None, "no painting: no picture at all (the post goes out with its text alone)")
+Image.new("RGB", (3200, 1800), (40, 120, 90)).save(os.path.join(art, "island-30.jpg"))
+open(os.path.join(art, "index.json"), "w").write('{"scenes": {"island": "island-30.jpg"}}')
+pic = alerts.island_picture(alerts.island_card({"date": "6 November", "campaigns": 1, "moves": 3}), "crier.jpg")
+data = alerts.local_picture(pic) if pic else None
+check(bool(data) and Image.open(pic).size == (1600, 900) and Image.open(pic).getpixel((1500, 100))[1] > 100,
+      "the Key Crier's picture is made from the live painting, 1600x900, a JPEG X takes")
+check("{SITE}/assets/shots/rabbit.png" not in open(alerts.__file__).read(), "the old screenshot is not named any more")
+
+
+class XPic(Fake):
+    def send_with_picture(self, text, picture):
+        self.sent.append((text, (picture,)))
+        return True, None, ""
+
+
+tg4, x4 = Fake("telegram"), XPic("x")
+w4 = alerts.Watcher([tg4, x4])
+w4.state.pop("island", None)
+w4.state.pop("x", None)
+asyncio.run(w4.maybe_island(at("2026-11-06T23:50:00Z"), dict(DAY, day="2026-11-06")))
+asyncio.run(w4.maybe_island(at("2026-11-07T07:00:30Z"), dict(DAY, day="2026-11-07")))
+check(len(x4.sent) == 1 and x4.sent[0][1][0] == os.path.join(TMP, "island", "crier.jpg"), "X gets the picture made from the painting")
+check(os.path.exists(os.path.join(TMP, "island", "today.jpg")), "the public copy for the closer look is made too")
+
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)
