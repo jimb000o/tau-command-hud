@@ -72,6 +72,23 @@ try:
 except ValueError:
     check(True, "a missing language is refused")
 
+# the model's answer comes as a tool call (valid JSON by the API itself); a broken text answer is asked once more
+import io as _io
+answers = []
+class _R(_io.BytesIO):
+    def __enter__(self): return self
+    def __exit__(self, *a): return False
+def fake_open(req, timeout=0):
+    sent = json.loads(req.data)
+    check(sent.get("tool_choice", {}).get("name") == "article" and sent["tools"][0]["input_schema"]["required"][0] == "title", "the article is asked for as a tool call")
+    return _R(json.dumps(answers.pop(0)).encode())
+blog.urllib.request.urlopen = fake_open
+answers = [{"content": [{"type": "tool_use", "name": "article", "input": answer}], "usage": {}}]
+check(blog.ask_ai(f) == answer, "a tool-call answer is the article")
+answers = [{"content": [{"type": "text", "text": '{"title": {"en": "the "bill" kind"}'}], "usage": {}},
+           {"content": [{"type": "text", "text": "here: " + json.dumps(answer)}], "usage": {}}]
+check(blog.ask_ai(f) == answer and not answers, "a text answer with a stray quote is asked once more, then read from the text")
+
 # a draft, then publish: by hand only, and the marked one needs --force
 blog.site_ids = lambda: set()
 blog.get = lambda path: {"entries": log, "visits": [V]} if path.startswith("/cruise/log") else ({"incidents": inc} if "incidents" in path else {})
