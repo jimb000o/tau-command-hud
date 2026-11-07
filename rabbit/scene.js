@@ -2097,6 +2097,9 @@
 
   const inPoly = (P, x, y) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, yi] = P[i], [xj, yj] = P[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
   const inBox = (b, x, y) => b && x >= b[0] && x <= b[0] + b[2] && y >= b[1] && y <= b[1] + b[3];
+  const toBox = ([bx, by, bw, bh], x, y) => Math.hypot(Math.max(bx - x, 0, x - bx - bw), Math.max(by - y, 0, y - by - bh));
+  const toSeg = (x, y, [ax, ay], [bx, by]) => { const dx = bx - ax, dy = by - ay, l = dx * dx + dy * dy, t = l ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / l)) : 0; return Math.hypot(x - ax - t * dx, y - ay - t * dy); };
+  const toPoly = (P, x, y) => P.reduce((m, q, i) => Math.min(m, toSeg(x, y, q, P[(i + 1) % P.length])), Infinity);   // from outside: the nearest edge
   /* a quarter that is there but not open yet (S.locked): the game shows only a "?" over it, nothing to click */
   function lockedAt(px, py) {
     if (S.roomA > 0.3 || (ART.pending && !(S.base && S.base.painted))) return null;
@@ -2115,11 +2118,13 @@
       const p = PLACES[id];
       if (p.poly ? inPoly(p.poly, x, y) : inBox(p.box, x, y)) return id;
     }
-    /* a finger is wider than a small place on a phone: the nearest place within 22 px of the tap counts too */
+    /* a finger is wider than a small place on a phone: the nearest place within 22 px of the tap counts too, measured to
+       its outline (the box of a place that bends round a neighbour, the embassy round the school, reaches over it) */
     const tol = 22 / (fitScale() * S.cam.z); let best = null, bd = tol;
     for (const id in PLACES) {
-      if (S.locked.has(id)) continue; const [bx, by, bw, bh] = PLACES[id].box;
-      const d = Math.hypot(Math.max(bx - x, 0, x - bx - bw), Math.max(by - y, 0, y - by - bh)); if (d < bd) { bd = d; best = id; }
+      if (S.locked.has(id)) continue; const p = PLACES[id], d0 = toBox(p.box, x, y);
+      if (d0 >= bd) continue;
+      const d = p.poly ? toPoly(p.poly, x, y) : d0; if (d < bd) { bd = d; best = id; }
     }
     return best;
   }

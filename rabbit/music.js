@@ -233,6 +233,7 @@
     bar:    { s: "hammock", k: 1.08, drums: "bossa", bass: 1, mar: 0, lead: "pan", strum: 1, conga: 1 },// La Ola: a cold drink, a guitar, the whole bar humming
     book:   { s: "moon", k: 0.85, drums: "none", bass: 0, mar: 0, lead: "bell", pad: 0.8, sparse: 1 }, // the lighthouse: almost silence, a few bells
     market: { s: "mango", k: 1, drums: "soca", bass: 1, mar: 1, lead: "pan", agogo: 1 },                // the square: a soca, a cowbell, everybody shouting prices
+    cafe:   { s: "hammock", k: 0.9, drums: "bossa", bass: 0.8, mar: 1, lead: "pluck", strum: 1, soft: 1 }, // the Parasol Café: a slow bossa between the cups
     pier:   { s: "moon", k: 1, drums: "soft", bass: 0.6, mar: 0, lead: "flute", arp: 1 },               // the pier: a slow flute over the water
     school: { s: "school", k: 1, drums: "soft", bass: 0.7, mar: 0, lead: "mar", clap: 1 },              // the school: a skipping tune on the xylophone, children clapping
     dive:   { s: "lowtide", k: 1, drums: "onedrop", bass: 1.2, mar: 0, lead: "organ", bubble: 1 },     // the dive centre: reggae from under the water, bubbles
