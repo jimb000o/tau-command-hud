@@ -1562,8 +1562,13 @@
   function living(f) {
     if (/[?&]live=0/.test(location.search) || /[?&]art=drawn/.test(location.search)) return;
     if (matchMedia("(prefers-reduced-motion: reduce)").matches || (navigator.connection && navigator.connection.saveData)) return;
-    fetch(LIVEBASE + "island.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : null)).then(j => {
-      if (!j || j.of !== f || !j.video || !j.mask) return;
+    /* the server's own clip of this very painting first; else one made by hand and kept on the site (rabbit/art/live/,
+       "of" names the painting's file without its ending, island-36-090df65a) */
+    const get = (base, exact) => fetch(base + "island.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : null)).then(j =>
+      (j && j.video && j.mask && (exact ? j.of === f : typeof j.of === "string" && j.of && String(f).replace(/^.*\//, "").startsWith(j.of)) ? { j, base } : null), () => null);
+    get(LIVEBASE, true).then(x => x || get(new URL("art/live/", location.href).href, false)).then(x => {
+      if (!x) return;
+      const { j } = x, LB = x.base;
       const v = document.createElement("video"), m = new Image();
       v.muted = true; v.loop = true; v.playsInline = true; v.crossOrigin = "anonymous"; v.preload = "auto";
       v.setAttribute("muted", ""); v.setAttribute("playsinline", "");
@@ -1573,9 +1578,9 @@
         g.drawImage(m, 0, 0, 160, 90);
         let md = null; try { md = g.getImageData(0, 0, 160, 90).data; } catch (e) {}
         v.addEventListener("playing", () => { if (ART.img.island && ART.img.island.f === f) ART.live = { v, m, f, md, a0: performance.now() }; }, { once: true });
-        v.src = LIVEBASE + j.video; const p = v.play(); if (p && p.catch) p.catch(() => {});
+        v.src = LB + j.video; const p = v.play(); if (p && p.catch) p.catch(() => {});
       };
-      m.src = LIVEBASE + j.mask;
+      m.src = LB + j.mask;
     }).catch(() => {});
   }
   /* how much the living island moves at a world point (0 still … 1), from its mask */
