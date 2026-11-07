@@ -116,5 +116,14 @@ check(not tw.claim(99, "wrong", NOW) and not tw.claim(99, code, NOW + 31 * 60), 
 check(tw.claim(77, code, NOW + 60) and tw.owner() == "77", "the right code makes that chat the owner's")
 check(not tw.claim(88, code, NOW + 120), "a code works once")
 
+# as the page: of the six newest features at most four; the title story is named in the up status
+many = [{"on": "2026-11-19", "major": {"id": f"m{i}", "title": f"F{i}", "link": f"/f{i}/"}} for i in range(8)]
+lm = tw.line({"headlines": []}, many, [], pulse, NOW)
+check([i["text"] for i in lm["dated"] if i["what"] == "feature"] == ["F7", "F6", "F5", "F4"], "four newest features, as on the page")
+st = tw.status(NOW, (cfg, updates, [{"id": "q", "on": "2026-11-20", "title": {"en": "Queen story"}}], pulse))
+check(any("title story (opens the line): Queen story" in l for l in st), f"up names the title story ({st[:2]})")
+st = tw.status(NOW, (cfg, updates, [], pulse))
+check(any("title story: none" in l for l in st), "and says when there is none")
+
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)

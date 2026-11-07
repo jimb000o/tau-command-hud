@@ -113,7 +113,8 @@ def line(cfg: dict | None, updates: list | None, blog: list | None, pulse: dict 
             dated.append(it)
     majors = [e for e in (updates or []) if isinstance(e, dict) and isinstance(e.get("major"), dict) and e["major"].get("title")
               and not str(e["major"].get("id") or "").startswith("roundup")]
-    for e in majors:
+    shown = 0
+    for e in sorted(majors, key=lambda e: -majors.index(e)):   # newest first, as the page picks them
         m, at = e["major"], day_ts(e.get("on"))
         if path(m.get("link")) == GLOW:
             continue
@@ -123,7 +124,11 @@ def line(cfg: dict | None, updates: list | None, blog: list | None, pulse: dict 
         if path(m.get("link")) in have and path(m.get("link")):
             continue
         it = {"what": "feature", "text": str(m["title"]), "at": at, "ends": at + life if at is not None else None}
-        (dated if at is not None and now < at + life else gone).append(it)
+        if at is None or now >= at + life:
+            gone.append(it)
+        elif e in majors[-6:] and shown < 4:   # assets/ticker.js loadNews: of the six newest majors, at most four
+            shown += 1
+            dated.append(it)
     if any(path(e["major"].get("link")) == GLOW for e in majors):
         standing.append({"what": "feature", "text": next(e["major"]["title"] for e in reversed(majors) if path(e["major"].get("link")) == GLOW),
                          "at": None, "ends": None})
@@ -349,6 +354,9 @@ def status(now: float | None = None, data=None) -> list[str]:
         age = f"{(now - newest['at']) / DAY:.0f} days old" if newest and newest["at"] else ""
         out.append(f"ticker:  {len(ln['dated'])} new items (leave after {ln['days']:g} days), {len(ln['standing'])} standing, "
                    f"{len(ln['gone'])} gone by age" + (f"; newest {age}: {newest['text']}" if newest else ""))
+        story = next((i for i in ln["dated"] if i["what"] == "blog"), None)
+        out.append(f"         title story (opens the line): {story['text'][7:]}" if story else
+                   f"         title story: none, no blog article from the last {ln['days']:g} days (site and /blog/posts.json)")
         for i in ln["soon"][:3]:
             out.append(f"         leaving {dt.datetime.fromtimestamp(i['ends'], BERLIN):%a %d.%m.}: {i['text']}")
     for t in probs.values():
