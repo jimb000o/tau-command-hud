@@ -194,12 +194,35 @@ def wrap(d, text: str, f, width: int) -> list[str]:
     return out + ([line] if line else [])
 
 
+class Motion:
+    """Kling's clip of the backdrop (kling.py), frame by frame as the clip is drawn, over and over: the sea moves under
+    the cards. One frame in memory at a time (ffmpeg decodes it, looped), so the blog service's memory is enough."""
+
+    def __init__(self, path: str):
+        self.p = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-stream_loop", "-1", "-i", path, "-vf",
+                                   "scale=1600:900:flags=lanczos,fps=25", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+                                  stdout=subprocess.PIPE)
+        self.n = 1600 * 900 * 3
+
+    def next(self) -> Image.Image | None:
+        b = self.p.stdout.read(self.n)
+        return Image.frombytes("RGB", (1600, 900), b) if len(b) == self.n else None
+
+    def close(self) -> None:
+        try:
+            self.p.kill()
+            self.p.wait(5)
+        except Exception:  # noqa: BLE001
+            pass
+
+
 class Clip:
     INTRO, EACH, OUTRO = 2.6, 2.0, 4.0
 
-    def __init__(self, f: dict, art: str, ships: str, when: str):
+    def __init__(self, f: dict, art: str, ships: str, when: str, motion: str | None = None):
         self.f, self.when = f, when
         self.bg = backdrop(art, ships)
+        self.motion = Motion(motion) if motion else None
         self.crew = crew(ships)
         self.shown = [k for k in ORDER if f["tricks"][k]["refused"]]   # tricks with no try this visit are left out
         self.length = self.INTRO + self.EACH * len(self.shown) + self.OUTRO
@@ -214,6 +237,11 @@ class Clip:
         w, h = 1600 / z, 900 / z
         cx, cy = 1600 * 0.62, 900 * 0.62
         x0, y0 = min(max(cx - w / 2, 0), 1600 - w), min(max(cy - h / 2, 0), 900 - h)
+        if self.motion:   # the living sea: the next frame of Kling's clip (the still backdrop if it ends early)
+            fr = self.motion.next()
+            if fr is not None:
+                return fr.resize((W, H), Image.BILINEAR, box=(x0, y0, x0 + w, y0 + h)).convert("RGBA")
+            self.motion.close(); self.motion = None
         return self.bg.resize((W, H), Image.BILINEAR, box=(x0, y0, x0 + w, y0 + h)).convert("RGBA")
 
     def shade(self, im: Image.Image, a: float) -> Image.Image:
@@ -341,6 +369,9 @@ class Clip:
             p.stdin.close()
         except BrokenPipeError:
             pass
+        finally:
+            if self.motion:
+                self.motion.close()
         if p.wait() != 0:
             raise RuntimeError(f"ffmpeg ended with {p.returncode}")
         return out
@@ -417,9 +448,41 @@ def post(path: str, t: dict) -> list[str]:
     return said
 
 
-def make(f: dict, out: str) -> str:
+def make(f: dict, out: str, motion: str | None = None) -> str:
     import blog
-    return Clip(f, blog.ART, blog.SHIPS, short_day(f["t"])).render(out)
+    return Clip(f, blog.ART, blog.SHIPS, short_day(f["t"]), motion).render(out)
+
+
+# ---------- Kling: the living sea under the clip (kling.py) ----------
+PROMPT = ("A hand-painted tropical island with a dark-sailed pirate ship at anchor, as a living painting. The camera is "
+          "completely still. Thin sea mist drifts slowly across the water, the ship rocks gently, its black sails and "
+          "flag move in the wind, lantern light flickers on deck, the sea ripples and glints. The island, the ship's "
+          "shape and every colour stay exactly as painted. Quiet, a little ominous, premium.")
+
+
+def kling_ask(vid: str, now: float | None = None) -> dict:
+    """Asked for once the pirates are in sight (cruise_crier.kling_prepare); the clip after their call uses it."""
+    import blog
+    import kling
+    return kling.ask("pirate-" + vid, "pirate", lambda: backdrop(blog.ART, blog.SHIPS), PROMPT, duration="10", tail=True, now=now)
+
+
+def motion_of(vid: str | None) -> tuple[str | None, dict | None]:
+    """(a seamless looping clip of the living sea, its job) for that visit, or (None, None)."""
+    try:
+        import kling
+        if not vid or not kling.enabled("pirate"):
+            return None, None
+        j = kling.ready("pirate-" + vid)
+        if not j:
+            return None, None
+        if j.get("tail"):
+            return j["file"], j
+        dst = j["file"].replace(".mp4", "-loop.mp4")
+        return (dst if os.path.exists(dst) else kling.loop(j["file"], dst, float(j.get("seconds") or 10))), j
+    except Exception as e:  # noqa: BLE001 - the still sea
+        log.warning("pirate clip %s: no living sea (%s)", vid, e)
+        return None, None
 
 
 def step(now: float, st: dict, save, tell) -> str | None:
@@ -454,7 +517,18 @@ def step(now: float, st: dict, save, tell) -> str | None:
             save(st)
             return vid
         out = f"/tmp/trick-clip-{vid}.mp4"
-        make(f, out)   # a failure here is tried again in 10 minutes
+        sea, job = motion_of(vid)
+        if sea and job.get("draft"):   # one of the first living-sea clips: the still one posts, this one waits for a look
+            import kling
+            make(f, out)   # a failure here is tried again in 10 minutes
+            try:
+                k = "pirate-" + vid
+                url = kling.draft(k, make(f, f"/tmp/trick-clip-{vid}-kling.mp4", sea), {**texts(f), "size": (1280, 720)})
+                tell(kling.draft_note(k, "pirate", url, "the pirates' clip on a living sea"))
+            except Exception as e:  # noqa: BLE001
+                log.warning("pirate clip draft: %s", e)
+        else:
+            make(f, out, sea) if sea else make(f, out)   # a failure here is tried again in 10 minutes
         t = texts(f)
         clips[vid] = {"at": round(now), "result": "posting"}
         save(st)   # before posting: a crash while posting never posts twice
@@ -488,7 +562,10 @@ def main(argv: list[str]) -> int:
         elif f["held"]:
             print(f"{vid}: a trick got through or is held back, so this clip would never be posted (preview only)")
         t0 = time.time()
-        make(f, out)
+        sea, _ = motion_of(vid)
+        if sea:
+            print("with Kling's living sea (kling.py)")
+        make(f, out, sea)
         t = texts(f)
         print(f"clip {out}: {os.path.getsize(out) / 2**20:.1f} MB, {Clip.INTRO + Clip.EACH * f['kinds'] + Clip.OUTRO:.1f} s, "
               f"made in {time.time() - t0:.0f} s")

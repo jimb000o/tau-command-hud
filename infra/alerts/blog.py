@@ -898,6 +898,11 @@ def main(argv: list[str]) -> int:
             except Exception as e:  # noqa: BLE001
                 log.warning("cruise crier: %s", e)
             try:
+                import kling_island   # the island painting alive on /rabbit/, and a trailer when it is new (Kling)
+                kling_island.step()
+            except Exception as e:  # noqa: BLE001
+                log.warning("kling island: %s", e)
+            try:
                 import hack_crier   # the hack of the week: its post after each replay, a finding only to the owner
                 hack_crier.step()
             except Exception as e:  # noqa: BLE001

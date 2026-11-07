@@ -24,6 +24,10 @@
 #                            through) in the public logbook and lets the blog write that visit (after IDNI knows)
 #              up clip       the pirates' clip of their newest visit to look at (posts nothing; a marked SAMPLE before
 #                            the first); it goes to Telegram and X by itself after each Tuesday call; up clip send <visit>
+#              up kling      Kling's clips (alerts/kling.py): the posting services rebuilt with the code just pulled (the
+#                            node left alone, safe any time), then this month's clips; up kling test  one 5 s clip of the
+#                            live island to look at (proves the key), up kling list  every clip, up kling send <key>  posts
+#                            a draft, up kling off island  the island still again (until the next painting)
 #              up escrow     the relay alone restarted with the code just pulled (not while a ship is due), then the
 #                            cruise bookings ahead in escrow, each with its state; up escrow status  only those
 #              up hack       the hack of the week (relay/hackweek.py, Thursdays 11:00): next replay, last runs step by step
@@ -130,6 +134,23 @@ if [ "${1:-}" = "clip" ]; then
     docker compose cp blog:/tmp/trick-clip.mp4 /opt/sites/rico/art/drafts/trick-clip.mp4
     echo "look: https://node.tauhud.com/rico/art/drafts/trick-clip.mp4"
   fi
+  exit 0
+fi
+# Kling's clips (alerts/kling.py, kling_island.py), the node left alone: the blog and agorzilla services rebuilt with the
+# code just pulled, Caddy given /kling/*, then: up kling  this month's clips, up kling test  a 5 s test clip (waits up to
+# 10 min), up kling list, up kling send <key>  a draft posted, up kling off island
+if [ "${1:-}" = "kling" ]; then
+  docker compose up -d --no-deps --build blog agorzilla >/dev/null 2>&1 || docker compose up -d --no-deps --build blog agorzilla
+  docker compose up -d --no-deps --force-recreate caddy >/dev/null 2>&1 || true
+  case "${2:-}" in
+    test) docker compose exec -T blog python kling.py test ;;
+    list) docker compose exec -T blog python kling.py list ;;
+    send) docker compose exec -T blog python kling.py send "${3:-}" ;;
+    off) docker compose exec -T blog python kling.py off "${3:-island}" ;;
+  esac
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T blog python kling.py line
+  echo "---------------- to here --------------------------------------"
   exit 0
 fi
 # the hack of the week (relay/hackweek.py, posts by alerts/hack_crier.py), nothing rebuilt: up hack  the next replay and the
@@ -514,6 +535,8 @@ python3 rabbit-art/paint.py usage 2>/dev/null | tee -a "$NOTE" || true
 # what the Anthropic API cost this month (blog drafts, IDNI news and daily post, troll box check), measured at every
 # answer by alerts/ai_meter.py (tokens x Anthropic's list price; the bill itself: platform.claude.com/settings/billing)
 docker compose exec -T alerts python ai_meter.py line 2>/dev/null | tee -a "$NOTE" || true
+# Kling's clips this month (alerts/kling.py; KLING_MONTH_CAP in .env, default 30 clips)
+docker compose exec -T blog python kling.py line 2>/dev/null | tee -a "$NOTE" || true
 # a new painted island, only when asked for: up island
 if [ "${1:-}" = "island" ]; then
   sh island.sh auto 2>&1 | tee "$V"
@@ -524,4 +547,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up guardian, up services, up knowledge, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up guardian, up services, up knowledge, up kling, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
