@@ -72,22 +72,41 @@ try:
 except ValueError:
     check(True, "a missing language is refused")
 
-# the model's answer comes as a tool call (valid JSON by the API itself); a broken text answer is asked once more
+# the model's answer is shaped by the API (valid JSON by itself); a broken text answer is asked once more;
+# a 400 on the shaped request falls back to the plain request, and the API's reason is shown
 import io as _io
+import urllib.error as _ue
 answers = []
+sent_bodies = []
 class _R(_io.BytesIO):
     def __enter__(self): return self
     def __exit__(self, *a): return False
 def fake_open(req, timeout=0):
     sent = json.loads(req.data)
-    check(sent.get("tool_choice", {}).get("name") == "article" and sent["tools"][0]["input_schema"]["required"][0] == "title", "the article is asked for as a tool call")
-    return _R(json.dumps(answers.pop(0)).encode())
+    sent_bodies.append(sent)
+    nxt = answers.pop(0)
+    if nxt == 400:
+        raise _ue.HTTPError(req.full_url, 400, "Bad Request", {}, _io.BytesIO(b'{"error": {"message": "no shaped answers here"}}'))
+    return _R(json.dumps(nxt).encode())
 blog.urllib.request.urlopen = fake_open
-answers = [{"content": [{"type": "tool_use", "name": "article", "input": answer}], "usage": {}}]
-check(blog.ask_ai(f) == answer, "a tool-call answer is the article")
+answers = [{"content": [{"type": "text", "text": json.dumps(answer)}], "usage": {}}]
+check(blog.ask_ai(f) == answer, "a shaped answer is the article")
+fmt = sent_bodies[-1]["output_config"]["format"]
+check(fmt["type"] == "json_schema" and fmt["schema"]["additionalProperties"] is False and "tools" not in sent_bodies[-1]
+      and "tool_choice" not in sent_bodies[-1] and fmt["schema"]["properties"]["card"]["additionalProperties"] is False,
+      "the article is asked for as a shaped answer, not a forced tool call")
 answers = [{"content": [{"type": "text", "text": '{"title": {"en": "the "bill" kind"}'}], "usage": {}},
            {"content": [{"type": "text", "text": "here: " + json.dumps(answer)}], "usage": {}}]
 check(blog.ask_ai(f) == answer and not answers, "a text answer with a stray quote is asked once more, then read from the text")
+answers = [400, {"content": [{"type": "text", "text": json.dumps(answer)}], "usage": {}}]
+sent_bodies.clear()
+check(blog.ask_ai(f) == answer and "output_config" not in sent_bodies[-1], "a 400 on the shaped request is asked again the plain way")
+answers = [400, 400]
+try:
+    blog.ask_ai(f)
+    check(False, "two 400s stop with the API's reason")
+except RuntimeError as e:
+    check("no shaped answers here" in str(e) and "400" in str(e), "two 400s stop with the API's reason")
 
 # a draft, then publish: by hand only, and the marked one needs --force
 blog.site_ids = lambda: set()

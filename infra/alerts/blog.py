@@ -28,6 +28,7 @@ import re
 import secrets
 import sys
 import time
+import urllib.error
 import urllib.request
 from collections import Counter
 
@@ -396,31 +397,35 @@ def unknown_numbers(text: str, facts: dict) -> list[str]:
 
 
 # ---------- writing ----------
-L3 = {"type": "object", "properties": {k: {"type": "string"} for k in LANGS}, "required": list(LANGS)}
-ARTICLE_TOOL = {   # the answer comes back as a tool call, so the API itself keeps it valid JSON (no quote can break it)
-    "name": "article", "description": "The finished article, in the shape the blog expects.",
-    "input_schema": {"type": "object", "properties": {
-        "title": L3, "dek": L3, "why": {"type": "array", "items": L3, "minItems": 2, "maxItems": 3}, "body": L3,
-        "x": {"type": "string"},
-        "card": {"type": "object", "properties": {"line": {"type": "string"}, "why": {"type": "array", "items": {"type": "string"}, "maxItems": 3}},
-                 "required": ["line", "why"]}},
-        "required": ["title", "dek", "why", "body", "x", "card"]}}
+def _obj(props: dict, required: list | None = None) -> dict:
+    return {"type": "object", "properties": props, "required": required or list(props), "additionalProperties": False}
 
 
-def ask_ai(facts: dict, tries: int = 2) -> dict:
+L3 = _obj({k: {"type": "string"} for k in LANGS})
+ARTICLE_SHAPE = _obj({   # the API shapes the answer by this schema, so no quote in the text can break the JSON
+    "title": L3, "dek": L3,
+    "why": {"type": "array", "items": L3, "description": "2 or 3 short lines"},
+    "body": L3, "x": {"type": "string"},
+    "card": _obj({"line": {"type": "string"}, "why": {"type": "array", "items": {"type": "string"}, "description": "up to 3 short lines"}})})
+
+
+def ask_ai(facts: dict, tries: int = 2, shaped: bool = True) -> dict:
     prompt = "Facts counted from the logbook of one cruise ship visit (JSON):\n\n" + json.dumps(facts, ensure_ascii=False, indent=1)
-    body = json.dumps({"model": AI_MODEL, "max_tokens": 8000, "system": SYSTEM,
-                       "tools": [ARTICLE_TOOL], "tool_choice": {"type": "tool", "name": "article"},
-                       "messages": [{"role": "user", "content": prompt}]}).encode()
-    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body, headers={
+    body = {"model": AI_MODEL, "max_tokens": 8000, "system": SYSTEM, "messages": [{"role": "user", "content": prompt}]}
+    if shaped:
+        body["output_config"] = {"format": {"type": "json_schema", "schema": ARTICLE_SHAPE}}
+    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=json.dumps(body).encode(), headers={
         "x-api-key": AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
-    with urllib.request.urlopen(req, timeout=300) as r:
-        j = urllib_json(r)
+    try:
+        with urllib.request.urlopen(req, timeout=300) as r:
+            j = urllib_json(r)
+    except urllib.error.HTTPError as e:
+        reason = e.read().decode("utf-8", "replace")[:600]
+        log.warning("the API answered %s for model %s: %s", e.code, AI_MODEL, reason)
+        if e.code == 400 and shaped:   # the model does not take the shaped answer: ask the plain way, the JSON in the text
+            return ask_ai(facts, tries, shaped=False)
+        raise RuntimeError(f"the API answered {e.code} for model {AI_MODEL}: {reason}") from None
     ai_meter.meter("blog", AI_MODEL, j.get("usage"))
-    for block in j.get("content", []):
-        if block.get("type") == "tool_use" and isinstance(block.get("input"), dict):
-            return block["input"]
-    # no tool call: the old way, the JSON in the text, and one more try when that is broken
     text = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
     m = re.search(r"\{.*\}", text, re.S)
     try:
@@ -430,7 +435,7 @@ def ask_ai(facts: dict, tries: int = 2) -> dict:
     except ValueError as e:
         if tries > 1:
             log.warning("the model's answer was not valid JSON (%s): asking once more", e)
-            return ask_ai(facts, tries - 1)
+            return ask_ai(facts, tries - 1, shaped)
         raise
 
 
