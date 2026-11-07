@@ -72,7 +72,7 @@ log = old + [small("2026-10-28", "Stats", "Stats: the chart is calmer. More text
 m = alerts.major_item(log[3])
 check(m["text"] == "New page: The Daily Consensus & more. Second." and m["link"] == "https://tauhud.com/gazette/", "major: text from the entry's first two sentences, link made absolute")
 t = alerts.major_text(m)
-check(t.startswith("✨ <b>TAU HUD · new on the site</b>") and "not news from the testnet" in t, "first line marks a site update, last says it is not chain news")
+check(t.startswith("✨ <b>TAU HUD · new on the site</b>") and "not news from the testnet" not in t, "first line marks a site update; no footer line since 7 Nov 2026 (the header says it)")
 check(alerts.major_buttons(m)["inline_keyboard"][0][0]["url"] == "https://tauhud.com/gazette/", "button opens the page")
 check("Open it on tauhud.com</a>" in t, "the link names tauhud.com for a page of its own")
 ext = alerts.major_item(major("2026-10-29", "Agorzilla", "New: Agorzilla.", "agorzilla", title="New: Agorzilla", link="https://agorzilla.com", x=False))
