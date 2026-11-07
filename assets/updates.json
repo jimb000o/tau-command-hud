@@ -2447,6 +2447,11 @@
     "html": "Guardian demo in the simulation: with the HUD on Simulation, tauhud.com/guardian/ plays the whole way through with play values. Scan the demo QR code with your Authenticator app (a real TOTP check in your browser) or use the play code 123456, choose what the Guardian does, and a play payment waits for your code in step 3. Nothing goes on the chain, nothing leaves your browser; amber marks it as a demo."
   },
   {
+    "tag": "HUD",
+    "on": "2026-11-07",
+    "html": "Chain core: the ring of waiting transactions now says that it is the mempool, and a wallet's own rule on the inner ring says whose it is: it binds only that wallet, never anyone else. Hover the inner ring for what it holds. The rules it shows no longer depend on when the page was opened: the page asks the relay who holds a rule now, and a rule a wallet took away leaves the ring."
+  },
+  {
     "tag": "Services",
     "on": "2026-11-07",
     "html": "Services on the testnet (tauhud.com/services/): a directory of what runs on Tau Testnet Alpha, with categories and search. Accounts appear by themselves once the chain shows them serving other wallets: co-signers others name for their payments, rule givers whose rules get taken, accounts paid with terms (retractable transfers) or by many different wallets. Numbers come straight from the blocks, every minute; nobody signs up. Ours (Guardian, White Rabbit Key, Agorzilla, wallet, API, rules wall, node kit) are listed first and marked. A builder can ask for a name and a link with a pre-filled request. Also open to other sites as JSON: node.tauhud.com/services."
