@@ -1592,7 +1592,7 @@
   function liveLayer(w) {
     const L = ART.live;
     if (!L || S.still || !ART.img.island || L.f !== ART.img.island.f || L.v.readyState < 2) return;
-    const vw = Math.min(1600, L.v.videoWidth || 1600), vh = Math.round(vw * 9 / 16);
+    const vw = Math.min(1920, L.v.videoWidth || 1600), vh = Math.round(vw * 9 / 16);
     if (!L.c || L.c.width !== vw) { L.c = document.createElement("canvas"); L.c.width = vw; L.c.height = vh; L.g = L.c.getContext("2d"); }
     const g = L.g;
     g.globalCompositeOperation = "copy"; g.drawImage(L.v, 0, 0, vw, vh);
