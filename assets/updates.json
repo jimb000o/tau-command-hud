@@ -2482,5 +2482,10 @@
     "tag": "Alerts",
     "on": "2026-11-07",
     "html": "Channel posts, after a review of the first eleven days: the evening post now opens with the day's one story and shows the slowest hour beside the usual pace; a testnet restart is no longer told as a rule change and says what it means for your test wallet; a new node is posted only after six hours online, and the evening count says how many were online at the peak; firsts say whose wallet did it; every chain post gets buttons that fit it; times read \"16:00 DE (15:00 UTC)\"; the weekly digest drops a line told twice; the rule challenge reminder names the task."
+  },
+  {
+    "tag": "Alerts",
+    "on": "2026-11-07",
+    "html": "Channel that tunes itself: every tauhud.com link in a Telegram post now says which kind of post it came from, and the relay counts only those page opens, by kind (no one's data). Each Sunday the owner gets a private note of posts and opens per kind; a closer look or weekly digest that nobody opened for four weeks posts every other time until someone does, and every such change is logged with its reason. Also new: a weekly channel poll on which page gets the next closer look, a post on the 1st of each month with the running costs as billed and the donations so far, and the pirate ship's report says what an all-refused call shows."
   }
 ]
