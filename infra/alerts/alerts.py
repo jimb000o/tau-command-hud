@@ -1657,6 +1657,8 @@ POLL_OPEN = float(os.environ.get("TG_POLL_OPEN_SECONDS", 36 * 3600))        # cl
 COSTS_ON = os.environ.get("COSTS_POST", "true").lower() in ("1", "true", "yes")
 COSTS_HOUR = int(os.environ.get("COSTS_HOUR", 9))                           # the 1st of each month, 09:00 UTC
 COSTS_URL = os.environ.get("COSTS_URL", f"{SITE}/assets/costs.json")
+# the pictures painted with Google's Gemini API, measured by infra/rabbit-art/paint.py per month (tokens x list price)
+GEMINI_USAGE_URL = os.environ.get("GEMINI_USAGE_URL", f"{NODE_PUBLIC}/rico/art/gemini-usage.json")
 CUR = {"EUR": "€", "USD": "$"}
 
 
@@ -1704,8 +1706,24 @@ def clicks_text(week: dict, quiet: list[str], changes: list[str]) -> str:
     return "\n".join(out)
 
 
-def costs_text(costs: dict | None, don: dict | None) -> str | None:
-    """The month's running costs as billed (assets/costs.json) and what came in (donations.json); None without costs."""
+def gemini_line(usage: dict | None, month: str) -> tuple[str, float] | None:
+    """Last month's pictures from Google's Gemini API as measured by paint.py (gemini-usage.json): (line, US dollars),
+    or None while nothing was measured yet (no file, or measuring began after that month)."""
+    if not isinstance(usage, dict) or not usage.get("since") or usage["since"][:7] > month:
+        return None
+    m = (usage.get("months") or {}).get(month) or {}
+    usd = round(float(m.get("usd") or 0), 2)
+    name = datetime.strptime(month + "-01", "%Y-%m-%d").strftime("%B")
+    since = f", measured since {int(usage['since'][8:10])} {name}" if usage["since"][:7] == month else ", measured"
+    if not usd:
+        return f"• Pictures (Google Gemini) in {name}: $0, nothing painted", 0.0
+    n = int(m.get("pictures") or 0)
+    return f"• Pictures (Google Gemini) in {name}: about ${usd:.2f} for {plural(n, 'picture')}{since}", usd
+
+
+def costs_text(costs: dict | None, don: dict | None, gemini: dict | None = None, month: str = "") -> str | None:
+    """The month's running costs as billed (assets/costs.json), last month's measured Gemini pictures (gemini-usage.json,
+    for `month`, YYYY-MM) and what came in (donations.json); None without costs."""
     e = html.escape
     items = (costs or {}).get("items") or []
     billed = [i for i in items if isinstance(i.get("amount"), (int, float))]
@@ -1714,9 +1732,14 @@ def costs_text(costs: dict | None, don: dict | None) -> str | None:
     by_cur: dict[str, float] = {}
     for i in billed:
         by_cur[i["cur"]] = by_cur.get(i["cur"], 0) + i["amount"]
+    gem = gemini_line(gemini, month) if month else None
+    if gem and gem[1]:
+        by_cur["USD"] = round(by_cur.get("USD", 0) + gem[1], 2)
     total = " + ".join(f"{CUR.get(c, c + ' ')}{n:g}" for c, n in by_cur.items())
     out = ["💚 <b>TAU HUD · what it costs to run</b>", f"<b>About {e(total)} a month, not counting time</b>", ""]
     out += [f"• {e(i['t'])}: {CUR.get(i['cur'], i['cur'] + ' ')}{i['amount']:g}" for i in billed]
+    if gem:
+        out.append(e(gem[0]))
     open_bills = [i["t"] for i in items if i.get("amount") is None]
     if open_bills:
         out.append(f"• not in yet: {e(', '.join(open_bills))}")
@@ -3464,7 +3487,9 @@ class Watcher:
                     don = json.load(f)
             except (OSError, ValueError):
                 don = None
-        text = costs_text(costs, don)
+        last = (d.replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+        gemini = await asyncio.to_thread(self.fetch_json_url, GEMINI_USAGE_URL)
+        text = costs_text(costs, don, gemini, last)
         st["month"] = month
         if text:
             ok, _, err = await asyncio.to_thread(tg[0].send_text, text, link_buttons(("💚 Support Tau HUD", f"{SITE}/donate/")))

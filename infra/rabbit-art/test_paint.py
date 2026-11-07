@@ -9,6 +9,10 @@ import types
 
 import paint
 
+USAGE_DIR = tempfile.mkdtemp()
+paint.USAGE = os.path.join(USAGE_DIR, "gemini-usage.json")   # never the server's art folder
+os.environ["GEMINI_MONTH_CAP"] = "100000"                      # the cap is tested on its own at the end
+
 assert set(paint.SCENE) == set(paint.PLACES)
 DRAWN = paint.PLACES[:9]   # the others have no drawn picture and are painted from the island itself
 for id in DRAWN:
@@ -248,4 +252,28 @@ with tempfile.TemporaryDirectory() as out:
     open(os.path.join(out, "bar-2.webp"), "wb").write(PIC)
     paint.cmd_lights(types.SimpleNamespace(out=out, places=["all"], missing=True, model="m"))
     assert len(seen) == n + 1 and json.load(open(os.path.join(out, "index.json")))["lights"]["bar"]["of"] == "bar-2.webp"
+# Gemini costs, measured: tokens times list price, per month, and the cap stops before a call
+u = json.load(open(paint.USAGE))
+mon = u["months"][paint.this_month()]
+assert mon["pictures"] > 0 and mon["looks"] > 0 and mon["usd"] > 0 and "gemini-2.5-flash-image" in mon["models"], mon
+paint.USAGE = os.path.join(USAGE_DIR, "fresh.json")
+assert "nothing painted this month, $0" in paint.usage_line()
+assert abs(paint.meter("gemini-2.5-flash-image", {"usageMetadata": {"promptTokenCount": 1000, "candidatesTokenCount": 1290}}, True) - 0.0390) < 0.0002
+assert abs(paint.meter("gemini-3-pro-image-preview", {"usageMetadata": {"promptTokenCount": 0, "candidatesTokenCount": 2000}}, True) - 0.24) < 1e-9
+assert paint.meter("gemini-3.8-flash", {"usageMetadata": {"promptTokenCount": 1000, "candidatesTokenCount": 200}}, False) < 0.002
+line = paint.usage_line()
+assert "2 pictures, 1 looks at rooms, about $0.28" in line and "aistudio.google.com/usage" in line, line
+os.environ["GEMINI_MONTH_CAP"] = "0.25"
+try:
+    paint.budget_check()
+    raise AssertionError("the cap did not stop the call")
+except SystemExit as e:
+    assert "GEMINI_MONTH_CAP" in str(e) and "$0.28 spent" in str(e), e
+os.environ["GEMINI_MONTH_CAP"] = "1"
+paint.budget_check()   # under the cap: goes on
+os.environ["GEMINI_MONTH_CAP"] = "0"
+try:
+    paint.budget_check(); raise AssertionError("cap 0 must stop every call")
+except SystemExit:
+    pass
 print("ok", len(calls), "calls")

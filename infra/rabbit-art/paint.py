@@ -297,6 +297,79 @@ def post(url, data, headers, timeout=150):
             sys.exit(f"The painter could not be reached: {e}")
 
 
+# What every call to Google's Gemini API costs, measured: the tokens Google counts in each answer (usageMetadata) times
+# Google's list price per million tokens (https://ai.google.dev/gemini-api/docs/pricing, 7 November 2026; change it
+# here when Google does). A picture is billed as output tokens: about 1,290 for gemini-2.5-flash-image (about 4 cents),
+# 1,120 at 1K/2K and 2,000 at 4K for gemini-3-pro-image-preview (about 13 and 24 cents). The month's totals land in
+# /opt/sites/rico/art/gemini-usage.json (numbers only, no prompts): read by `up` (gemini: line) and by the monthly costs
+# post on Telegram (alerts.py). The real bill stays at https://aistudio.google.com/usage; this is the estimate next to it.
+# GEMINI_MONTH_CAP in infra/.env (US dollars, default 10, 0 = no painting at all): no call is made once the month's
+# measured costs reach it.
+USAGE = os.path.join(OUT, "gemini-usage.json")
+PRICES = {   # model: (input, output) in US dollars per million tokens
+    "gemini-2.5-flash-image": (0.30, 30.0),
+    "gemini-3-pro-image-preview": (2.00, 120.0),
+    "gemini-2.5-flash": (0.30, 2.50),
+}
+PRICE_TEXT = (0.50, 3.00)      # a text model not in the list (gemini-3.8-flash, gemini-3-flash-preview): flash prices, rounded up
+PRICE_PICTURE = (2.00, 120.0)  # an image model not in the list: the dearest one's prices
+FLAT_PICTURE = 0.134           # an answer without token counts: one picture at the dearer model's 2K price
+
+
+def month_cap():
+    try:
+        return float(api_key("GEMINI_MONTH_CAP") or 10)
+    except ValueError:
+        return 10.0
+
+
+def this_month():
+    return time.strftime("%Y-%m", time.gmtime())
+
+
+def budget_check():
+    """Stops before a call once this month's measured Gemini costs reach GEMINI_MONTH_CAP (nothing is spent then)."""
+    cap, spent = month_cap(), load(USAGE).get("months", {}).get(this_month(), {}).get("usd", 0)
+    if spent >= cap:
+        sys.exit(f"Gemini: ${spent:.2f} spent this month, the cap is ${cap:g} (GEMINI_MONTH_CAP). Nothing painted. "
+                 "To allow more this month: echo 'GEMINI_MONTH_CAP=20' >> /opt/tau-command-hud/infra/.env")
+
+
+def meter(model, r, picture):
+    """Adds one answer of the Gemini API to this month's totals in gemini-usage.json; returns its cost in US dollars."""
+    u = (r or {}).get("usageMetadata") or {}
+    tin = int(u.get("promptTokenCount") or 0)
+    tout = int(u.get("candidatesTokenCount") or 0) + int(u.get("thoughtsTokenCount") or 0)
+    pin, pout = PRICES.get(model) or (PRICE_PICTURE if picture or "image" in model else PRICE_TEXT)
+    usd = (tin * pin + tout * pout) / 1e6 if (tin or tout) else (FLAT_PICTURE if picture else 0.001)
+    try:
+        j = load(USAGE)
+        j["about"] = ("Gemini API calls made by infra/rabbit-art/paint.py, per month (UTC), with their cost in US dollars "
+                      "estimated from the tokens Google counted and its list prices; the bill itself is in Google AI Studio.")
+        j.setdefault("since", time.strftime("%Y-%m-%d", time.gmtime()))
+        m = j.setdefault("months", {}).setdefault(this_month(), {"pictures": 0, "looks": 0, "usd": 0, "models": {}})
+        m["pictures" if picture else "looks"] += 1
+        m["usd"] = round(m["usd"] + usd, 4)
+        mm = m["models"].setdefault(model, {"calls": 0, "usd": 0})
+        mm["calls"] += 1
+        mm["usd"] = round(mm["usd"] + usd, 4)
+        write(USAGE, json.dumps(j, indent=1).encode())
+    except OSError:
+        pass   # a test or a machine without the art folder: nothing to keep
+    return usd
+
+
+def usage_line():
+    """One line for the block `up` prints: this month's measured Gemini costs."""
+    j = load(USAGE)
+    m = j.get("months", {}).get(this_month())
+    cap = f"cap ${month_cap():g} a month, GEMINI_MONTH_CAP"
+    if not m:
+        return (f"gemini:  nothing painted this month, $0 ({cap})" + ("" if j else "; measured from the first painting on"))
+    return (f"gemini:  this month {m['pictures']} pictures, {m['looks']} looks at rooms, about ${m['usd']:.2f} "
+            f"(measured since {j.get('since', '?')}, {cap}); the bill: https://aistudio.google.com/usage")
+
+
 def mime(raw):
     return "image/png" if raw[:4] == b"\x89PNG" else "image/jpeg" if raw[:2] == b"\xff\xd8" else "image/webp"
 
@@ -308,8 +381,10 @@ def paint_gemini(plate, prompt, n, model, refs=(), size=None, aspect="16:9"):
         print(f"    painting {i + 1} of {n} ...", flush=True)
         body = {"contents": [{"parts": [{"text": prompt}, *pics]}],
                 "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": aspect, **({"imageSize": size} if size else {})}}}
+        budget_check()
         r = post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                  json.dumps(body).encode(), {"Content-Type": "application/json", "x-goog-api-key": api_key("GEMINI_API_KEY")})
+        meter(model, r, True)
         parts = ((r.get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
         img = [p for p in parts if (p.get("inlineData") or p.get("inline_data"))]
         if not img:
@@ -1403,9 +1478,11 @@ def look_at_lights(raw, model):
     body = {"contents": [{"parts": [{"text": LIGHTS_PROMPT}, {"inline_data": {"mime_type": mime(raw), "data": base64.b64encode(raw).decode()}}]}],
             "generationConfig": {"responseMimeType": "application/json", "responseSchema": LIGHTS_SCHEMA, "temperature": 0.2}}
     for i, m in enumerate(model):   # an older model Google has retired answers 404: the next one is asked
+        budget_check()
         try:
             r = post(f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent",
                      json.dumps(body).encode(), {"Content-Type": "application/json", "x-goog-api-key": api_key("GEMINI_API_KEY")})
+            meter(m, r, False)
             break
         except SystemExit as e:
             if " 404" not in str(e) or i == len(model) - 1:
@@ -1540,6 +1617,7 @@ def main():
     fo.add_argument("--no-cast", dest="cast", action="store_false", help="only the townspeople, not the named cast")
     fo.add_argument("--model", default=None)
     sub.add_parser("page")
+    sub.add_parser("usage")
     li = sub.add_parser("lights")
     li.add_argument("places", nargs="*", default=["all"], help="all (default), or some of: " + " ".join(PLACES[1:]))
     li.add_argument("--missing", action="store_true", help="only rooms whose painting has not been looked at yet")
@@ -1547,7 +1625,9 @@ def main():
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
     a = p.parse_args()
-    {"page": page, "draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "touch": cmd_touch, "narrow": cmd_narrow, "busts": cmd_busts, "creatures": cmd_creatures, "lights": cmd_lights}[a.cmd](a)
+    global USAGE
+    USAGE = os.path.join(a.out, "gemini-usage.json")
+    {"page": page, "draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "touch": cmd_touch, "narrow": cmd_narrow, "busts": cmd_busts, "creatures": cmd_creatures, "lights": cmd_lights, "usage": lambda a: print(usage_line())}[a.cmd](a)
 
 
 if __name__ == "__main__":
