@@ -2608,6 +2608,11 @@
     "html": "News line: a new blog article now opens every round of the line for its first two days, and comes on within five minutes of being published, also on a page that is already open."
   },
   {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-07",
+    "html": "White Rabbit Key: the places stay lit at night. After dark a room now keeps well over half the light of the day, in the warm colour of its lamps, and out in the open the moon gives a pale light, instead of everything sinking into deep blue; the one you talk to stands in the place’s light. A place can now also have a painted night of its own, the same picture with its lamps lit, which fades in from about six in the evening. It is fetched only after dark, so the day costs no extra download."
+  },
+  {
     "tag": "No Memo",
     "on": "2026-11-07",
     "html": "No Memo: a second game on the live testnet, this one a terminal. The crew of the Black Sequence, the pirate ship that tests the chain every Tuesday, hands out twelve contracts; each is a real transaction from your test wallet, signed in this browser, and the chain itself is the judge. Make your mark, say it in the amount (a Tau transaction has no memo field), send a sealed payment twice, a dead letter, a free ride, an overspend, the giant, a forgery, an impostor: the chain must say no, with the right answer, and the terminal tells you what that answer means. Take a retractable payment back before its release, and race the block clock, which is the real expire_at_height. Every contract has a trace: a block deadline, enforced by the chain. The Bosun keeps the week’s case file, built from the pirates’ logbook and the hack of the week: the victim’s history as a wallet shows it, and the lookalike address to find. In Simulation mode a practice node in the browser answers the way the testnet does, so the contracts can be tried without the chain. English, 中文 and 日本語; one screen on a laptop, three panes on a phone.",

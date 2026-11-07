@@ -1,8 +1,9 @@
 """The Night Line announcement picture, made from the island's own paintings (the ones the game shows), never from
 the drawn plates of the first days:  python night_line_pic.py <art dir with index.json> <out.jpg>
 
-The painted Radio Coco room at night (the game's night light, a little brighter so it reads on a phone), Rico's painted
-portrait on the right, an ON AIR card on the left."""
+The painted Radio Coco room at night (its painted night where there is one, paint.py isle; else the game's night light
+over the day picture, a little brighter so it reads on a phone), Rico's painted portrait on the right, an ON AIR card on
+the left."""
 import json, os, sys
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
@@ -33,10 +34,14 @@ def main(art, out):
     sc = json.load(open(os.path.join(art, "index.json"))).get("scenes", {})
     if "radio" not in sc:
         sys.exit("no painted radio room in " + art)
-    room = cover(Image.open(os.path.join(art, sc["radio"])).convert("RGB"), W, H)
-    night = ImageChops.multiply(room, Image.new("RGB", (W, H), (120, 138, 200)))   # the game's night is (58,76,140); brighter for a phone
-    glow = Image.new("RGB", (W, H)); ImageDraw.Draw(glow).ellipse([W * 0.25, H * 0.15, W * 0.75, H * 0.85], fill=(90, 60, 30))
-    pic = ImageChops.add(night, glow.filter(ImageFilter.GaussianBlur(160)))
+    painted = sc.get("radio-night") if os.path.exists(os.path.join(art, sc.get("radio-night") or "-")) else None
+    room = cover(Image.open(os.path.join(art, painted or sc["radio"])).convert("RGB"), W, H)
+    if painted:   # the night painted over this very room, its lamps lit
+        pic = room
+    else:
+        night = ImageChops.multiply(room, Image.new("RGB", (W, H), (120, 138, 200)))   # the game's night is (58,76,140); brighter for a phone
+        glow = Image.new("RGB", (W, H)); ImageDraw.Draw(glow).ellipse([W * 0.25, H * 0.15, W * 0.75, H * 0.85], fill=(90, 60, 30))
+        pic = ImageChops.add(night, glow.filter(ImageFilter.GaussianBlur(160)))
     b = sc.get("bust-rico")
     if b and os.path.exists(os.path.join(art, b)):
         bust = Image.open(os.path.join(art, b)).convert("RGBA")
@@ -53,7 +58,7 @@ def main(art, out):
     d.text((90, 798), "White Rabbit Key", font=font(26), fill=(120, 220, 140, 255))
     pic = Image.alpha_composite(pic.convert("RGBA"), card).convert("RGB")
     pic.save(out, quality=90)
-    print("made", out, "from", sc["radio"], "and", b or "no portrait")
+    print("made", out, "from", painted or sc["radio"], "and", b or "no portrait")
 
 
 if __name__ == "__main__":

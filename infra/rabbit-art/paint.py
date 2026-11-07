@@ -19,6 +19,8 @@ One key in infra/.env (never in the repository), whichever you have:
       these moves the places, streets and lights in the game to match it
   infra/rabbit-art/paint.sh keep island=14 --layout island-14   with places set by hand on that painting
   infra/rabbit-art/paint.sh drop hall            back to the drawn picture for that place
+  infra/rabbit-art/paint.sh isle isle-36         takes over a set painted elsewhere (imports/codex/isle-36: the island,
+      the places by day and their painted nights); nothing painted, nothing paid, the game shows them at once
 paint.sh runs this file with the server's python3; with Pillow (apt-get install -y python3-pil) the pictures are small WebP files.
 """
 import argparse
@@ -1278,7 +1280,7 @@ def cmd_hires(a):
         buf = io.BytesIO(); out.save(buf, "WEBP", quality=84, method=5); data = buf.getvalue()
         name = f"{id}-hd-{hashlib.sha1(data).hexdigest()[:8]}.webp"
         write(os.path.join(a.out, name), data)
-        orig[id] = src; sc[id] = name
+        orig[id] = src; sc[id] = name; sc.pop(id + "-night", None)   # painted anew: a painted night no longer lines up
         write(path, json.dumps(idx, indent=1).encode())   # after each picture, so a stop half way keeps what is done
         print(f"  {name}: {out.size[0]} x {out.size[1]} pixels", flush=True)
     print("Done. Live: https://tauhud.com/rabbit/ (Ctrl+F5)")
@@ -1481,6 +1483,7 @@ def cmd_keep(a):
         shutil.copyfile(os.path.join(a.out, "drafts", f), os.path.join(a.out, f))
         idx["scenes"][id] = f
         idx.get("orig", {}).pop(id, None)   # a new pick: its sharp wide copy is made again by hires
+        idx["scenes"].pop(id + "-night", None)   # its painted night was made from the picture before
         if id == "island":   # a painting of a new sketch brings where everything stands on it
             sk = drafts.get("sketch", {}).get(f)
             if getattr(a, "layout", None):   # a layout drawn by hand over this very painting (plates/<name>.json)
@@ -1608,11 +1611,161 @@ def cmd_drop(a):
     idx = load(path)
     for id in a.places:
         idx.get("scenes", {}).pop(id, None)
+        idx.get("scenes", {}).pop(id + "-night", None)
         if id == "island":
             idx.pop("layout", None)
         idx.get("orig", {}).pop(id, None)
     write(path, json.dumps(idx, indent=1).encode())
     print("Back to the drawn pictures for: " + ", ".join(a.places))
+
+
+# ---------- a set painted elsewhere: the island and its places, by day and at night ----------
+# A set painted outside the server (infra/rabbit-art/imports/codex/<set>/, e.g. isle-36) is taken over as it is: nothing
+# is painted, nothing is paid, the node is left alone (up art). island.webp is the live island with only a few spots
+# changed (the people taken out of the square): it keeps the live island's name with -clean-<hash>, so its layout and the
+# living island's clip (rabbit/art/live, matched by that name) stay with it. rooms/<id>.webp is a place by day (21:9, at
+# least 2560 wide) and rooms/<id>-night.webp the very same picture at night, its lamps lit: the game fades it in from the
+# evening (rabbit/scene.js paintedNight) instead of darkening the day picture. A night that does not line up with its
+# day picture, or a picture of the wrong size, is refused with the reason; the rest is taken over.
+IMPORTS = os.path.join(HERE, "imports", "codex")
+ISLAND_CHANGE_MAX = 0.03   # the island may differ from the live one in at most 3 % of its pixels (a few spots, not a repaint)
+
+
+def isle_dir(name):
+    if name:
+        d = name if os.path.isabs(name) or os.sep in name else os.path.join(IMPORTS, name)
+        if not os.path.isdir(d):
+            sys.exit(f"isle: no folder {d}")
+        return d
+    sets = sorted((x for x in (os.listdir(IMPORTS) if os.path.isdir(IMPORTS) else []) if x.startswith("isle-") and os.path.isdir(os.path.join(IMPORTS, x))),
+                  key=lambda x: [int(n) if n.isdigit() else n for n in re.split(r"(\d+)", x)])
+    if not sets:
+        sys.exit(f"isle: no set to take over in {IMPORTS} (a folder isle-<island>)")
+    return os.path.join(IMPORTS, sets[-1])
+
+
+def picture(d, stem):
+    for ext in (".webp", ".png", ".jpg", ".jpeg"):
+        if os.path.isfile(os.path.join(d, stem + ext)):
+            return os.path.join(d, stem + ext)
+    return None
+
+
+def lines_up(day, night):
+    """How well a night picture lines up with its day picture: its outlines (small, grey, softened a little) compared with
+    the day picture's, 1 the very same outlines, about 0 another picture. A night made from the day picture scores above
+    0.9, one a few pixels off still above 0.85."""
+    from PIL import Image, ImageFilter, ImageOps
+    def outline(im):
+        g = ImageOps.autocontrast(im.convert("L").resize((480, max(1, round(480 * im.height / im.width))), Image.LANCZOS), cutoff=1)
+        return list(g.filter(ImageFilter.FIND_EDGES).filter(ImageFilter.GaussianBlur(2)).tobytes())
+    a, b = outline(day), outline(night)
+    n = len(a); ma, mb = sum(a) / n, sum(b) / n
+    cov = sum((x - ma) * (y - mb) for x, y in zip(a, b))
+    va, vb = sum((x - ma) ** 2 for x in a), sum((y - mb) ** 2 for y in b)
+    return cov / (va * vb) ** 0.5 if va and vb else 0.0
+
+
+def brightness(im):
+    """The mean brightness (0 to 255) of a picture and the share of it that is near black."""
+    g = im.convert("L").resize((480, max(1, round(480 * im.height / im.width))))
+    h = g.histogram(); n = sum(h)
+    return sum(i * c for i, c in enumerate(h)) / n, sum(h[:16]) / n
+
+
+def webp_bytes(path, im, quality=88):
+    """A WebP as it came stays byte for byte (no second loss); any other picture is made a WebP."""
+    raw = open(path, "rb").read()
+    if raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
+        return raw
+    buf = io.BytesIO(); im.save(buf, "WEBP", quality=quality, method=5)
+    return buf.getvalue()
+
+
+def cmd_isle(a):
+    from PIL import Image, ImageChops
+    d = isle_dir(a.src)
+    path = os.path.join(a.out, "index.json")
+    idx = load(path)
+    sc = idx.setdefault("scenes", {})
+    did, refused = [], []
+    print(f"isle: {os.path.relpath(d, REPO) if d.startswith(REPO) else d}", flush=True)
+    # the island: the live painting with a few spots changed
+    f = picture(d, "island")
+    if f and "island" in (a.only or ["island"]):
+        live = idx.get("orig", {}).get("island") or sc.get("island")   # the picture that was kept (not a wider copy of it)
+        stem = re.sub(r"-clean-[0-9a-f]{8}$", "", os.path.splitext(live or "")[0])
+        base = next((p for p in (os.path.join(a.out, stem + ".webp"), os.path.join(a.out, live or "")) if live and os.path.isfile(p)), None)
+        new = Image.open(f).convert("RGB")
+        if not base:
+            refused.append("island: there is no live island to compare it with (keep one first: up keep <n>)")
+        else:
+            old = Image.open(base).convert("RGB")
+            if new.size != old.size:
+                refused.append(f"island: {new.size[0]} x {new.size[1]}, the live island is {old.size[0]} x {old.size[1]}; it must be the live island with only some spots changed")
+            else:
+                r, g, b = ImageChops.difference(new, old).split()
+                changed = ImageChops.lighter(ImageChops.lighter(r, g), b).point(lambda v: 255 if v > 40 else 0)
+                share = changed.histogram()[255] / (new.width * new.height)
+                if share > ISLAND_CHANGE_MAX:
+                    refused.append(f"island: {share:.1%} of it differs from the live island, more than a few spots; a repainted island is a new island (up keep)")
+                else:
+                    buf = io.BytesIO(); new.save(buf, "WEBP", quality=86, method=5); data = buf.getvalue()
+                    name = f"{stem}-clean-{hashlib.sha1(data).hexdigest()[:8]}.webp"
+                    box = changed.getbbox()
+                    if not a.dry:
+                        write(os.path.join(a.out, name), data)
+                        sc["island"] = name; idx.get("orig", {}).pop("island", None)
+                    did.append(f"island {name} ({share:.2%} changed" + (f", within x {box[0]}-{box[2]}, y {box[1]}-{box[3]}" if box else ", nothing") + ")")
+    # the places: each by day and, where it is there, at night
+    rd = os.path.join(d, "rooms")
+    for id in PLACES[1:]:
+        if a.only and id not in a.only:
+            continue
+        f = picture(rd, id)
+        if not f:
+            continue
+        day = Image.open(f).convert("RGB")
+        w, h = day.size
+        if w < 2560 or not 1.7 <= w / h <= 2.5:
+            refused.append(f"{id}: {w} x {h}; a place is 21:9 (3360 x 1440), at least 2560 wide")
+            continue
+        fn = picture(rd, id + "-night")
+        night = Image.open(fn).convert("RGB") if fn else None
+        note = ""
+        if night is not None:
+            fit = lines_up(day, night)
+            (b0, _), (b1, black) = brightness(day), brightness(night)
+            if night.size != day.size:
+                refused.append(f"{id} at night: {night.size[0]} x {night.size[1]}, its day picture {w} x {h}; it must be the day picture at night, the same size")
+                night = None
+            elif fit < 0.5:
+                refused.append(f"{id} at night: does not line up with its day picture ({fit:.2f}); it must be the day picture with the night painted over it")
+                night = None
+            else:
+                note = f", night {b1 / max(1, b0):.0%} of the day's light" + (f", {black:.0%} near black" if black > 0.05 else "") + ("" if fit >= 0.85 else f", lines up only roughly ({fit:.2f})")
+        dd = webp_bytes(f, day)
+        dn = f"{id}-codex-{hashlib.sha1(dd).hexdigest()[:8]}.webp"
+        if not a.dry:
+            write(os.path.join(a.out, dn), dd)
+            sc[id] = dn; idx.get("orig", {}).pop(id, None)
+        if night is not None:
+            nd = webp_bytes(fn, night)
+            nn = f"{id}-night-codex-{hashlib.sha1(nd).hexdigest()[:8]}.webp"
+            if not a.dry:
+                write(os.path.join(a.out, nn), nd)
+                sc[id + "-night"] = nn
+        elif not a.dry:
+            sc.pop(id + "-night", None)   # an older night was made from the picture before
+        did.append(f"{id}{' + night' if night is not None else ''} ({w} x {h}{note})")
+    if not a.dry and did:
+        write(path, json.dumps(idx, indent=1).encode())
+    for x in did:
+        print("  took over: " + x)
+    for x in refused:
+        print("  REFUSED: " + x)
+    print("isle: " + (f"{len(did)} taken over" if did else "nothing taken over") + (f", {len(refused)} refused" if refused else "")
+          + (" (dry run, nothing written)" if a.dry else " (Ctrl+F5)" if did else ""))
 
 
 def main():
@@ -1684,10 +1837,14 @@ def main():
     li.add_argument("--model", default=None, help="default: " + ", ".join(LIGHT_MODELS) + " (the next when one is retired)")
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
+    il = sub.add_parser("isle")
+    il.add_argument("src", nargs="?", default=None, help="the set in imports/codex (default: the newest isle-*), or a folder")
+    il.add_argument("--only", nargs="+", default=None, help="only these: island and/or places")
+    il.add_argument("--dry", action="store_true", help="check and tell, write nothing")
     a = p.parse_args()
     global USAGE
     USAGE = os.path.join(a.out, "gemini-usage.json")
-    {"page": page, "draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "touch": cmd_touch, "narrow": cmd_narrow, "busts": cmd_busts, "creatures": cmd_creatures, "lights": cmd_lights, "usage": lambda a: print(usage_line())}[a.cmd](a)
+    {"page": page, "draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "touch": cmd_touch, "narrow": cmd_narrow, "busts": cmd_busts, "creatures": cmd_creatures, "lights": cmd_lights, "isle": cmd_isle, "usage": lambda a: print(usage_line())}[a.cmd](a)
 
 
 if __name__ == "__main__":
