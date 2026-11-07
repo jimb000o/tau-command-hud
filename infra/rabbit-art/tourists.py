@@ -2,6 +2,7 @@
 each, cut out, brought to the island's scale and laid out as one sheet with its manifest.
 
     python3 infra/rabbit-art/tourists.py FOLDER_OR_ZIP [--out rabbit/art/tourists] [--size p03=0.95 ...] [--partial] [--raw]
+    python3 infra/rabbit-art/tourists.py pirates.zip --set pirates     # the Black Sequence's crew -> rabbit/art/ships/crew-pirate.*
 
 The folder (or the zip, anywhere inside it) holds <id>-a and <id>-b for every figure below, as WebP or PNG (P01_A.png
 or p1a.webp will do too): cut out on transparent, or still on their flat background, which is then keyed out here as
@@ -41,6 +42,13 @@ FIGURES = [("p01", "back", -1), ("p02", "back", -1), ("p03", "back", -1), ("p04"
            ("p09", "front", -1), ("p10", "front", -1), ("p11", "front", 1), ("p12", "front", 1),
            ("p13", "side", -1), ("p14", "side", -1), ("p15", "side", 1), ("p16", "side", 1)]
 GUIDES = {"expedition": ("guide-dryrun", "front", -1), "liner": ("guide-queen", "front", -1)}   # MS Dry Run, Queen Mempool
+# the pirates of the Black Sequence (--set pirates): they never land, the game stands them on their ship's deck
+# (ships.json "pirate" deck points) and their captain at her place; one pirate for each trick the ship tries
+CREW = [("k01", "back", -1), ("k02", "back", -1), ("k03", "back", 1), ("k04", "back", 1),
+        ("k05", "front", -1), ("k06", "front", -1), ("k07", "front", 1), ("k08", "front", 1)]
+CAPTAINS = {"pirate": ("captain-pirates", "front", -1)}
+SETS = {"tourists": (FIGURES, GUIDES, "tourists", OUT),
+        "pirates": (CREW, CAPTAINS, "crew-pirate", os.path.join(REPO, "rabbit", "art", "ships"))}
 
 
 def key(name):
@@ -181,12 +189,14 @@ def tall(im):
     return bb[3] - bb[1] if bb else 0
 
 
-def build(src, out=OUT, size=None, partial=False, raw=False):
+def build(src, out=None, size=None, partial=False, raw=False, what="tourists"):
     """The sheet and its manifest from the painted frames; returns the manifest, notes on what looks wrong, and how
     tall each figure stands on the island (world units)."""
     size = size or {}
+    figures, guides, sheet_name, out0 = SETS[what]
+    out = out or out0
     pics = files(src, raw)
-    todo = [(i, v, f, None) for i, v, f in FIGURES] + [(n, v, f, s) for s, (n, v, f) in GUIDES.items()]
+    todo = [(i, v, f, None) for i, v, f in figures] + [(n, v, f, s) for s, (n, v, f) in guides.items()]
     got, notes, used = [], [], set()
     for name, view, face, ship in todo:
         fr = {}
@@ -253,7 +263,7 @@ def build(src, out=OUT, size=None, partial=False, raw=False):
     ch = max(max(f[4].height, f[5].height) for f in frames) + 2
     rows = -(-2 * len(frames) // COLS)
     sheet = Image.new("RGBA", (cw * COLS, ch * rows), (0, 0, 0, 0))
-    man = {"src": "tourists.webp", "cols": COLS, "cell": [cw, ch], "unit": UNIT, "figures": [], "guides": {}}
+    man = {"src": sheet_name + ".webp", "cols": COLS, "cell": [cw, ch], "unit": UNIT, "figures": [], "guides": {}}
     for i, (name, view, face, ship, sa, sb, ft, sw) in enumerate(frames):
         for j, im in enumerate((sa, sb)):
             c = 2 * i + j
@@ -269,8 +279,8 @@ def build(src, out=OUT, size=None, partial=False, raw=False):
     os.makedirs(out, exist_ok=True)
     buf = io.BytesIO()
     sheet.save(buf, "WEBP", lossless=True, quality=100, method=6)   # lossless: the two frames of a figure match to the pixel
-    open(os.path.join(out, "tourists.webp"), "wb").write(buf.getvalue())
-    with open(os.path.join(out, "tourists.json"), "w", encoding="utf-8") as fh:
+    open(os.path.join(out, sheet_name + ".webp"), "wb").write(buf.getvalue())
+    with open(os.path.join(out, sheet_name + ".json"), "w", encoding="utf-8") as fh:
         json.dump(man, fh, indent=1)
         fh.write("\n")
     return man, notes, heights
@@ -279,17 +289,18 @@ def build(src, out=OUT, size=None, partial=False, raw=False):
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("src", help="the folder or zip with p01-a.webp ... guide-queen-b.webp")
-    p.add_argument("--out", default=OUT)
+    p.add_argument("--out", default=None, help="where the sheet goes (default: rabbit/art/tourists, or rabbit/art/ships for the pirates)")
+    p.add_argument("--set", default="tourists", choices=sorted(SETS), help="tourists (default) or pirates: the crew of the Black Sequence, k01..k08 and captain-pirates")
     p.add_argument("--size", nargs="*", default=[], help="id=factor, e.g. p03=0.95")
     p.add_argument("--partial", action="store_true", help="leave out the figures that are missing")
     p.add_argument("--raw", action="store_true", help="take the magenta originals in raw/ instead of the cut-outs")
     a = p.parse_args(argv)
     size = {k: float(v) for k, v in (s.split("=", 1) for s in a.size)}
-    man, notes, heights = build(a.src, a.out, size, a.partial, a.raw)
+    man, notes, heights = build(a.src, a.out, size, a.partial, a.raw, a.set)
     for n in notes:
         print("note:", n)
     print("tall on the island (units; a grown-up is %d):" % ADULT_UNITS, " ".join(f"{k} {v}" for k, v in heights.items()))
-    print(f"{len(man['figures'])} passengers and {len(man['guides'])} guides, cells {man['cell'][0]}x{man['cell'][1]} -> {a.out}")
+    print(f"{len(man['figures'])} figures and {len(man['guides'])} guides, cells {man['cell'][0]}x{man['cell'][1]} -> {a.out or SETS[a.set][3]}")
 
 
 if __name__ == "__main__":

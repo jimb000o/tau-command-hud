@@ -2472,5 +2472,10 @@
     "tag": "Services",
     "on": "2026-11-07",
     "html": "Services on the testnet (tauhud.com/services/): a directory of what runs on Tau Testnet Alpha, with categories and search. Accounts appear by themselves once the chain shows them serving other wallets: co-signers others name for their payments, rule givers whose rules get taken, accounts paid with terms (retractable transfers) or by many different wallets. Numbers come straight from the blocks, every minute; nobody signs up. Ours (Guardian, White Rabbit Key, Agorzilla, wallet, API, rules wall, node kit) are listed first and marked. A builder can ask for a name and a link with a pre-filled request. Also open to other sites as JSON: node.tauhud.com/services."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-07",
+    "html": "White Rabbit Key: the pirates of Black Sequence are painted now, one for each trick she tries (an empty purse, two identical receipts, a stopped pocket watch, a wax seal, a false moustache, an empty hat, a calendar with its pages torn off, a sack of coins too big to move) and their captain with the chain-link flag; they stand on her deck while she lies at anchor and never come ashore. Her own painting replaces the darkened stand-in on tauhud.com/rabbit/ and in her announcement pictures."
   }
 ]
