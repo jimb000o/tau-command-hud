@@ -1,0 +1,440 @@
+{
+  "v": 1,
+  "checked": "2026-11-07",
+  "checked_against": {
+    "IDNI/tau-testnet": {
+      "sha": "668fbf4762f2eeb76b39975157d2e75af788d240",
+      "date": "2026-11-05"
+    },
+    "IDNI/tau-lang": {
+      "sha": "6244544a2bf4f036a02e3e0d9d68ab7428c55600",
+      "date": "2026-11-06"
+    }
+  },
+  "note": "Each fact was read in IDNI's own public repositories at the commits above and links the exact lines. Nothing here comes from memory, chat or guesses. When IDNI changes one of these files, tauhud.com/facts/ marks the fact 'check again' until a person reads it anew.",
+  "topics": [
+    {
+      "id": "basics",
+      "en": "What Tau is",
+      "zh": "Tau 是什么",
+      "ja": "Tau とは"
+    },
+    {
+      "id": "chain",
+      "en": "The testnet chain",
+      "zh": "测试网链",
+      "ja": "テストネットのチェーン"
+    },
+    {
+      "id": "accounts",
+      "en": "Accounts, payments, fees",
+      "zh": "账户、付款、手续费",
+      "ja": "アカウント・送金・手数料"
+    },
+    {
+      "id": "rules",
+      "en": "Rules people give their own accounts",
+      "zh": "用户给自己账户设的规则",
+      "ja": "自分のアカウントに付けるルール"
+    },
+    {
+      "id": "governance",
+      "en": "Changing the chain's own rules",
+      "zh": "修改链本身的规则",
+      "ja": "チェーン自体のルールを変える"
+    },
+    {
+      "id": "running",
+      "en": "Running a node",
+      "zh": "运行节点",
+      "ja": "ノードを動かす"
+    },
+    {
+      "id": "safety",
+      "en": "What the testnet does not promise",
+      "zh": "测试网不承诺的事",
+      "ja": "テストネットが約束しないこと"
+    }
+  ],
+  "facts": [
+    {
+      "id": "tau-lang",
+      "topic": "basics",
+      "en": "The Tau Language is a formal specification language that IDNI describes as expressive, decidable and executable: a specification can be checked for satisfiability, and the framework can synthesize a program that meets it. IDNI calls it work in progress, with releases in an alpha state.",
+      "zh": "Tau 语言是一种形式化规格语言，IDNI 称其为可表达、可判定、可执行：可以检查一个规格是否可满足，框架还能合成满足该规格的程序。IDNI 说明它仍在开发中，发布版本处于 alpha 阶段。",
+      "ja": "Tau 言語は形式仕様言語で、IDNI は表現力があり、決定可能で、実行可能だと説明しています。仕様が充足可能かを検査でき、フレームワークはそれを満たすプログラムを合成できます。IDNI は開発途中で、リリースは alpha 段階だとしています。",
+      "src": [
+        [
+          "tau-lang README, introduction",
+          "https://github.com/IDNI/tau-lang/blob/6244544a2bf4f036a02e3e0d9d68ab7428c55600/README.md#L58-L84"
+        ]
+      ]
+    },
+    {
+      "id": "testnet",
+      "topic": "basics",
+      "en": "Tau Testnet Alpha is a live blockchain whose consensus rules are a Tau program. A Python host does networking, storage and cryptography; the Tau program decides block validity, who may propose a block, transfers and fees.",
+      "zh": "Tau Testnet Alpha 是一条正在运行的区块链，它的共识规则本身就是一个 Tau 程序。Python 主机负责网络、存储和密码学；由 Tau 程序决定区块是否有效、谁可以提出区块、转账和手续费。",
+      "ja": "Tau Testnet Alpha は稼働中のブロックチェーンで、コンセンサスのルールそのものが Tau プログラムです。ネットワーク・保存・暗号は Python のホストが担い、ブロックの有効性、ブロックを提案できる者、送金、手数料は Tau プログラムが決めます。",
+      "src": [
+        [
+          "tau-testnet README, top",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L5-L10"
+        ],
+        [
+          "Consensus boundary",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L392-L398"
+        ]
+      ]
+    },
+    {
+      "id": "alpha",
+      "topic": "safety",
+      "en": "The testnet is alpha: its tokens have no real value, there is no finality, no validator slashing, the cryptography and consensus are not audited, and IDNI warns not to use it with real funds.",
+      "zh": "测试网处于 alpha 阶段：代币没有实际价值，没有最终性，没有对验证者的罚没，密码学和共识未经审计；IDNI 提醒不要用于真实资金。",
+      "ja": "テストネットは alpha 段階です。トークンに実際の価値はなく、ファイナリティもバリデーターへのスラッシングもなく、暗号とコンセンサスは監査されていません。IDNI は実際の資金で使わないよう警告しています。",
+      "src": [
+        [
+          "tau-testnet README, status",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L12-L14"
+        ]
+      ]
+    },
+    {
+      "id": "poa",
+      "topic": "chain",
+      "en": "Blocks come from an on-chain proof-of-authority validator set, not from mining by proof of work or from staking. Only validators in the active set may propose blocks, and the set changes only through on-chain governance.",
+      "zh": "区块来自链上的权威证明（PoA）验证者集合，不是工作量证明挖矿，也不是质押。只有活跃集合中的验证者可以提出区块，集合只能通过链上治理改变。",
+      "ja": "ブロックはオンチェーンのプルーフ・オブ・オーソリティ（PoA）のバリデーター集合から生まれ、プルーフ・オブ・ワークの採掘やステーキングではありません。有効な集合にいるバリデーターだけがブロックを提案でき、集合はオンチェーンのガバナンスでしか変わりません。",
+      "src": [
+        [
+          "tau-testnet README, features",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L8"
+        ],
+        [
+          "Node roles",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L69-L70"
+        ]
+      ]
+    },
+    {
+      "id": "fork-choice",
+      "topic": "chain",
+      "en": "Fork choice is the highest chain, ties broken by the smallest block hash. There are no checkpoints, so a reorganisation can go back as far as the common ancestor (a switch longer than 2000 blocks is refused).",
+      "zh": "分叉选择取最高的链，高度相同时取区块哈希最小者。没有检查点，因此重组可以一直回到共同祖先（超过 2000 个区块的切换会被拒绝）。",
+      "ja": "フォーク選択は最も高いチェーンで、同じ高さならブロックハッシュが最小のものです。チェックポイントはないため、再編成は共通の祖先まで遡ることがあります（2000 ブロックを超える切り替えは拒否されます）。",
+      "src": [
+        [
+          "Security & risk model",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L764"
+        ]
+      ]
+    },
+    {
+      "id": "network",
+      "topic": "chain",
+      "en": "The public network is called tau-testnet-v2. Everything needed to join it (genesis, bootnode address, network id) is committed in IDNI's repository; every node must have the same genesis hash and network id or the other nodes refuse it.",
+      "zh": "公共网络名为 tau-testnet-v2。加入所需的一切（创世文件、引导节点地址、网络 ID）都已提交在 IDNI 的仓库中；每个节点的创世哈希和网络 ID 必须相同，否则其他节点会拒绝它。",
+      "ja": "公開ネットワークの名前は tau-testnet-v2 です。参加に必要なもの（ジェネシス、ブートノードのアドレス、ネットワーク ID）はすべて IDNI のリポジトリにあります。ジェネシスハッシュとネットワーク ID が一致しないノードは、他のノードに拒否されます。",
+      "src": [
+        [
+          "Join the Tau Testnet",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L130-L132"
+        ],
+        [
+          "networks/tau-testnet-v2",
+          "https://github.com/IDNI/tau-testnet/tree/668fbf4762f2eeb76b39975157d2e75af788d240/networks/tau-testnet-v2"
+        ]
+      ]
+    },
+    {
+      "id": "genesis",
+      "topic": "chain",
+      "en": "The tau-testnet-v2 genesis file funds 11 accounts: one with 1,000,000 and ten with 100,000. It names one active validator and the supermajority voting rule. How many validators are active today: see the live numbers.",
+      "zh": "tau-testnet-v2 的创世文件为 11 个账户注资：一个 1,000,000，十个各 100,000。它列出一个活跃验证者和超级多数投票规则。今天有多少验证者在活跃，请看实时数字。",
+      "ja": "tau-testnet-v2 のジェネシスファイルは 11 のアカウントに資金を入れています。1 つが 1,000,000、10 個がそれぞれ 100,000 です。有効なバリデーターは 1 つ、投票ルールは supermajority と書かれています。今日いくつのバリデーターが有効かは、最新の数字を見てください。",
+      "src": [
+        [
+          "genesis.json",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/networks/tau-testnet-v2/genesis.json#L20-L46"
+        ]
+      ]
+    },
+    {
+      "id": "faucet",
+      "topic": "accounts",
+      "en": "The tau-testnet-v2 join profile switches on an automatic faucet: a new account receives 100,000 test tokens on its first transaction. (A network made with IDNI's genesis script has no faucet unless it is set.)",
+      "zh": "tau-testnet-v2 的加入配置开启了自动水龙头：新账户在第一笔交易时收到 100,000 个测试代币。（用 IDNI 的创世脚本创建的网络，除非设置，否则没有水龙头。）",
+      "ja": "tau-testnet-v2 の参加プロファイルでは自動フォーセットが有効です。新しいアカウントは最初の取引で 100,000 のテストトークンを受け取ります。（IDNI のジェネシススクリプトで作ったネットワークは、設定しない限りフォーセットはありません。）",
+      "src": [
+        [
+          "networks/tau-testnet-v2/env",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/networks/tau-testnet-v2/env#L22-L24"
+        ],
+        [
+          "Operating a network",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L325-L327"
+        ]
+      ]
+    },
+    {
+      "id": "keys",
+      "topic": "accounts",
+      "en": "Accounts are BLS12-381 keys. An address is the public key: 96 lowercase hex characters (48 bytes), without 0x. A private key is 64 hex characters (32 bytes); signatures are 96 bytes.",
+      "zh": "账户是 BLS12-381 密钥。地址就是公钥：96 个小写十六进制字符（48 字节），不带 0x。私钥是 64 个十六进制字符（32 字节）；签名为 96 字节。",
+      "ja": "アカウントは BLS12-381 の鍵です。アドレスは公開鍵そのもので、0x なしの小文字 16 進数 96 文字（48 バイト）。秘密鍵は 16 進数 64 文字（32 バイト）、署名は 96 バイトです。",
+      "src": [
+        [
+          "Cryptography & signatures",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L464"
+        ],
+        [
+          "Operating a network",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L325"
+        ]
+      ]
+    },
+    {
+      "id": "transfer",
+      "topic": "accounts",
+      "en": "A transfer is three values: from, to, amount; one transaction can carry several. There is no memo or message field. One transfer can move at most 16,777,215 (amounts are 24-bit numbers).",
+      "zh": "一笔转账就是三个值：付款方、收款方、金额；一笔交易可以包含多笔转账。没有备注或留言字段。单笔转账最多 16,777,215（金额是 24 位数字）。",
+      "ja": "送金は「送り手・受け手・金額」の 3 つの値で、1 つの取引に複数入れられます。メモやメッセージの欄はありません。1 回の送金の上限は 16,777,215 です（金額は 24 ビットの数）。",
+      "src": [
+        [
+          "Transaction signing fields",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/consensus/tx_signing.py#L115-L135"
+        ],
+        [
+          "Amount cap",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L327"
+        ]
+      ]
+    },
+    {
+      "id": "fees",
+      "topic": "accounts",
+      "en": "The base fee comes from the consensus rules themselves (the genesis rule sets 10 per transfer step) and validators can vote to change it. Only ordinary user transactions pay; the fee goes to the block's proposer, unless governance names a fixed receiver. The fee a transaction states is a limit: the sender pays the actual fee, not the limit.",
+      "zh": "基础手续费来自共识规则本身（创世规则为每个转账步骤 10），验证者可以投票修改。只有普通用户交易付费；手续费归区块提出者，除非治理指定了固定的接收账户。交易中写的手续费是上限：发送者付实际费用，而不是上限。",
+      "ja": "基本手数料はコンセンサスのルール自体から出ます（ジェネシスのルールでは送金 1 ステップごとに 10）。バリデーターは投票で変更できます。手数料を払うのは通常のユーザー取引だけで、ガバナンスが固定の受取先を決めない限り、ブロックの提案者に入ります。取引に書く手数料は上限で、送り手が払うのは実際の手数料です。",
+      "src": [
+        [
+          "Transaction fees",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L479-L483"
+        ]
+      ]
+    },
+    {
+      "id": "mempool",
+      "topic": "accounts",
+      "en": "Each account's transactions carry a sequence number; a gap is refused. There is no replace-by-fee: a stuck transaction has to expire or be evicted.",
+      "zh": "每个账户的交易都带序号；跳号会被拒绝。没有按手续费替换：卡住的交易只能等过期或被剔除。",
+      "ja": "各アカウントの取引にはシーケンス番号があり、番号が飛ぶと拒否されます。手数料による置き換え（RBF）はなく、詰まった取引は期限切れか追い出されるのを待つしかありません。",
+      "src": [
+        [
+          "Mempool policy",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L612"
+        ]
+      ]
+    },
+    {
+      "id": "o5",
+      "topic": "rules",
+      "en": "A user can give their own account a Tau rule that blocks some of their own transfers, for example only to listed recipients or nothing above an amount. The chain enforces it when the transaction is admitted and again when the block is applied. A rule binds only the account that set it.",
+      "zh": "用户可以给自己的账户设一条 Tau 规则，挡住自己的某些转账，例如只能转给名单上的收款方，或不超过某个金额。链会在交易被接纳时和区块执行时各检查一次。规则只约束设置它的账户。",
+      "ja": "ユーザーは自分のアカウントに Tau のルールを付け、自分の送金の一部を止められます。たとえば決めた相手にだけ送る、ある金額を超えて送らない、などです。チェーンは取引の受け入れ時とブロックの適用時の両方で確かめます。ルールが縛るのは設定したアカウントだけです。",
+      "src": [
+        [
+          "Consensus boundary, o5",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L396-L398"
+        ]
+      ]
+    },
+    {
+      "id": "o5-slots",
+      "topic": "rules",
+      "en": "In the current code at most 2 accounts can hold a registered personal transfer rule at the same time, chain-wide; IDNI notes that raising the number needs new measurements.",
+      "zh": "在当前代码中，全链同时最多只有 2 个账户可以持有已登记的个人转账规则；IDNI 注明提高这个数字需要重新测量。",
+      "ja": "現在のコードでは、登録された個人の送金ルールを同時に持てるのはチェーン全体で 2 アカウントまでです。IDNI は、この数を上げるには新たな計測が必要だと書いています。",
+      "src": [
+        [
+          "consensus/approvals.py",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/consensus/approvals.py#L78-L83"
+        ]
+      ]
+    },
+    {
+      "id": "rule-sharing",
+      "topic": "rules",
+      "en": "One user can offer a Tau rule to another, who checks it and accepts or rejects it. Offer, accept and reject are transactions and pay fees. An accepted rule cannot be withdrawn, only replaced by accepting another rule for the same output.",
+      "zh": "一个用户可以把一条 Tau 规则提供给另一个用户，对方检查后接受或拒绝。提供、接受、拒绝都是交易，需要付手续费。已接受的规则不能撤回，只能通过接受同一输出的另一条规则来替换。",
+      "ja": "ユーザーは別のユーザーに Tau のルールを提案でき、相手は確かめてから受け入れるか断ります。提案・受け入れ・拒否はどれも取引で手数料がかかります。受け入れたルールは取り消せず、同じ出力の別のルールを受け入れて置き換えるしかありません。",
+      "src": [
+        [
+          "Rule sharing",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L507-L509"
+        ],
+        [
+          "Caveats",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L549"
+        ]
+      ]
+    },
+    {
+      "id": "approvals",
+      "topic": "rules",
+      "en": "A user can require a co-signature for their own large transfers: their rule names an amount and an approver. A transfer above it waits on the chain and goes through by itself once the approver's signed vote arrives.",
+      "zh": "用户可以要求自己的大额转账需要共同签名：规则写明金额和批准人。超过该金额的转账会在链上等待，批准人签名的投票到达后自动完成。",
+      "ja": "ユーザーは自分の大きな送金に共同署名を求められます。ルールに金額と承認者を書くと、それを超える送金はチェーン上で待ち、承認者の署名付き投票が届くと自動で実行されます。",
+      "src": [
+        [
+          "docs/approvals.md",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/docs/approvals.md#L3-L12"
+        ]
+      ]
+    },
+    {
+      "id": "retractable",
+      "topic": "accounts",
+      "en": "A retractable transfer waits in escrow until a set block height or time; until then only the sender can take it back, without a fee. At most 16 can be open per sender (4096 on the whole chain), and the release can be at most 100,000 blocks or 90 days ahead.",
+      "zh": "可撤回转账会在托管中等到设定的区块高度或时间；在那之前只有发送者可以免手续费取回。每个发送者最多同时 16 笔（全链 4096 笔），释放点最远 100,000 个区块或 90 天。",
+      "ja": "取り消し可能な送金は、決めたブロック高か時刻までエスクローで待ちます。それまでは送り手だけが手数料なしで取り戻せます。送り手ごとに同時に 16 件まで（チェーン全体で 4096 件）、解放は最大 100,000 ブロックか 90 日先までです。",
+      "src": [
+        [
+          "Retractable transfers",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L594-L597"
+        ],
+        [
+          "docs/retractable.md",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/docs/retractable.md"
+        ]
+      ]
+    },
+    {
+      "id": "governance",
+      "topic": "governance",
+      "en": "The chain's own consensus rules and its validator set change only through governance on the chain: a proposal carries the full new rules, validators vote, and with the supermajority rule it needs at least two thirds of the active validators.",
+      "zh": "链本身的共识规则和验证者集合只能通过链上治理改变：提案包含完整的新规则，由验证者投票；按超级多数规则，至少需要三分之二的活跃验证者同意。",
+      "ja": "チェーン自体のコンセンサスのルールとバリデーター集合は、オンチェーンのガバナンスでしか変わりません。提案には新しいルール全体が入り、バリデーターが投票します。supermajority のルールでは有効なバリデーターの 3 分の 2 以上が必要です。",
+      "src": [
+        [
+          "Governance",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L490-L502"
+        ]
+      ]
+    },
+    {
+      "id": "activation",
+      "topic": "governance",
+      "en": "An agreed change takes effect only at a later block height (at least as many blocks ahead as there are validators). A proposal that has not reached its votes when that height arrives expires. A change that fails to compile is refused.",
+      "zh": "通过的变更只在之后的某个区块高度生效（至少提前与验证者数量相同的区块数）。到了那个高度仍未获得足够票数的提案会过期。无法编译的变更会被拒绝。",
+      "ja": "合意された変更は、後のブロック高で初めて有効になります（少なくともバリデーターの数だけ先）。その高さまでに票が集まらなかった提案は期限切れになります。コンパイルできない変更は拒否されます。",
+      "src": [
+        [
+          "Governance lifecycle",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L503-L505"
+        ],
+        [
+          "consensus/engine.py",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/consensus/engine.py#L1984-L1987"
+        ]
+      ]
+    },
+    {
+      "id": "ports",
+      "topic": "running",
+      "en": "A node uses three ports: 65432 (RPC and command line), 65433 (WebSocket, used by the web wallet) and 4001 (peer-to-peer). Only 4001 is meant to be public: RPC and WebSocket have no authentication.",
+      "zh": "节点使用三个端口：65432（RPC 和命令行）、65433（WebSocket，网页钱包使用）、4001（点对点）。只有 4001 应该公开：RPC 和 WebSocket 没有身份验证。",
+      "ja": "ノードは 3 つのポートを使います。65432（RPC とコマンドライン）、65433（WebSocket、ウェブウォレットが使用）、4001（ピア間通信）。公開してよいのは 4001 だけで、RPC と WebSocket には認証がありません。",
+      "src": [
+        [
+          "Quickstart",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L35-L37"
+        ],
+        [
+          "RPC / WebSocket exposure",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L774"
+        ]
+      ]
+    },
+    {
+      "id": "run-node",
+      "topic": "running",
+      "en": "The quickest way to run a node is IDNI's standalone Docker image, which builds the Tau engine inside it. Linux and macOS also run it from source (Python 3.14 or newer); Windows needs Docker Desktop or WSL2. Anyone can run a read node; proposing blocks needs a seat in the validator set.",
+      "zh": "运行节点最快的方法是 IDNI 的独立 Docker 镜像，它会在镜像内构建 Tau 引擎。Linux 和 macOS 也可以从源码运行（Python 3.14 或更新）；Windows 需要 Docker Desktop 或 WSL2。任何人都可以运行只读节点；提出区块需要在验证者集合中有席位。",
+      "ja": "ノードをいちばん早く動かす方法は IDNI のスタンドアロン Docker イメージで、Tau エンジンをイメージ内でビルドします。Linux と macOS はソースからも動かせます（Python 3.14 以上）。Windows では Docker Desktop か WSL2 が必要です。読み取りノードは誰でも動かせますが、ブロックの提案にはバリデーター集合の席が必要です。",
+      "src": [
+        [
+          "Quickstart",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L20-L26"
+        ],
+        [
+          "Windows",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L74"
+        ],
+        [
+          "Run from source",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L95"
+        ],
+        [
+          "Node roles",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L69-L70"
+        ]
+      ]
+    },
+    {
+      "id": "web-wallet",
+      "topic": "running",
+      "en": "IDNI's repository includes a browser wallet (web-wallet/) that talks to a node's WebSocket port and keeps private keys in the browser. It is not served by the node; it is opened with a static web server.",
+      "zh": "IDNI 的仓库包含一个浏览器钱包（web-wallet/），它连接节点的 WebSocket 端口，私钥保存在浏览器中。节点不提供它；需要用静态网页服务器打开。",
+      "ja": "IDNI のリポジトリにはブラウザのウォレット（web-wallet/）があり、ノードの WebSocket ポートにつなぎ、秘密鍵はブラウザに置きます。ノードは配信しないので、静的なウェブサーバーで開きます。",
+      "src": [
+        [
+          "Web wallet",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L293"
+        ]
+      ]
+    },
+    {
+      "id": "replay",
+      "topic": "safety",
+      "en": "Signatures do not yet include the network id, so a signed transaction is not tied to one network. IDNI's advice: do not reuse keys across networks.",
+      "zh": "签名目前还不包含网络 ID，因此一笔已签名的交易并不绑定某一个网络。IDNI 的建议：不要在不同网络之间重复使用密钥。",
+      "ja": "署名にはまだネットワーク ID が含まれていないため、署名済みの取引は 1 つのネットワークに結びついていません。IDNI の助言は、ネットワークをまたいで鍵を使い回さないことです。",
+      "src": [
+        [
+          "Cryptography & signatures",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L471"
+        ]
+      ]
+    },
+    {
+      "id": "halt",
+      "topic": "safety",
+      "en": "IDNI lists known alpha risks: deep reorganisations are possible, a crash in the Tau engine can stop a node process, and a bad governance change can halt the chain until it is corrected.",
+      "zh": "IDNI 列出了已知的 alpha 风险：可能出现深度重组，Tau 引擎崩溃会停止节点进程，错误的治理变更可能让链停住，直到被修正。",
+      "ja": "IDNI は alpha の既知のリスクを挙げています。深い再編成が起こりうること、Tau エンジンのクラッシュでノードのプロセスが止まりうること、悪いガバナンスの変更で修正されるまでチェーンが止まりうることです。",
+      "src": [
+        [
+          "Status",
+          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L14"
+        ]
+      ]
+    }
+  ],
+  "files": {
+    "IDNI/tau-testnet": [
+      "README.md",
+      "networks/tau-testnet-v2/env",
+      "networks/tau-testnet-v2/genesis.json",
+      "consensus/tx_signing.py",
+      "consensus/approvals.py",
+      "docs/approvals.md",
+      "docs/retractable.md",
+      "consensus/engine.py"
+    ],
+    "IDNI/tau-lang": [
+      "README.md"
+    ]
+  }
+}
