@@ -1942,7 +1942,8 @@ const AGZ_LIFE = (() => {
   };
   /* the frames for turns and the ball load once the page has settled; until then he turns the old way, a quick flip */
   const MV = { ok: false };
-  const loadMv = () => { const im = new Image(); im.onload = () => { a.style.setProperty("--agz-mv", `url("${im.src}")`); MV.ok = true; }; im.src = "assets/rig/agz-moves.webp"; };
+  const loadMv = () => { const im = new Image(); im.onload = () => { a.style.setProperty("--agz-mv", `url("${im.src}")`); MV.ok = true; }; im.src = window.AgzLook ? AgzLook.src("assets/rig/agz-moves.webp") : "assets/rig/agz-moves.webp"; };
+  addEventListener("agz-stage", () => { if (MV.ok) loadMv(); });   // he grew up: his turns and rolls in the new frames
   if (document.readyState === "complete") setTimeout(loadMv, 1500); else addEventListener("load", () => setTimeout(loadMv, 1500), { once: true });
   const show = (i, mirror) => { sf.style.backgroundPositionX = i / 6 * 100 + "%"; spr.style.transform = mirror ? "scaleX(-1)" : ""; };
   const sprite = on => { a.classList.toggle("sp", on); if (!on) spr.classList.remove("ball"); };
