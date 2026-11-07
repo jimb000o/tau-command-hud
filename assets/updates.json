@@ -2543,6 +2543,11 @@
     }
   },
   {
+    "tag": "Wallet",
+    "on": "2026-11-07",
+    "html": "Wallet: the hack of the week, replayed on the testnet. Every Thursday at 11:00 German time four simulated wallets replay a real kind of attack against a wallet safety setting, starting with address poisoning: a lookalike address that starts and ends like one you pay often sends you a tiny amount, and a payment copied from your history goes to it. One wallet pays with a 30-minute take-back window and takes the money back, its twin pays without and the money is gone. The bot posts the outcome with what the window does not protect; if the chain itself ever does something it must not, nothing is posted and IDNI is told first."
+  },
+  {
     "tag": "White Rabbit Key",
     "on": "2026-11-07",
     "html": "White Rabbit Key: after each Tuesday call of Black Sequence, a clip of about 20 seconds goes to Telegram and X by itself: each trick her pirates tried, one pirate at a time, and what the chain answered, with every number from that evening's logbook. If a trick ever gets through, there is no clip for that evening."

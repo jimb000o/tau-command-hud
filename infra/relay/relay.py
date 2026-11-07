@@ -45,6 +45,7 @@ from simvotes import SimVotes, name_of
 from simwallet import SimWallet
 from slotlease import SlotLease
 from cruise import Cruise
+from hackweek import HackWeek
 from island import Island
 from isle import Isle
 from load import Load
@@ -393,7 +394,10 @@ class Relay:
         self.cruise = Cruise(verdict=self.load_word, chain=self.chain_view, spend=self.island_spend,
                              budget=lambda: self.island.today + len(self.island.queue) < self.island.daily // 2)
         self.cruise.on_tx = lambda ok: self.load.sent("cruise" if ok else "refused")
-        self.island.idle = self.cruise.step
+        # the hack of the week, replayed on the testnet with our own wallets, after the ships in the bot's free slots (hackweek.py)
+        self.hack = HackWeek(verdict=self.load_word)
+        self.hack.on_tx = lambda ok: self.load.sent("cruise" if ok else "refused")
+        self.island.idle = self.idle_step
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
         self.simpredict = SimPredict(os.environ.get("SIMPREDICT_PATH", "/data/simpredict.json"), votes=self.simvotes, names=name_of)
         self.visits = Visits()   # cookie-free visitor numbers for the site owner (visits.py)
@@ -429,7 +433,7 @@ class Relay:
         self.sources = TxSources()              # which transactions came through this relay, for /api/v1/sources
         self.sources.bots = {pk: c for c, pk in self.island.pk.items()}   # White Rabbit Key's rival moves
         self.sources.purses = {pk: p for p, pk in self.island.ppk.items()}   # and the money it pays the visitors
-        self.sources.passengers = lambda: self.cruise.who   # and the cruise ships' simulated passengers
+        self.sources.passengers = self.simulated   # and the cruise ships' simulated passengers
         self.sources_text, self.sources_at = None, 0.0
         self.uptime = self._load_uptime()       # hourly availability buckets and outages
         self.uptime_text: str | None = None
@@ -454,7 +458,7 @@ class Relay:
         # accounts that serve other wallets, found in the blocks alone, for tauhud.com/services/ (services.py)
         self.services = Services()
         self.services.bots = self.wallets.bots
-        self.services.passengers = lambda: self.cruise.who
+        self.services.passengers = self.simulated
         self.services_text, self.services_at = None, 0.0
         self.mempool_seen: dict[str, dict] = {}  # tx_hash -> summary, while in the mempool
         self.left_mempool: dict[str, dict] = {}  # tx_hash -> summary, waiting for a block
@@ -480,7 +484,8 @@ class Relay:
         self.rules_text: str | None = None      # /rules, refreshed by poll_rules
         # last: the cruise ships' passenger wallets are made in the background; tagged as simulated once known
         self.cruise.on_ready = self.tag_passengers
-        if self.cruise.ready:
+        self.hack.on_ready = self.tag_passengers
+        if self.cruise.ready or self.hack.ready:
             self.tag_passengers()
 
     # ---------- polling ----------
@@ -1156,8 +1161,18 @@ class Relay:
         passengers are simulated, so they are counted apart from real wallets, from before the first one sends."""
         w = getattr(self, "wallets", None)
         if w is not None and hasattr(w, "retag"):
-            w.cruise = {pk.lower() for pk in self.cruise.who}
+            w.cruise = {pk.lower() for pk in self.simulated()}
             w.retag()
+
+    def simulated(self) -> dict:
+        """Our simulated wallets: the cruise ships' passengers and the hack of the week's four (pubkey -> who)."""
+        return {**self.cruise.who, **getattr(getattr(self, "hack", None), "who", {})}
+
+    async def idle_step(self, ask, gov) -> bool:
+        """The island bot's free slot: a cruise ship first, then the hack of the week (never both in one slot)."""
+        if await self.cruise.step(ask, gov):
+            return True
+        return await self.hack.step(ask, gov)
 
     def island_spend(self):
         self.island.today += 1   # a passenger's transaction comes out of the island's day budget (ISLAND_DAILY)
@@ -2079,7 +2094,7 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "no-store")])
             return Response(code.value, code.phrase, headers, json.dumps(sim[1], separators=(",", ":")).encode())
-        isl = self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.isle.route(path)
+        isl = self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.hack.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/hack") else self.isle.route(path)
         if isl is not None:
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, json.dumps(isl, separators=(",", ":")).encode())

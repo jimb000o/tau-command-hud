@@ -24,6 +24,9 @@
 #                            the first); it goes to Telegram and X by itself after each Tuesday call; up clip send <visit>
 #              up escrow     the relay alone restarted with the code just pulled (not while a ship is due), then the
 #                            cruise bookings ahead in escrow, each with its state; up escrow status  only those
+#              up hack       the hack of the week (relay/hackweek.py, Thursdays 11:00): next replay, last runs step by step
+#                            (nothing rebuilt, nothing sent); up hack preview  the last replay's post texts and picture;
+#                            up hack release 2026-11-12-poisoning  shows a held-back finding in public (after IDNI knows)
 #              up report     the weekly report for IDNI as it stands (nothing rebuilt, nothing filed): its text, a page
 #                            and a pre-filled GitHub issue link; up report last  last week's; up report send  also to
 #                            your Telegram (it comes there by itself every Sunday 18:00)
@@ -124,6 +127,49 @@ if [ "${1:-}" = "clip" ]; then
   fi
   exit 0
 fi
+# the hack of the week (relay/hackweek.py, posts by alerts/hack_crier.py), nothing rebuilt: up hack  the next replay and the
+# last runs step by step, up hack preview  the last replay's post texts and picture (posts nothing),
+# up hack release <run>  a held-back finding (the chain did what it must not) shown in public, after IDNI knows
+if [ "${1:-}" = "hack" ]; then
+  if [ "${2:-}" = "release" ]; then
+    case "${3:-}" in [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[a-z]*) ;; *) echo "usage: up hack release 2026-11-12-poisoning"; exit 2;; esac
+    docker compose exec -T relay python -c "
+import json, os, sys
+p = os.path.join(os.path.dirname(os.environ.get('HACK_STATE_PATH', '/data/hack-state.json')), 'hack-released.json')
+try:
+    r = json.load(open(p))
+except Exception:
+    r = []
+r = sorted(set(r) | {sys.argv[1]})
+json.dump(r, open(p, 'w'))
+print('released:', ', '.join(r))
+" "$3"
+    echo "copy into the chat: hack release $3 done"
+    exit 0
+  fi
+  if [ "${2:-}" = "preview" ]; then
+    docker compose up -d blog >/dev/null 2>&1 || true
+    docker compose exec -T blog python hack_crier.py preview ${3:-}
+    mkdir -p /opt/sites/rico/art/drafts
+    docker compose cp blog:/tmp/hack.jpg /opt/sites/rico/art/drafts/ >/dev/null 2>&1 && echo "look: https://node.tauhud.com/rico/art/drafts/hack.jpg"
+    exit 0
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T blog python hack_crier.py status 2>&1 || true
+  docker compose exec -T relay python -c 'import json,time,urllib.request
+d=json.load(urllib.request.urlopen("http://127.0.0.1:8080/hack/held", timeout=20)); s=json.load(urllib.request.urlopen("http://127.0.0.1:8080/hack", timeout=20))
+w=s.get("wallets") or {}
+print("hack:    wallets " + (", ".join("%s %s" % (k, v["short"]) for k, v in w.items()) or "not made yet"))
+held={r["id"] for r in d.get("runs") or []}
+for r in json.load(open("/data/hack-state.json")).get("runs", [])[::-1][:3]:
+    print("  %s %s: %s%s" % (r["id"], r.get("status"), r.get("result"), " (FINDING, held back)" if r["id"] in held else ""))
+    for k, x in (r.get("steps") or {}).items():
+        print("    %-12s ok=%s %s %s" % (k, x.get("ok"), x.get("code") or x.get("status") or "", (x.get("note") or "")[:70]))
+    for n in (r.get("log") or [])[-3:]: print("    · " + n["note"][:110])' 2>&1 || echo "relay /hack not answering yet"
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 # IDNI's progress of the day as ONE post, nothing rebuilt (alerts/idni_digest.py): up idni  the last ones and what the
 # next would say now (one model call, posts nothing), up idni send  writes it now and the alerts service posts it within a
 # minute (up idni send --force: also when the check marked numbers or wording), up idni hold / up idni release
@@ -133,9 +179,9 @@ fi
 if [ "${1:-}" = "escrow" ]; then
   if [ "${2:-}" != "status" ]; then
     when=$(TZ=Europe/Berlin date +%u%H)
-    case "$when" in 315|316|317|613|614|615|616)
+    case "$when" in 315|316|317|410|411|613|614|615|616)
       if [ "${2:-}" != "--now" ]; then
-        echo "a cruise ship is due or at the island now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
+        echo "a cruise ship or the hack replay is due or under way now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
         echo "try again after the visit, or: up escrow --now"; exit 1
       fi ;;
     esac
@@ -191,9 +237,9 @@ fi
 if [ "${1:-}" = "services" ]; then
   if [ "${2:-}" != "status" ]; then
     when=$(TZ=Europe/Berlin date +%u%H)
-    case "$when" in 315|316|317|613|614|615|616)
+    case "$when" in 315|316|317|410|411|613|614|615|616)
       if [ "${2:-}" != "--now" ]; then
-        echo "a cruise ship is due or at the island now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
+        echo "a cruise ship or the hack replay is due or under way now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
         echo "try again after the visit, or: up services --now"; exit 1
       fi ;;
     esac
@@ -426,4 +472,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up idni, up report, up blog, up guardian, up services, up knowledge, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up idni, up report, up blog, up hack, up guardian, up services, up knowledge, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
