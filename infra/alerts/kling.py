@@ -58,7 +58,10 @@ ACCESS = os.environ.get("KLING_ACCESS_KEY", "").strip()
 SECRET = os.environ.get("KLING_SECRET_KEY", "").strip()
 BASES = [b.rstrip("/") for b in (os.environ.get("KLING_API_BASE", "").strip() or
                                  "https://api-singapore.klingai.com https://api.klingai.com").split() if b]
-MODEL = os.environ.get("KLING_MODEL", "kling-v2-1").strip()
+# the models tried in this order until Kling takes one (it retires models: kling-v2-1 answered "discontinued" on
+# 7 November 2026); the first that works is remembered (state "model") and asked first from then on
+MODELS = (os.environ.get("KLING_MODEL", "").strip() or "kling-v2-6 kling-v2-5-turbo kling-v2-1-master kling-v1-6").split()
+MODEL = MODELS[0]
 CAP = int(os.environ.get("KLING_MONTH_CAP", "30") or 0)
 REVIEW = int(os.environ.get("KLING_REVIEW", "2") or 0)
 USES = {u.strip() for u in os.environ.get("KLING_USES", "island,trailer,ship,pirate,agorzilla").split(",") if u.strip()}
@@ -148,20 +151,43 @@ def jpeg(image) -> bytes:
     return b.getvalue()
 
 
+def model_gone(e: Exception) -> bool:
+    """Kling's answer for a model it does not offer (any more): code 1203, or words to that effect."""
+    t = str(e).lower()
+    return "code 1203" in t or "discontinued" in t or ("model" in t and ("not support" in t or "not exist" in t or "invalid" in t))
+
+
 def submit(img: bytes, prompt: str, negative: str = NEG, duration: str = "5", mode: str = "std", tail: bool = False) -> tuple[str, bool]:
-    """A new clip from the picture; (task id, whether the last frame is the picture again). A model that takes no last
-    frame is asked once more without it: the use then makes the loop itself (loop())."""
+    """A new clip from the picture; (task id, whether the last frame is the picture again). A model Kling no longer
+    offers: the next one of MODELS. A model that takes no last frame is asked once more without it: the use then
+    makes the loop itself (loop())."""
+    global MODEL
     b = base64.b64encode(img).decode()
-    body = {"model_name": MODEL, "image": b, "prompt": prompt[:2500], "negative_prompt": negative[:2500],
-            "cfg_scale": 0.5, "mode": mode, "duration": str(duration)}
-    if tail:
-        try:
-            return str(_call("POST", "/v1/videos/image2video", {**body, "image_tail": b})["task_id"]), True
-        except RuntimeError as e:
-            if "HTTP 401" in str(e) or "HTTP 429" in str(e) or "no address" in str(e):
+    st = state()
+    order = ([st["model"]] if st.get("model") in MODELS else []) + [m for m in MODELS if m != st.get("model")]
+    last = None
+    for model in order:
+        body = {"model_name": model, "image": b, "prompt": prompt[:2500], "negative_prompt": negative[:2500],
+                "mode": mode, "duration": str(duration)}
+        for with_tail in ([True, False] if tail else [False]):
+            try:
+                task = str(_call("POST", "/v1/videos/image2video", {**body, "image_tail": b} if with_tail else body)["task_id"])
+            except RuntimeError as e:
+                if "HTTP 401" in str(e) or "HTTP 429" in str(e) or "no address" in str(e):
+                    raise
+                last = e
+                if model_gone(e):
+                    log.info("model %s not offered (%s): the next one", model, e)
+                    break
+                if with_tail:
+                    log.info("no last frame with %s/%s (%s): asked without it", model, mode, e)
+                    continue
                 raise
-            log.info("no last frame with %s/%s (%s): asked without it", MODEL, mode, e)
-    return str(_call("POST", "/v1/videos/image2video", body)["task_id"]), False
+            MODEL = model
+            if st.get("model") != model:
+                st = state(); st["model"] = model; save(st)
+            return task, with_tail
+    raise RuntimeError(f"no model of {' '.join(MODELS)} is offered (KLING_MODEL in .env): {last}")
 
 
 def query(task: str) -> dict:
@@ -240,6 +266,7 @@ def ask(key: str, kind: str, image, prompt: str, *, duration: str = "5", mode: s
         log.warning("%s: not asked (%s)", key, e)
         return {"status": "error", "why": str(e)[:300]}
     draft = kind in PUBLIC_USES and asked_of(kind) < REVIEW
+    st = state()   # submit() may have written the model that worked
     st["jobs"][key] = {"kind": kind, "task": task, "at": round(now), "status": "submitted", "tail": tl, "draft": draft,
                        "duration": str(duration), "mode": mode, "model": MODEL}
     save(st)
