@@ -158,6 +158,7 @@ SHIPS = {
     "pirates": {
         "name": "Black Sequence", "weekday": 1, "hour": 18, "passengers": 20, "style": "pirate",
         "aboard": True,   # nobody comes ashore: the pirates trade from their boat, so no group stands on the island
+        "surprise": True,  # never named as the next call (brief "next"): the island and the posts see her only once she is in sight
         "stops": {"bar": (5, 4), "market": (8, 3), "works": (4, 2)},
         "per": (2, 3), "dwell": (14, 22), "landing": 10,
         "book": {"share": 0.0, "at": ("market",), "cancel": 0.0},
@@ -578,9 +579,10 @@ class Cruise:
                 return t0, k
         return None
 
-    def next_call(self, now: float) -> tuple[int, str] | None:
+    def next_call(self, now: float, surprise: bool = True) -> tuple[int, str] | None:
+        """The next arrival; surprise=False skips the ships that come unannounced (SHIPS "surprise": the pirates)."""
         for t0, k in calls_near(now):
-            if t0 > now:
+            if t0 > now and (surprise or not SHIPS[k].get("surprise")):
                 return t0, k
         return None
 
@@ -1412,13 +1414,15 @@ class Cruise:
                           "phase": ph, "t0": v["t0"], "end": v["left"] or end, "passengers": SHIPS[v["ship"]]["passengers"],
                           "ashore": sum(at.values()), "at": at, "sent": v["sent"], "refused": sum(v["refused"].values()),
                           "skipped": v["skipped"], "planned": len(v["acts"]), "trial": v["trial"], "note": v["note"], "why": self.why(v),
-                          "tricks": {"tried": sum(c["tried"] for c in (v.get("tricks") or {}).values()),
-                                     "stopped": sum(c["stopped"] for c in (v.get("tricks") or {}).values())},
+                          # only what the chain refused, by trick: a trick that got through is a finding held back
+                          # (reported privately first), so it is not counted here until its visit is released
+                          "tricks": self.tricks_seen(v),
                           "per_min": self.rate_of(v["ship"]),
                           "kinds": ["pay"] + list((v.get("allowed") or []) if v["landed"] else self.kinds_for(v["ship"])[1]),
                           "brake": "stopped" if v["left"] and v["note"].startswith("left") else "half" if self._verdict[1] == "strained" and v["landed"]
                           else "slow" if v["landed"] and now < self.slow_until else "none"}
-        n = self.next_call(now) if self.enabled else None   # switched off (CRUISE_ENABLED=0): no ship is announced
+        # switched off (CRUISE_ENABLED=0): no ship is announced; a surprise ship (the pirates) is never the next call
+        n = self.next_call(now, surprise=False) if self.enabled else None
         if n:
             out["next"] = {"ship": n[1], "name": SHIPS[n[1]]["name"], "t0": n[0]}
         out["bands"] = [[s["t0"], s["end"], s["name"]] for s in self.visits if s.get("landed") and s["end"] > now - 6 * 3600]
@@ -1444,7 +1448,22 @@ class Cruise:
         out["quiet_days"] = [d for d in range(7) if not any(s["weekday"] == d for s in SHIPS.values())]
         if out.get("last"):
             out["last"] = self.public(out["last"])
+        # each ship's newest visit (public): what she learned for her next call, for the island's talk before it
+        out["last_of"] = {}
+        for s in reversed(self.visits):
+            if s.get("ship") in SHIPS and s["ship"] not in out["last_of"]:
+                out["last_of"][s["ship"]] = self.public(s)
         return out
+
+    def tricks_seen(self, v: dict) -> dict:
+        """The pirates' tricks of a visit as the public sees them: tried and refused count only the refused ones (a
+        trick that got through stays out until `up cruise release`), and "by" the refused ones of each trick."""
+        rel = v.get("id") in self.released()
+        T = v.get("tricks") or {}
+        by = {k: int(c.get("stopped") or 0) for k, c in T.items() if c.get("stopped")}
+        stopped = sum(by.values())
+        tried = sum(int(c.get("tried") or 0) for c in T.values()) if rel else stopped
+        return {"tried": tried, "stopped": stopped, "by": by}
 
     # ---------- findings held back ----------
     def released(self) -> set:

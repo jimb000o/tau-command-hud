@@ -154,6 +154,13 @@ check("refused 20 of her pirates' 20 tricks" in tg and "Since then she changed o
 pt = cc.texts("pirates", TUE + 7 * 86400, pf)
 check(pt["x"] == "" and pt["on_x"] is False and "🏴" in pt["telegram"] and "made up" in pt["telegram"], "the pirates are announced on Telegram only, honestly")
 check(not blog.HYPE.search(pt["telegram"] + " ".join(pt["card"])) and not blog.BLAME.search(pt["telegram"]), "pirates: no hype or blame words")
+# they come unannounced: never hours before, only once she is in sight (relay "now", approach), until shortly after she anchors
+check(cc.due_call({"next": {"ship": "pirates", "t0": TUE}}, TUE - 150 * 60) is None, "pirates: no announcement at 15:30, even if a relay names them next")
+sight = {"now": {"ship": "pirates", "t0": TUE, "phase": "approach"}, "next": {"ship": "dryrun", "t0": TUE + 22 * 3600}}
+check(cc.due_call(sight, TUE - 25 * 60) == ("pirates", TUE), "pirates: posted once she is in sight")
+check(cc.due_call({**sight, "now": {**sight["now"], "phase": "landing"}}, TUE + 5 * 60) == ("pirates", TUE), "or while she anchors")
+check(cc.due_call({**sight, "now": {**sight["now"], "phase": "ashore"}}, TUE + 40 * 60) is None, "not later in the evening")
+check("Nobody announced her" in pt["telegram"] and "in sight" in pt["telegram"], "the post says she came unannounced")
 check(Image.open(cc.picture(pt, os.path.join(TMP, "pp.jpg"))).size == (1600, 900), "the pirate picture is made (MS Dry Run's painting darkened, a black flag)")
 check(any("20 pirate tricks, 20 refused" in n for n in blog.numbers_of(pf)) and any("changed overspend" in n for n in blog.numbers_of(pf)),
       "the blog's post lists the tricks and the change")
