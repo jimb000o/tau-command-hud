@@ -30,6 +30,9 @@
 #              up services   the relay rebuilt with the code just pulled (tauhud.com/services/ reads it), the node left alone;
 #                            refuses while a cruise ship is due (Wed 15-18, Sat 13-17 German time; up services --now overrides);
 #                            up services status  only what the directory finds now
+#              up knowledge  Tau today for AI assistants (tauhud.com/facts/, llms.txt): the build pulse rebuilt with the code
+#                            just pulled, Caddy given its two files, then both written at once and what they hold; the
+#                            node left alone, safe any time; up knowledge status  only what they hold now
 #              up lights     each painted room's lamps found for the night (nothing rebuilt, the node left alone);
 #                            up lights all  every room looked at again; a full up does the new rooms by itself
 #              up owner      the same, then a one-time link: open it in your Telegram, and the news line's watchtower
@@ -190,6 +193,23 @@ for r in d["services"][:12]: print("  %-10s %s… %s, %s wallets" % (r["app"] or
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
+# Tau today for AI assistants (alerts/knowledge.py, run by devpulse every 30 minutes): node.tauhud.com/tau-today.md and
+# .json, read by tauhud.com/facts/ and llms.txt. The node is left alone; Caddy is recreated for the two files (a few
+# seconds without HTTPS). A fact whose IDNI source changed since it was checked shows here as "to check again".
+if [ "${1:-}" = "knowledge" ]; then
+  if [ "${2:-}" != "status" ]; then
+    docker compose up -d --build --no-deps devpulse
+    docker compose up -d --no-deps --force-recreate caddy >/dev/null
+    echo "waiting 8 s…"; sleep 8
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T devpulse python knowledge.py 2>&1 | grep -v ' INFO ' | tail -3
+  curl -s -o /dev/null -w "          https://node.tauhud.com/tau-today.md answers %{http_code}\n" https://node.tauhud.com/tau-today.md || true
+  curl -s -o /dev/null -w "          https://tauhud.com/llms.txt answers %{http_code}\n" https://tauhud.com/llms.txt || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 # the blog by hand, nothing rebuilt (alerts/blog.py): up blog  lists the drafts waiting and where to read them,
 # up blog publish <id>  puts one on the blog and posts it once, up blog draft <visit-id>  writes one anew,
 # up blog unpublish <id>  takes one off again, up blog pictures  makes every article's hero picture and link preview anew
@@ -296,6 +316,16 @@ if s is not None:
         elif t.get("ahead"):
             print(f"         all {len(p.get('results') or [])} node patches apply to main {short(p.get('sha'))}: a pin bump can be built (then test it)")
 PY
+# Tau today for AI assistants (alerts/knowledge.py): how many facts, which to check again because IDNI changed their source
+python3 - <<'PY' | tee -a "$NOTE"
+import json, time, urllib.request
+try:
+    d = json.load(urllib.request.urlopen("https://node.tauhud.com/tau-today.json", timeout=20)); f = d["facts"]; st = f.get("stale") or {}
+    print(f"facts:   {len(f.get('items') or [])} for AI assistants (checked {f.get('checked')}), "
+          + (f"{len(st)} to check again: {', '.join(sorted(st))}" if st else "none to check again") + ", written " + time.strftime("%d.%m. %H:%M UTC", time.gmtime(d.get("generated_at") or 0)))
+except Exception as e:
+    print(f"facts:   tau-today not written yet ({str(e)[:60]}); the build pulse writes it within a few minutes, up knowledge status shows it")
+PY
 # the channels: may the service post at all? (asks Telegram and X, posts nothing; a refused key or a bot without the
 # right to post is named here, so the channel can never go quiet unnoticed), then what the running containers logged
 # the blog: drafts written after a cruise visit wait here for a read and an up blog publish <id>
@@ -379,4 +409,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up idni, up report, up blog, up guardian, up services, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up idni, up report, up blog, up guardian, up services, up knowledge, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"

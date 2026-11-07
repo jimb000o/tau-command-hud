@@ -647,6 +647,8 @@ TauI18n.add({ strings: {
   "Close": "閉じる",
   "playing now": "人がプレイ中",
   "People with this game open right now, counted live by the community relay; one browser counts once.": "いまこのゲームを開いている人。コミュニティ中継がリアルタイムで数えます。1 つのブラウザは 1 人と数えます。",
+  "Tau facts for your AI": "AI 向けの Tau の事実",
+  "What is true about Tau today, each fact with its source in IDNI's code, plus live numbers; point your AI assistant here": "今日の Tau について正しいこと。各事実に IDNI のコード内の出典、さらに最新の数字。AI アシスタントにここを読ませてください",
   "Services on the testnet": "テストネットのサービス",
   "A directory of what runs on the testnet: co-signers, rule givers, apps people pay; found on the chain by itself, live numbers": "テストネットで動いているものの一覧：共同署名者、ルールの提供者、みんなが支払うアプリ。チェーンから自動で見つけ、数字はライブ",
   "Payments above your own limit wait for a code from your Authenticator app; our Guardian co-signs, never sends": "自分で決めた上限を超える支払いは認証アプリのコードを待ちます。Guardian は共同署名だけで、送金はしません"
