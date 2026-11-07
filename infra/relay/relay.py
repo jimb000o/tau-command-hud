@@ -50,6 +50,7 @@ from isle import Isle
 from load import Load
 from txsources import TxSources, deja as deja_day
 from walletdays import WalletDays
+from services import Services
 from nodehist import NodeHistory
 from setupfunnel import SetupFunnel
 from visits import OWN_HOSTS, SITES, Visits
@@ -444,6 +445,11 @@ class Relay:
         self.wallets.add_blocks(self.ordered_blocks(), self.sources.sent)
         self.wallets.save(force=True)
         self.wallets_text, self.wallets_at = None, 0.0
+        # accounts that serve other wallets, found in the blocks alone, for tauhud.com/services/ (services.py)
+        self.services = Services()
+        self.services.bots = self.wallets.bots
+        self.services.passengers = lambda: self.cruise.who
+        self.services_text, self.services_at = None, 0.0
         self.mempool_seen: dict[str, dict] = {}  # tx_hash -> summary, while in the mempool
         self.left_mempool: dict[str, dict] = {}  # tx_hash -> summary, waiting for a block
         self.stats_text: str | None = None
@@ -2166,6 +2172,17 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "public, max-age=20")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.recent_text.encode())
+        if path in ("/services", "/api/v1/services"):   # accounts serving other wallets, from the blocks alone (services.py)
+            self.services.refresh_guardian()
+            if self.services_text is None or time.monotonic() - self.services_at >= 60:
+                out = self.services.scan(self.ordered_blocks())
+                self.services_text = json.dumps({**out, "height": self.height(), "generated_at": round(time.time())},
+                                                separators=(",", ":"))
+                self.services_at = time.monotonic()
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=60")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.services_text.encode())
         if path == "/api/v1/sources":
             if self.sources_text is None or time.monotonic() - self.sources_at >= 60:
                 self.sources_text = json.dumps(self.sources.by_day(self.ordered_blocks()), separators=(",", ":"))

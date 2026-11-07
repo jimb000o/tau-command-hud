@@ -25,6 +25,9 @@
 #                            your Telegram (it comes there by itself every Sunday 18:00)
 #              up guardian   the Guardian (tauhud.com/guardian/) started or restarted with the code just pulled, and Caddy
 #                            given its door; nothing rebuilt, the node left alone; up guardian status  only its numbers
+#              up services   the relay rebuilt with the code just pulled (tauhud.com/services/ reads it), the node left alone;
+#                            refuses while a cruise ship is due (Wed 15-18, Sat 13-17 German time; up services --now overrides);
+#                            up services status  only what the directory finds now
 #              up owner      the same, then a one-time link: open it in your Telegram, and the news line's watchtower
 #                            warns you there privately (never on the channel); up owner test  sends you one test message
 set -e
@@ -130,6 +133,30 @@ if [ "${1:-}" = "guardian" ]; then
   echo "---------------- copy from here into the chat ----------------"
   docker compose exec -T guardian python /guardian/guardian.py status 2>&1 || docker compose logs --tail 15 guardian 2>&1
   curl -s -o /dev/null -w "          door https://node.tauhud.com/guardian/info answers %{http_code}\n" https://node.tauhud.com/guardian/info || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# the relay alone, the node left alone (relay/services.py feeds tauhud.com/services/): rebuilt and restarted with the code
+# just pulled. Pages reconnect by themselves within seconds; a cruise ship sends through the relay, so not while one is due.
+if [ "${1:-}" = "services" ]; then
+  if [ "${2:-}" != "status" ]; then
+    when=$(TZ=Europe/Berlin date +%u%H)
+    case "$when" in 315|316|317|613|614|615|616)
+      if [ "${2:-}" != "--now" ]; then
+        echo "a cruise ship is due or at the island now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
+        echo "try again after the visit, or: up services --now"; exit 1
+      fi ;;
+    esac
+    docker compose up -d --build --no-deps relay
+    echo "waiting 20 s for the relay to read the chain…"; sleep 20
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T relay python -c 'import json,urllib.request
+d=json.load(urllib.request.urlopen("http://127.0.0.1:8080/services", timeout=20)); t=d["totals"]
+print("services: %s found (co-signers %s, rule givers %s, paid with terms %s, paid by many %s), %s wallets served, blocks since %s" % (t["services"], t["cosign"], t["rules"], t["terms"], t["paid"], t["wallets"], d.get("since")))
+for r in d["services"][:12]: print("  %-10s %s… %s, %s wallets" % (r["app"] or "", r["address"][:12], "+".join(r["kinds"]), r["wallets"]))' 2>&1 || echo "relay /services not answering yet"
+  curl -s -o /dev/null -w "          page https://tauhud.com/services/ answers %{http_code}\n" https://tauhud.com/services/ || true
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
@@ -319,4 +346,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up idni, up report, up blog, up guardian, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up idni, up report, up blog, up guardian, up services, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
