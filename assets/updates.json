@@ -2517,5 +2517,17 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-07",
     "html": "White Rabbit Key: the cruise ships now plan only as many stops as our node can answer. The Queen Mempool lost 162 of 581 planned stops on 7 November because our node took 6.8 s per answer and each send waits for the last one; from now on each visit measures that time, and the next plan leaves the extra stops out before landing, window by window. The logbook says how many and why; at most 12 a minute stays."
+  },
+  {
+    "tag": "Wallet",
+    "on": "2026-11-07",
+    "html": "Wallet: ready-made rules, one click each. Five of them, built from what people asked for in the Tau chats: Starter shield (at most 5,000 test AGRS per payment, and the way back on for new addresses and anything above 1,000), Only my people (payments only to names in your address book), Savings lock (nothing leaves before a date 90 days out), Second signature (above 1,000 a friend or the Guardian co-signs), and Way back by default (payments to new addresses and above 1,000 go with a way back of 30 blocks; no rule place needed, a habit of this wallet). Each card says what it keeps off and, in amber, what it does not: whoever holds your key can replace the rule, and a rule sees one payment at a time, so there is a limit per payment and no daily limit. Every card has a link to pass on that fills the same blocks for whoever opens it, nothing signed. New walk for someone a friend sent, /wallet/?walk=friend: make a test account, turn the way back on, pay a stranger, take it back, then a line to pass on. Opens of those links are counted by their tag only, nothing about who, and show up in the Sunday channel note.",
+    "major": {
+      "id": "wallet-presets",
+      "title": "New: ready-made wallet rules, one click each",
+      "text": "Five rules built from what people asked for: a limit per payment with the way back on, only to your address book, a savings lock, a second signature from a friend or the Guardian, and the way back by default. Each card says what it keeps off and what it does not. Plus a five-minute walk for a friend: pay a wrong address, take it back.",
+      "link": "/wallet/",
+      "image": "/assets/shots/wallet-presets.png"
+    }
   }
 ]
