@@ -2442,6 +2442,11 @@
     "html": "Guardian, after a simulated run of 100 visitors: on a phone the QR code can be opened in the Authenticator app directly or the key copied; the wallet's \"Enter your code\" link lands on that payment with the cursor in its code field, and a waiting payment comes first on a phone; the page fits a 1366×768 laptop in every state (the explainer folds while payments wait); a waiting payment names its recipient with the three wallet words and says how many blocks remain; the wording follows the three settings; \"What it can do\" folds on phones."
   },
   {
+    "tag": "Wallet",
+    "on": "2026-11-07",
+    "html": "Guardian demo in the simulation: with the HUD on Simulation, tauhud.com/guardian/ plays the whole way through with play values. Scan the demo QR code with your Authenticator app (a real TOTP check in your browser) or use the play code 123456, choose what the Guardian does, and a play payment waits for your code in step 3. Nothing goes on the chain, nothing leaves your browser; amber marks it as a demo."
+  },
+  {
     "tag": "Services",
     "on": "2026-11-07",
     "html": "Services on the testnet (tauhud.com/services/): a directory of what runs on Tau Testnet Alpha, with categories and search. Accounts appear by themselves once the chain shows them serving other wallets: co-signers others name for their payments, rule givers whose rules get taken, accounts paid with terms (retractable transfers) or by many different wallets. Numbers come straight from the blocks, every minute; nobody signs up. Ours (Guardian, White Rabbit Key, Agorzilla, wallet, API, rules wall, node kit) are listed first and marked. A builder can ask for a name and a link with a pre-filled request. Also open to other sites as JSON: node.tauhud.com/services."

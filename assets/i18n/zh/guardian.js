@@ -2,9 +2,6 @@
 TauI18n.add({ strings: {
   "Guardian": "Guardian",
   "It can say yes to your payment, never send one": "它只能对你的付款说“同意”，永远不能自己发起付款",
-  "{e1} The Guardian works only on the real testnet: switch the HUD to Live to connect your app.": "{e1} Guardian 只在真实测试网上工作：把 HUD 切换到实时模式再连接你的应用。",
-  "Simulation is on.": "模拟已开启。",
-  "The Guardian works only on the real testnet: switch the HUD to Live to connect your app.": "Guardian 只在真实测试网上工作：把 HUD 切换到实时模式再连接你的应用。",
   "Your test wallet": "你的测试钱包",
   "Asking our node": "正在询问我们的节点",
   "No test wallet in this browser yet.": "这个浏览器里还没有测试钱包。",
@@ -135,5 +132,17 @@ TauI18n.add({ strings: {
   "If our server is down, payments that wait for your code run out unconfirmed; they never go through without the code.": "如果我们的服务器宕机，等待你验证码的付款会在未确认的情况下过期；没有验证码它们永远不会通过。",
   "Connect your app first: otherwise a payment waiting for your code could not be confirmed.": "请先连接你的应用：否则等待你验证码的付款无法确认。",
   "Connected. Now choose what the Guardian does.": "已连接。现在选择 Guardian 做什么。",
-  "waits for your code for {n} more blocks (until block {a})": "还会等你的验证码 {n} 个区块（直到区块 {a}）"
+  "waits for your code for {n} more blocks (until block {a})": "还会等你的验证码 {n} 个区块（直到区块 {a}）",
+  "Simulation is on": "模拟已开启",
+  "a demo with play values.": "这是一个使用游戏数值的演示。",
+  "Scan the demo QR code with your app, or use the play code 123456. Nothing goes on the chain and nothing leaves your browser; on Live the same steps act on Tau Testnet Alpha.": "用你的应用扫描演示二维码，或使用游戏验证码 123456。什么都不会上链，什么都不会离开你的浏览器；在 Live 模式下，同样的步骤会作用于 Tau Testnet Alpha。",
+  "Play wallet (demo): ": "游戏钱包（演示）：",
+  "The play payment appears once your rule is set (demo).": "设好规则后，演示付款就会出现（演示）。",
+  "Wrong code (demo): use the code your app shows for the demo key, or the play code 123456.": "验证码错误（演示）：请使用应用为演示密钥显示的验证码，或游戏验证码 123456。",
+  "No such payment waits (demo).": "没有这样的待处理付款（演示）。",
+  "Co-signed (demo). On the real testnet the payment would go through with the next block.": "已共同签名（演示）。在真实测试网上，这笔付款会随下一个区块通过。",
+  "Demo with play values": "使用游戏数值的演示",
+  "Set (demo). On the real testnet a block would hold the rule now; a play payment waits in step 3.": "已设置（演示）。在真实测试网上，现在会有一个区块记录这条规则；第 3 步有一笔演示付款在等待。",
+  "Removed (demo).": "已移除（演示）。",
+  "Today by itself: 1 payment, {a} of {b} test AGRS.": "今天自动通过：1 笔，{a} / {b} 测试 AGRS。"
 } });
