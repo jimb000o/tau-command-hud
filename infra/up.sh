@@ -224,7 +224,7 @@ if [ "${1:-}" = "nomemo" ]; then
   echo "---------------- copy from here into the chat ----------------"
   docker compose exec -T relay python -c 'import json,urllib.request
 s=json.load(urllib.request.urlopen("http://127.0.0.1:8080/nomemo", timeout=20)); b=s.get("board") or {}
-print("nomemo:  purse %s, tracer %s, drop %s%s" % ("on" if s.get("enabled") else "OFF", "on" if s.get("tracer") else "off", s.get("drop_short") or "not made yet", " (making the keys now)" if s.get("making_wallets") else ""))
+print("nomemo:  purse %s, tracer %s, drop %s%s%s" % ("on" if s.get("enabled") else "OFF", "on" if s.get("tracer") else "off", s.get("drop_short") or "not made yet", " (making the keys now)" if s.get("making_wallets") else "", " (the bank is filling the drop)" if s.get("filling") else ""))
 print("         board: %d wallets, %s; chapters claimed %s; %d payouts today, %d waiting" % (b.get("wallets",0), ", ".join("%s %d" % kv for kv in (b.get("ranks") or {}).items()), b.get("claims"), s.get("today",0), s.get("waiting",0)))
 print("         test it: https://tauhud.com/nomemo/  (take 1, run; the drop above must match status)")' 2>&1 || echo "relay /nomemo not answering yet"
   echo "---------------- to here --------------------------------------"

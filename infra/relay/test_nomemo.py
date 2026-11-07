@@ -33,12 +33,14 @@ clock = lambda: T[0]   # noqa: E731
 
 class Node:
     def __init__(self):
-        self.sent, self.status = [], {}
+        self.sent, self.status, self.balance = [], {}, {}
 
     async def ask(self, cmd):
         c, *args = cmd.split(" ", 1)
         if c == "getsequence":
             return {"status": "ok", "data": {"sequence_number": 0, "tip_height": 500}}
+        if c == "getbalance":
+            return {"status": "ok", "data": {"address": args[0], "balance": self.balance.get(args[0], 100000)}}
         if c == "gettxstatus":
             return {"status": "ok", "data": self.status.get(args[0], {"status": "pending"})}
         if c == "sendtx":
@@ -69,10 +71,21 @@ check(len(m.jobs) == 2 and len(m.wallets) == 1, "an ordinary payment to the drop
 sent = asyncio.run(m.step(node.ask, gov))
 check(sent is False and node.sent == [] and m.jobs[0]["asked"] == 1, "nothing is paid while the claim is pending")
 node.status["c1"] = {"status": "confirmed", "block_number": 501}
+node.balance[m.pk["drop"]] = 102   # the drop only ever received: the faucet will not fill it
 T[0] += 30
 sent = asyncio.run(m.step(node.ask, gov))
-check(sent and len(node.sent) == 1 and node.sent[0]["operations"]["1"][0][1:] == [PLAYER, "500"] and node.sent[0]["sender_pubkey"] == m.pk["drop"], "the share of 500 goes out from the drop once the claim is sealed")
-check(m.wallets[PLAYER]["claims"]["1"]["paid"]["share"]["hash"] == "h1", "the share's hash is kept with the claim")
+check(sent and len(node.sent) == 1 and node.sent[0]["operations"]["1"][0][1:] == [m.pk["drop"], str(nomemo.TOPUP)] and node.sent[0]["sender_pubkey"] == m.pk["bank"] and node.sent[0]["sender_pubkey"] != m.pk["drop"], "a drop too poor for the share is filled by a bank wallet first")
+check(m.topup and m.topup["hash"] == "h1" and len(m.jobs) == 2, "the top-up is remembered until sealed; the share waits")
+T[0] += 30
+sent = asyncio.run(m.step(node.ask, gov))
+check(sent is False and len(node.sent) == 1, "nothing goes out while the top-up is unsealed")
+node.status["h1"] = {"status": "confirmed", "block_number": 502}
+node.balance[m.pk["drop"]] = 102 + nomemo.TOPUP
+T[0] += 30
+sent = asyncio.run(m.step(node.ask, gov))
+check(sent and len(node.sent) == 2 and node.sent[1]["operations"]["1"][0][1:] == [PLAYER, "500"] and node.sent[1]["sender_pubkey"] == m.pk["drop"] and m.topup is None, "the share of 500 goes out from the drop once the claim is sealed and the drop is filled")
+node.sent.pop(0)   # the checks below count the drop's payments
+check(m.wallets[PLAYER]["claims"]["1"]["paid"]["share"]["hash"] == "h2", "the share's hash is kept with the claim")
 check([j["kind"] for j in m.jobs] == ["mark", "dust"], "the mark waits, and the Tracer's dust is queued")
 sent = asyncio.run(m.step(node.ask, gov))
 check(sent is False, "no two sends within the gap")
@@ -101,7 +114,7 @@ T[0] += 30
 asyncio.run(m.step(node.ask, gov))
 check("3" not in m.wallets[PLAYER]["claims"] and not m.jobs, "a claim the chain refused is forgotten, nothing paid")
 m2 = nomemo.NoMemo(keys_path=os.path.join(d, "k"), state_path=os.path.join(d, "s.json"), clock=clock, enabled=True, keys=KEYS)
-check(m2.wallets[PLAYER]["claims"]["1"]["paid"]["share"]["hash"] == "h1", "the state survives a restart")
+check(m2.wallets[PLAYER]["claims"]["1"]["paid"]["share"]["hash"] == "h2", "the state survives a restart")
 check(m.route("/nomemo/wallet/zz") == {"error": "not an address"} and m.route("/other") is None, "bad paths")
 off = nomemo.NoMemo(keys_path=os.path.join(d, "k2"), state_path=os.path.join(d, "s2.json"), clock=clock, enabled=False, background=False)
 check(not off.ready and off.route("/nomemo")["enabled"] is False, "switched off: no keys made, the page is told")

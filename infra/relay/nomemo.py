@@ -51,6 +51,8 @@ DUST_AFTER = 180           # seconds after the first share before the Tracer's d
 CLAIM_DAYS = 14            # a claim older than this is forgotten unpaid
 QUIET = 20                 # seconds to wait before asking the chain again whether a claim is sealed
 TRIES = 40                 # gettxstatus asks per claim before it counts as not sealed
+TOPUP = 99_000             # what the bank sends the drop when the drop runs low (the faucet gives a wallet with balance 0 100,000 when it first pays)
+TOPUP_WAIT = 600           # seconds a top-up may stay unsealed before the drop is checked again
 TAG = (6, 4)
 WALLETS_KEEP = 5000
 RANKS = (("aboard", 0), ("deckhand", 1), ("navigator", 2), ("quartermaster’s mate", 3))   # by chapters claimed
@@ -63,6 +65,11 @@ def short(pk: str) -> str:
 def signing_bytes(tx: dict) -> bytes:
     from island import signing_bytes as sb
     return sb(tx)
+
+
+def base_fee_of(gov) -> int:
+    from island import base_fee
+    return base_fee(gov())
 
 
 def make_keys(path: str) -> None:
@@ -103,6 +110,7 @@ class NoMemo:
         self.today = 0
         self.next_seq: dict[str, int] = {}
         self.last_send = 0.0
+        self.topup: dict | None = None    # {"hash", "at"}: the bank's last payment to the drop, until it is sealed
         self.load_state()
         if keys:
             self.use_keys(keys)
@@ -232,8 +240,55 @@ class NoMemo:
                 self.on_tx()
             return (res.get("data") or {}).get("tx_hash") or "sent"
         self.next_seq.pop(key, None)
-        log.info("no memo %s to %s refused: %.160s", key, short(wallet), json.dumps((res or {}).get("error") or res))
+        why = json.dumps((res or {}).get("error") or res)
+        log.info("no memo %s to %s refused: %.160s", key, short(wallet), why)
+        if key == "drop" and "FUNDS" in why.upper():
+            await self.fill_drop(ask, gov)
         return None
+
+    async def balance(self, key: str, ask) -> int | None:
+        """The wallet's balance on the chain; None when the node did not say."""
+        m = await ask(f"getbalance {self.pk[key]}")
+        if not m or m.get("status") != "ok":
+            return None
+        try:
+            return int((m.get("data") or {}).get("balance") or 0)
+        except (TypeError, ValueError):
+            return None
+
+    async def fill_drop(self, ask, gov) -> bool:
+        """The drop pays shares, so its balance is never 0 and the testnet's faucet never fills it (a wallet with
+        balance 0 pays from the faucet; one that received before it ever sent does not). A bank wallet does instead:
+        a fresh key each time, its first payment comes from the faucet and goes to the drop. True when it was sent."""
+        from py_ecc.bls import G2Basic
+        from py_ecc.optimized_bls12_381 import curve_order
+        sk = secrets.randbelow(curve_order - 2) + 1
+        self.sk["bank"], self.pk["bank"] = sk, G2Basic.SkToPk(sk).hex()
+        self.who[self.pk["bank"]] = "nomemo"
+        self.next_seq.pop("bank", None)
+        if self.on_ready:
+            try:
+                self.on_ready()
+            except Exception as exc:
+                log.warning("no memo: on_ready failed: %r", exc)
+        h = await self.send("bank", self.pk["drop"], TOPUP, ask, gov)
+        if h:
+            self.topup = {"hash": h, "at": int(self.clock())}
+            log.info("no memo: the bank fills the drop with %d (%s)", TOPUP, h[:12])
+        return bool(h)
+
+    async def drop_ready(self, amount: int, ask, gov):
+        """True when the drop can pay amount now, "filled" when the bank just sent it money (one top-up at a time),
+        False while a top-up is still unsealed."""
+        now = self.clock()
+        if self.topup:
+            if now - self.topup["at"] < TOPUP_WAIT and await self.sealed(self.topup["hash"], ask) is not True:
+                return False
+            self.topup = None
+        bal = await self.balance("drop", ask)
+        if bal is None or bal >= amount + 2 * base_fee_of(gov):
+            return True
+        return "filled" if await self.fill_drop(ask, gov) else False
 
     async def sealed(self, tx_hash: str, ask) -> bool | None:
         """True once the chain has the claim in a block, False when it never will, None while it is pending."""
@@ -279,6 +334,10 @@ class NoMemo:
                     self.save_state()
                     continue
                 amount = SHARE if j["kind"] == "share" else MARK
+                ready = await self.drop_ready(amount, ask, gov)
+                if ready is not True:
+                    self.save_state()
+                    return ready == "filled"
                 h = await self.send("drop", j["to"], amount, ask, gov)
                 self.jobs.remove(j)
                 if h:
@@ -327,7 +386,7 @@ class NoMemo:
     def snapshot(self) -> dict:
         return {"simulated": True, "enabled": bool(self.enabled), "ready": self.ready, "making_wallets": self.making, "tracer": bool(self.tracer),
                 "drop": self.pk.get("drop"), "drop_short": short(self.pk.get("drop", "")), "share": SHARE, "mark": MARK, "claim_base": CLAIM_BASE,
-                "board": self.board(), "waiting": len(self.jobs), "today": self.today, "limits": {"daily": DAILY, "gap": GAP, "claim_days": CLAIM_DAYS}}
+                "board": self.board(), "waiting": len(self.jobs), "filling": bool(self.topup), "today": self.today, "limits": {"daily": DAILY, "gap": GAP, "claim_days": CLAIM_DAYS}}
 
     def wallet_view(self, pk: str) -> dict:
         w = self.wallets.get(pk) or {"claims": {}, "dust": []}
