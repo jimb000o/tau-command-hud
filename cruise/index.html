@@ -149,7 +149,8 @@ const SHIPS = { pirates: "Black Sequence", dryrun: "MS Dry Run", queen: "Queen M
 const PLACES = { till: "The ship’s till", hall: "Council Hall", market: "Market square", radio: "Radio Coco", north: "North Wind Embassy", south: "South Current Wellness Resort", bar: "Bar La Ola", book: "The Lighthouse", pier: "The pier", works: "The Coconut Works", school: "The School", dive: "Reef Proof Dive Centre", ship: "The Old Ship" };
 const KINDS = { pay: "pays", book: "books", cancel: "cancels", bill: "bills", trick: "tries a trick", tuned: "learned", landed: "landed", "no landing": "no landing", left: "left",
   "book ahead": "books ahead", refund: "refunds", "called off": "called off", escrow: "escrow" };
-const TRICKS = { overspend: "pays more than the wallet holds", replay: "sends a payment the chain already took a second time", expired: "sends a payment whose time ran out", forged: "signs a payment with another pirate’s key" };
+const TRICKS = { overspend: "pays more than the wallet holds", replay: "sends a payment the chain already took a second time", expired: "sends a payment whose time ran out", forged: "signs a payment with another pirate’s key",
+  impostor: "pays from another pirate’s wallet with their own signature", freeride: "allows no fee at all for a payment", stale: "sends a payment whose block height deadline has passed", giant: "pays more than a transfer can carry" };
 const EVENTS = ["landed", "no landing", "left", "called off", "tuned"];
 const isEvent = r => EVENTS.includes(r.kind) || (r.kind === "escrow" && r.p == null);
 /* a booking ahead: its state, the chip's look, and one line on what it means */

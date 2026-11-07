@@ -143,4 +143,8 @@ TauI18n.add({ strings: {
   "nothing to take back: the booking is retracted": "无可撤回：预订已撤回",
   "no answer from the node to sendtx; tried again in 30 s at the earliest": "节点未回答 sendtx；最早 30 秒后重试",
   "how each booking ended on the chain: paid out to the till or refunded to the passenger;": "每笔预订在链上的结局：付给钱柜，或退还给乘客；",
+  "pays from another pirate’s wallet with their own signature": "用自己的签名从另一个海盗的钱包付款",
+  "allows no fee at all for a payment": "付款时不允许任何手续费",
+  "sends a payment whose block height deadline has passed": "发送区块高度期限已过的付款",
+  "pays more than a transfer can carry": "支付超过一笔转账所能承载的金额",
 } });

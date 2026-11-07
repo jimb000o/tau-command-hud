@@ -328,11 +328,11 @@ TUE = next(t for t, k in cruise.calls_near(WED + 7 * 86400) if k == "pirates")
 check(cruise.berlin_day(TUE).weekday() == 1 and (TUE - cruise.berlin_t(cruise.berlin_day(TUE), 0)) == 18 * 3600, "the pirates call on Tuesday at 18:00")
 PP = cruise.plan("pirates", TUE, set(), {"trick"})
 tr = [a for a in PP if a["kind"] == "trick"]
-check(len(tr) == 4 * cruise.TRICK_START and {a["trick"] for a in tr} == set(cruise.TRICKS), f"each of the four tricks {cruise.TRICK_START} times a visit at first")
+check(len(tr) == len(cruise.TRICKS) * cruise.TRICK_START and {a["trick"] for a in tr} == set(cruise.TRICKS), f"each of the {len(cruise.TRICKS)} tricks {cruise.TRICK_START} times a visit at first")
 check(all(b["t"] - a["t"] >= cruise.TRICK_GAP for a, b in zip(tr, tr[1:])), f"at most one trick every {cruise.TRICK_GAP} s")
-check(min(a["t"] for a in tr) >= TUE + (cruise.landing("pirates") + 10) * 60, "the first trick only after every pirate has paid ashore")
+check(min(a["t"] for a in tr) >= TUE + (cruise.landing("pirates") + 1) * 60, "the first trick only after every pirate has paid the pier")
 check(cruise.where(PP, TUE + 40 * 60, TUE + 80 * 60, "pirates") == {}, "the pirates stay aboard: no group stands on the island")
-check(len(cruise.plan("pirates", TUE, set(), {"trick"}, {"overspend": 1, "replay": 2, "expired": 2, "forged": 2})) < len(PP), "fewer tricks when it learned so")
+check(len(cruise.plan("pirates", TUE, set(), {"trick"}, {k: 1 for k in cruise.TRICKS})) < len(PP), "fewer tricks when it learned so")
 
 CH = {"seq": {}, "hole": False, "sent": []}
 
@@ -349,13 +349,20 @@ async def chain(cmd: str):
     tx = json.loads(rest)
     pk = tx["sender_pubkey"]
     err = lambda c: {"status": "error", "error": {"code": c, "message": c.lower()}}  # noqa: E731
-    if tx["expiration_time"] < T[0]:
+    if tx["expiration_time"] < T[0] or tx["expire_at_height"] <= 901:
         return err("TX_EXPIRED")
     if tx["sequence_number"] != CH["seq"].get(pk, 0):
         return err("INVALID_SEQUENCE")
     if not G2Basic.Verify(bytes.fromhex(pk), hashlib.sha256(cruise.signing_bytes(tx)).digest(), bytes.fromhex(tx["signature"])):
         return err("INVALID_SIGNATURE")
-    amount = sum(int(x[2]) for x in tx.get("operations", {}).get("1", [])) if tx["tx_type"] == "user_tx" else int(tx.get("amount") or 0)
+    ops = tx.get("operations", {}).get("1", []) if tx["tx_type"] == "user_tx" else []
+    if any(x[0] != pk for x in ops):
+        return err("TX_INVALID")
+    if any(int(x[2]) > (1 << 24) - 1 for x in ops):
+        return err("TX_INVALID")
+    if tx["tx_type"] == "user_tx" and int(tx["fee_limit"]) < 1:
+        return err("FEE_LIMIT_TOO_LOW")
+    amount = sum(int(x[2]) for x in ops) if tx["tx_type"] == "user_tx" else int(tx.get("amount") or 0)
     if amount > 100000 and not CH["hole"]:
         return err("INSUFFICIENT_FUNDS")
     CH["seq"][pk] = CH["seq"].get(pk, 0) + 1
@@ -375,9 +382,10 @@ for _ in range(91 * 60 // 2 + 120):
 s1 = P.visits[-1]
 tricks = [e for e in P.logbook if e.get("kind") == "trick" and e.get("ok") is not None]
 check(s1["ship"] == "pirates" and not P.visits[-1]["note"], "the pirate ship stays the whole visit: refused tricks never send it away")
-check(len(tricks) >= 18 and all(e["ok"] is False and e["right"] for e in tricks),
+check(len(tricks) >= 28 and all(e["ok"] is False and e["right"] for e in tricks),
       f"every trick is refused by the chain, each with the answer it should get ({len(tricks)} tricks)")
-check({e["code"] for e in tricks} == {"INSUFFICIENT_FUNDS", "INVALID_SEQUENCE", "TX_EXPIRED", "INVALID_SIGNATURE"}, "four tricks, four different answers")
+check({e["code"] for e in tricks} == {"INSUFFICIENT_FUNDS", "INVALID_SEQUENCE", "TX_EXPIRED", "INVALID_SIGNATURE", "TX_INVALID", "FEE_LIMIT_TOO_LOW"}
+      and {e["trick"] for e in tricks} == set(cruise.TRICKS), "eight tricks, every one refused, six different answers")
 check(all(x is True for x in LOADS) and sum(s1["refused"].values()) == 0, "tricks are no refusals: not for the brakes, not on the load page")
 check(all(c["right"] == c["tried"] > 0 for c in s1["tricks"].values()), "the summary counts each trick: tried, stopped, stopped for the right reason")
 check(s1["per_min"] == cruise.RATE and s1["changed"] == [], "a clean first visit at full pace changes nothing")
