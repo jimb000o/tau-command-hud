@@ -2472,5 +2472,10 @@
     "tag": "Services",
     "on": "2026-11-07",
     "html": "Services on the testnet (tauhud.com/services/): a directory of what runs on Tau Testnet Alpha, with categories and search. Accounts appear by themselves once the chain shows them serving other wallets: co-signers others name for their payments, rule givers whose rules get taken, accounts paid with terms (retractable transfers) or by many different wallets. Numbers come straight from the blocks, every minute; nobody signs up. Ours (Guardian, White Rabbit Key, Agorzilla, wallet, API, rules wall, node kit) are listed first and marked. A builder can ask for a name and a link with a pre-filled request. Also open to other sites as JSON: node.tauhud.com/services."
+  },
+  {
+    "tag": "Agorzilla",
+    "on": "2026-11-07",
+    "html": "Agorzilla grows up on Tau HUD too: the HUD header, your My Tau card, /start/ and the menus now show him at the stage he has reached on agorzilla.com (Grown right now), not as the baby he was. Smaller eyes, a darker face, the head higher on a broader back, and the back and muzzle the feeders voted for; each new stage shows by itself."
   }
 ]

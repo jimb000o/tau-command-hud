@@ -12,6 +12,17 @@
   const MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg>';
   const src = document.currentScript && document.currentScript.src;
   const ROOT = src ? new URL("..", src).pathname : "/";
+  /* Agorzilla's small picture at his current stage: assets/agz-look.js remembers the stage; here it is refreshed at most every 30 min */
+  const AGZ_ST = /^(baby|kid|young|grown|elder|ancient)$/;
+  const agzPic = (() => { try { const s = localStorage.getItem("agz-stage"); return AGZ_ST.test(s) && s !== "baby" ? `assets/age/agorzilla-${s}.webp` : "assets/agorzilla.webp"; } catch (e) { return "assets/agorzilla.webp"; } })();
+  (async () => {
+    try {
+      if (Date.now() - (+localStorage.getItem("agz-stage-at") || 0) < 18e5) return;
+      localStorage.setItem("agz-stage-at", String(Date.now()));
+      const r = await fetch("https://agorzilla.com/chain/latest.json", { cache: "no-store" }); if (!r.ok) return;
+      const s = String((await r.json()).stage || "").toLowerCase(); if (AGZ_ST.test(s)) localStorage.setItem("agz-stage", s);
+    } catch (e) { /* the remembered picture stays */ }
+  })();
   const P = {
     hud:        { t: "HUD", d: "The chain core live: blocks, rules and agreement as they happen", i: "◉", h: "" },
     state:      { t: "Chain state", d: "Every rule in force right now: fee, agreement threshold, validators, agreed changes, personal rules", i: "≡", h: "#chain-state", act: "state" },
@@ -44,7 +55,7 @@
     playground: { t: "Playground", d: "Write a transfer rule and run the testnet's own checks on it", i: "◇", h: "playground/" },
     seat:       { t: "Validator seat", d: "Take a simulated seat and vote a rule change into law", i: "✓", h: "playground/#seat" },
     whatif:     { t: "What if", d: "Move block time, validators and votes needed, and watch the chain react", i: "≈", h: "whatif/" },
-    agorzilla:  { t: "Agorzilla", d: "One creature the whole testnet feeds: give it a meal, choose tomorrow's change", i: `<img src="${ROOT}assets/agorzilla.webp" alt="">`, h: "https://agorzilla.com", ext: true, live: true },
+    agorzilla:  { t: "Agorzilla", d: "One creature the whole testnet feeds: give it a meal, choose tomorrow's change", i: `<img src="${ROOT}${agzPic}" alt="">`, h: "https://agorzilla.com", ext: true, live: true },
     deja:       { t: "Déjà, the café cat", d: "Agorzilla's café cat: she eats when three wallets each send her 1 test AGRS in a day, and runs across at every rule change", i: `<img src="${ROOT}assets/deja.webp" alt="">`, h: "https://agorzilla.com/cat/", ext: true, live: true },
     rules:      { t: "Rules wall", d: "The rules people gave their own accounts; take one for yours to agree", i: "▤", h: "rules/" },
     wallet:     { t: "Wallet", d: "A testnet account with its own rules: send, take back, co-sign, vote, form a Pakt", i: "◈", h: "wallet/" },
@@ -706,7 +717,7 @@
     [[TELEGRAM, PLANE, "Telegram @tauHUDcom", "To your phone the moment it happens: rule changes, restarts, new nodes, a weekly recap"],
      [XCOM, XLOGO, "X @TauHUDcom", "In your timeline: real rule changes, new nodes, Testnet today and the Monday recap"],
      [RSS, RSSI, "RSS feed", "Every rule change in your feed reader"],
-     [AGZX, `<img src="${ROOT}assets/agorzilla.webp" alt="">`, "Agorzilla on X", "The creature the testnet feeds: each evening's change and every growth stage"]].forEach(([h, ic, t, d]) => {
+     [AGZX, `<img src="${ROOT}${agzPic}" alt="">`, "Agorzilla on X", "The creature the testnet feeds: each evening's change and every growth stage"]].forEach(([h, ic, t, d]) => {
       const a = el("a", "mi", `<span class="ic">${ic}</span><b>${esc(t)} <span class="ext">↗</span></b><span>${esc(d)}</span>`); a.href = h; a.target = "_blank"; a.rel = "noopener"; a.setAttribute("role", "menuitem"); a.addEventListener("click", closeAll); tgm.append(a);
     });
     tgb.addEventListener("click", () => { tgm.style.top = innerWidth <= 700 ? Math.round(tgb.getBoundingClientRect().bottom + 8) + "px" : ""; toggle(tgb, tgm); });   // phone: a full-width panel under the header
@@ -859,7 +870,7 @@
     /* socials as their own group at the end of the line, with their marks, so they read as a way to follow along and not as one more link */
     f.querySelectorAll('a[href*="t.me/tauHUDcom"], a[href*="x.com/TauHUDcom"]').forEach(a => { if (a.previousSibling && a.previousSibling.nodeType === 3) a.previousSibling.textContent = a.previousSibling.textContent.replace(/\s*·\s*$/, " "); a.remove(); });
     const so = el("span", "tn-social", `<span class="tn-sol">Follow</span>`);
-    [[TELEGRAM, PLANE, "Telegram"], [XCOM, XLOGO, "X"], [AGZX, `<img src="${ROOT}assets/agorzilla.webp" alt="">`, "Agorzilla"]].forEach(([h, ic, t]) => { const a = el("a", "tn-soc", `${ic}<span>${esc(t)}</span>`); a.href = h; a.target = "_blank"; a.rel = "noopener"; so.append(a); });
+    [[TELEGRAM, PLANE, "Telegram"], [XCOM, XLOGO, "X"], [AGZX, `<img src="${ROOT}${agzPic}" alt="">`, "Agorzilla"]].forEach(([h, ic, t]) => { const a = el("a", "tn-soc", `${ic}<span>${esc(t)}</span>`); a.href = h; a.target = "_blank"; a.rel = "noopener"; so.append(a); });
     host.append(" ", so);
   }
   /* Testnet health: Stats, Testnet load and Status answer the same question, so each carries tabs to the other two */
