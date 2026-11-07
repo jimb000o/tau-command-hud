@@ -2487,5 +2487,10 @@
     "tag": "Stats",
     "on": "2026-11-07",
     "html": "Stats: a new range, All chains. A testnet restart no longer resets the charts: our relay now writes down what every chain held, hour by hour and day by day, and keeps it when the next chain begins. Block time and transactions run as one timeline across restarts, each restart marked; earlier chains we only know by their length are marked “not kept”. The tiles add up blocks and transactions over every chain, and the day counts on In numbers add up across restarts too."
+  },
+  {
+    "tag": "Alerts",
+    "on": "2026-11-07",
+    "html": "Channel that tunes itself: every tauhud.com link in a Telegram post now says which kind of post it came from, and the relay counts only those page opens, by kind (no one's data). Each Sunday the owner gets a private note of posts and opens per kind; a closer look or weekly digest that nobody opened for four weeks posts every other time until someone does, and every such change is logged with its reason. Also new: a weekly channel poll on which page gets the next closer look, a post on the 1st of each month with the running costs as billed and the donations so far, and the pirate ship's report says what an all-refused call shows."
   }
 ]
