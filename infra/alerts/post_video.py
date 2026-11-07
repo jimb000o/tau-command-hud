@@ -14,9 +14,10 @@ import alerts  # noqa: E402  (the keys, OAuth signing and the multipart helper o
 CHUNK = 4 * 2**20
 
 
-def signed(method: str, url: str, query: dict | None = None) -> str:
-    """OAuth 1.0a header; query parameters are part of the signature, a JSON or multipart body is not."""
-    k = alerts.X_KEYS
+def signed(method: str, url: str, query: dict | None = None, keys: dict | None = None) -> str:
+    """OAuth 1.0a header; query parameters are part of the signature, a JSON or multipart body is not. `keys`: another
+    account's four keys (Agorzilla's own X account), else the channel's."""
+    k = keys or alerts.X_KEYS
     oauth = {"oauth_consumer_key": k["X_API_KEY"], "oauth_nonce": os.urandom(16).hex(), "oauth_signature_method": "HMAC-SHA1",
              "oauth_timestamp": str(int(time.time())), "oauth_token": k["X_ACCESS_TOKEN"], "oauth_version": "1.0"}
     p = alerts._pct
@@ -27,9 +28,10 @@ def signed(method: str, url: str, query: dict | None = None) -> str:
     return "OAuth " + ", ".join(f'{p(a)}="{p(b)}"' for a, b in sorted(oauth.items()))
 
 
-def call(method: str, url: str, body: bytes | None = None, ctype: str | None = None, query: dict | None = None) -> dict:
+def call(method: str, url: str, body: bytes | None = None, ctype: str | None = None, query: dict | None = None,
+         keys: dict | None = None) -> dict:
     full = url + ("?" + urllib.parse.urlencode(query) if query else "")
-    headers = {"Authorization": signed(method, url, query)}
+    headers = {"Authorization": signed(method, url, query, keys)}
     if ctype:
         headers["Content-Type"] = ctype
     req = urllib.request.Request(full, data=body, method=method, headers=headers)
@@ -41,30 +43,30 @@ def call(method: str, url: str, body: bytes | None = None, ctype: str | None = N
         raise RuntimeError(f"{method} {url}: HTTP {e.code} {e.read()[:400]!r}") from None
 
 
-def x_video(path: str, text: str) -> str:
+def x_video(path: str, text: str, keys: dict | None = None) -> str:
     data = open(path, "rb").read()
     up = "https://api.x.com/2/media/upload"
     init = call("POST", up + "/initialize", json.dumps({"media_type": "video/mp4", "total_bytes": len(data),
-                                                        "media_category": "tweet_video"}).encode(), "application/json")
+                                                        "media_category": "tweet_video"}).encode(), "application/json", keys=keys)
     mid = str((init.get("data") or {}).get("id") or "")
     if not mid:
         raise RuntimeError(f"x: no media id in {init}")
     for i in range(0, len(data), CHUNK):
         body, ctype = alerts.multipart({"segment_index": str(i // CHUNK)}, {"media": ("video.mp4", data[i:i + CHUNK], "application/octet-stream")})
-        call("POST", f"{up}/{mid}/append", body, ctype)
-    info = (call("POST", f"{up}/{mid}/finalize").get("data") or {}).get("processing_info")
+        call("POST", f"{up}/{mid}/append", body, ctype, keys=keys)
+    info = (call("POST", f"{up}/{mid}/finalize", keys=keys).get("data") or {}).get("processing_info")
     while info and info.get("state") in ("pending", "in_progress"):
         time.sleep(max(1, int(info.get("check_after_secs") or 3)))
-        info = (call("GET", up, query={"command": "STATUS", "media_id": mid}).get("data") or {}).get("processing_info")
+        info = (call("GET", up, query={"command": "STATUS", "media_id": mid}, keys=keys).get("data") or {}).get("processing_info")
     if info and info.get("state") == "failed":
         raise RuntimeError(f"x: video processing failed {info}")
-    out = call("POST", "https://api.x.com/2/tweets", json.dumps({"text": text, "media": {"media_ids": [mid]}}).encode(), "application/json")
+    out = call("POST", "https://api.x.com/2/tweets", json.dumps({"text": text, "media": {"media_ids": [mid]}}).encode(), "application/json", keys=keys)
     return str((out.get("data") or {}).get("id"))
 
 
-def telegram_video(path: str, caption: str) -> None:
+def telegram_video(path: str, caption: str, w: int = 1280, h: int = 720) -> None:
     fields = {"chat_id": alerts.TELEGRAM_CHAT, "caption": caption, "parse_mode": "HTML", "supports_streaming": "true",
-              "width": "1280", "height": "720"}
+              "width": str(w), "height": str(h)}
     body, ctype = alerts.multipart(fields, {"video": (os.path.basename(path), open(path, "rb").read(), "video/mp4")})
     ok, _, err = alerts.Telegram().call("sendVideo", body, ctype)
     if not ok:

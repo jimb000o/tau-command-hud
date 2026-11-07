@@ -282,13 +282,80 @@ def announce(now: float, cruise: dict | None, st: dict) -> str | None:
         return None
     t = compose(ship, t0)
     pic = picture(t, f"/tmp/cruise-{ship}.jpg")   # a failure here is tried again in 10 minutes
+    clip = ship_clip(vid, t, pic)   # the same picture as a video, when Kling's clip of it is there (kling.py)
     st["announced"][vid] = {"at": round(now), "result": "posting"}
     save(st)   # before posting: a crash while posting never posts twice
-    said = post(t, pic)
+    if clip and not clip["draft"]:
+        said = clip_post(t, clip["video"])
+    else:
+        said = post(t, pic)
+        if clip:   # one of the first clips of this kind: the photo went out, the clip waits for a look
+            import kling
+            url = kling.draft(clip["key"], clip["video"], clip_texts(t))
+            tell(kling.draft_note(clip["key"], "ship", url, f"{SHIPS[ship]['name']}'s announcement as a video"))
     st["announced"][vid] = {"at": round(now), "texts": t.get("written"), "result": said}
     save(st)
     log.info("announced %s (%s texts): %s", vid, t.get("written"), "; ".join(said))
     return vid
+
+
+# ---------- Kling: the announcement as a video ----------
+SHIP_PROMPT = ("A hand-painted tropical island with a ship at anchor, as a living painting. The camera is completely "
+               "still. The ship rocks very gently on the swell, its flags and pennants move in the breeze, the sea "
+               "ripples and glints, smoke drifts from the funnel and the chimneys, palm fronds stir. The island, the "
+               "ship's shape and every colour stay exactly as painted. Calm, minimal, premium.")
+
+
+def kling_prepare(now: float, cruise: dict | None) -> None:
+    """Asks Kling for the clips the next posts will want, early enough to be there: the announcement's scene (the
+    ship at anchor, no card) from 45 minutes before the announcement; the pirates' living sea from the moment she is
+    in sight (the clip after their call uses it). Picks up the clips already asked for."""
+    import kling
+    if not kling.enabled():
+        return
+    nxt = (cruise or {}).get("next") or {}
+    ship, t0 = nxt.get("ship"), nxt.get("t0")
+    if kling.enabled("ship") and ship in SHIPS and not SHIPS[ship].get("surprise") and t0 and \
+            t0 - (ANNOUNCE + 45) * 60 <= now < t0 - LATEST * 60:
+        k = "ship-" + visit_id(int(t0), ship)
+        if k in kling.state()["jobs"]:
+            kling.poll(k)
+        else:
+            t = compose(ship, int(t0))
+            scene = picture({**t, "card": None}, f"/tmp/cruise-{ship}-scene.jpg")
+            kling.ask(k, "ship", scene, SHIP_PROMPT, duration="5", tail=True, now=now)
+    cur = (cruise or {}).get("now") or {}
+    if kling.enabled("pirate") and cur.get("ship") == "pirates" and cur.get("t0"):
+        import trick_clip
+        trick_clip.kling_ask(visit_id(int(cur["t0"]), "pirates"), now)
+
+
+def clip_texts(t: dict) -> dict:
+    return {"telegram": t["telegram"], "x": t.get("x") if t.get("on_x") is not False else "", "size": (1600, 900)}
+
+
+def ship_clip(vid: str, t: dict, pic: str) -> dict | None:
+    """{"video", "draft", "key"} when Kling's clip of this call's scene is there: the clip, then the picture's card
+    fading in over its last frame; None otherwise (the photo goes out, as before)."""
+    try:
+        import kling
+        k = "ship-" + vid
+        j = kling.ready(k) if kling.enabled("ship") else None
+        if not j:
+            return None
+        out = kling.then_card(j["file"], pic, f"/tmp/cruise-{vid}.mp4", float(j.get("seconds") or 5))
+        return {"video": out, "draft": bool(j.get("draft")), "key": k}
+    except Exception as e:  # noqa: BLE001 - the photo instead
+        log.warning("ship clip %s: %s", vid, e)
+        return None
+
+
+def clip_post(t: dict, video: str) -> list[str]:
+    import kling
+    said = kling.post_video(video, clip_texts(t))
+    if t.get("on_x") is False or not t.get("x"):
+        said.append("x: not for this ship (its one X post is the blog's)")
+    return [s + " (video)" for s in said]
 
 
 # ---------- the report after the visit ----------
@@ -416,6 +483,10 @@ def step(now: float | None = None) -> None:
     except Exception as e:  # noqa: BLE001 - the relay may be restarting
         log.warning("cruise not read: %s", e)
         return
+    try:   # Kling's clips for the next posts, asked for early (kling.py; nothing when there is no key)
+        kling_prepare(now, cruise)
+    except Exception as e:  # noqa: BLE001
+        log.warning("kling: %s", e)
     try:
         announce(now, cruise, st)
     except Exception as e:  # noqa: BLE001 - marked as tried: never a second post of the same call
