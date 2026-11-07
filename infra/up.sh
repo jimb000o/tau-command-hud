@@ -462,6 +462,9 @@ fi
 # every painted room's own lamps for the night: a room painted anew (up room, up keep, up island) is looked at once
 # (paint.py lights --missing, one short text answer per new room, nothing when all are known)
 { echo "room lights:"; sh rabbit-art/paint.sh lights --missing 2>&1 | grep -E '^lights:|Error|error|GEMINI|painter' | tail -2 | sed 's/^/         /'; } | tee -a "$NOTE" || true
+# what the Gemini API cost this month, measured by paint.py at every call (tokens x Google's list price; the bill itself:
+# https://aistudio.google.com/usage); GEMINI_MONTH_CAP in .env stops painting at that many dollars a month (default 10)
+python3 rabbit-art/paint.py usage 2>/dev/null | tee -a "$NOTE" || true
 # a new painted island, only when asked for: up island
 if [ "${1:-}" = "island" ]; then
   sh island.sh auto 2>&1 | tee "$V"

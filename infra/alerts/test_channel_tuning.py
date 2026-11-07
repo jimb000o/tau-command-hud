@@ -1,6 +1,6 @@
 """Unit test of the channel's self-tuning parts (7 November 2026, no network): links carry ref=tg-<kind>, the Sunday
 note counts opens per kind and makes a kind nobody opens post every other time, the weekly poll picks the next closer
-look, the monthly costs post adds up only the bills that are in.
+look, the monthly costs post adds up only the bills that are in, plus last month's measured Gemini pictures.
 
 Run: python test_channel_tuning.py   (needs websockets==15.0.1)
 """
@@ -77,6 +77,15 @@ c = alerts.costs_text(costs, {"count": 1, "donors": 1, "totals": {"AGRS": "50"}}
 check("About €6 + $200 a month" in c and "not in yet: Voices" in c and "50 AGRS" in c and "not affiliated with IDNI" in c,
       "costs: billed items summed per currency, open bills named, donations")
 check(alerts.costs_text({"items": [{"t": "x", "amount": None, "cur": "EUR"}]}, None) is None, "no bill in: no post")
+usage = {"since": "2026-11-07", "months": {"2026-11": {"pictures": 12, "looks": 3, "usd": 1.234}}}
+c = alerts.costs_text(costs, None, usage, "2026-11")
+check("Pictures (Google Gemini) in November: about $1.23 for 12 pictures, measured since 7 November" in c and "$201.23" in c,
+      "costs: last month's measured Gemini pictures listed and added to the dollars")
+c = alerts.costs_text(costs, None, {"since": "2026-11-07", "months": {}}, "2026-12")
+check("Pictures (Google Gemini) in December: $0, nothing painted" in c and "$200 a month" in c, "costs: a month without painting says $0")
+c = alerts.costs_text(costs, None, None, "2026-11")
+check("Gemini" not in c, "costs: no usage file, no Gemini line")
+check("Gemini" not in alerts.costs_text(costs, None, usage, "2026-10"), "costs: no line for a month before measuring began")
 
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)
