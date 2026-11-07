@@ -17,7 +17,9 @@
 #                            up idni send  posts it now, up idni hold  keeps the next one back, up idni release  undoes that
 #              up cruise     a cruise ship's last visit in numbers and the node's timeouts per hour (nothing rebuilt)
 #                            up cruise next  the next call's announcement as it goes out by itself (posts nothing);
-#                            announcements and reports run by themselves every week (alerts/cruise_crier.py)
+#                            announcements and reports run by themselves every week (alerts/cruise_crier.py);
+#                            up cruise release 2026-11-10-pirates  shows a held-back finding (a pirate trick that got
+#                            through) in the public logbook and lets the blog write that visit (after IDNI knows)
 #              up report     the weekly report for IDNI as it stands (nothing rebuilt, nothing filed): its text, a page
 #                            and a pre-filled GitHub issue link; up report last  last week's; up report send  also to
 #                            your Telegram (it comes there by itself every Sunday 18:00)
@@ -60,7 +62,26 @@ if [ "${1:-}" = "cruise" ]; then
     docker compose exec -T blog python cruise_crier.py preview ${3:-}
     docker compose cp blog:/tmp/cruise-dryrun.jpg /opt/sites/rico/art/drafts/ >/dev/null 2>&1 || true
     docker compose cp blog:/tmp/cruise-queen.jpg /opt/sites/rico/art/drafts/ >/dev/null 2>&1 || true
-    echo "look: https://node.tauhud.com/rico/art/drafts/cruise-queen.jpg (or cruise-dryrun.jpg)"
+    docker compose cp blog:/tmp/cruise-pirates.jpg /opt/sites/rico/art/drafts/ >/dev/null 2>&1 || true
+    echo "look: https://node.tauhud.com/rico/art/drafts/cruise-queen.jpg (or cruise-dryrun.jpg, cruise-pirates.jpg)"
+    exit 0
+  fi
+  # up cruise release <visit>: a finding held back (a pirate trick the chain took) becomes public in the logbook
+  if [ "${2:-}" = "release" ]; then
+    case "${3:-}" in [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[a-z]*) ;; *) echo "usage: up cruise release 2026-11-10-pirates"; exit 2;; esac
+    docker compose exec -T relay python -c "
+import json, os, sys
+p = os.path.join(os.path.dirname(os.environ.get('CRUISE_STATE_PATH', '/data/cruise-state.json')), 'cruise-released.json')
+p = os.environ.get('CRUISE_RELEASED_PATH', p)
+try:
+    r = json.load(open(p))
+except Exception:
+    r = []
+r = sorted(set(r) | {sys.argv[1]})
+json.dump(r, open(p, 'w'))
+print('released:', ', '.join(r))
+" "$3"
+    echo "copy into the chat: cruise release $3 done; the blog drafts that visit within 10 minutes"
     exit 0
   fi
   docker compose cp cruise-report.py relay:/tmp/cruise-report.py >/dev/null

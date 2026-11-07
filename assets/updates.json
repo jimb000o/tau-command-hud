@@ -2450,5 +2450,17 @@
     "tag": "HUD",
     "on": "2026-11-07",
     "html": "Chain core: the ring of waiting transactions now says that it is the mempool, and a wallet's own rule on the inner ring says whose it is: it binds only that wallet, never anyone else. Hover the inner ring for what it holds. The rules it shows no longer depend on when the page was opened: the page asks the relay who holds a rule now, and a rule a wallet took away leaves the ring."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-07",
+    "major": {
+      "id": "cruise-pirates",
+      "image": "/assets/shots/cruise-pirates.jpg",
+      "title": "New: pirates on Tuesdays at White Rabbit Key, and ships that learn",
+      "text": "Black Sequence anchors every Tuesday at 18:00 German time. Her made-up pirates try what Tau Testnet Alpha must refuse: paying more than the wallet holds, the same payment twice, an expired one, a wrong key. The logbook shows each answer. Every ship now adjusts its own pace and tests from its last call, by fixed rules within the same limits, and says what it changed and why.",
+      "link": "/cruise/"
+    },
+    "html": "White Rabbit Key: a third ship. On Tuesdays at 18:00 German time the pirates of Black Sequence anchor off the island; they stay aboard and now and then try a trick the chain must refuse: paying more than the wallet holds, sending the same payment twice, a payment whose time ran out, a payment signed with the wrong key. The logbook shows each answer; a trick that got through is reported privately first. Every ship now learns from its last call by fixed rules (its pace, how often each kind is tried), within the same limits, and says what it changed and why. The other weekdays stay quiet."
   }
 ]

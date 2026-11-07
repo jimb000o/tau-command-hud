@@ -103,7 +103,7 @@ footer a { color: var(--dim); }
   <nav class="tnav" data-page="cruise" aria-label="Pages and tools"></nav>
   <div>
     <p class="lead">Simulated passengers, real transactions.</p>
-    <p class="sub">Two cruise ships call at White Rabbit Key: MS Dry Run on Wednesday at 16:00 and Queen Mempool on Saturday at 14:00 (German time). Their passengers are invented; what they pay ashore is a real test transaction on Tau Testnet Alpha, at most twelve a minute. This logbook keeps every one of them and what the node answered.</p>
+    <p class="sub">Three ships call at White Rabbit Key: the pirates of Black Sequence on Tuesday at 18:00, MS Dry Run on Wednesday at 16:00 and Queen Mempool on Saturday at 14:00 (German time); the other days are quiet. Their passengers are invented; what they pay is a real test transaction on Tau Testnet Alpha, at most twelve a minute. This logbook keeps every one of them and what the node answered.</p>
   </div>
   <div class="tiles" id="tiles"></div>
   <section class="panel">
@@ -112,7 +112,7 @@ footer a { color: var(--dim); }
     <div class="tablewrap"><table id="log"><thead><tr><th>Time</th><th>Ship</th><th>Passenger</th><th>What</th><th>Where</th><th class="n">Test AGRS</th><th>Node’s answer</th></tr></thead><tbody id="rows"></tbody></table></div>
     <p class="empty" id="empty" hidden>No ship has sent a transaction yet. The next one is announced on the Testnet load page and in the game.</p>
     <div class="more" id="more" hidden><button type="button" id="moreBtn">Show more</button><span id="moreText"></span></div>
-    <p class="note">What the kinds mean: <b>pays</b> a plain transfer to the place’s till; <b>books</b> a transfer the passenger can take back until a set time (retractable_transfer); <b>cancels</b> takes such a booking back (retract_transfer); <b>bills</b> one transaction that pays several places at once. A <span style="color:var(--bad)">refused</span> line shows the node’s own reason. <b>landed</b>, <b>no landing</b>, <b>left</b>: the ship’s own events, with the testnet’s state at that moment.</p>
+    <p class="note">What the kinds mean: <b>pays</b> a plain transfer to the place’s till; <b>books</b> a transfer the passenger can take back until a set time (retractable_transfer); <b>cancels</b> takes such a booking back (retract_transfer); <b>bills</b> one transaction that pays several places at once; <b>tries a trick</b> a pirate sends something the chain must refuse, and <b>stopped</b> shows that it did, with its answer. A <span style="color:var(--bad)">refused</span> line shows the node’s own reason. <b>landed</b>, <b>no landing</b>, <b>left</b>: the ship’s own events, with the testnet’s state at that moment.</p>
   </section>
   <footer>
     <p>Unofficial, not affiliated with IDNI. The ships send only when the island bot is quiet and never past half of the island’s daily budget; a strained testnet halves their pace, a stalled one sends them away. <a href="https://node.tauhud.com/cruise/log" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="/load/">Testnet load</a> · <a href="/rabbit/">White Rabbit Key</a></p>
@@ -129,9 +129,10 @@ const T = s => (window.TauI18n ? TauI18n.t(s) : s);
 const F = (s, o) => T(s.replace(/\{(\w+)\}/g, (_, k) => o[k]));   // filled first: the dictionaries match the numbers in place
 const N = n => n == null ? "–" : Number(n).toLocaleString("en-US");
 const el = (tag, attrs, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs || {})) { if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else if (v != null) e.setAttribute(k, v); } for (const k of kids) if (k != null) e.append(k); return e; };
-const SHIPS = { dryrun: "MS Dry Run", queen: "Queen Mempool" };
+const SHIPS = { pirates: "Black Sequence", dryrun: "MS Dry Run", queen: "Queen Mempool" };
 const PLACES = { hall: "Council Hall", market: "Market square", radio: "Radio Coco", north: "North Wind Embassy", south: "South Current Wellness Resort", bar: "Bar La Ola", book: "The Lighthouse", pier: "The pier", works: "The Coconut Works", school: "The School", dive: "Reef Proof Dive Centre", ship: "The Old Ship" };
-const KINDS = { pay: "pays", book: "books", cancel: "cancels", bill: "bills", landed: "landed", "no landing": "no landing", left: "left" };
+const KINDS = { pay: "pays", book: "books", cancel: "cancels", bill: "bills", trick: "tries a trick", tuned: "learned", landed: "landed", "no landing": "no landing", left: "left" };
+const TRICKS = { overspend: "pays more than the wallet holds", replay: "sends a payment the chain already took a second time", expired: "sends a payment whose time ran out", forged: "signs a payment with another pirate’s key" };
 const when = t => { const d = new Date(t * 1000); return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
 
 /* ---------- tooltip: a value line and at most two lines ---------- */
@@ -171,6 +172,10 @@ function visitLabel(id, rows) {
   return (e && SHIPS[e.ship] || id) + (d ? " · " + d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "");
 }
 function answer(r) {
+  if (r.kind === "tuned") return el("span", { class: "note" }, (r.changes || []).map(c => c.held ? T("a pirate trick: held back for now") : F("{w}: {a} → {b}", { w: T(c.what), a: c.from, b: c.to }) + " · " + T(c.because || "")).join("; "));
+  if (r.held) return el("span", null, el("span", { class: "skip" }, T("held back")), el("span", { class: "note" }, " · " + T("a finding, reported privately to the team behind the testnet first")));
+  if (r.kind === "trick" && r.ok === false) return el("span", null, el("span", { class: "ok" }, T("stopped by the chain")), el("span", { class: "note" }, " · " + (r.code || "") + (r.right === false ? " · " + T("another answer than expected") : "")));
+  if (r.kind === "trick" && r.ok === true) return el("span", null, el("span", { class: "no" }, T("got through")), r.hash ? el("a", { href: "/explorer/?q=" + r.hash, title: r.hash }, " " + r.hash.slice(0, 8) + "…") : null);
   if (["landed", "no landing", "left"].includes(r.kind)) return el("span", null, el("span", { class: "ev" }, F("testnet {s}", { s: T(r.verdict || "–") })), r.note ? el("span", { class: "note" }, " · " + T(r.note)) : null);
   if (r.ok === true) return el("span", null, el("span", { class: "ok" }, T("sealed")), r.hash ? el("a", { href: "/explorer/?q=" + r.hash, title: r.hash }, " " + r.hash.slice(0, 8) + "…") : null);
   if (r.ok === false) return el("span", null, el("span", { class: "no" }, T("refused")), r.err ? el("span", { class: "note" }, " · " + String(r.err).replace(/[{}"]/g, " ").replace(/\s+/g, " ").trim().slice(0, 140)) : null);
@@ -186,13 +191,13 @@ function render() {
   }
   const tb = $("rows"); tb.replaceChildren();
   rows.slice(0, SHOWN).forEach(r => {
-    const ev = ["landed", "no landing", "left"].includes(r.kind);
+    const ev = ["landed", "no landing", "left", "tuned"].includes(r.kind);
     tb.append(el("tr", null,
       el("td", { text: when(r.t) }),
       el("td", { text: SHIPS[r.ship] || r.ship || "" }),
       el("td", { text: ev ? "" : F("no. {n}", { n: r.p }) }),
       el("td", null, ev ? el("span", { class: "ev", text: T(KINDS[r.kind] || r.kind) }) : T(KINDS[r.kind] || r.kind)),
-      el("td", { text: r.to ? T(PLACES[r.to] || r.to) : "" }),
+      el("td", { text: r.kind === "trick" && r.trick ? T(TRICKS[r.trick] || r.trick) : r.to ? T(PLACES[r.to] || r.to) : "" }),
       el("td", { class: "n", text: r.amount != null ? N(r.amount) : "" }),
       el("td", null, answer(r))));
   });
@@ -200,7 +205,7 @@ function render() {
   $("more").hidden = rows.length <= SHOWN;
   $("moreText").textContent = F("{a} of {b} lines", { a: N(Math.min(SHOWN, rows.length)), b: N(rows.length) });
   $("logSmall").textContent = F("the last {n} days", { n: LOG.days || 30 });
-  const sent = all.filter(r => r.ok === true).length, ref = all.filter(r => r.ok === false).length, visits = ids.length;
+  const sent = all.filter(r => r.ok === true && r.kind !== "trick").length, ref = all.filter(r => r.ok === false && r.kind !== "trick").length, visits = ids.length;
   const last = all.find(r => r.kind === "landed");
   $("tiles").replaceChildren(
     tile(T("Visits"), N(visits), T("ships that landed or tried to")),

@@ -1,6 +1,10 @@
 """Cruise ships at White Rabbit Key: openly simulated passengers whose island visits are real, paced test transactions.
 
-Two ships call by a timetable on the island's clock (Europe/Berlin):
+Three ships call by a timetable on the island's clock (Europe/Berlin); the other days are quiet, no ship, the baseline:
+  Tuesday 18:00    Black Sequence a pirate ship, 20 pirates who stay aboard and trade from their boat: rum at Bar La Ola,
+                                  supplies at the market. Now and then a pirate tries a trick the chain must refuse
+                                  (TRICKS): paying more than the wallet holds, sending a payment the chain already took
+                                  a second time, a payment whose time ran out, a payment signed with another pirate's key.
   Wednesday 16:00  MS Dry Run     a small expedition ship, 40 curious passengers: the lighthouse, Captain Wren's Old
                                   Ship, the school, the dive shop. It tries the rarer kinds of transaction.
   Saturday 14:00   Queen Mempool  a big luxury liner, 120 passengers: the South Current spa, Bar La Ola, song requests
@@ -18,6 +22,11 @@ Tau Testnet Alpha to the till of a place (island.PLACES, the same tills the game
   book    a booking with the right to withdraw: a retractable transfer (tau-testnet docs/retractable.md) that waits in
           escrow until the time of the dive or the treatment; at that time the chain pays the place by itself
   cancel  the booking withdrawn: a retract_transfer well before that time, and the money goes back to the passenger
+  trick   a pirate's trick (TRICKS), at most one every TRICK_GAP seconds: the chain is meant to say no, and the logbook
+          notes whether it did and with which answer. A trick that is refused is the chain working, never a refusal
+          for the brakes; a trick the chain takes ("through") is a finding: it is held back from the public logbook
+          (route: "held") and reported to the owner privately first (alerts/cruise_crier.py reads /cruise/held from
+          inside the server), until `up cruise release <visit>` shows it (CRUISE_RELEASED_PATH)
 Never: votes, rule changes, rule offers or co-signed payments (they would take one of the testnet's two places for a
 personal rule, which belong to real visitors: slotlease.py), the players' board, Déjà or Agorzilla, payouts, and the
 places of Ama and Tano.
@@ -33,6 +42,15 @@ Pace and brakes, so a ship never floods the testnet:
   QUIET_SLOW (brief "brake": "slow"; the visit counts these sends apart from those slowed by a strained testnet);
 - a kind the ship has not yet used cleanly (TRIAL: book, bill) goes out at most TRIAL_MAX times on its first visit, and
   only one new kind per visit; it counts as tried once a visit with it ends with no refusal of that kind and no brake.
+
+Learning from each visit (tune_after), by fixed rules and never past the limits above: after a visit with
+TUNE_UNANSWERED or more sends our node did not answer in time, the ship goes one transaction a minute slower next
+time (never below RATE_MIN); after a clean visit, one faster again (never above RATE). A kind that was tried and is
+refused on a later visit goes back to a small trial. A trick the chain stopped with the right answer on TRICK_CALM
+visits in a row comes less often (never below TRICK_MIN a visit); one that got through is tried once a visit from
+then on, to see when it is closed. At most one change of pace or kinds a visit; each change is written into the
+logbook ("tuned") and the visit's summary ("changed": what, from, to, because), and the blog tells it. What a test
+checks on the chain never changes by itself: that stays with a person.
 
 The logbook: every transaction a passenger sends (kind, place, amount, hash, the node's answer and how many ms it took,
 the chain height, the load verdict at that moment) goes to CRUISE_LOG_PATH for LOG_DAYS days, with the signed transaction for the rare kinds
@@ -87,11 +105,32 @@ UNRELEASED = 3 * 60        # a booking still open this long after its time is re
 REFUSE_STOP, REFUSE_WINDOW = 5, 20   # refusals among the visit's last sends that send the ship away
 QUIET_HOLD = 30            # seconds the ship waits after a send the node did not answer in time (relay UPSTREAM_TIMEOUT)
 QUIET_SLOW = 10 * 60       # and for this long after it, half pace: the node is slow, the ship gives it room
+RATE_MIN = 6               # the slowest a ship tunes itself down to, transactions a minute
+TUNE_UNANSWERED = 3        # sends our node left unanswered in one visit that make the next visit one a minute slower
+TRICK_GAP = 120            # seconds between two pirate tricks, at least
+TRICK_START, TRICK_MIN, TRICK_CALM = 6, 2, 3   # each trick a visit at first; at least; visits stopped rightly before fewer
+# the pirates' tricks: what the pirate does, and the node's answers that mean the chain said no for the right reason
+# (tau-testnet commands/sendtx.py; an overspend may also be refused by the transfer rule itself, TX_REJECTED)
+TRICKS = {
+    "overspend": (("INSUFFICIENT_FUNDS", "TX_REJECTED"), "pays more than the wallet holds"),
+    "replay": (("INVALID_SEQUENCE",), "sends a payment the chain already took a second time"),
+    "expired": (("TX_EXPIRED",), "sends a payment whose time ran out"),
+    "forged": (("INVALID_SIGNATURE",), "signs a payment with another pirate's key"),
+}
+CODES = sorted({c for codes, _ in TRICKS.values() for c in codes} | {"TX_INVALID", "INVALID_PARAMS", "TX_REJECTED"})
 # MS Dry Run, 4 November 2026: eight sendtx went unanswered within 20 s (two a day on other days), were counted as
 # refusals, and the ship left after 34 minutes although the node had refused nothing. No answer is not a refusal.
 CHECK_BOOKINGS = 10        # passengers whose bookings are checked with the node when a visit ends
 
 SHIPS = {
+    "pirates": {
+        "name": "Black Sequence", "weekday": 1, "hour": 18, "passengers": 20, "style": "pirate",
+        "aboard": True,   # nobody comes ashore: the pirates trade from their boat, so no group stands on the island
+        "stops": {"bar": (5, 4), "market": (8, 3), "works": (4, 2)},
+        "per": (2, 3), "dwell": (14, 22), "landing": 10,
+        "book": {"share": 0.0, "at": ("market",), "cancel": 0.0},
+        "bill": 0.0, "kinds": ("trick",),
+    },
     "dryrun": {
         "name": "MS Dry Run", "weekday": 2, "hour": 16, "passengers": 40, "style": "expedition",
         # place: (test AGRS a visit pays there, how much the passengers want to go there)
@@ -113,7 +152,7 @@ SHIPS = {
 }
 CLOSED = frozenset({"ama", "stone", "drums", "circle", "grotto", "hall", "north", "camp", "canoe"})   # no tour group goes there
 BILL = (("bar", 5), ("radio", 25), ("works", 4))   # a table's evening: drinks and coconut snacks per head, one song request
-KINDS = ("pay", "bill", "book", "cancel")
+KINDS = ("pay", "bill", "book", "cancel")   # what passengers send; a pirate's "trick" is counted apart (TRICKS)
 PHASES = ("approach", "landing", "ashore", "boarding")
 VISIT_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z]+$")
 
@@ -185,9 +224,10 @@ def visit_id(t0: int, ship: str) -> str:
     return berlin_day(t0).isoformat() + "-" + ship
 
 
-def plan(ship: str, t0: int, trial: set | None = None, allowed: set | None = None) -> list[dict]:
+def plan(ship: str, t0: int, trial: set | None = None, allowed: set | None = None, tricks: dict | None = None) -> list[dict]:
     """Every passenger's day ashore, the same for the same visit (seeded by its id), by time.
-    trial: kinds limited to TRIAL_MAX this visit; allowed: the kinds this visit may send besides "pay"."""
+    trial: kinds limited to TRIAL_MAX this visit; allowed: the kinds this visit may send besides "pay";
+    tricks: how many of each pirate trick this visit tries (default TRICK_START each), when "trick" is allowed."""
     S = SHIPS[ship]
     trial, allowed = trial or set(), set(S["kinds"]) if allowed is None else allowed
     R = random.Random(visit_id(t0, ship))
@@ -233,6 +273,17 @@ def plan(ship: str, t0: int, trial: set | None = None, allowed: set | None = Non
             else:
                 acts.append({"t": t, "p": p, "kind": "pay", "to": place, "amount": S["stops"][place][0]})
             t += R.uniform(*S["dwell"]) * 60
+    if "trick" in allowed:   # a pirate's tricks, from ten minutes after the landing (every pirate has paid by then), spaced out
+        bag = [k for k in TRICKS for _ in range(max(0, int((tricks or {}).get(k, TRICK_START))))]
+        R.shuffle(bag)
+        t, last = t0 + (landing(ship) + 10) * 60, end - 5 * 60
+        step_ = max(TRICK_GAP, (last - t) / max(1, len(bag)))
+        for k in bag:
+            if t >= last:
+                break
+            acts.append({"t": t + R.uniform(0, step_ - TRICK_GAP), "p": R.randrange(S["passengers"]), "kind": "trick", "trick": k,
+                         "to": "market", "amount": S["stops"]["market"][0]})
+            t += step_
     acts.sort(key=lambda a: (a["t"], a["p"]))
     acts = acts[:VISIT_MAX]
     for i, a in enumerate(acts):
@@ -241,10 +292,11 @@ def plan(ship: str, t0: int, trial: set | None = None, allowed: set | None = Non
     return acts
 
 
-def where(acts: list[dict], now: float, end: float) -> dict[str, int]:
-    """How many passengers are at each place now, by the stops they have reached (pier on landing)."""
+def where(acts: list[dict], now: float, end: float, ship: str | None = None) -> dict[str, int]:
+    """How many passengers are at each place now, by the stops they have reached (pier on landing); none for a ship
+    whose people stay aboard."""
     last: dict[int, str] = {}
-    if now >= end:
+    if now >= end or SHIPS.get(ship or "", {}).get("aboard"):
         return {}
     for a in acts:
         if a["t"] > now:
@@ -268,6 +320,9 @@ class Cruise:
         self.log_path = log_path or os.environ.get("CRUISE_LOG_PATH", os.path.join(data, "cruise-log.jsonl"))
         self.state_path = state_path or os.environ.get("CRUISE_STATE_PATH", os.path.join(data, "cruise-state.json"))
         self.incidents_path = incidents_path or os.environ.get("CRUISE_INCIDENTS_PATH", os.path.join(data, "cruise-incidents.json"))
+        # visits whose held findings (a trick that got through) may be shown in public: up cruise release <visit>
+        self.released_path = os.environ.get("CRUISE_RELEASED_PATH", os.path.join(os.path.dirname(self.state_path) or ".", "cruise-released.json"))
+        self._released = (None, set())
         self.enabled = (os.environ.get("CRUISE_ENABLED", "1") != "0") if enabled is None else enabled
         self.clock = clock
         self.verdict_fn = verdict or (lambda: None)     # relay: the load verdict now (calm / busy / strained / stalled, None while syncing)
@@ -282,6 +337,7 @@ class Cruise:
         self.who: dict[str, str] = {}                   # public key -> ship
         self.tried: dict[str, str | None] = {k: None for k in TRIAL}   # kind -> the visit that first used it cleanly
         self.visits: list[dict] = []                    # summaries of the last visits, newest last
+        self.tune: dict[str, dict] = {}                 # ship -> what it learned: {"rate", "tricks": {trick: n}, "calm": {trick: visits}}
         self.cur: dict | None = None                    # the visit under way
         self.logbook: deque = deque(maxlen=LOG_KEEP)
         self.incidents: list[dict] = []
@@ -352,6 +408,7 @@ class Cruise:
                 st = json.load(f)
             self.tried.update({k: v for k, v in (st.get("tried") or {}).items() if k in TRIAL})
             self.visits = list(st.get("visits") or [])[-VISITS_KEEP:]
+            self.tune = {k: v for k, v in (st.get("tune") or {}).items() if k in SHIPS and isinstance(v, dict)}
             self._saved_cur = st.get("cur") if isinstance(st.get("cur"), dict) else None
         except (OSError, ValueError, TypeError, AttributeError):
             self._saved_cur = None
@@ -369,12 +426,13 @@ class Cruise:
         if self.cur:
             cur = {k: self.cur.get(k) for k in ("id", "ship", "t0", "landed", "left", "note", "trial", "allowed", "sent", "refused",
                                                 "skipped", "unsent", "brake_half", "wait", "booked", "landed_at",
-                                                "unanswered", "quiet", "quiet_took", "quiet_lost", "half_strained", "half_node")}
+                                                "unanswered", "quiet", "quiet_took", "quiet_lost", "half_strained", "half_node",
+                                                "tricks", "tricks_n", "took")}
             cur["done"] = sorted(self.cur["done"])
         try:
             tmp = self.state_path + ".tmp"
             with open(tmp, "w") as f:
-                json.dump({"tried": self.tried, "visits": self.visits[-VISITS_KEEP:], "cur": cur}, f, separators=(",", ":"))
+                json.dump({"tried": self.tried, "visits": self.visits[-VISITS_KEEP:], "cur": cur, "tune": self.tune}, f, separators=(",", ":"))
             os.replace(tmp, self.state_path)
         except OSError as exc:
             log.warning("cannot write %s: %r", self.state_path, exc)
@@ -463,12 +521,13 @@ class Cruise:
                         "skipped": 0, "unsent": 0, "brake_half": 0, "wait": None, "booked": []}
             saved = getattr(self, "_saved_cur", None)
             if saved and saved.get("id") == vid:   # the relay restarted during this visit: carry on where it was
-                for k in ("landed", "left", "note", "trial", "allowed", "sent", "refused", "skipped", "unsent", "brake_half", "wait", "booked", "landed_at", "unanswered", "quiet", "quiet_took", "quiet_lost", "half_strained", "half_node"):
+                for k in ("landed", "left", "note", "trial", "allowed", "sent", "refused", "skipped", "unsent", "brake_half", "wait", "booked", "landed_at", "unanswered", "quiet", "quiet_took", "quiet_lost", "half_strained", "half_node",
+                          "tricks", "tricks_n", "took"):
                     if k in saved:
                         self.cur[k] = saved[k]
                 self.cur["done"] = set(saved.get("done") or [])
                 if self.cur["landed"]:
-                    self.cur["acts"] = plan(ship, t0, set(self.cur["trial"]), set(self.cur["allowed"]))
+                    self.cur["acts"] = plan(ship, t0, set(self.cur["trial"]), set(self.cur["allowed"]), self.cur.get("tricks_n"))
             self._saved_cur = None
         v = self.cur
         if not v["landed"] and not v["left"] and now >= t0:
@@ -489,9 +548,67 @@ class Cruise:
 
     def kinds_for(self, ship: str) -> tuple[list, list]:
         """(trial, allowed) for a visit landing now: one new kind a visit, the others wait for a later one."""
-        new = [k for k in SHIPS[ship]["kinds"] if not self.tried.get(k)]
+        new = [k for k in SHIPS[ship]["kinds"] if k in TRIAL and not self.tried.get(k)]   # a pirate's trick is no trial: it is meant to be refused
         trial = new[:1]
         return trial, [k for k in SHIPS[ship]["kinds"] if k not in new or k in trial]
+
+    def rate_of(self, ship: str) -> int:
+        """Transactions a minute this ship sends, as it tuned itself: never above RATE, never below RATE_MIN."""
+        return max(RATE_MIN, min(RATE, int((self.tune.get(ship) or {}).get("rate") or RATE)))
+
+    def tricks_of(self, ship: str) -> dict:
+        n = (self.tune.get(ship) or {}).get("tricks") or {}
+        return {k: max(1, min(TRICK_START, int(n.get(k, TRICK_START)))) for k in TRICKS}
+
+    def tune_after(self, v: dict, s: dict) -> list[dict]:
+        """What the ship changes for its next call, by fixed rules from what this visit's logbook counted (see the top)."""
+        ship = v["ship"]
+        t = self.tune.setdefault(ship, {})
+        t.setdefault("tricks", {})
+        t.setdefault("calm", {})
+        changes: list[dict] = []
+        if not v["landed"]:
+            return changes
+        # the tricks: one that got through is tried once a visit from now on (a safety rule, it needs no person);
+        # one the chain keeps stopping with the right answer comes less often, and back when a hole closed again
+        calm_down = None
+        for k, c in sorted((v.get("tricks") or {}).items()):
+            n = int(t["tricks"].get(k, TRICK_START))
+            if c.get("through"):
+                if n != 1:
+                    changes.append({"what": f"{k} tries a visit", "from": n, "to": 1, "held": True,
+                                    "because": "the chain took this trick; it is tried once a visit until it is refused again"})
+                t["tricks"][k], t["calm"][k] = 1, 0
+            elif c.get("tried") and c.get("right") == c.get("tried"):
+                t["calm"][k] = int(t["calm"].get(k, 0)) + 1
+                if t["calm"][k] >= TRICK_CALM and calm_down is None and n != TRICK_MIN:
+                    calm_down = k
+            else:
+                t["calm"][k] = 0
+        one = None
+        rate, una = self.rate_of(ship), int(s.get("unanswered") or 0)
+        clean = not v.get("left") and una == 0 and not s.get("half") and not sum((v.get("refused") or {}).values())
+        refused_tried = [k for k in TRIAL if (v.get("refused") or {}).get(k) and k not in (v.get("trial") or []) and self.tried.get(k)]
+        if una >= TUNE_UNANSWERED and rate > RATE_MIN:
+            one = {"what": "transactions a minute", "from": rate, "to": rate - 1, "because": f"{una} sends got no answer from our node in time"}
+            t["rate"] = rate - 1
+        elif refused_tried:
+            k = refused_tried[0]
+            self.tried[k] = None
+            one = {"what": f"{k} kind", "from": "in full", "to": f"a small trial of {TRIAL_MAX}",
+                   "because": f"the node refused {v['refused'][k]} of them, though they went through on an earlier visit"}
+        elif clean and rate < RATE:
+            one = {"what": "transactions a minute", "from": rate, "to": rate + 1, "because": "the last visit ran clean: every send answered, no brake"}
+            t["rate"] = rate + 1
+        elif calm_down:
+            n = int(t["tricks"].get(calm_down, TRICK_START))
+            to = TRICK_MIN if n < TRICK_MIN else max(TRICK_MIN, n - 2)
+            one = {"what": f"{calm_down} tries a visit", "from": n, "to": to,
+                   "because": f"the chain refused it with the right answer on {TRICK_CALM} visits in a row"}
+            t["tricks"][calm_down], t["calm"][calm_down] = to, 0
+        if one:
+            changes.append(one)
+        return changes
 
     @staticmethod
     def why(v: dict) -> str:
@@ -523,10 +640,14 @@ class Cruise:
         state = self.verdict(now)
         if state in ("calm", "busy") and self.ready:
             trial, allowed = self.kinds_for(v["ship"])
-            v.update(landed=True, trial=trial, allowed=allowed, landed_at=int(now))
-            v["acts"] = plan(v["ship"], v["t0"], set(trial), set(allowed))
-            self.write({"t": int(now), "visit": v["id"], "ship": v["ship"], "kind": "landed", "verdict": state,
-                        "plan": len(v["acts"]), "trial": trial, "allowed": ["pay"] + allowed})
+            tn = self.tricks_of(v["ship"]) if "trick" in allowed else None
+            v.update(landed=True, trial=trial, allowed=allowed, landed_at=int(now), tricks_n=tn)
+            v["acts"] = plan(v["ship"], v["t0"], set(trial), set(allowed), tn)
+            e = {"t": int(now), "visit": v["id"], "ship": v["ship"], "kind": "landed", "verdict": state,
+                 "plan": len(v["acts"]), "trial": trial, "allowed": ["pay"] + allowed, "per_min": self.rate_of(v["ship"])}
+            if tn:
+                e["tricks"] = tn
+            self.write(e)
             log.info("cruise: %s lands with %d stops planned (trial %s)", v["id"], len(v["acts"]), trial or "-")
             self.save_state()
             return
@@ -594,9 +715,16 @@ class Cruise:
             if clean and v["sent"].get(k) and not v["refused"].get(k) and not (k == "book" and v["refused"].get("cancel")):
                 self.tried[k] = v["id"]
         s["tried"] = {k: self.tried.get(k) == v["id"] for k in v["trial"]}
+        if v.get("tricks"):
+            s["tricks"] = v["tricks"]
+        s["per_min"] = self.rate_of(v["ship"])
+        s["changed"] = self.tune_after(v, s)
         self.visits.append(s)
         self.visits = self.visits[-VISITS_KEEP:]
         self.write({"t": int(now), "visit": v["id"], "ship": v["ship"], "kind": "visit over", "summary": s})
+        if s["changed"]:
+            self.write({"t": int(now), "visit": v["id"], "ship": v["ship"], "kind": "tuned", "changes": s["changed"]})
+            log.info("cruise: %s tuned for its next call: %s", v["ship"], s["changed"])
         self._check = {"visit": v["id"], "ship": v["ship"], "booked": list(v.get("booked") or [])[:CHECK_BOOKINGS], "at": now}
         self.save_state()
 
@@ -624,7 +752,7 @@ class Cruise:
             return False
         strained, node_slow = state == "strained", now < self.slow_until
         slow = strained or node_slow
-        gap = 60 / RATE * (2 if slow else 1)
+        gap = 60 / self.rate_of(v["ship"]) * (2 if slow else 1)
         if now < self.hold_until or now - self.last_send < gap or not self.budget():
             return False
         act = None
@@ -654,12 +782,16 @@ class Cruise:
         self.save_state()
         return True
 
-    def build(self, ship: str, act: dict, seq: int, tip: int, fee: int, rid: str | None = None) -> dict:
+    def build(self, ship: str, act: dict, seq: int, tip: int, fee: int, rid: str | None = None, signer: str | None = None) -> dict:
+        """The passenger's signed transaction. Two of the pirates' tricks are made here: act "expired" (its time ran out
+        two minutes ago) and `signer` (signed with that other wallet's key, so the signature does not match the sender)."""
         from py_ecc.bls import G2Basic
         name = f"{ship}-{act['p']}"
         pk = self.pk[name]
         now = int(self.clock())
         env = {"sender_pubkey": pk, "sequence_number": seq, "expiration_time": now + 600, "expire_at_height": tip + 1000}
+        if act.get("expired"):
+            env["expiration_time"] = now - 120
         k = act["kind"]
         if k == "pay":
             tx = {"tx_type": "user_tx", **env, "fee_limit": str(fee * 5), "operations": {"1": [[pk, PLACES[act["to"]], str(act["amount"])]]}}
@@ -676,8 +808,101 @@ class Cruise:
             tx = {"tx_type": "retract_transfer", **env, "fee_limit": "0", "retractable_id": rid}
         else:
             raise ValueError(k)
-        tx["signature"] = G2Basic.Sign(self.sk[name], hashlib.sha256(signing_bytes(tx)).digest()).hex()
+        tx["signature"] = G2Basic.Sign(self.sk[signer or name], hashlib.sha256(signing_bytes(tx)).digest()).hex()
         return tx
+
+    @staticmethod
+    def code_of(res) -> str | None:
+        """The node's error code in a refusal, wherever the answer carries it."""
+        if not isinstance(res, dict):
+            return None
+        for d in (res.get("error"), res.get("data"), res):
+            if isinstance(d, dict) and isinstance(d.get("code"), str):
+                return d["code"]
+        m = re.search(r"\b(" + "|".join(CODES) + r")\b", json.dumps(res))
+        return m.group(1) if m else None
+
+    async def send_trick(self, v: dict, act: dict, ask, gov, state: str | None) -> dict | None:
+        """One pirate trick (TRICKS): sent like any payment, but the chain is meant to say no. Refused = the chain
+        working (counted apart, never a refusal for the brakes or the load page); taken = a finding, held back."""
+        import asyncio
+        ship, name, trick = v["ship"], f"{v['ship']}-{act['p']}", act["trick"]
+        pk = self.pk[name]
+        expect, what = TRICKS[trick]
+        entry = {"t": int(self.clock()), "visit": v["id"], "ship": ship, "i": act["i"], "p": act["p"], "kind": "trick", "trick": trick,
+                 "what": what, "to": act["to"], "amount": act["amount"], "from": pk, "verdict": state, "expect": list(expect)}
+        pay = {**act, "kind": "pay"}
+
+        def skip(note: str):
+            entry.update(ok=None, note=note)
+            v["skipped"] += 1
+            self.write(entry)
+
+        if trick == "replay":   # the newest payment a pirate got through, while it is still within its time (else it is refused as expired)
+            now = int(self.clock())
+            fresh = [(t["expiration_time"], n, t) for n, t in (v.get("took") or {}).items() if t.get("expiration_time", 0) - now >= 120]
+            if not fresh:
+                return skip("nothing to replay yet: no pirate payment the chain took is still within its time")
+            _, name, tx = max(fresh, key=lambda x: x[0])
+            entry.update(p=int(name.rsplit("-", 1)[1]), **{"from": tx["sender_pubkey"]})
+            entry["amount"] = int(((tx.get("operations") or {}).get("1") or [[0, 0, 0]])[0][2])
+        else:
+            st = await ask(f"getsequence {pk}")
+            if not st or st.get("status") != "ok":
+                return skip("no answer from the node to getsequence")
+            d = st.get("data") or {}
+            seq, tip = int(d.get("sequence_number") or 0), int(d.get("tip_height") or 0)
+            entry.update(seq=seq, height=tip)
+            signer = None
+            if trick == "overspend":
+                b = await ask(f"getbalance {pk}")
+                if not b or b.get("status") != "ok":
+                    return skip("no answer from the node to getbalance")
+                bal = int((b.get("data") or {}).get("balance") or 0)
+                pay["amount"] = entry["amount"] = bal + 1000
+                entry["balance"] = bal
+            elif trick == "expired":
+                pay["expired"] = True
+            elif trick == "forged":
+                signer = f"{ship}-{(act['p'] + 1) % SHIPS[ship]['passengers']}"
+            tx = await asyncio.to_thread(self.build, ship, pay, seq, tip, base_fee(gov()), None, signer)
+        t_ask = time.monotonic()
+        res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))
+        entry["ms"] = int((time.monotonic() - t_ask) * 1000)
+        entry["tx"] = tx   # signed and public anyway once sent; a key never goes in here
+        c = v.setdefault("tricks", {}).setdefault(trick, {"tried": 0, "stopped": 0, "right": 0, "through": 0})
+        if res is None:   # no answer in time: not a refusal and not a finding, the node is slow
+            now = self.clock()
+            self.hold_until, self.slow_until = now + QUIET_HOLD, now + QUIET_SLOW
+            v["unanswered"] = v.get("unanswered", 0) + 1
+            entry.update(ok=None, note=f"no answer from the node to sendtx; the ship waits {QUIET_HOLD} s, then goes at half pace")
+            self.write(entry)
+            return None
+        c["tried"] += 1
+        ok = res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False
+        if ok:
+            c["through"] += 1
+            self.spend()
+            entry.update(ok=True, through=True, hash=(res.get("data") or {}).get("tx_hash"),
+                         note="got through: the chain took what it should have refused; held back and reported privately first")
+            for a in v["acts"]:   # not again this visit
+                if a["kind"] == "trick" and a.get("trick") == trick:
+                    v["done"].add(a["i"])
+            self.write(entry)
+            self.incident(self.clock(), "trick through", f"A pirate trick got through: the pirate {what}, and the chain took it.",
+                          {"trick": trick, "tx": tx, "answer": res})
+            log.warning("cruise %s: trick %s got through", v["id"], trick)
+            return res
+        code = self.code_of(res)
+        right = code in expect
+        c["stopped"] += 1
+        c["right"] += right
+        err = res.get("error") or res
+        entry.update(ok=False, stopped=True, code=code, right=right,
+                     err=(json.dumps(err, separators=(",", ":")) if not isinstance(err, str) else err)[:300],
+                     note="stopped by the chain" + ("" if right else f", with another answer than {' or '.join(expect)}"))
+        self.write(entry)
+        return res
 
     async def booking_id(self, pk: str, act: dict, ask) -> str | None:
         """The id of the passenger's open booking at that place for that time, as the node lists it."""
@@ -691,6 +916,8 @@ class Cruise:
 
     async def send(self, v: dict, act: dict, ask, gov, state: str | None) -> dict | None:
         import asyncio
+        if act["kind"] == "trick":
+            return await self.send_trick(v, act, ask, gov, state)
         ship, name = v["ship"], f"{v['ship']}-{act['p']}"
         pk = self.pk[name]
         entry = {"t": int(self.clock()), "visit": v["id"], "ship": ship, "i": act["i"], "p": act["p"], "kind": act["kind"],
@@ -741,6 +968,8 @@ class Cruise:
         if ok:
             v["sent"][act["kind"]] += 1
             self.spend()
+            if act["kind"] == "pay" and "trick" in (v.get("allowed") or []):   # a pirate's last payment, for the replay trick
+                v.setdefault("took", {})[name] = tx
             if act["kind"] == "book":
                 v["booked"].append(act["p"])
         else:
@@ -787,11 +1016,14 @@ class Cruise:
         if v:
             ph = self.phase(v, now)
             end = v["t0"] + VISIT_MIN * 60
-            at = where(v["acts"], now, v["left"] or v["t0"] + (VISIT_MIN - BOARDING) * 60) if v["landed"] else {}
+            at = where(v["acts"], now, v["left"] or v["t0"] + (VISIT_MIN - BOARDING) * 60, v["ship"]) if v["landed"] else {}
             out["now"] = {"visit": v["id"], "ship": v["ship"], "name": SHIPS[v["ship"]]["name"], "style": SHIPS[v["ship"]]["style"],
                           "phase": ph, "t0": v["t0"], "end": v["left"] or end, "passengers": SHIPS[v["ship"]]["passengers"],
                           "ashore": sum(at.values()), "at": at, "sent": v["sent"], "refused": sum(v["refused"].values()),
                           "skipped": v["skipped"], "planned": len(v["acts"]), "trial": v["trial"], "note": v["note"], "why": self.why(v),
+                          "tricks": {"tried": sum(c["tried"] for c in (v.get("tricks") or {}).values()),
+                                     "stopped": sum(c["stopped"] for c in (v.get("tricks") or {}).values())},
+                          "per_min": self.rate_of(v["ship"]),
                           "kinds": ["pay"] + list((v.get("allowed") or []) if v["landed"] else self.kinds_for(v["ship"])[1]),
                           "brake": "stopped" if v["left"] and v["note"].startswith("left") else "half" if self._verdict[1] == "strained" and v["landed"]
                           else "slow" if v["landed"] and now < self.slow_until else "none"}
@@ -814,12 +1046,65 @@ class Cruise:
                          if e.get("kind") in KINDS]
         out["last"] = self.visits[-1] if self.visits else None
         out["tried"] = self.tried
-        out["limits"] = {"per_min": RATE, "visit_max": VISIT_MAX, "trial_max": TRIAL_MAX, "log_days": LOG_DAYS}
+        out["limits"] = {"per_min": RATE, "per_min_least": RATE_MIN, "visit_max": VISIT_MAX, "trial_max": TRIAL_MAX, "log_days": LOG_DAYS}
+        out["pace"] = {k: self.rate_of(k) for k in SHIPS}
+        out["tricks"] = {k: what for k, (_, what) in TRICKS.items()}
+        out["quiet_days"] = [d for d in range(7) if not any(s["weekday"] == d for s in SHIPS.values())]
+        if out.get("last"):
+            out["last"] = self.public(out["last"])
         return out
 
-    def route(self, path: str, query: str = "") -> dict | None:
+    # ---------- findings held back ----------
+    def released(self) -> set:
+        """Visits whose held findings may be shown (up cruise release <visit> writes the file)."""
+        try:
+            m = os.path.getmtime(self.released_path)
+        except OSError:
+            return set()
+        if self._released[0] != m:
+            try:
+                with open(self.released_path) as f:
+                    self._released = (m, {str(x) for x in json.load(f)})
+            except (OSError, ValueError, TypeError):
+                self._released = (m, set())
+        return self._released[1]
+
+    def public(self, e: dict) -> dict:
+        """An entry, summary or incident as the public sees it: a trick that got through shows only that something
+        was held back, until its visit is released."""
+        vid = e.get("visit") or e.get("id")
+        if vid in self.released():
+            return e
+        if e.get("through") or e.get("kind") == "trick through":
+            return {k: e.get(k) for k in ("t", "at", "visit", "ship", "i", "p") if k in e} | {
+                "kind": "trick" if e.get("through") else "held", "held": True, "ok": None,
+                "note": "held back: a finding, reported privately to the team behind the testnet first"}
+        if "summary" in e or "changes" in e or "tricks" in e or "tail" in e:
+            e = dict(e)
+            if isinstance(e.get("tail"), list):
+                e["tail"] = [self.public(x) if isinstance(x, dict) else x for x in e["tail"]]
+            if isinstance(e.get("summary"), dict):
+                e["summary"] = self.public(e["summary"])
+            if isinstance(e.get("changes"), list):
+                e["changes"] = [c if not c.get("held") else {"what": "a pirate trick", "held": True} for c in e["changes"]]
+            if isinstance(e.get("changed"), list):
+                e["changed"] = [c if not c.get("held") else {"what": "a pirate trick", "held": True} for c in e["changed"]]
+            if isinstance(e.get("tricks"), dict) and any(isinstance(c, dict) and c.get("through") for c in e["tricks"].values()):
+                e["tricks"] = {k: (c if not (isinstance(c, dict) and c.get("through")) else {"held": True}) for k, c in e["tricks"].items()}
+        return e
+
+    def held(self) -> dict:
+        """For the server only (alerts/cruise_crier.py, no X-Forwarded-For): every finding held back, newest first."""
+        rel = self.released()
+        rows = [e for e in self.logbook if e.get("through")]
+        return {"simulated": True, "entries": rows[::-1], "released": sorted(rel),
+                "incidents": [i for i in self.incidents if i.get("kind") == "trick through"][::-1]}
+
+    def route(self, path: str, query: str = "", internal: bool = False) -> dict | None:
         if path == "/cruise":
             return self.snapshot()
+        if path == "/cruise/held":
+            return self.held() if internal else {"error": "only from inside the server"}
         if path == "/cruise/log":
             q = parse_qs(query or "")
             try:
@@ -828,7 +1113,8 @@ class Cruise:
                 n = 200
             vid = (q.get("visit") or [""])[0]
             rows = [] if vid and not VISIT_RE.match(vid) else [e for e in self.logbook if not vid or e.get("visit") == vid]
-            return {"simulated": True, "days": LOG_DAYS, "entries": rows[-n:][::-1], "visits": [s["id"] for s in self.visits][::-1]}
+            return {"simulated": True, "days": LOG_DAYS, "entries": [self.public(e) for e in rows[-n:][::-1]],
+                    "visits": [s["id"] for s in self.visits][::-1]}
         if path == "/cruise/incidents":
-            return {"simulated": True, "incidents": self.incidents[::-1]}
+            return {"simulated": True, "incidents": [self.public(i) for i in self.incidents[::-1]]}
         return None
