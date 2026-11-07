@@ -1,5 +1,6 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Tau today for AI assistants and people: the hand-checked facts about Tau with their sources in IDNI's repositories, the live numbers and IDNI's newest commits (Markdown at /tau-today.md, tauhud.com/facts/).": "给 AI 助手和人看的今日 Tau：人工核对的 Tau 事实及其在 IDNI 仓库中的来源、实时数字和 IDNI 的最新提交（Markdown 版在 /tau-today.md，页面 tauhud.com/facts/）。",
   "(MIT). Real-time data: the read-only WebSocket": "（MIT）。实时数据：只读 WebSocket",
   ", any origin may call it (CORS), no key. One line to try:": "，任何来源都可以调用（CORS），无需密钥。试一行：",
   ", any origin may call it (CORS), no key.": "，任何来源都可以调用（CORS），无需密钥。",
