@@ -85,6 +85,7 @@
       done: "No business today, my friend: “{x}” is law already, and there’s nothing left for me to buy. My investors will think I’m on holiday. Sit anyway, the loungers are free." },   // his own words (and talk.js, when you come back); the North Wind keeps the diplomat's
   };
   const DAYS = 7, MOVES = 3, RUMOUR = 25, GIFT = 20;   // a campaign is one island week, Monday to Sunday; the election is Sunday night
+  const FIRST_EXTRA = 3;   // the first day of a campaign has six moves, so a first visit is a real game and not three taps; from then on three a day
   /* the island's calendar is the real one: an island day is a real day (Europe/Berlin), three moves each, and the week's
      days not yet played are played in one go. ?today=N pretends it is weekday N (1 Monday … 7 Sunday); ?clock=free lifts
      the lock, so the whole week can be played at once (the sim, and anyone who wants to) */
@@ -321,7 +322,7 @@
     const R = seeded(Date.now() & 0xffffff), sup = {};
     for (const c in CANDS) { sup[c] = {}; PEOPLE.forEach(p => { sup[c][p.id] = 42 + Math.round(R() * 14) + (CANDS[c].cares.some(x => p.cares.includes(x)) ? 6 : 0); }); }
     const trust = {}; for (const c in CANDS) trust[c] = 45;
-    return { v: 1, me, day: 1, move: 0, coins: { marisol: 40, tobias: 30, baako: 30, hana: 30 }, sup, trust, laws: [], book: [], pacts: [], deals: [], lies: [], pending: [], news: [], seed: Math.floor(R() * 1e9), onchain: true, sent: {}, over: null, said: {}, amb: null, declined: [], week: weekId(), waiting: false };
+    return { v: 1, me, day: 1, move: 0, coins: { marisol: 40, tobias: 30, baako: 30, hana: 30 }, sup, trust, laws: [], book: [], pacts: [], deals: [], lies: [], pending: [], news: [], seed: Math.floor(R() * 1e9), onchain: true, sent: {}, over: null, said: {}, amb: null, declined: [], week: weekId(), waiting: false, spare: FIRST_EXTRA };
   }
   const save = () => { if (G) store.set(KEY, JSON.stringify(G)); };
   function load() { try { const g = JSON.parse(store.get(KEY) || "null"); if (g && g.v === 1 && CANDS[g.me]) return g; } catch (e) {} return null; }
@@ -461,8 +462,10 @@
     locks();
     $("cvDay").textContent = dayName(G.day); $("cvDay").title = F("Day {n} of {m}", { n: G.day, m: DAYS }) + " · " + (G.day < todayIdx() ? Fd("catching up: it is {x} already", { x: dayName(todayIdx()) }) : T("today, on the island as in the world"));
     $("cvHour").textContent = T(G.move >= MOVES ? "Night" : HOURS[G.move]);
-    $("cvMoves").replaceChildren(...Array.from({ length: MOVES }, (_, i) => el("i", { class: i < MOVES - G.move ? "on" : "" })));
-    $("cvMoves").setAttribute("aria-label", F("{n} moves left today", { n: Math.max(0, MOVES - G.move) }));
+    const left = Math.max(0, MOVES - G.move) + (G.spare || 0);   // extra moves (the first day, the evening bell, a pact, the key) show as more green dots
+    $("cvMoves").replaceChildren(...Array.from({ length: G.move + left }, (_, i) => el("i", { class: i < left ? "on" : "" })));
+    $("cvMoves").setAttribute("aria-label", F("{n} moves left today", { n: left }));
+    $("cvMoves").parentElement.title = F("{n} moves left today", { n: left }) + " · " + T("Three moves a day, six on your first day. Reading, talking and visiting cost nothing; the evening bell at eight, your first pact and the key in the grotto give one more.");
     $("cvCoins").textContent = F("{n} coins", { n: G.coins[G.me] }); $("cvCoins").title = Fd("{n} coins saved from earlier campaigns", { n: savings().coins });
     if ($("cvAmb")) { $("cvAmb").hidden = !G.amb; if (G.amb) { $("cvAmb").textContent = T(AMB[G.amb.id].name); $("cvAmb").title = ambGoal(); } }
     $("cvMe").replaceChildren(portrait(G.me, 30), el("span", { text: nm(G.me) }));
@@ -739,7 +742,7 @@
     if (UI.card) openCard(at, PLACE[at]);
   }
   const treatBtn = (k, label, n, at, line, fx, msg) => btn(label, () => treat(k, n, at, line, fx, msg), { off: treated(k) || G.coins[G.me] < n, sub: treated(k) ? T("Done for today") : F("{n} coins, no move, written in the Book", { n }) });
-  const noMoves = box => box.append(el("p", { class: "cv-note", text: T("That was your last move today. The night comes.") }));
+  const noMoves = box => box.append(el("p", { class: "cv-note", text: T("That was your last move today. The island stays open: reading, talking and visiting cost nothing.") }));
 
   /* ---------- the places ---------- */
   const PLACE = {
@@ -866,7 +869,7 @@
     },
     grotto(box) {
       scene(box, "ama", T(SC.places.grotto.name), T("So you found it. The key on the old fort opens nothing; it never did. The real key was always this: everyone keeps a copy of what was agreed, so nobody can change it alone."), G.key ? null : [
-        btn(T("Take a copy of the Book"), () => { G.key = true; write(G.me, T("found the cave behind the waterfall and took a copy of the Book"), "fact"); bump(G.me, p => p.reads, 6); save(); SND.sfx("yes"); toast(T("You hold the White Rabbit Key.")); if (UI.card) openCard("grotto", PLACE.grotto); }),
+        btn(T("Take a copy of the Book"), () => { G.key = true; write(G.me, T("found the cave behind the waterfall and took a copy of the Book"), "fact"); bump(G.me, p => p.reads, 6); save(); SND.sfx("yes"); toast(T("You hold the White Rabbit Key.")); setTimeout(() => extraMove(T("the key in the grotto")), 2800); if (UI.card) openCard("grotto", PLACE.grotto); }),
       ]);
     },
   };
@@ -887,11 +890,12 @@
     placeKeys();
   }
   /* places by keyboard: the list under the scene, one button each, for the places this island has and are open */
+  const MOVE_AT = new Set(["hall", "market", "radio", "north", "south", "bar"]);   // where a move is made; everywhere else a visit costs nothing
   function placeKeys() {
     const keys = $("cvPlaces"); if (!keys) return;
     const ids = Object.keys(PLACE).filter(id => SC.places[id] && !SC.locked(id)), sig = ids.join();
     if (keys.dataset.sig === sig) return; keys.dataset.sig = sig; keys.textContent = "";
-    ids.forEach(id => keys.append(el("button", { type: "button", onclick: () => { wake(); if (G && !UI.card) openCard(id, PLACE[id]); } }, el("span", { text: T(SC.places[id].name) }))));
+    ids.forEach(id => keys.append(el("button", { type: "button", onclick: () => { wake(); if (G && !UI.card) openCard(id, PLACE[id]); } }, el("span", { text: T(SC.places[id].name) }), MOVE_AT.has(id) ? null : el("small", { text: T("free, no move") }))));
     /* what the bar leaves out on a small screen */
     keys.append(el("button", { type: "button", class: "more", onclick: () => { wake(); help(); } }, el("span", { text: T("How it works") })),
       el("button", { type: "button", class: "more", onclick: () => { wake(); $("cvReset").click(); } }, el("span", { text: T("New game") })));
@@ -982,7 +986,7 @@
   }
   function doPact(c, gift) {
     const ok = gift ? G.trust[c] >= 25 : G.trust[c] >= 50;
-    if (ok) { makePact(G.me, c, gift); SND.sfx("yes"); G.trust[c] = Math.min(100, G.trust[c] + 10); }
+    if (ok) { makePact(G.me, c, gift); SND.sfx("yes"); G.trust[c] = Math.min(100, G.trust[c] + 10); if (!G.pactMove) { G.pactMove = 1; setTimeout(() => extraMove(T("your first pact")), 1200); } }
     else { G.trust[c] = Math.max(0, G.trust[c] - 3); write(G.me, F("offered {x} a pact: turned down", { x: nm(c) }), "down"); SND.sfx("no"); }
     openCard("bar", box => scene(box, c, ok ? T("A pact") : T("No pact"), ok ? T("Fine. I vote for yours, you vote for mine. Lola is our witness, and the Book is our memory.") : T(G.trust[c] < 20 ? "After what you did? Buy yourself a lemonade." : "Not today. Show me how you vote first."), [btn(T("Continue"), () => closeCard())]));
     spend();
@@ -1004,7 +1008,8 @@
       box.classList.add("paper");
       box.append(el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: dayName(G.day) + " · " + T("Night") }),
         el("p", { class: "lead", text: Fd("{x} is done on the island. The next day begins with the real one, after midnight German time ({y}). Your campaign waits here; the rivals sleep too.", { x: dayName(G.day), y: spanText(untilMidnight()) }) }),
-        el("ul", null, el("li", { text: T("Until then: read the Book, talk to people, look at The island today. None of it costs a move.") }),
+        el("ul", null, el("li", { text: T("Until then: read the Book, talk to people, look at The island today, visit the school, the dive centre, the works and the stone circle. None of it costs a move.") }),
+          el("li", { text: T("At eight in the evening Tobias rings the pier bell: ring back within two minutes and you have one more move that day.") }),
           el("li", { text: G.day >= DAYS - 1 ? T("Tomorrow is Sunday: three last moves, then the islanders vote.") : Fd("Governor’s count {x}, Monday 00:00 German time.", { x: countIn() }) })),
         el("div", { class: "cv-acts" }, btn(T("Good night"), () => closeCard(), { go: true })));
     });
@@ -1123,6 +1128,12 @@
     const s = bellState();
     b.hidden = !s; b.classList.toggle("go", s === "open"); b.disabled = s !== "open";
     b.textContent = s === "open" ? T("🔔 Answer the evening bell") : T("🔔 The evening bell at eight");
+  }
+  /* one more move today, earned in the game: like the bell, it first gives back a move spent, so a day that was over goes on */
+  function extraMove(why) {
+    if (!G || G.over) return;
+    if (G.move > 0) G.move--; else G.spare = (G.spare || 0) + 1;
+    save(); hud(); toast(F("One more move today: {x}", { x: why }));
   }
   function answerBell() {
     if (bellState() !== "open") return bellChip();
@@ -2513,7 +2524,7 @@
     /* the first twenty seconds, before the four faces: what the game is, what you are after, who the rivals are and why
        every move is on Tau; three chips under it say the same in three words each, one of them counted live */
     box.append(el("div", { class: "iv-head" }, el("p", { class: "kick", text: T("An election game on Tau Testnet Alpha") }), el("h2", { text: T("White Rabbit Key") }),
-      el("p", { class: "cv-line", text: T("Run for governor of a small island. Your three rivals are played by the island; ten islanders vote on Sunday night, and whoever wins more of them governs next week. Three moves a day, each one a real transaction on Tau Testnet Alpha from a test wallet this browser makes for you. Other people play beside you this week: on Sunday night every campaign counts.") }),
+      el("p", { class: "cv-line", text: T("Run for governor of a small island. Your three rivals are played by the island; ten islanders vote on Sunday night, and whoever wins more of them governs next week. Three moves a day, six on your first, each one a real transaction on Tau Testnet Alpha from a test wallet this browser makes for you. Other people play beside you this week: on Sunday night every campaign counts.") }),
       el("div", { class: "iv-chips" },
         el("span", { class: "ivc", title: T("1 test AGRS per move, paid to the place where you make it. Wages and embassy money come back into your wallet; the rivals’ moves go on chain too. Test AGRS have no value.") }, el("i", { class: "dot", "aria-hidden": "true" }), el("span", { text: T("Every move: a real testnet transaction") })),
         isleIntro(),
@@ -2580,8 +2591,8 @@
       box.append(el("div", { class: "cv-paper" }, el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: dayName(td) }),
         el("p", { class: "lead", text: Fd("It is {x} already: Monday to {y} went by without you. Catch up briefly, or start today with the island as the rivals left it.", { x: dayName(td), y: dayName(td - 1) }) })),
         el("div", { class: "cv-acts" },
-          btn(T("Catch up briefly"), () => { G.brief = true; if (briefDay()) G.move = MOVES - 1; save(); then(); }, { go: true, sub: Fd("{n} days with one move each, then today with three", { n: td - 1 }) }),
-          btn(T("Play from today"), () => { skipTo(td); then(); }, { sub: T("Three moves today; what the rivals did until now is in the Book") })));
+          btn(T("Catch up briefly"), () => { G.brief = true; G.spare = 0; if (briefDay()) G.move = MOVES - 1; save(); then(); }, { go: true, sub: Fd("{n} days with one move each, then today with three", { n: td - 1 }) }),
+          btn(T("Play from today"), () => { skipTo(td); then(); }, { sub: T("Six moves today, then three a day; what the rivals did until now is in the Book") })));
     });
   }
   function skipTo(td) {
@@ -2624,11 +2635,12 @@
     });
   }
   function help() {
-    openCard("pier", box => scene(box, "sam", T("How it works"), T("Three moves a day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."), [btn(T("Licence and credits"), () => window.open("https://github.com/jimb000o/tau-command-hud/blob/main/rabbit/LICENSE.md", "_blank", "noopener")), btn(T("Back to the island"), () => closeCard(), { go: true })],
+    openCard("pier", box => scene(box, "sam", T("How it works"), T("Three moves a day, six on your first day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."), [btn(T("Licence and credits"), () => window.open("https://github.com/jimb000o/tau-command-hud/blob/main/rabbit/LICENSE.md", "_blank", "noopener")), btn(T("Back to the island"), () => closeCard(), { go: true })],
       el("ul", { class: "cv-help" }, el("li", { text: T("Council Hall: propose a law. Two of the other three candidates must vote yes. A law that contradicts one in force is refused first.") }),
         el("li", { text: T("Market square: talk about a topic. People who care about it move toward you.") }), el("li", { text: T("Radio Coco: pay for a line on air. True lines are safe. Lies come back when people read the Book.") }),
         el("li", { text: T("Embassies: coins now, for a promise to propose their law. Forget it and they tell everyone.") }), el("li", { text: T("Bar La Ola: pacts. Partners vote for each other’s laws.") }),
         el("li", { text: T("The lighthouse: the Book. Free to read, and nobody can change it.") }),
+        el("li", { text: T("Free, no move: asking anyone a question, reading the Book, The island today, and every visit to the school, the dive centre, the works, the camp, the old ship, the stone circle and the drums. One more move: the evening bell at eight, your first pact, the key in the grotto.") }),
         el("li", { text: T("The coins you have left when a campaign ends are saved in this browser. At the school, the lighthouse and the stone circle they pay for things the island keeps, and everyone sees the count in The island today.") }),
         el("li", { text: T("On day two or three someone who has read the Book makes you an offer: a goal of your own beside the election, with its own ending in the special edition.") }),
         el("li", { text: T("Some mornings something happens to the island. The Key Crier leads with it, you get one choice, and that topic is the talk of the week: speeches about it count more and laws for it pass more easily.") }),
