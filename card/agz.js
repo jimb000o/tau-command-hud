@@ -285,5 +285,7 @@
   };
   apply();
   if (window.WebGLRenderingContext) { if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", build); else build(); }
+  // he grew up (assets/agz-look.js swapped in the stage's pictures): the meshes take the new ones
+  addEventListener("agz-stage", () => { if (meshed) { undo(); build(); } });
   requestAnimationFrame(frame);
 })();

@@ -204,7 +204,7 @@ const OURS = [
     desc: "A code from your Authenticator app for payments above your own limit. It co-signs, never sends, and holds no key of yours. Built on the approver bot IDNI ships with the testnet." },
   { id: "rabbit", name: "White Rabbit Key", icon: "<img src='../assets/rabbit-key.webp' alt=''>", cats: ["paid"], href: "/rabbit/", cta: "Play",
     desc: "An island election game: every move and ballot is a real test payment to the island council or a ballot box." },
-  { id: "agorzilla", name: "Agorzilla", icon: "<img src='../assets/agorzilla.webp' alt=''>", cats: ["paid"], href: "https://agorzilla.com", cta: "Feed it",
+  { id: "agorzilla", name: "Agorzilla", icon: "<img src='../assets/" + (() => { try { const s = localStorage.getItem("agz-stage"); return /^(kid|young|grown|elder|ancient)$/.test(s) ? "age/agorzilla-" + s : "agorzilla"; } catch (e) { return "agorzilla"; } })() + ".webp' alt=''>", cats: ["paid"], href: "https://agorzilla.com", cta: "Feed it",
     desc: "One creature the whole testnet feeds: a meal is a test payment to its bowl, a ballot picks tomorrow's change." },
   { id: "escrow", name: "Cruise escrow", icon: "⚓", cats: ["terms"], href: "/cruise/", cta: "Open", quiet: true,
     desc: "Simulated cruise passengers book a call days ahead with a retractable test payment to the ship's till, released when the ship arrives. If the call is called off before, our server takes each booking back. Only the sender can take one back, so no third party decides." },
