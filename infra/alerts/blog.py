@@ -28,6 +28,7 @@ import re
 import secrets
 import sys
 import time
+import urllib.error
 import urllib.request
 from collections import Counter
 
@@ -82,12 +83,23 @@ something on the chain side is not yet clear, say what we will measure, not who 
 - No hype or marketing words (huge, exciting, revolutionary, game-changing, finally), no price talk, no coin talk, no \
 exclamation marks, no emoji, no names of people.
 - Honest and calm, like a good engineering blog: what we saw, what it means, what is still open.
-- Length: 250 to 450 English words in body.
-- title: at most 70 characters, a real headline with subject and verb. dek: one sentence, at most 160 characters.
+- Do not only list numbers: say what they come to. "what the numbers mean" holds shares and rates worked out from \
+the facts; use them to explain cause and effect (what set the pace, what the chain did, what our side did), and say \
+in one or two sentences what this one call means for the testnet as a whole and what it does not prove.
+- When the facts have "the ship before": compare this call with that one in its own section, say plainly what \
+improved, what did not and why (use "what we changed after that call"), and note that the two ships differ in size \
+and plan where that matters. The change from the ship before is the news of the article: it belongs in the title or \
+dek when it is real (for example a ship that stayed the whole time after one that left early).
+- Never write a line for a thing that did not happen or was not tried (no "0 bookings were checked" on a day without \
+bookings); leave it out.
+- Length: 300 to 500 English words in body.
+- title: at most 70 characters, a real headline with subject and verb that reads well aloud. dek: one sentence, at \
+most 160 characters, that adds to the title rather than repeating it.
 - why: two or three lines, each at most 160 characters, that say at a glance why this visit matters: one for the Tau \
 community, one for IDNI (what a community node under steady everyday traffic shows them), optionally one for everyone.
 - body: Markdown with "## " section headings, short paragraphs and "- " lists. Sections in this order: "What happened", \
-"What the logbook shows", "What is still open". No title in body, no tables, no links \
+"What the logbook shows", "Compared with the ship before" (only when the facts have "the ship before"), \
+"What it means for the testnet", "What is still open". No title in body, no tables, no links \
 of your own: name our places as they are called (White Rabbit Key, tauhud.com, the ship's name, Tau Testnet Alpha, \
 our node) and the blog links them to their pages by itself.
 - When the facts have "pirate tricks": the ship is a pirate ship whose made-up pirates try, on purpose, what the \
@@ -99,8 +111,9 @@ out, a payment signed with the wrong key). Never call a refused trick a failure 
 - zh: Simplified Chinese, ja: Japanese, same meaning and the same numbers; keep Tau, IDNI, AGRS, White Rabbit Key and \
 the ship names in Latin letters.
 - x: one post for X, at most 200 characters, no link, no hashtags: the headline point and why it matters.
-- card: the text on the article's picture, English only: "line", at most 60 characters, the point in one line; \
-"why", three points of at most 52 characters each that say at a glance why it matters (for the community, for IDNI).
+- card: the text on the article's picture, English only: "line", at most 60 characters, the one thing that changed \
+or was learned, in other words than the title (never a repeat of it); "why", three points of at most 52 characters \
+each that say at a glance why it matters (for the community, for IDNI, and what improved since the ship before).
 
 Answer with JSON only, no other text:
 {"title":{"en":"","zh":"","ja":""},"dek":{"en":"","zh":"","ja":""},"why":[{"en":"","zh":"","ja":""}],\
@@ -154,6 +167,9 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
     if left:
         f["left early"] = {"at": clock(left["t"]), "why": left.get("note"),
                            "minutes in port": round((left["t"] - (landed or left)["t"]) / 60)}
+        f["minutes in port"] = f["left early"]["minutes in port"]
+    elif landed:
+        f["minutes in port"] = 90   # the whole planned call
     f["sent and accepted"] = {k: v for k, v in (s.get("sent") or {}).items() if v} or \
         dict(Counter(e["kind"] for e in sends if e.get("ok") is True))
     f["refused by the node"] = {k: v for k, v in (s.get("refused") or {}).items() if v} or \
@@ -218,7 +234,7 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
             g["call called off before the arrival"] = off.get("note")
         g["how they ended on the chain"] = (settled or {}).get("result") or "not looked up yet when this was written"
         f["bookings ahead in escrow"] = g
-    if checked:
+    if checked and checked.get("checked"):   # a day without bookings has nothing to check, and the article says nothing of it
         f["bookings checked after the visit"] = checked.get("checked")
         f["bookings the chain had not paid out"] = len(checked.get("not_released") or [])
     if s.get("tried"):
@@ -268,6 +284,82 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
     return f
 
 
+def meaning_of(f: dict) -> dict:
+    """What the counted numbers come to, worked out here so the article can say it without inventing: shares, the
+    pace the node's answer time allows, the chain's movement during the call."""
+    m: dict = {}
+    plan = (f.get("landed") or {}).get("transactions planned") if isinstance(f.get("landed"), dict) else None
+    acc, ref = f.get("accepted in all") or 0, f.get("refused in all") or 0
+    old = f.get("refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)") or 0
+    una = (f.get("sends our node did not answer in time (not refusals)") or 0) + old
+    answered = acc + ref - old
+    if plan:
+        m["share of the planned stops that went through"] = f"{round(100 * acc / plan)}%"
+    if answered:
+        m["share of the node's answers that were a yes"] = f"{round(100 * acc / answered)}%"
+    if una and f.get("sends logged"):
+        m["share of sends our node did not answer in time"] = f"{round(100 * una / f['sends logged'])}%"
+    t = f.get("our node's answer time to a send, seconds") or {}
+    if t.get("median"):
+        m["sends a minute the node's answer time allows, one at a time"] = round(60 / t["median"], 1)
+        m["what that means"] = ("the ship sends one transaction and waits for the answer before the next; a slow answer, not "
+                                "the ship's brakes, is what sets the pace once the median goes above 5 seconds")
+    hs = f.get("block heights")
+    if hs and len(hs) == 2 and hs[1] > hs[0]:
+        m["blocks sealed while the ship was in port"] = hs[1] - hs[0]
+        m["accepted transactions per sealed block, on average"] = round(acc / (hs[1] - hs[0]), 1)
+    if f.get("minutes in port") is not None and f.get("minutes planned in port"):
+        m["share of the planned time in port"] = f"{round(100 * f['minutes in port'] / f['minutes planned in port'])}%"
+    return m
+
+
+BEFORE_KEYS = ("ship", "date", "minutes in port", "minutes planned in port", "accepted in all", "refused in all",
+               "stops skipped", "simulated passengers", "pirate tricks")
+
+
+def compare_with(f: dict, before: dict | None) -> dict:
+    """The ship before this one, in the same numbers, and what changed between the two calls: so the article can say
+    what improved and what did not, with nothing made up."""
+    if not before:
+        return f
+    b = {k: before[k] for k in BEFORE_KEYS if before.get(k) is not None}
+    plan = (before.get("landed") or {}).get("transactions planned") if isinstance(before.get("landed"), dict) else None
+    if plan:
+        b["transactions planned"] = plan
+    old = before.get("refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)") or 0
+    una = (before.get("sends our node did not answer in time (not refusals)") or 0) + old
+    if una:
+        b["sends our node did not answer in time"] = una
+    if old:
+        b["refused in all"] = (before.get("refused in all") or 0) - old
+        b["note"] = f"its {old} unanswered sends were counted as refusals by the rule of the time, and that is why it left early"
+    if before.get("left early"):
+        b["left early"] = {"at": before["left early"].get("at"), "why": before["left early"].get("why")}
+    t = before.get("our node's answer time to a send, seconds") or {}
+    if t.get("median"):
+        b["our node's median answer time, seconds"] = t["median"]
+    changed = []
+    for c in before.get("the ship changed for its next call") or []:
+        if not c.get("held"):
+            changed.append(f"the ship changed {c.get('what')} from {c.get('from')} to {c.get('to')} because {c.get('because')}")
+    if old:
+        changed.append("a send our node does not answer within 20 seconds no longer counts as a refusal: the ship waits 30 seconds, "
+                       "then sends at half pace for 10 minutes and checks whether the transaction arrived after all (rule since 6 November 2026)")
+    if changed:
+        b["what we changed after that call"] = changed
+    f["the ship before"] = b
+    f["compared with the ship before"] = {
+        "minutes in port": [b.get("minutes in port"), f.get("minutes in port")],
+        "accepted by the node": [b.get("accepted in all"), f.get("accepted in all")],
+        "refused by the node": [b.get("refused in all"), f.get("refused in all")],
+        "no answer in time": [b.get("sends our node did not answer in time", 0),
+                              f.get("sends our node did not answer in time (not refusals)") or 0],
+        "stops skipped": [b.get("stops skipped"), f.get("stops skipped")],
+        "read as": "[the ship before, this ship]; the two ships differ in size and plan, so compare shares and causes, not raw counts alone",
+    }
+    return f
+
+
 # ---------- checking ----------
 NUM = re.compile(r"(?<![\w.])\d+(?:[.,]\d+)?(?:[:]\d\d)?")
 
@@ -284,6 +376,7 @@ def numbers_in(obj) -> set[str]:
         pass
     elif isinstance(obj, (int, float)):
         out.add(str(round(obj, 1)).removesuffix(".0"))
+        out.add(str(round(obj, 1)))   # "20.0" as the text may write a whole number of seconds
     else:
         out |= {n.replace(",", ".") for n in NUM.findall(str(obj))}
     return out
@@ -304,20 +397,50 @@ def unknown_numbers(text: str, facts: dict) -> list[str]:
 
 
 # ---------- writing ----------
-def ask_ai(facts: dict) -> dict:
+def _obj(props: dict, required: list | None = None) -> dict:
+    return {"type": "object", "properties": props, "required": required or list(props), "additionalProperties": False}
+
+
+L3 = _obj({k: {"type": "string"} for k in LANGS})
+ARTICLE_SHAPE = _obj({   # the API shapes the answer by this schema, so no quote in the text can break the JSON
+    "title": L3, "dek": L3,
+    "why": {"type": "array", "items": L3, "description": "2 or 3 short lines"},
+    "body": L3, "x": {"type": "string"},
+    "card": _obj({"line": {"type": "string"}, "why": {"type": "array", "items": {"type": "string"}, "description": "up to 3 short lines"}})})
+
+
+def ask_ai(facts: dict, tries: int = 2, shaped: bool = True) -> dict:
     prompt = "Facts counted from the logbook of one cruise ship visit (JSON):\n\n" + json.dumps(facts, ensure_ascii=False, indent=1)
-    body = json.dumps({"model": AI_MODEL, "max_tokens": 6000, "system": SYSTEM,
-                       "messages": [{"role": "user", "content": prompt}]}).encode()
-    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body, headers={
+    body = {"model": AI_MODEL, "max_tokens": 8000, "system": SYSTEM, "messages": [{"role": "user", "content": prompt}]}
+    if shaped:
+        body["output_config"] = {"format": {"type": "json_schema", "schema": ARTICLE_SHAPE}}
+    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=json.dumps(body).encode(), headers={
         "x-api-key": AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
-    with urllib.request.urlopen(req, timeout=240) as r:
-        j = json.load(r)
+    try:
+        with urllib.request.urlopen(req, timeout=300) as r:
+            j = urllib_json(r)
+    except urllib.error.HTTPError as e:
+        reason = e.read().decode("utf-8", "replace")[:600]
+        log.warning("the API answered %s for model %s: %s", e.code, AI_MODEL, reason)
+        if e.code == 400 and shaped:   # the model does not take the shaped answer: ask the plain way, the JSON in the text
+            return ask_ai(facts, tries, shaped=False)
+        raise RuntimeError(f"the API answered {e.code} for model {AI_MODEL}: {reason}") from None
     ai_meter.meter("blog", AI_MODEL, j.get("usage"))
     text = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
     m = re.search(r"\{.*\}", text, re.S)
-    if not m:
-        raise ValueError("no JSON in the answer: " + text[:200])
-    return json.loads(m.group(0))
+    try:
+        if not m:
+            raise ValueError("no JSON in the answer: " + text[:200])
+        return json.loads(m.group(0))
+    except ValueError as e:
+        if tries > 1:
+            log.warning("the model's answer was not valid JSON (%s): asking once more", e)
+            return ask_ai(facts, tries - 1, shaped)
+        raise
+
+
+def urllib_json(r):
+    return json.load(r)
 
 
 def three(d, cap: int) -> dict | None:
@@ -387,7 +510,7 @@ def pictures(a: dict) -> dict:
             log.warning("hero for %s: %s", a["id"], e)
     if a.get("facts"):
         figs = blog_pics.visit_charts(a["facts"], os.path.join(IMG, a["id"]))
-        live = {"-stops.png": "/cruise/", "-pace.png": "/load/"}   # each chart leads to the live page it was drawn from
+        live = {"-stops.png": "/cruise/", "-pace.png": "/load/", "-before.png": "/cruise/"}   # each chart leads to the live page it was drawn from
         a["figures"] = [{"src": f"{NODE}/blog/img/{os.path.basename(p)}", "caption": cap, "after": i + 1,
                          **{"link": v for k, v in live.items() if p.endswith(k)}} for i, (p, cap) in enumerate(figs)] \
             or a.get("figures") or []   # after the first section the stops, after the second the pace
@@ -498,7 +621,8 @@ def write_draft(vid: str, now: float | None = None) -> str:
         inc, cr = get("/cruise/incidents").get("incidents") or [], get("/cruise")
     except Exception:  # noqa: BLE001 - the article can do without them
         inc, cr = [], None
-    facts = facts_of(entries, inc, cr)
+    facts = compare_with(facts_of(entries, inc, cr), before_facts(vid, log_.get("visits") or [], inc, cr))
+    facts["what the numbers mean"] = meaning_of(facts)
     a = pictures(article(facts, ask_ai(facts), now))
     st = state()
     name = st["drafts"].get(a["id"]) or f"{a['id']}-{secrets.token_hex(4)}"
@@ -508,6 +632,22 @@ def write_draft(vid: str, now: float | None = None) -> str:
     write_json(os.path.join(PUBLIC, "drafts", name + ".json"), a)
     write_json(STATE, st)
     return a["id"]
+
+
+def before_facts(vid: str, visits: list[str], inc: list, cr) -> dict | None:
+    """The facts of the ship that called before this one (the relay lists visits newest first), or None."""
+    try:
+        i = visits.index(vid)
+    except ValueError:
+        return None
+    for prev in visits[i + 1:i + 4]:
+        try:
+            rows = get(f"/cruise/log?visit={prev}&n=2000").get("entries") or []
+        except Exception:  # noqa: BLE001
+            return None
+        if any(e.get("kind") == "visit over" for e in rows) and not any(e.get("held") for e in rows):
+            return facts_of(rows, inc, cr)
+    return None
 
 
 def due(entries: list[dict], now: float) -> bool:
@@ -728,6 +868,8 @@ def main(argv: list[str]) -> int:
         if not AI_KEY:
             print("no NEWS_AI_KEY in infra/.env: no draft")
             return 1
+        print(f"writing the article of {args[0]}: the model reads the logbook and writes it in three languages, 1 to 4 minutes, "
+              "nothing is published", flush=True)
         did = write_draft(args[0])
         print(f"draft {did} written")
         return drafts_cli()

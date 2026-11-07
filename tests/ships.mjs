@@ -167,6 +167,31 @@ for (const [what, now, c, want] of week) {
   const [w, ship] = want.split(" "), exp = want ? ["ship", ship, w, ...(/Soon|Tomorrow|Today/.test(w) ? ["shipNear"] : []), ...(/Gone|Cut/.test(w) ? ["shipAfter"] : [])].sort().join(" ") : "";
   assert.equal(on, exp, what);
 }
+/* The pirates (Black Sequence, Tuesday 10 November at six): unannounced, so nothing about them before she is in sight;
+   the week's other ship is still talked about around her; only refused tricks become facts, never one held back */
+const pir = { ship: "pirates", style: "pirate", t0: utc(10, 17) }, dry3 = { ship: "dryrun", t0: utc(11, 15) }, queen2 = { ship: "queen", t0: utc(14, 13) };
+const clean = { overspend: { tried: 2, stopped: 2, right: 2, through: 0 }, replay: { tried: 2, stopped: 2, right: 2, through: 0 } };
+const pwas = (tricks, note = "") => ({ id: "2026-11-10-pirates", ship: "pirates", t0: pir.t0, end: pir.t0 + 5400, landed: true, note, sent: { pay: 30 }, refused: {}, tricks });
+const on = f => Object.keys(f).filter(k => f[k]).sort().join(" ");
+const pweek = [
+  ["Monday: the relay names Wednesday, never the pirates", utc(9, 10), { next: dry3, last: was("queen", utc(7, 14, 30)) }, "dryrun ship shipNear shipSoon"],
+  ["Monday, an older relay naming the pirates next: nobody says a word", utc(9, 10), { next: pir }, ""],
+  ["Tuesday 17:35, in sight", utc(10, 16, 35), { now: { ...pir, phase: "approach" }, next: dry3 }, "dryrun pirateSight pirates ship shipNear shipTomorrow"],
+  ["Tuesday 18:40, at anchor, a replay refused", utc(10, 17, 40), { now: { ...pir, phase: "ashore", tricks: { tried: 1, stopped: 1, by: { replay: 1 } } }, next: dry3 }, "dryrun pirateHere pirates ship shipNear shipTomorrow tReplay"],
+  ["Tuesday 21:00, gone, every trick refused", utc(10, 20), { next: dry3, last: pwas(clean) }, "dryrun pirateAfter pirateClean pirateGone pirates ship shipNear shipTomorrow tOverspend tReplay"],
+  ["Tuesday 21:00, gone, an overspend held back", utc(10, 20), { next: dry3, last: pwas({ ...clean, overspend: { held: true } }) }, "dryrun pirateAfter pirateGone pirates ship shipNear shipTomorrow tReplay"],
+  ["Tuesday 21:00, left early", utc(10, 20), { next: dry3, last: pwas(clean, "left early: the testnet stalled") }, "dryrun pirateAfter pirateCut pirateGone pirates ship shipNear shipTomorrow"],
+  ["Wednesday morning: the pirates were last night, the Dry Run today", utc(11, 9), { next: dry3, last: pwas(clean) }, "dryrun pirateAfter pirateClean pirateNext pirates ship shipNear shipToday tOverspend tReplay"],
+  ["Thursday: the pirates are history", utc(12, 9), { next: queen2, last: pwas(clean) }, "queen ship shipNear shipSoon"],
+];
+for (const [what, now, c, want] of pweek) assert.equal(on(W(c, now)), want, what);
+/* what a visit's summary says she met: stops skipped, sends unanswered in time, not one refusal, a change for next time */
+const qsum = { ship: "queen", end: utc(7, 14, 30), landed: true, note: "", sent: { pay: 409 }, refused: {}, skipped: 162, unanswered: 10,
+  changed: [{ what: "stops planned a minute", from: "as timetabled", to: 7.5, because: "our node answered a send in 6.8 s" }] };
+assert.equal(on(W({ next: dry2, last: qsum }, utc(7, 20))), "queen ship shipAfter shipClean shipGone shipQuiet shipSkipped shipTuned", "the Queen's evening, from her logbook");
+assert.equal(on(W({ next: dry2, last: { ...qsum, refused: { pay: 1 }, skipped: 0, unanswered: 0, changed: [{ what: "a pirate trick", held: true }] } }, utc(7, 20))), "queen ship shipAfter shipGone", "a held change is no change to talk about");
+assert.equal(on(talk.window.RABBIT_SHIP_WHEN.pirate("approach")), "pirateSight pirates");
+assert.equal(on(talk.window.RABBIT_SHIP_WHEN.pirate("next")), "pirateAfter pirateNext pirates");
 /* Rico on air about the ships (game.js shipLine): the pools he picks from by how near the ship is, the lines for what
    happens in port, the numbers spoken as a band, and how often he talks about the ship */
 const rico = { addEventListener() {}, removeEventListener() {}, fetch: () => Promise.reject(new Error("offline")), btoa };
@@ -177,6 +202,16 @@ for (const n of ["shipWait", "shipBoard", "shipCut", "shipCutLand", "shipCutStal
 for (const [n, keys] of Object.entries(R.SETS)) if (/^ship/.test(n)) for (const k of keys) assert.ok(R.L[k], `SETS.${n}: ${k} is not a line`);
 for (const n of new Set(game.match(/"ship[A-Z]\w*"/g).map(x => x.slice(1, -1)))) if (!/^ship(Soon|Tomorrow|Today|Close|Approach|Wait|Land|Here|Board|Gone)$/.test(n)) assert.ok(R.SETS[n], `game.js picks from SETS.${n}, which rico.js does not have`);
 for (const k of ["se_full", "se_ref1", "se_ref3", "ss_strain", "sl_recap", "sw5"]) assert.ok(R.L[k], k);
+/* the pirates on air: a line for every trick the relay can refuse, both kinds of evening, the numbers as a band */
+for (const n of ["pirSight", "pirSightN", "pirHere", "pirHereN", "pirBoard", "pirGone", "pirClean", "pirCut", "pirNext", "shipSkip"]) assert.ok(R.SETS[n]?.length, n);
+const tricks = [...cruise.matchAll(/^    "(\w+)": \(\("[A-Z_]+"/gm)].map(m => m[1]);
+assert.ok(tricks.length === 8, "the relay's eight tricks: " + tricks);
+for (const t of tricks) for (const i of [1, 2]) assert.ok(R.L[`pp_t_${t}${i}`], `no line for the pirates' ${t} trick (pp_t_${t}${i})`);
+for (const t of tricks) assert.ok(talk.window.RABBIT_SHIP_WHEN.TRICKF[t], "a fact for the trick " + t);
+for (const k of ["pp_recap", "sk_skip1", "sk_skip2", "sk_quiet"]) assert.ok(R.NUMERIC[k] === "count" && R.L[k].includes("{n}"), k + ": a number spoken as a band");
+/* before she is in sight, no line of hers may be said: no pirate line waits for a ship fact of the week ahead */
+for (const [w] of Object.values(talk.window.RABBIT_TALK).flatMap(t => t.back || [])) if (/pirate/.test(w)) assert.ok(!/ship(Soon|Tomorrow|Today|Near)/.test(w), w);
+for (const k of Object.keys(R.L).filter(k => /^pp_/.test(k))) assert.ok(!/tomorrow at|tuesday at|on tuesday|at six/i.test(R.L[k]), k + ": never says when she comes");
 const stops = new Set([...cruise.matchAll(/"stops": \{([^}]*)\}/g)].flatMap(m => [...m[1].matchAll(/"(\w+)":/g)].map(x => x[1])));
 for (const p of stops) assert.ok(R.L["sa_" + p], `no line for the passengers at ${p} (sa_${p})`);
 for (const k of [...R.SETS.shipTotal, ...R.SETS.shipBlock, "sl_recap"]) assert.ok(R.NUMERIC[k] === "count" && R.L[k].includes("{n}"), `${k}: a number spoken as a band`);

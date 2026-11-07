@@ -174,8 +174,11 @@ def visit_stats(facts: dict) -> list[tuple[str, str]]:
     """Four numbers for the hero picture, straight from the facts."""
     out = []
     left = facts.get("left early")
-    if isinstance(left, dict) and left.get("minutes in port") is not None:
-        out.append((f"{left['minutes in port']}/{facts.get('minutes planned in port', 90)}", "minutes in port"))
+    mins = facts.get("minutes in port", left.get("minutes in port") if isinstance(left, dict) else None)
+    if mins is not None:   # the first tile is the same for every ship, so one call reads against the next
+        b = facts.get("the ship before") or {}
+        before = f" (ship before: {b['minutes in port']})" if b.get("minutes in port") is not None else ""
+        out.append((f"{mins}/{facts.get('minutes planned in port', 90)}", "minutes in port" + before))
     acc = facts.get("accepted in all")
     if acc is not None:
         out.append((str(acc), "accepted by the node"))
@@ -190,7 +193,28 @@ def visit_stats(facts: dict) -> list[tuple[str, str]]:
     checked = facts.get("bookings checked after the visit")
     if checked:
         out.append((f"{checked - (facts.get('bookings the chain had not paid out') or 0)}/{checked}", "bookings paid out by the chain"))
+    if len(out) < 4 and facts.get("stops skipped") is not None:   # the same four tiles on every ship's picture
+        out.append((str(facts["stops skipped"]), "stops skipped"))
     return out[:4]
+
+
+def pairs(rows: list[tuple[str, float, float]], title: str, sub: str = "", note: str = "") -> Image.Image:
+    """One row per measure, two bars to that row's own scale: the ship before in grey, this ship in green."""
+    im, d = frame(title, sub)
+    if note:
+        d.text((80, 188), note, font=font(24, 400), fill=DIM)
+    x0, x1, y = 470, W - 220, 250
+    step = min(124, (H - 190 - y) / max(1, len(rows)))
+    for name, before, now in rows:
+        d.text((80, y + 22), name, font=font(30, 500), fill=TEXT)
+        top = max(before, now) or 1
+        for k, (v, col) in enumerate(((before, (92, 92, 100)), (now, OK))):
+            yy = y + k * 38
+            w = max(6, (x1 - x0) * v / top)
+            d.rounded_rectangle([x0, yy, x0 + w, yy + 30], radius=6, fill=col)
+            d.text((x0 + w + 18, yy - 4), f"{v:g}", font=font(32, 700), fill=TEXT if k else DIM)
+        y += step
+    return im
 
 
 def visit_charts(facts: dict, base: str) -> list[tuple[str, dict]]:
@@ -224,6 +248,20 @@ def visit_charts(facts: dict, base: str) -> list[tuple[str, dict]]:
                                              cap=120, cap_label="allowed: 120 per 10 minutes"),
                     {"en": "The ship's pace in port, sends per 10 minutes.", "zh": "游轮在港口的速度：每 10 分钟的发送数。",
                      "ja": "港での船のペース：10 分ごとの送信数。"}))
+    b = facts.get("the ship before") or {}
+    if b.get("ship") and (b.get("accepted in all") is not None or b.get("minutes in port") is not None):
+        rows = [("minutes in port", b.get("minutes in port") or 0, facts.get("minutes in port") or 0),
+                ("accepted by the node", b.get("accepted in all") or 0, acc),
+                ("no answer in time", b.get("sends our node did not answer in time") or 0, una + old),
+                ("refused by the node", b.get("refused in all") or 0, ref - old),
+                ("stops skipped", b.get("stops skipped") or 0, skip)]
+        rows = [r for r in rows if r[1] or r[2]]
+        short = lambda d: " ".join(str(d or "").split(",")[1:2]).strip() or str(d or "")  # noqa: E731 - "4 November 2026"
+        out.append((base + "-before.png", pairs(rows, f"{facts.get('ship') or 'This ship'} against the {b['ship']}",
+                                                f"grey: {b['ship']}, {short(b.get('date'))} · green: {facts.get('ship') or 'this ship'}, {short(facts.get('date'))}",
+                                                "different ships, different plans: read the shares, not the counts alone"),
+                    {"en": "This call against the ship before it, from both logbooks.", "zh": "本次停靠与前一艘游轮的对比，来自两本日志。",
+                     "ja": "今回の寄港と前の船との比較（両方のログブックより）。"}))
     secs = facts.get("median answer time per 10 minutes, seconds") or []
     if len(secs) > 1 and any(secs):
         labels = [f"{i * 10}–{i * 10 + 10}\nmin" for i in range(len(secs))]

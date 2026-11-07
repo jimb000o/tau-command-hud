@@ -43,6 +43,8 @@ log = logging.getLogger("cruise-crier")
 ON = os.environ.get("CRUISE_CRIER", "true").lower() in ("1", "true", "yes")
 ANNOUNCE = int(os.environ.get("CRUISE_ANNOUNCE_MINUTES", "150"))
 LATEST = 30            # minutes before the call: she is on the horizon then, "today at 14:00" comes too late
+SIGHT = 30             # a surprise ship (the pirates) is posted from the moment she is in sight (relay APPROACH)
+SIGHTED = 15           # until this long after her arrival; later, the clip and the blog tell it
 STATE = os.environ.get("CRUISE_CRIER_STATE", os.path.join(os.path.dirname(blog.STATE), "cruise-crier.json"))
 REPORTS = os.path.join(os.path.dirname(STATE), "cruise-reports")
 LOGBOOK = f"{blog.NODE}/cruise/log"
@@ -55,8 +57,9 @@ SHIPS = {
     "pirates": {
         "name": "Black Sequence", "file": "cruise-pirates", "art": "pirate", "hour": 18, "passengers": 20, "emoji": "🏴",
         "on_x": False,   # a new ship is announced on Telegram only; on X it gets the clip after the call (trick_clip.py) and the blog's post
-        "head": "Pirates off White Rabbit Key: Black Sequence drops anchor today at {hh}:00",
-        "story": ("From {hz}:30 German time her dark sails are on the horizon, at {hh}:00 she anchors off the island. "
+        "surprise": True,   # she comes unannounced: posted only once she is in sight (due_call), never hours before
+        "head": "Pirates in sight off White Rabbit Key: Black Sequence drops anchor at {hh}:00",
+        "story": ("Nobody announced her. Her dark sails are on the horizon now, and at {hh}:00 German time she anchors off the island. "
                   "Her 20 pirates stay aboard and trade from their boat: rum at Bar La Ola, supplies at the market. And "
                   "now and then one of them tries a trick: paying more than the wallet holds, sending a payment the chain "
                   "already took a second time, a payment whose time ran out, a payment signed with another pirate's key, a payment "
@@ -211,9 +214,13 @@ def hand_written(ship: str, t0: float) -> dict | None:
 # ---------- announcing ----------
 def due_call(cruise: dict | None, now: float) -> tuple[str, int] | None:
     """(ship, arrival) when the next call's announcement is due now."""
+    cur = (cruise or {}).get("now") or {}
+    if SHIPS.get(cur.get("ship"), {}).get("surprise") and cur.get("t0"):   # a surprise ship: once she is in sight, until she has landed
+        t0 = int(cur["t0"])
+        return (cur["ship"], t0) if cur.get("phase") in ("approach", "waiting", "landing") and t0 - SIGHT * 60 <= now < t0 + SIGHTED * 60 else None
     nxt = (cruise or {}).get("next") or {}
     ship, t0 = nxt.get("ship"), nxt.get("t0")
-    if ship not in SHIPS or not t0:
+    if ship not in SHIPS or not t0 or SHIPS[ship].get("surprise"):   # an older relay may still name her as the next call
         return None
     return (ship, int(t0)) if t0 - ANNOUNCE * 60 <= now < t0 - LATEST * 60 else None
 

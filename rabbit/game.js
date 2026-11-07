@@ -681,7 +681,14 @@
     /* what has happened to the island this campaign: eventBoiler, eventStorm, eventCoup, eventCatch, eventRoof */
     events().forEach(e => { if (e.day <= G.day) f["event" + e.id[0].toUpperCase() + e.id.slice(1)] = true; });
     /* a cruise ship near: which one, and whether it comes in a few days, tomorrow, today, is here or has left (shipFacts) */
+    f.dark = darkNow();
     return Object.assign(f, shipFacts());
+  }
+  /* after dark in Germany (the island's own sky: ?hour=22:00 too): roughly half an hour after sunset to sunrise, by month */
+  const SUNSET = [16.6, 17.4, 18.3, 20.1, 20.9, 21.5, 21.4, 20.7, 19.6, 18.5, 16.6, 16.1], SUNRISE = [8.2, 7.6, 6.6, 6.5, 5.4, 4.8, 5.0, 5.8, 6.7, 7.5, 7.3, 8.1];
+  function darkNow() {
+    const b = berlin(), q = /^(\d{1,2}):(\d{2})$/.exec(QS.get("hour") || ""), h = q ? +q[1] + q[2] / 60 : b.h + b.m / 60;
+    return h >= SUNSET[b.mo - 1] + 0.5 || h < SUNRISE[b.mo - 1];
   }
   /* of a list of [when, line]: the first that holds and has not been heard yet, else they take turns.
      A "when" of "a+b" holds when both hold, "!a" when a does not */
@@ -1495,7 +1502,7 @@
      transactions (the card says which). The island shows the ship, its tenders, a guide's pennant where a
      group is, and a ring at a place whenever one of their transactions is sealed in a block.
      ?ship=dryrun or ?ship=queen shows a made-up visit, marked as a preview; it sends nothing. ---------- */
-  const SHIPV = { v: null, next: null, last: null };
+  const SHIPV = { v: null, next: null, last: null, lastOf: {}, escrow: [] };
   const SHIPAT = { works: "The Coconut Works", school: "The School", dive: "Reef Proof Dive Centre", ship: "The Old Ship" };   // places only a painted island's layout brings
   const berlinHM = s => { try { return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(new Date(s * 1000)); } catch (e) { return new Date(s * 1000).toISOString().slice(11, 16); } };
   /* &phase=soon, tomorrow, today or close (two hours or less): no ship on the sea yet, only the islanders and Rico
@@ -1505,11 +1512,12 @@
     const now = Math.floor(Date.now() / 1000), q = k === "queen", qs = new URLSearchParams(location.search), phase = qs.get("phase");
     if (phase === "soon" || phase === "tomorrow" || phase === "today" || phase === "close") return null;
     const why = phase === "cut" ? (/^(stalled|refused)$/.test(qs.get("why") || "") ? qs.get("why") : "no landing") : "";
+    if (k === "pirates" && phase === "next") return null;   // the day after: only the talk about her
     if (k === "pirates") return { ship: k, name: "Black Sequence", style: "pirate", why,   // the pirates stay aboard: nobody ashore
       phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : phase === "wait" ? "waiting" : phase === "land" ? "landing" : "ashore",
       t0: phase === "approach" ? now + 90 : phase === "wait" ? now - 120 : phase === "land" ? now - 240 : now - 1800,
       end: phase === "gone" || phase === "cut" ? now : phase === "turn" ? now + 90 : now + 3600, passengers: 20, ashore: 0, at: {},
-      sent: { pay: 38, bill: 0, book: 0, cancel: 0 }, refused: 0, tricks: { tried: 9, stopped: 9 }, kinds: ["pay", "trick"], preview: true };
+      sent: { pay: 38, bill: 0, book: 0, cancel: 0 }, refused: 0, tricks: { tried: 9, stopped: 9, by: { overspend: 2, replay: 2, expired: 1, forged: 1, impostor: 1, freeride: 1, giant: 1 } }, kinds: ["pay", "trick"], preview: true };
     return { ship: k, name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition",
       phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : phase === "wait" ? "waiting" : phase === "land" ? "landing" : "ashore",
       why, t0: phase === "approach" ? now + 90 : phase === "wait" ? now - 120 : phase === "land" ? now - 240 : now - 1800,
@@ -1524,7 +1532,7 @@
     fetch("https://node.tauhud.com/cruise", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => {
       if (!j) return;
       SRC.ship = new Set([].concat(...Object.values(j.wallets || {})).map(lc));
-      SHIPV.v = j.now || null; SHIPV.next = j.next || null; SHIPV.last = j.last || null;
+      SHIPV.v = j.now || null; SHIPV.next = j.next || null; SHIPV.last = j.last || null; SHIPV.lastOf = j.last_of || {}; SHIPV.escrow = j.escrow || [];
       shipShow(); shipNews(SHIPV.v); shipLoad();
     }, () => {});
   }
@@ -1534,6 +1542,7 @@
   function shipFacts() {
     const W = window.RABBIT_SHIP_WHEN, k = QS.get("ship"); if (!W) return {};
     if (k === "dryrun" || k === "queen") return W.mark(k, SHIP_SAY[QS.get("phase")] || "shipHere");
+    if (k === "pirates" && W.pirate) return W.pirate(QS.get("phase") || "here", (SHIPV.v || {}).tricks);
     return W({ now: SHIPV.v, next: SHIPV.next, last: SHIPV.last }, Date.now() / 1000);
   }
   /* ---------- Rico on the ships: the nearer a ship, the more he talks about it (rico.js SETS ship*) ----------
@@ -1555,7 +1564,7 @@
   const shipWhy = note => /^no landing/.test(note || "") ? "no landing" : /^left early/.test(note || "") ? (/refused/.test(note) ? "refused" : "stalled") : "";
   function shipStage() {
     const f = shipFacts(); if (!f.ship) return null;
-    const now = Date.now() / 1000, ship = f.queen ? "queen" : "dryrun", v = SHIPV.v, pv = QS.get("ship") === ship;
+    const now = Date.now() / 1000, ship = f.queen ? "queen" : "dryrun", v = SHIPV.v && SHIPV.v.style !== "pirate" ? SHIPV.v : null, pv = QS.get("ship") === ship;
     const st = { ship, q: ship === "queen", preview: pv }, PH = { approach: "approach", waiting: "wait", landing: "land", ashore: "here", boarding: "board" };
     if (v && PH[v.phase]) return Object.assign(st, { stage: PH[v.phase], v, h: Math.max(0, (v.t0 - now) / 3600) });
     if (v && v.phase === "gone") return Object.assign(st, { stage: v.why ? "cut" : "gone", why: v.why || "", v, after: Math.max(0, (now - v.end) / 3600) });
@@ -1569,7 +1578,8 @@
   function shipNews(v) {
     if (!v || v.preview || !v.visit) return;
     const L = SHIPLIVE, S = v.sent || {};
-    if (L.visit !== v.visit) { Object.assign(L, { visit: v.visit, sent: { ...S }, refused: v.refused || 0, brake: v.brake || "none", ev: [], block: null, top: null, said: {} }); return; }
+    const by = { ...((v.tricks || {}).by || {}) };   // the pirates: each trick the chain refused (never one that got through)
+    if (L.visit !== v.visit) { Object.assign(L, { visit: v.visit, sent: { ...S }, refused: v.refused || 0, brake: v.brake || "none", by, ev: [], block: null, top: null, said: {} }); return; }
     const was = L.sent || {}, add = k => { if (!L.ev.some(e => e.k === k)) L.ev.push({ k, at: Date.now() }); };
     if ((S.book || 0) > (was.book || 0)) add("book");
     if ((S.cancel || 0) > (was.cancel || 0)) add("cancel");
@@ -1577,7 +1587,9 @@
     if ((v.refused || 0) > L.refused) add(v.refused >= 3 ? "ref3" : "ref1");
     if (v.brake === "half" && L.brake !== "half") add("half");
     if (L.brake === "half" && v.brake === "none") add("full");
-    L.sent = { ...S }; L.refused = v.refused || 0; L.brake = v.brake || "none";
+    if (v.brake === "slow" && L.brake !== "slow") add("slow");
+    for (const k in by) if ((by[k] || 0) > ((L.by || {})[k] || 0)) add("trick:" + k);
+    L.sent = { ...S }; L.refused = v.refused || 0; L.brake = v.brake || "none"; L.by = by;
   }
   /* how the testnet copes while the passengers are ashore (relay GET /load: the verdict of the last ten minutes) */
   function shipLoad() {
@@ -1607,6 +1619,8 @@
   /* a line with a number: shown exactly, spoken as a band ({where}: shown as the block, spoken as the latest block) */
   const banded = (k, n, h) => ({ t: F(RICO.L[k], h != null ? { n, where: "block " + h } : { n }), v: RICO.fill(RICO.L[k], { n: band(n), ...RICO.BLOCK }) });
   function shipLine() {
+    const ps = pirateStage();   // the pirates first; after they left, the week's other ship may be talked about too
+    if (ps) { const l = pirateLine(ps); if (l || !/^(gone|next|cut)$/.test(ps.stage)) return l; }
     const st = shipStage(), p = shipOdds(st); if (!p) return null;
     const run = ROT.shipAt === ROT.n - 1 ? ROT.shipRun || 0 : 0, port = /^(land|here|board)$/.test(st.stage);
     if (run >= (port ? 2 : 1) || Math.random() >= p) return null;
@@ -1638,14 +1652,96 @@
       : port && v.passengers ? [Q("{a} of {n} passengers ashore, in port until {t}.", { a: v.ashore || 0, n: v.passengers, t: berlinHM(v.end) })] : [];
     const own = () => stage === "cut" ? line(RICO.SETS[{ "no landing": "shipCutLand", stalled: "shipCutStall", refused: "shipCutRefused" }[st.why] || "shipCut"], Q(LOGQ))
       : line(pool({ soon: "shipSoon", tomorrow: "shipTomorrow", today: "shipToday", close: "shipClose", approach: "shipApproach", wait: "shipWait", land: "shipLand", here: "shipHere", board: "shipBoard", gone: "shipGone" }[stage]), ...when);
-    return (r < CALL ? shipCall() : r < CALL + WHY ? why() : null) || own() || why();
+    const learn = r >= CALL + WHY && r < CALL + WHY + 0.3 ? learnLine(st, line) : null;
+    return (r < CALL ? shipCall() : r < CALL + WHY ? why() : null) || learn || own() || why();
+  }
+  /* ---------- the pirates on air (rico.js pp_*): they come unannounced ----------
+     Nothing before she is in sight. Then a bulletin (after dark, lanterns), at anchor the pirate watch and one line for
+     each trick the chain just refused (relay /cruise now.tricks.by, which never counts a trick that got through), weighing
+     anchor, and after: her evening in numbers (only the refused tricks), "every trick refused" only when the logbook's
+     summary says so, the day after now and then. A trick that got through is held back and never mentioned. */
+  function pirateStage() {
+    const f = shipFacts(); if (!f.pirates) return null;
+    const pv = QS.get("ship") === "pirates", v = SHIPV.v && SHIPV.v.style === "pirate" ? SHIPV.v : null, now = Date.now() / 1000;
+    const st = { pirate: true, preview: pv, f, dark: darkNow(), v: v || SHIPV.last };
+    if (f.pirateSight) return Object.assign(st, { stage: "approach" });
+    if (f.pirateHere) return Object.assign(st, { stage: v && v.phase === "boarding" ? "board" : "here" });
+    const end = (st.v || {}).end || now;
+    return Object.assign(st, { stage: f.pirateCut && f.pirateGone ? "cut" : f.pirateNext ? "next" : "gone", after: Math.max(0, (now - end) / 3600) });
+  }
+  function pirateLine(st) {
+    const p = st.stage === "next" ? 0.06 : shipOdds(st); if (!p) return null;
+    const run = ROT.shipAt === ROT.n - 1 ? ROT.shipRun || 0 : 0, port = /^(here|board)$/.test(st.stage);
+    if (run >= (port ? 2 : 1)) return null;
+    const ev = port ? SHIPLIVE.ev.filter(e => /^trick:/.test(e.k) && Date.now() - e.at < 240000) : [];
+    if (!ev.length && Math.random() >= p) return null;
+    const line = (keys, ...more) => { keys = (keys || []).filter(k => RICO.L[k]); if (!keys.some(sayable)) return null; const k = pickLine(keys); return { k, parts: [V(k), ...more] }; };
+    /* live (relay now.tricks): {tried, stopped, by}; after (the logbook's summary): each trick's counts, one that got through only {held} */
+    const v = st.v || {}, T = v.tricks || {}, stopped = T.stopped != null ? Number(T.stopped) || 0
+      : Object.values(T).reduce((a, c) => a + (c && !c.held && !c.through ? Number(c.stopped) || 0 : 0), 0);
+    const done = l => { if (!l) return null; ROT.shipRun = run + 1; ROT.shipAt = ROT.n; ROT.callLast = !!l.call; if (st.preview && !l.call) l.parts.push(Q("(preview)")); return l; };
+    /* a trick the chain just refused: named by the pirate's prop */
+    while (ev.length) {
+      const e = ev.shift(); SHIPLIVE.ev = SHIPLIVE.ev.filter(x => x !== e);
+      const k = e.k.slice(6), l = line(["pp_t_" + k + "1", "pp_t_" + k + "2"], Q("({n} tricks refused by the chain so far)", { n: stopped }));
+      if (l) return done(l);
+    }
+    const r = Math.random(), S = RICO.SETS, id = v.visit || v.id || v.t0;
+    if (st.stage === "approach") return done(line(st.dark ? S.pirSightN : S.pirSight, ...(v.t0 && !st.preview ? [Q("Anchors at {t}, German time.", { t: berlinHM(v.t0) })] : [])));
+    if (st.stage === "here") return done((r < 0.2 ? shipCall() : null) || line(st.dark ? S.pirHereN : S.pirHere, ...(stopped ? [Q("({n} tricks refused by the chain so far)", { n: stopped })] : [])));
+    if (st.stage === "board") return done(line(S.pirBoard));
+    if (st.stage === "cut") return done(line(S.pirCut, Q(LOGQ)));
+    /* after: her evening in numbers once, the refused tricks only */
+    if (st.stage === "gone" && stopped >= 2 && SHIPLIVE.recap !== id && sayable("pp_recap")) {
+      SHIPLIVE.recap = id;
+      return done({ k: "pp_recap", parts: [banded("pp_recap", stopped), Q("({n} tricks refused by the chain)", { n: stopped }), Q(LOGQ)] });
+    }
+    return done((r < 0.15 ? shipCall() : null) || (st.f.pirateClean && st.stage === "gone" && r < 0.5 ? line(S.pirClean, Q(LOGQ)) : null)
+      || line(st.stage === "next" ? S.pirNext : S.pirGone));
+  }
+  /* ---------- what a ship learned (rico.js sk_*, ex_*): from her logbook, each thing once ----------
+     Before her next call: what she changed for it, and why (the relay's tune log, "last_of" her last visit). After a
+     visit: the stops she skipped (our node's answers took their time), the sends it left unanswered in time, a day with
+     no refusal. MS Dry Run: the fares paid days ahead into escrow, one taken back on purpose, paid out at the arrival. */
+  const LEARNQ = "(her logbook: {x} from {y} to {z}, because {w})";
+  function learnLine(st, line) {
+    const once = (k, l) => { if (!l || SHIPLIVE.said[k]) return null; SHIPLIVE.said[k] = Date.now(); return l; };
+    const ahead = /^(soon|tomorrow|today|close)$/.test(st.stage), after = st.stage === "gone" || st.stage === "cut";
+    const esc = (SHIPV.escrow || []).find(e => e.ship === st.ship && (ahead ? st.t0 && e.arrival === st.t0 : (st.v || {}).t0 === e.arrival));
+    if (esc && (ahead || after || /^(land|here|board)$/.test(st.stage))) {
+      const n = esc.count || {}, q = Q("(bookings ahead: {n} in escrow, {m} taken back, {a} paid out)", { n: (n["in escrow"] || 0) + (n.sent || 0), m: (n.refunded || 0) + (n["refund sent"] || 0), a: n["paid out"] || 0 });
+      const k = esc.called_off ? "ex_off" : (n["paid out"] || 0) > 0 ? "ex_paid" : ahead && ((n.refunded || 0) + (n["refund sent"] || 0)) > 0 ? "ex_back" : ahead && ((n["in escrow"] || 0) + (n.sent || 0)) > 0 ? "ex_open" : null;
+      const l = k && once("ex:" + esc.visit + ":" + k, line([k], q)); if (l) return l;
+    }
+    if (ahead) {
+      const lo = (SHIPV.lastOf || {})[st.ship] || {}, c = (lo.changed || []).find(x => x && !x.held && x.what);
+      if (!c) return null;
+      const k = c.what === "transactions a minute" ? (Number(c.to) < Number(c.from) ? "sk_rate_down" : "sk_rate_up") : c.what === "stops planned a minute" ? "sk_plan" : / kind$/.test(c.what) ? "sk_trial" : null;
+      return k ? once("sk:" + (lo.id || "") + ":" + k, line([k], Q(LEARNQ, { x: c.what, y: String(c.from), z: String(c.to), w: c.because || "" }))) : null;
+    }
+    if (!after) return null;
+    const v = st.v || {}, id = v.id || v.visit, sum = (SHIPV.last && SHIPV.last.id === id) ? SHIPV.last : null;   // the logbook's summary of that visit
+    if (!sum || !sum.landed) return null;
+    const rf = Object.values(sum.refused || {}).reduce((a, b) => a + (Number(b) || 0), 0), sent = Object.values(sum.sent || {}).reduce((a, b) => a + (Number(b) || 0), 0);
+    const skip = Number(sum.skipped) || 0, una = Number(sum.unanswered) || 0;
+    /* skipped stops: the lines name our node's answer time as the cause, so not when a strained testnet slowed her */
+    if (skip >= 2 && !(Number(sum.half_strained) > 0)) { const ks = RICO.SETS.shipSkip.filter(sayable); if (ks.length && !SHIPLIVE.said["sk:skip:" + id]) { const k = pickLine(ks); SHIPLIVE.said["sk:skip:" + id] = 1; return { k, parts: [banded(k, skip), Q("({n} of {m} planned stops skipped)", { n: skip, m: Number(sum.planned) || skip + sent })] }; } }
+    if (una >= 2 && sayable("sk_quiet") && !SHIPLIVE.said["sk:quiet:" + id]) { SHIPLIVE.said["sk:quiet:" + id] = 1; return { k: "sk_quiet", parts: [banded("sk_quiet", una), Q("({n} sends without an answer in time)", { n: una })] }; }
+    if (!rf && sent > 0 && st.stage === "gone") { const l = once("sk:clean:" + id, line(["sk_clean"], Q(LOGQ))); if (l) return l; }
+    const c = (sum.changed || []).find(x => x && !x.held && x.what);
+    if (c) {
+      const k = c.what === "transactions a minute" ? (Number(c.to) < Number(c.from) ? "sk_rate_down" : "sk_rate_up") : c.what === "stops planned a minute" ? "sk_plan" : / kind$/.test(c.what) ? "sk_trial" : null;
+      if (k) return once("sk:" + id + ":" + k, line([k], Q(LEARNQ, { x: c.what, y: String(c.from), z: String(c.to), w: c.because || "" })));
+    }
+    return null;
   }
   /* what Rico reports while the passengers are ashore, the newest first; null: nothing new, so a line of the stage */
   function shipPort(st, line) {
     const v = st.v || {}, S = v.sent || {}, L = SHIPLIVE, now = Date.now(), ago = k => now - (L.said[k] || 0);
     L.ev = L.ev.filter(e => now - e.at < 240000);
     while (L.ev.length) {
-      const e = L.ev.shift(), keys = { book: RICO.SETS.shipBook, cancel: RICO.SETS.shipCancel, bill: RICO.SETS.shipBill, half: ["ss_strain"], full: ["se_full"], ref1: ["se_ref1"], ref3: ["se_ref3"] }[e.k];
+      const e = L.ev.shift(), keys = { book: RICO.SETS.shipBook, cancel: RICO.SETS.shipCancel, bill: RICO.SETS.shipBill, half: ["ss_strain"], full: ["se_full"], slow: ["se_slow"], ref1: ["se_ref1"], ref3: ["se_ref3"] }[e.k];
+      if (!keys) continue;   // a pirate trick: pirateLine tells it
       const more = e.k === "book" ? [Q("({n} bookings so far)", { n: S.book || 0 })] : e.k === "cancel" ? [Q("({n} withdrawn so far)", { n: S.cancel || 0 })]
         : e.k === "bill" ? [Q("({n} group bills so far)", { n: S.bill || 0 })] : /^ref/.test(e.k) ? [Q("({n} refused so far)", { n: v.refused || 0 })] : [];
       const l = line(keys, ...more); if (l) return l;
@@ -1679,7 +1775,7 @@
   /* a listener (or an islander) calls about the ship near: each call once, until Rico has said a lot of other things */
   function shipCall() {
     if (ROT.callLast) return null;
-    const sf = shipFacts(), keys = RICO.CALLS.map((c, i) => (c.when && /ship|queen|dryrun/.test(c.when) && holds(sf, c.when) ? "call:" + i : null))
+    const sf = shipFacts(), keys = RICO.CALLS.map((c, i) => (c.when && /ship|queen|dryrun|pirate/.test(c.when) && holds(sf, c.when) ? "call:" + i : null))
       .filter(x => x && !SAID.includes(x) && sayable(x));
     return keys.length ? dial(keys[Math.floor(Math.random() * keys.length)]) : null;
   }
@@ -1692,7 +1788,7 @@
     b.textContent = (ph === "approach" ? F("🛳 {x} at {t}", { x: v.name, t: berlinHM(v.t0) })
       : ph === "waiting" ? F("🛳 {x} waits offshore", { x: v.name })
       : ph === "gone" ? F("🛳 {x} has left", { x: v.name })
-      : v.style === "pirate" ? F("🏴 {x} in port: {n} tricks tried, {m} refused by the chain", { x: v.name, n: (v.tricks || {}).tried || 0, m: (v.tricks || {}).stopped || 0 })
+      : v.style === "pirate" ? F("🏴 {x} at anchor: {m} tricks refused by the chain", { x: v.name, m: (v.tricks || {}).stopped || 0 })
       : F("🛳 {x}: {n} ashore", { x: v.name, n: v.ashore || 0 })) + (v.preview ? " · " + T("preview") : "");
   }
   /* a ring at the place each passenger transaction in a new block paid (a booking: the place it is for); a block with a
@@ -1722,7 +1818,7 @@
         : v.phase === "gone" ? T(v.why === "no landing" ? "It sailed on without landing: the testnet was not calm."
           : v.why === "refused" ? "It left early: the node refused its passengers’ transactions, and the ship took them back at once."
           : "It left early: the testnet stalled, and the ship took its passengers back at once.")
-        : v.style === "pirate" ? F("{n} pirates aboard, in port until {t}: {a} tricks tried so far, {b} refused by the chain.", { n: v.passengers, t: berlinHM(v.end), a: (v.tricks || {}).tried || 0, b: (v.tricks || {}).stopped || 0 })
+        : v.style === "pirate" ? F("{n} pirates aboard, at anchor until {t}: {b} tricks refused by the chain so far.", { n: v.passengers, t: berlinHM(v.end), b: (v.tricks || {}).stopped || 0 })
         : F("{a} of {n} passengers ashore, in port until {t}.", { a: v.ashore || 0, n: v.passengers, t: berlinHM(v.end) });
       box.append(el("h3", { text: v.name + (v.preview ? " · " + T("preview") : "") }),
         el("p", { text: T(v.style === "pirate" ? "A pirate ship. Its crew stays aboard and trades from the boat: rum at Bar La Ola, supplies at the market. Now and then a pirate tries a trick the chain must refuse." : v.style === "expedition" ? "A small expedition ship with curious passengers: the lighthouse, Captain Wren’s Old Ship, the school, a dive on the reef." : "A big luxury liner: the spa at the South Current resort, Bar La Ola, song requests on Radio Coco, souvenirs.") }),
