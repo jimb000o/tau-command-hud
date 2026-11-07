@@ -9,6 +9,8 @@ what `up post cruise-… send` and `up cruise` did by hand:
                     assets/share/cruise-<ship>.json, when its "date" is that day; else written here from the timetable
                     and the ship's last call as the public logbook counts it (blog.facts_of), so each week's post is
                     new and every number in it comes from the logbook.
+  after the pirates' call  a clip of every trick the chain refused, to Telegram and X (trick_clip.py; none when a
+                    trick got through)
   after the call    the visit in numbers (the same facts the blog draft is written from) once to the owner's private
                     Telegram chat (tickerwatch.tell; `up owner` sets it), never to the channel, and kept in
                     /state/cruise-reports/<visit>.json; the blog draft, once written, is told there too, with the
@@ -52,7 +54,7 @@ FOOT = "White Rabbit Key · community project, not affiliated with IDNI"
 SHIPS = {
     "pirates": {
         "name": "Black Sequence", "file": "cruise-pirates", "art": "pirate", "hour": 18, "passengers": 20, "emoji": "🏴",
-        "on_x": False,   # a new ship is announced on Telegram only; on X it gets its one post when the blog tells the visit
+        "on_x": False,   # a new ship is announced on Telegram only; on X it gets the clip after the call (trick_clip.py) and the blog's post
         "head": "Pirates off White Rabbit Key: Black Sequence drops anchor today at {hh}:00",
         "story": ("From {hz}:30 German time her dark sails are on the horizon, at {hh}:00 she anchors off the island. "
                   "Her 20 pirates stay aboard and trade from their boat: rum at Bar La Ola, supplies at the market. And "
@@ -419,6 +421,11 @@ def step(now: float | None = None) -> None:
         held(now, st)
     except Exception as e:  # noqa: BLE001
         log.warning("held findings: %s", e)
+    try:   # the pirates' clip after their Tuesday call: every refused trick, to Telegram and X (trick_clip.py)
+        import trick_clip
+        trick_clip.step(now, st, save, lambda text: tell(text))
+    except Exception as e:  # noqa: BLE001 - tried again in 10 minutes; marked before posting, never posted twice
+        log.warning("pirate clip: %s", e)
 
 
 def status_lines(now: float | None = None) -> list[str]:
@@ -438,6 +445,12 @@ def status_lines(now: float | None = None) -> list[str]:
                    + (" (done)" if visit_id(nxt["t0"], nxt["ship"]) in st["announced"] else ""))
     else:
         out.append("cruise:  no call ahead (ships switched off?), nothing to announce")
+    if st.get("clipped"):
+        vid = max(st["clipped"])
+        r = st["clipped"][vid].get("result")
+        out.append(f"         pirate clip {vid}: " + ("; ".join(r) if isinstance(r, list) else str(r)))
+    elif os.environ.get("TRICK_CLIP", "true").lower() in ("1", "true", "yes"):
+        out.append("         pirate clip: by itself after each Tuesday call (look first: up clip)")
     if st["reported"]:
         vid = max(st["reported"])
         out.append(f"         last report {vid}: {st['reported'][vid].get('told')}")

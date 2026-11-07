@@ -20,6 +20,8 @@
 #                            announcements and reports run by themselves every week (alerts/cruise_crier.py);
 #                            up cruise release 2026-11-10-pirates  shows a held-back finding (a pirate trick that got
 #                            through) in the public logbook and lets the blog write that visit (after IDNI knows)
+#              up clip       the pirates' clip of their newest visit to look at (posts nothing; a marked SAMPLE before
+#                            the first); it goes to Telegram and X by itself after each Tuesday call; up clip send <visit>
 #              up escrow     the relay alone restarted with the code just pulled (not while a ship is due), then the
 #                            cruise bookings ahead in escrow, each with its state; up escrow status  only those
 #              up report     the weekly report for IDNI as it stands (nothing rebuilt, nothing filed): its text, a page
@@ -102,6 +104,21 @@ print('released:', ', '.join(r))
   docker compose exec -T relay python /tmp/cruise-report.py ${2:-}
   echo "sendtx timeouts per hour (UTC), last 3 days:"
   docker compose logs -t --since 72h relay 2>&1 | grep -E "(upstream|sender) sendtx failed" | awk '{print substr($3,1,13)}' | sort | uniq -c | sed 's/^/  /'
+  exit 0
+fi
+# the pirates' clip after each Tuesday call (alerts/trick_clip.py, posted by itself), nothing rebuilt: up clip  the newest
+# pirate visit's clip to look at (a SAMPLE, marked on every frame, before the first one), posts nothing;
+# up clip send 2026-11-10-pirates  posts that visit's clip now, once (never one where a trick got through)
+if [ "${1:-}" = "clip" ]; then
+  mkdir -p /opt/sites/rico/art/drafts
+  docker compose up -d blog >/dev/null 2>&1 || true
+  if [ "${2:-}" = "send" ] && [ -n "${3:-}" ]; then
+    docker compose exec -T blog python trick_clip.py send "$3"
+  else
+    docker compose exec -T blog python trick_clip.py preview ${2:-} /tmp/trick-clip.mp4
+    docker compose cp blog:/tmp/trick-clip.mp4 /opt/sites/rico/art/drafts/trick-clip.mp4
+    echo "look: https://node.tauhud.com/rico/art/drafts/trick-clip.mp4"
+  fi
   exit 0
 fi
 # IDNI's progress of the day as ONE post, nothing rebuilt (alerts/idni_digest.py): up idni  the last ones and what the
