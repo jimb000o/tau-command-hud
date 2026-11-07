@@ -528,7 +528,7 @@ def step(now: float, st: dict, save, tell) -> str | None:
             except Exception as e:  # noqa: BLE001
                 log.warning("pirate clip draft: %s", e)
         else:
-            make(f, out, sea)   # a failure here is tried again in 10 minutes
+            make(f, out, sea) if sea else make(f, out)   # a failure here is tried again in 10 minutes
         t = texts(f)
         clips[vid] = {"at": round(now), "result": "posting"}
         save(st)   # before posting: a crash while posting never posts twice
