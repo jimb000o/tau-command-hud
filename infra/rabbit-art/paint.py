@@ -201,7 +201,8 @@ SCENE = {
     "cafe": "The Parasol Café on the front beach: a small wooden beach café with a striped awning over its counter, round "
             "tables under red and white parasols on a wooden deck by the sand, mismatched chairs, a battered tin kettle, "
             "a long table where everybody talks, a noticeboard covered in notes, hanging lanterns, a bowl for the cat by "
-            "the counter, the school's blue house on stilts beside it and the bay in front, cosy, noisy and friendly.",
+            "the counter, the Council Tree's red crown above it, the market stalls on one side and Bar La Ola on the other, "
+            "the bay in front, cosy, noisy and friendly.",
     "radio": "Inside Radio Coco, the small wooden radio hut on stilts beside the lattice radio mast on the cliff top, "
              "wooden all through, no concrete, no metal studio: rough plank walls, plank floor, a thatched roof on beams, the painted Radio Coco sign seen backwards through the open front, a microphone on an arm, a mixing desk, a turntable, "
              "shelves of records, a window showing the waterfall and the sea far below, cables, a fan, a coffee mug, "
@@ -218,16 +219,16 @@ SCENE = {
     "bar": "Inside Bar La Ola, a wooden bar on stilts at the pier: long shelves of colourful bottles, a counter with stools, "
            "a ceiling fan, a string of warm light bulbs, an open side onto the water and the boats, driftwood and shells, "
            "a ledger and a pencil on the counter, cosy and lively.",
-    "book": "Inside the lighthouse on its rocky islet at the back of the island: rough stone walls, a stone stair winding "
-            "up, a small arched window onto the open sea and, across the water, the village hills and the old standing "
-            "stone, a lamp hanging from above throwing a cone of green-tinted light onto a big open book on a wooden "
-            "lectern, ropes, a brass telescope, sea charts, an old keeper's chair, quiet and solemn.",
+    "book": "Inside the lighthouse on its green hill at the back of the island: rough stone walls, a stone stair winding "
+            "up, a small arched window onto the open sea and, below, the village hills, the hut of the three drums and "
+            "the old standing stone, a lamp hanging from above throwing a cone of green-tinted light onto a big open "
+            "book on a wooden lectern, ropes, a brass telescope, sea charts, an old keeper's chair, quiet and solemn.",
     "pier": "A wooden pier running out into the sea, seen from its start on the beach: planks, rope railings on posts, "
             "a lamp post with a square lantern, a small sailing boat on the water, bright sky with clouds, gulls far "
             "away, sand in the foreground, barrels and coiled ropes.",
     "school": "Inside the island's school, a blue wooden house on stilts: a blackboard with chalk drawings of blocks and "
               "arrows, small desks, exercise books, a globe, children's paintings of the island on the walls, open "
-              "shutters onto the red tree and the sea, cheerful and a little chaotic.",
+              "shutters onto the beach, the swing in the yard, the palm trees and the sea, cheerful and a little chaotic.",
     "dive": "Inside the Reef Proof dive centre, a stilt house over the water: wetsuits and fins on hooks, tanks, a trapdoor "
             "straight into the turquoise water, and odd futuristic diving gear: glowing sensor buoys, a sleek underwater "
             "drone, a screen showing reef readings as a chain of small linked blocks, all hand-made and a bit improvised.",
@@ -246,8 +247,9 @@ SCENE = {
     "ama": "Inside Ama's house in the first people's village: a round house of wood and palm thatch, woven mats, carved "
            "posts, baskets, a hearth, family photographs next to carved wooden figures, a window onto the stone circle "
            "and the hills, calm and dignified, a living home, nothing exotic or stereotyped.",
-    "canoe": "The canoe house by the river: a long open shed of wood and thatch, a dug-out canoe being carved, tools on the "
-             "wall, wood shavings, paddles, the river glittering outside.",
+    "canoe": "The canoe house on the west beach: a long open boathouse of wood and thatch at the water's edge, a dug-out "
+             "canoe being carved, tools on the wall, wood shavings, paddles, two canoes pulled up on the sand outside and "
+             "the turquoise bay glittering beyond.",
     "stone": "The Tide Stone: a tall ancient standing stone on a green hill top above the sea, covered in carved marks in "
              "rows, a few stones around it, wind in the grass, a sweeping view over the island, solemn and mysterious.",
     "drums": "On the summit of a green hill: a small round open hut with a palm-thatch roof sheltering a large carved "
