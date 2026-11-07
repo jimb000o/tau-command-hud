@@ -15,7 +15,7 @@ TauI18n.add({ strings: {
   "{x} median": "中央値 {x}",
   "The middle half took {x} to {y}": "中央の半分は {x}〜{y} かかりました",
   "The middle half took {x}": "中央の半分は {x} かかりました",
-  "(tau-testnet pinned to commit 64ceb40)": "（tau-testnet はコミット 64ceb40 に固定）",
+  "(tau-testnet pinned to commit 668fbf4)": "（tau-testnet はコミット 668fbf4 に固定）",
   ", served by a read-only relay.": "。読み取り専用のリレーを通じて提供しています。",
   ", {n} on another.": "、別のチェーンに {n}。",
   "10 min": "10 分",

@@ -2492,5 +2492,10 @@
     "tag": "Alerts",
     "on": "2026-11-07",
     "html": "Channel that tunes itself: every tauhud.com link in a Telegram post now says which kind of post it came from, and the relay counts only those page opens, by kind (no one's data). Each Sunday the owner gets a private note of posts and opens per kind; a closer look or weekly digest that nobody opened for four weeks posts every other time until someone does, and every such change is logged with its reason. Also new: a weekly channel poll on which page gets the next closer look, a post on the 1st of each month with the running costs as billed and the donations so far, and the pirate ship's report says what an all-refused call shows."
+  },
+  {
+    "tag": "Node",
+    "on": "2026-11-07",
+    "html": "Node: our node moves to IDNI’s newest testnet software (668fbf4, 5 November). One change reaches a running node: when a miner’s fallback block proposal needs a fresh evaluator, it can now start one; IDNI writes that without it, mining a block that activates governance or revises a policy composite failed. Our node does not mine, so the HUD shows the same chain as before. The rest is tests and build. All seven of our own node fixes carry over unchanged."
   }
 ]

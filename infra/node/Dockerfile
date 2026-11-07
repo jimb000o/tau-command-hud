@@ -10,7 +10,7 @@
 # x86_64 and arm64 (tau-lang ships linux-arm64 recipes; Spot is built from
 # source there).
 
-ARG TAU_TESTNET_REF=64ceb4046253b6f02b25ff79da22fd55b1bfee41
+ARG TAU_TESTNET_REF=668fbf4762f2eeb76b39975157d2e75af788d240
 
 # Base images pinned by digest: a re-published tag (python:3.14-trixie was
 # rebuilt on Docker Hub 2026-10-27 02:13Z) invalidates the whole tau-builder
