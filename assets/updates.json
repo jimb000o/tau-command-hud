@@ -2452,6 +2452,11 @@
     "html": "Chain core: the ring of waiting transactions now says that it is the mempool, and a wallet's own rule on the inner ring says whose it is: it binds only that wallet, never anyone else. Hover the inner ring for what it holds. The rules it shows no longer depend on when the page was opened: the page asks the relay who holds a rule now, and a rule a wallet took away leaves the ring."
   },
   {
+    "tag": "Cruise",
+    "on": "2026-11-07",
+    "html": "Cruise bookings in escrow: from MS Dry Run on 11 November, five simulated passengers book the call days ahead with a retractable transfer of the fare to the ship's till, released when she arrives; one of them takes theirs back. If the call is called off before (ships switched off, or a stalled testnet 20 minutes before the arrival), our server takes every booking back at least 6 minutes ahead. tauhud.com/cruise/ shows each booking as in escrow, paid out or refunded. Only the sender can take a retractable transfer back, so there is no third party who decides."
+  },
+  {
     "tag": "Services",
     "on": "2026-11-07",
     "html": "Services on the testnet (tauhud.com/services/): a directory of what runs on Tau Testnet Alpha, with categories and search. Accounts appear by themselves once the chain shows them serving other wallets: co-signers others name for their payments, rule givers whose rules get taken, accounts paid with terms (retractable transfers) or by many different wallets. Numbers come straight from the blocks, every minute; nobody signs up. Ours (Guardian, White Rabbit Key, Agorzilla, wallet, API, rules wall, node kit) are listed first and marked. A builder can ask for a name and a link with a pre-filled request. Also open to other sites as JSON: node.tauhud.com/services."

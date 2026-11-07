@@ -18,6 +18,8 @@
 #              up cruise     a cruise ship's last visit in numbers and the node's timeouts per hour (nothing rebuilt)
 #                            up cruise next  the next call's announcement as it goes out by itself (posts nothing);
 #                            announcements and reports run by themselves every week (alerts/cruise_crier.py)
+#              up escrow     the relay alone restarted with the code just pulled (not while a ship is due), then the
+#                            cruise bookings ahead in escrow, each with its state; up escrow status  only those
 #              up report     the weekly report for IDNI as it stands (nothing rebuilt, nothing filed): its text, a page
 #                            and a pre-filled GitHub issue link; up report last  last week's; up report send  also to
 #                            your Telegram (it comes there by itself every Sunday 18:00)
@@ -75,6 +77,34 @@ fi
 # IDNI's progress of the day as ONE post, nothing rebuilt (alerts/idni_digest.py): up idni  the last ones and what the
 # next would say now (one model call, posts nothing), up idni send  writes it now and the alerts service posts it within a
 # minute (up idni send --force: also when the check marked numbers or wording), up idni hold / up idni release
+# bookings ahead of a cruise call, in escrow until its arrival (relay/cruise.py): up escrow  restarts the relay alone with
+# the code just pulled (never while a ship is due or in port; the node keeps running), then shows every booking;
+# up escrow status  only shows them
+if [ "${1:-}" = "escrow" ]; then
+  if [ "${2:-}" != "status" ]; then
+    when=$(TZ=Europe/Berlin date +%u%H)
+    case "$when" in 315|316|317|613|614|615|616)
+      if [ "${2:-}" != "--now" ]; then
+        echo "a cruise ship is due or at the island now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
+        echo "try again after the visit, or: up escrow --now"; exit 1
+      fi ;;
+    esac
+    docker compose up -d --build --no-deps relay
+    echo "waiting 20 s for the relay to start…"; sleep 20
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T relay python -c 'import json,time,urllib.request
+d=json.load(urllib.request.urlopen("http://127.0.0.1:8080/cruise", timeout=20))
+es=d.get("escrow") or []
+print("escrow: ships %s, %d calls with bookings ahead" % ("on" if d.get("enabled") else "switched off", len(es)))
+for e in es:
+    off=(e.get("called_off") or {}).get("why")
+    print("  %s arrival %s: %s%s" % (e["visit"], time.strftime("%a %d.%m. %H:%M UTC", time.gmtime(e["arrival"])), ", ".join("%s %s" % kv for kv in e["count"].items()), ", called off: "+off if off else ""))
+    for b in e["bookings"]: print("    no. %-3s %s AGRS  %-13s %s" % (b["p"], b["amount"], b["status"], (b.get("note") or "")[:70]))' 2>&1 || echo "relay /cruise not answering yet"
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 if [ "${1:-}" = "idni" ]; then
   shift
   docker compose up -d devpulse >/dev/null 2>&1 || true
@@ -198,6 +228,10 @@ if s:
         here = f"{v.get('name')} {v.get('phase')}, {v.get('ashore', 0)} ashore; " if v else ""
         print(f"ships:   {here}next {n.get('name')} {at(n['t0'])} {zn}" if n else f"ships:   {here}no call ahead")
         print(f"         {wallets} of {seats} passenger wallets made, kinds tried: {', '.join(tried)}, logbook https://node.tauhud.com/cruise/log")
+    for e in (s.get("escrow") or [])[:1]:   # bookings ahead of the next call (relay/cruise.py escrow)
+        c = ", ".join(f"{k} {x}" for k, x in (e.get("count") or {}).items()) or "none"
+        off = f", called off: {e['called_off']['why']}" if e.get("called_off") else ""
+        print(f"escrow:  {e.get('name')} {at(e['arrival'])}: {c}{off}")
 # in sync with IDNI (alerts/devpulse.py, every 30 min): is our node on the newest tau-testnet main, does IDNI's build
 # use our tau-lang commit, do our node patches still apply to the newest main
 s = read(sys.argv[4], "idni:    ")
