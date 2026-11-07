@@ -1677,6 +1677,9 @@ def note_kind(kind: str, now: float | None = None):
         pass
 
 
+SHARED_KINDS = {"friend"}   # the wallet's "Pass it on" line (ref=friend) and its rule links (ref=preset-<id>): opens without a post of ours
+
+
 def clicks_table(opens: dict, posts: dict, start: str) -> dict:
     """{kind: [posts, opens]} summed over the days from `start` (YYYY-MM-DD) on."""
     out: dict[str, list[int]] = {}
@@ -1692,7 +1695,8 @@ def clicks_text(week: dict, quiet: list[str], changes: list[str]) -> str:
     e = html.escape
     rows = sorted(week.items(), key=lambda kv: (-kv[1][1], kv[0]))
     out = ["📈 <b>Channel this week</b> (only you get this)", "Opens of tauhud.com from each kind of post, last 7 days:"]
-    out += [f"• {e(k)}: {plural(p, 'post')}, {plural(o, 'open')}" for k, (p, o) in rows] or ["• no posts counted yet"]
+    out += [f"• {e(k)}: {plural(o, 'open')} from a link people passed on, no post" if p == 0 and (k in SHARED_KINDS or k.startswith("preset-"))
+            else f"• {e(k)}: {plural(p, 'post')}, {plural(o, 'open')}" for k, (p, o) in rows] or ["• no posts counted yet"]
     if changes:
         out += ["", "Changed by itself:"] + [f"• {e(c)}" for c in changes]
     if quiet:

@@ -2533,6 +2533,18 @@
   {
     "tag": "Wallet",
     "on": "2026-11-07",
+    "html": "Wallet: ready-made rules, one click each. Five of them, built from what people asked for in the Tau chats: Starter shield (at most 5,000 test AGRS per payment, and the way back on for new addresses and anything above 1,000), Only my people (payments only to names in your address book), Savings lock (nothing leaves before a date 90 days out), Second signature (above 1,000 a friend or the Guardian co-signs), and Way back by default (payments to new addresses and above 1,000 go with a way back of 30 blocks; no rule place needed, a habit of this wallet). Each card says what it keeps off and, in amber, what it does not: whoever holds your key can replace the rule, and a rule sees one payment at a time, so there is a limit per payment and no daily limit. Every card has a link to pass on that fills the same blocks for whoever opens it, nothing signed. New walk for someone a friend sent, /wallet/?walk=friend: make a test account, turn the way back on, pay a stranger, take it back, then a line to pass on. Opens of those links are counted by their tag only, nothing about who, and show up in the Sunday channel note.",
+    "major": {
+      "id": "wallet-presets",
+      "title": "New: ready-made wallet rules, one click each",
+      "text": "Five rules built from what people asked for: a limit per payment with the way back on, only to your address book, a savings lock, a second signature from a friend or the Guardian, and the way back by default. Each card says what it keeps off and what it does not. Plus a five-minute walk for a friend: pay a wrong address, take it back.",
+      "link": "/wallet/",
+      "image": "/assets/shots/wallet-presets.png"
+    }
+  },
+  {
+    "tag": "Wallet",
+    "on": "2026-11-07",
     "html": "Wallet: the hack of the week, replayed on the testnet. Every Thursday at 11:00 German time four simulated wallets replay a real kind of attack against a wallet safety setting, starting with address poisoning: a lookalike address that starts and ends like one you pay often sends you a tiny amount, and a payment copied from your history goes to it. One wallet pays with a 30-minute take-back window and takes the money back, its twin pays without and the money is gone. The bot posts the outcome with what the window does not protect; if the chain itself ever does something it must not, nothing is posted and IDNI is told first."
   }
 ]

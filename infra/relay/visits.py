@@ -49,6 +49,7 @@ DAY = 86400
 KEEP_DAYS = 400
 HOUR_DAYS = 31     # days whose hour-by-hour counts /visits/public shows (24H, 7D and 30D on /meta/)
 ENGAGED_SECONDS = 30          # nav.js sends e=1 after this much visible time
+SHARED_TAGS = {"friend"}   # links people pass on themselves (the wallet's "Pass it on" line and its rule links, ref=friend / ref=preset-<id>): counted beside the channel's post kinds
 MAX_KEYS = {"views": 150, "refs": 300, "sources": 100, "flows": 400}   # distinct keys per day; the rest goes to "(other)"
 PAGE = re.compile(r"^[a-z0-9][a-z0-9/_-]{0,47}$")
 HOST = re.compile(r"^[a-z0-9.-]{1,80}\.[a-z]{2,24}$")
@@ -277,10 +278,12 @@ class Visits:
     def channel(self) -> dict:
         """Page opens per day from our Telegram channel's own links, by post kind: {"days": {day: {kind: n}}}, last 56
         days. The alerts bot tags every tauhud.com link it posts with ?ref=tg-<kind>; it reads this to see which kinds
-        of post people open and to post the ones nobody opens less often."""
+        of post people open and to post the ones nobody opens less often. Links people pass on themselves (ref=friend,
+        ref=preset-<id>) are listed under their own tag, so the Sunday note shows what travels without a post."""
         self._roll()
         first = _day_str(self.day - 55)
-        return {"days": {k: {t[3:]: n for t, n in d.get("sources", {}).items() if t.startswith("tg-")}
+        return {"days": {k: {(t[3:] if t.startswith("tg-") else t): n for t, n in d.get("sources", {}).items()
+                             if t.startswith("tg-") or t in SHARED_TAGS or t.startswith("preset-")}
                          for k, d in sorted(self.days.items()) if k >= first}}
 
     # ---------- HTTP ----------
