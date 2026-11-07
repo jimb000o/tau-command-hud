@@ -431,6 +431,10 @@ class Cruise:
         self.till: dict[str, str] = {}                  # ship -> its till's public key (the bookings' recipient)
         self.load_state()
         self.load_log()
+        if not self.node:   # first start with this rule: the newest visit in the logbook that timed its sends measures the node
+            for vid in sorted({e.get("visit") for e in self.logbook if isinstance(e.get("ms"), int) and e.get("visit")}, reverse=True):
+                if self.measure({"id": vid, "ship": vid.rsplit("-", 1)[-1] if vid.rsplit("-", 1)[-1] in SHIPS else "queen"}):
+                    break
         try:
             with open(self.incidents_path) as f:
                 self.incidents = json.load(f)[-INCIDENTS_MAX:]

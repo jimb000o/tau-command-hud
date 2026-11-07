@@ -416,6 +416,14 @@ M.save_state()
 M2 = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s9"), "log_path": os.path.join(d, "l9b"), "incidents_path": os.path.join(d, "i9")}, clock=clock,
                    enabled=True, verdict=lambda: "calm", background=False)
 check(M2.plan_pace("dryrun") == M.plan_pace("dryrun"), "the measure is the node's: it is kept across restarts and holds for every ship")
+lq = os.path.join(d, "l10")
+with open(lq, "w") as f:
+    for n in range(40):
+        f.write(json.dumps({"t": int(T[0]), "visit": "2026-11-07-queen", "kind": "pay", "ok": True, "ms": 6000 + n * 40}) + "\n")
+M3 = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s10"), "log_path": lq, "incidents_path": os.path.join(d, "i10")}, clock=clock,
+                   enabled=True, verdict=lambda: "calm", background=False)
+check(M3.node.get("answer_ms") == 6800 and M3.node.get("visit") == "2026-11-07-queen",
+      "first start with this rule: the Queen's timed sends already in the logbook measure the node")
 rp = [e for e in tricks if e["trick"] == "replay"]
 check(rp and all(e["tx"] in CH["sent"] for e in rp), "the replay sends a payment the chain already took, byte for byte")
 
