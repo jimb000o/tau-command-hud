@@ -382,7 +382,9 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
   moves), only for a day a real player moved (since 6 November 2026; a day nobody played gets no report, the
   islanders' own politics are not news), with the standing explanation of the campaign cycle on Monday only, with
   the governor's count; its length is read from `rabbit/game.js` (`ISLAND_DAYS`, 5, when unreachable). X gets it
-  only for a day real players moved and at most every `ISLAND_X_EVERY_DAYS` (2) days, as a spare post.
+  only for a day with a story (an election won or a law passed by real players, since 7 November 2026; a day of moves
+  alone stays on Telegram), told as that story with the live island painting, at most every `ISLAND_X_EVERY_DAYS` (1)
+  days, as a spare post; the Monday governor's count always.
   `--island-preview` prints today's so far; `ISLAND_CRIER=false` stops it.
 - Nothing is posted late in a burst after a restart: the Monday recap is skipped once it is `RECAP_LATE_HOURS` (3)
   late, Agorzilla's evenings older than `AGORZILLA_LATE_HOURS` (6) are noted and not posted (on 2 November 2026 the

@@ -166,7 +166,7 @@ services:
       IDNI_DIGEST_LATE_HOURS: ${IDNI_DIGEST_LATE_HOURS:-3}
       ISLAND_CRIER: ${ISLAND_CRIER:-true}
       ISLAND_HOUR: ${ISLAND_HOUR:-7}
-      ISLAND_X_EVERY_DAYS: ${ISLAND_X_EVERY_DAYS:-2}
+      ISLAND_X_EVERY_DAYS: ${ISLAND_X_EVERY_DAYS:-1}
       # the news line's watchtower (alerts/tickerwatch.py): a stale HUD news line is told to the owner only, privately
       # (up owner sets that chat; TICKER_OWNER_CHAT sets a chat id directly), never to the channel
       TICKER_WATCH: ${TICKER_WATCH:-true}
