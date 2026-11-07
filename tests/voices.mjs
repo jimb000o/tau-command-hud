@@ -11,7 +11,7 @@ new Function(readFileSync(new URL("rabbit/rico.js", root), "utf8"))();
 const SHIPK = window.RABBIT_SHIP_WHEN.keys, whens = [...Object.values(window.RABBIT_TALK).flatMap(t => [...(t.back || []).map(([w]) => w),
   ...(t.ask || []).flatMap(q => [q.when || "", ...q.a.map(([w]) => w), ...(q.more ? q.more.a.map(([w]) => w) : [])])]), ...window.RICO.CALLS.map(c => c.when || "")];
 for (const w of whens) for (const k of w.split("+").map(k => k.replace(/^!/, "")))
-  if (/^ship|^queen$|^dryrun$/.test(k) && !SHIPK.includes(k)) { console.error(`a line waits for "${w}": ${k} is not a ship fact (talk.js RABBIT_SHIP_WHEN)`); process.exit(1); }
+  if (/^ship|^queen$|^dryrun$|^pirate|^t[A-Z]/.test(k) && !SHIPK.includes(k)) { console.error(`a line waits for "${w}": ${k} is not a ship fact (talk.js RABBIT_SHIP_WHEN)`); process.exit(1); }
 const game = readFileSync(new URL("rabbit/game.js", root), "utf8"), cast = JSON.parse(readFileSync(new URL("rabbit/cast.json", root), "utf8"));
 for (const c of cast) if (!game.includes(JSON.stringify(c.text))) { console.error(`rabbit/cast.json: not in game.js: ${c.text}`); process.exit(1); }
 const seen = new Set(), list = [...window.RICO.all().map(([who, text]) => ({ who, text })), ...cast].filter(c => !seen.has(c.who + "|" + c.text) && seen.add(c.who + "|" + c.text));
