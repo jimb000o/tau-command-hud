@@ -237,7 +237,7 @@ async function play(n) {
     const G = await page.evaluate(() => { const G = window.COVE_GAME.state; return G && { over: G.over, day: G.day, coins: G.coins, laws: G.laws, key: !!G.key, chart: !!G.chart, seen: G.seen || {}, onchain: G.onchain, book: G.book, deals: G.deals, pacts: G.pacts, lies: G.lies.length }; });
     out.over = G && G.over; out.game = G;
     out.own = G ? G.book.filter(b => b.who === G.me || b.who === cand).length : 0;
-    out.ownIsle = G ? G.book.filter(b => b.who === cand && KINDS.split("|").includes(b.kind)).length : 0;
+    out.ownIsle = G ? G.book.filter(b => b.who === cand && KINDS.split("|").includes(b.kind) && !b.deja).length : 0;   // agreeing to feed Déjà is no move, so the island never hears of it
     out.isleSeen = await page.evaluate(() => { const b = document.getElementById("cvIsle"); return b && !b.hidden ? b.innerText : ""; });
     if (G && !G.over && !out.stuck) out.stuck = { at: `day ${G.day}, game did not end in 400 steps` };
   } catch (e) { out.errors.push("harness: " + e.message.split("\n")[0]); }

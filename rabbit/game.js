@@ -2871,7 +2871,7 @@
   function agreeDeja() {
     if (fedDeja() || !G.onchain) return;
     G.deja = dejaDay();
-    const b = { day: G.day, hour: Math.min(2, G.move), who: G.me, text: T("agreed to feed Déjà, the café cat"), kind: "gift", at: CAFE(), pay: 1 };
+    const b = { day: G.day, hour: Math.min(2, G.move), who: G.me, text: T("agreed to feed Déjà, the café cat"), kind: "gift", at: CAFE(), pay: 1, deja: 1 };   // no move: the shared island never hears of it
     G.book.push(b); save();
     mySend(DEJA.bowl, T("agreed to feed Déjà"), h => { if (h) { b.tx = h; save(); DJ_S.at = 0; } }, 1, null);
     SND.sfx("meow"); toast(T("You agreed. Déjà looked at you as if she had expected it."));
