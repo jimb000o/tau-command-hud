@@ -20,11 +20,16 @@
 #                            announcements and reports run by themselves every week (alerts/cruise_crier.py);
 #                            up cruise release 2026-11-10-pirates  shows a held-back finding (a pirate trick that got
 #                            through) in the public logbook and lets the blog write that visit (after IDNI knows)
+#              up escrow     the relay alone restarted with the code just pulled (not while a ship is due), then the
+#                            cruise bookings ahead in escrow, each with its state; up escrow status  only those
 #              up report     the weekly report for IDNI as it stands (nothing rebuilt, nothing filed): its text, a page
 #                            and a pre-filled GitHub issue link; up report last  last week's; up report send  also to
 #                            your Telegram (it comes there by itself every Sunday 18:00)
 #              up guardian   the Guardian (tauhud.com/guardian/) started or restarted with the code just pulled, and Caddy
 #                            given its door; nothing rebuilt, the node left alone; up guardian status  only its numbers
+#              up services   the relay rebuilt with the code just pulled (tauhud.com/services/ reads it), the node left alone;
+#                            refuses while a cruise ship is due (Wed 15-18, Sat 13-17 German time; up services --now overrides);
+#                            up services status  only what the directory finds now
 #              up owner      the same, then a one-time link: open it in your Telegram, and the news line's watchtower
 #                            warns you there privately (never on the channel); up owner test  sends you one test message
 set -e
@@ -93,6 +98,34 @@ fi
 # IDNI's progress of the day as ONE post, nothing rebuilt (alerts/idni_digest.py): up idni  the last ones and what the
 # next would say now (one model call, posts nothing), up idni send  writes it now and the alerts service posts it within a
 # minute (up idni send --force: also when the check marked numbers or wording), up idni hold / up idni release
+# bookings ahead of a cruise call, in escrow until its arrival (relay/cruise.py): up escrow  restarts the relay alone with
+# the code just pulled (never while a ship is due or in port; the node keeps running), then shows every booking;
+# up escrow status  only shows them
+if [ "${1:-}" = "escrow" ]; then
+  if [ "${2:-}" != "status" ]; then
+    when=$(TZ=Europe/Berlin date +%u%H)
+    case "$when" in 315|316|317|613|614|615|616)
+      if [ "${2:-}" != "--now" ]; then
+        echo "a cruise ship is due or at the island now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
+        echo "try again after the visit, or: up escrow --now"; exit 1
+      fi ;;
+    esac
+    docker compose up -d --build --no-deps relay
+    echo "waiting 20 s for the relay to start…"; sleep 20
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T relay python -c 'import json,time,urllib.request
+d=json.load(urllib.request.urlopen("http://127.0.0.1:8080/cruise", timeout=20))
+es=d.get("escrow") or []
+print("escrow: ships %s, %d calls with bookings ahead" % ("on" if d.get("enabled") else "switched off", len(es)))
+for e in es:
+    off=(e.get("called_off") or {}).get("why")
+    print("  %s arrival %s: %s%s" % (e["visit"], time.strftime("%a %d.%m. %H:%M UTC", time.gmtime(e["arrival"])), ", ".join("%s %s" % kv for kv in e["count"].items()), ", called off: "+off if off else ""))
+    for b in e["bookings"]: print("    no. %-3s %s AGRS  %-13s %s" % (b["p"], b["amount"], b["status"], (b.get("note") or "")[:70]))' 2>&1 || echo "relay /cruise not answering yet"
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 if [ "${1:-}" = "idni" ]; then
   shift
   docker compose up -d devpulse >/dev/null 2>&1 || true
@@ -121,6 +154,30 @@ if [ "${1:-}" = "guardian" ]; then
   echo "---------------- copy from here into the chat ----------------"
   docker compose exec -T guardian python /guardian/guardian.py status 2>&1 || docker compose logs --tail 15 guardian 2>&1
   curl -s -o /dev/null -w "          door https://node.tauhud.com/guardian/info answers %{http_code}\n" https://node.tauhud.com/guardian/info || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# the relay alone, the node left alone (relay/services.py feeds tauhud.com/services/): rebuilt and restarted with the code
+# just pulled. Pages reconnect by themselves within seconds; a cruise ship sends through the relay, so not while one is due.
+if [ "${1:-}" = "services" ]; then
+  if [ "${2:-}" != "status" ]; then
+    when=$(TZ=Europe/Berlin date +%u%H)
+    case "$when" in 315|316|317|613|614|615|616)
+      if [ "${2:-}" != "--now" ]; then
+        echo "a cruise ship is due or at the island now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
+        echo "try again after the visit, or: up services --now"; exit 1
+      fi ;;
+    esac
+    docker compose up -d --build --no-deps relay
+    echo "waiting 20 s for the relay to read the chain…"; sleep 20
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T relay python -c 'import json,urllib.request
+d=json.load(urllib.request.urlopen("http://127.0.0.1:8080/services", timeout=20)); t=d["totals"]
+print("services: %s found (co-signers %s, rule givers %s, paid with terms %s, paid by many %s), %s wallets served, blocks since %s" % (t["services"], t["cosign"], t["rules"], t["terms"], t["paid"], t["wallets"], d.get("since")))
+for r in d["services"][:12]: print("  %-10s %s… %s, %s wallets" % (r["app"] or "", r["address"][:12], "+".join(r["kinds"]), r["wallets"]))' 2>&1 || echo "relay /services not answering yet"
+  curl -s -o /dev/null -w "          page https://tauhud.com/services/ answers %{http_code}\n" https://tauhud.com/services/ || true
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
@@ -192,6 +249,10 @@ if s:
         here = f"{v.get('name')} {v.get('phase')}, {v.get('ashore', 0)} ashore; " if v else ""
         print(f"ships:   {here}next {n.get('name')} {at(n['t0'])} {zn}" if n else f"ships:   {here}no call ahead")
         print(f"         {wallets} of {seats} passenger wallets made, kinds tried: {', '.join(tried)}, logbook https://node.tauhud.com/cruise/log")
+    for e in (s.get("escrow") or [])[:1]:   # bookings ahead of the next call (relay/cruise.py escrow)
+        c = ", ".join(f"{k} {x}" for k, x in (e.get("count") or {}).items()) or "none"
+        off = f", called off: {e['called_off']['why']}" if e.get("called_off") else ""
+        print(f"escrow:  {e.get('name')} {at(e['arrival'])}: {c}{off}")
 # in sync with IDNI (alerts/devpulse.py, every 30 min): is our node on the newest tau-testnet main, does IDNI's build
 # use our tau-lang commit, do our node patches still apply to the newest main
 s = read(sys.argv[4], "idni:    ")
@@ -306,4 +367,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up idni, up report, up blog, up guardian, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up idni, up report, up blog, up guardian, up services, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"

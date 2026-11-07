@@ -202,6 +202,19 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
         hs = [e.get("height") for e in sends if e.get("height")]
         if hs:
             f["block heights"] = [min(hs), max(hs)]
+    ahead = [e for e in rows if e.get("kind") in ("book ahead", "refund")]
+    off = next((e for e in rows if e.get("kind") == "called off"), None)
+    settled = next((e for e in rows if e.get("kind") == "escrow" and e.get("status") == "settled"), None)
+    if ahead or off or settled:   # bookings ahead of the call (relay/cruise.py escrow), since 11 November 2026
+        g = {"what they are": "retractable transfers of the fare from simulated passengers to the ship's till, released at the "
+                              "arrival time; only the sender can take one back, so there is no third party who decides",
+             "booked": sum(1 for e in ahead if e["kind"] == "book ahead" and e.get("ok") is True),
+             "refused by the node": sum(1 for e in ahead if e["kind"] == "book ahead" and e.get("ok") is False),
+             "taken back before the arrival": sum(1 for e in ahead if e["kind"] == "refund" and e.get("ok") is True)}
+        if off:
+            g["call called off before the arrival"] = off.get("note")
+        g["how they ended on the chain"] = (settled or {}).get("result") or "not looked up yet when this was written"
+        f["bookings ahead in escrow"] = g
     if checked:
         f["bookings checked after the visit"] = checked.get("checked")
         f["bookings the chain had not paid out"] = len(checked.get("not_released") or [])

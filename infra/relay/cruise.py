@@ -27,6 +27,17 @@ Tau Testnet Alpha to the till of a place (island.PLACES, the same tills the game
           for the brakes; a trick the chain takes ("through") is a finding: it is held back from the public logbook
           (route: "held") and reported to the owner privately first (alerts/cruise_crier.py reads /cruise/held from
           inside the server), until `up cruise release <visit>` shows it (CRUISE_RELEASED_PATH)
+Booked ahead (a ship with "escrow", MS Dry Run): a few passengers book the call days before it, ESCROW_AHEAD at most. Each
+booking is a retractable transfer of the fare to the ship's till (a wallet made here like the passengers'), released at the
+arrival time: the chain pays the till by itself when the first block reaches it. The ship never draws on it before.
+  call off  the call is called off before arrival when the ships are switched off (CRUISE_ENABLED=0) or the testnet is
+            stalled at CALL_OFF minutes before it; then the server takes back every open booking, each retract going
+            out RETRACT_MARGIN before the arrival at the latest, and the ship does not land
+  withdraw  one passenger of a trial withdraws their own booking a day or so before (the sender's right)
+After the arrival every booking is looked up on the chain and written to the logbook as "paid out" (released to the till)
+or "refunded" (retracted to the passenger). Only the sender can retract (tau-testnet docs/retractable.md), so this is no
+arbiter between two parties: the passenger's own wallet, kept on our server, takes the money back. A refund that is not
+in a block before the arrival is too late, and the till is paid: the logbook says so.
 Never: votes, rule changes, rule offers or co-signed payments (they would take one of the testnet's two places for a
 personal rule, which belong to real visitors: slotlease.py), the players' board, Déjà or Agorzilla, payouts, and the
 places of Ama and Tano.
@@ -58,8 +69,9 @@ and for every refusal; GET /cruise/log shows it. A stall during a visit adds an 
 last INCIDENT_TAIL entries before it, the newest block, the transaction that has waited longest. So if the testnet
 breaks while a ship is in port, the logbook says what it sent; and when it was not the ship, the logbook says that too.
 
-GET /cruise            the timetable, the ship in port (or the next), passengers ashore and where, counts, wallets
-GET /cruise/log        logbook entries, newest first (?n=200, ?visit=<id>)
+GET /cruise            the timetable, the ship in port (or the next), passengers ashore and where, counts, wallets,
+                       and "escrow": the bookings ahead of the last calls, each with its state
+GET /cruise/log        logbook entries, newest first (?n=200, ?visit=<id>), and "escrow" as above
 GET /cruise/incidents  the incident reports, newest first
 """
 from __future__ import annotations
@@ -121,6 +133,12 @@ CODES = sorted({c for codes, _ in TRICKS.values() for c in codes} | {"TX_INVALID
 # MS Dry Run, 4 November 2026: eight sendtx went unanswered within 20 s (two a day on other days), were counted as
 # refusals, and the ship left after 34 minutes although the node had refused nothing. No answer is not a refusal.
 CHECK_BOOKINGS = 10        # passengers whose bookings are checked with the node when a visit ends
+ESCROW_AHEAD = 3 * 86400   # bookings ahead of a call go out from this long before its arrival
+ESCROW_CLOSE = 2 * 3600    # and no later than this before it
+CALL_OFF = 20 * 60         # this long before arrival a stalled testnet calls the call off (refunds need RETRACT_MARGIN)
+ESCROW_TRIES = 3           # sends of one booking or refund the node left unanswered before it is given up
+SETTLE_AGAIN = 10 * 60     # a booking the node cannot tell yet is asked about again after this
+ESCROW_KEEP = 8            # calls with bookings kept in the state file
 
 SHIPS = {
     "pirates": {
@@ -138,6 +156,8 @@ SHIPS = {
         "per": (4, 6), "dwell": (10, 18), "landing": 10,
         "book": {"share": 0.45, "at": ("dive", "book"), "cancel": 0.3},
         "bill": 0.0, "kinds": ("book",),
+        # booked ahead: so many passengers pay the fare into escrow for the ship's till, one of them withdraws again
+        "escrow": {"bookings": 5, "fare": 10, "withdraw": 1},
     },
     "queen": {
         "name": "Queen Mempool", "weekday": 5, "hour": 14, "passengers": 120, "style": "liner",
@@ -153,6 +173,7 @@ SHIPS = {
 CLOSED = frozenset({"ama", "stone", "drums", "circle", "grotto", "hall", "north", "camp", "canoe"})   # no tour group goes there
 BILL = (("bar", 5), ("radio", 25), ("works", 4))   # a table's evening: drinks and coconut snacks per head, one song request
 KINDS = ("pay", "bill", "book", "cancel")   # what passengers send; a pirate's "trick" is counted apart (TRICKS)
+ESCROW_KINDS = ("book ahead", "refund", "called off", "escrow")   # the logbook's lines for bookings ahead of a call
 PHASES = ("approach", "landing", "ashore", "boarding")
 VISIT_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z]+$")
 
@@ -292,6 +313,25 @@ def plan(ship: str, t0: int, trial: set | None = None, allowed: set | None = Non
     return acts
 
 
+def escrow_plan(ship: str, t0: int, now: float) -> list[dict]:
+    """The bookings ahead of a call, from now (or ESCROW_AHEAD before it) to ESCROW_CLOSE before it, seeded by its id."""
+    S, E = SHIPS[ship], SHIPS[ship]["escrow"]
+    R = random.Random("escrow-" + visit_id(t0, ship))
+    lo, hi = max(now, t0 - ESCROW_AHEAD), t0 - ESCROW_CLOSE - 600
+    if hi <= lo:
+        return []
+    ps = R.sample(range(S["passengers"]), E["bookings"])
+    at = sorted(R.uniform(lo, hi) for _ in ps)
+    wd = set(R.sample(range(len(ps)), min(E.get("withdraw", 0), len(ps))))
+    out = []
+    for n, (p, t) in enumerate(zip(ps, at)):
+        b = {"n": n, "p": p, "amount": int(E["fare"]), "at": int(t), "status": "planned"}
+        if n in wd:   # halfway between the booking and the call-off check
+            b["withdraw_at"] = int(t + R.uniform(0.4, 0.6) * (t0 - CALL_OFF - t))
+        out.append(b)
+    return out
+
+
 def where(acts: list[dict], now: float, end: float, ship: str | None = None) -> dict[str, int]:
     """How many passengers are at each place now, by the stops they have reached (pier on landing); none for a ship
     whose people stay aboard."""
@@ -346,6 +386,8 @@ class Cruise:
         self.slow_until = 0.0     # half pace until this
         self._verdict = (0.0, None)
         self._pruned = 0.0
+        self.escrow: dict[str, dict] = {}               # visit id -> the bookings ahead of that call (escrow_step)
+        self.till: dict[str, str] = {}                  # ship -> its till's public key (the bookings' recipient)
         self.load_state()
         self.load_log()
         try:
@@ -353,7 +395,7 @@ class Cruise:
                 self.incidents = json.load(f)[-INCIDENTS_MAX:]
         except (OSError, ValueError, TypeError):
             pass
-        if self.enabled:
+        if self.enabled or self.escrow_open():   # switched off with bookings open: the wallets still refund them
             if background:   # 160 wallets: their public keys take a few seconds of pure Python the first time
                 threading.Thread(target=self._keys, daemon=True).start()
             else:
@@ -380,6 +422,7 @@ class Cruise:
             with open(self.keys_path) as f:
                 keys = json.load(f)
         names = [f"{k}-{n}" for k, s in SHIPS.items() for n in range(s["passengers"])]
+        names += [f"till-{k}" for k, s in SHIPS.items() if s.get("escrow")]   # the ship's till takes the bookings ahead
         if any(not isinstance(keys.get(n), dict) for n in names):
             for n in names:
                 if not isinstance(keys.get(n), dict):
@@ -392,10 +435,15 @@ class Cruise:
                 json.dump(keys, f)
             os.replace(tmp, self.keys_path)
         sk, pk = {}, {}
+        till = {}
         for n in names:
+            if n.startswith("till-"):
+                till[n[5:]] = keys[n]["pk"]
+                continue
             sk[n], pk[n] = int(keys[n]["sk"], 16), keys[n]["pk"]
-        self.sk, self.pk = sk, pk
+        self.sk, self.pk, self.till = sk, pk, till
         self.who = {v: n.split("-")[0] for n, v in pk.items()}
+        self.who.update({v: k for k, v in till.items()})   # simulated too: never counted as a real wallet
         self.ready = True
 
     def wallet(self, ship: str, p: int) -> str:
@@ -410,6 +458,7 @@ class Cruise:
             self.visits = list(st.get("visits") or [])[-VISITS_KEEP:]
             self.tune = {k: v for k, v in (st.get("tune") or {}).items() if k in SHIPS and isinstance(v, dict)}
             self._saved_cur = st.get("cur") if isinstance(st.get("cur"), dict) else None
+            self.escrow = {k: v for k, v in (st.get("escrow") or {}).items() if isinstance(v, dict) and v.get("ship") in SHIPS}
         except (OSError, ValueError, TypeError, AttributeError):
             self._saved_cur = None
         c = self._saved_cur
@@ -432,7 +481,8 @@ class Cruise:
         try:
             tmp = self.state_path + ".tmp"
             with open(tmp, "w") as f:
-                json.dump({"tried": self.tried, "visits": self.visits[-VISITS_KEEP:], "cur": cur, "tune": self.tune}, f, separators=(",", ":"))
+                esc = dict(sorted(self.escrow.items(), key=lambda kv: kv[1].get("t0", 0))[-ESCROW_KEEP:])
+                json.dump({"tried": self.tried, "visits": self.visits[-VISITS_KEEP:], "cur": cur, "escrow": esc, "tune": self.tune}, f, separators=(",", ":"))
             os.replace(tmp, self.state_path)
         except OSError as exc:
             log.warning("cannot write %s: %r", self.state_path, exc)
@@ -530,6 +580,10 @@ class Cruise:
                     self.cur["acts"] = plan(ship, t0, set(self.cur["trial"]), set(self.cur["allowed"]), self.cur.get("tricks_n"))
             self._saved_cur = None
         v = self.cur
+        off = (self.escrow.get(vid) or {}).get("off")
+        if off and not v["landed"] and not v["left"]:   # called off before arrival: its bookings are refunded, it does not land
+            v.update(left=int(off["t"]), note="no landing: called off before arrival, " + off["why"])
+            self.save_state()
         if not v["landed"] and not v["left"] and now >= t0:
             self.land(now)
         return v
@@ -731,9 +785,13 @@ class Cruise:
     # ---------- sending, in the island bot's free slots ----------
     async def step(self, ask, gov) -> bool:
         """Called by the island bot when it has nothing to send. Sends at most one passenger transaction; True if it did."""
-        if not self.enabled or not self.ready:
+        if not self.ready:
             return False
         now = self.clock()
+        if await self.escrow_step(ask, gov, now):   # bookings ahead of a call: also while the ships are switched off
+            return True
+        if not self.enabled:
+            return False
         if now - self._pruned > 3600:
             self.prune(now)
         chk = getattr(self, "_check", None)
@@ -802,7 +860,11 @@ class Cruise:
             env["expiration_time"] = min(env["expiration_time"], act["rel"] - 1)
             tx = {"tx_type": "retractable_transfer", **env, "fee_limit": str(fee * 5), "recipient_pubkey": PLACES[act["to"]],
                   "amount": int(act["amount"]), "release_at_time": int(act["rel"])}
-        elif k == "cancel":   # feeless (docs/retractable.md); no use once the booking's time has come
+        elif k == "escrow":   # booked ahead: the fare waits in escrow for the ship's till until the arrival
+            env["expiration_time"] = min(env["expiration_time"], act["rel"] - 1)
+            tx = {"tx_type": "retractable_transfer", **env, "fee_limit": str(fee * 5), "recipient_pubkey": act["till"],
+                  "amount": int(act["amount"]), "release_at_time": int(act["rel"])}
+        elif k in ("cancel", "unbook"):   # feeless (docs/retractable.md); no use once the booking's time has come
             env["expiration_time"] = min(env["expiration_time"], act["rel"] - 1)
             env["expire_at_height"] = tip + 100
             tx = {"tx_type": "retract_transfer", **env, "fee_limit": "0", "retractable_id": rid}
@@ -1007,6 +1069,244 @@ class Cruise:
                 self.save_state()
             self.incident(now, "not released", "Bookings stayed in escrow after their time.", {"visit": chk["visit"], "ship": chk["ship"], "bookings": stuck})
 
+    # ---------- bookings ahead of a call, in escrow until the arrival ----------
+    def escrow_open(self) -> bool:
+        """Some booking ahead may still be in escrow or on its way there (the wallets are needed to refund it)."""
+        return any(b.get("status") in ("in escrow", "sent", "refund sent") for e in self.escrow.values() if not e.get("settled")
+                   for b in e.get("bookings") or [])
+
+    def call_off(self, e: dict, now: float, why: str):
+        if e.get("off"):
+            return
+        e["off"] = {"t": int(now), "why": why}
+        for b in e["bookings"]:
+            if b["status"] == "planned":
+                b.update(status="not booked", note="the call was called off before this booking went out")
+        held = sum(1 for b in e["bookings"] if b["status"] in ("in escrow", "sent"))
+        self.write({"t": int(now), "visit": e["id"], "ship": e["ship"], "kind": "called off", "note": why, "refunds": held,
+                    "arrival": e["t0"]})
+        log.warning("cruise: %s called off before arrival (%s), %d bookings to refund", e["id"], why, held)
+        self.save_state()
+
+    async def park_of(self, b: dict, ask) -> tuple[str | None, str | None]:
+        """(retractable id, status: open / released / retracted / None) of a booking, from its park's hash."""
+        if b.get("hash"):
+            res = await ask(f"gettxstatus {b['hash']}")
+            d = (res or {}).get("data") or {}
+            r = d.get("retractable") if isinstance(d.get("retractable"), dict) else None
+            if r and r.get("id"):
+                b["rid"] = str(r["id"])
+                st = r.get("status")
+                return b["rid"], st if st in ("open", "released", "retracted") else None
+        if b.get("rid"):
+            res = await ask(f"getretractable {b['rid']}")
+            st = ((res or {}).get("data") or {}).get("status")
+            return b["rid"], st if st in ("open", "released", "retracted") else None
+        return None, None
+
+    async def find_park(self, e: dict, b: dict, ask, mempool: bool = True) -> str | None:
+        """The passenger's booking to the till for this arrival, open or waiting in the mempool, as the node lists it."""
+        res = await ask(f"getretractables {self.wallet(e['ship'], b['p'])} out")
+        if not res or res.get("status") != "ok":
+            return None
+        d = res.get("data") or {}
+        for x in (d.get("retractables") or []) + [m for m in d.get("mempool") or [] if mempool and m.get("tx_type") == "retractable_transfer"]:
+            if str(x.get("recipient_pubkey", "")).lower() == self.till.get(e["ship"]) and int(x.get("release_at_time") or 0) == int(e["t0"]):
+                return str(x.get("retractable_id") or "") or None
+        return None
+
+    async def escrow_step(self, ask, gov, now: float) -> bool:
+        """Plans the bookings ahead of the next calls, sends one booking or refund when one is due, and settles a call
+        after its arrival. True if a transaction went out."""
+        if self.enabled:
+            for t0, ship in calls_near(now, 4):
+                vid = visit_id(t0, ship)
+                if SHIPS[ship].get("escrow") and vid not in self.escrow and t0 - ESCROW_AHEAD <= now < t0 - ESCROW_CLOSE \
+                        and not any(v.get("id") == vid for v in self.visits) and ship in self.till:
+                    bs = escrow_plan(ship, t0, now)
+                    if bs:
+                        self.escrow[vid] = {"id": vid, "ship": ship, "t0": t0, "till": self.till[ship], "off": None, "bookings": bs}
+                        self.write({"t": int(now), "visit": vid, "ship": ship, "kind": "escrow", "status": "bookings open",
+                                    "planned": len(bs), "arrival": t0, "till": self.till[ship]})
+                        self.save_state()
+        due = None
+        for e in sorted(self.escrow.values(), key=lambda x: x["t0"]):
+            if e.get("settled"):
+                continue
+            t0 = e["t0"]
+            if not e.get("off") and now < t0 - RETRACT_MARGIN:
+                if not self.enabled:
+                    self.call_off(e, now, "the ships are switched off")
+                elif now >= t0 - CALL_OFF and self.verdict(now) == "stalled":
+                    self.call_off(e, now, "the testnet was stalled at the check before arrival")
+            for b in e["bookings"]:
+                st = b["status"]
+                if st == "planned" and now >= t0 - ESCROW_CLOSE:
+                    b.update(status="not booked", note="the booking time closed before it could go out")
+                    self.save_state()
+                    continue
+                want_refund = st in ("in escrow", "sent") and (e.get("off") or (b.get("withdraw_at") and now >= b["withdraw_at"]))
+                if want_refund and now >= t0 - RETRACT_MARGIN:
+                    if not b.get("late"):
+                        b["late"] = True
+                        b["note"] = "the refund could not go out in time; the arrival releases it to the till"
+                        self.save_state()
+                    continue
+                if b.get("late") or now < b.get("wait_until", 0):
+                    continue
+                if due is None and (want_refund or (st == "planned" and now >= b["at"] and self.enabled and not e.get("off"))):
+                    due = (e, b, "refund" if want_refund else "book ahead")
+            if now >= t0 + UNRELEASED and now >= e.get("settle_next", 0):
+                await self.settle(e, ask, now)
+        if not due or now < self.hold_until or now - self.last_send < 60 / RATE:
+            return False
+        e, b, kind = due
+        if kind == "book ahead" and not self.budget():
+            return False
+        sent = False
+        try:
+            sent = bool(await self.send_escrow(e, b, kind, ask, gov, now))
+        except Exception as exc:
+            log.warning("cruise %s %s failed: %r", e["id"], kind, exc)
+        if sent:
+            self.last_send = now
+        self.save_state()
+        return sent
+
+    async def send_escrow(self, e: dict, b: dict, kind: str, ask, gov, now: float):
+        import asyncio
+        ship = e["ship"]
+        pk = self.wallet(ship, b["p"])
+        entry = {"t": int(now), "visit": e["id"], "ship": ship, "p": b["p"], "kind": kind, "to": "till", "amount": b["amount"],
+                 "from": pk, "release_at_time": e["t0"], "verdict": self.verdict(now)}
+        if kind == "book ahead" and b.get("tries"):   # an earlier send went unanswered: is it in escrow after all?
+            rid = await self.find_park(e, b, ask)
+            if rid:
+                b.update(status="in escrow", rid=rid)
+                entry.update(ok=True, retractable_id=rid, note="the earlier unanswered booking reached the node after all")
+                self.write(entry)
+                return
+        rid = None
+        if kind == "refund":
+            rid, st = await self.park_of(b, ask)
+            if not rid:   # only a booking in a block can be taken back
+                rid = await self.find_park(e, b, ask, mempool=False)
+            if st in ("released", "retracted"):
+                b["status"] = "paid out" if st == "released" else "refunded"
+                entry.update(ok=None, retractable_id=rid, note="nothing to take back: the booking is " + st)
+                self.write(entry)
+                return
+            if not rid:   # not in a block yet (or never got there): look again in a minute, until RETRACT_MARGIN
+                b["wait_until"] = int(now + 60)
+                return
+            b["rid"] = rid
+            entry["retractable_id"] = rid
+        st = await ask(f"getsequence {pk}")
+        if not st or st.get("status") != "ok":
+            entry.update(ok=None, note="no answer from the node to getsequence")
+            self.write(entry)
+            return
+        d = st.get("data") or {}
+        seq, tip = int(d.get("sequence_number") or 0), int(d.get("tip_height") or 0)
+        act = {"p": b["p"], "kind": "escrow" if kind == "book ahead" else "unbook", "amount": b["amount"], "rel": e["t0"], "till": e["till"]}
+        tx = await asyncio.to_thread(self.build, ship, act, seq, tip, base_fee(gov()), rid)
+        t_ask = time.monotonic()
+        res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))
+        entry["ms"] = int((time.monotonic() - t_ask) * 1000)
+        entry.update(seq=seq, height=tip, tx=tx)
+        if res is None:
+            n = self.clock()
+            self.hold_until, self.slow_until = n + QUIET_HOLD, n + QUIET_SLOW
+            b["tries"] = b.get("tries", 0) + 1
+            entry.update(ok=None, note=f"no answer from the node to sendtx; tried again in {QUIET_HOLD} s at the earliest")
+            if b["tries"] >= ESCROW_TRIES:
+                if kind == "book ahead":
+                    b.update(status="sent", note="sent, the node did not answer: checked on the chain after the arrival")
+                else:
+                    b["note"] = "the refund went unanswered " + str(ESCROW_TRIES) + " times: checked on the chain after the arrival"
+                    b["status"] = "refund sent"
+            self.write(entry)
+            return True
+        ok = res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False
+        h = (res.get("data") or {}).get("tx_hash") if ok else None
+        entry.update(ok=ok, hash=h)
+        if ok:
+            self.spend()
+            if kind == "book ahead":
+                b.update(status="in escrow", hash=h, booked_at=int(now))
+            else:
+                b.update(status="refund sent", refund_hash=h, refund_at=int(now))
+        else:
+            err = res.get("error") or res
+            entry["err"] = (err if isinstance(err, str) else json.dumps(err, separators=(",", ":")))[:300]
+            if kind == "book ahead":
+                b.update(status="refused", note=entry["err"][:140])
+            else:
+                b["tries"] = b.get("tries", 0) + 1
+                if b["tries"] >= ESCROW_TRIES:
+                    b["note"] = "the node refused the refund: " + entry["err"][:120]
+                    b["late"] = True   # no more tries: the arrival decides
+        self.write(entry)
+        self.on_tx and self.on_tx(ok)
+        return True
+
+    async def settle(self, e: dict, ask, now: float):
+        """After the arrival: every booking as the chain has it, paid out to the till or refunded to the passenger.
+        A booking the node cannot tell yet is asked again every SETTLE_AGAIN seconds, for six hours at most."""
+        found = []
+        for b in e["bookings"]:
+            st, rid = None, b.get("rid")
+            if b["status"] not in ("not booked", "refused", "planned"):
+                rid, st = await self.park_of(b, ask)
+                if not rid and b["status"] == "sent":   # an unanswered booking: did it reach the chain?
+                    rid = await self.find_park(e, b, ask)
+                    st = "open" if rid else None
+            found.append((b, rid, st))
+        unknown = [b for b, rid, st in found if st is None and b["status"] not in ("not booked", "refused", "planned", "sent")]
+        if unknown and now < e["t0"] + 6 * 3600:
+            e["settle_next"] = int(now + SETTLE_AGAIN)
+            self.save_state()
+            return
+        stuck, out = [], {}
+        for b, rid, st in found:
+            if st == "released":
+                b["status"] = "paid out"
+            elif st == "retracted":
+                b["status"] = "refunded"
+            elif st == "open":
+                b["status"] = "not released"
+                stuck.append({"passenger": b["p"], "retractable_id": rid, "release_at_time": e["t0"]})
+            elif b["status"] == "sent":
+                b.update(status="not booked", note="the booking never reached the chain")
+            elif b["status"] not in ("not booked", "refused"):
+                b["status"] = "unknown"
+            out[b["status"]] = out.get(b["status"], 0) + 1
+            if b["status"] in ("not booked", "refused") and not b.get("hash"):
+                continue
+            self.write({"t": int(now), "visit": e["id"], "ship": e["ship"], "p": b["p"], "kind": "escrow", "to": "till",
+                        "amount": b["amount"], "status": b["status"], "hash": b.get("hash"), "retractable_id": rid,
+                        "note": b.get("note"), "ok": b["status"] in ("paid out", "refunded")})
+        e["settled"], e["result"] = int(now), out
+        self.write({"t": int(now), "visit": e["id"], "ship": e["ship"], "kind": "escrow", "status": "settled", "result": out,
+                    "called_off": (e.get("off") or {}).get("why")})
+        if stuck:
+            self.incident(now, "not released", "Bookings ahead of the call stayed in escrow after the arrival.",
+                          {"visit": e["id"], "ship": e["ship"], "bookings": stuck})
+        self.save_state()
+
+    def escrow_view(self, now: float) -> list[dict]:
+        """The bookings ahead of the last calls, newest first, for the pages."""
+        out = []
+        for e in sorted(self.escrow.values(), key=lambda x: -x["t0"])[:4]:
+            bs = [{k: b.get(k) for k in ("p", "amount", "status", "at", "hash", "refund_hash", "note")} | {"withdraw": bool(b.get("withdraw_at"))}
+                  for b in e["bookings"]]
+            count = {}
+            for b in bs:
+                count[b["status"]] = count.get(b["status"], 0) + 1
+            out.append({"visit": e["id"], "ship": e["ship"], "name": SHIPS[e["ship"]]["name"], "arrival": e["t0"], "till": e.get("till"),
+                        "called_off": e.get("off"), "settled": bool(e.get("settled")), "count": count, "bookings": bs})
+        return out
+
     # ---------- what pages see ----------
     def brief(self, now: float | None = None) -> dict:
         """The ship in port or the next one, for the testnet load page and the game's chip."""
@@ -1046,6 +1346,7 @@ class Cruise:
                          if e.get("kind") in KINDS]
         out["last"] = self.visits[-1] if self.visits else None
         out["tried"] = self.tried
+        out["escrow"] = self.escrow_view(now)
         out["limits"] = {"per_min": RATE, "per_min_least": RATE_MIN, "visit_max": VISIT_MAX, "trial_max": TRIAL_MAX, "log_days": LOG_DAYS}
         out["pace"] = {k: self.rate_of(k) for k in SHIPS}
         out["tricks"] = {k: what for k, (_, what) in TRICKS.items()}
@@ -1114,7 +1415,7 @@ class Cruise:
             vid = (q.get("visit") or [""])[0]
             rows = [] if vid and not VISIT_RE.match(vid) else [e for e in self.logbook if not vid or e.get("visit") == vid]
             return {"simulated": True, "days": LOG_DAYS, "entries": [self.public(e) for e in rows[-n:][::-1]],
-                    "visits": [s["id"] for s in self.visits][::-1]}
+                    "visits": [s["id"] for s in self.visits][::-1], "escrow": self.escrow_view(self.clock())}
         if path == "/cruise/incidents":
             return {"simulated": True, "incidents": [self.public(i) for i in self.incidents[::-1]]}
         return None

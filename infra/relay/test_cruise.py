@@ -355,7 +355,7 @@ async def chain(cmd: str):
         return err("INVALID_SEQUENCE")
     if not G2Basic.Verify(bytes.fromhex(pk), hashlib.sha256(cruise.signing_bytes(tx)).digest(), bytes.fromhex(tx["signature"])):
         return err("INVALID_SIGNATURE")
-    amount = sum(int(x[2]) for x in tx["operations"]["1"])
+    amount = sum(int(x[2]) for x in tx.get("operations", {}).get("1", [])) if tx["tx_type"] == "user_tx" else int(tx.get("amount") or 0)
     if amount > 100000 and not CH["hole"]:
         return err("INSUFFICIENT_FUNDS")
     CH["seq"][pk] = CH["seq"].get(pk, 0) + 1
