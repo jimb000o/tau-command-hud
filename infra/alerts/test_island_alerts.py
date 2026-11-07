@@ -63,8 +63,13 @@ check("the islanders made 120 moves of their own, 7 laws passed" in t, "the isla
 check("A campaign is the week" not in t and t.rstrip().endswith("<i>Every move is one real transaction on Tau Testnet Alpha, with test AGRS that have no value.</i>"),
       "a weekday says only what is real about it, not the whole cycle")
 x = alerts.island_x(r)
-check(x.startswith("🐇 The Key Crier: yesterday on the island, 3 November") and "12 campaigns, 7 elections: Hana 4, Marisol 2, Tobias 1. 38 moves" in x
-      and "Law of the day: Night market every Friday." in x and x.endswith("#TauNet $AGRS") and alerts.x_len(x) <= 280 and "…" not in x, "the X copy fits")
+check(x.startswith("🐇 The Key Crier, 3 November: 7 island elections won: Hana 4, Marisol 2, Tobias 1.")
+      and "Every move behind it was a signed transaction on Tau Testnet Alpha (38 moves by real players that day)." in x
+      and "New law: Night market every Friday." in x and x.endswith("#TauNet $AGRS") and alerts.x_len(x) <= 280 and "…" not in x,
+      "the X copy tells the day's story and why it matters, and fits")
+check(alerts.island_story(dict(r, wins=[("Hana", 1)])) == "Hana won an island election", "one election: who won it")
+check(alerts.island_story(dict(r, wins=[])) == "New law of the island: Night market every Friday", "no election: the law passed")
+check(alerts.island_story(dict(r, wins=[], law=None)) is None, "moves alone are no story")
 q = alerts.island_report("2026-11-04", QUIET, 7)
 qt = alerts.island_text(q)
 check("A quiet day on the island" in qt and "the islanders kept their own politics going: 200 moves of their own, 6 laws passed" in qt
@@ -105,9 +110,13 @@ check(len(tg.sent) == 1 and len(x.sent) == 1 and w.state["island"]["posted"]["20
 asyncio.run(w.maybe_island(at("2026-11-06T07:01:00Z"), dict(DAY, day="2026-11-06")))
 check(len(tg.sent) == 2 and len(x.sent) == 2, "a day with players two days after the last X copy: on X again")
 asyncio.run(w.maybe_island(at("2026-11-07T07:01:00Z"), dict(DAY, day="2026-11-07")))
-check(len(tg.sent) == 3 and len(x.sent) == 2, "the next day with players: Telegram only, X had the island yesterday")
+check(len(tg.sent) == 3 and len(x.sent) == 3, "the next day with a story: on X again (a story every day may go out)")
 asyncio.run(w.maybe_island(at("2026-11-08T12:00:00Z"), dict(DAY, day="2026-11-08")))
 check(len(tg.sent) == 3, "a morning missed is not posted at noon")
+THIN = dict(DAY, players=dict(DAY["players"], campaigns=1, finished=0, moves=3, wins={}, laws={}))
+asyncio.run(w.maybe_island(at("2026-11-09T23:50:00Z"), dict(THIN, day="2026-11-09")))
+asyncio.run(w.maybe_island(at("2026-11-10T07:01:00Z"), dict(THIN, day="2026-11-10")))
+check(len(tg.sent) == 4 and len(x.sent) == 3, "a day of moves alone (1 campaign, 3 moves): Telegram only, nothing on X")
 
 # Telegram failing: X goes alone, the Telegram retry later does not repeat it on X
 tg2, x2 = Fake("telegram", fail=True), Fake("x")

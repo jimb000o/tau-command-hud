@@ -235,13 +235,15 @@ DEEPDIVE_DAYS = tuple(sorted({int(x) for x in os.environ.get("DEEPDIVE_DAYS", "0
 DEEPDIVE_LINE = "🔎 TAU HUD · a closer look"
 DEEPDIVE_FOOT = "🔎 A closer look at Tau HUD"
 # The Key Crier: White Rabbit Key's shared island (relay /isle) summed up every morning for the day before, at
-# ISLAND_HOUR UTC; the X copy at most every ISLAND_X_EVERY_DAYS days, and only for a day real players moved.
+# ISLAND_HOUR UTC; the X copy only for a day with a story (an election won or a law passed by real players), told as
+# that story, at most every ISLAND_X_EVERY_DAYS days (since 7 November 2026: "1 campaign, 3 moves" read like spam; a
+# day of moves alone stays on Telegram).
 # On Monday the report opens with the governor's count: who governs the island this week and which laws hold (the
 # relay's `last`, decided at Monday 00:00 German time), on X too.
 ISLAND_ON = os.environ.get("ISLAND_CRIER", "true").lower() in ("1", "true", "yes")
 ISLAND_HOUR = int(os.environ.get("ISLAND_HOUR", 7))         # UTC (08:00 German winter time: the morning paper)
 ISLAND_EVERY = float(os.environ.get("ISLAND_POLL_SECONDS", 600))
-ISLAND_X_EVERY_DAYS = max(1, int(os.environ.get("ISLAND_X_EVERY_DAYS", 2)))
+ISLAND_X_EVERY_DAYS = max(1, int(os.environ.get("ISLAND_X_EVERY_DAYS", 1)))
 ISLAND_DAYS = int(os.environ.get("ISLAND_DAYS", 7))         # a campaign's length; rabbit/game.js DAYS is read when reachable
 ISLAND_GAME_JS = f"{SITE}/rabbit/game.js"
 ISLAND_LINK = f"{SITE}/rabbit/"
@@ -1566,6 +1568,19 @@ def island_buttons() -> dict:
     return {"inline_keyboard": [[{"text": "🐇 Play today's island", "url": ISLAND_LINK}]]}
 
 
+def island_story(r: dict) -> str | None:
+    """The day's story for X, or None: an election won by real players (who won), else a law they passed. A day of
+    moves alone is no story; it stays on Telegram."""
+    if r.get("wins"):
+        won = sum(c for _, c in r["wins"])
+        if won == 1:
+            return f"{r['wins'][0][0]} won an island election"
+        return f"{won} island elections won: " + ", ".join(f"{n} {c}" for n, c in r["wins"][:3])
+    if r.get("law"):
+        return f"New law of the island: {r['law']}"
+    return None
+
+
 def island_card(r: dict) -> list[str]:
     """The card on the Key Crier's picture: the same facts as the post, so the picture alone says why it matters."""
     w = r.get("week")
@@ -1573,8 +1588,8 @@ def island_card(r: dict) -> list[str]:
         return [f"The governor's count, {w['span']}", f"{w['governor']} governs the island this week",
                 f"{plural(w['won'], 'campaign')} won of {w['finished']}, every move a real transaction",
                 "White Rabbit Key on Tau Testnet Alpha"]
-    return [f"Yesterday on the island, {r['date']}", f"{plural(r['campaigns'], 'campaign')}, {plural(r['moves'], 'move')}",
-            "each a real transaction on Tau Testnet Alpha", "White Rabbit Key · tauhud.com/rabbit"]
+    return [island_story(r) or f"Yesterday on the island, {r['date']}", f"{r['date']}: {plural(r['moves'], 'move')} by real players,",
+            "each one a signed transaction on Tau Testnet Alpha", "White Rabbit Key · tauhud.com/rabbit"]
 
 
 def island_picture(card: list[str] | None = None, name: str = "today.jpg") -> str | None:
@@ -1598,13 +1613,16 @@ def island_x(r: dict) -> str:
             lines.append("Laws of the island: " + "; ".join(w["laws"]) + ".")
         lines.append(f"Every campaign won is a ballot; every move a real transaction on Tau Testnet Alpha.")
         return x_post(lines, foot=ISLAND_FOOT)
-    head = f"🐇 The Key Crier: yesterday on the island, {r['date']}"
-    body = f"{plural(r['campaigns'], 'campaign')}"
-    if r["finished"]:
-        body += f", {plural(r['finished'], 'election')}" + (": " + ", ".join(f"{n} {c}" for n, c in r["wins"][:3]) if r["wins"] else "")
-    body += f". {plural(r['moves'], 'move')}, each a real transaction on Tau Testnet Alpha."
-    lines = [head, body] + ([f"Law of the day: {r['law']}."] if r["law"] else [])
-    return x_post(lines, foot=ISLAND_FOOT)
+    story = island_story(r)
+    if story:   # what happened, then why it matters: the island's politics are real transactions anyone can check
+        lines = [f"🐇 The Key Crier, {r['date']}: {story}.",
+                 f"Every move behind it was a signed transaction on Tau Testnet Alpha ({plural(r['moves'], 'move')} by real players that day)."]
+        if r.get("wins") and r.get("law"):   # the first to go when the post is too long
+            lines.append(f"New law: {r['law']}.")
+        return x_post(lines, keep=2, foot=ISLAND_FOOT)
+    head = f"🐇 The Key Crier: yesterday on the island, {r['date']}"   # not posted on X (no story); --island-preview
+    body = f"{plural(r['campaigns'], 'campaign')}. {plural(r['moves'], 'move')}, each a real transaction on Tau Testnet Alpha."
+    return x_post([head, body], foot=ISLAND_FOOT)
 
 
 # ---------------- outlets ----------------
@@ -2924,8 +2942,8 @@ class Watcher:
     # ---------- the Key Crier: White Rabbit Key's shared island, the day before (relay /isle) ----------
     async def maybe_island(self, now: float | None = None, snap: dict | None = None):
         """Keep the island's day as the relay sums it up (the last reading before midnight UTC is the day), and every
-        morning at ISLAND_HOUR UTC report the day before: Telegram when a real player moved, the X copy only for a day real
-        players moved and at most every ISLAND_X_EVERY_DAYS days; X never waits for Telegram. On Monday the report
+        morning at ISLAND_HOUR UTC report the day before: Telegram when a real player moved, the X copy only for a day with
+        a story (island_story: an election won, a law passed) and at most every ISLAND_X_EVERY_DAYS days; X never waits for Telegram. On Monday the report
         opens with the governor's count of the week just ended (relay `last`), then goes out on X as well."""
         if not ISLAND_ON:
             return
@@ -2978,11 +2996,11 @@ class Watcher:
             last_x = max([t for t in st["x_posted"].values() if t], default=0)
             st["x_posted"][day] = round(now)
             self.save_state()
-            if r["week"] or r["players"] and (not last_x or (now - last_x) >= (ISLAND_X_EVERY_DAYS - 0.5) * 86400):
+            if r["week"] or island_story(r) and (not last_x or (now - last_x) >= (ISLAND_X_EVERY_DAYS - 0.5) * 86400):
                 pic = await asyncio.to_thread(island_picture, island_card(r), "crier.jpg")
                 await self.post_x(island_x(r), "island " + day, now, pic, spare=True)
             else:
-                st["x_posted"][day] = 0   # Telegram only: nobody played, or X had the island lately
+                st["x_posted"][day] = 0   # Telegram only: no election won and no law passed, or X had the island lately
                 log.info("island %s: Telegram only", day)
         for k in ("posted", "x_posted"):
             for old in sorted(st[k])[:-14]:
