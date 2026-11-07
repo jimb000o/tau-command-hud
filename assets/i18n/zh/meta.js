@@ -110,7 +110,7 @@ TauI18n.add({ strings: {
   "Testnet transactions": "测试网交易",
   "Transactions in the testnet's blocks, sorted by where they came from. Counted by the Tau HUD relay from the blocks it keeps; one person can hold several wallets.": "测试网区块中的交易，按来源分类。由 Tau HUD 中继根据它保存的区块统计；一个人可以拥有多个钱包。",
   "meals and votes: payments to Agorzilla's bowl and ballot boxes": "喂食和投票：付给 Agorzilla 食盆和投票箱的交易",
-  "sent from a Tau HUD page: wallet, playground, vote, No Memo (our terminal game, real players)": "从 Tau HUD 页面发送：钱包、试验场、投票、No Memo（我们的终端游戏，真实玩家）",
+  "sent from a Tau HUD page: wallet, playground, vote": "从 Tau HUD 页面发送：钱包、试验场、投票",
   "everything else: other wallets, scripts and tools": "其他所有：别的钱包、脚本和工具",
   "elsewhere": "其他来源",
   "transactions": "笔交易",
@@ -370,7 +370,7 @@ TauI18n.add({ strings: {
   "With IDNI's genesis testing: our sites {p} of all {n}": "算上 IDNI 创世账户的测试：我们的网站占全部 {n} 笔中的 {p}",
   "through our sites": "来自我们的网站",
   "White Rabbit Key, our island game on tauhud.com: the players' own lines and ballots. The island bot's moves and wages and the cruise ships' simulated passengers are counted apart, never as users.": "白兔礁，我们在 tauhud.com 上的海岛游戏：玩家自己的记录和选票。海岛机器人的行动和工资以及游轮的模拟乘客单独统计，从不算作用户。",
-  "Share of the user transactions in this range that came through our sites: Agorzilla, the Tau HUD pages and White Rabbit Key. User transactions are everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests, and our own server's automation: the cruise ships' simulated passengers and the island bot, shown apart below. Counted in transactions and wallets, not people.": "本范围内用户交易中来自我们网站的比例：Agorzilla、Tau HUD 各页面和白兔礁。用户交易指测试网上的全部交易，但不含 IDNI 的 11 个创世账户（IDNI 测试时大部分流量来自这些账户），也不含我们服务器自己的自动交易：游轮的模拟乘客和海岛机器人，在下方单独列出。按交易和钱包统计，不是按人。",
+  "Share of the user transactions in this range that came through our sites: Agorzilla, the Tau HUD pages, White Rabbit Key and No Memo. User transactions are everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests, and our own server's automation: the cruise ships' simulated passengers and the island bot, shown apart below. Counted in transactions and wallets, not people.": "本范围内用户交易中来自我们网站的比例：Agorzilla、Tau HUD 各页面、白兔礁和 No Memo。用户交易指测试网上的全部交易，但不含 IDNI 的 11 个创世账户（IDNI 测试时大部分流量来自这些账户），也不含我们服务器自己的自动交易：游轮的模拟乘客和海岛机器人，在下方单独列出。按交易和钱包统计，不是按人。",
   "Our cruise ships: simulated passengers on White Rabbit Key's island, sent by our server as paced test load (at most 12 a minute). Real transactions on the testnet, but no people: never counted as user transactions.": "我们的游轮：白兔礁海岛上的模拟乘客，由我们的服务器作为有节奏的测试负载发送（每分钟最多 12 笔）。是测试网上的真实交易，但不是人：从不算作用户交易。",
   "The island bot of White Rabbit Key: the rival candidates' moves and the wages the island pays players, sent by our server. Real transactions, but no people: never counted as user transactions.": "白兔礁的海岛机器人：对手候选人的行动和海岛付给玩家的工资，由我们的服务器发送。是真实交易，但不是人：从不算作用户交易。",
   "our cruise ships": "我们的游轮",
@@ -381,4 +381,5 @@ TauI18n.add({ strings: {
   "our sites, by users": "我们的网站（用户）",
   "our cruise ships and island bot": "我们的游轮和海岛机器人",
   "Our cruise ships and the island bot are not users either.": "我们的游轮和海岛机器人也不算用户。",
+  "No Memo, our terminal game on tauhud.com: contracts a player sends from their own test wallet. Real players' transactions.": "No Memo，我们在 tauhud.com 上的终端游戏：玩家用自己的测试钱包发送的合约。是真实玩家的交易。",
 } });

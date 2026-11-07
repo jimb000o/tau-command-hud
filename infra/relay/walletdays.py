@@ -106,6 +106,7 @@ class WalletDays:
         if rabbit(tx, {}):
             return "rabbit"
         g = group(tx, tx_hash, sent)
+        g = "tauhud" if g == "nomemo" else g   # No Memo is a page of tauhud.com: its players count as Tau HUD's wallets
         return g if g in ("rabbit", "agorzilla", "tauhud") else "other"
 
     def add_blocks(self, blocks: list[dict], sent: dict | None = None) -> bool:
