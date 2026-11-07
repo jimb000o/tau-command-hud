@@ -134,7 +134,9 @@ def last_lines(f: dict | None) -> tuple[str, str, str]:
     tricks = f.get("pirate tricks") or {}
     if tricks.get("tried"):   # the pirates: what the chain refused, never what got through (that waits for the owner)
         tg = (f"On her last call, {date}, the chain refused {tricks.get('refused with the expected answer', 0)} of her pirates' "
-              f"{tricks['tried']} tricks with the answer it should give.")
+              f"{tricks['tried']} tricks with the answer it should give."
+              + (" Each is a check the chain itself makes on every payment, whoever sends it."
+                 if tricks.get("refused with the expected answer", 0) == tricks["tried"] else ""))
         card = f"- Last call: {tricks.get('refused with the expected answer', 0)} of {tricks['tried']} tricks refused"
         return tg + changed_line(f), card, ""
     old = f.get("refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)") or 0

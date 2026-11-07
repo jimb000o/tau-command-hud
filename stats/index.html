@@ -74,7 +74,10 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .filters .lbl { font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); margin-right: 4px; }
 .filters button { font: 600 12px var(--display); letter-spacing: .12em; text-transform: uppercase; background: transparent; color: var(--dim); border: 1px solid var(--hair); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
 .filters button[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
-.filters button:hover:not([aria-pressed="true"]) { color: #fff; border-color: #fff; }
+.filters button:hover:not([aria-pressed="true"]):not(:disabled) { color: #fff; border-color: #fff; }
+.filters button:disabled { opacity: .45; cursor: help; }
+.chart .nk rect { fill: rgba(255,255,255,.06); }
+.chart .nk text { font-size: 11px; fill: var(--dim); }
 .filters .span { color: var(--dim); font-size: 12px; }
 .tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); }
 .tile { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; cursor: default; }
@@ -241,6 +244,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
     </div>
     <div class="filters" role="group" aria-label="Time range">
       <span class="lbl">Range</span>
+      <button type="button" data-range="-1" aria-pressed="false" id="allBtn" data-tip="Every chain our relay has seen, one timeline: a testnet restart does not reset these charts.">All chains</button>
       <button type="button" data-range="0" aria-pressed="true">This chain</button>
       <button type="button" data-range="86400" aria-pressed="false">24 h</button>
       <button type="button" data-range="21600" aria-pressed="false">6 h</button>
@@ -307,7 +311,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
   </main>
 
   <footer>
-    <p id="foot">Data: our node at node.tauhud.com<span class="vt"> (tau-testnet pinned to commit 64ceb40)</span>, served by a read-only relay. <a class="vt" id="rawLink" href="https://node.tauhud.com/stats" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra" target="_blank" rel="noopener">How it works</a> · <a href="/playground/">Rule Playground</a> · <a href="/history/">Time travel</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BStats%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+    <p id="foot">Data: our node at node.tauhud.com<span class="vt"> (tau-testnet pinned to commit 668fbf4)</span>, served by a read-only relay. <a class="vt" id="rawLink" href="https://node.tauhud.com/stats" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra" target="_blank" rel="noopener">How it works</a> · <a href="/playground/">Rule Playground</a> · <a href="/history/">Time travel</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BStats%5D%20" target="_blank" rel="noopener">Feedback</a></p>
   </footer>
 </div>
 
@@ -317,6 +321,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
 "use strict";
 const $ = id => document.getElementById(id);
 const RELAY = "node.tauhud.com";
+const HISTORY_URL = `https://${RELAY}/history`;
 const STATS_URL = `https://${RELAY}/stats`, WS_URL = `wss://${RELAY}`, COMMUNITY_URL = `https://${RELAY}/community`;
 const PARAMS = new URLSearchParams(location.search);
 const SAMPLE = PARAMS.has("sample");
@@ -372,7 +377,7 @@ const quant = (a, q) => { if (!a.length) return null; const s = [...a].sort((x, 
 
 /* ------------------------------ data ------------------------------ */
 // D: { rows:[{n,ts,txs,transfers,volume,types,senders:Set}], accounts:[], restarts:[], dropped:[], droppedTotal, governance, trackingSince, head, canonical, tip, mode }
-let D = null, RANGE = 0, lastFetch = 0;
+let D = null, RANGE = PARAMS.get("range") === "all" ? -1 : 0, lastFetch = 0;
 let PEERS = null;  // GET /peers: every node our node met or heard of (null until it answers)
 let NODES = null;  // GET /community: other people's nodes and how they compare with ours (null until it answers)
 
@@ -497,7 +502,7 @@ function sampleNodes() {
 /* ------------------------------ derived ------------------------------ */
 function inRange() {
   const rows = D.rows.filter(r => r.n > 0 && r.ts);   // the genesis block carries a fixed timestamp
-  if (!RANGE || !rows.length) return rows;
+  if (RANGE <= 0 || !rows.length) return rows;
   const end = Math.max(rows[rows.length - 1].ts, Date.now() / 1000), from = end - RANGE;
   return rows.filter(r => r.ts >= from);
 }
@@ -999,6 +1004,14 @@ function render() {
   }
   // range buttons
   document.querySelectorAll("[data-range]").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.range) === RANGE)));
+  const allBtn = $("allBtn");
+  allBtn.disabled = !HIST;
+  allBtn.dataset.tip = HIST ? "Every chain our relay has seen, one timeline: a testnet restart does not reset these charts."
+    : HIST === null ? "Loading the history of every chain…" : SIM ? "The simulation has a single made-up chain, so there is no history across restarts."
+    : "Our relay starts keeping every chain’s history with its next update; until then only the current chain is shown.";
+  if (RANGE === -1 && HIST === false) RANGE = 0;
+  const ALL = RANGE === -1 && !!HIST;
+  document.querySelectorAll("[data-range]").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.range) === RANGE)));
   $("rangeSpan").textContent = rows.length ? `blocks #${fmtN(rows[0].n)}–#${fmtN(rows[rows.length - 1].n)} · ${fmtWhen(rows[0].ts)} to ${fmtWhen(rows[rows.length - 1].ts)} · your local time` : "no blocks in this range";
 
   // block times
@@ -1046,7 +1059,7 @@ function render() {
   });
 
   // dropped
-  const since = D.trackingSince, dr = (D.dropped || []).filter(x => !RANGE || x.left >= now - RANGE);
+  const since = D.trackingSince, dr = (D.dropped || []).filter(x => RANGE <= 0 || x.left >= now - RANGE);
   if (D.mode === "window") { $("hDropped").textContent = "Counted by the relay once it keeps the history."; $("droppedWrap").replaceChildren(); }
   else {
     $("hDropped").replaceChildren(document.createTextNode(dr.length ? `${fmtN(dr.length)} dropped in this range. ` : "None dropped in this range. "), el("span", "", since ? `Watching since ${fmtDay(since)}, ${fmtTime(since)}.` : ""));
@@ -1077,6 +1090,163 @@ function render() {
     tile("Rule changes", g ? fmtN(g.activated) : "—", "agreed", g ? `${fmtN(g.pending + g.scheduled)} open · ${fmtN(g.expired)} expired · ${fmtN(g.validators)} validator${g.validators === 1 ? "" : "s"}` : "",
       "Changes to the network’s own rules that reached agreement,\nplus the ones still open or that missed quorum.", "this chain"),
   );
+  if (ALL) renderAll(now, { last, g, nRestarts, rs, dr });
+}
+
+/* ------------------------------ all chains ------------------------------ */
+/* GET /history (relay chainhist.py): what every chain held per UTC hour and day, written down while its blocks were
+   there, so these charts keep growing across testnet restarts. A chain that ended before the relay counted it is only
+   known by how far it got (kept "tip"): its stretch is marked, its blocks are not in the bars. */
+let HIST = null;   // null while loading, false when the relay has no /history yet
+async function loadHistory() {
+  if (SAMPLE) { HIST = sampleHistory(); render(); return; }
+  if (SIM) { HIST = false; render(); return; }
+  try {
+    const r = await fetch(HISTORY_URL, { cache: "no-store" });
+    if (!r.ok) throw new Error(String(r.status));
+    const j = await r.json();
+    HIST = j && Array.isArray(j.chains) && j.chains.length ? j : false;
+  } catch (e) { if (!HIST) HIST = false; }
+  render();
+}
+function histSlots(px) {
+  const now = Date.now() / 1000, chains = HIST.chains, F = HIST.fields;
+  const t0 = Math.min(now - 86400, ...chains.map(c => c.start).filter(Boolean));
+  const span = now - t0, hourly = span <= Math.min(21, HIST.hour_days || 90) * 86400;
+  const maxBars = Math.max(24, Math.floor(px / 10));
+  const size = [1, 2, 3, 6, 12, 24, 48, 168, 336].map(h => h * 3600).filter(z => hourly || z >= 86400).find(z => span / z <= maxBars) || 28 * 86400;
+  const first = Math.floor(t0 / size) * size, list = [];
+  for (let t = first; t <= now; t += size) { const b = { t, end: t + size, chains: new Set() }; F.forEach(f => b[f] = 0); list.push(b); }
+  for (const r of hourly ? HIST.hours : HIST.days) {
+    const ts = hourly ? r[0] : Date.parse(r[0] + "T00:00:00Z") / 1000, b = list[Math.floor((ts - first) / size)];
+    if (!b) continue;
+    F.forEach((f, i) => { const v = Number(r[2 + i]) || 0; b[f] = f === "gap_max" ? Math.max(b[f], v) : b[f] + v; });
+    b.chains.add(r[1]);
+  }
+  return { size, list, first };
+}
+// restarts and not-kept stretches over a chart whose bars stand for equal time slots (barChart, histBlockChart)
+function chainMarks(host, bk) {
+  const svg = host.querySelector("svg"); if (!svg) return;
+  const [, , w, h] = svg.getAttribute("viewBox").split(" ").map(Number), L = 40, R = 12, T = 10, B = 26;
+  const slotW = (w - L - R) / bk.list.length, X = t => Math.max(L, Math.min(w - R, L + (t - bk.first) / bk.size * slotW));
+  const under = svg.querySelector("g.bar, path, circle");
+  HIST.chains.filter(c => c.kept === "tip" && c.start && c.end).forEach(c => {
+    const g = svgEl("g", { class: "nk" }), a = X(c.start), z = X(c.end);
+    svgEl("rect", { x: a, y: T, width: Math.max(2, z - a), height: h - T - B }, g);
+    if (z - a > 60) { const t = svgEl("text", { x: (a + z) / 2, y: h - B - 6, "text-anchor": "middle" }, g); t.textContent = "not kept"; }
+    const lines = [["tv", `Chain ${c.n}: #${fmtN(c.tip || 0)} blocks`], ["", `Ran from ${fmtWhen(c.start)} to ${fmtWhen(c.end)}`], ["tm", "Ended before our relay kept each chain’s history: only its length is known."]];
+    g.addEventListener("pointermove", ev => showTip(ev, tipLines(lines))); g.addEventListener("pointerleave", hideTip);
+    svg.insertBefore(g, under);
+  });
+  const rs = svgEl("g", { class: "rs" }, svg);
+  HIST.chains.slice(1).forEach(c => {
+    if (!c.start) return;
+    const x = X(c.start), left = x > w - R - 50; svgEl("line", { x1: x, x2: x, y1: T, y2: h - B }, rs);
+    const l = svgEl("text", { x: left ? x - 3 : x + 3, y: T + 8, "text-anchor": left ? "end" : "start" }, rs); l.textContent = "restart";
+  });
+  rs.style.pointerEvents = "none";
+}
+// average time between blocks per slot (the relay keeps sums, so slots of any length add up exactly), slowest as dots
+function histBlockChart(bk) {
+  const host = $("cBlocks"), legend = $("lBlocks"), pts = bk.list.filter(b => b.gap_n);
+  if (pts.length < 2) { host.replaceChildren(el("div", "empty", "Needs at least two time slots with blocks.")); legend.replaceChildren(); return; }
+  const f = frame(host, 230), px = f.w - f.L - f.R, py = f.h - f.T - f.B, slotW = px / bk.list.length;
+  const avg = b => b.gap_sum / b.gap_n, avgs = pts.map(avg), all = pts.reduce((a, b) => a + b.gap_sum, 0) / pts.reduce((a, b) => a + b.gap_n, 0);
+  const sc = niceScale(Math.max(Math.max(...avgs) * 1.15, all * 2.5)), maxV = sc.max;
+  yAxis(f, sc, " s");
+  xTimeAxis({ ...f, L: f.L + slotW / 2, R: f.R + slotW / 2 }, bk.list[0].t, bk.list[bk.list.length - 1].t);
+  const X = b => f.L + ((b.t - bk.first) / bk.size + 0.5) * slotW, Y = v => f.h - f.B - Math.min(v, maxV) / maxV * py;
+  const ay = Y(all);
+  svgEl("line", { x1: f.L, x2: f.w - f.R, y1: ay, y2: ay, stroke: "#8a8a94", "stroke-width": 1.5, "stroke-dasharray": "5 4" }, f.svg);
+  const al = svgEl("text", { x: f.L + 6, y: ay - 6, style: "fill:#ebebee;paint-order:stroke;stroke:#101012;stroke-width:4px" }, f.svg); al.textContent = `average ${fmtDur(all)}`;
+  // one line per run of slots with blocks: an empty slot (no chain running) breaks it
+  let d = "", prev = null;
+  for (const b of bk.list) { if (b.gap_n) { d += `${prev && prev.gap_n ? "L" : "M"}${X(b).toFixed(1)},${Y(avg(b)).toFixed(1)}`; } prev = b; }
+  svgEl("path", { d, fill: "none", stroke: "#ebebee", "stroke-width": 2, "stroke-linejoin": "round" }, f.svg);
+  const slow = pts.filter(b => b.gap_max > all * 1.5);
+  slow.forEach(b => b.gap_max > maxV ? svgEl("path", { d: `M${X(b) - 5},${f.T + 6} L${X(b) + 5},${f.T + 6} L${X(b)},${f.T - 1} Z`, fill: "#fff" }, f.svg)
+    : svgEl("circle", { cx: X(b), cy: Y(b.gap_max), r: 2.5, fill: "#ebebee", "fill-opacity": .8, "pointer-events": "none" }, f.svg));
+  const lg = (cls, text, style) => { const sp = el("span"), i = el("i", cls); if (style) i.style.cssText = style; sp.append(i, document.createTextNode(text)); return sp; };
+  legend.replaceChildren(lg("ln", `average ${perLabel(bk.size)}`, "background:#fff"), ...(slow.length ? [lg("dot", "slowest block of the slot")] : []),
+    ...(slow.some(b => b.gap_max > maxV) ? [lg("tri", "off the scale")] : []), lg("dash", "average of all chains"));
+  const xh = svgEl("line", { class: "xh", y1: f.T, y2: f.h - f.B, visibility: "hidden" }, f.svg);
+  const hit = svgEl("rect", { class: "hit", x: f.L, y: f.T, width: px, height: py }, f.svg);
+  hit.addEventListener("pointermove", ev => {
+    const r = f.svg.getBoundingClientRect(), x = (ev.clientX - r.left) * f.w / r.width;
+    const b = pts.reduce((a, c) => Math.abs(X(c) - x) < Math.abs(X(a) - x) ? c : a);
+    xh.setAttribute("x1", X(b)); xh.setAttribute("x2", X(b)); xh.setAttribute("visibility", "visible");
+    showTip(ev, tipLines([["tv", `average ${fmtDur(avg(b))}`], ["", `Slowest block: ${fmtDur(b.gap_max)}.`],
+      ["tm", `${fmtN(b.blocks)} blocks · ${bucketLabel(b, bk.size)} · chain ${[...b.chains].join(", ")}`]]));
+  });
+  hit.addEventListener("pointerleave", () => { xh.setAttribute("visibility", "hidden"); hideTip(); });
+  chainMarks(host, bk);
+  return all;
+}
+function renderAll(now, ctx) {
+  const chains = HIST.chains, tot = HIST.totals || {}, cur = chains.find(c => c.current) || chains[chains.length - 1];
+  const counted = chains.filter(c => c.kept !== "tip"), since = tot.counted_since || (counted[0] && counted[0].start);
+  $("rangeSpan").textContent = `${fmtN(chains.length)} chain${chains.length === 1 ? "" : "s"} since ${fmtDay(chains[0].start || now)} · counted block by block since ${since ? fmtDay(since) : "—"} · your local time`;
+  const host = $("cTx"), bk = histSlots(Math.max(280, host.clientWidth - 52)), per = perLabel(bk.size);
+  // block time
+  const avgAll = histBlockChart(bk), slowest = bk.list.reduce((a, b) => b.gap_max > (a ? a.gap_max : 0) ? b : a, null);
+  $("hBlocks").replaceChildren(document.createTextNode(avgAll ? `Over all chains, a block came every ${fmtDur(avgAll)} on average. ` : "Waiting for blocks. "),
+    el("span", "", slowest && slowest.gap_max ? `Longest wait: ${fmtDur(slowest.gap_max)}, ${bucketLabel(slowest, bk.size)}.` : ""));
+  table($("tBlocks"), [["Period"], ["Blocks", 1], ["Average seconds", 1], ["Slowest", 1]],
+    [...bk.list].filter(b => b.blocks).reverse().map(b => [bucketLabel(b, bk.size), fmtN(b.blocks), b.gap_n ? fmtN(b.gap_sum / b.gap_n) : "—", b.gap_n ? fmtN(b.gap_max) : "—"]));
+  // transactions
+  barChart(host, bk, KINDS, (b, k) => b[k], (b, t) => tipLines([["tv", `${fmtN(t)} transaction${t === 1 ? "" : "s"}`],
+    ...KINDS.filter(([k]) => b[k]).map(([k, name]) => ["", `${fmtN(b[k])} ${name.toLowerCase()}`]),
+    ["tm", `${bucketLabel(b, bk.size)} · ${fmtN(b.blocks)} block${b.blocks === 1 ? "" : "s"}${b.chains.size ? ` · chain ${[...b.chains].join(", ")}` : ""}`]]));
+  chainMarks(host, bk);
+  const busiest = bk.list.reduce((a, b) => (!a || b.txs > a.txs) ? b : a, null);
+  $("hTx").replaceChildren(document.createTextNode(tot.txs ? `${fmtN(tot.txs)} transactions on ${fmtN(counted.length)} chain${counted.length === 1 ? "" : "s"}. ` : "No transactions counted yet. "),
+    el("span", "", busiest && busiest.txs ? `Busiest: ${fmtN(busiest.txs)} ${per.replace("per ", "in one ")}, ${bucketLabel(busiest, bk.size)}.` : ""));
+  table($("tTx"), [["Period"], ["Transfers", 1], ["Rule work", 1], ["Governance", 1], ["Blocks", 1]],
+    [...bk.list].filter(b => b.blocks).reverse().map(b => [bucketLabel(b, bk.size), fmtN(b.transfer), fmtN(b.rule), fmtN(b.gov), fmtN(b.blocks)]));
+  // types over every counted chain
+  const types = {}; counted.forEach(c => Object.entries(c.types || {}).forEach(([k, v]) => types[k] = (types[k] || 0) + v));
+  const tb = $("types"), sum = Object.values(types).reduce((a, b) => a + b, 0); tb.replaceChildren();
+  Object.entries(types).sort((a, b) => b[1] - a[1]).forEach(([k, v]) => {
+    const [name, what] = TYPE_NAMES[k] || [k, "other transaction type"], tr = el("tr"), td = el("td");
+    const sw = el("i"); sw.style.cssText = `display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:8px;background:${KINDS.find(x => x[0] === KIND(k))[3]}`;
+    td.append(sw, document.createTextNode(name), el("span", "what", what));
+    tr.append(td, el("td", "n", fmtN(v)), el("td", "n", `${Math.round(v / sum * 100)} %`)); tb.append(tr);
+  });
+  // tiles
+  const { last, g, nRestarts, rs, dr } = ctx, tiles = $("tiles"); tiles.replaceChildren();
+  tiles.append(
+    tile("Chain height", last ? `#${fmtN(last.n)}` : "—", "", last ? `newest block ${fmtDur(now - last.ts)} ago` : "waiting for the first block",
+      "Number of the newest block on the current chain.\nCounts from the last restart.", "now"),
+    tile("Blocks", fmtN(tot.blocks || 0), "", `on ${fmtN(chains.length)} chain${chains.length === 1 ? "" : "s"}${cur && cur.tip ? `, ${fmtN(cur.tip)} on this one` : ""}`,
+      "Blocks of every chain our relay has seen, added up.\nA chain that ended before we counted it adds its length.", "all chains"),
+    tile("Block time", avgAll ? fmtDur(avgAll) : "—", "average", "between two blocks, over every counted chain",
+      "Seconds from one block to the next, averaged over every chain\ncounted block by block. Stalls count in.", "all chains"),
+    tile("Transactions", fmtN(tot.txs || 0), "", `${fmtN(tot.transfers || 0)} transfers moved ${fmtN(tot.volume || 0)} AGRS`,
+      "Transactions sealed into blocks on every chain counted block by block.\nAGRS are testnet balances with no real value.", since ? `since ${fmtDay(since)}` : "all chains"),
+    tile("Dropped", fmtN(D.droppedTotal || dr.length), "", "left our mempool without a block",
+      "Seen waiting at our node, then gone without a block.\nRefusals at other nodes never reach us.", "all chains"),
+    tile("Restarts", fmtN(nRestarts), "known", rs.cur ? `current chain running ${fmtDur(now - rs.cur.from)}` : "",
+      "Times the testnet started over from its genesis.\nOur relay keeps each chain’s history across them.", "all time"),
+    tile("Rule changes", g ? fmtN(g.activated) : "—", "agreed", g ? `${fmtN(g.pending + g.scheduled)} open · ${fmtN(g.expired)} expired · ${fmtN(g.validators)} validator${g.validators === 1 ? "" : "s"}` : "",
+      "Changes to the network’s own rules that reached agreement,\nplus the ones still open or that missed quorum.", "this chain"),
+  );
+}
+// ?sample: an earlier chain known only by its length, then the sample chain counted block by block
+function sampleHistory() {
+  const F = ["blocks", "txs", "transfer", "rule", "gov", "transfers", "volume", "gap_sum", "gap_n", "gap_max"], rows = D ? D.rows.filter(r => r.n > 0) : [];
+  const hours = new Map(), days = new Map(), add = (m, k, r, gap) => { const v = m.get(k) || F.map(() => 0);
+    const ty = r.types || {}, kinds = { transfer: 0, rule: 0, gov: 0 }; Object.entries(ty).forEach(([t, c]) => kinds[KIND(t)] += c);
+    [1, r.txs, kinds.transfer, kinds.rule, kinds.gov, r.transfers, r.volume, gap || 0, gap != null ? 1 : 0].forEach((x, i) => v[i] += x); v[9] = Math.max(v[9], gap || 0); m.set(k, v); };
+  rows.forEach((r, i) => { const gap = i ? r.ts - rows[i - 1].ts : null; add(hours, r.ts - r.ts % 3600, r, gap); add(days, new Date(r.ts * 1000).toISOString().slice(0, 10), r, gap); });
+  const start = rows.length ? rows[0].ts : Date.now() / 1000, end = rows.length ? rows[rows.length - 1].ts : start;
+  const types = {}; rows.forEach(r => Object.entries(r.types).forEach(([k, c]) => types[k] = (types[k] || 0) + c));
+  const txs = rows.reduce((a, r) => a + r.txs, 0);
+  return { fields: F, hour_days: 90, chains: [
+    { n: 1, start: start - 30 * 3600, end: start - 20 * 3600, tip: 512, kept: "tip", current: false },
+    { n: 2, start, end, tip: rows.length, first: 1, kept: "full", current: true, types, blocks: rows.length, txs }],
+    hours: [...hours].map(([k, v]) => [k, 2, ...v]), days: [...days].map(([k, v]) => [k, 2, ...v]),
+    totals: { chains: 2, blocks: 512 + rows.length, txs, transfers: rows.reduce((a, r) => a + r.transfers, 0), volume: rows.reduce((a, r) => a + r.volume, 0), counted_since: start } };
 }
 
 const AGREE = {
@@ -1145,10 +1315,10 @@ document.querySelectorAll("[data-table]").forEach(b => b.addEventListener("click
   if (!on) render();
 }));
 let rz; new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(render, 120); }).observe(document.querySelector(".wrap"));
-load().then(() => { loadNodes(); loadWallets(); });
+load().then(() => { loadNodes(); loadWallets(); loadHistory(); });
 document.querySelectorAll("[data-win]").forEach(b => b.addEventListener("click", () => { WIN = Number(b.dataset.win); render(); }));
 if (SIM) TauSim.mark();
-if (!SAMPLE) { setInterval(load, 30000); setInterval(loadNodes, 30000); setInterval(loadWallets, 300000); }  // also upgrades from the 50-block window once /stats answers
+if (!SAMPLE) { setInterval(load, 30000); setInterval(loadNodes, 30000); setInterval(loadWallets, 300000); setInterval(loadHistory, 120000); }  // also upgrades from the 50-block window once /stats answers
 setInterval(() => { if (D && document.visibilityState === "visible" && tip.hidden) render(); }, 15000);
 </script>
 </body>

@@ -22,7 +22,7 @@ with open(EVENTS, "w") as f:
 CHAIN = os.path.join(os.path.dirname(EVENTS), "chain.jsonl")
 BOARD = os.path.join(os.path.dirname(EVENTS), "community.json")
 PEERS = os.path.join(os.path.dirname(EVENTS), "peers.json")
-os.environ.update(PEERS_PATH=PEERS, BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, SENT_PATH=EVENTS + ".sent", CHAT_PATH=EVENTS + ".chat", CHAT_KEY_PATH=EVENTS + ".chatkey", ROADMAP_PATH=EVENTS + ".roadmap", DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
+os.environ.update(PEERS_PATH=PEERS, BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, SENT_PATH=EVENTS + ".sent", CHAT_PATH=EVENTS + ".chat", CHAT_KEY_PATH=EVENTS + ".chatkey", ROADMAP_PATH=EVENTS + ".roadmap", CHAINHIST_PATH=EVENTS + ".chainhist", DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
 os.environ.update(UPSTREAM_URL="ws://127.0.0.1:18765", LISTEN_HOST="127.0.0.1", LISTEN_PORT="18766",
                   TRUST_PROXY="1", MAX_PER_IP="3", CLIENT_BURST="20", LOOKUP_CACHE_SECONDS="10", GOV_POLL_SECONDS="4", TAU_GOVERNANCE_OPEN_ADMISSION="true")
 sys.path.insert(0, os.path.dirname(__file__))
@@ -349,6 +349,17 @@ async def main():
                 check(len(json.load(f)["restarts"]) == 2, "restarts persisted to the events file")
             with open(CHAIN) as f:
                 check(all(json.loads(line)["block_hash"].startswith("0001") for line in f), "file rewritten with the new chain")
+            # the dead chain's history stays: /history keeps every chain apart (chainhist.py)
+            hist = await asyncio.to_thread(lambda: json.loads(urllib.request.urlopen("http://127.0.0.1:18766/history", timeout=5).read()))
+            ch = hist["chains"]
+            check([c["kept"] for c in ch] == ["tip", "full", "full"] and ch[0]["tip"] == 40 and ch[1]["tip"] >= 60
+                  and ch[1]["blocks"] == ch[1]["tip"] and ch[2]["current"] and ch[2]["tip"] == 2,
+                  f"/history keeps the ended chains {[(c['n'], c['kept'], c['tip']) for c in ch]}")
+            check(hist["totals"]["chains"] == 3 and hist["totals"]["blocks"] == 40 + ch[1]["tip"] + 2
+                  and hist["totals"]["txs"] == ch[1]["txs"] + ch[2]["txs"] and ch[1]["txs"] > 0, f"/history totals {hist['totals']}")
+            src = await asyncio.to_thread(lambda: json.loads(urllib.request.urlopen("http://127.0.0.1:18766/api/v1/sources", timeout=5).read()))
+            check(src["chains"] == 2 and sum(r["other"][0] + r["idni"][0] for r in src["days"].values()) >= ch[1]["txs"],
+                  f"/api/v1/sources keeps the ended chain's days {src['chains']}")
         reader, writer = await asyncio.open_connection("127.0.0.1", 18766)
         writer.write(b"GET /health HTTP/1.1\r\nHost: x\r\n\r\n")
         body = json.loads((await reader.read(4096)).decode().split("\r\n\r\n", 1)[1])
