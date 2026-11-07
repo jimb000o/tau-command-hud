@@ -30,6 +30,7 @@
 #                            a draft, up kling off island  the island still again (until the next painting)
 #              up escrow     the relay alone restarted with the code just pulled (not while a ship is due), then the
 #                            cruise bookings ahead in escrow, each with its state; up escrow status  only those
+#              up nomemo     No Memo's crew purse (relay/nomemo.py): the drop, the players' board, what waits to be paid (nothing rebuilt)
 #              up hack       the hack of the week (relay/hackweek.py, Thursdays 11:00): next replay, last runs step by step
 #                            (nothing rebuilt, nothing sent); up hack preview  the last replay's post texts and picture;
 #                            up hack release 2026-11-12-poisoning  shows a held-back finding in public (after IDNI knows)
@@ -214,6 +215,18 @@ for r in json.load(open("/data/hack-state.json")).get("runs", [])[::-1][:3]:
     for k, x in (r.get("steps") or {}).items():
         print("    %-12s ok=%s %s %s" % (k, x.get("ok"), x.get("code") or x.get("status") or "", (x.get("note") or "")[:70]))
     for n in (r.get("log") or [])[-3:]: print("    · " + n["note"][:110])' 2>&1 || echo "relay /hack not answering yet"
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# No Memo's crew purse (relay/nomemo.py), nothing rebuilt: the drop's address, the board, what waits, the Tracer
+if [ "${1:-}" = "nomemo" ]; then
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T relay python -c 'import json,urllib.request
+s=json.load(urllib.request.urlopen("http://127.0.0.1:8080/nomemo", timeout=20)); b=s.get("board") or {}
+print("nomemo:  purse %s, tracer %s, drop %s%s" % ("on" if s.get("enabled") else "OFF", "on" if s.get("tracer") else "off", s.get("drop_short") or "not made yet", " (making the keys now)" if s.get("making_wallets") else ""))
+print("         board: %d wallets, %s; chapters claimed %s; %d payouts today, %d waiting" % (b.get("wallets",0), ", ".join("%s %d" % kv for kv in (b.get("ranks") or {}).items()), b.get("claims"), s.get("today",0), s.get("waiting",0)))
+print("         test it: https://tauhud.com/nomemo/  (take 1, run; the drop above must match status)")' 2>&1 || echo "relay /nomemo not answering yet"
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
@@ -587,4 +600,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up guardian, up services, up knowledge, up kling, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"

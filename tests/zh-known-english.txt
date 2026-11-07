@@ -121,3 +121,19 @@ stale
 freeride
 giant
 impostor
+claim
+chapter <n>
+mail
+op
+pick a|b · answer <n>
+hunt · mark a|b
+trace <blocks>
+board
+sound on|off · fx on|off · voice on|off · full · boot · clear
+hunt
+mark a
+mark b
+BLACK SEQUENCE · crew terminal
+NO MEMO
+peek
+trace

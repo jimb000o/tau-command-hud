@@ -45,6 +45,8 @@ jobs:
           BASE="$RUNNER_TEMP/base-updates.json" node tests/updates.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: News line headlines leave by themselves and have their zh and ja
         run: node tests/ticker.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: The crew of No Memo has every spoken line listed (nomemo/voices.json)
+        run: node tests/nomemo-voices.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: The facts for AI assistants (llms.txt, tauhud.com/facts/) say what facts/facts.json says
         run: node tools/facts.mjs --check | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Shared scripts parse

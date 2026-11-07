@@ -122,6 +122,90 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .rank { color: var(--ok) !important; }
 .inst .row.state-live b { color: var(--ok); } .inst .row.state-sim b { color: var(--behind); } .inst .row.state-off b { color: var(--bad); }
 
+/* the top bar: the block clock, what is running, the post, the trace; always in view, on the phone in every tab */
+.top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 14px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 8px; background: rgba(12,12,14,.9); font-size: 11px; color: var(--dim); min-height: 36px; }
+.top .blk { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.top .blk b { color: #fff; font: 600 13px var(--mono); }
+.top .blk b.tick { animation: tick .5s ease-out; }
+@keyframes tick { 0% { color: var(--ok); text-shadow: 0 0 10px var(--ok); } 100% { color: #fff; text-shadow: none; } }
+.top .slots { display: flex; gap: 10px; overflow: hidden; min-width: 0; }
+.top .slot { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: center; min-width: 120px; max-width: 220px; }
+.top .slot span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.top .slot i { display: block; height: 4px; border-radius: 2px; background: rgba(255,255,255,.1); overflow: hidden; }
+.top .slot i::after { content: ""; display: block; height: 100%; width: var(--p, 0%); background: var(--ok); transition: width .4s; }
+.top .slot.bad i::after { background: var(--bad); } .top .slot.ok i::after { background: var(--ok); width: 100%; }
+.top .slot small { grid-column: 1 / 3; color: var(--dim); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top .right { display: flex; align-items: center; gap: 6px; }
+.top .tr { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; min-height: 28px; white-space: nowrap; color: var(--dim); }
+.top .tr i { width: 46px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.1); overflow: hidden; }
+.top .tr i::after { content: ""; display: block; height: 100%; width: var(--p, 0%); background: var(--ok); transition: width .6s linear; }
+.top .tr.on { color: var(--ok); border-color: rgba(57,255,138,.35); }
+.top .tr.hot { color: var(--behind); border-color: rgba(255,177,59,.45); } .top .tr.hot i::after { background: var(--behind); }
+.top .tr.out { color: var(--bad); border-color: rgba(255,77,109,.5); } .top .tr.out i::after { background: var(--bad); }
+.top button { font: 11px var(--mono); color: var(--dim); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 0 10px; min-height: 28px; min-width: 28px; cursor: pointer; white-space: nowrap; }
+.top button:hover { color: #fff; border-color: var(--hair); }
+.top button.has { color: var(--ok); border-color: rgba(57,255,138,.4); }
+.top button.has::before { content: "●"; margin-right: 5px; animation: blink 1.4s steps(1) infinite; }
+/* the trace at the screen's edge: a glow that quickens as the deadline nears, visible on a phone without comparing anything */
+.edge { position: fixed; inset: 0; pointer-events: none; z-index: 30; opacity: 0; transition: opacity .6s; }
+html.tr-on .edge { opacity: 1; box-shadow: inset 0 0 40px rgba(57,255,138,.10); }
+html.tr-hot .edge { opacity: 1; box-shadow: inset 0 0 60px rgba(255,177,59,.28); animation: pulse 1.2s ease-in-out infinite; }
+html.tr-out .edge { opacity: 1; box-shadow: inset 0 0 90px rgba(255,77,109,.5); animation: pulse .5s ease-in-out 4; }
+@keyframes pulse { 50% { opacity: .35; } }
+.term.flash-bad { animation: flashbad .45s; } .term.flash-ok { animation: flashok .5s; }
+@keyframes flashbad { 0% { box-shadow: inset 0 0 0 2px var(--bad); transform: translateX(0); } 20% { transform: translateX(-4px); } 40% { transform: translateX(4px); } 60% { transform: translateX(-2px); } 100% { box-shadow: inset 0 0 0 0 transparent; transform: none; } }
+@keyframes flashok { 0% { box-shadow: inset 0 0 0 2px var(--ok); } 100% { box-shadow: inset 0 0 0 0 transparent; } }
+/* a transaction's way, drawn as it goes: wallet, relay, node, block */
+.screen .route { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; color: var(--dim); margin: 3px 0 4px; }
+.screen .route span { border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; color: var(--dim); transition: color .3s, border-color .3s; }
+.screen .route span.on { color: var(--ok); border-color: rgba(57,255,138,.45); text-shadow: 0 0 8px rgba(57,255,138,.4); }
+.screen .route span.bad { color: var(--bad); border-color: rgba(255,77,109,.5); }
+.screen .route em { font-style: normal; color: var(--dim); padding: 0 5px; } .screen .route em.on { color: var(--ok); }
+.screen .mail { border-left: 2px solid var(--mint); padding-left: 8px; margin: 4px 0; }
+.screen .mail b { color: var(--mint); }
+.screen .cols button, .screen .abc { font: 12px var(--mono); color: var(--ok); background: transparent; border: 1px solid rgba(57,255,138,.4); border-radius: 4px; padding: 2px 8px; cursor: pointer; min-height: 28px; }
+.screen p.typing::after { content: "▮"; color: var(--ok); animation: blink .7s steps(1) infinite; }
+/* the crew: three faces, each in a mood; painted when nomemo/art is there, drawn until then */
+.crewbox { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 8px 10px; border-top: 1px solid var(--line); }
+.face { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; color: var(--dim); text-align: center; cursor: pointer; min-height: 44px; }
+.face .pic { width: 56px; height: 56px; border-radius: 6px; border: 1px solid var(--line); background: #0a0c0b; display: grid; place-items: center; overflow: hidden; position: relative; }
+.face .pic img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) sepia(1) hue-rotate(85deg) saturate(2.4) brightness(.85) contrast(1.1); }
+.face .pic::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px); pointer-events: none; }
+.face .pic svg { width: 44px; height: 44px; fill: none; stroke: var(--ok); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
+.face.glad .pic { border-color: rgba(57,255,138,.5); box-shadow: 0 0 10px rgba(57,255,138,.25); }
+.face.sour .pic { border-color: rgba(255,77,109,.45); }
+.face.talk .pic { box-shadow: 0 0 0 1px var(--mint), 0 0 12px rgba(185,255,214,.35); }
+.face b { color: var(--text); font-weight: 600; }
+/* the gear: what the terminal can do, unlocked chapter by chapter */
+.inst .gear { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.inst .gear span { font-size: 10px; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; color: var(--dim); }
+.inst .gear span.on { color: var(--ok); border-color: rgba(57,255,138,.4); }
+/* windows over the terminal: the boot screen, a chapter card, the post */
+.over { position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; background: rgba(5,5,6,.92); padding: 16px; }
+.over.show { display: flex; }
+.over .win { width: min(760px, 100%); max-height: 100%; overflow: auto; border: 1px solid var(--hair); border-radius: 8px; background: #050506; box-shadow: 0 0 60px rgba(57,255,138,.08); }
+.over .pic { width: 100%; aspect-ratio: 16 / 9; background: #0a0a0c center / cover no-repeat; border-bottom: 1px solid var(--line); display: grid; place-items: end start; }
+.over .pic h3 { margin: 0; padding: 14px 18px; font: 700 22px var(--display); color: #fff; text-shadow: 0 2px 14px #000; }
+.over .pic h3 small { display: block; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--ok); }
+.over .body { padding: 14px 18px 16px; color: var(--text); font-size: 13px; }
+.over .body p { margin: 0 0 8px; }
+.over .body .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.over button { font: 600 12px var(--display); color: #000; background: var(--ok); border: 0; border-radius: 999px; padding: 0 16px; min-height: 36px; cursor: pointer; }
+.over button.ghost { color: var(--dim); background: transparent; border: 1px solid var(--line); }
+#bootScreen .win { background: #050506 center / cover no-repeat; border-color: var(--line); }
+#bootScreen .boot { padding: 22px 24px; min-height: 300px; font-size: 13px; color: var(--ok); text-shadow: 0 0 8px rgba(57,255,138,.35); background: linear-gradient(rgba(5,5,6,.78), rgba(5,5,6,.9)); }
+#bootScreen .boot p { margin: 0 0 3px; white-space: pre-wrap; }
+#bootScreen .boot p.typing { white-space: nowrap; overflow: hidden; max-width: 100%; }
+#bootScreen .boot p.dim { color: var(--dim); text-shadow: none; }
+#bootScreen .row { padding: 0 24px 18px; background: rgba(5,5,6,.9); }
+.post { list-style: none; margin: 0; padding: 0; }
+.post li { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.post li b { color: var(--mint); } .post li small { color: var(--dim); margin-left: 8px; }
+.post li.new { box-shadow: inset 2px 0 0 var(--ok); padding-left: 8px; }
+html.nm-full, html.nm-full body { background: #000; }
+html.nm-full .wrap { max-width: none; } html.nm-full .wrap > header, html.nm-full .tnav, html.nm-full .tabbar, html.nm-full .tnav-spacer, html.nm-full .tb-pill, html.nm-full .fb-fab, html.nm-full footer { display: none !important; }
+@media (prefers-reduced-motion: reduce) { .edge, .term, .top .blk b { animation: none !important; } }
+
 .mtabs { display: none; }
 footer { color: var(--dim); font-size: 11px; padding: 0; }
 footer a { color: var(--dim); }
@@ -145,6 +229,9 @@ footer p { margin: 0; }
   .chips { padding: 6px 8px 8px; } .chips button { min-height: 44px; font-size: 11px; }
   .jobs li { min-height: 52px; }
   footer { display: none; }
+  .top { grid-template-columns: auto 1fr; gap: 6px; padding: 5px 8px; } .top .slots, .top .blk > span:first-child, #topPace { display: none; } .top .right { grid-column: 2; justify-content: flex-end; min-width: 0; }
+  .top .tr { min-width: 0; overflow: hidden; padding: 4px 8px; gap: 5px; } .top .tr span { overflow: hidden; text-overflow: ellipsis; } .top .tr i { width: 26px; flex: none; }
+  .crewbox { padding: 6px 8px; } .face .pic { width: 44px; height: 44px; }
 }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
@@ -162,10 +249,21 @@ footer p { margin: 0; }
     <button type="button" data-pane="term" class="on">Terminal</button>
     <button type="button" data-pane="stat">Instruments</button>
   </div>
+  <div class="top" id="top" aria-label="Status">
+    <div class="blk"><span>NO MEMO</span><b id="topBlock">—</b><span id="topPace"></span></div>
+    <div class="slots" id="slots" aria-live="off"></div>
+    <div class="right">
+      <button type="button" id="mailBtn" title="post">post</button>
+      <span class="tr" id="topTrace"><span id="topTraceText">no trace</span><i></i></span>
+      <button type="button" id="sndBtn" title="sound">♪</button>
+      <button type="button" id="fsBtn" title="full screen">⛶</button>
+    </div>
+  </div>
   <div class="deck" id="deck">
     <aside class="pane jobs-pane" id="paneJobs" aria-label="Contracts">
       <h2><span>Contracts</span><small id="jobsCount"></small></h2>
       <div class="scroll"><ol class="jobs" id="jobs"></ol></div>
+      <div class="crewbox" id="crewBox"></div>
       <div class="crewnote">Nobody on board is a real person. What you do here is real: every contract is a test transaction on Tau Testnet Alpha from your own test wallet, signed in this browser. Test AGRS have no value.</div>
     </aside>
     <section class="pane term show" id="paneTerm" aria-label="Terminal">
@@ -180,6 +278,10 @@ footer p { margin: 0; }
   </div>
   <footer><p>Unofficial, not affiliated with IDNI. A game on the public testnet: your test wallet is the one <a href="/wallet/">the wallet page</a> and <a href="/rabbit/">White Rabbit Key</a> use, made in this browser, never sent anywhere. The crew of the Black Sequence also calls at the island on Tuesdays: <a href="/cruise/">cruise logbook</a>.</p></footer>
 </div>
+<div class="edge" aria-hidden="true"></div>
+<div class="over" id="bootScreen" role="dialog" aria-label="Boot"><div class="win"><div class="boot" id="bootLines"></div><div class="row"><button type="button" class="ghost" id="bootSkip">skip</button></div></div></div>
+<div class="over" id="card" role="dialog" aria-label="Chapter"><div class="win"><div class="pic" id="cardPic"><h3 id="cardTitle"></h3></div><div class="body" id="cardBody"></div></div></div>
+<div class="over" id="mailWin" role="dialog" aria-label="Post"><div class="win"><div class="body"><h3 id="mailTitle" style="margin:0 0 8px;font:600 11px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)"></h3><ul class="post" id="mailList"></ul><div class="row"><button type="button" class="ghost" id="mailClose">close</button></div></div></div></div>
 <script src="../wallet/vendor/tau-bls.min.js"></script>
 <script src="game.js" defer></script>
 </body>
