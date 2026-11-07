@@ -70,6 +70,8 @@ jobs:
         env:
           WORKERS: 3
           SETTLE_MS: 5000
+      - name: White Rabbit Key's places at night (lit by their lamps, a painted night only after dark)
+        run: node tests/room-night.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Summary
         if: always()
         run: cat tests/out/report.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true

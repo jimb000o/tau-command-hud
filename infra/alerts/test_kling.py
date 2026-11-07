@@ -246,6 +246,18 @@ kling_island.step(tell=told.append)
 check("trailer: none for a painting live for days already", "trailer-island-30-old" not in kling.state()["jobs"]
       and kling.state().get("seen_island") == "island-30-old.jpg")
 
+# the same island cleaned (paint.py isle: the people taken out of the square): no trailer, no second living clip
+jobs_before = set(kling.state()["jobs"]) | {"island-island-30-old"}
+Image.new("RGB", (1600, 900), (40, 120, 160)).save(os.path.join(ART, "island-30-old-clean-1234abcd.jpg"))
+json.dump({"scenes": {"island": "island-30-old-clean-1234abcd.jpg"}}, open(os.path.join(ART, "index.json"), "w"))
+st = kling.state(); st["jobs"]["island-island-30-old"] = {"kind": "island", "task": "t", "at": round(time.time()), "status": "succeed", "done_island": "live"}; kling.save(st)
+kling_island.step(tell=told.append)
+check("clean copy: the same island, no trailer and no new clip", kling.state().get("seen_island") == "island-30-old-clean-1234abcd.jpg"
+      and "trailer-island-30-old-clean-1234abcd" not in kling.state()["jobs"] and "island-island-30-old-clean-1234abcd" not in kling.state()["jobs"]
+      and set(kling.state()["jobs"]) == jobs_before, sorted(kling.state()["jobs"]))
+check("clean copy: its painting's name", kling_island.plain("island-36-abc-clean-1234abcd.webp") == "island-36-abc.webp"
+      and kling_island.plain("island-36-abc.webp") == "island-36-abc.webp")
+
 # ---------- the cruise announcement falls back to the photo ----------
 import cruise_crier  # noqa: E402
 check("ship clip: none without a finished clip", cruise_crier.ship_clip("2026-11-11-dryrun", {}, "/nope.jpg") is None)
