@@ -1364,6 +1364,7 @@ def cmd_keep(a):
 # to know where they hang in that very painting: the image model looks at the kept painting once and names every light
 # in it with a box, and index.json keeps that list under "lights", tied to the painting's file (a new painting is looked
 # at again). Looking costs one short text answer per room, no picture.
+LIGHT_MODELS = ["gemini-3.8-flash", "gemini-3-flash-preview", "gemini-2.5-flash"]   # newest first; GEMINI_TEXT_MODEL in infra/.env goes before them
 LIGHT_KINDS = ["lamp", "bulbs", "candle", "lantern", "chandelier", "fire", "torch", "screen", "glow", "window"]
 LIGHT_COLOURS = ["warm", "fire", "cream", "gold", "green", "teal", "cyan", "pink", "red", "moon"]
 LIGHTS_PROMPT = (
@@ -1401,8 +1402,14 @@ def look_at_lights(raw, model):
         pass
     body = {"contents": [{"parts": [{"text": LIGHTS_PROMPT}, {"inline_data": {"mime_type": mime(raw), "data": base64.b64encode(raw).decode()}}]}],
             "generationConfig": {"responseMimeType": "application/json", "responseSchema": LIGHTS_SCHEMA, "temperature": 0.2}}
-    r = post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-             json.dumps(body).encode(), {"Content-Type": "application/json", "x-goog-api-key": api_key("GEMINI_API_KEY")})
+    for i, m in enumerate(model):   # an older model Google has retired answers 404: the next one is asked
+        try:
+            r = post(f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent",
+                     json.dumps(body).encode(), {"Content-Type": "application/json", "x-goog-api-key": api_key("GEMINI_API_KEY")})
+            break
+        except SystemExit as e:
+            if " 404" not in str(e) or i == len(model) - 1:
+                raise
     parts = ((r.get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
     text = "".join(p.get("text", "") for p in parts)
     try:
@@ -1451,7 +1458,7 @@ def cmd_lights(a):
         except OSError:
             print(f"  {id}: painting {f} not found")
             continue
-        got = look_at_lights(raw, a.model)
+        got = look_at_lights(raw, [a.model] if a.model else [m for m in [api_key("GEMINI_TEXT_MODEL")] if m] + LIGHT_MODELS)
         have[id] = {"of": f, **got}
         done.append(f"{id} {len(got['l'])}")
         print(f"  {id}: {len(got['l'])} lights" + (" (outside)" if got["outside"] else ""), flush=True)
@@ -1536,7 +1543,7 @@ def main():
     li = sub.add_parser("lights")
     li.add_argument("places", nargs="*", default=["all"], help="all (default), or some of: " + " ".join(PLACES[1:]))
     li.add_argument("--missing", action="store_true", help="only rooms whose painting has not been looked at yet")
-    li.add_argument("--model", default="gemini-2.5-flash")
+    li.add_argument("--model", default=None, help="default: " + ", ".join(LIGHT_MODELS) + " (the next when one is retired)")
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
     a = p.parse_args()
