@@ -3351,8 +3351,8 @@ const CORE_HITS = [], CORE_RINGS = [];
 /* known origins of waiting transactions (assets/origins.js): ring colour and dash per kind; IDNI dashed grey, our own server wallets dotted,
    simulated cruise passengers amber (simulated), the apps' players solid white */
 const ORIGIN_RING = { idni: ["rgba(170,170,178,.85)", [3, 3]], bot: ["rgba(170,170,178,.85)", [1, 3]], cruise: ["rgba(255,177,59,.9)", [3, 3]],
-  rabbit: ["rgba(185,255,214,.95)", []], agorzilla: ["rgba(255,255,255,.9)", []], deja: ["rgba(255,255,255,.9)", []] };
-function originOf(tx) { if (!window.TauOrigin) return null; if (!tx._og || performance.now() - tx._og.at > 5000) tx._og = { at: performance.now(), o: TauOrigin.of(tx.sender, tx.transfers) }; return tx._og.o; }
+  rabbit: ["rgba(185,255,214,.95)", []], nomemo: ["rgba(185,255,214,.95)", [6, 2]], agorzilla: ["rgba(255,255,255,.9)", []], deja: ["rgba(255,255,255,.9)", []] };
+function originOf(tx) { if (!window.TauOrigin) return null; if (!tx._og || performance.now() - tx._og.at > 5000) tx._og = { at: performance.now(), o: TauOrigin.of(tx.sender, tx.transfers, tx.id) }; return tx._og.o; }
 const originLine = og => og ? `\nComes from ${og.name}: ${og.what}.` : "";
 /* CORE_MOUSE: where the pointer rests over the core, in canvas units; the frame loop re-runs the hit test there so the hovered element lights up even while it orbits */
 let CORE_MOUSE = null;

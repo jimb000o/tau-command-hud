@@ -2564,7 +2564,8 @@ class Watcher:
             return
         got = await asyncio.to_thread(self.relay_json, "/wallets/tags")
         tags = got.get("tags") if isinstance(got, dict) and isinstance(got.get("tags"), dict) else None   # unknown: claim nothing
-        text = firsts.telegram_text(due, REAL_LINE, tags)
+        via = got.get("via") if isinstance(got, dict) and isinstance(got.get("via"), dict) else {}
+        text = firsts.telegram_text(due, REAL_LINE, tags, via)
         first_tx = next((f["tx"] for f in due if f.get("tx")), None)
         buttons = link_buttons(("🔎 See it in the explorer", f"{SITE}/explorer/?tx={first_tx}" if first_tx else f"{SITE}/explorer/"),
                                ("📜 Rules wall", f"{SITE}/rules/"))

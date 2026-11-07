@@ -886,20 +886,24 @@
     nav.after(t);
   }
   /* "what is real": today's transactions by sender, one line on the HUD, Stats and In numbers (relay /api/v1/sources). The
-     groups are the relay's: IDNI's genesis accounts, White Rabbit Key (players, the island bot and the cruise ships' simulated
-     passengers, all real transactions), Agorzilla, the Tau HUD pages, every other wallet. Live mode only: the simulation says
+     groups are the relay's: IDNI's genesis accounts, White Rabbit Key's players, our cruise ships' simulated passengers and the
+     island bot (our server's, real transactions but no users), Agorzilla, the Tau HUD pages, every other wallet. Live mode only: the simulation says
      what it is in its own bar. */
   const REAL_HOST = { hud: "#simbar", stats: "#sourceLine", meta: "#sourceLine" };
   function realLine(page) {
     const sel = REAL_HOST[page]; if (!sel || SIM) return;
     const host = document.querySelector(sel); if (!host) return;
     const line = el(page === "hud" ? "p" : "span", "tn-real"); line.id = "realLine"; line.hidden = true;
-    line.dataset.tnt = "Counted by our relay from the blocks it keeps, UTC day; wallets, not people. White Rabbit Key counts the players, the island bot and the cruise ships: simulated passengers, real transactions. Everything else on this page comes from the chain as it is.";
+    line.dataset.tnt = "Counted by our relay from the blocks it keeps, UTC day; wallets, not people. White Rabbit Key counts its players; our cruise ships (simulated passengers) and the island bot are our server's own transactions, real but no users, and counted apart. Everything else on this page comes from the chain as it is.";
     if (page === "hud") host.after(line); else host.append(" ", line);
-    const NAMES = [["idni", "IDNI genesis accounts"], ["rabbit", "White Rabbit Key"], ["agorzilla", "Agorzilla"], ["tauhud", "Tau HUD pages"], ["other", "other wallets"]];
+    const NAMES = [["idni", "IDNI genesis accounts"], ["rabbit", "White Rabbit Key players"], ["agorzilla", "Agorzilla"], ["tauhud", "Tau HUD pages"], ["cruise", "our cruise ships"], ["bot", "island bot"], ["other", "other wallets"]];
     const fill = j => {
       const k = new Date().toISOString().slice(0, 10), d = j && j.days && j.days[k];
       if (!d) { line.hidden = true; return; }
+      if (!d.cruise && d.rabbit) {   // a relay from before it kept the cruise ships and the island bot apart from the players
+        const z = (j.rabbit || {})[k] || {}, c = z.cruise || 0, p = z.paid || 0;
+        d.rabbit = [Math.max(0, (d.rabbit[0] || 0) - c - p)]; d.cruise = [c]; d.bot = [p];
+      }
       const n = Object.values(d).reduce((a, v) => a + (v && v[0] || 0), 0);
       line.textContent = `What is real · today on the testnet: ${fmt(n)} transactions` + (n ? " · " + NAMES.filter(([g]) => (d[g] || [0])[0]).map(([g, name]) => `${name} ${fmt(d[g][0])}`).join(" · ") : "");
       line.hidden = false;
