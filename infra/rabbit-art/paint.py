@@ -1393,6 +1393,19 @@ TOUCH_SETS = {
         "lighthouse on its islet at the back, the surveyors' camp in the mountains, the rock arch, the sea cave, the "
         "old ship, the bar, the pier, the dive centre, the red tree, the Coconut Works, the waterfall, the palace, "
         "the resort and every other building, path and stretch of coast."),
+    # from island 34 (paint.sh touch dive-reef --from island=34): the dive centre out on the reef by the small sandbank
+    # in the lower left sea, in front of the old ship, where the front beach has no room for it any more
+    "dive-reef": (
+        "the Reef Proof Dive Centre moves out onto the reef: on the shallow turquoise reef in the sea at the lower "
+        "left of the picture, in front of and to the left of the old ship, right beside the small sandbank, a small "
+        "dive station of weathered wood on stilts standing in the shallow water, clearly visible: a little hut with a "
+        "palm-thatch roof and a wide open front, a wooden deck around it with a ladder down into the water, a short "
+        "jetty with a small dive boat tied to it, a rack of yellow air tanks, fins and masks drying on a rail, and a "
+        "red flag with a white diagonal stripe on a pole; a line of small white buoys leads from it across the reef. "
+        "Everything else stays exactly where and how it is, above all the school, the Parasol Café, the Market "
+        "Square, the old ship, the bar, the pier, the canoe house, the lighthouse on its islet at the back, the "
+        "surveyors' camp in the mountains, the rock arch, the sea cave, the red tree, the Coconut Works, the "
+        "waterfall, the palace, the resort and every other building, path and stretch of coast."),
 }
 
 
