@@ -4,7 +4,9 @@ Three ships call by a timetable on the island's clock (Europe/Berlin); the other
   Tuesday 18:00    Black Sequence a pirate ship, 20 pirates who stay aboard and trade from their boat: rum at Bar La Ola,
                                   supplies at the market. Now and then a pirate tries a trick the chain must refuse
                                   (TRICKS): paying more than the wallet holds, sending a payment the chain already took
-                                  a second time, a payment whose time ran out, a payment signed with another pirate's key.
+                                  a second time, a payment whose time ran out, a payment signed with another pirate's key,
+                                  a payment from another pirate's wallet, a payment that allows no fee, one whose block
+                                  deadline has passed, one bigger than a transfer can carry.
   Wednesday 16:00  MS Dry Run     a small expedition ship, 40 curious passengers: the lighthouse, Captain Wren's Old
                                   Ship, the school, the dive shop. It tries the rarer kinds of transaction.
   Saturday 14:00   Queen Mempool  a big luxury liner, 120 passengers: the South Current spa, Bar La Ola, song requests
@@ -120,7 +122,7 @@ QUIET_SLOW = 10 * 60       # and for this long after it, half pace: the node is 
 RATE_MIN = 6               # the slowest a ship tunes itself down to, transactions a minute
 TUNE_UNANSWERED = 3        # sends our node left unanswered in one visit that make the next visit one a minute slower
 TRICK_GAP = 120            # seconds between two pirate tricks, at least
-TRICK_START, TRICK_MIN, TRICK_CALM = 6, 2, 3   # each trick a visit at first; at least; visits stopped rightly before fewer
+TRICK_START, TRICK_MIN, TRICK_CALM = 4, 2, 3   # each trick a visit at first; at least; visits stopped rightly before fewer
 # the pirates' tricks: what the pirate does, and the node's answers that mean the chain said no for the right reason
 # (tau-testnet commands/sendtx.py; an overspend may also be refused by the transfer rule itself, TX_REJECTED)
 TRICKS = {
@@ -128,6 +130,10 @@ TRICKS = {
     "replay": (("INVALID_SEQUENCE",), "sends a payment the chain already took a second time"),
     "expired": (("TX_EXPIRED",), "sends a payment whose time ran out"),
     "forged": (("INVALID_SIGNATURE",), "signs a payment with another pirate's key"),
+    "impostor": (("TX_INVALID",), "pays from another pirate's wallet with their own signature"),
+    "freeride": (("FEE_LIMIT_TOO_LOW",), "allows no fee at all for a payment"),
+    "stale": (("TX_EXPIRED",), "sends a payment whose block height deadline has passed"),
+    "giant": (("TX_INVALID", "INVALID_PARAMS"), "pays more than a transfer can carry (2^24 test AGRS)"),
 }
 CODES = sorted({c for codes, _ in TRICKS.values() for c in codes} | {"TX_INVALID", "INVALID_PARAMS", "TX_REJECTED"})
 # MS Dry Run, 4 November 2026: eight sendtx went unanswered within 20 s (two a day on other days), were counted as
@@ -294,10 +300,10 @@ def plan(ship: str, t0: int, trial: set | None = None, allowed: set | None = Non
             else:
                 acts.append({"t": t, "p": p, "kind": "pay", "to": place, "amount": S["stops"][place][0]})
             t += R.uniform(*S["dwell"]) * 60
-    if "trick" in allowed:   # a pirate's tricks, from ten minutes after the landing (every pirate has paid by then), spaced out
+    if "trick" in allowed:   # a pirate's tricks, once the landing is over (every pirate has paid the pier by then), spaced out
         bag = [k for k in TRICKS for _ in range(max(0, int((tricks or {}).get(k, TRICK_START))))]
         R.shuffle(bag)
-        t, last = t0 + (landing(ship) + 10) * 60, end - 5 * 60
+        t, last = t0 + (landing(ship) + 1) * 60, end - 5 * 60
         step_ = max(TRICK_GAP, (last - t) / max(1, len(bag)))
         for k in bag:
             if t >= last:
@@ -850,9 +856,12 @@ class Cruise:
         env = {"sender_pubkey": pk, "sequence_number": seq, "expiration_time": now + 600, "expire_at_height": tip + 1000}
         if act.get("expired"):
             env["expiration_time"] = now - 120
+        if act.get("stale"):
+            env["expire_at_height"] = max(1, tip - 5)
         k = act["kind"]
         if k == "pay":
-            tx = {"tx_type": "user_tx", **env, "fee_limit": str(fee * 5), "operations": {"1": [[pk, PLACES[act["to"]], str(act["amount"])]]}}
+            tx = {"tx_type": "user_tx", **env, "fee_limit": "0" if act.get("freeride") else str(fee * 5),
+                  "operations": {"1": [[act.get("from") or pk, PLACES[act["to"]], str(act["amount"])]]}}
         elif k == "bill":
             to = act["to"]
             tx = {"tx_type": "user_tx", **env, "fee_limit": str(fee * 5 * len(to)), "operations": {"1": [[pk, PLACES[pl], str(a)] for pl, a in to]}}
@@ -925,8 +934,16 @@ class Cruise:
                 entry["balance"] = bal
             elif trick == "expired":
                 pay["expired"] = True
+            elif trick == "stale":
+                pay["stale"] = True
+            elif trick == "freeride":
+                pay["freeride"] = True
+            elif trick == "giant":
+                pay["amount"] = entry["amount"] = 1 << 24   # tau_defs.TRANSFER_VALUE_BV_WIDTH = 24
             elif trick == "forged":
                 signer = f"{ship}-{(act['p'] + 1) % SHIPS[ship]['passengers']}"
+            elif trick == "impostor":   # the transfer names another pirate's wallet as payer, signed by this pirate
+                pay["from"] = self.pk[f"{ship}-{(act['p'] + 1) % SHIPS[ship]['passengers']}"]
             tx = await asyncio.to_thread(self.build, ship, pay, seq, tip, base_fee(gov()), None, signer)
         t_ask = time.monotonic()
         res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))

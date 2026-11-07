@@ -57,7 +57,8 @@ SHIPS = {
         "story": ("From {hz}:30 German time her dark sails are on the horizon, at {hh}:00 she anchors off the island. "
                   "Her 20 pirates stay aboard and trade from their boat: rum at Bar La Ola, supplies at the market. And "
                   "now and then one of them tries a trick: paying more than the wallet holds, sending a payment the chain "
-                  "already took a second time, a payment whose time ran out, a payment signed with another pirate's key. "
+                  "already took a second time, a payment whose time ran out, a payment signed with another pirate's key, a payment "
+                  "from another pirate's wallet, one that allows no fee, one past its block deadline, one too big to carry. "
                   "Tau Testnet Alpha is meant to refuse every one, and the logbook shows what it answered."),
         "x": "",
         "why": ["- Tests what the chain must refuse: overspends, replays, expired and forged payments",

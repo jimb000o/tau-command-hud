@@ -143,4 +143,8 @@ TauI18n.add({ strings: {
   "nothing to take back: the booking is retracted": "取り戻すものなし：予約は取り消し済み",
   "no answer from the node to sendtx; tried again in 30 s at the earliest": "ノードが sendtx に応答せず；早くても 30 秒後に再試行",
   "how each booking ended on the chain: paid out to the till or refunded to the passenger;": "各予約がチェーン上でどう終わったか：レジへの支払い、または乗客への返金；",
+  "pays from another pirate’s wallet with their own signature": "自分の署名で別の海賊のウォレットから支払う",
+  "allows no fee at all for a payment": "支払いに手数料をまったく認めない",
+  "sends a payment whose block height deadline has passed": "ブロック高の期限が過ぎた支払いを送る",
+  "pays more than a transfer can carry": "1 回の送金で運べる上限を超えて支払う",
 } });
