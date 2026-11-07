@@ -19,6 +19,7 @@ import html
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import time
@@ -62,6 +63,12 @@ def key_of(f: str) -> str:
     return os.path.splitext(os.path.basename(f))[0]
 
 
+def plain(f: str) -> str:
+    """The painting a clean copy was made of (paint.py isle: the same island with a few spots changed, e.g. the people
+    taken out of the square, island-36-abc-clean-1234abcd.webp): the same island, not a new one."""
+    return re.sub(r"-clean-[0-9a-f]{8}(?=\.[A-Za-z0-9]+$)", "", f or "")
+
+
 def world(path: str):
     """The game's 1600x900 world window of the painting, as scene.js and the posts draw it."""
     from PIL import Image
@@ -101,13 +108,13 @@ def live(f: str) -> str | None:
 
 
 def living(f: str, path: str, now: float, tell) -> str | None:
-    if not kling.enabled("island") or live(f) == f:
+    if not kling.enabled("island") or live(f) in (f, plain(f)):   # a clean copy keeps the clip of its painting
         return None
     st = kling.state()
     off = st["off"].get("island")
-    if off is True or off == f:
+    if off is True or off in (f, plain(f)):
         return None
-    k = "island-" + key_of(f)
+    k = "island-" + key_of(plain(f))   # one clip per island: a clean copy of a painting that has one gets none
     if st["jobs"].get(k, {}).get("done_island"):
         return None
     j = kling.ask(k, "island", lambda: world(path), LOOP_PROMPT, duration="10", mode="pro", tail=True, now=now)
@@ -163,6 +170,9 @@ def trailer(f: str, path: str, now: float, tell) -> str | None:
     st = kling.state()
     seen = st.get("seen_island")
     if seen == f:
+        return None
+    if seen and plain(seen) == plain(f):   # the same island, only cleaned (paint.py isle): not a new island, no trailer
+        st["seen_island"] = f; kling.save(st)
         return None
     if seen is None and now - os.path.getmtime(path) > FRESH:   # first run: the painting has been live for a while
         st["seen_island"] = f; kling.save(st)

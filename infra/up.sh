@@ -46,6 +46,9 @@
 #                            node left alone, safe any time; up knowledge status  only what they hold now
 #              up lights     each painted room's lamps found for the night (nothing rebuilt, the node left alone);
 #                            up lights all  every room looked at again; a full up does the new rooms by itself
+#              up art        a set painted elsewhere taken over (infra/rabbit-art/imports/codex/isle-36: the island without
+#                            people, every place by day and its painted night), nothing rebuilt, nothing painted, the node
+#                            left alone, safe any time; up art isle-36  that set, up art check  only checks it
 #              up crier      the posting service (alerts) rebuilt with the code just pulled and Caddy given /island/*, the
 #                            node left alone, safe any time; then the island picture the posts carry, made from the live
 #                            painting, to look at; up crier status  only the picture made anew
@@ -75,6 +78,22 @@ if [ "${1:-}" = "post" ] && [ -n "${2:-}" ]; then
     docker compose run --rm -v /opt/tau-command-hud:/repo:ro -v /tmp:/out alerts python /repo/infra/alerts/post_image.py "/out/$2.jpg" "/repo/$J" --dry
     echo "look: https://node.tauhud.com/rico/art/drafts/$2.jpg   then post it: up post $2 send"
   fi
+  exit 0
+fi
+# a set painted elsewhere (paint.py isle), nothing rebuilt, nothing painted, the node left alone: up art  the newest set in
+# infra/rabbit-art/imports/codex, up art isle-36  that one, up art check [isle-36]  only checks it and writes nothing;
+# then the lamps of the places taken over found for the night (one short look each, as a full up does)
+if [ "${1:-}" = "art" ]; then
+  if [ "${2:-}" = "check" ]; then sh rabbit-art/paint.sh isle ${3:-} --dry; exit 0; fi
+  A=$(mktemp)
+  sh rabbit-art/paint.sh isle ${2:-} 2>&1 | tee "$A" || true
+  sh rabbit-art/paint.sh lights --missing 2>&1 | grep -E '^lights:|Error|error|GEMINI|painter' | tail -2 || true
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  grep -E '^isle:|took over|REFUSED|Traceback|Error' "$A" | grep -v '^isle: /' || true
+  echo "look: https://tauhud.com/rabbit/?hour=22:00 (Ctrl+F5), then walk into a place; by day ?hour=12:00"
+  echo "---------------- to here --------------------------------------"
+  rm -f "$A"
   exit 0
 fi
 # each painted room's own lamps for the night, nothing rebuilt, the node left alone: up lights  the rooms not looked at
