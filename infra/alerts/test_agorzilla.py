@@ -230,3 +230,24 @@ class RuleEvenings(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class KeptTest(unittest.TestCase):
+    """Rules v5 on agorzilla.com: box 1 keeps the look; a kept evening says "stays", never "became", and has no before/after card."""
+    R = {"n": 11, "t": 1794247200, "kind": "look", "category": "Sky", "options": ["Aurora", "Storm", "Pink dawn"],
+         "tally": [2, 2, 0], "winner": "Aurora", "tie": False, "kept": True, "feeders": 4}
+    L = {"stage_name": "Grown", "lived": 9, "open": {"kind": "look", "category": "Fur", "options": ["Natural", "Silver", "Honey"], "keep": "Natural"}}
+
+    def test_telegram_says_stays(self):
+        t = A.text(self.R, self.L)
+        self.assertIn("Sky stays <b>Aurora</b>", t)
+        self.assertNotIn("became", t)
+        self.assertIn("keep Natural, Silver, Honey", t)
+
+    def test_x_says_stays(self):
+        t = A.x_text(self.R, self.L)
+        self.assertIn("Sky stays Aurora", t)
+        self.assertNotIn("became", t)
+
+    def test_no_card_for_a_kept_look(self):
+        self.assertIsNone(A.evening_card(self.R))

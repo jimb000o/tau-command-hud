@@ -94,7 +94,8 @@ def tonight(latest: dict, html: bool) -> str:
     e = esc if html else str
     if is_rule(o) and o.get("question"):
         return f"Tonight is a rule evening, a vote on the rules of the game: {e(o['question'])} ({e(', '.join(o['options']))})."
-    return f"Tonight's choice: {e(o['category'])} ({e(', '.join(o['options']))})."
+    opts = [f"keep {o['keep']}" if o.get("keep") and k == 0 and v == o["keep"] else v for k, v in enumerate(o["options"])]   # rules v5: box 1 keeps it
+    return f"Tonight's choice: {e(o['category'])} ({e(', '.join(opts))})."
 
 
 def rule_head(r: dict, latest: dict, was: str | None, html: bool) -> tuple[str, str]:
@@ -124,6 +125,10 @@ def text(r: dict, latest: dict, was: str | None = None) -> str:
     votes = sum(r.get("tally") or [])
     if is_rule(r):
         head = "\n".join(rule_head(r, latest, was, html=True))
+    elif r.get("winner") and r.get("kept"):   # rules v5: "keep" won, or no other option had enough wallets
+        tally = " / ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"]))
+        head = f"🦍 Agorzilla, evening {r['n'] + 1}: {esc(r['category'])} stays <b>{esc(r['winner'])}</b>"
+        head += f" ({esc(tally)}). Not enough wallets wanted a change."
     elif r.get("winner"):
         tally = " / ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"]))
         head = f"🦍 Agorzilla, evening {r['n'] + 1}: {esc(r['category'])} became <b>{esc(r['winner'])}</b>"
@@ -148,6 +153,9 @@ def x_text(r: dict, latest: dict, was: str | None = None) -> str:
     """The evening on X: what changed first, then how it grows and tonight's choice; no link, no HTML."""
     if is_rule(r):
         head, body = rule_head(r, latest, was, html=False)
+    elif r.get("winner") and r.get("kept"):
+        head = f"🦍 Evening {r['n'] + 1}: {r['category']} stays {r['winner']}"
+        body = " · ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"])) + ". Not enough wallets wanted a change"
     elif r.get("winner"):
         head = f"🦍 Evening {r['n'] + 1}: {r['category']} became {r['winner']}"
         body = " · ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"])) + (", a tie settled by the state hash" if r.get("tie") else "")
@@ -235,7 +243,7 @@ def evening_card(r: dict) -> bytes | None:
     A rule evening does not change the look: its card is the ballot (rule_card)."""
     if is_rule(r):
         return rule_card(r)
-    if not r.get("winner"):
+    if not r.get("winner") or r.get("kept"):   # a kept look has no before and after
         return None
     paths = shots_of(r)
     if not paths:
