@@ -94,3 +94,30 @@ Queen Mempool
 GitHub
 Tauhud.com/cruise
 Guardian
+
+# No Memo: the game's name, the terminal's command words and the pirates' trick names are code
+No Memo
+nomemo>
+help
+jobs
+status
+case
+run
+back
+drop
+findings
+crew
+clear
+take <n>
+pick a|b
+peek <cmd> <hex>
+pick a
+pick b
+replay
+forged
+overspend
+expired
+stale
+freeride
+giant
+impostor

@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>No Memo</title>
+<meta name="description" content="A terminal game on Tau Testnet Alpha: twelve contracts from the crew of the Black Sequence, each a real transaction from your test wallet. Make the chain say no for the right reason, beat the block clock, take a payment back in time, and read the week's case file.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · No Memo">
+<meta property="og:description" content="Twelve contracts from the crew of the Black Sequence, each a real transaction on Tau Testnet Alpha. No memo field: say it in the amount.">
+<meta property="og:image" content="https://tauhud.com/assets/og/nomemo.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://tauhud.com/nomemo/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<meta name="twitter:image" content="https://tauhud.com/assets/og/nomemo.png">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber for the simulation, red for offline. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --dim: #8a8a94; --text: #ebebee; --mint: #b9ffd6;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 10px max(14px, env(safe-area-inset-right, 0px)) 10px max(14px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.05), transparent 55%),
+    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow: hidden; display: flex; flex-direction: column;
+}
+a { color: #fff; }
+.wrap { max-width: 1480px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto; min-height: 0; }
+.wrap > *, .wrap > .tnav { min-width: 0; flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; padding: 6px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.state { display: inline-flex; align-items: center; gap: 7px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+.state.live { color: var(--ok); border-color: rgba(57,255,138,.4); } .state.live i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.sim { color: var(--behind); border-color: rgba(255,177,59,.4); } .state.sim i { background: var(--behind); }
+.state.off { color: var(--bad); border-color: rgba(255,77,109,.4); } .state.off i { background: var(--bad); }
+
+/* the deck: contracts on the left, the terminal in the middle, the instruments on the right; it fills the window, each pane scrolls inside */
+.deck { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(230px, 300px) minmax(0, 1fr) minmax(210px, 270px); gap: 8px; }
+.pane { border: 1px solid var(--line); border-radius: 8px; background: rgba(12,12,14,.9); min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.pane h2 { margin: 0; padding: 9px 12px 7px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.pane h2 small { font: 11px var(--mono); text-transform: none; letter-spacing: 0; color: var(--dim); }
+.scroll { overflow: auto; min-height: 0; flex: 1 1 auto; overscroll-behavior: contain; }
+
+/* contracts */
+.jobs { list-style: none; margin: 0; padding: 4px 0; }
+.jobs li { display: grid; grid-template-columns: 22px 1fr auto; gap: 2px 8px; padding: 7px 12px; border-bottom: 1px solid var(--line); cursor: pointer; min-height: 44px; align-items: center; }
+.jobs li:hover { background: rgba(255,255,255,.03); }
+.jobs li .n { color: var(--dim); font-size: 11px; }
+.jobs li .t { color: #fff; font-weight: 600; }
+.jobs li .w { color: var(--dim); font-size: 11px; grid-column: 2 / 4; }
+.jobs li .st { font-size: 11px; color: var(--dim); white-space: nowrap; }
+.jobs li.done .t { color: var(--dim); font-weight: 500; text-decoration: line-through; text-decoration-color: rgba(255,255,255,.3); }
+.jobs li.done .st { color: var(--ok); }
+.jobs li.taken { background: rgba(57,255,138,.05); box-shadow: inset 2px 0 0 var(--ok); }
+.jobs li.taken .st { color: var(--ok); }
+.jobs li.next .n { color: var(--ok); }
+.crewnote { padding: 8px 12px 10px; color: var(--dim); font-size: 11px; border-top: 1px solid var(--line); }
+
+/* the terminal */
+.term { background: #050506; }
+.screen { padding: 10px 14px 6px; font-size: 13px; line-height: 1.5; }
+.screen p { margin: 0 0 2px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.screen .sys { color: var(--dim); }
+.screen .you { color: #fff; }
+.screen .you::before { content: "nomemo> "; color: var(--ok); }
+.screen .crew b { color: var(--mint); font-weight: 600; }
+.screen .crew { color: var(--text); }
+.screen .ok { color: var(--ok); }
+.screen .no { color: var(--bad); }
+.screen .warn { color: var(--behind); }
+.screen .step { color: var(--dim); } .screen .step::before { content: "› "; }
+.screen .learn { color: #fff; border-left: 2px solid var(--ok); padding-left: 8px; margin: 6px 0; }
+.screen a { color: var(--mint); }
+.screen code { font: inherit; color: #fff; background: rgba(255,255,255,.07); padding: 0 4px; border-radius: 3px; }
+.screen .cols { display: grid; grid-template-columns: max-content 1fr; gap: 0 14px; }
+.screen .cols span:nth-child(odd) { color: var(--ok); }
+.screen .hist { display: grid; grid-template-columns: max-content max-content 1fr; gap: 0 14px; margin: 4px 0; }
+.screen .hist span:nth-child(3n+1) { color: var(--dim); }
+.screen .cur { display: inline-block; width: 8px; height: 14px; background: var(--ok); vertical-align: -2px; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.cmd { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-top: 1px solid var(--line); background: rgba(255,255,255,.02); }
+.cmd .ps { color: var(--ok); flex: none; }
+.cmd input { flex: 1 1 auto; min-width: 0; background: transparent; border: 0; outline: 0; color: #fff; font: 13px var(--mono); padding: 8px 0; caret-color: var(--ok); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 12px 8px; border-top: 1px solid var(--line); }
+.chips button { font: 11px var(--mono); color: var(--dim); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 6px 11px; cursor: pointer; min-height: 32px; }
+.chips button:hover { color: #fff; border-color: var(--hair); }
+.chips button.go { color: var(--ok); border-color: rgba(57,255,138,.45); }
+
+/* instruments */
+.inst { padding: 4px 0; }
+.inst .row { padding: 7px 12px; border-bottom: 1px solid var(--line); }
+.inst .row h3 { margin: 0; font: 600 10px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.inst .row b { display: block; font: 600 15px var(--display); color: #fff; margin-top: 2px; letter-spacing: .01em; overflow-wrap: anywhere; }
+.inst .row p { margin: 1px 0 0; color: var(--dim); font-size: 11px; }
+.inst .row a { color: var(--dim); font-size: 11px; }
+.trace { height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); margin-top: 6px; overflow: hidden; }
+.trace i { display: block; height: 100%; background: var(--ok); width: 0; transition: width .6s linear; }
+.trace.hot i { background: var(--behind); }
+.trace.out i { background: var(--bad); }
+.rank { color: var(--ok) !important; }
+.inst .row.state-live b { color: var(--ok); } .inst .row.state-sim b { color: var(--behind); } .inst .row.state-off b { color: var(--bad); }
+
+.mtabs { display: none; }
+footer { color: var(--dim); font-size: 11px; padding: 0; }
+footer a { color: var(--dim); }
+footer p { margin: 0; }
+
+@media (max-width: 1100px) { .deck { grid-template-columns: minmax(200px, 250px) minmax(0, 1fr); } .pane.stat { display: none; } .inst-sm { display: block; } }
+@media (max-height: 760px) { .screen { font-size: 12px; } footer { display: none; } }
+@media (max-width: 760px) {
+  body { padding: 6px 10px 62px; }
+  .brand span { display: none; }
+  .deck { display: block; }
+  .pane { height: 100%; }
+  .pane:not(.show) { display: none; }
+  .pane.stat { display: flex; }
+  .pane.stat:not(.show) { display: none; }
+  .mtabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .mtabs button { font: 600 11px var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 0 6px; min-height: 44px; cursor: pointer; }
+  .mtabs button.on { color: #fff; border-color: var(--hair); }
+  .screen { font-size: 12px; padding: 8px 10px 4px; }
+  .cmd input { font-size: 16px; min-height: 44px; }   /* 16px: no zoom-in on focus */
+  .chips { padding: 6px 8px 8px; } .chips button { min-height: 44px; font-size: 11px; }
+  .jobs li { min-height: 52px; }
+  footer { display: none; }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>No Memo</span></a>
+    <span class="state" id="state" data-tip="Where this terminal talks to.\nEvery contract is a transaction signed in this browser and sent to Tau Testnet Alpha through our node at node.tauhud.com."><i></i><span id="stateText">Connecting</span></span>
+  </header>
+  <nav class="tnav" data-page="nomemo" aria-label="Pages and tools"></nav>
+  <div class="mtabs" id="mtabs" role="tablist" aria-label="Panes">
+    <button type="button" data-pane="jobs">Contracts</button>
+    <button type="button" data-pane="term" class="on">Terminal</button>
+    <button type="button" data-pane="stat">Instruments</button>
+  </div>
+  <div class="deck" id="deck">
+    <aside class="pane jobs-pane" id="paneJobs" aria-label="Contracts">
+      <h2><span>Contracts</span><small id="jobsCount"></small></h2>
+      <div class="scroll"><ol class="jobs" id="jobs"></ol></div>
+      <div class="crewnote">Nobody on board is a real person. What you do here is real: every contract is a test transaction on Tau Testnet Alpha from your own test wallet, signed in this browser. Test AGRS have no value.</div>
+    </aside>
+    <section class="pane term show" id="paneTerm" aria-label="Terminal">
+      <div class="scroll" id="screenWrap"><div class="screen" id="screen" role="log" aria-live="polite"></div></div>
+      <form class="cmd" id="cmdForm" autocomplete="off"><span class="ps" aria-hidden="true">nomemo&gt;</span><input id="cmd" name="cmd" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Command" placeholder="help"></form>
+      <div class="chips" id="chips"></div>
+    </section>
+    <aside class="pane stat" id="paneStat" aria-label="Instruments">
+      <h2><span>Instruments</span></h2>
+      <div class="scroll inst" id="inst"></div>
+    </aside>
+  </div>
+  <footer><p>Unofficial, not affiliated with IDNI. A game on the public testnet: your test wallet is the one <a href="/wallet/">the wallet page</a> and <a href="/rabbit/">White Rabbit Key</a> use, made in this browser, never sent anywhere. The crew of the Black Sequence also calls at the island on Tuesdays: <a href="/cruise/">cruise logbook</a>.</p></footer>
+</div>
+<script src="../wallet/vendor/tau-bls.min.js"></script>
+<script src="game.js" defer></script>
+</body>
+</html>
