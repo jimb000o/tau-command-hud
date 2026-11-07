@@ -31,6 +31,8 @@ import time
 import urllib.request
 from collections import Counter
 
+import ai_meter
+
 log = logging.getLogger("blog")
 
 RELAY = os.environ.get("RELAY_HTTP", "http://relay:8080").rstrip("/")
@@ -310,6 +312,7 @@ def ask_ai(facts: dict) -> dict:
         "x-api-key": AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
     with urllib.request.urlopen(req, timeout=240) as r:
         j = json.load(r)
+    ai_meter.meter("blog", AI_MODEL, j.get("usage"))
     text = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
     m = re.search(r"\{.*\}", text, re.S)
     if not m:

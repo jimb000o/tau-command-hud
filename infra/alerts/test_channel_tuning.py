@@ -86,6 +86,10 @@ check("Pictures (Google Gemini) in December: $0, nothing painted" in c and "$200
 c = alerts.costs_text(costs, None, None, "2026-11")
 check("Gemini" not in c, "costs: no usage file, no Gemini line")
 check("Gemini" not in alerts.costs_text(costs, None, usage, "2026-10"), "costs: no line for a month before measuring began")
+c = alerts.costs_text(costs, None, usage, "2026-11", {"usd": 2.5, "answers": 40, "since": "2026-11-07", "by": {}})
+check("AI writing (Anthropic API: blog, IDNI news, chat check) in November: about $2.50 for 40 answers, measured since 7 November" in c
+      and "$203.73" in c, "costs: last month's measured Anthropic answers listed and added to the dollars")
+check("Anthropic" not in alerts.costs_text(costs, None, None, "2026-11", None), "costs: nothing measured, no Anthropic line")
 
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)

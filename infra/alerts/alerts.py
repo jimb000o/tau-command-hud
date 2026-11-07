@@ -110,6 +110,7 @@ import explain
 import findings
 import firsts
 import gazette
+import ai_meter
 import idni_digest
 import recap
 import tickerwatch
@@ -1721,9 +1722,25 @@ def gemini_line(usage: dict | None, month: str) -> tuple[str, float] | None:
     return f"• Pictures (Google Gemini) in {name}: about ${usd:.2f} for {plural(n, 'picture')}{since}", usd
 
 
-def costs_text(costs: dict | None, don: dict | None, gemini: dict | None = None, month: str = "") -> str | None:
-    """The month's running costs as billed (assets/costs.json), last month's measured Gemini pictures (gemini-usage.json,
-    for `month`, YYYY-MM) and what came in (donations.json); None without costs."""
+def anthropic_line(t: dict | None, month: str) -> tuple[str, float] | None:
+    """Last month's answers from the Anthropic API (blog drafts, IDNI news and daily post, troll box check) as measured
+    by ai_meter.py: (line, US dollars), or None while nothing was measured for that month."""
+    if not t:
+        return None
+    name = datetime.strptime(month + "-01", "%Y-%m-%d").strftime("%B")
+    since = f", measured since {int(t['since'][8:10])} {name}" if t["since"][:7] == month else ", measured"
+    usd = round(float(t.get("usd") or 0), 2)
+    if not t.get("answers"):
+        return f"• AI writing (Anthropic API) in {name}: $0", 0.0
+    return (f"• AI writing (Anthropic API: blog, IDNI news, chat check) in {name}: about ${usd:.2f} for "
+            f"{plural(int(t['answers']), 'answer')}{since}"), usd
+
+
+def costs_text(costs: dict | None, don: dict | None, gemini: dict | None = None, month: str = "",
+               anthropic: dict | None = None) -> str | None:
+    """The month's running costs as billed (assets/costs.json), last month's measured Gemini pictures (gemini-usage.json)
+    and Anthropic API answers (ai_meter.totals), both for `month` (YYYY-MM), and what came in (donations.json); None
+    without costs."""
     e = html.escape
     items = (costs or {}).get("items") or []
     billed = [i for i in items if isinstance(i.get("amount"), (int, float))]
@@ -1732,14 +1749,14 @@ def costs_text(costs: dict | None, don: dict | None, gemini: dict | None = None,
     by_cur: dict[str, float] = {}
     for i in billed:
         by_cur[i["cur"]] = by_cur.get(i["cur"], 0) + i["amount"]
-    gem = gemini_line(gemini, month) if month else None
-    if gem and gem[1]:
-        by_cur["USD"] = round(by_cur.get("USD", 0) + gem[1], 2)
+    measured = [x for x in ((gemini_line(gemini, month), anthropic_line(anthropic, month)) if month else ()) if x]
+    for _, usd in measured:
+        if usd:
+            by_cur["USD"] = round(by_cur.get("USD", 0) + usd, 2)
     total = " + ".join(f"{CUR.get(c, c + ' ')}{n:g}" for c, n in by_cur.items())
     out = ["💚 <b>TAU HUD · what it costs to run</b>", f"<b>About {e(total)} a month, not counting time</b>", ""]
     out += [f"• {e(i['t'])}: {CUR.get(i['cur'], i['cur'] + ' ')}{i['amount']:g}" for i in billed]
-    if gem:
-        out.append(e(gem[0]))
+    out += [e(line) for line, _ in measured]
     open_bills = [i["t"] for i in items if i.get("amount") is None]
     if open_bills:
         out.append(f"• not in yet: {e(', '.join(open_bills))}")
@@ -3489,7 +3506,7 @@ class Watcher:
                 don = None
         last = (d.replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
         gemini = await asyncio.to_thread(self.fetch_json_url, GEMINI_USAGE_URL)
-        text = costs_text(costs, don, gemini, last)
+        text = costs_text(costs, don, gemini, last, await asyncio.to_thread(ai_meter.totals, last))
         st["month"] = month
         if text:
             ok, _, err = await asyncio.to_thread(tg[0].send_text, text, link_buttons(("💚 Support Tau HUD", f"{SITE}/donate/")))
