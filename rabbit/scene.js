@@ -1509,7 +1509,14 @@
      drawn island of the first days, with its palms, people, flags and boat, is a fallback for when the server has no
      painting, not a picture to flash before the real one */
   const ART = { base: "https://node.tauhud.com/rico/art/", img: {}, pending: true };
-  const settle = () => { if (!ART.pending) return; ART.pending = false; S.base = null; if (S.c) size(); };
+  /* no painting (the server restarting or out of reach): the drawn island stands in, and the painting is asked for
+     again after 15 s, 30 s, 1 and 2 min, then every 5 min, so it comes back by itself without a reload */
+  let again = 15000;
+  const drawn = () => { clearTimeout(late); if (ART.pending && !ART.img.island) { ART.pending = false; S.base = null; if (S.c) size(); } };
+  const settle = () => {
+    drawn(); if (ART.img.island) return;
+    clearTimeout(ART.retry); ART.retry = setTimeout(() => ask(0), again); again = Math.min(300000, again * 2);
+  };
   let late = setTimeout(settle, 12000);   // a silent server: the drawn island after all
   /* the list of the paintings; a server that is restarting just then (up) is asked again, three times, before the drawn
      island shows */
@@ -1519,11 +1526,13 @@
     /* each room's own lamps (paint.py lights), only while they were found in the very painting that shows */
     ART.lights = {};
     for (const id in (j && j.lights) || {}) { const L = j.lights[id]; if (L && Array.isArray(L.l) && (L.of === scenes[id] || L.of === ((j.orig || {})[id]))) ART.lights[id] = L; }
-    if (!scenes.island) settle();
+    if (!scenes.island) drawn();   // the server has no painting of the island: the drawn one, and no asking again
     else { clearTimeout(late); late = setTimeout(settle, 30000); }   // the painting is listed: a large picture on a slow line takes its time
     Object.entries(scenes).forEach(([id, f]) => {
-      const im = new Image(); im.crossOrigin = "anonymous"; im.decoding = "async";
+      if (ART.img[id] && ART.img[id].f === f) return;   // asked again: a painting that came already stays
+      const im = new Image(); im.crossOrigin = "anonymous"; im.decoding = "async"; im.f = f;
       im.onload = () => {
+        if (id === "island" && ART.img.island) return;   // asked again meanwhile: the painting that came first stays
         ART.img[id] = im;
         if (id === "folk") return;   // the people, painted: a strip of figures (infra/rabbit-art paint.py folk)
         if (id !== "island") { delete roomCache[id]; return; }
@@ -1532,8 +1541,9 @@
         if (j.layout && painted("island")) useLayout(j.layout);
         const bare = ART.pending;   // only the bare sky and sea were there: the view starts where it belongs, the painting fades in
         ART.pending = false; S.base = null; if (bare) S.sized = false;
+        clearTimeout(late); clearTimeout(ART.retry);
         if (S.c) size();
-        ART.fade = bare;   // over the drawn island (a very slow line) it simply takes its place
+        ART.fade = bare;   // over the drawn island (a very slow line, a server back from a restart) it simply takes its place
       };
       if (id === "island") im.onerror = settle;
       im.src = ART.base + f;

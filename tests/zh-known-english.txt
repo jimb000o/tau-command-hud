@@ -44,6 +44,7 @@ SVG
 Smick
 Tau
 Tau HUD
+Tau Testnet Alpha
 admission.py
 admission.py:{n} ↗
 alice-node

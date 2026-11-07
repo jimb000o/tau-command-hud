@@ -136,6 +136,11 @@ HEALTH_WEIGHTS = {"node": 20, "sync": 15, "last_block": 20, "pace": 10, "availab
 # this long afterwards (the block poll may still be catching up)
 DROP_GRACE_SECONDS = _env_float("DROP_GRACE_SECONDS", 30)
 UPSTREAM_TIMEOUT = _env_float("UPSTREAM_TIMEOUT_SECONDS", 20)
+# A visitor's own transaction (sendtx/checktx from tauhud.com/wallet, agorzilla.com, White Rabbit Key): the node runs
+# Tau once per transfer in it, so a feed with a vote and a suggestion (three transfers) takes about three times as
+# long as one payment. At the 6.8 s median the node answered the Queen's sends with (7.11), 20 s cut those off and
+# the page said "nothing was sent" for transactions that then arrived.
+WALLET_TIMEOUT = _env_float("WALLET_TIMEOUT_SECONDS", 60)
 # The island bot and cruise ships use a second node connection of their own (Relay.sender); 0 = share the visitors' one
 SENDER_CONNECTION = os.environ.get("SENDER_CONNECTION", "1") != "0"
 SENDER_FALLBACK = _env_float("SENDER_FALLBACK_SECONDS", 60)   # sender down this long -> borrow the visitors' connection
@@ -340,7 +345,7 @@ class Upstream:
             await asyncio.sleep(backoff)
             backoff = min(backoff * 2, 30)
 
-    async def request(self, command: str) -> dict | None:
+    async def request(self, command: str, timeout: float | None = None) -> dict | None:
         """Send one command and return the parsed envelope, or None."""
         async with self.lock:
             if command.split()[0] in HEAVY_COMMANDS:
@@ -350,7 +355,7 @@ class Upstream:
                 return None
             try:
                 await ws.send(command)
-                raw = await asyncio.wait_for(ws.recv(), UPSTREAM_TIMEOUT)
+                raw = await asyncio.wait_for(ws.recv(), timeout or UPSTREAM_TIMEOUT)
             except (ConnectionClosed, asyncio.TimeoutError) as exc:
                 log.warning("%s %s failed: %r", self.name, command.split()[0], exc)
                 await ws.close()
@@ -1428,8 +1433,13 @@ class Relay:
             if cmd == "sendtx":
                 self.load.sent("refused")
             return envelope_error(cmd, "Relay is busy; retry shortly.", "BUSY")
-        msg = await self.upstream.request(f"{cmd} {tx}")
+        # Through the sending connection while it is up, so a slow send never holds the visitors' reads (pages keep
+        # loading), and with the longer WALLET_TIMEOUT. A send the node did not answer in time may still be in its mempool.
+        way = self.sender if (self.sender is not None and self.sender.ws is not None) else self.upstream
+        msg = await way.request(f"{cmd} {tx}", WALLET_TIMEOUT)
         if msg is None:
+            if cmd == "sendtx":
+                return envelope_error(cmd, "The node did not answer in time; the transaction may still arrive.", "NO_ANSWER")
             return envelope_error(cmd, "Node is not reachable right now.", "UPSTREAM_DOWN")
         if cmd == "sendtx":
             self.load.sent("sent" if msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False else "refused")

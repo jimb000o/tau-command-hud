@@ -28,6 +28,7 @@ import re
 import secrets
 import sys
 import time
+import urllib.error
 import urllib.request
 from collections import Counter
 
@@ -88,7 +89,9 @@ in one or two sentences what this one call means for the testnet as a whole and 
 - When the facts have "the ship before": compare this call with that one in its own section, say plainly what \
 improved, what did not and why (use "what we changed after that call"), and note that the two ships differ in size \
 and plan where that matters. The change from the ship before is the news of the article: it belongs in the title or \
-dek when it is real (for example a ship that stayed the whole time after one that left early).
+dek when it is real (for example a ship that stayed the whole time after one that left early). Where "the ship before" \
+has a "note" that its unanswered sends were counted as refusals by the rule of the time, the node refused none of them: \
+write "sends without an answer, counted as refusals by the old rule", never "the node refused them".
 - Never write a line for a thing that did not happen or was not tried (no "0 bookings were checked" on a day without \
 bookings); leave it out.
 - Length: 300 to 500 English words in body.
@@ -176,8 +179,8 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
     f["accepted in all"] = sum(f["sent and accepted"].values())
     f["refused in all"] = sum(f["refused by the node"].values())
     unanswered = [e for e in sends if e.get("ok") is None and "no answer" in str(e.get("note") or "")]
-    # before 6 November 2026 a send without an answer was logged as refused with an empty error
-    silent = [e for e in sends if e.get("ok") is False and not e.get("err")]
+    # before 6 November 2026 a send without an answer was logged as refused with an empty error (written as "null" at times)
+    silent = [e for e in sends if e.get("ok") is False and str(e.get("err") or "").strip().lower() in ("", "null", "none")]
     if unanswered or s.get("unanswered"):
         f["sends our node did not answer in time (not refusals)"] = s.get("unanswered") or len(unanswered)
         if later:
@@ -333,7 +336,10 @@ def compare_with(f: dict, before: dict | None) -> dict:
         b["refused in all"] = (before.get("refused in all") or 0) - old
         b["note"] = f"its {old} unanswered sends were counted as refusals by the rule of the time, and that is why it left early"
     if before.get("left early"):
-        b["left early"] = {"at": before["left early"].get("at"), "why": before["left early"].get("why")}
+        why = str(before["left early"].get("why") or "")
+        if old:
+            why += " (sends without an answer, which the rule of the time counted as refusals; the node refused none)"
+        b["left early"] = {"at": before["left early"].get("at"), "why": why}
     t = before.get("our node's answer time to a send, seconds") or {}
     if t.get("median"):
         b["our node's median answer time, seconds"] = t["median"]
@@ -396,20 +402,50 @@ def unknown_numbers(text: str, facts: dict) -> list[str]:
 
 
 # ---------- writing ----------
-def ask_ai(facts: dict) -> dict:
+def _obj(props: dict, required: list | None = None) -> dict:
+    return {"type": "object", "properties": props, "required": required or list(props), "additionalProperties": False}
+
+
+L3 = _obj({k: {"type": "string"} for k in LANGS})
+ARTICLE_SHAPE = _obj({   # the API shapes the answer by this schema, so no quote in the text can break the JSON
+    "title": L3, "dek": L3,
+    "why": {"type": "array", "items": L3, "description": "2 or 3 short lines"},
+    "body": L3, "x": {"type": "string"},
+    "card": _obj({"line": {"type": "string"}, "why": {"type": "array", "items": {"type": "string"}, "description": "up to 3 short lines"}})})
+
+
+def ask_ai(facts: dict, tries: int = 2, shaped: bool = True) -> dict:
     prompt = "Facts counted from the logbook of one cruise ship visit (JSON):\n\n" + json.dumps(facts, ensure_ascii=False, indent=1)
-    body = json.dumps({"model": AI_MODEL, "max_tokens": 6000, "system": SYSTEM,
-                       "messages": [{"role": "user", "content": prompt}]}).encode()
-    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body, headers={
+    body = {"model": AI_MODEL, "max_tokens": 8000, "system": SYSTEM, "messages": [{"role": "user", "content": prompt}]}
+    if shaped:
+        body["output_config"] = {"format": {"type": "json_schema", "schema": ARTICLE_SHAPE}}
+    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=json.dumps(body).encode(), headers={
         "x-api-key": AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
-    with urllib.request.urlopen(req, timeout=240) as r:
-        j = json.load(r)
+    try:
+        with urllib.request.urlopen(req, timeout=300) as r:
+            j = urllib_json(r)
+    except urllib.error.HTTPError as e:
+        reason = e.read().decode("utf-8", "replace")[:600]
+        log.warning("the API answered %s for model %s: %s", e.code, AI_MODEL, reason)
+        if e.code == 400 and shaped:   # the model does not take the shaped answer: ask the plain way, the JSON in the text
+            return ask_ai(facts, tries, shaped=False)
+        raise RuntimeError(f"the API answered {e.code} for model {AI_MODEL}: {reason}") from None
     ai_meter.meter("blog", AI_MODEL, j.get("usage"))
     text = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
     m = re.search(r"\{.*\}", text, re.S)
-    if not m:
-        raise ValueError("no JSON in the answer: " + text[:200])
-    return json.loads(m.group(0))
+    try:
+        if not m:
+            raise ValueError("no JSON in the answer: " + text[:200])
+        return json.loads(m.group(0))
+    except ValueError as e:
+        if tries > 1:
+            log.warning("the model's answer was not valid JSON (%s): asking once more", e)
+            return ask_ai(facts, tries - 1, shaped)
+        raise
+
+
+def urllib_json(r):
+    return json.load(r)
 
 
 def three(d, cap: int) -> dict | None:
@@ -447,7 +483,9 @@ def article(facts: dict, out: dict, now: float) -> dict:
 def card_of(c, title: str) -> list[str]:
     """The lines on the hero picture: title, the point, "Why it matters" and up to three short points, the footer."""
     c = c if isinstance(c, dict) else {}
-    short = lambda t, n: " ".join(str(t or "").split())[:n]  # noqa: E731
+    def short(t, n):   # cut at a word, never in the middle of one
+        t = " ".join(str(t or "").split())
+        return t if len(t) <= n else t[:n].rsplit(" ", 1)[0].rstrip(" ,;:")
     lines = [short(title, 60)]
     if c.get("line"):
         lines.append(short(c["line"], 64))
@@ -837,6 +875,8 @@ def main(argv: list[str]) -> int:
         if not AI_KEY:
             print("no NEWS_AI_KEY in infra/.env: no draft")
             return 1
+        print(f"writing the article of {args[0]}: the model reads the logbook and writes it in three languages, 1 to 4 minutes, "
+              "nothing is published", flush=True)
         did = write_draft(args[0])
         print(f"draft {did} written")
         return drafts_cli()

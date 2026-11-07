@@ -2558,6 +2558,21 @@
     "html": "White Rabbit Key: the start screen now says in one breath what the game is, what you are after and why it is on Tau: run for governor against three rivals the island plays, ten islanders vote on Sunday night, every move a real transaction on Tau Testnet Alpha from a test wallet the browser makes for you, and other people play beside you all week, counted live. After the pick, signs stand over the places until the first move, the council hall marked as the place to start. From feedback in the Tau Telegram: nobody should need a tour to get this in twenty seconds."
   },
   {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-07",
+    "html": "White Rabbit Key: the first day of a campaign has six moves, so a first visit is a real game and not three taps; from then on three a day, as before. One more move for the day comes from your first pact and from the key in the grotto, as it did from the evening bell. What costs no move is now said where the moves run out and in the list of places: asking, reading the Book, The island today and every visit to the school, the dive centre, the works, the camp, the old ship, the stone circle and the drums."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-07",
+    "html": "White Rabbit Key: every move now shows what it is on the chain. A strip under the island says the move was signed into Tau Testnet Alpha and is waiting for a block, then that it was sealed, with the block number, the hash and a link to the Explorer; a chip in the bar counts the campaign's transactions sealed so far and opens the list of all of them with the chain's answer to each. The game asks the relay for the status of what is still waiting."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-07",
+    "html": "Tau HUD: a first visit opens on one screen instead of the whole dashboard: the newest block, one sentence on what makes Tau different, and three doors: watch the chain live, write a money rule in four steps, or run for governor on White Rabbit Key. The full dashboard is one click away and is what every visit after shows. From feedback in the Tau Telegram: a crypto person should get it in twenty seconds without a tour. ?calm=1 shows the door again, ?full=1 the dashboard."
+  },
+  {
     "tag": "Blog",
     "on": "2026-11-07",
     "html": "Blog: every article now reads against the ship before it. A new chart sets this call beside the last one (minutes in port, accepted, unanswered, skipped), the first number tile on the title picture always shows the minutes in port with the ship before's number, and the same four tiles appear on every ship's picture. The drafting rules now ask for what improved and what did not since the last call and why, for what the numbers come to rather than the numbers alone (shares, the pace our node's answer time allows, blocks sealed during the call), and for one or two sentences on what the call means for the testnet as a whole. A line for a thing that never happened (bookings on a day without bookings) is no longer written, and the picture's second line no longer repeats the title."
