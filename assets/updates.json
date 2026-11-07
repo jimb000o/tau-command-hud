@@ -2529,5 +2529,17 @@
       "link": "/facts/"
     },
     "html": "Tau facts for your AI (tauhud.com/facts/): AI assistants often answer about Tau from old training data. This page lists what is true today, 24 facts in English, Chinese and Japanese, each linked to the exact lines in IDNI's own repositories it was read from, next to the live chain numbers and IDNI's newest commits, with a sentence to paste before your question. The same list is at tauhud.com/llms.txt, and with the live part, regenerated every 30 minutes, at node.tauhud.com/tau-today.md. When IDNI changes a file a fact was read from, that fact is marked to check again until a person reads it anew."
+  },
+  {
+    "tag": "Wallet",
+    "on": "2026-11-07",
+    "html": "Wallet: ready-made rules, one click each. Five of them, built from what people asked for in the Tau chats: Starter shield (at most 5,000 test AGRS per payment, and the way back on for new addresses and anything above 1,000), Only my people (payments only to names in your address book), Savings lock (nothing leaves before a date 90 days out), Second signature (above 1,000 a friend or the Guardian co-signs), and Way back by default (payments to new addresses and above 1,000 go with a way back of 30 blocks; no rule place needed, a habit of this wallet). Each card says what it keeps off and, in amber, what it does not: whoever holds your key can replace the rule, and a rule sees one payment at a time, so there is a limit per payment and no daily limit. Every card has a link to pass on that fills the same blocks for whoever opens it, nothing signed. New walk for someone a friend sent, /wallet/?walk=friend: make a test account, turn the way back on, pay a stranger, take it back, then a line to pass on. Opens of those links are counted by their tag only, nothing about who, and show up in the Sunday channel note.",
+    "major": {
+      "id": "wallet-presets",
+      "title": "New: ready-made wallet rules, one click each",
+      "text": "Five rules built from what people asked for: a limit per payment with the way back on, only to your address book, a savings lock, a second signature from a friend or the Guardian, and the way back by default. Each card says what it keeps off and what it does not. Plus a five-minute walk for a friend: pay a wrong address, take it back.",
+      "link": "/wallet/",
+      "image": "/assets/shots/wallet-presets.png"
+    }
   }
 ]
