@@ -1037,31 +1037,37 @@
     g.fillStyle = col; g.beginPath(); g.moveTo(x, y - 24); g.lineTo(x + 12, y - 21 + w); g.lineTo(x, y - 17); g.closePath(); g.fill(); g.stroke();
   }
   const placePt = id => { const p = PLACES[id]; return !p ? null : p.c ? [p.c[0], p.c[1]] : [p.x, p.y - 18]; };
-  /* The passengers ashore, painted (rabbit/art/tourists: one sheet and its manifest, cut and laid out from the painted
-     figures by infra/rabbit-art/tourists.py). Where the relay counts passengers (v.at), a group stands on the layout's
-     ground for that place (stand: its first point is where the guide stands, the others are the corners of the ground
-     the group may use), one figure for each passenger as far as the ground holds them, filled from the guide outwards
-     and the same for the whole visit. They face their guide, from behind or from the front or in profile as she stands
-     to them, and now and then one of them makes their small gesture (each figure's second frame); nobody walks. Those
-     who come fade in, those who go on fade out; on the pier they wait for the tenders. A grown-up is 16 world units
-     tall, as the painting measures (loungers, doors and umbrellas: about 8.5 units to the metre); layout "crowd" scales
-     them. Without the art (or with ?art=drawn), and at a place without ground, the guide's pennant shows as before. */
-  const CROWD = { at: {}, cast: {}, slots: {}, t: 0 }, CROWD_FADE = 900;   // ms for one passenger to come or go
+  /* The passengers ashore, painted (rabbit/art/tourists: one sheet and its manifest, scaled and laid out from the
+     painted figures by infra/rabbit-art/tourists.py, both frames of a figure from their whole canvases alike, so they
+     line up to the pixel). Where the relay counts passengers (v.at), a group stands on the layout's ground for that
+     place (stand: its first point is where the guide stands, the others are the corners of the ground the group may
+     use), one figure for each passenger as far as the ground holds them, filled from the guide outwards and the same
+     for the whole visit. They face their guide, from behind or from the front or in profile as she stands to them, and
+     now and then one of them makes their small gesture (each figure's second frame, swapped in whole: no cross-fade);
+     nobody walks. Those who come appear one by one, those who go on leave one by one; on the pier they wait for the
+     tenders. A grown-up is 16 world units tall, as the painting measures (loungers, doors and umbrellas: about 8.5
+     units to the metre); layout "crowd" scales them. What stands in front of the ground (layout "over": a railing,
+     a bollard, a post, each a polygon with the depth d it stands at) is painted again over the figures behind it, so
+     feet behind a railing stay hidden. Without the art (or with ?art=drawn), and at a place without ground, the
+     guide's pennant shows as before. */
+  const CROWD = { at: {}, cast: {}, slots: {}, t: 0 }, CROWD_STEP = 900;   // ms between two passengers coming or going
   fetch("/rabbit/art/tourists/tourists.json").then(r => r.ok ? r.json() : null).then(m => {
     if (!crowdOk(m)) return;
     const im = new Image(); im.decoding = "async";
-    im.onload = () => { CROWD.m = m; CROWD.im = im; };
+    im.onload = () => { CROWD.m = m; CROWD.im = im; };   // one picture holds both frames of everyone: nothing to load later
     im.src = "/rabbit/art/tourists/" + m.src;
   }).catch(() => {});
   function crowdOk(m) {
-    const fig = f => !!f && Number.isInteger(f.a) && Number.isInteger(f.b) && Array.isArray(f.foot) && f.foot.length === 2 && f.foot.every(Number.isFinite);
+    const num = v => Array.isArray(v) && v.every(Number.isFinite);
+    const fig = f => !!f && Number.isInteger(f.a) && Number.isInteger(f.b) && num(f.foot) && f.foot.length === 2
+      && (f.contacts === undefined || Array.isArray(f.contacts) && f.contacts.every(c => num(c) && c.length === 3));
     return !!m && typeof m.src === "string" && /^[a-z0-9-]+\.webp$/.test(m.src) && m.unit > 0 && Number.isInteger(m.cols) && m.cols > 0
       && Array.isArray(m.cell) && m.cell.length === 2 && m.cell.every(v => v > 0) && Array.isArray(m.figures) && m.figures.length > 0
       && m.figures.every(f => fig(f) && /^(back|front|side)$/.test(f.view) && (f.face === 1 || f.face === -1)) && Object.values(m.guides || {}).every(fig);
   }
   const crowdArt = () => !!CROWD.im && !!S.base?.painted && !/[?&]art=drawn(?:&|$)/.test(location.search);
   const h01 = (...v) => { let h = 2166136261; for (const ch of v.join("|")) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return (h >>> 0) / 4294967296; };
-  /* where a group stands: a loose, slightly uneven lattice on the place's ground (people about a metre apart: 8.6 units, 4.8 deep
+  /* where a group stands: a loose, slightly uneven lattice on the place's ground (people about 7 units apart, 4 deep
      on the screen), nearest the guide first, at most 40 (inPoly: further down, with the click areas) */
   function standSlots(id) {
     const st = SPOT.stand && SPOT.stand[id], c = CROWD.slots[id];
@@ -1070,8 +1076,8 @@
     if (Array.isArray(st) && st.length >= 4 && st.every(p => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite))) {
       const [[gx, gy], ...P] = st, xs = P.map(p => p[0]), ys = P.map(p => p[1]);
       s = [];
-      for (let y = Math.min(...ys) + 1.5, r = 0; y < Math.max(...ys); y += 4.8, r++)
-        for (let x = Math.min(...xs) + 1.5 + (r % 2) * 4.3; x < Math.max(...xs); x += 8.6) {
+      for (let y = Math.min(...ys) + 1.5, r = 0; y < Math.max(...ys); y += 3.9, r++)
+        for (let x = Math.min(...xs) + 1.5 + (r % 2) * 3.6; x < Math.max(...xs); x += 7.2) {
           const px = x + (h01(id, x, y, "x") - 0.5) * 3.2, py = y + (h01(id, x, y, "y") - 0.5) * 1.8, d = Math.hypot(px - gx, (py - gy) * 1.7);
           if (d > 5 && inPoly(P, px, py)) s.push([px, py, d + h01(id, x, y, "d") * 3]);
         }
@@ -1097,15 +1103,33 @@
     CROWD.cast[id] = { slots, c: out };
     return out;
   }
-  /* now and then a small gesture: each figure on its own beat, every 6 to 16 s, for one to two and a half seconds */
-  const gesture = (id, i, t) => { if (S.still) return false; const p = 6500 + h01(id, i, "p") * 9000; return (t + h01(i, id, "o") * p) % p < 1100 + h01(id, i, "d") * 1500; };
-  function tourist(g, f, x, y, a, b) {
-    const m = CROWD.m, [cw, ch] = m.cell, c = b ? f.b : f.a, sc = SPOT.crowd > 0 ? SPOT.crowd : 1, k = sc / m.unit, sw = (f.sw > 0 ? f.sw : 3) * sc;
-    g.save(); g.globalAlpha *= a;
-    g.fillStyle = "rgba(20,34,40,.24)"; g.beginPath(); g.ellipse(x + sw * 0.15, y + 0.2, sw, sw * 0.34, 0, 0, Math.PI * 2); g.fill();
+  /* now and then a small gesture, each figure on its own: its time runs in stretches of its own length (6 to 15 s), in
+     about two of three it gestures once, at a moment of its own, for 1.2 to 3 s, and rests at least 1.6 s between two:
+     never all at once, never a flicker; with reduced motion nobody gestures */
+  function gesture(id, i, t) {
+    if (S.still) return false;
+    const L = 6000 + h01(id, i, "L") * 9000, u = t + h01(i, id, "o") * L, n = Math.floor(u / L);
+    if (h01(id, i, n, "go") > 0.65) return false;
+    const d = 1200 + h01(id, i, n, "d") * 1800, s = 800 + h01(id, i, n, "s") * (L - d - 1600), w = u - n * L;
+    return w >= s && w < s + d;
+  }
+  /* one figure standing at x, y: a faint shadow under it, a darker touch under each foot, wheel or stick that meets the
+     ground (the manifest's contacts), a little to the right, as the light comes from the upper left; then the figure */
+  function tourist(g, f, x, y, b) {
+    const m = CROWD.m, [cw, ch] = m.cell, c = b ? f.b : f.a, sc = SPOT.crowd > 0 ? SPOT.crowd : 1, k = sc / m.unit, [fx, fy] = f.foot;
+    const cs = Array.isArray(f.contacts) && f.contacts.length ? f.contacts : [[fx, fy, 3 * m.unit]];
+    let x0 = Infinity, x1 = -Infinity, yb = -Infinity;
+    for (const [cx, cy, hw] of cs) { x0 = Math.min(x0, cx - hw); x1 = Math.max(x1, cx + hw); yb = Math.max(yb, cy); }
+    const rx = (x1 - x0) / 2 * k + 1.6 * sc;
+    g.fillStyle = "rgba(20,34,40,.13)"; g.beginPath(); g.ellipse(x + ((x0 + x1) / 2 - fx) * k + 0.6 * sc, y + (yb - fy) * k, rx, rx * 0.3, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "rgba(20,34,40,.26)"; g.beginPath();
+    for (const [cx, cy, hw] of cs) {
+      const r = Math.max(0.8 * sc, hw * k * 1.15), ex = x + (cx - fx) * k + 0.3 * sc, ey = y + (cy - fy) * k;
+      g.moveTo(ex + r, ey); g.ellipse(ex, ey, r, Math.max(0.45 * sc, r * 0.36), 0, 0, Math.PI * 2);
+    }
+    g.fill();
     g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
-    g.drawImage(CROWD.im, (c % m.cols) * cw, Math.floor(c / m.cols) * ch, cw, ch, x - f.foot[0] * k, y - f.foot[1] * k, cw * k, ch * k);
-    g.restore();
+    g.drawImage(CROWD.im, (c % m.cols) * cw, Math.floor(c / m.cols) * ch, cw, ch, x - fx * k, y - fy * k, cw * k, ch * k);
   }
   function crowdItems(items, g, t, v, kind) {
     const visit = v.ship + "|" + v.t0, fresh = CROWD.visit !== visit, dt = fresh ? 0 : Math.min(250, Math.max(0, t - CROWD.t)), guide = CROWD.m.guides && CROWD.m.guides[kind];
@@ -1120,17 +1144,26 @@
         continue;
       }
       const n0 = Math.min(slots.length, want), st = CROWD.at[id] || (CROWD.at[id] = { n: fresh || S.still ? n0 : 0 });
-      st.n = S.still ? n0 : st.n + Math.sign(n0 - st.n) * Math.min(Math.abs(n0 - st.n), dt / CROWD_FADE);
-      if (st.n <= 0) { if (!n0) delete CROWD.at[id]; continue; }
-      const cast = crowdCast(id, visit, slots), [gx, gy] = SPOT.stand[id][0], all = Math.min(slots.length, Math.ceil(st.n - 1e-9));
-      for (let i = 0; i < all; i++) {
-        const [x, y] = slots[i], f = cast[i], a = Math.min(1, st.n - i);
-        items.push([y, () => tourist(g, f, x, y, a, gesture(id, i, t))]);
+      st.n = S.still ? n0 : st.n + Math.sign(n0 - st.n) * Math.min(Math.abs(n0 - st.n), dt / CROWD_STEP);
+      const shown = Math.min(slots.length, Math.floor(st.n + 1e-6));   // whole figures only: nobody is half there
+      if (!shown) { if (!n0) delete CROWD.at[id]; continue; }
+      const cast = crowdCast(id, visit, slots), [gx, gy] = SPOT.stand[id][0];
+      for (let i = 0; i < shown; i++) {
+        const [x, y] = slots[i], f = cast[i];
+        items.push([y, () => tourist(g, f, x, y, gesture(id, i, t))]);
       }
+      for (const o of overs(id)) items.push([o.d, () => over(g, o.p)]);
       if (id === "pier" && landing) continue;   // off the tenders: their guides wait at the places
-      const a = Math.min(1, st.n);
-      items.push([gy, guide ? () => tourist(g, guide, gx, gy, a, gesture(id, "guide", t)) : () => { g.save(); g.globalAlpha *= a; pennant(g, gx + 2, gy, t, SHIPS[kind].funnel); g.restore(); }]);
+      items.push([gy, guide ? () => tourist(g, guide, gx, gy, gesture(id, "guide", t)) : () => pennant(g, gx + 2, gy, t, SHIPS[kind].funnel)]);
     }
+  }
+  /* what the painting has in front of a place's ground (layout "over": [{d, p}]): drawn again, from the painting, at
+     its own depth, so the figures behind it stay behind it and those in front of it stay in front */
+  const overs = id => (Array.isArray(SPOT.over && SPOT.over[id]) ? SPOT.over[id] : []).filter(o => o && Number.isFinite(o.d)
+    && Array.isArray(o.p) && o.p.length >= 3 && o.p.every(q => Array.isArray(q) && q.length === 2 && q.every(Number.isFinite)));
+  function over(g, p) {
+    g.save(); g.beginPath(); p.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.clip();
+    g.drawImage(S.base, -S.base.e, 0, WW + 2 * S.base.e, WH); g.restore();
   }
   function shipItems(items, g, t, sky) {
     const now = Date.now() / 1000, pos = shipPos(now), v = SHIP.s;
@@ -1211,7 +1244,7 @@
   const RB = { x: 860, y: 690, tx: 860, ty: 690, hop: 0, dir: 1, next: 0 };
   /* the lighthouse lamp, the radio mast's light, where people gather, where the cat walks and where a cruise ship anchors:
      a new layout moves them. The anchor sits high enough that the hull stays clear of the radio bar on a small laptop (1280×720) */
-  const SPOT = { beam: [300, 445], blink: [1112, 299], gather: [790, 640], cat: [370, 700, 1180, 712], anchor: [1395, 780], stand: {}, crowd: 1,
+  const SPOT = { beam: [300, 445], blink: [1112, 299], gather: [790, 640], cat: [370, 700, 1180, 712], anchor: [1395, 780], stand: {}, over: {}, crowd: 1,
     jungle: [[760, 235], [985, 205], [455, 440], [1180, 560], [330, 285]] };   // where the legend may look out of the leaves
   function rabbitStep(dt, t) {
     const d = Math.hypot(RB.tx - RB.x, RB.ty - RB.y);

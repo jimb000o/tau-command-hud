@@ -194,26 +194,28 @@ assert.ok(O({ stage: "gone", after: 0 }) > O({ stage: "gone", after: 2 }) && O({
 assert.equal(O(null), 0);
 console.log("Ship assets, fallback selection, heading, turn continuity, waterline transforms and overview clearance passed.");
 /* The passengers ashore (scene.js crowdItems): the painted groups stand on the layout's ground, one figure for each
-   passenger counted at a place as far as the ground holds them, face their guide, fade as they come and go, and leave
-   the pennants exactly as before while there is no art (or ?art=drawn, or the drawn island). */
+   passenger counted at a place as far as the ground holds them, face their guide, come and go one by one (whole, never
+   half see-through), gesture now and then each on their own, and leave the pennants exactly as before while there is
+   no art (or ?art=drawn, or the drawn island). */
 const LAYOUT = JSON.parse(await readFile(root + "infra/rabbit-art/plates/island-22.json", "utf8"));
 const crowdSrc = source.slice(source.indexOf("  const placePt ="), source.indexOf("  function shipItems(")) +
   source.slice(source.indexOf("  const inPoly ="), source.indexOf("\n", source.indexOf("  const inPoly =")) + 1);
 const pennants = [];
 const cx = vm.createContext({
   fetch: () => Promise.resolve({ ok: false }), Image: class {}, Math, JSON, Number, Object, Array, Set,
-  S: { base: { painted: true }, still: false }, location: { search: "" },
-  SPOT: { stand: LAYOUT.stand, crowd: 1 }, PLACES: LAYOUT.places, SHIPS: { liner: { funnel: "#e2674f" }, expedition: { funnel: "#2c8c88" } },
+  S: { base: { painted: true, e: 0 }, still: false }, location: { search: "" }, WW: 1600, WH: 900,
+  SPOT: { stand: LAYOUT.stand, over: LAYOUT.over, crowd: 1 }, PLACES: LAYOUT.places, SHIPS: { liner: { funnel: "#e2674f" }, expedition: { funnel: "#2c8c88" } },
   pennant: (g, x, y, t, col) => pennants.push([x, y, col]),
 });
 vm.runInContext(crowdSrc + ";this.cr={CROWD,crowdOk,crowdArt,standSlots,crowdCast,crowdItems,gesture,inPoly};", cx);
 const cr = cx.cr;
 const VIEWS = ["back", "back", "back", "back", "back", "back", "back", "back", "front", "front", "front", "front", "side", "side", "side", "side"];
-const figs = VIEWS.map((view, i) => ({ id: "p" + String(i + 1).padStart(2, "0"), view, face: [-1, 1][Math.floor(i / 2) % 2], a: 2 * i, b: 2 * i + 1, foot: [20, 88], sw: 3 }));
-const man = { src: "tourists.webp", cols: 12, cell: [42, 92], unit: 5, figures: figs, guides: { expedition: { id: "guide-dryrun", view: "front", face: -1, a: 32, b: 33, foot: [20, 88] }, liner: { id: "guide-queen", view: "front", face: -1, a: 34, b: 35, foot: [20, 88] } } };
+const figs = VIEWS.map((view, i) => ({ id: "p" + String(i + 1).padStart(2, "0"), view, face: [-1, 1][Math.floor(i / 2) % 2], a: 2 * i, b: 2 * i + 1, foot: [32, 90.6], contacts: [[28, 90, 3], [37, 89, 2.5]] }));
+const man = { src: "tourists.webp", cols: 12, cell: [79, 117], unit: 5, figures: figs, guides: { expedition: { id: "guide-dryrun", view: "front", face: 1, a: 32, b: 33, foot: [39, 110], contacts: [[39, 110, 4]] }, liner: { id: "guide-queen", view: "front", face: -1, a: 34, b: 35, foot: [39, 110] } } };
 assert.ok(cr.crowdOk(man));
 for (const bad of [null, { ...man, src: "../x.webp" }, { ...man, unit: 0 }, { ...man, figures: [] }, { ...man, figures: [{ ...figs[0], foot: [1] }] },
-  { ...man, figures: [{ ...figs[0], view: "up" }] }, { ...man, guides: { liner: { a: 1 } } }]) assert.ok(!cr.crowdOk(bad), JSON.stringify(bad)?.slice(0, 60));
+  { ...man, figures: [{ ...figs[0], view: "up" }] }, { ...man, guides: { liner: { a: 1 } } }, { ...man, figures: [{ ...figs[0], contacts: [[1, 2]] }] },
+  { ...man, figures: [{ ...figs[0], contacts: "feet" }] }]) assert.ok(!cr.crowdOk(bad), JSON.stringify(bad)?.slice(0, 60));
 assert.ok(!cr.crowdArt(), "no art loaded: nothing changes");
 cr.CROWD.m = man; cr.CROWD.im = {};
 assert.ok(cr.crowdArt());
@@ -239,30 +241,62 @@ let turned = 0;
 cr.standSlots("south").forEach(([x], i) => { const [gx] = LAYOUT.stand.south[0]; if (Math.abs(gx - x) < 2 || cast[i].face === Math.sign(gx - x)) turned++; });
 assert.ok(turned >= cast.length * 0.6, `only ${turned} of ${cast.length} turned to their guide`);
 /* the counts: one figure for each passenger as far as the ground holds them; a guide where the pennant was, none on
-   the pier while they land; arrivals fade in; at boarding they fade out; places without ground keep their pennant */
-const G = { globalAlpha: 1, save() {}, restore() {}, beginPath() {}, ellipse() {}, fill() {}, drawImage(...a) { G.drawn.push(a); }, drawn: [] };
+   the pier while they land; arrivals come one by one; at boarding they go one by one; places without ground keep their
+   pennant; every figure with its shadows (one under it, one under each foot or wheel) */
+const G = { globalAlpha: 1, save() {}, restore() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, clip() { G.clips++; }, ellipse(...a) { G.shadows.push(a); }, fill() {},
+  drawImage(...a) { (a.length === 5 ? G.overs : G.drawn).push(a); }, drawn: [], shadows: [], overs: [], clips: 0 };
 const run = (v, t) => { const items = []; cr.crowdItems(items, G, t, v, v.style); return items; };
 const dv = { ship: "dryrun", t0: 1, style: "expedition", phase: "landing", at: { book: 8, pier: 3, hall: 2, dive: 99 } };
 let items = run(dv, 1000);
-const slotsN = id => cr.standSlots(id).length;
-assert.equal(items.length, 8 + 1 + 3 + slotsN("dive") + 1 + 1, "8 at the lighthouse and their guide, 3 on the pier, the dive deck full and its guide, the pennant at the Council Tree");
+const slotsN = id => cr.standSlots(id).length, ovN = LAYOUT.over.pier.length, figN = 8 + 3 + slotsN("dive");
+assert.ok(ovN >= 3 && !LAYOUT.over.book && !LAYOUT.over.dive, "the pier has its bollards in front; nothing laid out in front of the lighthouse or the dive deck here");
+assert.equal(items.length, figN + 1 + ovN + 1 + 1, "8 at the lighthouse and their guide, 3 on the pier behind its bollards, the dive deck full and its guide, the pennant at the Council Tree");
 const hall = []; cr.crowdItems(hall, G, 1001, { ...dv, at: { hall: 2 } }, "expedition"); hall.forEach(([, d]) => d());
-assert.ok(G.drawn.length > 0 && G.drawn.every(a => a.length === 9 && a.slice(1).every(Number.isFinite)), "figures drawn from the sheet");
 assert.equal(pennants.length, 1, "no ground at the Council Tree: the pennant as before");
+G.drawn = []; G.shadows = []; G.overs = []; G.clips = 0; items.forEach(([, d]) => d());
+assert.ok(G.drawn.length === figN + 2 && G.drawn.every(a => a.length === 9 && a.slice(1).every(Number.isFinite) && G.globalAlpha === 1), "figures drawn from the sheet, whole");
+assert.equal(G.shadows.length, figN * 3 + 2 * 2, "a shadow under each figure and under each of its feet (two guides, one foot each)");
+/* what stands in front (layout over): the painting again, clipped to each shape, at the depth the shape stands at, so the
+   figures behind it are under it and those in front of it over it; a malformed entry is left out */
+assert.ok(G.clips === ovN && G.overs.length === ovN && G.overs.every(a => a[1] === 0 && a[3] === 1600 && a[4] === 900), "the bollards painted again over the pier group, clipped");
+assert.deepEqual(items.filter(([y]) => LAYOUT.over.pier.some(o => o.d === y)).map(([y]) => y).sort(), LAYOUT.over.pier.map(o => o.d).sort(), "each at its own depth");
+cx.SPOT.over.book = [{ d: 1 }, { d: 2, p: [[1, 2]] }, { d: 3, p: [[1, 2], [3, 4], [5]] }, "post", null];
+cr.CROWD.visit = null; assert.equal(run(dv, 1000).length, items.length, "nothing drawn for shapes that are not shapes");
+delete cx.SPOT.over.book;
+const [, sx, sy, cw0, ch0, dx, dy, dw, dh] = G.drawn[0];
+assert.ok(Math.abs(dw - cw0 / 5) < 1e-9 && Math.abs(dh - ch0 / 5) < 1e-9 && sx % 79 === 0 && sy % 117 === 0, "a cell at its own scale: 5 sheet pixels to the world unit");
 cr.CROWD.visit = null; items = run({ ...dv, phase: "ashore", at: { pier: 3 } }, 2000);
-assert.equal(items.length, 4, "ashore, the pier has its guide too");
+assert.equal(items.length, 4 + ovN, "ashore, the pier has its guide too");
 items = run({ ...dv, phase: "ashore", at: { pier: 3, school: 4 } }, 2100);
-assert.equal(items.length, 4 + 1 + 1, "a new group fades in: its first figure and its guide");
-for (let t = 2200; t <= 2100 + 4 * 900 + 100; t += 100) items = run({ ...dv, phase: "ashore", at: { pier: 3, school: 4 } }, t);
-assert.equal(items.length, 4 + 5, "after four fades all four are there");
+assert.equal(items.length, 4 + ovN, "a new group does not show half of anybody");
+for (let t = 2200; t <= 3000; t += 100) items = run({ ...dv, phase: "ashore", at: { pier: 3, school: 4 } }, t);
+assert.equal(items.length, 4 + ovN + 1 + 1, "after a moment its first passenger and its guide are there");
+for (let t = 3100; t <= 2100 + 4 * 900 + 100; t += 100) items = run({ ...dv, phase: "ashore", at: { pier: 3, school: 4 } }, t);
+assert.equal(items.length, 4 + ovN + 5, "and then all four, one by one");
 items = run({ ...dv, phase: "boarding", at: { pier: 3, school: 4 } }, 5900);
 assert.ok(items.length > 0, "boarding: they go one by one, not all at once");
 for (let t = 6000; t < 20000; t += 100) items = run({ ...dv, phase: "boarding", at: {} }, t);
 assert.equal(items.length, 0, "and then the island is theirs again");
 assert.equal(Object.keys(cr.CROWD.at).length, 0);
 cx.S.still = true; assert.equal(cr.gesture("book", 1, 12345), false); cx.S.still = false;
-let gestures = 0; for (let t = 0; t < 60000; t += 100) gestures += cr.gesture("book", 3, t) ? 1 : 0;
-assert.ok(gestures > 0 && gestures < 300, `a gesture now and then (${gestures} of 600 frames)`);
-console.log("Passengers ashore: ground at every stop, groups, counts, fades, guides and the pennant fallback passed.");
+/* gestures: each figure on its own, held 1.2 to 3 s, at least 1.6 s apart, in varied pauses, never all at once */
+let all = 0, together = 0;
+const runs = {};
+for (let i = 0; i < 12; i++) {
+  let on = null, last = -1e9;
+  runs[i] = [];
+  for (let t = 0; t < 600000; t += 50) {
+    const g = cr.gesture("book", i, t);
+    if (g && on === null) { on = t; assert.ok(t - last >= 1550, `figure ${i} rests ${t - last} ms`); }
+    if (!g && on !== null) { assert.ok(t - on >= 1150 && t - on <= 3050, `figure ${i} holds ${t - on} ms`); runs[i].push(on); last = t; on = null; }
+  }
+  all += runs[i].length;
+  const gaps = runs[i].slice(1).map((t, k) => t - runs[i][k]);
+  assert.ok(Math.max(...gaps) - Math.min(...gaps) > 6000, `figure ${i}: its pauses vary`);
+}
+for (let t = 0; t < 600000; t += 250) { let n = 0; for (let i = 0; i < 12; i++) n += cr.gesture("book", i, t) ? 1 : 0; if (n >= 6) together++; }
+assert.ok(all / 12 > 15 && all / 12 < 70, `a gesture now and then: ${all / 12} in ten minutes`);
+assert.ok(together < 10, `half the group at once ${together} times in ten minutes`);
+console.log("Passengers ashore: ground at every stop, groups, counts, one by one, shadows, what stands in front, gestures, guides and the pennant fallback passed.");
 
 console.log("Ship talk: a week of windows in German time, Rico's ship pools, bands and odds, passed.");
