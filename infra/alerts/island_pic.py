@@ -27,25 +27,39 @@ def painting(art: str) -> str:
     return path
 
 
+def wrap(d: ImageDraw.ImageDraw, text: str, f, width: float) -> list[str]:
+    out, line = [], ""
+    for w in text.split():
+        t = (line + " " + w).strip()
+        if line and d.textlength(t, font=f) > width:
+            out.append(line); line = w
+        else:
+            line = t
+    return out + ([line] if line else [])
+
+
 def small_card(pic: Image.Image, lines: list[str]) -> Image.Image:
-    """Title, lines, accent line last, in a compact dark card in the lower left corner (sea in every painting so far),
-    so the island itself stays in view; the site's card colours (cruise_pic.card)."""
+    """The story big (title, up to two lines, readable on a phone), then the lines, accent line last, in a dark card in
+    the lower left corner (sea in every painting so far), the island itself in view; the site's card colours."""
     title, *rest = lines
     body, accent = (rest[:-1], rest[-1]) if rest else ([], "")
-    ft, fb, fa = cruise_pic.font(36), cruise_pic.font(24, 500), cruise_pic.font(22)
+    ft, fb, fa = cruise_pic.font(64), cruise_pic.font(30, 500), cruise_pic.font(28)
     d0 = ImageDraw.Draw(pic)
-    wid = max([d0.textlength(title, font=ft)] + [d0.textlength(t, font=fb) for t in body] + [d0.textlength(accent, font=fa)])
-    hgt = 26 + 50 + 34 * len(body) + (40 if accent else 0) + 18
+    heads = wrap(d0, title, ft, 1000)[:2]
+    wid = max([d0.textlength(t, font=ft) for t in heads] + [d0.textlength(t, font=fb) for t in body] + [d0.textlength(accent, font=fa)])
+    hgt = 28 + 76 * len(heads) + 10 + 42 * len(body) + (48 if accent else 0) + 22
     x0, y1 = 40, pic.height - 40
     y0 = y1 - hgt
     over = Image.new("RGBA", pic.size); d = ImageDraw.Draw(over)
-    d.rounded_rectangle([x0, y0, x0 + wid + 56, y1], radius=16, fill=(8, 12, 24, 225))
-    y = y0 + 22
-    d.text((x0 + 28, y), title, font=ft, fill=(242, 242, 242, 255)); y += 52
+    d.rounded_rectangle([x0, y0, x0 + wid + 64, y1], radius=18, fill=(8, 12, 24, 230))
+    y = y0 + 24
+    for t in heads:
+        d.text((x0 + 32, y), t, font=ft, fill=(245, 245, 245, 255)); y += 76
+    y += 10
     for t in body:
-        d.text((x0 + 28, y), t, font=fb, fill=(205, 214, 222, 255)); y += 34
+        d.text((x0 + 32, y), t, font=fb, fill=(205, 214, 222, 255)); y += 42
     if accent:
-        d.text((x0 + 28, y + 6), accent, font=fa, fill=(120, 220, 140, 255))
+        d.text((x0 + 32, y + 8), accent, font=fa, fill=(120, 220, 140, 255))
     return Image.alpha_composite(pic, over)
 
 

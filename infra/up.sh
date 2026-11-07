@@ -289,10 +289,10 @@ if [ "${1:-}" = "crier" ]; then
   echo "---------------- copy from here into the chat ----------------"
   docker compose exec -T alerts python -c 'import alerts
 print("today:   " + str(alerts.island_picture()))
-r = {"date": "6 November", "campaigns": 1, "moves": 3}
+r = {"date": "6 November", "campaigns": 4, "moves": 23, "wins": [("Hana", 1)], "law": None}
 print("preview: " + str(alerts.island_picture(alerts.island_card(r), "preview.jpg")))' 2>&1 | grep -v " INFO " || true
   curl -s -o /dev/null -w "          https://node.tauhud.com/island/today.jpg answers %{http_code}\n" https://node.tauhud.com/island/today.jpg || true
-  echo "look: https://node.tauhud.com/island/preview.jpg (a sample Key Crier picture, never posted)"
+  echo "look: https://node.tauhud.com/island/preview.jpg (a sample story day, made-up numbers, never posted)"
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
