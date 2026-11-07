@@ -223,6 +223,10 @@ services:
       # after it; CRUISE_CRIER=false stops both (CRUISE_ENABLED=0 keeps the ships themselves away)
       CRUISE_CRIER: ${CRUISE_CRIER:-true}
       CRUISE_ANNOUNCE_MINUTES: ${CRUISE_ANNOUNCE_MINUTES:-150}
+      # after each Tuesday call of the pirates, a ~22 s clip of every trick the chain refused, to Telegram and X (alerts/
+      # trick_clip.py; none when a trick got through); X only while the day's X posts leave room. false stops it
+      TRICK_CLIP: ${TRICK_CLIP:-true}
+      X_DAILY_CAP: ${X_DAILY_CAP:-8}
       TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
       # a clean blog draft on the blog by itself this many hours after it was written (24 since 6.11.2026); 0 = only by hand (up blog publish)
       BLOG_AUTO_PUBLISH_HOURS: ${BLOG_AUTO_PUBLISH_HOURS:-24}
@@ -238,7 +242,7 @@ services:
       - /opt/sites/rico/art:/art:ro         # the island's paintings: each article's hero picture is made from them
       - ../rabbit/art/ships:/ships:ro       # the painted ships on that picture
     depends_on: [relay]
-    mem_limit: 128m
+    mem_limit: 384m        # the pirates' clip: Pillow frames into ffmpeg (two threads, 720p) for about a minute a week
     restart: unless-stopped
     logging: *logging
 
