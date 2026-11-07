@@ -396,20 +396,46 @@ def unknown_numbers(text: str, facts: dict) -> list[str]:
 
 
 # ---------- writing ----------
-def ask_ai(facts: dict) -> dict:
+L3 = {"type": "object", "properties": {k: {"type": "string"} for k in LANGS}, "required": list(LANGS)}
+ARTICLE_TOOL = {   # the answer comes back as a tool call, so the API itself keeps it valid JSON (no quote can break it)
+    "name": "article", "description": "The finished article, in the shape the blog expects.",
+    "input_schema": {"type": "object", "properties": {
+        "title": L3, "dek": L3, "why": {"type": "array", "items": L3, "minItems": 2, "maxItems": 3}, "body": L3,
+        "x": {"type": "string"},
+        "card": {"type": "object", "properties": {"line": {"type": "string"}, "why": {"type": "array", "items": {"type": "string"}, "maxItems": 3}},
+                 "required": ["line", "why"]}},
+        "required": ["title", "dek", "why", "body", "x", "card"]}}
+
+
+def ask_ai(facts: dict, tries: int = 2) -> dict:
     prompt = "Facts counted from the logbook of one cruise ship visit (JSON):\n\n" + json.dumps(facts, ensure_ascii=False, indent=1)
-    body = json.dumps({"model": AI_MODEL, "max_tokens": 6000, "system": SYSTEM,
+    body = json.dumps({"model": AI_MODEL, "max_tokens": 8000, "system": SYSTEM,
+                       "tools": [ARTICLE_TOOL], "tool_choice": {"type": "tool", "name": "article"},
                        "messages": [{"role": "user", "content": prompt}]}).encode()
     req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body, headers={
         "x-api-key": AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
-    with urllib.request.urlopen(req, timeout=240) as r:
-        j = json.load(r)
+    with urllib.request.urlopen(req, timeout=300) as r:
+        j = urllib_json(r)
     ai_meter.meter("blog", AI_MODEL, j.get("usage"))
+    for block in j.get("content", []):
+        if block.get("type") == "tool_use" and isinstance(block.get("input"), dict):
+            return block["input"]
+    # no tool call: the old way, the JSON in the text, and one more try when that is broken
     text = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
     m = re.search(r"\{.*\}", text, re.S)
-    if not m:
-        raise ValueError("no JSON in the answer: " + text[:200])
-    return json.loads(m.group(0))
+    try:
+        if not m:
+            raise ValueError("no JSON in the answer: " + text[:200])
+        return json.loads(m.group(0))
+    except ValueError as e:
+        if tries > 1:
+            log.warning("the model's answer was not valid JSON (%s): asking once more", e)
+            return ask_ai(facts, tries - 1)
+        raise
+
+
+def urllib_json(r):
+    return json.load(r)
 
 
 def three(d, cap: int) -> dict | None:
@@ -837,6 +863,8 @@ def main(argv: list[str]) -> int:
         if not AI_KEY:
             print("no NEWS_AI_KEY in infra/.env: no draft")
             return 1
+        print(f"writing the article of {args[0]}: the model reads the logbook and writes it in three languages, 1 to 4 minutes, "
+              "nothing is published", flush=True)
         did = write_draft(args[0])
         print(f"draft {did} written")
         return drafts_cli()
