@@ -153,7 +153,14 @@
     BLOG = [...by.values()].filter(p => young(p.on) && pickLang(p.title)).sort((a, b) => String(b.on).localeCompare(String(a.on))).slice(0, 2)
       .map(p => ({ kind: "news", text: pickLang(p.title), href: "blog/?p=" + encodeURIComponent(p.id), raw: true, on: p.on,
         tip: pickLang(p.dek), tipRaw: true }));
+    /* an article published while the page is open comes onto the line next, not only after a reload */
+    const top = BLOG[0] ? BLOG[0].href : "";
+    if (blogTop !== null && top && top !== blogTop) opened = false;
+    blogTop = top;
   }).catch(() => {});
+  let blogTop = null;
+  /* for its first two days the newest title story also opens every round of the line, so nobody misses it */
+  const hot = () => { const b = BLOG[0], t = b ? Date.parse(String(b.on || "")) : NaN; return isFinite(t) && Date.now() - t < 2 * 864e5 ? b : null; };
 
   /* ---------- the cruise ships at White Rabbit Key (relay /cruise): the next call from three days before, in the reader's
      own time; while a ship is in port, that it is there. Switched off on the server (CRUISE_ENABLED=0), none is announced ---------- */
@@ -184,10 +191,11 @@
   let slot = 0, headAt = 0, pickAt = 0, inviteAt = 0;
   const from = (list, at) => list.length ? list[at % list.length] : null;
   /* the line opens with the newest thing on it: the latest title story, else the newest feature */
-  let opened = false;
+  let opened = false, ledAt = -1;
   const opener = () => BLOG[0] || NEWS.filter(n => !n.fresh && n.on).sort((a, b) => String(b.on).localeCompare(String(a.on)))[0] || null;
   const next = () => {
-    if (!opened) { opened = true; const o = opener(); if (o && (o.raw || translated(o.text))) return o; }
+    if (!opened) { opened = true; const o = opener(); if (o && (o.raw || translated(o.text))) { if (slot % SLOTS.length === 0) ledAt = slot; return o; } }
+    if (slot % SLOTS.length === 0 && ledAt !== slot) { ledAt = slot; const h = hot(); if (h) return h; }
     /* on the day a new edition comes out, it opens the line and every round after */
     if (slot % SLOTS.length === 0) { const g = gazette(); if (g && g.out) { slot++; return g; } }
     /* in the Night Line's hour, so does the show */
@@ -297,6 +305,7 @@
     W = view.clientWidth;
     /* the facts need the page's first readings; give the chain a moment */
     setTimeout(() => { if (reduced) still(); else { holdUntil = performance.now() + HOLD; requestAnimationFrame(frame); } }, 1200);
-    setInterval(() => { loadNews(false); loadIdni(); loadBlog(); loadShip(); }, 15 * 60 * 1000);
+    setInterval(() => { loadNews(false); loadIdni(); loadShip(); }, 15 * 60 * 1000);
+    setInterval(loadBlog, 5 * 60 * 1000);   // a new article is on the line within five minutes
   });
 })();
