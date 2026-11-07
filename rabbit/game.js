@@ -729,7 +729,7 @@
   const did = k => { G.did = G.did || {}; G.did[k] = 1; };
   const movesLeft = () => G.move < MOVES && !G.over;
   /* a move is used up, unless the evening bell kept one for the visitor (BELL) */
-  const useMove = () => { if (G.spare) G.spare--; else G.move++; };
+  const useMove = () => { if (G.spare) G.spare--; else G.move++; if (!store.get(SIGNED)) { store.set(SIGNED, "1"); signsOff(); } };
   /* a move is spent: the sun goes on, and after the evening the night comes */
   function spend() {
     useMove(); save(); hud();
@@ -2382,6 +2382,7 @@
     ISLE.s = s; ISLE.at = Date.now();
     isleRule(); isleChip();
     document.querySelectorAll(".cv-isle-intro").forEach(p => p.replaceWith(isleIntro()));
+    document.querySelectorAll(".cv-isle-gov").forEach(p => p.replaceChildren(...isleGov()));
     const bd = UI.card && UI.card._board && UI.card.querySelector(".cv-board"); if (bd && s.board) { bd.replaceWith(boardBody(s.board)); fitCard(UI.card); }
   }
   const isleTop = (o, n = 1) => Object.keys(o || {}).sort((a, b) => o[b] - o[a]).slice(0, n);
@@ -2435,16 +2436,16 @@
     b.title = F("{n} playing now, you included: people with White Rabbit Key open, counted live by the relay.", { n: here }) + "\n" + (n ? F("{n} campaigns today. Click: the island today.", { n }) : T("Click: the island today."));
     b.setAttribute("aria-label", F("{n} playing now", { n: here }));
   }
-  /* on the start card: who else is on the island today */
+  /* on the start card: a chip that says the island is shared, and who else is on it right now (counted live by the
+     relay; until it answers, the words alone), and a line under the four with this week's governor */
   function isleIntro() {
-    const s = ISLE.s, p = el("p", { class: "cv-isle-intro cv-note" }); if (!s) return p;
-    const n = s.players.campaigns, here = s.here || 0;
-    p.append(el("b", { text: T("The island today:") }), " ", n
-      ? F("{n} campaigns so far, {m} finished.", { n, m: s.players.finished }) + (here > 1 ? " " + F("{n} people playing right now.", { n: here }) : "")
-      : T("no visitor has campaigned yet today. The islanders are at it already; yours would be the first campaign.") + (here > 1 ? " " + F("{n} people playing right now.", { n: here }) : ""));
-    const last = isleLast(); if (last) p.append(" ", Fd("{x} governs the island this week.", { x: nm(last.governor) }));
-    return p;
+    const s = ISLE.s, c = el("span", { class: "ivc cv-isle-intro", title: T("Everyone this week plays the same island, each their own campaign against the island’s three rivals; every finished campaign counts for its candidate. The relay counts who has the page open right now.") });
+    const n = s ? s.players.campaigns : 0, here = s ? Math.max(1, s.here || 0) : 1;
+    c.append(el("i", { class: "dot" + (here > 1 ? " now" : ""), "aria-hidden": "true" }), el("span", { text: !s ? T("Shared island: everyone plays the same week")
+      : (here > 1 ? F("{n} playing now", { n: here }) : T("Shared island")) + " · " + (n ? F("{n} campaigns today", { n }) : T("yours would be the first campaign today")) }));
+    return c;
   }
+  function isleGov() { const last = isleLast(); return last ? [el("b", { text: T("The island:") }), " ", Fd("{x} governs the island this week.", { x: nm(last.governor) })] : []; }
   /* each morning the paper says what the whole island talks about, and people who care about it lean a little toward
      whoever has that law in force in this game: the same nudge whether one campaign or a thousand were played */
   function isleMorning() {
@@ -2564,18 +2565,55 @@
   /* ---------- the start: pick your candidate ---------- */
   function start() {
     G = load();
-    if (G) { G.onchain = true; hud(); if (G.picked === "…") G.picked = null; signUp(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); return; }
+    if (G) { G.onchain = true; hud(); if (G.picked === "…") G.picked = null; signUp(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); setTimeout(signsOn, 800); return; }
     SC.setHour(0, true); hud();
     openCard(null, introCard);
   }
+  /* ---------- signs at the places until the first move: a newcomer sees at once where to go, and that a tap is a move ----------
+     The names stand over the buildings, the council hall marked as the place to start. They follow the island when it is
+     panned on a phone, hide behind every card, and never come back once a move was made in this browser. */
+  const SIGNS = ["hall", "market", "radio", "north", "south", "bar", "book"], SIGNED = "rabbit-first-move";
+  let signsRaf = 0;
+  function signsOn() {
+    if (store.get(SIGNED) || !G || G.over || G.move >= MOVES || $("cvSigns")) return;
+    const host = el("div", { class: "signs", id: "cvSigns", "aria-label": T("Places on the island") });
+    const few = $("cvStage").clientWidth < 700;   // a phone: the four that matter first, the embassies and the bar stay in ☰
+    SIGNS.filter(id => SC.places[id] && PLACE[id] && !SC.locked(id) && !(few && /^(north|south|bar)$/.test(id))).forEach(id => {
+      const b = el("button", { type: "button", class: "sign" + (id === "hall" ? " go" : ""), "data-id": id, onclick: e => { e.stopPropagation(); wake(); if (G && !UI.card) openCard(id, PLACE[id]); } }, el("b", { text: T(SC.places[id].name) }));
+      if (id === "hall") b.append(el("small", { text: T("Start here: propose a law") }));
+      host.append(b);
+    });
+    $("cvStage").append(host);
+    /* each sign hangs under its place's ground point; one that would cover another slides down, one at the edge slides in */
+    const place = () => {
+      if (!host.isConnected) { signsRaf = 0; return; }
+      const W = host.clientWidth, put = [];
+      for (const b of host.querySelectorAll(".sign")) {
+        const p = SC.places[b.dataset.id] || {}, w = b.offsetWidth, h = b.offsetHeight; let [x, y] = SC.toScreen(p.x, p.y);
+        x = Math.max(w / 2 + 4, Math.min(W - w / 2 - 4, x)); y += 10;
+        const base = y;   // a sign in another's way moves up when its place stands higher on the island, else down, until it is clear
+        for (let n = 0, moved = true; moved && n < 8; n++) { moved = false; for (const o of put) if (Math.abs(o.x - x) < (o.w + w) / 2 + 6 && y < o.y + o.h + 6 && y + h + 6 > o.y) { y = base < o.base ? o.y - h - 8 : o.y + o.h + 8; moved = true; } }
+        put.push({ x, y, w, h, base }); b.style.left = x + "px"; b.style.top = y + "px";
+      }
+      signsRaf = requestAnimationFrame(place);
+    };
+    place();
+  }
+  function signsOff() { const s = $("cvSigns"); if (s) s.remove(); if (signsRaf) { cancelAnimationFrame(signsRaf); signsRaf = 0; } }
   /* a laptop or a desktop: the four candidates stand large across the island at dusk, as in a game's opening scene, the
      facts in a quiet strip below them. A phone, or a screen too low for that, keeps the plate with four small faces. */
   const wideIntro = () => { const st = $("cvStage"); return !LAND.matches && innerWidth >= 900 && st.clientWidth >= 860 && st.clientHeight >= 480; };
   function introCard(box) {
     const wide = wideIntro(), stH = $("cvStage").clientHeight;
     box.classList.add("intro"); box.classList.toggle("wide", wide); box.classList.toggle("low", wide && stH < 760); box._wide = wide;
-    box.append(el("div", { class: "iv-head" }, el("p", { class: "kick", text: T("Sunday night the island elects a governor") }), el("h2", { text: T("White Rabbit Key") }),
-      el("p", { class: "cv-line", text: T("Four islanders stand for governor, and you are one of them. Each day you have three moves: propose laws, talk to people, buy a line on the radio, take an embassy’s money, make pacts. Everything anyone does is written into the Book in the lighthouse, where anyone can read it.") })));
+    /* the first twenty seconds, before the four faces: what the game is, what you are after, who the rivals are and why
+       every move is on Tau; three chips under it say the same in three words each, one of them counted live */
+    box.append(el("div", { class: "iv-head" }, el("p", { class: "kick", text: T("An election game on Tau Testnet Alpha") }), el("h2", { text: T("White Rabbit Key") }),
+      el("p", { class: "cv-line", text: T("Run for governor of a small island. Your three rivals are played by the island; ten islanders vote on Sunday night, and whoever wins more of them governs next week. Three moves a day, each one a real transaction on Tau Testnet Alpha from a test wallet this browser makes for you. Other people play beside you this week: on Sunday night every campaign counts.") }),
+      el("div", { class: "iv-chips" },
+        el("span", { class: "ivc", title: T("1 test AGRS per move, paid to the place where you make it. Wages and embassy money come back into your wallet; the rivals’ moves go on chain too. Test AGRS have no value.") }, el("i", { class: "dot", "aria-hidden": "true" }), el("span", { text: T("Every move: a real testnet transaction") })),
+        isleIntro(),
+        el("span", { class: "ivc", title: T("Ten islanders vote in every campaign. Every campaign won this week is a ballot for its candidate; the one with the most governs the island next week.") }, el("i", { class: "dot", "aria-hidden": "true" }), el("span", { text: Fd("Election Sunday night · count {x}", { x: countIn() }) })))));
     const pick = el("div", { class: "cv-pick" });
     /* wide: a canvas as large as the figure will stand (about half the stage high), drawn at twice that for sharpness */
     const big = Math.max(240, Math.min(640, Math.round(stH * 0.6)));
@@ -2583,16 +2621,12 @@
       wide ? el("span", { class: "fig" }, portrait(c, big, 0, true)) : portrait(c, innerWidth < 760 || innerHeight < 520 ? 56 : 96),
       el("span", { class: "plate" }, el("b", { translate: "no", text: nm(c) }), el("small", { text: T(CANDS[c].role) }), el("em", { text: T(CANDS[c].pitch) })))));
     box.append(el("div", { class: "iv-cast" }, el("p", { class: "cv-h", text: T("Which candidate are you?") }), pick));
+    /* under the four: the week in one line, who governs, the island's ballot as the chain shows it, the wallet */
     const td = todayIdx();
     const camp = [el("b", { text: T("Your campaign:") }), " ", T("this week, Monday to Sunday. An island day is a real day: three moves, a few minutes. Sunday evening the islanders vote."), " ",
       td === 1 ? T("Today is Monday: the week begins.") : td === DAYS ? T("Today is Sunday: play the whole week now, the vote is tonight.") : Fd("Today is {x}: catch up Monday to {y} briefly or start today, then a day a day.", { x: dayName(td), y: dayName(td - 1) })];
-    const isle = [el("b", { text: T("The island:") }), " ", Fd("every campaign won is a ballot for its candidate; governor’s count {x}, Monday 00:00 German time.", { x: countIn() })];
-    /* every move is a real test transaction, always: said plainly here instead of a box to tick */
-    const chain = el("p", { class: "cv-chain" }, el("span", { text: T("Every move is real: it is signed into Tau Testnet Alpha from a test wallet made for you in this browser, and paid to the place where you make it (1 test AGRS, a line on Radio Coco 25). Wages and embassy money come back into that wallet. The rivals’ moves go there too. Test AGRS have no value.") }), " ", el("a", { href: "/wallet/", text: T("Your test wallet") }));
-    /* the same words either way; wide they stand in three columns (the week, the island, the chain) */
-    box.append(wide
-      ? el("div", { class: "iv-facts" }, el("p", { class: "cv-note" }, ...camp), el("div", null, el("p", { class: "cv-note" }, ...isle), ballotEl(), isleIntro()), chain)
-      : el("div", { class: "iv-facts" }, el("p", { class: "cv-note" }, ...camp, el("br"), ...isle), ballotEl(), isleIntro(), chain));
+    box.append(el("div", { class: "iv-facts" }, el("p", { class: "cv-note" }, ...camp), el("p", { class: "cv-note cv-isle-gov" }, ...isleGov()), ballotEl(),
+      el("p", { class: "cv-note cv-chain" }, el("a", { href: "/wallet/", text: T("Your test wallet") }), " · ", el("span", { text: T("Test AGRS have no value.") }))));
   }
   /* once per browser, after the first move signed into the testnet: where that move can be seen, and the two other pages
      the same test wallet opens. Shown at the first quiet moment, so it never cuts into a scene. */
@@ -2675,7 +2709,7 @@
     hana: "So it is true, Hana: your name is on the list, in my own hand. Four candidates, one governor’s chair under the council tree, and on Sunday night the ten islanders who vote choose who sits in it. You write everything down, so you know how this works. Laws are made in the Council Hall. Everything else is written here.",
   };
   function welcome() {
-    const after = () => { toast(T("Tap a place on the island to begin.")); dragHint(); };
+    const after = () => { toast(T("Tap a sign for your first move: a real transaction on Tau Testnet Alpha.")); signsOn(); dragHint(); };
     const go = () => { closeCard(); const pend = G.pending.splice(0); if (pend.length) councilQueue(pend, after); else after(); };   // a campaign begun today: the rivals' laws from the skipped nights come to the council first
     openCard("book", box => {
       box.classList.add("welcome");
