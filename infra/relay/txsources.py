@@ -9,6 +9,8 @@ Every transaction in the blocks the relay holds is put in one of five groups:
              relay itself (the end of a turn on a rule place).
   rabbit     White Rabbit Key, the island game on tauhud.com/rabbit/: a player pays the island council, a place's till or
              a ballot box (a line or a ballot).
+  nomemo     No Memo, the terminal game on tauhud.com/nomemo/: sent through this relay's wallet door from No Memo (it says
+             "via nomemo"). Real players' transactions, counted like Tau HUD's but apart.
   cruise     a cruise ship's simulated passenger pays a place on the island (cruise.py). Real transactions, sent by our
              server, not by people: never user transactions.
   bot        the island bot: a rival candidate's move, or a wage or embassy money one of the island's purses pays a
@@ -59,9 +61,9 @@ import time
 
 log = logging.getLogger("relay.txsources")
 
-GROUPS = ("agorzilla", "tauhud", "rabbit", "cruise", "bot", "idni", "other")
+GROUPS = ("agorzilla", "tauhud", "rabbit", "nomemo", "cruise", "bot", "idni", "other")
 AUTO = ("cruise", "bot")   # our own server's automated senders: real transactions, but not users'
-OURS = ("agorzilla", "tauhud", "rabbit")   # our two sites, with White Rabbit Key on tauhud.com counted apart
+OURS = ("agorzilla", "tauhud", "rabbit", "nomemo")   # our two sites, with White Rabbit Key and No Memo on tauhud.com counted apart
 SENT_MAX = 50000
 # Agorzilla's addresses (agorilla repo assets/core.js: BOWL, BOXES, ASKS)
 AGORZILLA = frozenset({
@@ -245,7 +247,8 @@ def group(tx: dict, tx_hash: str, sent: dict) -> str:
             return "agorzilla"
     site = sent.get(tx_hash)
     if site is not None:
-        return site.split("|")[0] or "tauhud"
+        s, _, via = site.partition("|")
+        return "nomemo" if not s and via in GAME_VIA else s or "tauhud"
     if str(tx.get("sender_pubkey") or "").lower() in GENESIS:
         return "idni"
     return "other"

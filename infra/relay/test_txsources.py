@@ -47,9 +47,9 @@ blocks = [
     {"header": {}, "tx_ids": ["h7"], "transactions": [tx(A, B)]},
 ]
 out = s.by_day(blocks)
-check(out["days"]["2026-10-28"] == {"agorzilla": [2, 1, 1, 0, 10], "tauhud": [1, 1, 1, 0, 5], "rabbit": [0, 0, 0, 0, 0], "cruise": [0, 0, 0, 0, 0], "bot": [0, 0, 0, 0, 0], "idni": [0, 0, 0, 0, 0], "other": [1, 1, 1, 0, 5]},
+check(out["days"]["2026-10-28"] == {"agorzilla": [2, 1, 1, 0, 10], "tauhud": [1, 1, 1, 0, 5], "rabbit": [0, 0, 0, 0, 0], "nomemo": [0, 0, 0, 0, 0], "cruise": [0, 0, 0, 0, 0], "bot": [0, 0, 0, 0, 0], "idni": [0, 0, 0, 0, 0], "other": [1, 1, 1, 0, 5]},
       "a meal is Agorzilla's, a relay send Tau HUD's, the rest other; wallets counted once a day")
-check(out["days"]["2026-10-29"] == {"agorzilla": [3, 3, 2, 1, 15], "tauhud": [0, 0, 0, 0, 0], "rabbit": [0, 0, 0, 0, 0], "cruise": [0, 0, 0, 0, 0], "bot": [0, 0, 0, 0, 0], "idni": [2, 1, 1, 0, 10], "other": [1, 1, 1, 0, 5]},
+check(out["days"]["2026-10-29"] == {"agorzilla": [3, 3, 2, 1, 15], "tauhud": [0, 0, 0, 0, 0], "rabbit": [0, 0, 0, 0, 0], "nomemo": [0, 0, 0, 0, 0], "cruise": [0, 0, 0, 0, 0], "bot": [0, 0, 0, 0, 0], "idni": [2, 1, 1, 0, 10], "other": [1, 1, 1, 0, 5]},
       "a send from agorzilla.com through the relay counts for Agorzilla, a genesis account for IDNI")
 z = out["agorzilla"]["2026-10-28"]
 check(z["meals"] == 2 and z["snacks"] == 1 and z["agrs"] == 10 and z["wallets"] == 1 and z["new"] == 1 and z["hours"][0] == 2,
@@ -142,6 +142,13 @@ check(po["days"]["2026-11-04"]["rabbit"][:2] == [1, 1] and po["days"]["2026-11-0
 sg = txsources.TxSources(os.path.join(tempfile.mkdtemp(), "sent.json"))
 sg.note("AA", "", "nomemo"); sg.note("bb", "", "wallet"); sg.note("cc", "rabbit", ""); sg.note("dd", "", "nomemo")
 check(sg.games() == {"dd": "nomemo", "aa": "nomemo"} and sg.games(1) == {"dd": "nomemo"}, "No Memo's sends are known by hash, newest first")
+
+sn = txsources.TxSources(os.path.join(tempfile.mkdtemp(), "sent.json"))
+sn.note("n1", "", "nomemo"); sn.note("n2", "", "wallet")
+no = sn.by_day([{"header": {"timestamp": 1793804400}, "tx_ids": ["n1", "n2"], "transactions": [tx(A, B), tx(C, B)]}])
+nd = no["days"]["2026-11-04"]
+check(nd["nomemo"][:2] == [1, 1] and nd["tauhud"][:2] == [1, 1] and no["ours"]["2026-11-04"][:2] == [2, 2] and no["starts"]["2026-11-04"].get("tauhud:nomemo"),
+      "No Memo is its own group, one of our sites, and its page shows where it started")
 
 print("\n" + ("all ok" if not failed else f"{failed} failed"))
 sys.exit(1 if failed else 0)

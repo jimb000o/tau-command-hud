@@ -661,4 +661,5 @@ TauI18n.add({ strings: {
   "White Rabbit Key players {n}": "白兔礁玩家 {n}",
   "our cruise ships {n}": "我们的游轮 {n}",
   "island bot {n}": "海岛机器人 {n}",
+  "No Memo {n}": "No Memo {n}",
 } });
