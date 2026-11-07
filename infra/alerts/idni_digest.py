@@ -34,6 +34,7 @@ import sys
 import time
 from datetime import datetime, timezone
 
+import ai_meter
 import devpulse as dp
 
 HOUR = int(os.environ.get("IDNI_DIGEST_HOUR", 10))                 # UTC: 11:00 German winter time
@@ -225,6 +226,7 @@ def ask(prompt: str) -> dict:
         "x-api-key": dp.NEWS_AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
     with urllib.request.urlopen(req, timeout=180) as r:
         j = json.load(r)
+    ai_meter.meter("digest", dp.NEWS_AI_MODEL, j.get("usage"))
     text = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
     m = re.search(r"\{.*\}", text, re.S)
     if not m:

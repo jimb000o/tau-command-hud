@@ -47,6 +47,8 @@ import urllib.request
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 
+import ai_meter
+
 log = logging.getLogger("tau-devpulse")
 
 REPOS = [r.strip() for r in os.environ.get("DEVPULSE_REPOS", "IDNI/tau-testnet,IDNI/tau-lang").split(",") if r.strip()]
@@ -449,6 +451,7 @@ def ask_ai(prompt: str) -> dict:
         "x-api-key": NEWS_AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
     with urllib.request.urlopen(req, timeout=180) as r:
         j = json.load(r)
+    ai_meter.meter("news", NEWS_AI_MODEL, j.get("usage"))
     text = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
     m = re.search(r"\{.*\}", text, re.S)
     if not m:

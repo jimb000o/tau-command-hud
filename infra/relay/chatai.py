@@ -13,6 +13,8 @@ import logging
 import os
 import time
 
+import ai_meter
+
 log = logging.getLogger("relay.chatai")
 
 SYSTEM = (
@@ -73,6 +75,7 @@ class ChatAI:
         except Exception as exc:   # an AI outage must never touch the chat
             log.warning("chat AI check failed: %s", type(exc).__name__)
             return None
+        ai_meter.meter("chat", self.model, getattr(r, "usage", None))
         if r.stop_reason == "refusal":
             return "other"
         body = next((b.text for b in r.content if b.type == "text"), "")

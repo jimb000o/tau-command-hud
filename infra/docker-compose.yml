@@ -73,6 +73,7 @@ services:
       # chain restarts and dropped transactions for /stats (relay.py EVENTS_PATH),
       # availability history for /uptime (UPTIME_PATH)
       - relay_data:/data
+      - ai_usage:/ai-usage   # what the troll box's AI check costs (ai_meter.py), read by the monthly costs post
     depends_on: [tau-node]
     restart: unless-stopped
     logging: *logging
@@ -174,6 +175,7 @@ services:
     volumes:
       - alerts_state:/state     # what was seen and posted, so nothing is posted twice
       - alerts_public:/public   # proposals.json, feed.xml and recap/, served by Caddy
+      - ai_usage:/ai-usage      # the Anthropic API's costs per month (ai_meter.py), for the costs post
     depends_on: [relay]
     restart: unless-stopped
     logging: *logging
@@ -239,6 +241,7 @@ services:
     volumes:
       - alerts_state:/state     # /state/blog.json: which visits have a draft, which drafts were posted
       - alerts_public:/public   # /public/blog/posts.json and drafts/, served by Caddy
+      - ai_usage:/ai-usage      # what each draft cost (ai_meter.py)
       - /opt/sites/rico/art:/art:ro         # the island's paintings: each article's hero picture is made from them
       - ../rabbit/art/ships:/ships:ro       # the painted ships on that picture
     depends_on: [relay]
@@ -273,6 +276,7 @@ services:
     volumes:
       - alerts_state:/state     # the clones, in /state/devpulse; digests.json (the daily IDNI post)
       - alerts_public:/public   # devpulse.json, served by Caddy
+      - ai_usage:/ai-usage      # what the news line and the daily IDNI post cost (ai_meter.py)
       - ./node/Dockerfile:/pins/Dockerfile:ro
       - ./node/patches:/pins/patches:ro   # tried on each new upstream main: do our node patches still apply?
       - ../facts:/facts:ro   # the hand-checked facts for Tau today (knowledge.py, tauhud.com/facts/); a folder, so a pull reaches it
@@ -441,6 +445,7 @@ volumes:
   relay_data:
   alerts_state:
   alerts_public:
+  ai_usage:
   agorzilla_shots:
   guardian_data:
   caddy_data:
