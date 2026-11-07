@@ -2447,6 +2447,11 @@
     "html": "Guardian demo in the simulation: with the HUD on Simulation, tauhud.com/guardian/ plays the whole way through with play values. Scan the demo QR code with your Authenticator app (a real TOTP check in your browser) or use the play code 123456, choose what the Guardian does, and a play payment waits for your code in step 3. Nothing goes on the chain, nothing leaves your browser; amber marks it as a demo."
   },
   {
+    "tag": "HUD",
+    "on": "2026-11-07",
+    "html": "Chain core: the ring of waiting transactions now says that it is the mempool, and a wallet's own rule on the inner ring says whose it is: it binds only that wallet, never anyone else. Hover the inner ring for what it holds. The rules it shows no longer depend on when the page was opened: the page asks the relay who holds a rule now, and a rule a wallet took away leaves the ring."
+  },
+  {
     "tag": "Cruise",
     "on": "2026-11-07",
     "html": "Cruise bookings in escrow: from MS Dry Run on 11 November, five simulated passengers book the call days ahead with a retractable transfer of the fare to the ship's till, released when she arrives; one of them takes theirs back. If the call is called off before (ships switched off, or a stalled testnet 20 minutes before the arrival), our server takes every booking back at least 6 minutes ahead. tauhud.com/cruise/ shows each booking as in escrow, paid out or refunded. Only the sender can take a retractable transfer back, so there is no third party who decides."
