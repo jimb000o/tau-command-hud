@@ -85,6 +85,7 @@
       done: "No business today, my friend: “{x}” is law already, and there’s nothing left for me to buy. My investors will think I’m on holiday. Sit anyway, the loungers are free." },   // his own words (and talk.js, when you come back); the North Wind keeps the diplomat's
   };
   const DAYS = 7, MOVES = 3, RUMOUR = 25, GIFT = 20;   // a campaign is one island week, Monday to Sunday; the election is Sunday night
+  const FIRST_EXTRA = 3;   // the first day of a campaign has six moves, so a first visit is a real game and not three taps; from then on three a day
   /* the island's calendar is the real one: an island day is a real day (Europe/Berlin), three moves each, and the week's
      days not yet played are played in one go. ?today=N pretends it is weekday N (1 Monday … 7 Sunday); ?clock=free lifts
      the lock, so the whole week can be played at once (the sim, and anyone who wants to) */
@@ -321,7 +322,7 @@
     const R = seeded(Date.now() & 0xffffff), sup = {};
     for (const c in CANDS) { sup[c] = {}; PEOPLE.forEach(p => { sup[c][p.id] = 42 + Math.round(R() * 14) + (CANDS[c].cares.some(x => p.cares.includes(x)) ? 6 : 0); }); }
     const trust = {}; for (const c in CANDS) trust[c] = 45;
-    return { v: 1, me, day: 1, move: 0, coins: { marisol: 40, tobias: 30, baako: 30, hana: 30 }, sup, trust, laws: [], book: [], pacts: [], deals: [], lies: [], pending: [], news: [], seed: Math.floor(R() * 1e9), onchain: true, sent: {}, over: null, said: {}, amb: null, declined: [], week: weekId(), waiting: false };
+    return { v: 1, me, day: 1, move: 0, coins: { marisol: 40, tobias: 30, baako: 30, hana: 30 }, sup, trust, laws: [], book: [], pacts: [], deals: [], lies: [], pending: [], news: [], seed: Math.floor(R() * 1e9), onchain: true, sent: {}, over: null, said: {}, amb: null, declined: [], week: weekId(), waiting: false, spare: FIRST_EXTRA };
   }
   const save = () => { if (G) store.set(KEY, JSON.stringify(G)); };
   function load() { try { const g = JSON.parse(store.get(KEY) || "null"); if (g && g.v === 1 && CANDS[g.me]) return g; } catch (e) {} return null; }
@@ -461,11 +462,14 @@
     locks();
     $("cvDay").textContent = dayName(G.day); $("cvDay").title = F("Day {n} of {m}", { n: G.day, m: DAYS }) + " · " + (G.day < todayIdx() ? Fd("catching up: it is {x} already", { x: dayName(todayIdx()) }) : T("today, on the island as in the world"));
     $("cvHour").textContent = T(G.move >= MOVES ? "Night" : HOURS[G.move]);
-    $("cvMoves").replaceChildren(...Array.from({ length: MOVES }, (_, i) => el("i", { class: i < MOVES - G.move ? "on" : "" })));
-    $("cvMoves").setAttribute("aria-label", F("{n} moves left today", { n: Math.max(0, MOVES - G.move) }));
+    const left = Math.max(0, MOVES - G.move) + (G.spare || 0);   // extra moves (the first day, the evening bell, a pact, the key) show as more green dots
+    $("cvMoves").replaceChildren(...Array.from({ length: G.move + left }, (_, i) => el("i", { class: i < left ? "on" : "" })));
+    $("cvMoves").setAttribute("aria-label", F("{n} moves left today", { n: left }));
+    $("cvMoves").parentElement.title = F("{n} moves left today", { n: left }) + " · " + T("Three moves a day, six on your first day. Reading, talking and visiting cost nothing; the evening bell at eight, your first pact and the key in the grotto give one more.");
     $("cvCoins").textContent = F("{n} coins", { n: G.coins[G.me] }); $("cvCoins").title = Fd("{n} coins saved from earlier campaigns", { n: savings().coins });
     if ($("cvAmb")) { $("cvAmb").hidden = !G.amb; if (G.amb) { $("cvAmb").textContent = T(AMB[G.amb.id].name); $("cvAmb").title = ambGoal(); } }
     $("cvMe").replaceChildren(portrait(G.me, 30), el("span", { text: nm(G.me) }));
+    chainChip();
     const last = G.news[G.news.length - 1];
     if (last && last !== DJ.said) { DJ.said = last; const np = [V("book"), last.v ? { t: last.s, v: last.v } : Q(last.s)]; if (DJ.opened) onAir(np, 1); else { DJ.after = np; $("cvNews").textContent = last.s; } }   // before the show opens, the news waits for Rico's opener
     else if (!DJ.text) $("cvNews").textContent = last ? last.s : T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book.");
@@ -566,7 +570,8 @@
       if (!over()) return;
       /* still too long: leaf through the longest list of the page shown */
       const shown = kids.filter(e => !e.classList.contains("pg-off"));
-      const lists = shown.flatMap(e => [e, ...e.querySelectorAll("ul, .cv-acts, .cv-ask")]).filter(e => e.matches("ul, .cv-acts, .cv-ask"));
+      /* a one-page plate (the start, a paper, the ending) never leafs through its buttons: the way out stays in sight */
+      const lists = shown.flatMap(e => [e, ...e.querySelectorAll("ul, .cv-acts, .cv-ask")]).filter(e => e.matches("ul, .cv-acts, .cv-ask") && !(special && e.matches(".cv-acts")));
       const L = lists.sort((a, b) => b.children.length - a.children.length)[0];
       const items = L ? [...L.children].filter(e => !e.matches(".cv-h, h4")) : [];
       if (items.length < 2) { shrink(); if (over() && innerWidth < 760 && !box._tall) box._tall = "again"; return; }
@@ -746,7 +751,7 @@
     if (UI.card) openCard(at, PLACE[at]);
   }
   const treatBtn = (k, label, n, at, line, fx, msg) => btn(label, () => treat(k, n, at, line, fx, msg), { off: treated(k) || G.coins[G.me] < n, sub: treated(k) ? T("Done for today") : F("{n} coins, no move, written in the Book", { n }) });
-  const noMoves = box => box.append(el("p", { class: "cv-note", text: T("That was your last move today. The night comes.") }));
+  const noMoves = box => box.append(el("p", { class: "cv-note", text: T("That was your last move today. The island stays open: reading, talking and visiting cost nothing.") }));
 
   /* ---------- the places ---------- */
   const PLACE = {
@@ -873,7 +878,7 @@
     },
     grotto(box) {
       scene(box, "ama", T(SC.places.grotto.name), T("So you found it. The key on the old fort opens nothing; it never did. The real key was always this: everyone keeps a copy of what was agreed, so nobody can change it alone."), G.key ? null : [
-        btn(T("Take a copy of the Book"), () => { G.key = true; write(G.me, T("found the cave behind the waterfall and took a copy of the Book"), "fact"); bump(G.me, p => p.reads, 6); save(); SND.sfx("yes"); toast(T("You hold the White Rabbit Key.")); if (UI.card) openCard("grotto", PLACE.grotto); }),
+        btn(T("Take a copy of the Book"), () => { G.key = true; write(G.me, T("found the cave behind the waterfall and took a copy of the Book"), "fact"); bump(G.me, p => p.reads, 6); save(); SND.sfx("yes"); toast(T("You hold the White Rabbit Key.")); setTimeout(() => extraMove(T("the key in the grotto")), 2800); if (UI.card) openCard("grotto", PLACE.grotto); }),
       ]);
     },
   };
@@ -894,11 +899,12 @@
     placeKeys();
   }
   /* places by keyboard: the list under the scene, one button each, for the places this island has and are open */
+  const MOVE_AT = new Set(["hall", "market", "radio", "north", "south", "bar"]);   // where a move is made; everywhere else a visit costs nothing
   function placeKeys() {
     const keys = $("cvPlaces"); if (!keys) return;
     const ids = Object.keys(PLACE).filter(id => SC.places[id] && !SC.locked(id)), sig = ids.join();
     if (keys.dataset.sig === sig) return; keys.dataset.sig = sig; keys.textContent = "";
-    ids.forEach(id => keys.append(el("button", { type: "button", onclick: () => { wake(); if (G && !UI.card) openCard(id, PLACE[id]); } }, el("span", { text: T(SC.places[id].name) }))));
+    ids.forEach(id => keys.append(el("button", { type: "button", onclick: () => { wake(); if (G && !UI.card) openCard(id, PLACE[id]); } }, el("span", { text: T(SC.places[id].name) }), MOVE_AT.has(id) ? null : el("small", { text: T("free, no move") }))));
     /* what the bar leaves out on a small screen */
     keys.append(el("button", { type: "button", class: "more", onclick: () => { wake(); help(); } }, el("span", { text: T("How it works") })),
       el("button", { type: "button", class: "more", onclick: () => { wake(); $("cvReset").click(); } }, el("span", { text: T("New game") })));
@@ -989,7 +995,7 @@
   }
   function doPact(c, gift) {
     const ok = gift ? G.trust[c] >= 25 : G.trust[c] >= 50;
-    if (ok) { makePact(G.me, c, gift); SND.sfx("yes"); G.trust[c] = Math.min(100, G.trust[c] + 10); }
+    if (ok) { makePact(G.me, c, gift); SND.sfx("yes"); G.trust[c] = Math.min(100, G.trust[c] + 10); if (!G.pactMove) { G.pactMove = 1; setTimeout(() => extraMove(T("your first pact")), 1200); } }
     else { G.trust[c] = Math.max(0, G.trust[c] - 3); write(G.me, F("offered {x} a pact: turned down", { x: nm(c) }), "down"); SND.sfx("no"); }
     openCard("bar", box => scene(box, c, ok ? T("A pact") : T("No pact"), ok ? T("Fine. I vote for yours, you vote for mine. Lola is our witness, and the Book is our memory.") : T(G.trust[c] < 20 ? "After what you did? Buy yourself a lemonade." : "Not today. Show me how you vote first."), [btn(T("Continue"), () => closeCard())]));
     spend();
@@ -1011,7 +1017,8 @@
       box.classList.add("paper");
       box.append(el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: dayName(G.day) + " · " + T("Night") }),
         el("p", { class: "lead", text: Fd("{x} is done on the island. The next day begins with the real one, after midnight German time ({y}). Your campaign waits here; the rivals sleep too.", { x: dayName(G.day), y: spanText(untilMidnight()) }) }),
-        el("ul", null, el("li", { text: T("Until then: read the Book, talk to people, look at The island today. None of it costs a move.") }),
+        el("ul", null, el("li", { text: T("Until then: read the Book, talk to people, look at The island today, visit the school, the dive centre, the works and the stone circle. None of it costs a move.") }),
+          el("li", { text: T("At eight in the evening Tobias rings the pier bell: ring back within two minutes and you have one more move that day.") }),
           el("li", { text: G.day >= DAYS - 1 ? T("Tomorrow is Sunday: three last moves, then the islanders vote.") : Fd("Governor’s count {x}, Monday 00:00 German time.", { x: countIn() }) })),
         el("div", { class: "cv-acts" }, btn(T("Good night"), () => closeCard(), { go: true })));
     });
@@ -1130,6 +1137,12 @@
     const s = bellState();
     b.hidden = !s; b.classList.toggle("go", s === "open"); b.disabled = s !== "open";
     b.textContent = s === "open" ? T("🔔 Answer the evening bell") : T("🔔 The evening bell at eight");
+  }
+  /* one more move today, earned in the game: like the bell, it first gives back a move spent, so a day that was over goes on */
+  function extraMove(why) {
+    if (!G || G.over) return;
+    if (G.move > 0) G.move--; else G.spare = (G.spare || 0) + 1;
+    save(); hud(); toast(F("One more move today: {x}", { x: why }));
   }
   function answerBell() {
     if (bellState() !== "open") return bellChip();
@@ -2212,7 +2225,7 @@
     return btn(sent ? T("Sent to the testnet ✓") : label, go, { off: !!sent, sub: T("1 test AGRS from your test wallet, signed by you") });
   }
   /* ---------- the Book on the chain ---------- */
-  const CHAIN = { ws: null, wait: new Map(), q: [], payq: [], busy: false, next: 0, fee: null, made: false };
+  const CHAIN = { ws: null, wait: new Map(), q: [], payq: [], busy: false, next: 0, fee: null, made: false, follow: 0 };
   function relay() {
     return new Promise(res => {
       if (CHAIN.ws && CHAIN.ws.readyState === 1) return res(CHAIN.ws);
@@ -2287,12 +2300,73 @@
         hash = (r.data && r.data.tx_hash) || String(Date.now()); CHAIN.next = seq + 1;
         try { const lk = "tauhud-wallet-log-live-" + k.pk, logs = JSON.parse(store.get(lk) || "[]"); logs.unshift({ hash, kind: "pay", label: T("White Rabbit Key") + ": " + label, at: Date.now(), status: "queued", seq, paid: true }); store.set(lk, JSON.stringify(logs.slice(0, 40))); } catch (e) {}
         if (TILL[at]) remember(to, "Key jar · " + ((SC.places[at] || {}).name || at));   // a readable name in the wallet's address book
-        toast(F("Signed into the testnet: {n} test AGRS from your wallet.", { n: pay }));
+        if (!txNote(hash, label, pay)) toast(F("Signed into the testnet: {n} test AGRS from your wallet.", { n: pay }));
         if (CHAIN.payq.length) flushPay();
       } else { CHAIN.payq.length = 0; CHAIN.next = 0; toast(T("The testnet did not take this move just now; the game goes on.")); }
     } catch (e) { if (G && G.onchain) toast(T("The testnet is out of reach just now; the game goes on.")); }
     CHAIN.busy = false; done && done(hash);
     if (CHAIN.q.length) setTimeout(pump, 400);
+  }
+  /* ---------- the chain moment: every move signed into the testnet is shown as what it is ----------
+     A strip under the island says "signed, waiting for a block", then "sealed in block N", with the hash and a link to
+     the Explorer; a chip in the bar counts the campaign's transactions, and opens the list of them with the chain's
+     answer to each. The game keeps the list (G.txs) and asks the relay for the status of what is still waiting. */
+  const txShort = h => h.slice(0, 6) + "…" + h.slice(-4);
+  const txUrl = h => "/explorer/?tx=" + h + (window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "");
+  function txNote(h, label, pay) {
+    if (!G || !/^[0-9a-f]{64}$/i.test(h || "")) return false;
+    G.txs = Array.isArray(G.txs) ? G.txs : [];
+    G.txs.unshift({ h, label, pay: pay || 1, at: Date.now(), st: "queued" }); if (G.txs.length > 60) G.txs.length = 60;
+    save(); chainChip(); chainStrip(G.txs[0]); followTxs();
+    return true;
+  }
+  function chainChip() {
+    const b = $("cvChainChip"); if (!b) return;
+    const txs = (G && G.txs) || []; b.hidden = !txs.length; if (!txs.length) return;
+    const sealed = txs.filter(t => t.st === "in").length, waiting = txs.filter(t => t.st === "queued").length;
+    b.replaceChildren(el("i", { class: "dot" + (waiting ? " now" : ""), "aria-hidden": "true" }), el("b", { class: "num", text: String(sealed + waiting) }), el("span", { class: "lb", text: T("on chain") }));
+    b.title = F("{n} moves on Tau Testnet Alpha this campaign: {m} sealed in a block, {k} waiting. Click: every transaction with the chain’s answer.", { n: txs.length, m: sealed, k: waiting });
+    b.setAttribute("aria-label", F("{n} on chain", { n: sealed + waiting }));
+  }
+  let stripT = 0;
+  function chainStrip(t) {
+    const d = $("cvChain"); if (!d || !t) return;
+    const text = t.st === "in" ? F("Sealed in block {n} on Tau Testnet Alpha", { n: t.block }) : t.st === "out" ? F("Refused by the chain: {x}", { x: t.why || "" }) : F("Signed into Tau Testnet Alpha: {n} test AGRS · waiting for a block", { n: t.pay });
+    d.replaceChildren(el("i", { class: "dot" + (t.st === "in" ? " ok" : t.st === "out" ? " no" : " now"), "aria-hidden": "true" }), el("span", { class: "tx", text: text }), el("code", { class: "h", text: txShort(t.h) }),
+      el("a", { href: txUrl(t.h), target: "_blank", rel: "noopener", text: T("Explorer") }));
+    d.hidden = false; requestAnimationFrame(() => d.classList.add("on"));
+    clearTimeout(stripT); stripT = setTimeout(() => { d.classList.remove("on"); setTimeout(() => { if (!d.classList.contains("on")) d.hidden = true; }, 350); }, t.st === "queued" ? 14000 : 9000);
+  }
+  function followTxs() {
+    if (CHAIN.follow) return;
+    const tick = async () => {
+      CHAIN.follow = 0;
+      if (!G || document.hidden) { CHAIN.follow = setTimeout(tick, 15000); return; }
+      const open = (G.txs || []).filter(t => t.st === "queued" && Date.now() - t.at < 900000).slice(0, 4);
+      if (!open.length) return;
+      let changed = false;
+      for (const t of open) {
+        const m = await ask("gettxstatus " + t.h, 8000); if (!m || m.status !== "ok") continue;
+        const d = m.data || {}, st = String(d.status || d.state || "").toLowerCase();
+        if (d.block_number != null || /confirmed|included|mined|sealed|applied/.test(st)) { t.st = "in"; t.block = d.block_number ?? d.height ?? null; changed = true; if (G.txs[0] === t) chainStrip(t); }
+        else if (/reject|fail|dropped|expired|invalid/.test(st)) { t.st = "out"; t.why = d.reason || d.error || st; changed = true; if (G.txs[0] === t) chainStrip(t); }
+      }
+      if (changed) { save(); chainChip(); if (UI.card && UI.card.classList.contains("chain")) chainCard(); }
+      CHAIN.follow = setTimeout(tick, 6000);
+    };
+    CHAIN.follow = setTimeout(tick, 5000);
+  }
+  function chainCard() {
+    const pk = myPk(), lang = window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "", open = u => window.open(u, "_blank", "noopener");
+    openCard("book", box => {
+      box.classList.add("chain");
+      const rows = ((G && G.txs) || []).map(t => el("li", { class: t.st === "out" ? "k-broke" : "k-fact" },
+        el("small", { text: t.st === "in" ? F("in block {n}", { n: t.block }) : t.st === "out" ? F("refused: {x}", { x: t.why || "" }) : T("waiting for a block") }),
+        el("span", null, el("span", { text: t.label }), " ", el("a", { class: "cv-tx", href: txUrl(t.h), target: "_blank", rel: "noopener", text: txShort(t.h) }))));
+      scene(box, "sam", T("Your moves on Tau Testnet Alpha"), T("Every move you make goes to the testnet as a transaction from your test wallet: 1 test AGRS to the place’s jar, signed in this browser. Here is each one, with the chain’s answer."),
+        [btn(T("Your test wallet"), () => open("/wallet/" + (lang ? "?" + lang.slice(1) : ""))), pk ? btn(T("Your Tau card"), () => open("/card/?a=" + pk + lang)) : null, btn(T("Back to the island"), () => closeCard(), { go: true })].filter(Boolean),
+        el("ol", { class: "cv-book" }, rows.length ? rows : [el("li", { class: "dim", text: T("Nothing yet.") })]));
+    });
   }
   let drawer = null;
   function remember(addr, name) {
@@ -2565,7 +2639,7 @@
   /* ---------- the start: pick your candidate ---------- */
   function start() {
     G = load();
-    if (G) { G.onchain = true; hud(); if (G.picked === "…") G.picked = null; signUp(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); setTimeout(signsOn, 800); return; }
+    if (G) { G.onchain = true; hud(); if (G.picked === "…") G.picked = null; signUp(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); setTimeout(signsOn, 800); followTxs(); return; }
     SC.setHour(0, true); hud();
     openCard(null, introCard);
   }
@@ -2609,7 +2683,7 @@
     /* the first twenty seconds, before the four faces: what the game is, what you are after, who the rivals are and why
        every move is on Tau; three chips under it say the same in three words each, one of them counted live */
     box.append(el("div", { class: "iv-head" }, el("p", { class: "kick", text: T("An election game on Tau Testnet Alpha") }), el("h2", { text: T("White Rabbit Key") }),
-      el("p", { class: "cv-line", text: T("Run for governor of a small island. Your three rivals are played by the island; ten islanders vote on Sunday night, and whoever wins more of them governs next week. Three moves a day, each one a real transaction on Tau Testnet Alpha from a test wallet this browser makes for you. Other people play beside you this week: on Sunday night every campaign counts.") }),
+      el("p", { class: "cv-line", text: T("Run for governor of a small island. Your three rivals are played by the island; ten islanders vote on Sunday night, and whoever wins more of them governs next week. Three moves a day, six on your first, each one a real transaction on Tau Testnet Alpha from a test wallet this browser makes for you. Other people play beside you this week: on Sunday night every campaign counts.") }),
       el("div", { class: "iv-chips" },
         el("span", { class: "ivc", title: T("1 test AGRS per move, paid to the place where you make it. Wages and embassy money come back into your wallet; the rivals’ moves go on chain too. Test AGRS have no value.") }, el("i", { class: "dot", "aria-hidden": "true" }), el("span", { text: T("Every move: a real testnet transaction") })),
         isleIntro(),
@@ -2635,7 +2709,7 @@
     const pk = myPk(), h = /^[0-9a-f]{64}$/.test(G.picked || "") ? G.picked : null, lang = window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "";
     const open = u => window.open(u, "_blank", "noopener");
     openCard(null, box => {
-      box.classList.add("paper");
+      box.classList.add("paper", "extra");   // an extra, not the morning paper: it closes like any plate (✕, Escape)
       box.append(el("div", { class: "cv-paper" }, el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: T("Extra") }),
         el("p", { class: "lead", text: T("Your first move is on Tau Testnet Alpha: 1 test AGRS to the Book, signed by the test wallet this browser made for you. The same wallet opens two more pages, and Agorzilla eats transactions like yours.") }),
         el("ul", null, el("li", { text: T("Explorer: the transaction itself, and the block that sealed it.") }),
@@ -2648,7 +2722,8 @@
           btn(T("Back to the island"), () => closeCard())));
     });
   }
-  setInterval(() => { if (G && !G.over && G.picked && G.picked !== "…" && myPk() && !store.get("rabbit-bridged") && !UI.card && !drawer && !document.hidden) bridgeCard(); }, 4000);
+  /* a quiet moment: after the first real move (the signs are down), no plate, no drawer, no chain strip in the way */
+  setInterval(() => { if (G && !G.over && G.picked && G.picked !== "…" && myPk() && !store.get("rabbit-bridged") && store.get(SIGNED) && $("cvChain").hidden && !UI.card && !drawer && !document.hidden) bridgeCard(); }, 4000);
   function dragHint() {
     if (!matchMedia("(pointer: coarse) and (orientation: portrait)").matches || store.get("rabbit-drag-hint")) return;
     setTimeout(() => { if (G && !UI.card && SC.canPan()) { store.set("rabbit-drag-hint", "1"); toast(T("Drag the island to look around, or turn your phone sideways. ☰ lists every place.")); } }, 3500);
@@ -2676,8 +2751,8 @@
       box.append(el("div", { class: "cv-paper" }, el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: dayName(td) }),
         el("p", { class: "lead", text: Fd("It is {x} already: Monday to {y} went by without you. Catch up briefly, or start today with the island as the rivals left it.", { x: dayName(td), y: dayName(td - 1) }) })),
         el("div", { class: "cv-acts" },
-          btn(T("Catch up briefly"), () => { G.brief = true; if (briefDay()) G.move = MOVES - 1; save(); then(); }, { go: true, sub: Fd("{n} days with one move each, then today with three", { n: td - 1 }) }),
-          btn(T("Play from today"), () => { skipTo(td); then(); }, { sub: T("Three moves today; what the rivals did until now is in the Book") })));
+          btn(T("Catch up briefly"), () => { G.brief = true; G.spare = 0; if (briefDay()) G.move = MOVES - 1; save(); then(); }, { go: true, sub: Fd("{n} days with one move each, then today with three", { n: td - 1 }) }),
+          btn(T("Play from today"), () => { skipTo(td); then(); }, { sub: T("Six moves today, then three a day; what the rivals did until now is in the Book") })));
     });
   }
   function skipTo(td) {
@@ -2720,11 +2795,12 @@
     });
   }
   function help() {
-    openCard("pier", box => scene(box, "sam", T("How it works"), T("Three moves a day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."), [btn(T("Licence and credits"), () => window.open("https://github.com/jimb000o/tau-command-hud/blob/main/rabbit/LICENSE.md", "_blank", "noopener")), btn(T("Back to the island"), () => closeCard(), { go: true })],
+    openCard("pier", box => scene(box, "sam", T("How it works"), T("Three moves a day, six on your first day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."), [btn(T("Licence and credits"), () => window.open("https://github.com/jimb000o/tau-command-hud/blob/main/rabbit/LICENSE.md", "_blank", "noopener")), btn(T("Back to the island"), () => closeCard(), { go: true })],
       el("ul", { class: "cv-help" }, el("li", { text: T("Council Hall: propose a law. Two of the other three candidates must vote yes. A law that contradicts one in force is refused first.") }),
         el("li", { text: T("Market square: talk about a topic. People who care about it move toward you.") }), el("li", { text: T("Radio Coco: pay for a line on air. True lines are safe. Lies come back when people read the Book.") }),
         el("li", { text: T("Embassies: coins now, for a promise to propose their law. Forget it and they tell everyone.") }), el("li", { text: T("Bar La Ola: pacts. Partners vote for each other’s laws.") }),
         el("li", { text: T("The lighthouse: the Book. Free to read, and nobody can change it.") }),
+        el("li", { text: T("Free, no move: asking anyone a question, reading the Book, The island today, and every visit to the school, the dive centre, the works, the camp, the old ship, the stone circle and the drums. One more move: the evening bell at eight, your first pact, the key in the grotto.") }),
         el("li", { text: T("The coins you have left when a campaign ends are saved in this browser. At the school, the lighthouse and the stone circle they pay for things the island keeps, and everyone sees the count in The island today.") }),
         el("li", { text: T("On day two or three someone who has read the Book makes you an offer: a goal of your own beside the election, with its own ending in the special edition.") }),
         el("li", { text: T("Some mornings something happens to the island. The Key Crier leads with it, you get one choice, and that topic is the talk of the week: speeches about it count more and laws for it pass more easily.") }),
@@ -2843,6 +2919,7 @@
     $("cvHelp").onclick = () => { wake(); help(); };
     $("cvBookBtn").onclick = () => { wake(); if (G) openCard("book", PLACE.book); };
     $("cvIsle").onclick = () => { wake(); openIsle(); };
+    if ($("cvChainChip")) $("cvChainChip").onclick = () => { wake(); chainCard(); };
     if ($("cvBell")) { $("cvBell").onclick = () => { wake(); answerBell(); }; bellChip(); setInterval(bellChip, 5000); }
     if ($("cvShip")) { $("cvShip").onclick = () => { wake(); shipCard(); }; shipFetch(); setInterval(() => { if (!document.hidden || SND.on) shipFetch(); }, 60000); }
     isleJoin();
