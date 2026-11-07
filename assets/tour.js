@@ -249,7 +249,7 @@
   }
   /* first visit: offer this page's tour once */
   function offer() {
-    if (i >= 0 || store.get(KEY) || innerWidth < 900 || document.querySelector(".modal:not([hidden]), .tn-modal:not([hidden])")) return;
+    if (i >= 0 || store.get(KEY) || innerWidth < 900 || /[?&]walk=/.test(location.search) || document.querySelector(".modal:not([hidden]), .tn-modal:not([hidden])")) return;   // a walk a friend sent has its own steps
     offered = true; target = null; ring.hidden = true;
     card.classList.remove("anchored", "side-top", "side-bottom", "side-left", "side-right"); card.style.left = card.style.top = ""; card.style.zoom = zoom() === 1 ? "" : String(zoom());
     q(".tt-step").textContent = "New here?"; q("h3").textContent = `A short tour of ${T.name}`;

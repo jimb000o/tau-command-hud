@@ -205,8 +205,8 @@ footer a { color: var(--dim); }
 .splits { display: grid; gap: 6px; }
 .splitrow { display: grid; grid-template-columns: minmax(0, 1fr) 8em auto; gap: 6px; align-items: center; }
 .splitrow button { background: none; border: 0; color: var(--dim); cursor: pointer; font-size: 15px; padding: 0 6px; }
-.build { display: grid; gap: 6px; margin-top: 8px; }
-.blk { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: start; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+.build { display: grid; gap: 5px; margin-top: 6px; }
+.blk { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: start; border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
 .blk:has(input[type=checkbox]:checked) { border-color: rgba(57,255,138,.45); }
 .blk input[type=checkbox] { margin: 3px 0 0; accent-color: var(--ok); }
 .blk b { color: var(--text); font-weight: 600; }
@@ -242,6 +242,22 @@ input.in.md, select.in.md { width: auto; max-width: 15em; padding: 3px 6px; disp
 .blk.bad input.in:focus, .blk.bad select.in:focus { border-color: var(--sim); box-shadow: 0 0 0 2px rgba(255,177,59,.35); }
 .fixit { display: block; color: var(--sim); font-size: 12px; margin-top: 3px; }
 .fixit:empty { display: none; }
+/* presets: a whole rule in one click, each saying what it keeps off and what it does not */
+.presets { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; align-items: center; }
+.presets .lbl { font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); margin-right: 4px; }
+.preset { display: inline-flex; align-items: center; min-height: 26px; background: none; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; cursor: pointer; color: var(--text); font: 600 11px/1.3 var(--font, inherit); }
+#probesBox .probes { margin-top: 4px; }
+.preset[aria-disabled=true] b { color: var(--dim); }
+.preset:hover, .preset:focus-visible { border-color: rgba(57,255,138,.45); }
+.preset[aria-pressed=true] { border-color: var(--ok); }
+.preset[aria-pressed=true] b::after { content: " ✓"; color: var(--ok); }
+.preset[aria-disabled=true] { opacity: .6; cursor: default; }
+.preset .not { color: var(--sim); }
+.preshare { margin-top: 2px; font-size: 11px; line-height: 1.4; color: var(--dim); display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.preshare:empty { display: none; }
+.preshare button { background: none; border: 1px solid var(--hair); border-radius: 999px; color: var(--dim); font: 11px var(--mono); padding: 2px 9px; cursor: pointer; }
+.preshare button:hover { color: #fff; }
+html.focus-rule #presets, html.focus-rule #preshare { display: none !important; }
 .slotsbar { margin: 6px 0; border-left: 2px solid var(--sim); padding: 4px 0 4px 10px; font-size: 12px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
 .slotsbar b { color: var(--text); font-weight: 600; }
 .why2:empty { display: none; }
@@ -474,13 +490,15 @@ html.focus-feed #signFacts { display: none; }
           <div class="rule" id="ruleNow"></div>
           <div class="slotsbar" id="slotsBar" hidden></div>
           <div class="slotsbar" id="leaseBar" hidden></div>
+          <div class="presets" id="presets" role="group" aria-label="Ready-made rules"></div>
+          <div class="preshare" id="preshare"></div>
           <div class="build" id="build">
             <label class="blk" id="bkOnly"><input type="checkbox" id="cOnly"><span><b>Only to people in my address book</b><span class="sub2" id="onlyNote">A lookalike address is refused by the chain.</span><span class="chips" id="onlyChips"></span><span class="fixit" id="fxOnly"></span></span></label>
             <label class="blk" id="bkCap"><input type="checkbox" id="cCap"><span><b>At most</b> <input class="in sm" id="vCap" type="number" min="1" step="1" value="5000"> <b>test AGRS per payment</b><span class="fixit" id="fxCap"></span></span></label>
             <label class="blk" id="bkFrom"><input type="checkbox" id="cFrom"><span><b>Nothing leaves before</b> <input class="in md" id="vFrom" type="date"><span class="fixit" id="fxFrom"></span></span></label>
             <label class="blk" id="bkCo"><input type="checkbox" id="cCo"><span><b>Above</b> <input class="in sm" id="vCoAbove" type="number" min="1" step="1" value="1000"> <b>a co-signature from</b> <select class="in md" id="vCoWho"></select><span class="fixit" id="fxCo"></span></span></label>
           </div>
-          <div class="probes" id="probes"></div>
+          <details class="tau" id="probesBox" open><summary id="probesSum">Test payments against this rule</summary><div class="probes" id="probes"></div></details>
           <details class="tau" id="draftTau"><summary>The rule in Tau</summary><pre id="draftText" translate="no"></pre></details>
           <div class="row"><button class="b go" type="button" id="btnRule" disabled>Sign this rule</button><button class="b" type="button" id="btnFreeze">Freeze</button><button class="b quiet" type="button" id="btnRuleOff" hidden>Remove my rule</button></div>
           <div class="why2" id="ruleWhy"></div>
@@ -539,6 +557,10 @@ const logKey = () => `tauhud-wallet-log-${MODE}-${W.pk}`, paktKey = () => `tauhu
 /* ---------- address book and address prints: people pick names they know instead of copying hex from a history ---------- */
 const BOOK_KEY = `tauhud-wallet-book-${MODE}`;
 let BOOK = [];
+/* the wallet's habit "way back by default" (set under Ready-made rules): no chain rule, this browser only */
+const BACK_KEY = `tauhud-wallet-back-${MODE}`;
+let BACKSET = (() => { try { const b = JSON.parse(store.get(BACK_KEY) || "null"); return b && typeof b === "object" ? { on: !!b.on, above: Number(b.above) || 1000 } : { on: false, above: 1000 }; } catch (e) { return { on: false, above: 1000 }; } })();
+const saveBack = () => store.set(BACK_KEY, JSON.stringify(BACKSET));
 function loadBook() {
   try { BOOK = JSON.parse(store.get(BOOK_KEY) || "[]").filter(c => c && c.name && isAddr(c.addr)); } catch (e) { BOOK = []; }
   if (SIM && store.get(BOOK_KEY) == null) { const f = S.friends(); BOOK = [{ name: "Jack", addr: f[0] }, { name: "Mia", addr: f[1] }, { name: "Lena", addr: f[2] }]; saveBook(); }
@@ -1072,12 +1094,15 @@ function plan() {
   /* a first payment to an address outside the book: the way back is offered, one click away */
   const stranger = TAB === "send" && !gated && isAddr(d.to) && d.to !== W.pk && !nameOf(d.to) && !look;
   if (!gated) facts.push(fact(big || stranger ? "warn" : "", "Way back", stranger ? T("none once a block holds it, and this address is not in your address book. Send it with a way back to keep the chance to take it back.") : big ? T("none once a block holds it, and this is more than a quarter of what you have") : T("none once a block holds it. Want one? Use Send with a way back.")));
+  /* the wallet's habit: new addresses and big payments go with a way back; one click switches the tab */
+  const habit = TAB === "send" && !gated && BACKSET.on && can && isAddr(d.to) && (stranger || d.amount > BACKSET.above);
+  if (habit) { can = false; why = stranger ? T("Your setting: a new address gets a way back. One click, then sign.") : F("Your setting: above {n} test AGRS the payment gets a way back. One click, then sign.", { n: fmt(BACKSET.above) }); }
   if (gated) {
     const approvers = Object.fromEntries(r.co.slots.map(([s, p]) => [String(s), p]));
     return { what, to, facts, can, why, big, kind: "cosign", label: () => F("{n} test AGRS to {x}, waiting for a co-signature", { n: fmt(d.amount), x: tag(d.to) }), done: () => F("{n} test AGRS to {x}, co-signed and paid", { n: fmt(d.amount), x: tag(d.to) }),
       tx: () => base("approval_request", { recipient_pubkey: d.to, amount: d.amount, approvers, custom_inputs: {} }) };
   }
-  return { what, to, facts, can, why, tryIt, big, stranger, kind: "pay", label: () => F("{n} test AGRS to {x}", { n: fmt(d.amount), x: tag(d.to) }),
+  return { what, to, facts, can, why, tryIt, big, stranger: stranger || habit, habit, kind: "pay", label: () => F("{n} test AGRS to {x}", { n: fmt(d.amount), x: tag(d.to) }),
     tx: () => base("user_tx", { operations: { "1": [[W.pk, d.to, String(d.amount)]] } }) };
 }
 function planSplit(fee, sp, r) {
@@ -1118,7 +1143,7 @@ function renderSign() {
   $("btnSign").disabled = !P.can || !live;
   $("btnSign").textContent = T(P.kind === "cosign" ? "Sign and ask for co-signature" : P.kind === "vote" ? "Sign my yes" : "Sign and send");
   $("btnTry").hidden = !P.tryIt; $("btnTry").disabled = !live;
-  $("btnBack").hidden = !(P.stranger && P.can);
+  $("btnBack").hidden = !((P.stranger && P.can) || P.habit);
   $("signWhy").textContent = P.why || (P.can ? T(SIM ? "Lands on the shared simulated chain; every visitor sees it." : "The node checks it first; if it would be refused, nothing is sent.") : "");
 }
 async function signNow(p, trying) {
@@ -1218,6 +1243,52 @@ function seedBuilder(r) {
   if (keepDraft || !r || r.freeze || r.unknown) return;   // a carried rule stays in the builder after the chain's answer comes in
   fillBuilder(r);
 }
+/* ---------- ready-made rules: one click fills the blocks, and each says what it keeps off and what it does not ----------
+   "Way back by default" is no chain rule: it is this wallet's habit and needs no rule place. */
+const inDays = n => Math.floor((Date.now() + n * 86400000) / 86400000) * 86400;
+const coWho = () => (!SIM && GUARD) || (BOOK.find(c => c.addr !== W.pk) || {}).addr || null;
+const PRESETS = [
+  { id: "shield", name: "Starter shield", of: "At most 5,000 test AGRS per payment, and the way back on for new addresses and anything above 1,000.", against: "one payment that empties you", not: "many small payments; whoever holds your key can replace the rule",
+    rule: () => ({ only: [], cap: 5000, from: null, co: null }), back: true },
+  { id: "people", name: "Only my people", of: "Payments only to names in your address book, up to 5.", against: "lookalike addresses", not: "a name in your book turning out to be the wrong person",
+    need: () => BOOK.length ? null : T("Put someone in your address book first."), rule: () => ({ only: BOOK.slice(0, MAX_ONLY).map(c => c.addr), cap: null, from: null, co: null }) },
+  { id: "savings", name: "Savings lock", of: "Nothing leaves before a date 90 days from today.", against: "spending before a date", not: "anything after the date; whoever holds your key can replace the rule",
+    rule: () => ({ only: [], cap: null, from: inDays(90), co: null }) },
+  { id: "second", name: "Second signature", of: "Above 1,000 test AGRS a co-signer must sign: a friend from your book, or the Guardian with a code from your Authenticator app.", against: "a stolen phone", not: "payments below the limit; a co-signer who is offline makes the payment wait",
+    need: () => coWho() ? null : T(SIM ? "Put a co-signer in your address book first." : "Put a co-signer in your address book first, or wait for the Guardian to answer."), rule: () => ({ only: [], cap: null, from: null, co: { limit: 1000, who: [coWho()], slots: [[18, coWho()]], need: "any" } }) },
+  { id: "back", name: "Way back by default", of: "Payments to new addresses, and above 1,000 test AGRS, go with a way back of 30 blocks. No rule place needed: a habit of this wallet, not of the chain.", against: "a wrong address", not: "anything once the payment is released; another wallet with your key does not know this habit",
+    back: true },
+];
+const sameRule = (a, b) => !!a && !!b && JSON.stringify([[...new Set(a.only)].sort(), a.cap, a.from, a.co && a.co.limit, a.co && a.co.who]) === JSON.stringify([[...new Set(b.only)].sort(), b.cap, b.from, b.co && b.co.limit, b.co && b.co.who]);
+function applyPreset(p) {
+  if (p.need && p.need()) return;
+  if (p.rule) { fillBuilder(p.rule()); keepDraft = true; if (p.back) BACKSET.on = true; }
+  else if (p.back) BACKSET.on = !BACKSET.on;   // the habit alone: a second click turns it off
+  saveBack();
+  renderAll();
+}
+function renderPresets() {
+  const d = ruleDraft();
+  $("presets").replaceChildren(el("span", { class: "lbl", text: T("Ready-made") }), ...PRESETS.map(p => {
+    const need = p.need ? p.need() : null, on = p.rule ? d.ok && sameRule(d.r, p.rule()) : BACKSET.on;
+    return el("button", { class: "preset", type: "button", "aria-pressed": on ? "true" : "false", "aria-disabled": need ? "true" : "false",
+      "data-tip": T(p.name) + "\n" + T("Against: " + p.against) + "\n" + (need || T("Not against: " + p.not)), onclick: () => applyPreset(p) },
+      el("b", { text: T(p.name) }));
+  }));
+  const on = PRESETS.find(p => p.rule && d.ok && sameRule(d.r, p.rule())) || (BACKSET.on ? PRESETS[4] : null);
+  const pid = on ? on.id : "", link = "https://tauhud.com/wallet/?preset=" + pid + "&ref=preset-" + pid;   // the tag counts opens, nothing about who
+  /* the chosen card, spelled out: what it does, and in amber what it does not; nothing chosen: the one line every rule shares */
+  /* a grey chip says why on the screen, not only in its hover; the chosen one says what it does not keep off */
+  const needs = PRESETS.filter(p => p.need && p.need());
+  $("preshare").replaceChildren(...[needs.length ? el("span", { class: "fixit", style: "margin:0", text: "↳ " + needs.map(p => T(p.name)).join(", ") + ": " + needs[0].need() }) : null,
+    on ? el("span", { class: "not", text: T("Not against: " + on.not) }) : null,
+    (on || BACKSET.on) ? el("button", { type: "button", text: T("Copy a link to this rule"), "data-tip": T("Copy a link to this rule") + "\n" + link + "\n" + T("Whoever opens it gets the same blocks filled in, nothing signed."),
+      onclick: e => { navigator.clipboard && navigator.clipboard.writeText(link).then(() => { e.target.textContent = T("Copied"); setTimeout(() => { e.target.textContent = T("Copy a link to this rule"); }, 1500); }).catch(() => {}); } }) : null].filter(Boolean));
+}
+/* ?preset=<id>: a shared rule fills the blocks once; nothing is signed */
+(() => { const q = new URLSearchParams(location.search).get("preset"); const p = PRESETS.find(x => x.id === q); if (!p) return;
+  if (p.back) { BACKSET.on = true; saveBack(); }
+  if (p.rule && !(p.need && p.need())) carried = { ...p.rule() }; })();
 function ruleDraft() {
   const r = { freeze: false, only: [], cap: null, from: null, co: null }, bad = [], at = {};
   const no = (k, x) => { at[k] = x; bad.push(x); };
@@ -1268,7 +1339,9 @@ function renderRule() {
   sel.replaceChildren(el("option", { value: "", text: T("pick a name") }), ...BOOK.filter(c => c.addr !== W.pk).map(c => el("option", { value: c.addr, translate: "no", text: c.name })));
   sel.value = BOOK.some(c => c.addr === want) ? want : "";
   [["only", "bkOnly", "fxOnly"], ["cap", "bkCap", "fxCap"], ["from", "bkFrom", "fxFrom"], ["co", "bkCo", "fxCo"]].forEach(([k, b, f]) => { $(b).classList.toggle("bad", !!d.at[k]); $(f).textContent = d.at[k] ? "↳ " + d.at[k] : ""; });
-  $("probes").replaceChildren(...(d.bad.length ? [el("h3", { text: T("Test payments against this rule") }), el("div", { class: "probe" }, el("span", { class: "dot sim" }), el("em", { text: T("Fix the amber block above first; then these lines show what the rule does.") }))] : probes(d.ok ? d.r : r)));
+  $("probes").replaceChildren(...(d.bad.length ? [el("div", { class: "probe" }, el("span", { class: "dot sim" }), el("em", { text: T("Fix the amber block above first; then these lines show what the rule does.") }))] : probes(d.ok ? d.r : r).slice(1)));
+  const dots = [...$("probes").querySelectorAll(".probe .dot")], n = c => dots.filter(x => x.classList.contains(c)).length;
+  $("probesSum").textContent = d.bad.length || !dots.length ? T("Test payments against this rule") : F("Test payments against this rule · {a} go through, {b} stopped, {c} wait", { a: n("ok"), b: dots.length - n("ok") - n("sim"), c: n("sim") });
   $("draftTau").hidden = !d.text; $("draftText").textContent = d.text || "";
   const same = d.text && r && d.text.replace(/\s+/g, "") === r.text.replace(/\s+/g, "");
   $("btnRule").disabled = !W.pk || !d.ok || same || slotsFull();
@@ -1310,6 +1383,15 @@ function renderRule() {
   else if (full) why.push(T("Grey while both live rule places are taken."));
   $("ruleWhy").className = "why2" + (W.pk && d.bad.length ? " fix" : "");
   $("ruleWhy").replaceChildren(...why);
+  renderPresets();
+  fitRules();
+}
+/* on one screen the test payments fold into their line rather than make the panel scroll; opened by hand, they stay open */
+let probesFolded = false;
+function fitRules() {
+  const box = $("rules"), det = $("probesBox");
+  if (probesFolded || !det.open || getComputedStyle(box).overflowY !== "auto") return;
+  if (box.scrollHeight > box.clientHeight + 1) { det.open = false; probesFolded = true; }
 }
 async function sendRule(text, label, res) {
   res.className = "result wait"; res.textContent = T("Signing in your browser, then asking the node…");
@@ -1650,7 +1732,9 @@ function inboxItems() {
   return items;
 }
 /* first steps: the empty Activity panel shows the way in, with what is already done */
+const WALK = new URLSearchParams(location.search).get("walk") === "friend";   // ?walk=friend: the five-minute walk for someone new, sent by a friend
 function renderSteps() {
+  if (WALK) return renderWalk();
   const steps = [
     [!!W.pk, "Make your account", "One click; the key stays in this browser."],
     [!!W.pk && BOOK.length > 0, "Put someone in your address book", "Then you pay names, not hex."],
@@ -1663,6 +1747,25 @@ function renderSteps() {
   const show = W.log.length ? steps.filter(x => !x[0]).slice(0, 1) : steps;
   $("steps").replaceChildren(el("h3", { text: F("First steps · {a} of {b} done", { a: done, b: steps.length }) }),
     ...show.map(([ok, t, x]) => el("div", { class: "step" + (ok ? " done" : "") }, el("span", { class: "ck", text: ok ? "✓" : "○" }), el("span", null, el("b", { text: T(t) }), " ", ok ? null : el("span", { text: T(x) })))));
+}
+/* the walk a friend sent: a wrong address, a payment with a way back, and the way back taken. Then a line to pass on. */
+function renderWalk() {
+  const sentBack = W.log.some(x => x.kind === "back"), took = W.log.some(x => x.kind === "retract");
+  const steps = [
+    [!!W.pk, "Make your test account", "One click; the key stays in this browser. Test AGRS have no value."],
+    [BACKSET.on, "Turn on Way back by default", "Under Ready-made rules on the right: new addresses get a way back."],
+    [sentBack, "Pay 100 test AGRS to a stranger", "Paste any 96-hex address, or a lookalike from your history. The page switches to Send with a way back."],
+    [took, "Take it back", "Under Activity: Take back. Free, until the release block."],
+  ];
+  const done = steps.filter(x => x[0]).length;
+  $("steps").hidden = false;
+  const line = T("I sent test money to a wrong address on Tau Testnet Alpha and took it back before it arrived. Five minutes, nothing to install:") + " https://tauhud.com/wallet/?walk=friend&ref=friend";   // the tag counts opens, nothing about who
+  $("steps").replaceChildren(el("h3", { text: F("A payment you can take back · {a} of {b} done", { a: done, b: steps.length }) }),
+    ...steps.map(([ok, t, x]) => el("div", { class: "step" + (ok ? " done" : "") }, el("span", { class: "ck", text: ok ? "✓" : "○" }), el("span", null, el("b", { text: T(t) }), " ", ok ? null : el("span", { text: T(x) })))),
+    done === steps.length ? el("div", { class: "row", style: "margin-top:6px" },
+      el("a", { class: "b go", href: "https://x.com/intent/post?text=" + encodeURIComponent(line), target: "_blank", rel: "noopener", style: "text-decoration:none", text: T("Pass it on") }),
+      el("button", { class: "b", type: "button", text: T("Copy the line"), onclick: e => { navigator.clipboard && navigator.clipboard.writeText(line).then(() => { e.target.textContent = T("Copied"); }).catch(() => {}); } }),
+      el("span", { class: "dim", style: "font-size:12px;align-self:center", text: T("On the chain only the sender can take a payment back, and only before the release block; after that it is final.") })) : null);
 }
 function renderActivity() {
   const inbox = W.pk ? inboxItems() : [];
