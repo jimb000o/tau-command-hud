@@ -16,6 +16,9 @@
   window.RABBIT_TALK = {
     ama: {
       back: [
+        ["pirateSight", "Black sails off the reef. Nobody told the council. Nobody tells the council anything, but usually they at least send a letter."],
+        ["pirateHere", "Pirates. They stay on their boat, which is the first polite thing pirates have ever done. The tree stays where it is."],
+        ["pirateAfter", "The pirates came and went. They tried their tricks on the chain, not on the island, and the chain answered. That is what a good elder does too."],
         ["shipNear", "A ship is on its way, I hear. Visitors are welcome under this tree. Groups are a different animal. A visitor sits down. A group takes pictures of people sitting down."],
         ["shipHere", "The ship is in. The tree is not on the tour, and the tour is not on the tree. We agreed that in council. It may be the only thing we agreed on all year."],
         ["last", "The last day. Suddenly everyone is very polite to me. It happens every election, like the rains."],
@@ -38,6 +41,10 @@
     },
     marisol: {
       back: [
+        ["pirateSight", "Black sails! Every fisherman on the square is whispering. In ten minutes this is the rumour of the year. In twenty, there are three versions."],
+        ["pirateHere+tImpostor", "One of the pirates wore a false moustache and paid from another pirate’s wallet. The chain checked the signature, not the moustache. Refused. I’m telling everyone."],
+        ["pirateHere", "The pirates buy from the market by rope and basket. Nobody goes near the boat. Everybody watches it. That’s the café’s whole evening."],
+        ["pirateAfter", "Everyone at the café has a pirate story now. Half of them weren’t there. The logbook was, so I believe the logbook."],
         ["shipNear+queen", "The Queen Mempool is coming. A hundred and twenty coffees, a hundred and twenty new rumours. I’ve ordered more cups. The rumours bring their own."],
         ["shipNear+dryrun", "The expedition ship is coming. Forty people who want to know where the coffee grows. I’ve put a little sign on every cup: Baako’s hill. Baako is unbearable already."],
         ["shipHere+queen", "Look at my square! Hats everywhere. They all ask the same three things: is the water clean, is the fish fresh, is the cat for sale. Yes, yes, and Déjà is not for sale."],
@@ -65,6 +72,10 @@
     },
     lola: {
       back: [
+        ["pirateSight+dark", "Lanterns on a ship I don’t know. Torches on at the bar, the good rum under the counter. Not hiding it. Pricing it."],
+        ["pirateHere+tReplay", "Pirates pay for their rum, would you believe it. One of them tried to pay twice with the same payment. The chain said no before I could."],
+        ["pirateHere", "Pirates at my bar, by rope and basket. They pay the same price as everyone, through the same chain. I’ve never had such well-behaved pirates. I’ve never had pirates."],
+        ["pirateAfter", "The pirates have gone, and the rum they paid for is paid for. Whatever else they tried, the logbook has the chain’s answer. I’d rather read that than a pirate’s promise."],
         ["shipNear+queen", "The Queen is on her way. A hundred and twenty thirsty people and one bartender. I’ve hidden the good lemons. Pacts first, passengers second."],
         ["shipHere+queen", "A table of eight, one bill. One transaction, and it pays my bar, Rico’s song and the Works’ coconut snacks at once. Nobody argues about who had the extra lemonade. I love these people."],
         ["shipHere+dryrun", "The expedition people order one lemonade and ask where the lemons grow, who witnesses the pacts and why there’s a Book. I told them: the Book, because I forget."],
@@ -87,6 +98,9 @@
     },
     rico: {
       back: [
+        ["pirateSight", "Pirates, baby! Nobody announced them, nobody booked them, and Rico has no jingle for this. Rico is writing one now."],
+        ["pirateAfter", "The pirates are gone, baby. What the chain said to their tricks is in the logbook. Rico read it on air. Twice. Best ratings since the storm."],
+        ["shipGone+shipTuned", "The ship wrote in her logbook what she changes for next time, baby, and why. Rico has never once written down why he changed anything. Inspiring."],
         ["shipNear+queen", "The Queen Mempool is coming, baby! Named after the chain’s waiting room, where transactions wait for a block. Rico hopes she doesn’t wait as long."],
         ["shipHere+queen", "Song requests from the Queen, baby! Each one a real transaction on the lagoon. Our relay makes the passengers up, but the coins are signed. Best crowd Rico ever had that doesn’t exist."],
         ["shipHere+dryrun", "The Wednesday ship never visits the studio, baby. Forty people, and not one song request. They want the lighthouse. Rico will survive. Barely."],
@@ -109,6 +123,9 @@
     },
     sam: {
       back: [
+        ["pirateSight", "A ship I can’t name. The lighthouse saw her first. The Book will see her last: whatever they try, it writes down what the chain said."],
+        ["pirateAfter", "The pirates are in the Book now, between a fisherman and the school. The Book does not care who they are. Only who signed, and what the chain took."],
+        ["shipGone+shipClean", "Not one refusal today. Every payment the passengers made, the chain took, and the Book has them all. Dull for the radio. Beautiful for the Book."],
         ["shipTomorrow", "A ship tomorrow. Every coin the passengers pay will go in the Book, like everyone else’s. The Book doesn’t care who sailed in. Only who signed."],
         ["shipHere+dryrun", "Forty strangers climbed my stairs today. They read the Book with their noses very close. One asked if she could add a line. I said: only with a coin, like everyone. She paid two."],
         ["shipHere+queen", "The Queen’s passengers come up for the view, not for the Book. A few read it anyway. One of them laughed at my poem. Fair."],
@@ -133,6 +150,10 @@
     },
     tobias: {
       back: [
+        ["pirateSight", "A ship! Not on my timetable! No flag I know, no answer to my horn. I’m putting on the uniform. Both uniforms."],
+        ["pirateHere+dark", "They anchored in the dark and stayed aboard. No tenders, no welcome, no speech. My speech is still in my pocket. It’s a very good speech."],
+        ["pirateHere", "Pirates at anchor, and not one of them came to the pier. I rang the bell anyway. They waved. I think they waved."],
+        ["pirateAfter", "Gone, without a word. I’ve added a page to the harbour book: ships that do not announce themselves. It’s a short page. One name."],
         ["shipSoon+queen", "The Queen Mempool, on Saturday! A hundred and twenty passengers. I have started on the welcome speech. So far it welcomes them for eleven minutes, and they have not yet left the boat."],
         ["shipTomorrow+queen", "Tomorrow at two, the Queen! I have polished the bell, the medal and the pier. The pier objected. It is a very old pier."],
         ["shipToday", "She comes today! I have been on this pier since dawn, in full uniform. The gulls think I am a statue. Let them. Statues get flowers."],
@@ -163,6 +184,10 @@
     },
     hana: {
       back: [
+        ["pirateSight", "A dark ship, unannounced? Children, inside, please. Not because of the pirates. Because we are going to watch them properly."],
+        ["pirateHere", "We are watching from the window. Every time a pirate tries a trick, the class writes down what the chain answered. The children call it pirate bingo. I call it checking."],
+        ["pirateAfter", "Homework: find the pirates’ tricks in the logbook and write down the chain’s answer to each one. Then explain why the chain had to say no. In whole sentences."],
+        ["shipGone+shipSkipped", "The class found something in the logbook: the ship planned more stops than she made. Our node took its time answering, and she sends one at a time. A late stop is skipped, not forced. Good manners, for a ship."],
         ["shipNear+dryrun", "The expedition ship always visits the school. The children are preparing questions for the passengers. Hard ones. I have seen the list."],
         ["shipHere+dryrun", "Forty passengers in my back row. The children asked them: who said it, and where is it written? Two of them had to go and look it up. A very good afternoon."],
         ["shipGone+dryrun", "They have gone. Before the break the children counted the ship’s transactions in the blocks. Every one matched the logbook. Then they counted again, to be sure. Then it was break."],
@@ -177,6 +202,7 @@
         ["", "Welcome back. Sit at the back, please. The front row is for people who did their homework."],
       ],
       ask: [
+        { when: "pirates", q: "What are the pirates trying?", a: [["", "Paying more than they hold, sending the same payment twice, a payment whose time ran out, a signature from somebody else’s key. Each is a rule the chain checks on every payment, yours too. The pirates only check that it checks."]] },
         { when: "ship", q: "What do you think of the cruise ships?", a: [["", "Curious visitors are a gift. Crowds are weather. The Wednesday ship brings questions, the Saturday ship brings hats. I like both, but only one fits in a classroom."]],
           more: { q: "Would you stop the big ships if you won?", a: [["", "No. I would write down what they cost the reef and what they bring the island, side by side, where everyone can read it. Then the island decides. That is the whole lesson, really."]] } },
         { q: "What do the children learn here?", a: [["", "Reading, sums, and checking. I teach them two questions for anything they hear: who said it, and where is it written. It makes them terrible at believing adverts."]],
@@ -188,6 +214,9 @@
     },
     kai: {
       back: [
+        ["pirateSight", "Dark ship near the reef, and no mooring request. The sensors have started signing every reading twice. Nervous sensors. Or just thorough."],
+        ["pirateHere", "The pirates stay off the reef, which I respect. The turtle has gone deeper anyway. She doesn’t trust a ship without a timetable."],
+        ["shipGone+shipQuiet", "Some of today’s sends got no answer in time. Not a no, just a long silence. The ship waited, slowed down and carried on. I’d do the same on a dive."],
         ["shipNear+dryrun", "The expedition ship is coming! Divers who read the briefing. The reef will love them. The turtle is already doing her hair."],
         ["shipHere+dryrun", "Divers everywhere, three sensors each, every reading signed. Some booked their dive and can still change their minds: the coins wait until the hour, then the chain pays us by itself."],
         ["shipGone+dryrun", "They’ve gone. The sensors signed the water before they came and after they left. Same water. That’s the best review a reef can get."],
@@ -208,6 +237,8 @@
     },
     baako: {
       back: [
+        ["pirateHere+tFreeride", "The pirates ordered coconuts from the boat. One of them sent a payment that allowed no fee at all. The chain didn’t take it. Even pirates pay the ferryman."],
+        ["pirateHere", "Pirates ordering coconuts from the boat, one basket at a time. One price on the board, the same for pirates. Noor wanted a pirate price. I said no."],
         ["shipNear+queen", "The Queen is coming! The co-op has picked extra coconuts. One price on the board, the same for islanders and passengers. Noor wanted a passenger price. I said no. She said fine. She did not say it nicely."],
         ["shipHere+queen", "Coconut snacks on the bar bills! One transaction, and a share comes straight to the Works. The co-op’s book adds it up by itself. I love a sum that does itself."],
         ["shipHere+dryrun", "The expedition people asked how the press works. I showed them the bicycles, the organ and Noor. They were most afraid of Noor."],
@@ -229,6 +260,8 @@
     /* Noor only meets you when you play Baako: she runs the Coconut Works, his co-op brings her the coconuts, and here she is the boss */
     noor: {
       back: [
+        ["pirateHere+tGiant", "Pirates, Baako. One of them tried to pay with a sum bigger than a payment can even hold. The chain refused. So did I."],
+        ["pirateHere", "Pirates, Baako. They want soap. Of course they want soap. Nobody goes near the boat. The soap goes in a basket."],
         ["shipNear+queen", "The Queen is coming, Baako. Double shift. Soap shaped like little ships. Don’t ask. It sells."],
         ["shipHere", "Passengers at my gate, Baako. They want to see the organ. Nobody sees the organ. They can see the soap."],
         ["deal", "An embassy envelope, Baako? The co-op’s farmers will ask where it went. I only make soap, and even I asked."],
@@ -251,6 +284,7 @@
     },
     pim: {
       back: [
+        ["pirateSight", "I measured her from the cliff. Black hull, three chain links on the flag, not on any list I have. The North Wind wants to know if pirates count as cruise traffic."],
         ["shipNear+queen", "The Queen is coming. The North Wind asked me to measure how deep she sits in the water. I did. Then they asked me to measure the bay again. It is still the same size."],
         ["shipHere+queen", "I measured the Queen from the cliff. Two hundred metres and a bit. The embassy wants to know what the bit would cost to dredge. I said: ask the council. They sighed."],
         ["deal", "Ah. You have signed with an embassy. That is not my business. I only measure. Although it was quite a thick envelope."],
@@ -268,6 +302,10 @@
     },
     wren: {
       back: [
+        ["pirateSight+dark", "Lanterns on a black ship, dear, coming round the reef in the dark. I told the passengers there were no pirates. Item four hundred and fifteen: I was wrong."],
+        ["pirateSight", "Look at that flag, dear. Three chain links. I told everyone there were no pirates. I may have to relabel something."],
+        ["pirateHere", "Pirates, dear. Made up by the relay, like the passengers, but their tricks go to the real chain. I’m cataloguing them from the Old Ship. From a safe distance."],
+        ["pirateAfter", "Item four hundred and sixteen, dear: one pirate ship, one evening, and the chain’s answer to their tricks in the logbook. I’ve filed it under maritime history."],
         ["shipNear+dryrun", "The expedition ship is coming, dear. They always visit my Old Ship. I’ve labelled the gangway, the rail and the bucket. The bucket was nervous."],
         ["shipHere+dryrun", "Item four hundred and thirteen, dear: forty passengers, one sun hat each, all the same hat. Item four hundred and fourteen: a question about pirates. There were no pirates. There was paperwork."],
         ["shipGone+dryrun", "They’ve gone, dear, and one of them left me a postcard. Of my own ship. I’ve labelled it."],
@@ -277,6 +315,8 @@
         ["", "Come aboard, dear, and mind the third step. It’s labelled, but nobody reads labels."],
       ],
       ask: [
+        { when: "pirates", q: "Are they real pirates?", a: [["", "No, dear. The relay makes them up, like the cruise passengers. Their tricks are real, though: real test transactions that the chain has to refuse. A pirate is only as good as the lock he tries."]],
+          more: { q: "Why let pirates try tricks at all?", a: [["", "Better to try every lock while the coins are test coins, dear. A lock nobody ever tries is only a hope."]] } },
         { when: "ship", q: "Do you like the cruise ships?", a: [["", "The small one, very much, dear. Its passengers read the labels. The big one stays out at sea, which suits a liner. Nobody wants a liner reading their labels."]] },
         { q: "What’s the oddest thing the sea gave back?", a: [["", "A ship’s log from a crew who swore they had never been here. The log said otherwise, in their own hand. Records outlive excuses, dear. That’s archaeology in one sentence."]],
           more: { q: "So you trust records more than people?", a: [["", "I trust records about people. People change their minds, which is healthy. Records stop them changing the past, which is healthier."]] } },
@@ -286,6 +326,7 @@
     },
     kiko: {
       back: [
+        ["pirateHere", "A pirate ship out there, lanterns on the water. Small waves. Polite pirates. The canoe stays up the beach anyway."],
         ["shipHere", "Big ship out there. Big waves. I built the sides higher this morning. The passengers took pictures of my canoe. Nobody asked if it floats."],
         ["shipGone", "Ship’s gone. The waves stay a while. Like gossip."],
         ["harbour", "The harbour law passed. Big ships, big waves. I’m building the sides higher."],
@@ -303,6 +344,7 @@
     },
     tano: {
       back: [
+        ["pirateHere", "The drums are quiet tonight. Not from fear. When a stranger comes, you listen first. They try their tricks, the chain answers, and we listen."],
         ["shipTomorrow", "A ship tomorrow. The drums won’t play for it. They play for the island. The passengers may listen from the path, like anyone."],
         ["shipHere", "Hear the ship’s horn? The drums don’t answer horns. When it has gone, we’ll play. Not for them. For the quiet after."],
         ["stoneSet", "Your stone sits in the circle. It does not vote. It listens, like you did. That is why it stays."],
@@ -331,6 +373,9 @@
     /* the resort's offer is game.js EMB.south; coming back, he talks about where your deal with him stands */
     salado: {
       back: [
+        ["pirateSight", "A ship without a booking! No escrow, no reservation, no towels! I don’t know whether to panic or send a brochure."],
+        ["pirateHere", "I sent the pirates a brochure. They didn’t come up. Nobody comes up to a spa from a pirate ship. My investors say that is a gap in the market. It is a gap in the sea."],
+        ["pirateAfter", "They never came up to the spa. Pirates. My investors asked if they could be a new market. I said: only if they learn to pay from their own wallets."],
         ["road+southKept", "You did it, the road is law! I called my investors and for once they had nothing to say. Nothing! I think that means they’re happy. Come, have a smoothie, it’s on the house."],
         ["road+southOwed", "So the road passed. Wonderful. Only somebody else proposed it, and in the Book your name is next to my coins, not next to the road. My investors noticed before I did. About the road I’m happy. About you I’m still thinking."],
         ["road", "The road is law. I keep saying it out loud, just to hear it. My guests will arrive like normal people now, in a minibus with the air conditioning on. Nobody has to cry."],
@@ -379,6 +424,14 @@
        shipGone        it left on time, today           shipCut  it left early or never landed, today (the logbook says why)
        shipAfter       either of these two
        ship            any of the above
+       shipSkipped shipQuiet shipClean shipTuned   with shipAfter, from her logbook summary: stops skipped (our node's
+                       answers took their time), sends our node left unanswered in time, not one refusal, a change for next time
+       pirates         the pirate ship Black Sequence, which comes unannounced: nothing at all before she is in sight, then
+       pirateSight     in sight or waiting off the reef     pirateHere   at anchor (her crew stays aboard)
+       pirateGone      left, that evening    pirateNext   the day after    pirateAfter   either    pirateCut   left early
+       pirateClean     every trick she tried was refused (never while a trick that got through is held back)
+       tOverspend tReplay tExpired tStale tForged tImpostor tFreeride tGiant   that trick was refused at least once (live, or
+                       after the visit); a trick that got through is never a fact, so no line names it
      The visit under way counts first, then one that ended today, then the next call. Nothing while the ships are
      switched off (the relay announces no call then) or the relay cannot be reached: nobody talks about a ship that will not come. */
   const BERLIN = (() => { try { return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", year: "numeric", month: "numeric", day: "numeric" }); } catch (e) { return null; } })();
@@ -387,7 +440,11 @@
     const p = {}; BERLIN.formatToParts(new Date(t * 1000)).forEach(x => { p[x.type] = +x.value; });
     return Date.UTC(p.year, p.month - 1, p.day) / 864e5;
   };
-  const WHEN = ["ship", "queen", "dryrun", "shipSoon", "shipTomorrow", "shipToday", "shipNear", "shipHere", "shipGone", "shipCut", "shipAfter"];
+  /* the pirates' eight tricks (relay cruise.py TRICKS), as facts once the chain refused one: what a line may name */
+  const TRICKF = { overspend: "tOverspend", replay: "tReplay", expired: "tExpired", stale: "tStale", forged: "tForged", impostor: "tImpostor", freeride: "tFreeride", giant: "tGiant" };
+  const WHEN = ["ship", "queen", "dryrun", "shipSoon", "shipTomorrow", "shipToday", "shipNear", "shipHere", "shipGone", "shipCut", "shipAfter",
+    "shipSkipped", "shipQuiet", "shipClean", "shipTuned",
+    "pirates", "pirateSight", "pirateHere", "pirateGone", "pirateNext", "pirateAfter", "pirateCut", "pirateClean", ...Object.values(TRICKF)];
   const mark = (ship, w) => {
     const f = {}; if ((ship !== "queen" && ship !== "dryrun") || !WHEN.includes(w)) return f;
     f.ship = f[ship] = f[w] = true;
@@ -395,18 +452,66 @@
     if (w === "shipGone" || w === "shipCut") f.shipAfter = true;
     return f;
   };
-  const shipOf = v => v && (v.ship || (v.style === "liner" ? "queen" : v.style === "expedition" ? "dryrun" : null));
-  window.RABBIT_SHIP_WHEN = Object.assign((c, now) => {
-    if (!c) return {};
-    const v = c.now, today = dayOf(now);
-    if (v && v.phase) {
-      if (v.phase === "landing" || v.phase === "ashore" || v.phase === "boarding") return mark(shipOf(v), "shipHere");
-      if (v.phase === "approach" || v.phase === "waiting") return mark(shipOf(v), "shipToday");
-      if (v.phase === "gone") return mark(shipOf(v), v.why ? "shipCut" : "shipGone");
+  const shipOf = v => v && (v.ship || (v.style === "liner" ? "queen" : v.style === "expedition" ? "dryrun" : v.style === "pirate" ? "pirates" : null));
+  const sum = o => typeof o === "number" ? o : Object.values(o || {}).reduce((a, b) => a + (Number(b) || 0), 0);
+  const cutOf = l => !l.landed || /^(no landing|left early)/.test(l.note || "");
+  /* what a visit's summary (relay "last": the logbook's public summary) says the ship learned or met */
+  const learned = l => {
+    const f = {}; if (!l || !l.landed) return f;
+    if ((Number(l.skipped) || 0) > 0 && !(Number(l.half_strained) > 0)) f.shipSkipped = true;   // skipped while our node was slow, not a strained testnet
+    if ((Number(l.unanswered) || 0) > 0) f.shipQuiet = true;
+    if (!cutOf(l) && !sum(l.refused) && sum(l.sent) > 0) f.shipClean = true;
+    if ((l.changed || []).some(c => c && !c.held && c.what)) f.shipTuned = true;
+    return f;
+  };
+  /* the pirates' tricks the chain refused (each trick by name, tOverspend …): live from "by", after from the summary.
+     A trick that got through is held back (relay: {held: true}) and never counted, so no line ever names it */
+  const refusedOf = (T, live) => {
+    const f = {}; if (!T) return f;
+    for (const [k, n] of Object.entries(live ? T.by || {} : T)) if (TRICKF[k] && (live ? Number(n) > 0 : n && !n.held && !n.through && Number(n.stopped) > 0)) f[TRICKF[k]] = true;
+    return f;
+  };
+  const cleanOf = T => { const c = Object.values(T || {}); return c.length > 0 && c.every(x => x && !x.held && !x.through && Number(x.tried) > 0 && x.tried === x.stopped); };
+  /* the pirates come unannounced: nothing about them before they are in sight, then shock, then talk until the next day */
+  function pirate(c, now, today) {
+    const f = {}, v = c.now, on = (...k) => { f.pirates = true; k.forEach(x => { f[x] = true; }); };
+    if (v && shipOf(v) === "pirates" && v.phase) {
+      if (v.phase === "approach" || v.phase === "waiting") on("pirateSight");
+      else if (v.phase === "landing" || v.phase === "ashore" || v.phase === "boarding") { on("pirateHere"); Object.assign(f, refusedOf(v.tricks, true)); }
+      else if (v.phase === "gone") { on("pirateGone", "pirateAfter"); if (v.why) f.pirateCut = true; else Object.assign(f, refusedOf(v.tricks, true)); }
+      return f;
     }
     const l = c.last;
-    if (l && l.end && l.end <= now && dayOf(l.end) === today) return mark(shipOf(l), l.landed && !/^(no landing|left early)/.test(l.note || "") ? "shipGone" : "shipCut");
-    const n = c.next, d = n && n.t0 > now ? dayOf(n.t0) - today : -1;
-    return d === 0 ? mark(shipOf(n), "shipToday") : d === 1 ? mark(shipOf(n), "shipTomorrow") : d === 2 || d === 3 ? mark(shipOf(n), "shipSoon") : {};
-  }, { keys: WHEN, mark });
+    if (l && shipOf(l) === "pirates" && l.end && l.end <= now) {
+      const d = today - dayOf(l.end);
+      if (d === 0 || d === 1) {
+        on(d ? "pirateNext" : "pirateGone", "pirateAfter");
+        if (cutOf(l)) f.pirateCut = true;
+        else { Object.assign(f, refusedOf(l.tricks, false)); if (cleanOf(l.tricks)) f.pirateClean = true; }
+      }
+    }
+    return f;
+  }
+  window.RABBIT_SHIP_WHEN = Object.assign((c, now) => {
+    if (!c) return {};
+    const today = dayOf(now), pf = pirate(c, now, today), out = f => Object.assign(f, pf);
+    const v = c.now && shipOf(c.now) !== "pirates" ? c.now : null;
+    if (v && v.phase) {
+      if (v.phase === "landing" || v.phase === "ashore" || v.phase === "boarding") return out(mark(shipOf(v), "shipHere"));
+      if (v.phase === "approach" || v.phase === "waiting") return out(mark(shipOf(v), "shipToday"));
+      if (v.phase === "gone") return out(mark(shipOf(v), v.why ? "shipCut" : "shipGone"));
+    }
+    const l = c.last;
+    if (l && shipOf(l) !== "pirates" && l.end && l.end <= now && dayOf(l.end) === today)
+      return out(Object.assign(mark(shipOf(l), l.landed && !/^(no landing|left early)/.test(l.note || "") ? "shipGone" : "shipCut"), learned(l)));
+    const n = c.next, d = n && n.t0 > now ? dayOf(n.t0) - today : -1;   // a pirate call as the next one (an older relay): mark says nothing
+    return out(d === 0 ? mark(shipOf(n), "shipToday") : d === 1 ? mark(shipOf(n), "shipTomorrow") : d === 2 || d === 3 ? mark(shipOf(n), "shipSoon") : {});
+  }, { keys: WHEN, mark, TRICKF,
+    /* a preview (?ship=pirates&phase=approach|land|here|turn|gone|next|cut): the pirate facts of that moment */
+    pirate: (phase, tricks) => {
+      const f = { pirates: true }, k = phase === "approach" || phase === "wait" ? "pirateSight" : phase === "gone" || phase === "cut" ? "pirateGone" : phase === "next" ? "pirateNext" : "pirateHere";
+      f[k] = true; if (k === "pirateGone" || k === "pirateNext") f.pirateAfter = true;
+      if (phase === "cut") f.pirateCut = true; else Object.assign(f, refusedOf(tricks, true));
+      return f;
+    } });
 })();
