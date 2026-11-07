@@ -14,7 +14,6 @@ TauI18n.add({ strings: {
   "Agorzilla {n}": "Agorzilla {n}",
   "Tau HUD pages {n}": "Tau HUD 页面 {n}",
   "other wallets {n}": "其他钱包 {n}",
-  "Counted by our relay from the blocks it keeps, UTC day; wallets, not people. White Rabbit Key counts the players, the island bot and the cruise ships: simulated passengers, real transactions. Everything else on this page comes from the chain as it is.": "由我们的中继从它保存的区块里统计，按 UTC 日；是钱包，不是人。White Rabbit Key 包括玩家、岛上机器人和游轮：模拟的乘客，真实的交易。本页其他一切都直接来自链。",
   "sim": "模拟",
   "Your moves in the game are real test transactions, whatever the chain chips show; the chips follow the simulation.": "你在游戏中的每一步都是真实的测试交易，无论链条芯片显示什么；芯片跟随模拟。",
   "@tauHUDcom: every rule change and chain restart as it happens, a weekly recap, HUD updates": "@tauHUDcom：每次规则变更和链重启实时推送、每周回顾、HUD 更新",
@@ -657,5 +656,9 @@ TauI18n.add({ strings: {
   "What is true about Tau today, each fact with its source in IDNI's code, plus live numbers; point your AI assistant here": "今天关于 Tau 成立的事实，每条都附 IDNI 代码中的来源，外加实时数字；让你的 AI 助手读这里",
   "Services on the testnet": "测试网上的服务",
   "A directory of what runs on the testnet: co-signers, rule givers, apps people pay; found on the chain by itself, live numbers": "测试网上运行的一切的目录：共同签名者、规则提供者、大家付款的应用；直接从链上发现，实时数字",
-  "Payments above your own limit wait for a code from your Authenticator app; our Guardian co-signs, never sends": "超过你自定限额的付款要等身份验证器应用里的验证码；我们的 Guardian 共同签名，从不发送"
+  "Payments above your own limit wait for a code from your Authenticator app; our Guardian co-signs, never sends": "超过你自定限额的付款要等身份验证器应用里的验证码；我们的 Guardian 共同签名，从不发送",
+  "Counted by our relay from the blocks it keeps, UTC day; wallets, not people. White Rabbit Key counts its players; our cruise ships (simulated passengers) and the island bot are our server's own transactions, real but no users, and counted apart. Everything else on this page comes from the chain as it is.": "由我们的中继从它保存的区块里统计，按 UTC 日；是钱包，不是人。白兔礁只计玩家；我们的游轮（模拟乘客）和海岛机器人是我们服务器自己的交易，真实但不是用户，单独统计。本页其他一切都直接来自链。",
+  "White Rabbit Key players {n}": "白兔礁玩家 {n}",
+  "our cruise ships {n}": "我们的游轮 {n}",
+  "island bot {n}": "海岛机器人 {n}",
 } });

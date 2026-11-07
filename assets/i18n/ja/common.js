@@ -14,7 +14,6 @@ TauI18n.add({ strings: {
   "Agorzilla {n}": "Agorzilla {n}",
   "Tau HUD pages {n}": "Tau HUD のページ {n}",
   "other wallets {n}": "その他のウォレット {n}",
-  "Counted by our relay from the blocks it keeps, UTC day; wallets, not people. White Rabbit Key counts the players, the island bot and the cruise ships: simulated passengers, real transactions. Everything else on this page comes from the chain as it is.": "私たちのリレーが保持するブロックから数えた UTC の一日。人ではなくウォレットです。White Rabbit Key にはプレイヤー、島のボット、クルーズ船が含まれます。乗客は模擬、取引は本物。このページの他のすべては、チェーンそのままです。",
   "sim": "シム",
   "Your moves in the game are real test transactions, whatever the chain chips show; the chips follow the simulation.": "ゲームでのあなたの一手は、チェーンのチップが何を示していても本物のテスト取引です。チップはシミュレーションに従います。",
   "@tauHUDcom: every rule change and chain restart as it happens, a weekly recap, HUD updates": "@tauHUDcom：すべてのルール変更とチェーンの再起動をリアルタイムで、週次まとめ、HUD の更新情報",
@@ -652,5 +651,9 @@ TauI18n.add({ strings: {
   "What is true about Tau today, each fact with its source in IDNI's code, plus live numbers; point your AI assistant here": "今日の Tau について正しいこと。各事実に IDNI のコード内の出典、さらに最新の数字。AI アシスタントにここを読ませてください",
   "Services on the testnet": "テストネットのサービス",
   "A directory of what runs on the testnet: co-signers, rule givers, apps people pay; found on the chain by itself, live numbers": "テストネットで動いているものの一覧：共同署名者、ルールの提供者、みんなが支払うアプリ。チェーンから自動で見つけ、数字はライブ",
-  "Payments above your own limit wait for a code from your Authenticator app; our Guardian co-signs, never sends": "自分で決めた上限を超える支払いは認証アプリのコードを待ちます。Guardian は共同署名だけで、送金はしません"
+  "Payments above your own limit wait for a code from your Authenticator app; our Guardian co-signs, never sends": "自分で決めた上限を超える支払いは認証アプリのコードを待ちます。Guardian は共同署名だけで、送金はしません",
+  "Counted by our relay from the blocks it keeps, UTC day; wallets, not people. White Rabbit Key counts its players; our cruise ships (simulated passengers) and the island bot are our server's own transactions, real but no users, and counted apart. Everything else on this page comes from the chain as it is.": "私たちのリレーが保持するブロックから数えた UTC の一日。人ではなくウォレットです。White Rabbit Key はプレイヤーだけを数えます。私たちのクルーズ船（模擬の乗客）と島のボットは私たちのサーバー自身の取引で、本物ですがユーザーではなく、別に数えます。このページの他のすべては、チェーンそのままです。",
+  "White Rabbit Key players {n}": "White Rabbit Key のプレイヤー {n}",
+  "our cruise ships {n}": "私たちのクルーズ船 {n}",
+  "island bot {n}": "島のボット {n}",
 } });

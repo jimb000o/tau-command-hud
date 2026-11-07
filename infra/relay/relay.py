@@ -2209,7 +2209,7 @@ class Relay:
                             json.dumps(self.summary(), separators=(",", ":")).encode())
         if path == "/wallets/tags":   # which known app or owner each wallet belongs to, for the chain core (walletdays.py)
             if getattr(self, "wtags_text", None) is None or time.monotonic() - self.wtags_at >= 60:
-                self.wtags_text = json.dumps({"tags": self.wallets.known()}, separators=(",", ":"))
+                self.wtags_text = json.dumps({"tags": self.wallets.known(), "via": self.sources.games()}, separators=(",", ":"))
                 self.wtags_at = time.monotonic()
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),

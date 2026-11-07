@@ -47,9 +47,9 @@ blocks = [
     {"header": {}, "tx_ids": ["h7"], "transactions": [tx(A, B)]},
 ]
 out = s.by_day(blocks)
-check(out["days"]["2026-10-28"] == {"agorzilla": [2, 1, 1, 0, 10], "tauhud": [1, 1, 1, 0, 5], "rabbit": [0, 0, 0, 0, 0], "idni": [0, 0, 0, 0, 0], "other": [1, 1, 1, 0, 5]},
+check(out["days"]["2026-10-28"] == {"agorzilla": [2, 1, 1, 0, 10], "tauhud": [1, 1, 1, 0, 5], "rabbit": [0, 0, 0, 0, 0], "cruise": [0, 0, 0, 0, 0], "bot": [0, 0, 0, 0, 0], "idni": [0, 0, 0, 0, 0], "other": [1, 1, 1, 0, 5]},
       "a meal is Agorzilla's, a relay send Tau HUD's, the rest other; wallets counted once a day")
-check(out["days"]["2026-10-29"] == {"agorzilla": [3, 3, 2, 1, 15], "tauhud": [0, 0, 0, 0, 0], "rabbit": [0, 0, 0, 0, 0], "idni": [2, 1, 1, 0, 10], "other": [1, 1, 1, 0, 5]},
+check(out["days"]["2026-10-29"] == {"agorzilla": [3, 3, 2, 1, 15], "tauhud": [0, 0, 0, 0, 0], "rabbit": [0, 0, 0, 0, 0], "cruise": [0, 0, 0, 0, 0], "bot": [0, 0, 0, 0, 0], "idni": [2, 1, 1, 0, 10], "other": [1, 1, 1, 0, 5]},
       "a send from agorzilla.com through the relay counts for Agorzilla, a genesis account for IDNI")
 z = out["agorzilla"]["2026-10-28"]
 check(z["meals"] == 2 and z["snacks"] == 1 and z["agrs"] == 10 and z["wallets"] == 1 and z["new"] == 1 and z["hours"][0] == 2,
@@ -88,16 +88,16 @@ check(r1["moves"] == 11 and r1["rivals"] == 10 and r1["by"] == {"tobias": 10} an
 check(r2["votes"] == 2 and r2["cands"] == {"marisol": 1, "hana": 1} and r2["wallets"] == 2 and r2["new"] == 1 and r2["agrs"] == 10,
       "ballots per candidate; a wallet that played before is not new; a meal for Agorzilla is not a move")
 check(out["totals"]["rabbit"] == {"7": 2, "30": 2, "all": 2}, "visitor wallets on the island over 7 / 30 days / all")
-check(out["days"]["2026-10-28"]["rabbit"] == [3, 1, 1, 0, 15] and out["days"]["2026-10-28"]["other"][0] == 0,
-      "White Rabbit Key is its own group: the bot's moves count as its transactions, not as others', and not as a wallet")
+check(out["days"]["2026-10-28"]["rabbit"] == [1, 1, 1, 0, 5] and out["days"]["2026-10-28"]["bot"] == [2, 0, 0, 0, 10] and out["days"]["2026-10-28"]["other"][0] == 0,
+      "White Rabbit Key counts the players' moves; the bot's moves are the bot's, never users' and never a wallet")
 check(out["ours"]["2026-10-28"] == [1, 1, 1, 0, 5] and out["hours"]["2026-10-28"][1] == 1 and out["starts"]["2026-10-28"] == {"rabbit": {"line": 1}},
       "only the players' own moves count as ours, in the hours and where our transactions started")
 check(out["days"]["2026-10-29"]["rabbit"][:2] == [2, 2] and out["days"]["2026-10-29"]["agorzilla"][0] == 1, "a meal stays Agorzilla's")
 PURSE = "ee" * 48
 s.purses = {PURSE: "works"}
 out = s.by_day([{"header": {"timestamp": day1 + 60}, "tx_ids": ["p1", "h2"], "transactions": [tx(PURSE, A), tx(A, CO)]}])
-check(out["days"]["2026-10-28"]["rabbit"] == [2, 1, 1, 0, 10] and out["days"]["2026-10-28"]["tauhud"][0] == 0 and out["ours"]["2026-10-28"][:2] == [1, 1],
-      "a purse's wage is White Rabbit Key's too, but no visitor's move; a relay-sent move to the council is the game's, not Tau HUD's")
+check(out["days"]["2026-10-28"]["rabbit"] == [1, 1, 1, 0, 5] and out["days"]["2026-10-28"]["bot"][:2] == [1, 0] and out["days"]["2026-10-28"]["tauhud"][0] == 0 and out["ours"]["2026-10-28"][:2] == [1, 1],
+      "a purse's wage is the bot's, no visitor's move; a relay-sent move to the council is the game's, not Tau HUD's")
 s.purses = {}
 s.bots = {}
 for i in range(txsources.SENT_MAX + 5):
@@ -136,8 +136,12 @@ bb = {"header": {"timestamp": 1793804400}, "tx_ids": ["p1", "p2", "p3"], "transa
     {"tx_type": "user_tx", "sender_pubkey": "d" * 96, "operations": {"1": [["d" * 96, island.PLACES["bar"], "5"]]}}]}
 po = sp.by_day([bb])
 pr = po["rabbit"]["2026-11-04"]
-check(po["days"]["2026-11-04"]["rabbit"][:2] == [3, 1] and pr["cruise"] == 2 and pr["lines"] == 1 and pr["wallets"] == 1 and po["ours"]["2026-11-04"][:2] == [1, 1],
-      "a cruise passenger's bill and booking count as the island's transactions, never as a player, a wallet or a move")
+check(po["days"]["2026-11-04"]["rabbit"][:2] == [1, 1] and po["days"]["2026-11-04"]["cruise"][:2] == [2, 0] and pr["cruise"] == 2 and pr["lines"] == 1 and pr["wallets"] == 1 and po["ours"]["2026-11-04"][:2] == [1, 1],
+      "a cruise passenger's bill and booking are the cruise ships' transactions, never a player's, a wallet, a move or a user's")
+
+sg = txsources.TxSources(os.path.join(tempfile.mkdtemp(), "sent.json"))
+sg.note("AA", "", "nomemo"); sg.note("bb", "", "wallet"); sg.note("cc", "rabbit", ""); sg.note("dd", "", "nomemo")
+check(sg.games() == {"dd": "nomemo", "aa": "nomemo"} and sg.games(1) == {"dd": "nomemo"}, "No Memo's sends are known by hash, newest first")
 
 print("\n" + ("all ok" if not failed else f"{failed} failed"))
 sys.exit(1 if failed else 0)

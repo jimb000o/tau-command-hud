@@ -33,6 +33,8 @@ GET /wallets/active
 GET /wallets/tags
   tags       {pubkey: tag} for the wallets whose tag comes from the public blocks or from our own server wallets:
              idni, bot, cruise, rabbit, agorzilla (tauhud.com's chain core marks their transactions, assets/origins.js).
+  via        {tx hash: page} the newest transactions sent from one of our games with a page of its own (txsources
+             GAME_VIA: "nomemo"). A wallet's tag says what it did first; this says which game a transaction came from.
              "tauhud" stays out: it comes from the relay's own note of what it sent, which is only ever shown as totals.
 Only counts leave the relay. The file keeps sender keys per day; they are public in the blocks anyway.
 """

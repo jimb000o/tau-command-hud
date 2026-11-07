@@ -8,7 +8,9 @@
    A waiting transaction (getmempool) carries no recipient, so there only the sender counts.
    Anything else is "not known": a key is not a person, and an unknown sender stays unknown.
    Address lists: infra/relay/txsources.py (GENESIS, AGORZILLA, DEJA, RABBIT_*). Keep them the same there and here.
-   TauOrigin.of(sender, transfers) -> { tag, name, what } or null. TauOrigin.ready(): a promise once the relay answered (or failed). */
+   A transaction sent from one of our games with a page of its own (No Memo) is named by its hash (GET /wallets/tags "via"):
+   the same browser wallet plays White Rabbit Key and No Memo, so the wallet alone cannot say which game it came from.
+   TauOrigin.of(sender, transfers, hash) -> { tag, name, what } or null. TauOrigin.ready(): a promise once the relay answered (or failed). */
 (() => {
   "use strict";
   const set = a => new Set(a);
@@ -64,11 +66,12 @@
     bot: ["White Rabbit Key island bot", "sent by our own server: the island bot’s rival moves or the island’s purses"],
     cruise: ["cruise passenger (simulated)", "a simulated passenger of White Rabbit Key’s cruise ships, sent by our server"],
     rabbit: ["White Rabbit Key", "a player’s move in White Rabbit Key, the island game on tauhud.com"],
+    nomemo: ["No Memo", "a player’s move in No Memo, the terminal game on tauhud.com"],
     agorzilla: ["Agorzilla", "a meal or a vote for Agorzilla, the creature on agorzilla.com"],
     deja: ["Déjà the café cat", "food for Déjà, the café cat of Agorzilla’s café"],
   };
   const sim = () => !!(window.TauSim && TauSim.on);
-  let known = new Map();
+  let known = new Map(), via = new Map();
   const get = async path => { try { const r = await fetch("https://node.tauhud.com" + path, { cache: "no-store" }); return r.ok ? await r.json() : null; } catch (e) { return null; } };
   const load = async () => {
     if (sim()) return;
@@ -80,16 +83,19 @@
     if (isle) { add(Object.values(isle.wallets || {}), "bot"); add(Object.values(isle.purses || {}), "bot"); }
     if (ship && ship.wallets) add(Object.values(ship.wallets).flat(), "cruise");
     if (m.size || tags) known = m;
+    if (tags && tags.via) via = new Map(Object.entries(tags.via).filter(([, v]) => TAGS[v]));
   };
   const first = load();
   setInterval(load, 300000);
   const mk = tag => ({ tag, name: TAGS[tag][0], what: TAGS[tag][1] });
-  function of(sender, transfers) {
+  function of(sender, transfers, hash) {
     const s = String(sender || "").toLowerCase();
     if (!s || sim()) return null;   // the simulation's accounts are made up: no app or owner to name
     if (GENESIS.has(s)) return mk("idni");
     const k = known.get(s);
     if (k === "bot" || k === "cruise") return mk(k);
+    const g = hash && via.get(String(hash).toLowerCase());
+    if (g) return mk(g);
     for (const op of Array.isArray(transfers) ? transfers : []) {
       const to = String((op && op[1]) || "").toLowerCase();
       if (to === DEJA) return mk("deja");
@@ -99,7 +105,7 @@
     return k ? mk(k) : null;
   }
   // a short name for a label next to the dot (the chain core), in the page's language
-  const SHORT = { idni: "IDNI", bot: "island bot", cruise: "cruise (sim)", rabbit: "White Rabbit Key", agorzilla: "Agorzilla", deja: "Déjà" };
+  const SHORT = { idni: "IDNI", bot: "island bot", cruise: "cruise (sim)", rabbit: "White Rabbit Key", nomemo: "No Memo", agorzilla: "Agorzilla", deja: "Déjà" };
   const label = tag => { const t = SHORT[tag] || tag; return window.TauI18n ? TauI18n.t(t) : t; };
   window.TauOrigin = { of, label, tags: TAGS, ready: () => first };
 })();
