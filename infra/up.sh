@@ -30,6 +30,8 @@
 #              up services   the relay rebuilt with the code just pulled (tauhud.com/services/ reads it), the node left alone;
 #                            refuses while a cruise ship is due (Wed 15-18, Sat 13-17 German time; up services --now overrides);
 #                            up services status  only what the directory finds now
+#              up lights     each painted room's lamps found for the night (nothing rebuilt, the node left alone);
+#                            up lights all  every room looked at again; a full up does the new rooms by itself
 #              up owner      the same, then a one-time link: open it in your Telegram, and the news line's watchtower
 #                            warns you there privately (never on the channel); up owner test  sends you one test message
 set -e
@@ -56,6 +58,13 @@ if [ "${1:-}" = "post" ] && [ -n "${2:-}" ]; then
     docker compose run --rm -v /opt/tau-command-hud:/repo:ro -v /tmp:/out alerts python /repo/infra/alerts/post_image.py "/out/$2.jpg" "/repo/$J" --dry
     echo "look: https://node.tauhud.com/rico/art/drafts/$2.jpg   then post it: up post $2 send"
   fi
+  exit 0
+fi
+# each painted room's own lamps for the night, nothing rebuilt, the node left alone: up lights  the rooms not looked at
+# yet, up lights all  every room again, up lights grotto  that one (paint.py lights)
+if [ "${1:-}" = "lights" ]; then
+  if [ -n "${2:-}" ] && [ "${2:-}" != "all" ]; then shift; sh rabbit-art/paint.sh lights "$@"; elif [ "${2:-}" = "all" ]; then sh rabbit-art/paint.sh lights all; else sh rabbit-art/paint.sh lights --missing; fi
+  echo "look: https://tauhud.com/rabbit/?hour=22:00 (Ctrl+F5), then walk into a place"
   exit 0
 fi
 # a cruise ship's visit in numbers, nothing rebuilt, nothing sent (cruise-report.py): up cruise  the last visit,
@@ -357,6 +366,9 @@ if [ "${1:-}" = "owner" ]; then
     docker compose exec -T alerts python tickerwatch.py pair 2>&1 | tee -a "$NOTE" || true
   fi
 fi
+# every painted room's own lamps for the night: a room painted anew (up room, up keep, up island) is looked at once
+# (paint.py lights --missing, one short text answer per new room, nothing when all are known)
+{ echo "room lights:"; sh rabbit-art/paint.sh lights --missing 2>&1 | grep -E '^lights:|Error|error|GEMINI|painter' | tail -2 | sed 's/^/         /'; } | tee -a "$NOTE" || true
 # a new painted island, only when asked for: up island
 if [ "${1:-}" = "island" ]; then
   sh island.sh auto 2>&1 | tee "$V"
