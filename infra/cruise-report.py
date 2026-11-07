@@ -85,7 +85,8 @@ def report(vid):
             day = time.strftime("%Y-%m-%d", time.gmtime(landed["t"]))
             import datetime as dt
             t0 = cruise.berlin_t(dt.date.fromisoformat(day), s["hour"])
-            acts = {a["i"]: a for a in cruise.plan(landed["ship"], t0, set(landed.get("trial") or []), set(a for a in landed.get("allowed") or [] if a != "pay"))}
+            acts = {a["i"]: a for a in cruise.plan(landed["ship"], t0, set(landed.get("trial") or []), set(a for a in landed.get("allowed") or [] if a != "pay"),
+                                                         landed.get("tricks"), landed.get("plan_per_min"))}
             lag = sorted(r["t"] - acts[r["i"]]["t"] for r in sends if r.get("i") in acts)
             if lag:
                 q = lambda p: round(lag[min(len(lag) - 1, int(p * len(lag)))] / 60, 1)  # noqa: E731

@@ -62,7 +62,12 @@ time (never below RATE_MIN); after a clean visit, one faster again (never above 
 refused on a later visit goes back to a small trial. A trick the chain stopped with the right answer on TRICK_CALM
 visits in a row comes less often (never below TRICK_MIN a visit); one that got through is tried once a visit from
 then on, to see when it is closed. At most one change of pace or kinds a visit; each change is written into the
-logbook ("tuned") and the visit's summary ("changed": what, from, to, because), and the blog tells it. What a test
+logbook ("tuned") and the visit's summary ("changed": what, from, to, because), and the blog tells it.
+The plan follows our node: one send waits for the answer to the last, so a node that answers in 6.8 s takes at most
+~9 a minute whatever the pace. After each visit with PLAN_MIN_SENDS answered sends, its median answer time is kept
+(for all ships: it is the node's); the next plan holds at most PLAN_MARGIN of what that allows, or of the pace if
+lower, in every PLAN_WINDOW minutes. Extra stops leave the plan before the visit, not by falling behind in it
+(MISS); bookings, bills, withdrawals and tricks stay. Written into the logbook too ("landed": thinned, because). What a test
 checks on the chain never changes by itself: that stays with a person.
 
 The logbook: every transaction a passenger sends (kind, place, amount, hash, the node's answer and how many ms it took,
@@ -119,6 +124,9 @@ UNRELEASED = 3 * 60        # a booking still open this long after its time is re
 REFUSE_STOP, REFUSE_WINDOW = 5, 20   # refusals among the visit's last sends that send the ship away
 QUIET_HOLD = 30            # seconds the ship waits after a send the node did not answer in time (relay UPSTREAM_TIMEOUT)
 QUIET_SLOW = 10 * 60       # and for this long after it, half pace: the node is slow, the ship gives it room
+PLAN_MARGIN = 0.85         # stops planned per minute: this share of what our node can answer (one send waits for the last answer)
+PLAN_MIN_SENDS = 20        # answered sends a visit needs before its answer time counts
+PLAN_WINDOW = 10           # minutes: the plan is thinned window by window, so the landing waves fit too
 RATE_MIN = 6               # the slowest a ship tunes itself down to, transactions a minute
 TUNE_UNANSWERED = 3        # sends our node left unanswered in one visit that make the next visit one a minute slower
 TRICK_GAP = 120            # seconds between two pirate tricks, at least
@@ -247,11 +255,35 @@ def landing(ship: str) -> int:
     return int(SHIPS.get(ship, {}).get("landing") or LANDING)
 
 
+def thin(acts: list[dict], t0: int, per_min: float, R: random.Random) -> list[dict]:
+    """At most per_min x PLAN_WINDOW stops in every PLAN_WINDOW minutes: plain stops leave first, then landing fees;
+    bookings, bills, withdrawals and tricks always stay. The same visit thins the same way (R is seeded by its id)."""
+    cap = max(1, int(per_min * PLAN_WINDOW))
+    win: dict[int, list[int]] = {}
+    for i, a in enumerate(acts):
+        win.setdefault(int((a["t"] - t0) // (PLAN_WINDOW * 60)), []).append(i)
+    drop: set[int] = set()
+    for w in sorted(win):
+        idx = win[w]
+        over = len(idx) - cap
+        if over <= 0:
+            continue
+        stops = [i for i in idx if acts[i]["kind"] == "pay" and acts[i]["to"] != "pier"]
+        piers = [i for i in idx if acts[i]["kind"] == "pay" and acts[i]["to"] == "pier"]
+        take = R.sample(stops, min(over, len(stops)))
+        over -= len(take)
+        if over > 0:
+            take += R.sample(piers, min(over, len(piers)))
+        drop.update(take)
+    return [a for i, a in enumerate(acts) if i not in drop]
+
+
 def visit_id(t0: int, ship: str) -> str:
     return berlin_day(t0).isoformat() + "-" + ship
 
 
-def plan(ship: str, t0: int, trial: set | None = None, allowed: set | None = None, tricks: dict | None = None) -> list[dict]:
+def plan(ship: str, t0: int, trial: set | None = None, allowed: set | None = None, tricks: dict | None = None,
+         per_min: float | None = None) -> list[dict]:
     """Every passenger's day ashore, the same for the same visit (seeded by its id), by time.
     trial: kinds limited to TRIAL_MAX this visit; allowed: the kinds this visit may send besides "pay";
     tricks: how many of each pirate trick this visit tries (default TRICK_START each), when "trick" is allowed."""
@@ -313,6 +345,8 @@ def plan(ship: str, t0: int, trial: set | None = None, allowed: set | None = Non
             t += step_
     acts.sort(key=lambda a: (a["t"], a["p"]))
     acts = acts[:VISIT_MAX]
+    if per_min:
+        acts = thin(acts, t0, per_min, R)
     for i, a in enumerate(acts):
         a["i"] = i
         a["t"] = int(a["t"])
@@ -383,6 +417,7 @@ class Cruise:
         self.who: dict[str, str] = {}                   # public key -> ship
         self.tried: dict[str, str | None] = {k: None for k in TRIAL}   # kind -> the visit that first used it cleanly
         self.visits: list[dict] = []                    # summaries of the last visits, newest last
+        self.node: dict = {}                            # our node, measured on the last visits: {"answer_ms", "sends", "visit"}
         self.tune: dict[str, dict] = {}                 # ship -> what it learned: {"rate", "tricks": {trick: n}, "calm": {trick: visits}}
         self.cur: dict | None = None                    # the visit under way
         self.logbook: deque = deque(maxlen=LOG_KEEP)
@@ -396,6 +431,10 @@ class Cruise:
         self.till: dict[str, str] = {}                  # ship -> its till's public key (the bookings' recipient)
         self.load_state()
         self.load_log()
+        if not self.node:   # first start with this rule: the newest visit in the logbook that timed its sends measures the node
+            for vid in sorted({e.get("visit") for e in self.logbook if isinstance(e.get("ms"), int) and e.get("visit")}, reverse=True):
+                if self.measure({"id": vid, "ship": vid.rsplit("-", 1)[-1] if vid.rsplit("-", 1)[-1] in SHIPS else "queen"}):
+                    break
         try:
             with open(self.incidents_path) as f:
                 self.incidents = json.load(f)[-INCIDENTS_MAX:]
@@ -465,6 +504,7 @@ class Cruise:
             self.tune = {k: v for k, v in (st.get("tune") or {}).items() if k in SHIPS and isinstance(v, dict)}
             self._saved_cur = st.get("cur") if isinstance(st.get("cur"), dict) else None
             self.escrow = {k: v for k, v in (st.get("escrow") or {}).items() if isinstance(v, dict) and v.get("ship") in SHIPS}
+            self.node = st.get("node") if isinstance(st.get("node"), dict) else {}
         except (OSError, ValueError, TypeError, AttributeError):
             self._saved_cur = None
         c = self._saved_cur
@@ -482,13 +522,13 @@ class Cruise:
             cur = {k: self.cur.get(k) for k in ("id", "ship", "t0", "landed", "left", "note", "trial", "allowed", "sent", "refused",
                                                 "skipped", "unsent", "brake_half", "wait", "booked", "landed_at",
                                                 "unanswered", "quiet", "quiet_took", "quiet_lost", "half_strained", "half_node",
-                                                "tricks", "tricks_n", "took")}
+                                                "tricks", "tricks_n", "took", "plan_per_min")}
             cur["done"] = sorted(self.cur["done"])
         try:
             tmp = self.state_path + ".tmp"
             with open(tmp, "w") as f:
                 esc = dict(sorted(self.escrow.items(), key=lambda kv: kv[1].get("t0", 0))[-ESCROW_KEEP:])
-                json.dump({"tried": self.tried, "visits": self.visits[-VISITS_KEEP:], "cur": cur, "escrow": esc, "tune": self.tune}, f, separators=(",", ":"))
+                json.dump({"tried": self.tried, "visits": self.visits[-VISITS_KEEP:], "cur": cur, "escrow": esc, "tune": self.tune, "node": self.node}, f, separators=(",", ":"))
             os.replace(tmp, self.state_path)
         except OSError as exc:
             log.warning("cannot write %s: %r", self.state_path, exc)
@@ -578,12 +618,13 @@ class Cruise:
             saved = getattr(self, "_saved_cur", None)
             if saved and saved.get("id") == vid:   # the relay restarted during this visit: carry on where it was
                 for k in ("landed", "left", "note", "trial", "allowed", "sent", "refused", "skipped", "unsent", "brake_half", "wait", "booked", "landed_at", "unanswered", "quiet", "quiet_took", "quiet_lost", "half_strained", "half_node",
-                          "tricks", "tricks_n", "took"):
+                          "tricks", "tricks_n", "took", "plan_per_min"):
                     if k in saved:
                         self.cur[k] = saved[k]
                 self.cur["done"] = set(saved.get("done") or [])
                 if self.cur["landed"]:
-                    self.cur["acts"] = plan(ship, t0, set(self.cur["trial"]), set(self.cur["allowed"]), self.cur.get("tricks_n"))
+                    self.cur["acts"] = plan(ship, t0, set(self.cur["trial"]), set(self.cur["allowed"]), self.cur.get("tricks_n"),
+                                          self.cur.get("plan_per_min"))
             self._saved_cur = None
         v = self.cur
         off = (self.escrow.get(vid) or {}).get("off")
@@ -615,6 +656,29 @@ class Cruise:
     def rate_of(self, ship: str) -> int:
         """Transactions a minute this ship sends, as it tuned itself: never above RATE, never below RATE_MIN."""
         return max(RATE_MIN, min(RATE, int((self.tune.get(ship) or {}).get("rate") or RATE)))
+
+    def plan_pace(self, ship: str) -> float | None:
+        """Stops a minute the next plan holds at most: PLAN_MARGIN of what our node answered last time, or of the pace
+        if that is lower. None while no visit measured the node (the plan stays as the ship's timetable makes it)."""
+        ms = int(self.node.get("answer_ms") or 0)
+        if ms <= 0:
+            return None
+        return round(PLAN_MARGIN * min(self.rate_of(ship), 60000 / ms), 1)
+
+    def measure(self, v: dict) -> dict | None:
+        """After a visit: our node's median answer time to a send, kept for every ship's next plan; the change, if any."""
+        ms = sorted(e["ms"] for e in self.logbook if e.get("visit") == v["id"] and e.get("kind") in KINDS
+                    and isinstance(e.get("ms"), int) and e.get("ok") is not None)
+        if len(ms) < PLAN_MIN_SENDS:
+            return None
+        med = ms[len(ms) // 2]
+        before = self.plan_pace(v["ship"])
+        self.node = {"answer_ms": med, "sends": len(ms), "visit": v["id"]}
+        after = self.plan_pace(v["ship"])
+        if before is not None and abs(after - before) < 0.5:
+            return None
+        return {"what": "stops planned a minute", "from": before if before is not None else "as timetabled", "to": after,
+                "because": f"our node answered a send in {med / 1000:.1f} s (median of {len(ms)}), one send waits for the last answer"}
 
     def tricks_of(self, ship: str) -> dict:
         n = (self.tune.get(ship) or {}).get("tricks") or {}
@@ -701,10 +765,16 @@ class Cruise:
         if state in ("calm", "busy") and self.ready:
             trial, allowed = self.kinds_for(v["ship"])
             tn = self.tricks_of(v["ship"]) if "trick" in allowed else None
-            v.update(landed=True, trial=trial, allowed=allowed, landed_at=int(now), tricks_n=tn)
-            v["acts"] = plan(v["ship"], v["t0"], set(trial), set(allowed), tn)
+            pp = self.plan_pace(v["ship"])
+            v.update(landed=True, trial=trial, allowed=allowed, landed_at=int(now), tricks_n=tn, plan_per_min=pp)
+            v["acts"] = plan(v["ship"], v["t0"], set(trial), set(allowed), tn, pp)
             e = {"t": int(now), "visit": v["id"], "ship": v["ship"], "kind": "landed", "verdict": state,
                  "plan": len(v["acts"]), "trial": trial, "allowed": ["pay"] + allowed, "per_min": self.rate_of(v["ship"])}
+            if pp:
+                full = len(plan(v["ship"], v["t0"], set(trial), set(allowed), tn))
+                e.update(plan_per_min=pp, thinned=full - len(v["acts"]),
+                         because=f"our node answered a send in {self.node['answer_ms'] / 1000:.1f} s on {self.node.get('visit')}: "
+                                 f"at most {pp} stops a minute planned, {full - len(v['acts'])} of {full} left out before landing")
             if tn:
                 e["tricks"] = tn
             self.write(e)
@@ -779,6 +849,10 @@ class Cruise:
             s["tricks"] = v["tricks"]
         s["per_min"] = self.rate_of(v["ship"])
         s["changed"] = self.tune_after(v, s)
+        if v["landed"]:
+            m = self.measure(v)
+            if m:
+                s["changed"].append(m)
         self.visits.append(s)
         self.visits = self.visits[-VISITS_KEEP:]
         self.write({"t": int(now), "visit": v["id"], "ship": v["ship"], "kind": "visit over", "summary": s})
