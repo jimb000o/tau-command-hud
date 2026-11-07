@@ -652,6 +652,8 @@ TauI18n.add({ strings: {
   "Close": "关闭",
   "playing now": "人正在玩",
   "People with this game open right now, counted live by the community relay; one browser counts once.": "此刻打开着这个游戏的人，由社区中继实时统计；同一个浏览器只算一次。",
+  "Tau facts for your AI": "给 AI 的 Tau 事实",
+  "What is true about Tau today, each fact with its source in IDNI's code, plus live numbers; point your AI assistant here": "今天关于 Tau 成立的事实，每条都附 IDNI 代码中的来源，外加实时数字；让你的 AI 助手读这里",
   "Services on the testnet": "测试网上的服务",
   "A directory of what runs on the testnet: co-signers, rule givers, apps people pay; found on the chain by itself, live numbers": "测试网上运行的一切的目录：共同签名者、规则提供者、大家付款的应用；直接从链上发现，实时数字",
   "Payments above your own limit wait for a code from your Authenticator app; our Guardian co-signs, never sends": "超过你自定限额的付款要等身份验证器应用里的验证码；我们的 Guardian 共同签名，从不发送"

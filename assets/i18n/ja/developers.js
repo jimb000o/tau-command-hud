@@ -1,5 +1,6 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Tau today for AI assistants and people: the hand-checked facts about Tau with their sources in IDNI's repositories, the live numbers and IDNI's newest commits (Markdown at /tau-today.md, tauhud.com/facts/).": "AI アシスタントと人のための今日の Tau：人の目で確認した Tau の事実と IDNI のリポジトリ内の出典、最新の数字、IDNI の最新コミット（Markdown は /tau-today.md、ページは tauhud.com/facts/）。",
   "(MIT). Real-time data: the read-only WebSocket": "（MIT）。リアルタイムデータ：読み取り専用の WebSocket",
   ", any origin may call it (CORS), no key. One line to try:": "、どのオリジンからも呼び出せます（CORS）、キー不要。まず一行：",
   ", any origin may call it (CORS), no key.": "、どのオリジンからも呼び出せます（CORS）、キー不要。",
