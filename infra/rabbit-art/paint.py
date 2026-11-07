@@ -1359,6 +1359,113 @@ def cmd_keep(a):
     print("Done. The island shows them now: https://tauhud.com/rabbit/ (reload)")
 
 
+# ---------- each place's own light at night ----------
+# The rooms are painted by day. At night the game (rabbit/scene.js roomLight) lights each one by its own lamps, so it has
+# to know where they hang in that very painting: the image model looks at the kept painting once and names every light
+# in it with a box, and index.json keeps that list under "lights", tied to the painting's file (a new painting is looked
+# at again). Looking costs one short text answer per room, no picture.
+LIGHT_MODELS = ["gemini-3.8-flash", "gemini-3-flash-preview", "gemini-2.5-flash"]   # newest first; GEMINI_TEXT_MODEL in infra/.env goes before them
+LIGHT_KINDS = ["lamp", "bulbs", "candle", "lantern", "chandelier", "fire", "torch", "screen", "glow", "window"]
+LIGHT_COLOURS = ["warm", "fire", "cream", "gold", "green", "teal", "cyan", "pink", "red", "moon"]
+LIGHTS_PROMPT = (
+    "This is a hand-painted background of one place in an adventure game, painted by daylight. The game also shows it "
+    "at night, lit only by the light sources that are painted in it. List every light source that is really painted in "
+    "this picture and would glow at night: lamps, lamp posts, string lights (one entry for the whole string, kind "
+    "bulbs, the box around the string), candles, lanterns, chandeliers, fires, hearths, torches, stoves, glowing screens "
+    "or dials, glowing buoys or crystals (kind glow), and the windows and openings the moon shines in through (kind "
+    "window). Never invent a light that is not painted, never list the sun or the sky. For each: kind (one of "
+    + ", ".join(LIGHT_KINDS) + "), colour of its light at night (one of " + ", ".join(LIGHT_COLOURS) + "; moon for windows) "
+    "and box_2d as [ymin, xmin, ymax, xmax] on a 0 to 1000 scale around the glowing part only (the bulb, flame, shade or "
+    "glass). At most 16, the most important first. Also say whether the place is outside in the open air (outside).")
+LIGHTS_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "outside": {"type": "BOOLEAN"},
+        "lights": {"type": "ARRAY", "items": {"type": "OBJECT", "properties": {
+            "kind": {"type": "STRING", "enum": LIGHT_KINDS},
+            "colour": {"type": "STRING", "enum": LIGHT_COLOURS},
+            "box_2d": {"type": "ARRAY", "items": {"type": "INTEGER"}}},
+            "required": ["kind", "colour", "box_2d"]}}},
+    "required": ["outside", "lights"]}
+
+
+def look_at_lights(raw, model):
+    """The image model's list of the lights painted in one picture: {"outside": bool, "l": [{k, c, x, y, w, h}]}, x/y the
+    middle of the light and w/h its size, all as parts (0 to 1) of the picture."""
+    try:
+        from PIL import Image
+        im = Image.open(io.BytesIO(raw)).convert("RGB")
+        if im.width > 1280:
+            im = im.resize((1280, round(1280 * im.height / im.width)), Image.LANCZOS)
+        buf = io.BytesIO(); im.save(buf, "JPEG", quality=85); raw = buf.getvalue()
+    except ImportError:
+        pass
+    body = {"contents": [{"parts": [{"text": LIGHTS_PROMPT}, {"inline_data": {"mime_type": mime(raw), "data": base64.b64encode(raw).decode()}}]}],
+            "generationConfig": {"responseMimeType": "application/json", "responseSchema": LIGHTS_SCHEMA, "temperature": 0.2}}
+    for i, m in enumerate(model):   # an older model Google has retired answers 404: the next one is asked
+        try:
+            r = post(f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent",
+                     json.dumps(body).encode(), {"Content-Type": "application/json", "x-goog-api-key": api_key("GEMINI_API_KEY")})
+            break
+        except SystemExit as e:
+            if " 404" not in str(e) or i == len(model) - 1:
+                raise
+    parts = ((r.get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
+    text = "".join(p.get("text", "") for p in parts)
+    try:
+        j = json.loads(text)
+    except ValueError:
+        sys.exit("The painter's eye sent no list back: " + text[:200])
+    return clean_lights(j)
+
+
+def clean_lights(j):
+    out = []
+    for L in (j.get("lights") or [])[:16]:
+        b = L.get("box_2d") or []
+        if len(b) != 4 or L.get("kind") not in LIGHT_KINDS:
+            continue
+        y0, x0, y1, x1 = [max(0, min(1000, int(v))) for v in b]
+        y0, y1, x0, x1 = min(y0, y1), max(y0, y1), min(x0, x1), max(x0, x1)
+        if x1 - x0 < 2 or y1 - y0 < 2 or (x1 - x0) * (y1 - y0) > 400000:   # a dot or half the picture: not a lamp
+            continue
+        c = L.get("colour") if L.get("colour") in LIGHT_COLOURS else ("moon" if L["kind"] == "window" else "warm")
+        out.append({"k": L["kind"], "c": c, "x": round((x0 + x1) / 2000, 4), "y": round((y0 + y1) / 2000, 4),
+                    "w": round((x1 - x0) / 1000, 4), "h": round((y1 - y0) / 1000, 4)})
+    return {"outside": bool(j.get("outside")), "l": out}
+
+
+def cmd_lights(a):
+    path = os.path.join(a.out, "index.json")
+    idx = load(path)
+    scenes = idx.get("scenes", {})
+    rooms = [id for id in PLACES[1:] if id in scenes]
+    who = rooms if "all" in a.places else [id for id in a.places if id in rooms]
+    if not who:
+        print("lights: no painted room to look at" + ("" if "all" in a.places else f" ({' '.join(a.places)})"))
+        return
+    if not api_key("GEMINI_API_KEY"):
+        sys.exit("lights: no GEMINI_API_KEY in infra/.env")
+    have = idx.setdefault("lights", {})
+    done = []
+    for id in who:
+        f = scenes[id]
+        of = (have.get(id) or {}).get("of")
+        if a.missing and of and of in (f, idx.get("orig", {}).get(id)):   # a sharper copy keeps its lights
+            continue
+        try:
+            raw = open(os.path.join(a.out, f), "rb").read()
+        except OSError:
+            print(f"  {id}: painting {f} not found")
+            continue
+        got = look_at_lights(raw, [a.model] if a.model else [m for m in [api_key("GEMINI_TEXT_MODEL")] if m] + LIGHT_MODELS)
+        have[id] = {"of": f, **got}
+        done.append(f"{id} {len(got['l'])}")
+        print(f"  {id}: {len(got['l'])} lights" + (" (outside)" if got["outside"] else ""), flush=True)
+        write(path, json.dumps(idx, indent=1).encode())   # after each room: a stop half way keeps what was found
+    print("lights: " + (", ".join(done) if done else "every room already has its lights") + " (Ctrl+F5)")
+
+
 def cmd_drop(a):
     path = os.path.join(a.out, "index.json")
     idx = load(path)
@@ -1433,10 +1540,14 @@ def main():
     fo.add_argument("--no-cast", dest="cast", action="store_false", help="only the townspeople, not the named cast")
     fo.add_argument("--model", default=None)
     sub.add_parser("page")
+    li = sub.add_parser("lights")
+    li.add_argument("places", nargs="*", default=["all"], help="all (default), or some of: " + " ".join(PLACES[1:]))
+    li.add_argument("--missing", action="store_true", help="only rooms whose painting has not been looked at yet")
+    li.add_argument("--model", default=None, help="default: " + ", ".join(LIGHT_MODELS) + " (the next when one is retired)")
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
     a = p.parse_args()
-    {"page": page, "draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "touch": cmd_touch, "narrow": cmd_narrow, "busts": cmd_busts, "creatures": cmd_creatures}[a.cmd](a)
+    {"page": page, "draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "touch": cmd_touch, "narrow": cmd_narrow, "busts": cmd_busts, "creatures": cmd_creatures, "lights": cmd_lights}[a.cmd](a)
 
 
 if __name__ == "__main__":

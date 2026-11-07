@@ -3,6 +3,7 @@ each, scaled to the island and laid out as one sheet with its manifest.
 
     python3 infra/rabbit-art/tourists.py FOLDER_OR_ZIP [--out rabbit/art/tourists] [--still p05 ...] [--size p03=0.95 ...]
                                          [--raw] [--partial]
+    python3 infra/rabbit-art/tourists.py pirates.zip --set pirates     # the Black Sequence's crew -> rabbit/art/ships/crew-pirate.*
 
 The folder (or the zip, anywhere in it) holds <id>-a and <id>-b for every figure below, as WebP or PNG, each on the
 full painted canvas (1024 x 1536, the soles on the baseline y=1456, the figure round x=512), and metrics.json with each
@@ -43,6 +44,13 @@ FIGURES = [("p01", "back", -1), ("p02", "back", -1), ("p03", "side", -1), ("p04"
            ("p09", "front", -1), ("p10", "front", -1), ("p11", "front", 1), ("p12", "front", 1),
            ("p13", "side", -1), ("p14", "side", -1), ("p15", "side", 1), ("p16", "side", 1)]
 GUIDES = {"expedition": ("guide-dryrun", "front", 1), "liner": ("guide-queen", "front", -1)}   # MS Dry Run, Queen Mempool
+# the pirates of the Black Sequence (--set pirates): they never land, the game stands them on their ship's deck
+# (ships.json "pirate" deck points) and their captain at her place; one pirate for each trick the ship tries
+CREW = [("k01", "back", -1), ("k02", "back", -1), ("k03", "back", 1), ("k04", "back", 1),
+        ("k05", "front", -1), ("k06", "front", -1), ("k07", "front", 1), ("k08", "front", 1)]
+CAPTAINS = {"pirate": ("captain-pirates", "front", -1)}
+SETS = {"tourists": (FIGURES, GUIDES, "tourists", OUT),
+        "pirates": (CREW, CAPTAINS, "crew-pirate", os.path.join(REPO, "rabbit", "art", "ships"))}
 
 
 def key(name):
@@ -165,14 +173,16 @@ def pair_change(a, b, legs):
     return n / max(1, fig.histogram()[255]), low / max(1, n)
 
 
-def build(src, out=OUT, still=(), size=None, partial=False, raw=False):
+def build(src, out=None, still=(), size=None, partial=False, raw=False, what="tourists"):
     """The sheet and its manifest; returns the manifest, notes on what looks wrong, and per figure how tall it stands
     on the island (world units) and how much changes between its frames at that size."""
     size = size or {}
+    figures, guides, sheet_name, out0 = SETS[what]
+    out = out or out0
     pics, metrics = files(src, raw)
     if not metrics:
         print("note: no metrics.json, so the bodyHeights are the ones the prompt asked for")
-    todo = [(i, v, f, None) for i, v, f in FIGURES] + [(n, v, f, s) for s, (n, v, f) in GUIDES.items()]
+    todo = [(i, v, f, None) for i, v, f in figures] + [(n, v, f, s) for s, (n, v, f) in guides.items()]
     got, notes, used, info = [], [], set(), {}
     for name, view, face, ship in todo:
         fr = {}
@@ -209,14 +219,14 @@ def build(src, out=OUT, still=(), size=None, partial=False, raw=False):
         if not cs:
             sys.exit(f"{name}: nothing touches the ground")
         got.append((name, view, face, ship, a, b, [ANCHOR[0] * kx, ANCHOR[1] * ky], cs))
-    if sum(1 for g in got if not g[3]) < 6:
-        sys.exit("too few passengers for a group")
+    if sum(1 for g in got if not g[3]) < min(6, len(figures)):
+        sys.exit("too few figures for a group")
     cw = max(g[4].width for g in got) + 2
     ch = max(g[4].height for g in got) + 2
     cells = [c for g in got for c in ((g[4],) if g[5] is g[4] else (g[4], g[5]))]
     rows = -(-len(cells) // COLS)
     sheet = Image.new("RGBA", (cw * COLS, ch * rows), (0, 0, 0, 0))
-    man = {"src": "tourists.webp", "cols": COLS, "cell": [cw, ch], "unit": UNIT, "figures": [], "guides": {}}
+    man = {"src": sheet_name + ".webp", "cols": COLS, "cell": [cw, ch], "unit": UNIT, "figures": [], "guides": {}}
     c = 0
     for name, view, face, ship, a, b, ft, cs in got:
         ia = c
@@ -235,8 +245,8 @@ def build(src, out=OUT, still=(), size=None, partial=False, raw=False):
     os.makedirs(out, exist_ok=True)
     buf = io.BytesIO()
     sheet.save(buf, "WEBP", lossless=True, quality=100, method=6)   # lossless: the two frames of a figure match to the pixel
-    open(os.path.join(out, "tourists.webp"), "wb").write(buf.getvalue())
-    with open(os.path.join(out, "tourists.json"), "w", encoding="utf-8") as fh:
+    open(os.path.join(out, sheet_name + ".webp"), "wb").write(buf.getvalue())
+    with open(os.path.join(out, sheet_name + ".json"), "w", encoding="utf-8") as fh:
         json.dump(man, fh, indent=1)
         fh.write("\n")
     return man, notes, info
@@ -245,19 +255,20 @@ def build(src, out=OUT, still=(), size=None, partial=False, raw=False):
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("src", help="the folder or zip with p01-a.webp ... guide-queen-b.webp and metrics.json")
-    p.add_argument("--out", default=OUT)
+    p.add_argument("--out", default=None, help="where the sheet goes (default: rabbit/art/tourists, or rabbit/art/ships for the pirates)")
+    p.add_argument("--set", default="tourists", choices=sorted(SETS), help="tourists (default) or pirates: the crew of the Black Sequence, k01..k08 and captain-pirates")
     p.add_argument("--still", nargs="*", default=[], help="figures that stand still on their first frame")
     p.add_argument("--size", nargs="*", default=[], help="id=factor, e.g. p03=0.95")
     p.add_argument("--partial", action="store_true", help="leave out the figures that are missing")
     p.add_argument("--raw", action="store_true", help="take the magenta originals in raw/ instead of the cut-outs")
     a = p.parse_args(argv)
     size = {k: float(v) for k, v in (s.split("=", 1) for s in a.size)}
-    man, notes, info = build(a.src, a.out, set(a.still), size, a.partial, a.raw)
+    man, notes, info = build(a.src, a.out, set(a.still), size, a.partial, a.raw, a.set)
     for n in notes:
         print("note:", n)
     for n, i in info.items():
         print(f"{n:13} {i['tall']:5} units  changes {i['change']:.1%} of the figure ({i['low']:.0%} of it in the legs)" + ("  still" if i["still"] else ""))
-    print(f"{len(man['figures'])} passengers and {len(man['guides'])} guides, cells {man['cell'][0]}x{man['cell'][1]} -> {a.out}")
+    print(f"{len(man['figures'])} figures and {len(man['guides'])} guides, cells {man['cell'][0]}x{man['cell'][1]} -> {a.out or SETS[a.set][3]}")
 
 
 if __name__ == "__main__":
