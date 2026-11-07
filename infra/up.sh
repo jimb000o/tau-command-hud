@@ -302,6 +302,18 @@ fi
 # the posts' island picture (alerts/island_pic.py): the Key Crier's X post and the closer look at the game carry the
 # painting the game shows now, never a repo screenshot. The posting service is rebuilt alone (it gets the art folder),
 # Caddy is recreated for node.tauhud.com/island/* (a few seconds without HTTPS); the node and the relay are left alone.
+# Agorzilla's evening posts (alerts/agorzilla.py) with the code just pulled: only that service is rebuilt, the node and
+# the relay are left alone (rules v5 on agorzilla.com: a kept look is posted as "stays", never "became")
+if [ "${1:-}" = "agorzilla" ]; then
+  docker compose up -d --build --no-deps agorzilla
+  echo "waiting 8 s…"; sleep 8
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose ps agorzilla --format '          agorzilla: {{.Status}}' 2>/dev/null || docker compose ps agorzilla
+  docker compose exec -T agorzilla python -c 'import agorzilla as A; print("          kept looks posted as stays:", "stays" in A.text({"n": 0, "category": "Sky", "options": ["A", "B", "C"], "tally": [1, 0, 0], "winner": "A", "kept": True}, {}))' 2>&1 | tail -1
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 if [ "${1:-}" = "crier" ]; then
   if [ "${2:-}" != "status" ]; then
     docker compose up -d --build --no-deps alerts
