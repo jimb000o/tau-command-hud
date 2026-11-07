@@ -13,6 +13,12 @@ on:
 permissions:
   contents: read
 
+# shell: bash runs every step with pipefail, so a check piped into tee (for the run summary) still fails the step
+# when the check fails; without it the step took tee's exit code and stayed green (November 2026).
+defaults:
+  run:
+    shell: bash
+
 concurrency:
   group: checks-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -94,7 +100,8 @@ jobs:
           REF=$(grep '^TAU_TESTNET_REF=' infra/.env.example | cut -d= -f2)
           git init -q "$RUNNER_TEMP/tau-testnet" && cd "$RUNNER_TEMP/tau-testnet"
           git fetch -q --depth 1 https://github.com/IDNI/tau-testnet.git "$REF" && git checkout -q FETCH_HEAD
-          pip install blake3==1.0.11
+          # the Python packages its code imports, at the versions that commit pins (blake3, and BLS signatures since November 2026)
+          pip install $(grep -E '^(blake3|py_arkworks_bls12381)==' requirements.txt)
           echo "TAU_TESTNET_DIR=$RUNNER_TEMP/tau-testnet" >> "$GITHUB_ENV"
       - name: Run the tests
         run: tests/python.sh | tee -a "$GITHUB_STEP_SUMMARY"
