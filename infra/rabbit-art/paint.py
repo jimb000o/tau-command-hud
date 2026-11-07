@@ -1356,6 +1356,43 @@ TOUCH_SETS = {
         "else stays exactly where and how it is, above all the canoe house, the old ship, the school, the bar, the pier, "
         "the waterfall, the palace, the resort, the radio mast, the Coconut Works, the red tree and every other building, "
         "path and stretch of coast."),
+    # from island 30 (paint.sh touch cafe-in-school --from island=30): the beach touch turned the school itself into the
+    # café; school, Parasol Café and Market Square each their own place on the front beach. Two ways: the café as a wing
+    # of the schoolhouse, clearly set apart (cafe-in-school), or its own small building between school and market (cafe-apart)
+    "cafe-in-school": (
+        "the front beach between the old ship on the left and Bar La Ola on its stilts on the right holds three "
+        "places, each clearly its own, with open sand, a path and a few palms between them so nothing is crowded. The "
+        "wooden house by the beach just left of Bar La Ola and below the big red tree, which this picture paints as a "
+        "café, is the island's school again: a cheerful blue wooden schoolhouse on stilts with a small bell under a "
+        "little roof turret, open shutters, a blank slate board by the door and a small sandy schoolyard with a swing "
+        "hanging from a palm. The Parasol Café shares that building but is clearly a place of its own: a lower wing "
+        "built onto the side of the schoolhouse that faces the sea, its walls painted warm coral and cream instead of "
+        "blue, a red-and-white striped awning instead of the school's grey shingle roof, opening onto a wooden deck "
+        "on the sand with round café tables under red-and-white parasols, a counter with cups and a string of "
+        "lanterns; a low fence with flower boxes divides the schoolyard from the café deck, so the school and the "
+        "café read as two places at one glance. The Market Square stays on the left of the front beach near the old "
+        "ship: a small open square of packed sand and flat stones with a handful of wooden stalls under colourful "
+        "awnings, crates of coconuts, fruit and fish, baskets and a few people trading, with open sand between it and "
+        "the school. Everything else stays exactly where and how it is, above all the canoe house, the lighthouse on "
+        "its islet at the back, the surveyors' camp in the mountains, the rock arch, the sea cave, the old ship, the "
+        "bar, the pier, the dive centre, the red tree, the Coconut Works, the waterfall, the palace, the resort and "
+        "every other building, path and stretch of coast."),
+    "cafe-apart": (
+        "the front beach between the old ship on the left and Bar La Ola on its stilts on the right holds three "
+        "separate places side by side, each with room around it: open sand, a path and a few palms between them, "
+        "never crowded. On the right, just left of Bar La Ola and below the big red tree, where this picture paints a "
+        "café, the island's school stands again: a cheerful blue wooden schoolhouse on stilts with a small bell under "
+        "a little roof turret, open shutters, a blank slate board by the door and a small sandy schoolyard with a "
+        "swing hanging from a palm; no parasols and no café tables at the school. In the middle of the front beach, "
+        "on open sand halfway between the school and the market, the Parasol Café as its own small building, clearly "
+        "smaller than the school: a low beach café of pale wood with warm coral walls, a red-and-white striped awning "
+        "over its counter, a wooden deck on the sand with round tables under red-and-white parasols and a few hanging "
+        "lanterns. On the left, near the old ship, the Market Square: a small open square of packed sand and flat "
+        "stones with a handful of wooden stalls under colourful awnings, crates of coconuts, fruit and fish, baskets "
+        "and a few people trading. Everything else stays exactly where and how it is, above all the canoe house, the "
+        "lighthouse on its islet at the back, the surveyors' camp in the mountains, the rock arch, the sea cave, the "
+        "old ship, the bar, the pier, the dive centre, the red tree, the Coconut Works, the waterfall, the palace, "
+        "the resort and every other building, path and stretch of coast."),
 }
 
 
