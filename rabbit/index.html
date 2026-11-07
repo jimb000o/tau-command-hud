@@ -293,7 +293,10 @@ html.rk-full #cvFull { border-color: var(--ok); }
 @keyframes popc { from { opacity: 0; } }
 .cv-x { position: absolute; right: 10px; top: 10px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--hair); background: none; color: var(--text); cursor: pointer; font-size: 14px; }
 .cv-x:hover { border-color: #fff; }
-.cv-card.intro .cv-x, .cv-card.paper .cv-x, .cv-card.locked .cv-x { display: none; }
+.cv-card.intro .cv-x, .cv-card.paper:not(.extra) .cv-x, .cv-card.locked .cv-x { display: none; }
+/* the Key Crier extra: four short buttons two by two where the plate is wide enough, so a phone held sideways keeps them all in sight */
+.cv-card.paper.extra .cv-acts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 479px) { .cv-card.paper.extra .cv-acts { grid-template-columns: minmax(0, 1fr); } }
 .cv-who { display: flex; gap: 12px; align-items: center; padding-right: 40px; }
 .cv-who .face { flex: none; border-radius: 12px; background: radial-gradient(circle at 50% 35%, rgba(255,214,160,.18), rgba(255,255,255,.03)); border: 1px solid var(--line); }
 .cv-who b { display: block; font: 700 17px var(--display); color: #fff; }

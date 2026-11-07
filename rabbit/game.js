@@ -570,7 +570,8 @@
       if (!over()) return;
       /* still too long: leaf through the longest list of the page shown */
       const shown = kids.filter(e => !e.classList.contains("pg-off"));
-      const lists = shown.flatMap(e => [e, ...e.querySelectorAll("ul, .cv-acts, .cv-ask")]).filter(e => e.matches("ul, .cv-acts, .cv-ask"));
+      /* a one-page plate (the start, a paper, the ending) never leafs through its buttons: the way out stays in sight */
+      const lists = shown.flatMap(e => [e, ...e.querySelectorAll("ul, .cv-acts, .cv-ask")]).filter(e => e.matches("ul, .cv-acts, .cv-ask") && !(special && e.matches(".cv-acts")));
       const L = lists.sort((a, b) => b.children.length - a.children.length)[0];
       const items = L ? [...L.children].filter(e => !e.matches(".cv-h, h4")) : [];
       if (items.length < 2) { shrink(); if (over() && innerWidth < 760 && !box._tall) box._tall = "again"; return; }
@@ -2612,7 +2613,7 @@
     const pk = myPk(), h = /^[0-9a-f]{64}$/.test(G.picked || "") ? G.picked : null, lang = window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "";
     const open = u => window.open(u, "_blank", "noopener");
     openCard(null, box => {
-      box.classList.add("paper");
+      box.classList.add("paper", "extra");   // an extra, not the morning paper: it closes like any plate (✕, Escape)
       box.append(el("div", { class: "cv-paper" }, el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: T("Extra") }),
         el("p", { class: "lead", text: T("Your first move is on Tau Testnet Alpha: 1 test AGRS to the Book, signed by the test wallet this browser made for you. The same wallet opens two more pages, and Agorzilla eats transactions like yours.") }),
         el("ul", null, el("li", { text: T("Explorer: the transaction itself, and the block that sealed it.") }),
@@ -2625,7 +2626,8 @@
           btn(T("Back to the island"), () => closeCard())));
     });
   }
-  setInterval(() => { if (G && !G.over && G.picked && G.picked !== "…" && myPk() && !store.get("rabbit-bridged") && !UI.card && !drawer && !document.hidden) bridgeCard(); }, 4000);
+  /* a quiet moment: after the first real move (the signs are down), no plate, no drawer, no chain strip in the way */
+  setInterval(() => { if (G && !G.over && G.picked && G.picked !== "…" && myPk() && !store.get("rabbit-bridged") && store.get(SIGNED) && $("cvChain").hidden && !UI.card && !drawer && !document.hidden) bridgeCard(); }, 4000);
   function dragHint() {
     if (!matchMedia("(pointer: coarse) and (orientation: portrait)").matches || store.get("rabbit-drag-hint")) return;
     setTimeout(() => { if (G && !UI.card && SC.canPan()) { store.set("rabbit-drag-hint", "1"); toast(T("Drag the island to look around, or turn your phone sideways. ☰ lists every place.")); } }, 3500);
