@@ -1487,6 +1487,11 @@
     const now = Math.floor(Date.now() / 1000), q = k === "queen", qs = new URLSearchParams(location.search), phase = qs.get("phase");
     if (phase === "soon" || phase === "tomorrow" || phase === "today" || phase === "close") return null;
     const why = phase === "cut" ? (/^(stalled|refused)$/.test(qs.get("why") || "") ? qs.get("why") : "no landing") : "";
+    if (k === "pirates") return { ship: k, name: "Black Sequence", style: "pirate", why,   // the pirates stay aboard: nobody ashore
+      phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : phase === "wait" ? "waiting" : phase === "land" ? "landing" : "ashore",
+      t0: phase === "approach" ? now + 90 : phase === "wait" ? now - 120 : phase === "land" ? now - 240 : now - 1800,
+      end: phase === "gone" || phase === "cut" ? now : phase === "turn" ? now + 90 : now + 3600, passengers: 20, ashore: 0, at: {},
+      sent: { pay: 38, bill: 0, book: 0, cancel: 0 }, refused: 0, tricks: { tried: 9, stopped: 9 }, kinds: ["pay", "trick"], preview: true };
     return { ship: k, name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition",
       phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : phase === "wait" ? "waiting" : phase === "land" ? "landing" : "ashore",
       why, t0: phase === "approach" ? now + 90 : phase === "wait" ? now - 120 : phase === "land" ? now - 240 : now - 1800,
@@ -1496,7 +1501,7 @@
   }
   function shipFetch() {
     const k = new URLSearchParams(location.search).get("ship");
-    if (k === "dryrun" || k === "queen") { if (!SHIPV.v?.preview) SHIPV.v = shipPreview(k); return shipShow(); }
+    if (k === "dryrun" || k === "queen" || k === "pirates") { if (!SHIPV.v?.preview) SHIPV.v = shipPreview(k); return shipShow(); }
     if (window.TauSim && TauSim.on) return;
     fetch("https://node.tauhud.com/cruise", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => {
       if (!j) return;
@@ -1669,6 +1674,7 @@
     b.textContent = (ph === "approach" ? F("🛳 {x} at {t}", { x: v.name, t: berlinHM(v.t0) })
       : ph === "waiting" ? F("🛳 {x} waits offshore", { x: v.name })
       : ph === "gone" ? F("🛳 {x} has left", { x: v.name })
+      : v.style === "pirate" ? F("🏴 {x} in port: {n} tricks tried, {m} refused by the chain", { x: v.name, n: (v.tricks || {}).tried || 0, m: (v.tricks || {}).stopped || 0 })
       : F("🛳 {x}: {n} ashore", { x: v.name, n: v.ashore || 0 })) + (v.preview ? " · " + T("preview") : "");
   }
   /* a ring at the place each passenger transaction in a new block paid (a booking: the place it is for); a block with a
@@ -1698,11 +1704,13 @@
         : v.phase === "gone" ? T(v.why === "no landing" ? "It sailed on without landing: the testnet was not calm."
           : v.why === "refused" ? "It left early: the node refused its passengers’ transactions, and the ship took them back at once."
           : "It left early: the testnet stalled, and the ship took its passengers back at once.")
+        : v.style === "pirate" ? F("{n} pirates aboard, in port until {t}: {a} tricks tried so far, {b} refused by the chain.", { n: v.passengers, t: berlinHM(v.end), a: (v.tricks || {}).tried || 0, b: (v.tricks || {}).stopped || 0 })
         : F("{a} of {n} passengers ashore, in port until {t}.", { a: v.ashore || 0, n: v.passengers, t: berlinHM(v.end) });
       box.append(el("h3", { text: v.name + (v.preview ? " · " + T("preview") : "") }),
-        el("p", { text: T(v.style === "expedition" ? "A small expedition ship with curious passengers: the lighthouse, Captain Wren’s Old Ship, the school, a dive on the reef." : "A big luxury liner: the spa at the South Current resort, Bar La Ola, song requests on Radio Coco, souvenirs.") }),
+        el("p", { text: T(v.style === "pirate" ? "A pirate ship. Its crew stays aboard and trades from the boat: rum at Bar La Ola, supplies at the market. Now and then a pirate tries a trick the chain must refuse." : v.style === "expedition" ? "A small expedition ship with curious passengers: the lighthouse, Captain Wren’s Old Ship, the school, a dive on the reef." : "A big luxury liner: the spa at the South Current resort, Bar La Ola, song requests on Radio Coco, souvenirs.") }),
         el("ul", { class: "cv-help" },
           el("li", { text: T("Nobody on board is a real person: our relay makes the passengers up. What they do here is real: every stop is a test transaction on Tau Testnet Alpha to the till of the place.") }),
+          v.style === "pirate" ? el("li", { text: T("The tricks: paying more than the wallet holds, sending a payment the chain already took a second time, a payment whose time ran out, a payment signed with another pirate’s key. Each one the chain refuses is the chain doing its job; the logbook shows its answer.") }) : null,
           book ? el("li", { text: T("Some book a dive or a treatment with the right to withdraw: the money waits in escrow until its time, then the chain pays the place by itself. A few change their minds and take it back.") }) : null,
           bill ? el("li", { text: T("At Bar La Ola a table pays one bill: a single transaction that pays the bar, Radio Coco and the Coconut Works at once.") }) : null,
           el("li", { text: T("At most twelve transactions a minute, only when the island bot has nothing to send; half as many while the testnet strains, and the ship leaves at once if it stalls. Its logbook keeps every one.") }),

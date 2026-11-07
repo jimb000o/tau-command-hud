@@ -9,6 +9,7 @@ TauI18n.add({ strings: {
   "answers": "回答",
   "Ask for it": "提出需求",
   "Atom feed of every proposal, agreement, activation and chain restart.": "每个提案、同意、生效和链重启的 Atom 订阅源。",
+  "Services found on the chain: co-signers, rule givers, accounts paid with terms or by many wallets, with their numbers (tauhud.com/services/).": "链上发现的服务：共同签名者、规则提供者、附条件或被许多钱包付款的账户，以及它们的数字（tauhud.com/services/）。",
   "Availability per hour for 31 days, outages, stalls, restarts.": "31 天内每小时的可用性、中断、停滞、重启。",
   "Background": "背景",
   "badge": "徽章",

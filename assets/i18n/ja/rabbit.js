@@ -2048,4 +2048,8 @@ TauI18n.add({ strings: {
   "(sent from tauhud.com)": "（tauhud.com から送信）",
   "(sent from the Tau HUD wallet)": "（Tau HUD ウォレットから送信）",
   "(sent from tauhud.com/{x}/)": "（tauhud.com/{x}/ から送信）",
+  "🏴 {x} in port: {n} tricks tried, {m} refused by the chain": "🏴 {x} 停泊中：小細工 {n} 回、うち {m} 回をチェーンが拒否",
+  "{n} pirates aboard, in port until {t}: {a} tricks tried so far, {b} refused by the chain.": "{n} 人の海賊は船に残ったまま、{t} まで停泊：これまでに小細工 {a} 回、うち {b} 回をチェーンが拒否。",
+  "A pirate ship. Its crew stays aboard and trades from the boat: rum at Bar La Ola, supplies at the market. Now and then a pirate tries a trick the chain must refuse.": "海賊船です。乗組員は船に残り、小舟から取引します：Bar La Ola でラム酒、市場で物資。ときどき海賊が、チェーンが拒否すべき小細工を試します。",
+  "The tricks: paying more than the wallet holds, sending a payment the chain already took a second time, a payment whose time ran out, a payment signed with another pirate’s key. Each one the chain refuses is the chain doing its job; the logbook shows its answer.": "小細工の種類：ウォレットの残高より多く支払う、チェーンが受け取った支払いをもう一度送る、期限切れの支払いを送る、別の海賊の鍵で署名する。チェーンが拒否するたびに、チェーンが役目を果たしています。航海日誌にその回答が残ります。",
 } });

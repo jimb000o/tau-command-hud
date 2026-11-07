@@ -113,5 +113,12 @@ v2.day = -1
 v2._roll()
 check(list(v2.days) == ["2026-10-29"], "days older than the retention are dropped")
 
+# our own Telegram links: /visits/channel shows only the tg- tags, by kind, nothing else
+hit("p=rules&s=tg-deepdive&l=en&m=live", ip="9.9.9.1")
+hit("p=hud&s=newsletter&l=en&m=live", ip="9.9.9.2")
+ch = json.loads(v.route("/visits/channel", "", "1.1.1.1", H)[2])
+today = list(ch["days"])[-1]
+check(ch["days"][today].get("deepdive") == 1 and "newsletter" not in json.dumps(ch), "channel opens: tg- tags only, by kind")
+
 print("\nall ok" if not failed else f"\n{failed} failed")
 sys.exit(1 if failed else 0)

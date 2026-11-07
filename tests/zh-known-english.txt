@@ -57,6 +57,7 @@ bob · id {h}
 engine.py:{n} ↗
 github.com/IDNI/tau-lang
 github.com/jimb{n}o/tau-command-hud
+services.py
 governance.py ↗
 governance.py:{n} ↗
 infra/
@@ -65,6 +66,7 @@ lab-box ({h})
 lab-box · id {h}
 my-node
 node.tauhud.com
+node.tauhud.com/services
 ok version={n} env=simulation node=tau-hud-sim
 t.me/tauHUDcom
 tau-testnet
@@ -90,3 +92,4 @@ MS Dry Run
 Queen Mempool
 GitHub
 Tauhud.com/cruise
+Guardian

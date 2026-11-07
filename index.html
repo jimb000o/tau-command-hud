@@ -1635,6 +1635,8 @@ const agreeHave = (v, thr) => S.mode === "live" ? `${v} of ${thr} needed votes` 
 const votersNote = () => S.mode !== "live" ? "" : S.openVoting === true ? " On this network any account may vote (open governance admission); the threshold comes from the validator count." : S.openVoting === false ? " Only active validators may vote on this network." : " Who may vote is a network setting: validators only, or every account.";
 const threshold = () => { const N = Math.max(1, S.validators.length); return S.quorum === "majority" ? Math.floor(N / 2) + 1 : Math.ceil(2 * N / 3); };
 
+/* the "no opinion" clause (o5 = 1 for every transfer): the node reads it as taking an account's rule away, never as a rule of its own */
+const o5Neutral = text => { const f = String(text || "").replace(/\s+/g, "").replace(/^always\((.*)\)\.?$/, "$1"); return f === "(o5[t]:bv[24]={#x000001}:bv[24])" || f === "o5[t]:bv[24]={#x000001}:bv[24]"; };
 /* ---------- a personal rule as the chain carries it (the text of stream o5), read into the shape the panels know ---------- */
 function policyFromText(text) {
   const s = String(text || "").trim(), num = h => /^#?x?[0-9a-f]+$/i.test(h) && /[a-f]|^#?x/i.test(h) ? parseInt(h.replace(/^#?x/i, ""), 16) : Number(h);
@@ -1940,7 +1942,8 @@ const AGZ_LIFE = (() => {
   };
   /* the frames for turns and the ball load once the page has settled; until then he turns the old way, a quick flip */
   const MV = { ok: false };
-  const loadMv = () => { const im = new Image(); im.onload = () => { a.style.setProperty("--agz-mv", `url("${im.src}")`); MV.ok = true; }; im.src = "assets/rig/agz-moves.webp"; };
+  const loadMv = () => { const im = new Image(); im.onload = () => { a.style.setProperty("--agz-mv", `url("${im.src}")`); MV.ok = true; }; im.src = window.AgzLook ? AgzLook.src("assets/rig/agz-moves.webp") : "assets/rig/agz-moves.webp"; };
+  addEventListener("agz-stage", () => { if (MV.ok) loadMv(); });   // he grew up: his turns and rolls in the new frames
   if (document.readyState === "complete") setTimeout(loadMv, 1500); else addEventListener("load", () => setTimeout(loadMv, 1500), { once: true });
   const show = (i, mirror) => { sf.style.backgroundPositionX = i / 6 * 100 + "%"; spr.style.transform = mirror ? "scaleX(-1)" : ""; };
   const sprite = on => { a.classList.toggle("sp", on); if (!on) spr.classList.remove("ball"); };
@@ -2284,6 +2287,8 @@ const policyMeaning = p => !p ? "No own rule: every transfer is allowed." : ({
   heightlock: `Locked until a block: ${p.label}; until the chain reaches it every transfer is refused. A deadline in block heights, not clock time, so no clock can be gamed.`,
   custom: `Own rule on stream o5: ${p.label}. The node answers it on every transfer; 0 means refused, whoever holds the key.`,
 }[p.kind] || p.label);
+/* whose rule it is: an account's own rule binds only that account, so the hover names the wallet first */
+const ruleWhose = (a, p) => `Own rule of wallet ${short(a)}${isGenesis(a) ? " (IDNI genesis)" : ""}: ${p.label}.`;
 const proposalMeaning = u => ({
   fee: `Every transaction would cost ${u.value} AGRS instead of ${S.fee}; the fee rule (o9) in the consensus spec changes.`,
   validator: `A new validator ${short(u.value)} joins the set that seals blocks and votes; the agreement threshold is recomputed from the larger set.`,
@@ -2632,8 +2637,8 @@ function readouts() {
   $("rR").textContent = S.clauses.size;
   tickSubs();
   $("rHw").dataset.full = `Height: blocks in the chain since genesis #0.\nBelow: when the last block came and how old the chain is.`;
-  $("rMw").dataset.full = `Waiting: transactions in no block yet.${S.mode === "live" ? "\nGhost transactions, already sealed but still listed by the node, are counted apart (known bug)." : ""}`;
-  $("rRw").dataset.full = `User rules: accounts with their own money rule (o5) in force now.\n“Last at” is the block of the newest one.${S.mode === "live" ? "\nThe live chain has none yet; the simulation shows how they look." : ""}`;
+  $("rMw").dataset.full = `Waiting: the mempool, transactions in no block yet.${S.mode === "live" ? "\nGhost transactions, already sealed but still listed by the node, are counted apart (known bug)." : ""}`;
+  $("rRw").dataset.full = `User rules: wallets with their own money rule (o5) in force now; each binds only its own wallet.\n“Last at” is the block of the newest one.${S.mode === "live" && !S.clauses.size ? "\nThe live chain has none now; the simulation shows how they look." : ""}`;
   $("chipFee").textContent = S.fee + " AGRS";
   $("chipRev").textContent = "rev " + S.specRev;
   { const m = S.mode === "live" ? S.eligMode || "" : "validator_set", c = CONS_CHIP[m], n = S.validators.length;
@@ -3045,7 +3050,12 @@ function liveMessage(ev) {
   presenceFromMessage(d);
   if (msg.command === "getruleoffers") {   // an account's rule in force and the offers it sent or received, from before this page opened
     const a = String(d.address || "").toLowerCase(); let changed = false;
-    (d.accepted_clauses || []).forEach(c => { if (a && c && c.target_stream === "o5" && c.clause_body && !S.clauses.has(a)) { S.clauses.set(a, policyFromText(c.clause_body)); changed = true; } });
+    if (a && Array.isArray(d.accepted_clauses)) {   // the node's answer is the account's rule as it stands now: add it, replace it, or take it away
+      const c = d.accepted_clauses.find(c => c && String(c.target_stream).replace(/^o/, "") === "5" && c.clause_body && !o5Neutral(c.clause_body)), had = S.clauses.get(a);
+      const now = c && policyFromText(c.clause_body);
+      if (now && (!had || had.kind + had.label !== now.kind + now.label)) { S.clauses.set(a, now); changed = true; }
+      else if (!c && had && !(had.seenAt && performance.now() - had.seenAt < 90000)) { S.clauses.delete(a); changed = true; }   // an answer sent before a block that just set the rule is older than that block
+    }
     (d.offers || []).forEach(o => {
       if (!o || !o.offer_id || S.offers.some(x => x.id === o.offer_id)) return;
       S.offers.push({ id: o.offer_id, from: o.offerer_pubkey, to: o.recipient_pubkey, policy: policyFromText(o.rule_text), status: o.status || "offered", expire: Number(o.expire_at_height) || 0, at: Number(o.created_at_height) || 0, collides: false }); changed = true;
@@ -3071,7 +3081,8 @@ function liveMessage(ev) {
       let ruleWork = false;
       txs.forEach(t => {   // what a block says about personal rules and rule sharing (README · Rule sharing): read before the card is drawn
         const fresh = !LIVE.seenTx.has(t.id);
-        if (t.type === "rule_deploy" && t.rule) { t.policy = policyFromText(t.rule); t.note = `${short(t.sender)} now runs “${t.policy.name}” · ${t.policy.label}`; if (fresh) { S.clauses.set(t.sender, t.policy); S.rulesLastBlock = b.n; ruleWork = true; log(`Clause registry: ${short(t.sender)} now runs “${t.policy.name}” · composite o5 rebuilt`, "warn"); } }
+        if (t.type === "rule_deploy" && t.rule && o5Neutral(t.rule)) { t.note = `${short(t.sender)} takes its own rule away`; if (fresh) { S.clauses.delete(t.sender); S.rulesLastBlock = b.n; ruleWork = true; log(`Clause registry: ${short(t.sender)} took its own rule away · composite o5 rebuilt`, "warn"); } }
+        else if (t.type === "rule_deploy" && t.rule) { t.policy = policyFromText(t.rule); t.policy.seenAt = performance.now(); t.policy.since = b.n; t.note = `${short(t.sender)} now runs “${t.policy.name}” · ${t.policy.label}`; if (fresh) { S.clauses.set(t.sender, t.policy); S.rulesLastBlock = b.n; ruleWork = true; log(`Clause registry: ${short(t.sender)} now runs “${t.policy.name}” · composite o5 rebuilt`, "warn"); } }
         else if (t.type === "rule_offer") { t.policy = policyFromText(t.ruleText); let o = S.offers.find(x => x.id === (t.offerId || t.id)); if (!o && fresh) { o = { id: t.offerId || t.id, from: t.sender, to: t.to, policy: t.policy, status: "offered", expire: t.expireAt || b.n + 20, collides: S.clauses.has(t.to), at: b.n, txId: t.id }; S.offers.push(o); ruleWork = true; } t.offer = o; t.note = `${short(t.sender)} → ${short(t.to)} · ${t.policy.name}: ${t.policy.label}`; }
         else if (t.type === "rule_offer_accept" || t.type === "rule_offer_reject") {
           const yes = t.type === "rule_offer_accept", o = S.offers.find(x => x.id === t.offerId); t.offer = o;
@@ -3179,6 +3190,21 @@ async function pollDropped() {
     list.forEach(x => { if (!x || !x.tx_hash || DROP.seen.has(x.tx_hash) || LIVE.seenTx.has(x.tx_hash)) return; DROP.seen.add(x.tx_hash); refusedTx(x); });
   } catch (e) {} finally { clearTimeout(timer); }
 }
+/* who holds a personal rule now: the relay checks the rule places every few minutes (GET /rules). Holders this page has not seen are
+   looked up, and an account it shows that the relay no longer lists is asked again, so the inner ring does not depend on when the page opened */
+const RULE_ASK = new Map();
+async function pollRules() {
+  if (S.simfeed || !LIVE.ws || LIVE.ws.readyState !== 1 || $("wsurl").value.trim() !== RELAY) return;
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 8000);
+  try {
+    const r = await fetch(relayBase() + "/rules", { cache: "no-store", signal: ctl.signal }); if (!r.ok) return;
+    const d = await r.json(), holders = (Array.isArray(d.holders) ? d.holders : []).map(a => String(a).toLowerCase()).filter(a => /^[0-9a-f]{96}$/.test(a));
+    if (S.simfeed || S.mode !== "live") return;
+    const ask = a => { const at = RULE_ASK.get(a) || 0; if (Date.now() - at < 300000) return; RULE_ASK.set(a, Date.now()); lookup(`getruleoffers ${a} all`); };   // the lookup is costly for the node: once per account in 5 min
+    holders.forEach(a => { if (!S.clauses.has(a)) ask(a); });
+    [...S.clauses.keys()].forEach(a => { if (!holders.includes(a)) ask(a); });
+  } catch (e) {} finally { clearTimeout(timer); }
+}
 function refusedTx(x) {
   const type = x.type || "user_tx";
   const t = { id: x.tx_hash, type, sender: x.sender || "", kind: /consensus_rule/.test(type) ? "gov" : "", fee: null, transfers: [], dropped: true, seen: x.seen, left: x.left,
@@ -3194,7 +3220,7 @@ function refusedTx(x) {
 /* forget every block and transaction: on connect, and when the relay reports that the node wiped a dead chain ("reset": true) */
 function liveClear() {
   Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, height: 0, updates: [], offers: [], refusedN: 0, approvals: [], reorgs: [], eligMode: "", modeHistory: [] });
-  TXST.st.clear(); TXST.busy = ""; RMEM.at = 0; RMEM.M = 0; SCAN.ids.clear(); SCAN.lo = null; SCAN.want = null;
+  TXST.st.clear(); TXST.busy = ""; RULE_ASK.clear(); RMEM.at = 0; RMEM.M = 0; SCAN.ids.clear(); SCAN.lo = null; SCAN.want = null;
   S.clauses = new Map(); S.byHeight = new Map(); S.memSeen = new Map(); S.chainStart = null; S.rulesLastBlock = null; LIVE.seenBlocks.clear(); LIVE.seenTx.clear(); DROP.seen.clear(); DROP.cards.clear(); DROP.first = true; LIVE.memOnce = false;
   $("ribbon").innerHTML = ""; $("feed").innerHTML = ""; $("feedRej").textContent = "0 refused"; $("feedRej").classList.remove("some");
   RIB.back = false; RIB.target = null; RIB.loading = false; ribbonHold.length = 0;
@@ -3220,7 +3246,7 @@ function liveConnect() {
     liveSend("getgovernance"); liveSend("getblocks 12"); liveSend("getmempool"); RIB.probe = true; liveSend("getblockrange 1 1");
     LIVE.poll = setInterval(() => { liveSend("getblocks 6"); liveSend("getmempool"); }, 3000);
     LIVE.govPoll = setInterval(() => liveSend("getgovernance"), 15000);
-    setTimeout(pollDropped, 1500); LIVE.dropPoll = setInterval(() => { if (!document.hidden) pollDropped(); }, 30000);
+    setTimeout(pollDropped, 1500); setTimeout(pollRules, 2500); LIVE.dropPoll = setInterval(() => { if (!document.hidden) { pollDropped(); pollRules(); } }, 30000);
     pollNodes(); if (!S.simfeed) pollNext();   // fill the orbit from this feed right away, so a switch from the opening simulation never shows its nodes on the live chain
   };
   ws.onmessage = liveMessage;
@@ -3668,12 +3694,15 @@ function draw(tm) {
 
   // user-rule ring: every account that runs its own Tau policy
   const R = [...S.clauses.values()], rr = C * .56;
+  ring(rr, 14, () => vt(`Rule ring: wallets with their own money rule, ${R.length ? R.length + " now" : "none now"}.\nEach rule binds only the wallet that set it, never anyone else.`,
+    `Rule ring: senders with their own o5 clause, ${R.length ? R.length + " now" : "none now"}.\nEach clause binds only its own sender; the testnet has 2 places.`));
   const RA = [...S.clauses.keys()];
   R.forEach((p, i) => {
     const a = i / Math.max(R.length, 1) * Math.PI * 2 - t * .12, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
     const st = ruleState(p), held = st.hot && st.refused, col = st.hot ? (held ? "222,222,230" : "57,255,138") : "170,170,178";   // a refusal leaves the account untouched: it stays lit, its shield takes the red
     focusAt(RA[i], x, y, 22);
-    hit(x, y, 24, () => verdict("ok", st.hot ? (st.refused ? "Normal: its rule just refused a transfer; the shield held." : "Normal: it just let a transfer pass.") : "Normal: in force; nothing checked in the last few seconds.") + vt(`${policyMeaning(p)}`, `${policyMeaning(p)}\nAccount ${short(RA[i])}, a branch of the composite o5 program.`));
+    hit(x, y, 24, () => verdict("ok", st.hot ? (st.refused ? "Normal: its rule just refused a transfer; the shield held." : "Normal: it just let a transfer pass.") : p.since != null ? `Normal: in force since block #${fmt(p.since)}.` : "Normal: in force.")
+      + `${p.name}\n${ruleWhose(RA[i], p)}\n` + vt("It binds only this wallet; every other wallet sends as before.", "Its own branch of the composite o5 program; no other wallet is bound."));
     dotShadow(x, y, 9, C);
     cx.beginPath(); cx.arc(x, y, 7, 0, Math.PI * 2);
     cx.fillStyle = `rgba(${col},.9)`; cx.shadowColor = `rgb(${col})`; cx.shadowBlur = st.hot ? 18 : 10; cx.fill();
@@ -3703,7 +3732,7 @@ function draw(tm) {
       cx.beginPath(); cx.arc(Math.cos(a) * r, Math.sin(a) * r, sl ? 13 : 11, 0, Math.PI * 2); cx.stroke(); cx.restore();
       if (M <= 8) { const y = Math.sin(a) * r; plate(TauOrigin.label(og.tag), Math.cos(a) * r, y + (y > 0 ? 36 : -20), "500 15px JetBrains Mono, monospace", st[0]); } }   // a few waiting: each says where it comes from
     if (sl) { hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const h = sealedAt(tx.id); return vt(`Ghost transaction: already in ${typeof h === "number" ? `block #${fmt(h)}` : "a block"}, still listed by the node (known bug, see Findings).`, `Mempool: ${short(tx.id)} · ${tx.type} · already in ${typeof h === "number" ? "#" + fmt(h) : "a block"}, still listed by getmempool (IDNI #81).`) + originLine(og); }); return; }
-    hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const what = tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"; return vt(`Waiting for the next block: ${what}. It passed the rule check at the door.`, `Mempool: ${what} ${short(tx.id)} · type ${tx.type} · fee ${tx.fee}. Admitted after the rule check, waiting for the next block.`) + originLine(og); });
+    hit(Math.cos(a) * r, Math.sin(a) * r, 10, () => { const what = tx.kind === "gov" ? "a rule-change proposal" : /rule/.test(tx.type) ? "rule work" : "a transfer"; return vt(`In the mempool: ${what} waiting for the next block. It passed the rule check at the door.`, `Mempool: ${what} ${short(tx.id)} · type ${tx.type} · fee ${tx.fee}. Admitted after the rule check, waiting for the next block.`) + originLine(og); });
   });
   cx.shadowBlur = 0;
   ring(C * .44, 30, () => {   // the waiting room: every dot on this orbit is a transaction the node admitted but no block has sealed yet
@@ -3711,10 +3740,10 @@ function draw(tm) {
     const gov = S.mempool.filter(t => t.kind === "gov").length, rule = S.mempool.filter(t => t.kind !== "gov" && /rule/.test(t.type)).length, xfer = M - gov - rule;
     const mix = [[xfer, "transfer", "transfers"], [rule, "rule work", "rule work"], [gov, "rule-change proposal", "rule-change proposals"]].filter(x => x[0]).map(x => `${x[0]} ${x[0] === 1 ? x[1] : x[2]}`).join(", ");
     const age = (m.pageAge ? "at least " : "") + fmtAge(oldest);
-    return health("mempool") + vt("Waiting transactions\n", "Mempool\n") + (M
+    return health("mempool") + "Mempool · waiting transactions\n" + (M
       ? vt(`${st ? (W ? `${W} really ${W === 1 ? "waits" : "wait"}, the oldest for ${age}.` : "Nothing really waits; the amber framed dots are ghosts.") : `${M} waiting (${mix}), the oldest for ${age}.`}\nClick to see them one by one.`,
            `${M} listed (${mix}), ${st} ghost${st === 1 ? "" : "s"} (IDNI #81), ${W} pending${W ? `, oldest ${age}` : ""}.\nClick to list them.`)
-      : vt(`Waiting transactions orbit here as dots until a block takes them in.\nClick for details.`,
+      : vt(`The node's waiting room: accepted transactions orbit here as dots until a block takes them in.\nClick for details.`,
            `Mempool empty. Admitted transactions orbit here until the proposer seals them.\nClick for details.`));
   }, null, () => showDetail(dtKey(detailMempool)));
 

@@ -826,19 +826,37 @@
   const SHIPS = {
     liner: { L: 186, hull: P.navy, band: P.cream, funnel: P.coral, decks: [0.8, 0.64, 0.44], tall: 9 },
     expedition: { L: 128, hull: "#2f5468", band: "#e9ecea", funnel: P.teal, decks: [0.58, 0.42], tall: 9, crane: true },
+    pirate: { L: 128, hull: "#1f2428", band: "#3a3f45", funnel: "#15181b", decks: [0.5, 0.36], tall: 8 },
   };
+  /* the pirates' Black Sequence: its own painting (pirate.webp) once there is one; until then MS Dry Run's, darkened
+     like tarred wood, with no smoke and a black flag of three white chain links on its mast */
+  const shipKind = v => v.style === "liner" ? "liner" : v.style === "pirate" ? (BOATS.pirate ? "pirate" : "pirateStandIn") : "expedition";
+  function standIn(m) {
+    const c = document.createElement("canvas"); c.width = m.im.naturalWidth; c.height = m.im.naturalHeight;
+    const x = c.getContext("2d"); x.filter = "brightness(0.42) saturate(0.45) contrast(1.15)"; x.drawImage(m.im, 0, 0);
+    const { funnel, ...rest } = m;
+    BOATS.pirateStandIn = { ...rest, im: c, flag: funnel };
+  }
+  function blackFlag(g, x, y, k, t) {   // pole up from (x, y), in the sprite's own pixels (k: pixels per world unit)
+    const h = 15 * k, w = 13 * k, f = 8 * k, wave = Math.sin(t * 0.006) * k;
+    g.strokeStyle = INK; g.lineWidth = 1.2 * k; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - h - f); g.stroke();
+    g.fillStyle = "#121416"; g.beginPath(); g.moveTo(x, y - h - f); g.quadraticCurveTo(x + w / 2, y - h - f - wave, x + w, y - h - f + wave);
+    g.lineTo(x + w, y - h + wave); g.quadraticCurveTo(x + w / 2, y - h - wave, x, y - h); g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = "#f2efe6"; g.lineWidth = 0.9 * k;
+    for (let i = 0; i < 3; i++) { g.beginPath(); g.ellipse(x + w * (0.26 + i * 0.24), y - h - f / 2 + wave * 0.3, 2.1 * k, 1.3 * k, 0, 0, Math.PI * 2); g.stroke(); }
+  }
   /* Painted boats share a single waterline transform, including the dusk pass. A missing
      asset leaves the original drawing below in charge until that particular image loads. */
   const BOATS = {};
   fetch("/rabbit/art/ships/ships.json").then(r => r.ok ? r.json() : {}).then(manifest => {
-    for (const kind of ["liner", "expedition", "tender", "wake"]) {
+    for (const kind of ["liner", "expedition", "pirate", "tender", "wake"]) {
       const m = manifest[kind];
       if (!m || typeof m.src !== "string" || !/^[a-z]+\.webp$/.test(m.src)) continue;
       const point = p => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite);
       if (kind === "wake" ? !point(m.tip) : !point(m.stern) || !point(m.bow) || !(m.length > 0)) continue;
       if (kind !== "wake" && Math.hypot(m.bow[0] - m.stern[0], m.bow[1] - m.stern[1]) < 1) continue;
       const im = new Image(); im.decoding = "async";
-      im.onload = () => { BOATS[kind] = { ...m, im }; };
+      im.onload = () => { BOATS[kind] = { ...m, im }; if (kind === "expedition") standIn(BOATS[kind]); };
       im.src = "/rabbit/art/ships/" + m.src;
     }
   }).catch(() => {});
@@ -888,6 +906,7 @@
         g.beginPath(); g.ellipse(0, 1, m.length * 0.48, 2, 0, 0, Math.PI * 2); g.stroke();
       }
       pixels(); g.drawImage(m.im, 0, 0);
+      if (m.flag) blackFlag(g, m.flag[0], m.flag[1], 1 / scale, t);
       if (m.funnel) {
         const [fx, fy] = m.funnel;
         for (let k = 0; k < 4; k++) {
@@ -907,7 +926,7 @@
   }
   function shipWindows(g, t, light) {
     const pos = shipPos(Date.now() / 1000); if (!pos) return;
-    const m = boatArt(SHIP.s.style === "expedition" ? "expedition" : "liner");
+    const m = boatArt(shipKind(SHIP.s));
     if (!m || !m.windows) return;
     boatTransform(g, m, boatPose(pos[0], pos[1], t, pos[2]), (scale, pixels) => {
       pixels();
@@ -930,7 +949,7 @@
   }
   function cruiseShip(g, x, y, t, kind, light, a) {
     if (paintedBoat(g, x, y, t, kind, a)) return;
-    const D = SHIPS[kind] || SHIPS.liner, L = D.L, bob = Math.sin(t * 0.0012) * 1.2, hh = 15;
+    const D = SHIPS[kind] || SHIPS[/^pirate/.test(kind) ? "pirate" : "liner"], L = D.L, bob = Math.sin(t * 0.0012) * 1.2, hh = 15;
     g.save(); g.globalAlpha = a; g.translate(x, y + bob); g.lineJoin = "round"; g.strokeStyle = INK; g.lineWidth = 1.5;
     g.fillStyle = "rgba(10,30,45,.28)"; g.beginPath(); g.ellipse(4, 4, L * 0.56, 7, 0, 0, Math.PI * 2); g.fill();   // its shadow on the water
     /* the hull: a long low body, the bow raised to the right */
@@ -992,12 +1011,108 @@
     g.fillStyle = col; g.beginPath(); g.moveTo(x, y - 24); g.lineTo(x + 12, y - 21 + w); g.lineTo(x, y - 17); g.closePath(); g.fill(); g.stroke();
   }
   const placePt = id => { const p = PLACES[id]; return !p ? null : p.c ? [p.c[0], p.c[1]] : [p.x, p.y - 18]; };
+  /* The passengers ashore, painted (rabbit/art/tourists: one sheet and its manifest, cut and laid out from the painted
+     figures by infra/rabbit-art/tourists.py). Where the relay counts passengers (v.at), a group stands on the layout's
+     ground for that place (stand: its first point is where the guide stands, the others are the corners of the ground
+     the group may use), one figure for each passenger as far as the ground holds them, filled from the guide outwards
+     and the same for the whole visit. They face their guide, from behind or from the front or in profile as she stands
+     to them, and now and then one of them makes their small gesture (each figure's second frame); nobody walks. Those
+     who come fade in, those who go on fade out; on the pier they wait for the tenders. A grown-up is 16 world units
+     tall, as the painting measures (loungers, doors and umbrellas: about 8.5 units to the metre); layout "crowd" scales
+     them. Without the art (or with ?art=drawn), and at a place without ground, the guide's pennant shows as before. */
+  const CROWD = { at: {}, cast: {}, slots: {}, t: 0 }, CROWD_FADE = 900;   // ms for one passenger to come or go
+  fetch("/rabbit/art/tourists/tourists.json").then(r => r.ok ? r.json() : null).then(m => {
+    if (!crowdOk(m)) return;
+    const im = new Image(); im.decoding = "async";
+    im.onload = () => { CROWD.m = m; CROWD.im = im; };
+    im.src = "/rabbit/art/tourists/" + m.src;
+  }).catch(() => {});
+  function crowdOk(m) {
+    const fig = f => !!f && Number.isInteger(f.a) && Number.isInteger(f.b) && Array.isArray(f.foot) && f.foot.length === 2 && f.foot.every(Number.isFinite);
+    return !!m && typeof m.src === "string" && /^[a-z0-9-]+\.webp$/.test(m.src) && m.unit > 0 && Number.isInteger(m.cols) && m.cols > 0
+      && Array.isArray(m.cell) && m.cell.length === 2 && m.cell.every(v => v > 0) && Array.isArray(m.figures) && m.figures.length > 0
+      && m.figures.every(f => fig(f) && /^(back|front|side)$/.test(f.view) && (f.face === 1 || f.face === -1)) && Object.values(m.guides || {}).every(fig);
+  }
+  const crowdArt = () => !!CROWD.im && !!S.base?.painted && !/[?&]art=drawn(?:&|$)/.test(location.search);
+  const h01 = (...v) => { let h = 2166136261; for (const ch of v.join("|")) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return (h >>> 0) / 4294967296; };
+  /* where a group stands: a loose, slightly uneven lattice on the place's ground (people about a metre apart: 8.6 units, 4.8 deep
+     on the screen), nearest the guide first, at most 40 (inPoly: further down, with the click areas) */
+  function standSlots(id) {
+    const st = SPOT.stand && SPOT.stand[id], c = CROWD.slots[id];
+    if (c && c.st === st) return c.s;
+    let s = null;
+    if (Array.isArray(st) && st.length >= 4 && st.every(p => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite))) {
+      const [[gx, gy], ...P] = st, xs = P.map(p => p[0]), ys = P.map(p => p[1]);
+      s = [];
+      for (let y = Math.min(...ys) + 1.5, r = 0; y < Math.max(...ys); y += 4.8, r++)
+        for (let x = Math.min(...xs) + 1.5 + (r % 2) * 4.3; x < Math.max(...xs); x += 8.6) {
+          const px = x + (h01(id, x, y, "x") - 0.5) * 3.2, py = y + (h01(id, x, y, "y") - 0.5) * 1.8, d = Math.hypot(px - gx, (py - gy) * 1.7);
+          if (d > 5 && inPoly(P, px, py)) s.push([px, py, d + h01(id, x, y, "d") * 3]);
+        }
+      s = s.sort((p, q) => p[2] - q[2]).slice(0, 40);
+    }
+    CROWD.slots[id] = { st, s };
+    return s;
+  }
+  /* who stands where, for the whole visit: no one twice in a group while there are figures left, each turned towards
+     the guide (from behind when she stands beyond them, from the front when she is nearer to us, else in profile) */
+  function crowdCast(id, visit, slots) {
+    const c = CROWD.cast[id];
+    if (c && c.slots === slots) return c.c;
+    const F = CROWD.m.figures, [gx, gy] = SPOT.stand[id][0], out = [];
+    let left = [];
+    slots.forEach(([x, y], i) => {
+      if (!left.length) left = F.map((f, k) => [f, h01(visit, id, i, k)]).sort((p, q) => p[1] - q[1]).map(p => p[0]);
+      const dx = gx - x, dy = gy - y, face = Math.abs(dx) < 2 ? (h01(visit, id, i) < 0.5 ? -1 : 1) : Math.sign(dx), view = dy < -3 ? "back" : dy > 3 ? "front" : "side";
+      let best = 0, top = -1;
+      left.forEach((f, k) => { const s = (f.face === face ? 2 : 0) + (f.view === view ? 1 : 0); if (s > top) { top = s; best = k; } });
+      out.push(left.splice(best, 1)[0]);
+    });
+    CROWD.cast[id] = { slots, c: out };
+    return out;
+  }
+  /* now and then a small gesture: each figure on its own beat, every 6 to 16 s, for one to two and a half seconds */
+  const gesture = (id, i, t) => { if (S.still) return false; const p = 6500 + h01(id, i, "p") * 9000; return (t + h01(i, id, "o") * p) % p < 1100 + h01(id, i, "d") * 1500; };
+  function tourist(g, f, x, y, a, b) {
+    const m = CROWD.m, [cw, ch] = m.cell, c = b ? f.b : f.a, sc = SPOT.crowd > 0 ? SPOT.crowd : 1, k = sc / m.unit, sw = (f.sw > 0 ? f.sw : 3) * sc;
+    g.save(); g.globalAlpha *= a;
+    g.fillStyle = "rgba(20,34,40,.24)"; g.beginPath(); g.ellipse(x + sw * 0.15, y + 0.2, sw, sw * 0.34, 0, 0, Math.PI * 2); g.fill();
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
+    g.drawImage(CROWD.im, (c % m.cols) * cw, Math.floor(c / m.cols) * ch, cw, ch, x - f.foot[0] * k, y - f.foot[1] * k, cw * k, ch * k);
+    g.restore();
+  }
+  function crowdItems(items, g, t, v, kind) {
+    const visit = v.ship + "|" + v.t0, fresh = CROWD.visit !== visit, dt = fresh ? 0 : Math.min(250, Math.max(0, t - CROWD.t)), guide = CROWD.m.guides && CROWD.m.guides[kind];
+    if (fresh) { CROWD.visit = visit; CROWD.at = {}; CROWD.cast = {}; }
+    CROWD.t = t;
+    const here = ["landing", "ashore"].includes(v.phase) ? v.at || {} : {}, landing = v.phase === "landing";
+    for (const id of new Set([...Object.keys(here), ...Object.keys(CROWD.at)])) {
+      const slots = standSlots(id), want = Math.max(0, Math.floor(+here[id] || 0));
+      if (!slots || !slots.length) {   // no ground laid out here: the pennant, as before
+        delete CROWD.at[id];
+        const pt = placePt(id); if (pt && want > 0 && !(id === "pier" && landing)) items.push([pt[1] + 2, () => pennant(g, pt[0] + 16, pt[1] + 4, t, SHIPS[kind].funnel)]);
+        continue;
+      }
+      const n0 = Math.min(slots.length, want), st = CROWD.at[id] || (CROWD.at[id] = { n: fresh || S.still ? n0 : 0 });
+      st.n = S.still ? n0 : st.n + Math.sign(n0 - st.n) * Math.min(Math.abs(n0 - st.n), dt / CROWD_FADE);
+      if (st.n <= 0) { if (!n0) delete CROWD.at[id]; continue; }
+      const cast = crowdCast(id, visit, slots), [gx, gy] = SPOT.stand[id][0], all = Math.min(slots.length, Math.ceil(st.n - 1e-9));
+      for (let i = 0; i < all; i++) {
+        const [x, y] = slots[i], f = cast[i], a = Math.min(1, st.n - i);
+        items.push([y, () => tourist(g, f, x, y, a, gesture(id, i, t))]);
+      }
+      if (id === "pier" && landing) continue;   // off the tenders: their guides wait at the places
+      const a = Math.min(1, st.n);
+      items.push([gy, guide ? () => tourist(g, guide, gx, gy, a, gesture(id, "guide", t)) : () => { g.save(); g.globalAlpha *= a; pennant(g, gx + 2, gy, t, SHIPS[kind].funnel); g.restore(); }]);
+    }
+  }
   function shipItems(items, g, t, sky) {
     const now = Date.now() / 1000, pos = shipPos(now), v = SHIP.s;
     if (!pos) return;
-    const [x, y, a] = pos, kind = v.style === "expedition" ? "expedition" : "liner";
-    items.push([y, () => cruiseShip(g, x, y, t, kind, sky.light, a)]);
+    const [x, y, a] = pos, art = shipKind(v), kind = art === "liner" || art === "expedition" ? art : "pirate";
+    items.push([y, () => cruiseShip(g, x, y, t, art, sky.light, a)]);
     tenders(now, x, y).forEach(([tx, ty, d]) => items.push([ty, () => tender(g, tx, ty, t, d)]));
+    if (crowdArt()) return crowdItems(items, g, t, v, kind);
     if (["landing", "ashore"].includes(v.phase)) for (const id in v.at || {}) {
       const pt = placePt(id); if (!pt || !(v.at[id] > 0) || id === "pier" && v.phase === "landing") continue;
       items.push([pt[1] + 2, () => pennant(g, pt[0] + 16, pt[1] + 4, t, SHIPS[kind].funnel)]);
@@ -1070,7 +1185,7 @@
   const RB = { x: 860, y: 690, tx: 860, ty: 690, hop: 0, dir: 1, next: 0 };
   /* the lighthouse lamp, the radio mast's light, where people gather, where the cat walks and where a cruise ship anchors:
      a new layout moves them. The anchor sits high enough that the hull stays clear of the radio bar on a small laptop (1280×720) */
-  const SPOT = { beam: [300, 445], blink: [1112, 299], gather: [790, 640], cat: [370, 700, 1180, 712], anchor: [1395, 780],
+  const SPOT = { beam: [300, 445], blink: [1112, 299], gather: [790, 640], cat: [370, 700, 1180, 712], anchor: [1395, 780], stand: {}, crowd: 1,
     jungle: [[760, 235], [985, 205], [455, 440], [1180, 560], [330, 285]] };   // where the legend may look out of the leaves
   function rabbitStep(dt, t) {
     const d = Math.hypot(RB.tx - RB.x, RB.ty - RB.y);

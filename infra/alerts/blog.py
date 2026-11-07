@@ -1,6 +1,6 @@
 """The Tau HUD blog (tauhud.com/blog/): learnings articles drafted from our own data, published by hand (or, with
 BLOG_AUTO_PUBLISH_HOURS, a clean draft by itself after that many hours); the loop also runs the cruise ships' automatic
-announcements and reports (cruise_crier.py).
+announcements and reports (cruise_crier.py) and the weekly report for IDNI (idni_report.py).
 
   python blog.py loop                 every 10 minutes: a cruise ship visit that is over (and whose bookings were
                                       checked) gets one draft; nothing is published
@@ -87,6 +87,12 @@ community, one for IDNI (what a community node under steady everyday traffic sho
 "What the logbook shows", "What is still open". No title in body, no tables, no links \
 of your own: name our places as they are called (White Rabbit Key, tauhud.com, the ship's name, Tau Testnet Alpha, \
 our node) and the blog links them to their pages by itself.
+- When the facts have "pirate tricks": the ship is a pirate ship whose made-up pirates try, on purpose, what the \
+chain must refuse. A refused trick is good news: the chain did its job. Say which tricks were refused and with which \
+answer, in plain words (paying more than the wallet holds, sending the same payment twice, a payment whose time ran \
+out, a payment signed with the wrong key). Never call a refused trick a failure or a problem.
+- When the facts have "the ship changed for its next call": tell each change in the section "What is still open" as \
+"The ship changed <what> from <from> to <to> because <because>." Nothing else changed by itself; do not suggest more.
 - zh: Simplified Chinese, ja: Japanese, same meaning and the same numbers; keep Tau, IDNI, AGRS, White Rabbit Key and \
 the ship names in Latin letters.
 - x: one post for X, at most 200 characters, no link, no hashtags: the headline point and why it matters.
@@ -196,6 +202,19 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
         hs = [e.get("height") for e in sends if e.get("height")]
         if hs:
             f["block heights"] = [min(hs), max(hs)]
+    ahead = [e for e in rows if e.get("kind") in ("book ahead", "refund")]
+    off = next((e for e in rows if e.get("kind") == "called off"), None)
+    settled = next((e for e in rows if e.get("kind") == "escrow" and e.get("status") == "settled"), None)
+    if ahead or off or settled:   # bookings ahead of the call (relay/cruise.py escrow), since 11 November 2026
+        g = {"what they are": "retractable transfers of the fare from simulated passengers to the ship's till, released at the "
+                              "arrival time; only the sender can take one back, so there is no third party who decides",
+             "booked": sum(1 for e in ahead if e["kind"] == "book ahead" and e.get("ok") is True),
+             "refused by the node": sum(1 for e in ahead if e["kind"] == "book ahead" and e.get("ok") is False),
+             "taken back before the arrival": sum(1 for e in ahead if e["kind"] == "refund" and e.get("ok") is True)}
+        if off:
+            g["call called off before the arrival"] = off.get("note")
+        g["how they ended on the chain"] = (settled or {}).get("result") or "not looked up yet when this was written"
+        f["bookings ahead in escrow"] = g
     if checked:
         f["bookings checked after the visit"] = checked.get("checked")
         f["bookings the chain had not paid out"] = len(checked.get("not_released") or [])
@@ -214,6 +233,35 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
                               "strained testnet": "half pace", "stalled testnet": "it leaves at once",
                               "our node does not answer a send within 20 seconds": "no refusal: the ship waits 30 seconds, then half pace for 10 minutes"}
     f["answered sends"] = len(answered)
+    tricks = [e for e in rows if e.get("kind") == "trick" and (e.get("ok") is not None or e.get("held"))]
+    if tricks or s.get("tricks"):   # the pirates (since 7 November 2026): what the chain is meant to refuse
+        st = s.get("tricks") or {}
+        held = sum(1 for e in tricks if e.get("held")) + sum(1 for c in st.values() if isinstance(c, dict) and c.get("held"))
+        t = {"tried": sum(1 for e in tricks if e.get("ok") is not None) + held,
+             "refused with the expected answer": sum(1 for e in tricks if e.get("ok") is False and e.get("right")),
+             "refused with another answer": sum(1 for e in tricks if e.get("ok") is False and not e.get("right")),
+             "accepted although the chain should refuse it": sum(1 for e in tricks if e.get("ok") is True)}
+        if held:
+            t["held back"] = held
+        by = {}
+        for e in tricks:
+            if e.get("ok") is not None and e.get("trick"):
+                b = by.setdefault(e.get("what") or e["trick"], {"tried": 0, "refused": 0})
+                b["tried"] += 1
+                b["refused"] += e.get("ok") is False
+        if by:
+            t["each trick"] = by
+        codes = Counter(e.get("code") for e in tricks if e.get("ok") is False and e.get("code"))
+        if codes:
+            t["the chain's answers"] = dict(codes)
+        f["pirate tricks"] = {k: v for k, v in t.items() if v or k == "tried"}
+        f["what a trick is"] = ("a pirate sends on purpose what the chain must refuse; a refused trick is the chain working, "
+                                "not a failure, and it never counts as a refusal for the ship's brakes")
+    if s.get("per_min"):
+        f["the ship's pace this visit, transactions a minute at most"] = s["per_min"]
+    if s.get("changed"):
+        f["the ship changed for its next call"] = [c if c.get("held") else {k: c.get(k) for k in ("what", "from", "to", "because")}
+                                                   for c in s["changed"]]
     return f
 
 
@@ -316,6 +364,8 @@ def card_of(c, title: str) -> list[str]:
 # ---------- pictures ----------
 def ship_of(a: dict) -> str:
     name = str((a.get("facts") or {}).get("ship") or a.get("ship") or "")
+    if "black sequence" in name.lower() or a.get("ship") == "pirate":
+        return "pirate"
     return "liner" if "queen" in name.lower() or a.get("ship") == "liner" else "expedition"
 
 
@@ -476,6 +526,8 @@ def tick(now: float | None = None) -> None:
         entries = get(f"/cruise/log?visit={vid}&n=2000").get("entries") or []
         if not due(entries, now):
             continue
+        if any(e.get("held") for e in entries):   # a finding is held back for its owner: no article until it is released
+            continue
         try:
             did = write_draft(vid, now)
             log.info("draft %s written: %s", did, draft_url(state(), did))
@@ -512,6 +564,17 @@ def auto_publish(now: float | None = None) -> str | None:
     return None
 
 
+def auto_note(st: dict, did: str, a: dict) -> str:
+    """Whether this draft goes on the blog by itself (auto_publish), said plainly for the up block."""
+    at = (st.get("drafted_at") or {}).get(did)
+    chk = a.get("check") or {}
+    if not at:
+        return "never by itself: written before drafts published themselves, only by hand"
+    if chk.get("unknown_numbers") or chk.get("hype"):
+        return "never by itself: the check marked numbers or wording (up blog publish --force after a read)"
+    return f"by itself on {day(at + AUTO_PUBLISH_HOURS * 3600)} {clock(at + AUTO_PUBLISH_HOURS * 3600)}, unless published by hand before"
+
+
 def drafts_cli() -> int:
     try:
         import cruise_crier
@@ -519,6 +582,12 @@ def drafts_cli() -> int:
             print(line)
     except Exception as e:  # noqa: BLE001
         print(f"cruise:  not read ({e})")
+    try:
+        import idni_report
+        for line in idni_report.status_lines():
+            print(line)
+    except Exception as e:  # noqa: BLE001
+        print(f"report:  not read ({e})")
     st = state()
     live = {p["id"] for p in posts()["posts"]}
     waiting = [d for d in st["drafts"] if d not in live]
@@ -530,7 +599,9 @@ def drafts_cli() -> int:
         print(f"blog:    draft {did}: {(a.get('title') or {}).get('en', '?')}")
         print(f"         read it: {draft_url(st, did)}")
         print(f"         numbers to check: {', '.join(bad)}" if bad else "         every number is in the logbook facts")
-        print(f"         publish: up blog publish {did}" + (f" (or it goes on the blog by itself {AUTO_PUBLISH_HOURS:g} h after it was written, if clean)" if AUTO_PUBLISH_HOURS > 0 else ""))
+        print(f"         publish: up blog publish {did}")
+        if AUTO_PUBLISH_HOURS > 0:
+            print("         " + auto_note(st, did, a))
     return 0
 
 
@@ -546,6 +617,12 @@ def numbers_of(f: dict) -> list[str]:
         out.append(f"{acc} transactions accepted by the node" + (f", {ref} refused" if ref > 0 else ", none refused"))
     if old:
         out.append(f"{old} got no answer from our node in time, and the ship counted them as refusals")
+    tr = f.get("pirate tricks") or {}
+    if tr.get("tried"):
+        out.append(f"{tr['tried']} pirate tricks, {tr.get('refused with the expected answer', 0)} refused by the chain with the expected answer")
+    for c in f.get("the ship changed for its next call") or []:
+        if not c.get("held"):
+            out.append(f"the ship changed {c['what']} from {c['from']} to {c['to']}: {c['because']}")
     una = f.get("sends our node did not answer in time (not refusals)")
     if una:
         out.append(f"{una} got no answer from our node in time" + (f", {f['of those, reached the chain after all']} of them reached the chain all the same"
@@ -661,6 +738,11 @@ def main(argv: list[str]) -> int:
                 cruise_crier.step()
             except Exception as e:  # noqa: BLE001
                 log.warning("cruise crier: %s", e)
+            try:
+                import idni_report   # the weekly report for IDNI, Sunday 18:00 to the owner's private chat (never filed by itself)
+                idni_report.step()
+            except Exception as e:  # noqa: BLE001
+                log.warning("idni report: %s", e)
             try:
                 site_pictures()
                 tick()

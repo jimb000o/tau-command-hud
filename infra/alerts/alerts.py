@@ -66,7 +66,7 @@ simulation (votes, their own proposals, the best forecaster) is noted every
 ten minutes, because the relay starts those over at midnight UTC.
 
   python alerts.py                  run the watcher
-  python alerts.py --test           send one test post to each configured channel
+  python alerts.py --test           send one test line to the owner's private chat (never the channel)
   python alerts.py --check          check the channel keys without posting: Telegram token and the bot's right to post,
                                     the X keys of Tau HUD and of Agorzilla; exit 1 when a channel cannot post
   python alerts.py --preview        print how the newest rule changes would be posted, post nothing
@@ -127,6 +127,7 @@ STATE_PATH = os.environ.get("STATE_PATH", "/state/alerts.json")
 PUBLIC_DIR = os.environ.get("PUBLIC_DIR", "/public")
 SITE = os.environ.get("SITE_URL", "https://tauhud.com").rstrip("/")
 FEED_URL = os.environ.get("FEED_URL", "https://node.tauhud.com/feed.xml")
+NODE_PUBLIC = os.environ.get("NODE_URL", "https://node.tauhud.com").rstrip("/")   # where the share pictures are public
 POST_MAX_AGE = float(os.environ.get("POST_MAX_AGE_SECONDS", 3 * 3600))
 OPEN_ADMISSION = os.environ.get("TAU_GOVERNANCE_OPEN_ADMISSION", "true").lower() in ("1", "true", "yes")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
@@ -170,7 +171,9 @@ HEALTH_EVERY = float(os.environ.get("HEALTH_POLL_SECONDS", 60))
 # than a day ago, at most NEWNODE_DAILY_CAP posts a day (the rest are recorded, not posted). A post waits up to
 # NEWNODE_GROUP seconds while another new node is about to qualify, so nodes that arrive together are posted together.
 NEWNODE_ON = os.environ.get("NEWNODE_ALERTS", "true").lower() in ("1", "true", "yes")
-NEWNODE_HOLD = float(os.environ.get("NEWNODE_HOLD_SECONDS", 1800))
+# 6 h since 7 November 2026: peers that come for a few hours (often around a testnet restart) and go again made
+# "9 nodes online" in the morning and "2 nodes online" the same evening; they now only raise the day's peak
+NEWNODE_HOLD = float(os.environ.get("NEWNODE_HOLD_SECONDS", 21600))
 NEWNODE_DAILY_CAP = int(os.environ.get("NEWNODE_DAILY_CAP", 3))
 NEWNODE_EVERY = float(os.environ.get("NEWNODE_POLL_SECONDS", 300))
 NEWNODE_GROUP = float(os.environ.get("NEWNODE_GROUP_SECONDS", 600))
@@ -478,6 +481,13 @@ def eta_txt(blocks_left: int, pace: float | None) -> str:
     return f" (~{round(s / 86400)} days)"
 
 
+RESTART_HEADLINE = "The Tau testnet restarted"
+# What a restart means for a reader's own test wallet, only what the chain itself makes true: the key lives in the
+# browser and still signs; balance and rules lived on the old chain, which is gone.
+RESTART_FOR_YOU = ("For you: a test wallet made on Tau HUD keeps its key in your browser and can sign again on the new chain, "
+                   "but its test AGRS and its own rules were on the old chain and start again from zero.")
+
+
 def describe(ev: dict, p: dict | None, head: int, pace: float | None) -> dict:
     """Everything a post says about an event: a headline, what changes, why it
     matters, the facts, a plain one-paragraph body (feed, page, X) and a link."""
@@ -485,8 +495,9 @@ def describe(ev: dict, p: dict | None, head: int, pace: float | None) -> dict:
     if k == "restart":
         old = ev.get("old_tip")
         why = "The test network started over: balances, rules and history begin again from the starting state."
-        facts = ([f"The old chain ended at block #{fmt_n(old)}."] if old else []) + ["Tau HUD follows the new chain from block 1."]
-        return {"headline": "The Tau testnet restarted", "what": [], "why": why, "why_title": "What happened", "facts": facts,
+        facts = ([f"The old chain ended at block #{fmt_n(old)}."] if old else []) + ["Tau HUD follows the new chain from block 1.",
+                 RESTART_FOR_YOU]
+        return {"headline": RESTART_HEADLINE, "what": [], "why": why, "why_title": "What happened", "facts": facts,
                 "body": why + " " + " ".join(facts), "link": f"{SITE}/stats/"}
     x = (p or {}).get("explain") or {"title": (p or {}).get("title", "a rule change"), "changes": [], "why": ""}
     title = x["title"]
@@ -954,13 +965,30 @@ def today_numbers(stats: dict | None, items: list[dict], props: list[dict], onli
     proposers = [by_id[i]["proposer"] for i in practice if i in by_id and by_id[i].get("proposer")]
     head = (stats or {}).get("head") or 0
     pace = gaps[len(gaps) // 2] if gaps else None
+    slow = slowest_hour(ts, end, pace)
     coming = [{"title": p["title"], "at": p["activate_at"], "eta": eta_txt(p["activate_at"] - head, pace) if head else ""}
               for p in props if p.get("approved_at") is not None and p.get("activated_at") is None and p.get("expired_at") is None
               and (p.get("explain") or {}).get("severity") != "none"]
     return {"end": end, "blocks": len(rows), "pace": pace, "txs": sum(r[f["txs"]] for r in rows) if "txs" in f else 0,
             "senders": len(senders), "practice": len(practice), "practice_why": practice_meaning(len(practice), proposers),
             "events": events, "online": online, "last_block": newest if newest and newest < end else None,
-            "coming": sorted(coming, key=lambda c: c["at"])[:2], "wallets": None}
+            "coming": sorted(coming, key=lambda c: c["at"])[:2], "wallets": None, "slow": slow}
+
+
+def slowest_hour(ts: list[float], end: float, pace: float | None) -> dict | None:
+    """The full hour with the fewest blocks between the day's first block and `end`, when it held less than half of
+    what the median pace makes usual (the median alone hides a slow stretch); None on an even day."""
+    if not pace or len(ts) < 2:
+        return None
+    usual, best, t = 3600 / pace, None, ts[0]
+    while t + 3600 <= end:
+        n = sum(1 for x in ts if t <= x < t + 3600)
+        if best is None or n < best["blocks"]:
+            best = {"blocks": n, "at": t}
+        t += 3600
+    if best is None or best["blocks"] >= usual / 2:
+        return None
+    return {**best, "usual": round(usual)}
 
 
 WALLET_WHO = {  # the relay's wallet tags (relay/walletdays.py), in words; our own wallets say so
@@ -1040,12 +1068,16 @@ def today_why(r: dict, short: bool = False) -> str | None:
     """One sentence on what the day's numbers mean, from the facts only; None when there is nothing to say.
     `short`: the X wording."""
     w, pace = r.get("wallets"), r.get("pace")
-    steady = bool(r["blocks"]) and pace is not None and pace <= 90
+    steady = bool(r["blocks"]) and pace is not None and pace <= 90 and not r.get("slow")
     if not r["blocks"]:
         return None   # the quiet lines say it
-    if r["events"]:
+    rules = [h for h in r["events"] if h != RESTART_HEADLINE]
+    if rules:
         return "A rule change on Tau is proposed, voted on and in force, no fork, no restart." if short else \
             "A rule change on Tau is proposed, voted on and in force without a fork or a restart; today's is above."
+    if r["events"]:   # only the restart: say what it means, never the "no restart" line
+        return "The testnet started over today: balances, rules and history began again from the starting state." if short else \
+            "The testnet started over today: balances, rules and history began again from the starting state, so the numbers above count the new chain."
     if w and w.get("ratio") and w["ratio"] >= 1.5:
         kept = "the chain kept one block a minute" if steady else f"the chain slowed to one block every {round(pace)} seconds"
         return f"Each a real signed transaction the one validator checked; {kept}." if short else \
@@ -1083,18 +1115,40 @@ def quiet_lines(r: dict) -> list[str]:
     out = ["• no block in 24 hours: the testnet stood still"]
     if r.get("last_block"):
         ago = r["end"] - r["last_block"]
-        when = datetime.fromtimestamp(r["last_block"], timezone.utc).strftime("%-d %B, %H:%M UTC")
-        out.append(f"• the last block was sealed on {when}, {plural(int(ago // 3600), 'hour')} ago" if ago >= 7200
-                   else f"• the last block was sealed at {when[-9:]}")
+        when = findings.hm(r["last_block"], r["end"])
+        out.append(f"• the last block was sealed {'on ' if ago >= 7200 else 'at '}{when}" + (f", {plural(int(ago // 3600), 'hour')} ago" if ago >= 7200 else ""))
     out.append("• Tau HUD keeps watching; the restart or the first new block gets a post of its own")
     return out
+
+
+def today_lead(r: dict) -> str | None:
+    """The one thing the day is about, told first (7 November 2026: the post read like a list of numbers); None on an
+    ordinary day. Only facts the numbers below carry."""
+    rules = [h for h in r["events"] if h != RESTART_HEADLINE]
+    if RESTART_HEADLINE in r["events"]:
+        return "The testnet started over today, and the chain runs again from block 1."
+    if rules:
+        return f"The day's news: {rules[0]}."
+    w = r.get("wallets") or {}
+    if w.get("ships"):
+        return f"{' and '.join(w['ships'])} called at White Rabbit Key: simulated passengers, real transactions."
+    if r.get("slow"):
+        return "Blocks came slowly for a while today."
+    if not r["blocks"]:
+        return None
+    if w.get("by", {}).get("other"):
+        return "People outside Tau HUD and IDNI used the testnet today."
+    return None
 
 
 def today_text(r: dict) -> str:
     e = html.escape
     day = datetime.fromtimestamp(r["end"], timezone.utc)
     out = [REAL_LINE, f"📋 <b>Testnet today, {day.day} {day.strftime('%B')}</b>", ""]
-    pace = f", one every {round(r['pace'])} seconds" if r["pace"] else ""
+    lead = today_lead(r)
+    if lead:
+        out += [e(lead), ""]
+    pace = f", {'usually ' if r.get('slow') else ''}one every {round(r['pace'])} seconds" if r["pace"] else ""
     w = r.get("wallets")
     if w and w["total"]:
         out.append(f"<b>{e(wallets_head(w))}</b>")
@@ -1105,6 +1159,9 @@ def today_text(r: dict) -> str:
         if r["txs"]:
             line += f", {plural(r['txs'], 'transaction')}" + ("" if w and w["total"] else f" from {plural(r['senders'], 'account')}")
         out.append(line)
+    if r.get("slow"):
+        sl = r["slow"]
+        out.append(f"• slowest hour from {findings.hm(sl['at'])}: only {plural(sl['blocks'], 'block')}, about {sl['usual']} are usual")
     if not r["txs"] and not r["practice"]:
         out += [e(x) for x in quiet_lines(r)]
     for h in r["events"]:
@@ -1114,7 +1171,8 @@ def today_text(r: dict) -> str:
         out.append(f"• {plural(n, 'practice vote')}: the rules in force were proposed again and agreed, so nothing changes"
                    + (f"; {e(r['practice_why'])}." if n > 1 and r.get("practice_why") else ".") + " You can try it on the Vote page.")
     if r["online"]:
-        out.append(f"• {plural(r['online'], 'node')} online")
+        top = r.get("peak") or 0
+        out.append(f"• {plural(r['online'], 'node')} online" + (f" now, up to {top} earlier today" if top > r["online"] else ""))
     why = today_why(r)
     if why:
         out += ["", "<b>Why it matters</b>", e(why)]
@@ -1227,9 +1285,9 @@ def major_text(m: dict) -> str:
         body = [e(m["text"]), ""] if m.get("text") else []
         body += [f"• <a href=\"{e(l['link'])}\">{e(l['label'])}</a>: {e(l['text'])}" for l in m["lines"]] + [""]
         return "\n".join([SITE_LINE, f"<b>{e(m['title'])}</b>", ""] + body
-                         + [f"<a href=\"{e(SITE_LOG_LINK)}\">Every change in the Updates log</a>", "", f"<i>{e(SITE_NOTICE)}</i>"])
+                         + [f"<a href=\"{e(SITE_LOG_LINK)}\">Every change in the Updates log</a>"])
     return "\n".join([SITE_LINE, f"<b>{e(m['title'])}</b>", "", e(m["text"]), "",
-                      f"<a href=\"{e(m['link'])}\">Open it on {e(link_host(m['link']))}</a>", "", f"<i>{e(SITE_NOTICE)}</i>"])
+                      f"<a href=\"{e(m['link'])}\">Open it on {e(link_host(m['link']))}</a>"])
 
 
 def link_host(link: str) -> str:
@@ -1280,13 +1338,14 @@ def digest_text(items: list[dict], lines: int | None = None) -> str:
     """The week's smaller changes, the ones a visitor notices first; more than `lines` are counted, not listed."""
     e = html.escape
     lines = SITE_DIGEST_LINES if lines is None else lines
-    items = digest_order(items)
+    items, seen = digest_order(items), set()
+    items = [i for i in items if not (i["line"].strip().lower() in seen or seen.add(i["line"].strip().lower()))]
     shown, rest = items[:lines], len(items) - lines
     head = f"<b>This week on Tau HUD: {plural(len(items), 'smaller change')}</b>"
     out = [DIGEST_LINE, head, ""] + [f"• <b>{e(i['area'])}</b>: {e(i['line'])}" for i in shown]
     if rest > 0:
         out.append(f"…and {rest} more in the Updates log.")
-    out += ["", f"<a href=\"{e(SITE_LOG_LINK)}\">Read every change in the Updates log</a>", "", f"<i>{e(SITE_NOTICE)}</i>"]
+    out += ["", f"<a href=\"{e(SITE_LOG_LINK)}\">Read every change in the Updates log</a>"]
     text = "\n".join(out)
     if len(text) > 3900 and lines > 1:  # Telegram's limit is 4096 characters
         return digest_text(items, lines - 1)
@@ -1302,7 +1361,7 @@ def catchup_text(majors: list[dict]) -> str:
     for m in majors:
         t = re.sub(r"^New:\s*", "", m["title"])
         out.append(f"• <a href=\"{e(m['link'])}\">{e(t[:1].upper() + t[1:])}</a>")
-    out += ["", f"<a href=\"{e(SITE_LOG_LINK)}\">Every change in the Updates log</a>", "", f"<i>{e(SITE_NOTICE)}</i>"]
+    out += ["", f"<a href=\"{e(SITE_LOG_LINK)}\">Every change in the Updates log</a>"]
     text = "\n".join(out)
     return text if len(text) <= 4000 or len(majors) <= 1 else catchup_text(majors[:-1])
 
@@ -1574,6 +1633,134 @@ def multipart(fields: dict[str, str], files: dict[str, tuple[str, bytes, str]]) 
     return out.getvalue(), f"multipart/form-data; boundary={boundary}"
 
 
+# Every tauhud.com link the channel posts carries ?ref=tg-<kind> (7 November 2026), so the relay's visitor numbers
+# (/visits/channel) show which kinds of post people open; maybe_clicks reads them each Sunday.
+TG_KINDS = [("what it costs", "costs"), ("Testnet today", "today"), ("weekly recap", "recap"), ("a closer look", "deepdive"), ("worth a look", "deepdive"),
+            ("new on the site", "site"), ("smaller site updates", "digest"), ("Key Crier", "island"), ("RULE CHALLENGE", "challenge"),
+            ("First on the testnet", "firsts"), ("Firsts on the testnet", "firsts"), ("joined the Tau testnet", "nodes"),
+            ("restarted", "restart"), ("health", "health"), ("IDNI", "idni"), ("blog", "blog"), ("Daily Consensus", "gazette"),
+            ("White Rabbit Key", "rabbit"), ("TESTNET ALPHA", "chain")]
+SITE_LINK_RE = re.compile(r"https://(?:www\.)?tauhud\.com(/[^\s\"'<>]*)?")
+
+
+KINDS_PATH = os.environ.get("TG_KINDS_PATH", os.path.join(os.path.dirname(os.environ.get("STATE_PATH", "/state/alerts.json")) or "/state",
+                                                         "tg-kinds.json"))
+# Kinds that post less often by themselves when nobody opened their links for CLICKS_QUIET_DAYS (maybe_clicks); every
+# change is written to the log ("tuned: …") and told to the owner privately. Chain news and the evening post never tune.
+CLICKS_TUNABLE = ("deepdive", "digest")
+CLICKS_QUIET_DAYS = int(os.environ.get("CLICKS_QUIET_DAYS", 28))
+CLICKS_MIN_POSTS = int(os.environ.get("CLICKS_MIN_POSTS", 3))
+CLICKS_WEEKDAY, CLICKS_HOUR = 6, int(os.environ.get("CLICKS_HOUR", 16))   # Sunday 16:00 UTC, a private note to the owner
+POLL_ON = os.environ.get("TG_POLL", "true").lower() in ("1", "true", "yes")
+POLL_WEEKDAY, POLL_HOUR = 2, int(os.environ.get("TG_POLL_HOUR", 16))       # Wednesday 16:00 UTC: which closer look comes next
+POLL_OPEN = float(os.environ.get("TG_POLL_OPEN_SECONDS", 36 * 3600))        # closed at the first closer look after this
+COSTS_ON = os.environ.get("COSTS_POST", "true").lower() in ("1", "true", "yes")
+COSTS_HOUR = int(os.environ.get("COSTS_HOUR", 9))                           # the 1st of each month, 09:00 UTC
+COSTS_URL = os.environ.get("COSTS_URL", f"{SITE}/assets/costs.json")
+CUR = {"EUR": "€", "USD": "$"}
+
+
+def note_kind(kind: str, now: float | None = None):
+    """Count one channel post of this kind per UTC day (tg-kinds.json, kept 60 days), for maybe_clicks."""
+    day = datetime.fromtimestamp(now or time.time(), timezone.utc).strftime("%Y-%m-%d")
+    try:
+        with open(KINDS_PATH) as f:
+            d = json.load(f)
+    except (OSError, ValueError):
+        d = {}
+    d.setdefault(day, {})[kind] = d.get(day, {}).get(kind, 0) + 1
+    for k in sorted(d)[:-60]:
+        del d[k]
+    try:
+        write_atomic(KINDS_PATH, json.dumps(d, separators=(",", ":")))
+    except OSError:
+        pass
+
+
+def clicks_table(opens: dict, posts: dict, start: str) -> dict:
+    """{kind: [posts, opens]} summed over the days from `start` (YYYY-MM-DD) on."""
+    out: dict[str, list[int]] = {}
+    for src, i in ((posts, 0), (opens, 1)):
+        for day, kinds in src.items():
+            if day >= start:
+                for k, n in kinds.items():
+                    out.setdefault(k, [0, 0])[i] += int(n or 0)
+    return out
+
+
+def clicks_text(week: dict, quiet: list[str], changes: list[str]) -> str:
+    e = html.escape
+    rows = sorted(week.items(), key=lambda kv: (-kv[1][1], kv[0]))
+    out = ["📈 <b>Channel this week</b> (only you get this)", "Opens of tauhud.com from each kind of post, last 7 days:"]
+    out += [f"• {e(k)}: {plural(p, 'post')}, {plural(o, 'open')}" for k, (p, o) in rows] or ["• no posts counted yet"]
+    if changes:
+        out += ["", "Changed by itself:"] + [f"• {e(c)}" for c in changes]
+    if quiet:
+        out += ["", "Posting less often now: " + ", ".join(e(q) for q in quiet)]
+    return "\n".join(out)
+
+
+def costs_text(costs: dict | None, don: dict | None) -> str | None:
+    """The month's running costs as billed (assets/costs.json) and what came in (donations.json); None without costs."""
+    e = html.escape
+    items = (costs or {}).get("items") or []
+    billed = [i for i in items if isinstance(i.get("amount"), (int, float))]
+    if not billed:
+        return None
+    by_cur: dict[str, float] = {}
+    for i in billed:
+        by_cur[i["cur"]] = by_cur.get(i["cur"], 0) + i["amount"]
+    total = " + ".join(f"{CUR.get(c, c + ' ')}{n:g}" for c, n in by_cur.items())
+    out = ["💚 <b>TAU HUD · what it costs to run</b>", f"<b>About {e(total)} a month, not counting time</b>", ""]
+    out += [f"• {e(i['t'])}: {CUR.get(i['cur'], i['cur'] + ' ')}{i['amount']:g}" for i in billed]
+    open_bills = [i["t"] for i in items if i.get("amount") is None]
+    if open_bills:
+        out.append(f"• not in yet: {e(', '.join(open_bills))}")
+    out.append("")
+    if don and don.get("count"):
+        tot = ", ".join(f"{v} {k}" for k, v in (don.get("totals") or {}).items())
+        out.append(f"Donations so far: {plural(don['count'], 'donation')} from {plural(don.get('donors', 0), 'wallet')}"
+                   + (f", {e(tot)}" if tot else "") + ". Thank you.")
+    else:
+        out.append("No donations yet.")
+    out.append("Tau HUD is a community project, not affiliated with IDNI. Every bill is listed on the donation page.")
+    return "\n".join(out)
+
+
+def tg_kind(text: str) -> str:
+    head = "\n".join(text.split("\n")[:3])
+    return next((k for w, k in TG_KINDS if w.lower() in head.lower()), "post")
+
+
+def tag_url(url: str, kind: str) -> str:
+    """The same tauhud.com link with ref=tg-<kind> in its query, before any #fragment; a link already tagged stays."""
+    if "ref=" in url:
+        return url
+    base, hash_, frag = url.partition("#")
+    return f"{base}{'&' if '?' in base else '?'}ref=tg-{kind}{hash_}{frag}"
+
+
+def tag_links(text: str, buttons: dict | None, kind: str) -> tuple[str, dict | None]:
+    # only the targets of links (href) and buttons: a link written out as text stays as people read it
+    text = re.sub(r'href="(https://(?:www\.)?tauhud\.com[^"]*)"', lambda m: f'href="{tag_url(m.group(1), kind)}"', text)
+    if buttons:
+        buttons = {"inline_keyboard": [[{**b, "url": tag_url(b["url"], kind)} if SITE_LINK_RE.fullmatch(b.get("url", "")) else b
+                                        for b in row] for row in buttons.get("inline_keyboard", [])]}
+    return text, buttons
+
+
+def item_buttons(item: dict) -> dict:
+    """Buttons that fit a chain event: a restart opens the wallet and the stats, a rule change its proposal and the Vote page."""
+    if item.get("kind") == "restart":
+        return {"inline_keyboard": [[{"text": "👛 Your wallet", "url": f"{SITE}/wallet/"}, {"text": "📊 Stats", "url": f"{SITE}/stats/"}]]}
+    return {"inline_keyboard": [[{"text": "🗳 This rule change", "url": item.get("link") or f"{SITE}/proposals/"},
+                                 {"text": "✋ Vote yourself", "url": f"{SITE}/vote/"}]]}
+
+
+def link_buttons(*pairs: tuple[str, str]) -> dict:
+    return {"inline_keyboard": [[{"text": t, "url": u} for t, u in pairs]]}
+
+
 def ask_buttons() -> dict:
     """Buttons under each channel post; they open the question bot in a private chat (same as bot.buttons)."""
     b = f"https://t.me/{TELEGRAM_BOT_NAME}?start="
@@ -1591,13 +1778,18 @@ class Telegram(Outlet):
     def send_text(self, text: str, buttons: dict | None = None, picture: str | None = None) -> tuple[bool, float | None, str]:
         """`picture`: a public image URL shown large above the text (a link preview of it), else no preview at all."""
         preview = {"url": picture, "prefer_large_media": True, "show_above_text": True} if picture else {"is_disabled": True}
+        if buttons is None and TELEGRAM_BOT_NAME:
+            buttons = ask_buttons()
+        kind = tg_kind(text)
+        text, buttons = tag_links(text, buttons, kind)
         msg = {"chat_id": TELEGRAM_CHAT, "text": text, "parse_mode": "HTML", "link_preview_options": preview}
         if buttons is not None:
             msg["reply_markup"] = buttons
-        elif TELEGRAM_BOT_NAME:
-            msg["reply_markup"] = ask_buttons()
         body = json.dumps(msg).encode()
-        return self.call("sendMessage", body, "application/json")
+        res = self.call("sendMessage", body, "application/json")
+        if res[0]:
+            note_kind(kind)
+        return res
 
     def send_photo(self, png, r):
         fields = {"chat_id": TELEGRAM_CHAT, "caption": recap_caption(r), "parse_mode": "HTML"}
@@ -1653,7 +1845,7 @@ class Telegram(Outlet):
             "in the channel's Administrators, add the bot with Post messages"
 
     def send(self, item):
-        return self.send_text(telegram_text(item))
+        return self.send_text(telegram_text(item), item_buttons(item))
 
 
 def _pct(s: str) -> str:
@@ -2169,7 +2361,7 @@ class Watcher:
         text = health_text(seen, h, st.get("down_since") if seen == "up" else None, now)
         tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
         for o in tg:
-            ok, _, err = await asyncio.to_thread(o.send_text, text)
+            ok, _, err = await asyncio.to_thread(o.send_text, text, link_buttons(("🟢 Live status", f"{SITE}/status/"), ("💬 Ask the bot", f"https://t.me/{TELEGRAM_BOT_NAME}?start=status")))
             if not ok:
                 log.warning("health post to telegram failed (%s); trying again next check", err)
                 return
@@ -2265,11 +2457,17 @@ class Watcher:
         if not due:
             self.save_state()
             return
-        text = firsts.telegram_text(due, REAL_LINE)
+        got = await asyncio.to_thread(self.relay_json, "/wallets/tags")
+        tags = got.get("tags") if isinstance(got, dict) and isinstance(got.get("tags"), dict) else None   # unknown: claim nothing
+        text = firsts.telegram_text(due, REAL_LINE, tags)
+        first_tx = next((f["tx"] for f in due if f.get("tx")), None)
+        buttons = link_buttons(("🔎 See it in the explorer", f"{SITE}/explorer/?tx={first_tx}" if first_tx else f"{SITE}/explorer/"),
+                               ("📜 Rules wall", f"{SITE}/rules/"))
+        pic = f"{NODE_PUBLIC}/og/block/{int(due[0]['h'])}.png"
         what = "firsts " + ", ".join(f["key"] for f in due)
         x_keys = sorted(f["key"] for f in due)
         for o in tg:
-            ok, retry, err = await asyncio.to_thread(o.send_text, text)
+            ok, retry, err = await asyncio.to_thread(o.send_text, text, buttons, pic)
             if not ok:
                 st["pending"] = due + st["pending"]
                 st["tries"] = st.get("tries", 0) + 1
@@ -2317,6 +2515,11 @@ class Watcher:
         if peers is None and board is None:
             return
         known = st.setdefault("known", {})
+        day_now = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
+        peak = st.setdefault("peak", {})
+        peak[day_now] = max(peak.get(day_now, 0), nodes_online(peers, board))
+        for d in sorted(peak)[:-3]:
+            del peak[d]
         fresh = new_nodes(peers, board, known, now)
         if not st.get("primed"):
             for p in (peers or {}).get("peers") or []:
@@ -2346,7 +2549,7 @@ class Watcher:
         if posted < NEWNODE_DAILY_CAP:
             text = newnode_text(fresh, online)
             for o in tg:
-                ok, _, err = await asyncio.to_thread(o.send_text, text)
+                ok, _, err = await asyncio.to_thread(o.send_text, text, link_buttons(("🌐 All nodes", f"{SITE}/nodes/"), ("🛠 Run your own", "https://github.com/jimb000o/tau-command-hud/blob/main/kit/README.md")))
                 if not ok:
                     log.warning("new node post failed (%s); trying again next check", err)
                     if fresh[0]["key"] not in st.setdefault("x_done", []):   # X does not wait for a failing Telegram
@@ -2431,6 +2634,7 @@ class Watcher:
         active = await asyncio.to_thread(self.relay_json, "/wallets/active")
         ships = ships_in(await asyncio.to_thread(self.relay_json, "/cruise/log?n=300"), slot - 86400, slot) if active else []
         r["wallets"] = today_wallets(active, datetime.fromtimestamp(slot, timezone.utc).strftime("%Y-%m-%d"), ships)
+        r["peak"] = (self.state.get("newnodes", {}).get("peak") or {}).get(datetime.fromtimestamp(slot - 1, timezone.utc).strftime("%Y-%m-%d"))
         if tg_due:
             for o in tg:
                 ok, retry, err = await asyncio.to_thread(o.send_text, today_text(r), today_buttons())
@@ -2531,9 +2735,16 @@ class Watcher:
             return
         if datetime.fromtimestamp(slot, timezone.utc).weekday() not in DEEPDIVE_DAYS:
             return
+        if "deepdive" in self.state.get("quiet_kinds", []) and int(slot // 86400) % 2:
+            st["slot"] = slot   # nobody opened a closer look for weeks: every other one stays out (maybe_clicks)
+            log.info("deepdive: skipped today, posting every other time (no opens)")
+            self.save_state()
+            return
+        await self.close_poll(now)
         tg = self.tg_on()
         # the day's post: the one started this slot (Telegram or X went first), else the file's next unposted one
         p = next((q for q in st["posts"] if q["id"] == st.get("current") and st.get("current_slot") == slot), None) \
+            or next((q for q in st["posts"] if q["id"] == st.get("voted") and q["id"] not in st["posted"]), None) \
             or next((q for q in st["posts"] if q["id"] not in st["posted"] and q["id"] not in st["x_posted"]), None)
         if not p:
             return
@@ -2732,6 +2943,8 @@ class Watcher:
             did = False
             if tg and p.get("tg") and pid not in st["posted"] and st.get("pause_until", 0) <= now:
                 buttons = {"inline_keyboard": [[{"text": p.get("button") or "Open it", "url": site_link(p["link"])}]]} if p.get("link") else None
+                if "{challenge}" in (p.get("tg") or ""):   # the week's task itself, so the post says what to write (7 Nov 2026)
+                    p = {**p, "tg": p["tg"].replace("{challenge}\n\n", (self.challenge_line() + "\n\n") if self.challenge_line() else "").replace("{challenge}", "")}
                 for o in tg:
                     ok, retry, err = await asyncio.to_thread(o.send_text, p["tg"], buttons, pic) if pic else \
                         await asyncio.to_thread(o.send_text, p["tg"], buttons)
@@ -2856,6 +3069,8 @@ class Watcher:
         ds = digest_slot(now)
         if not st["pending"] or ds is None or now - ds >= SITE_SLOT_HOURS * 3600:
             return
+        if "digest" in self.state.get("quiet_kinds", []) and datetime.fromtimestamp(ds, timezone.utc).isocalendar()[1] % 2:
+            return   # nobody opened the weekly digest for weeks: it comes every other week, the changes wait (maybe_clicks)
         tg_due = bool(tg) and st.get("pause_until", 0) <= now and st.get("digest_slot", 0) < ds
         x_due = SITE_DIGEST_X and st.get("x_digest_slot", 0) < ds and (st.get("digest_slot", 0) >= ds or self.x_alone(st, now))
         if not tg_due and not x_due:
@@ -3117,6 +3332,162 @@ class Watcher:
         if last:
             e["challenge_last"] = {k: last[k] for k in ("id", "title", "task", "count")} | {"answers": last["answers"][:3]}
 
+    def tell_owner(self, text: str) -> bool:
+        """One message to the owner's private chat (up owner), never the channel."""
+        chat, tg = tickerwatch.owner(), self.tg_on()
+        if not chat or not tg:
+            return False
+        ok, _, err = tg[0].call("sendMessage", json.dumps({"chat_id": chat, "text": text, "parse_mode": "HTML",
+                                                           "link_preview_options": {"is_disabled": True}}).encode(), "application/json")
+        if not ok:
+            log.warning("owner note failed (%s)", err)
+        return ok
+
+    async def maybe_clicks(self, now: float | None = None, opens: dict | None = None, posts: dict | None = None):
+        """Sunday CLICKS_HOUR UTC: how often people opened tauhud.com from each kind of channel post (relay /visits/channel,
+        links tagged ref=tg-<kind>), told to the owner privately. A tunable kind with CLICKS_MIN_POSTS posts and no open
+        in CLICKS_QUIET_DAYS posts every other time; one open brings it back. Every change is logged ("tuned: …")."""
+        now = now if now is not None else time.time()
+        d = datetime.fromtimestamp(now, timezone.utc)
+        st = self.state.setdefault("clicks", {})
+        st.setdefault("since", now)
+        week = d.strftime("%G-W%V")
+        if d.weekday() != CLICKS_WEEKDAY or d.hour < CLICKS_HOUR or st.get("week") == week:
+            return
+        if opens is None:
+            got = await asyncio.to_thread(self.relay_json, "/visits/channel")
+            if not isinstance(got, dict):
+                return
+            opens = got.get("days") or {}
+        if posts is None:
+            try:
+                with open(KINDS_PATH) as f:
+                    posts = json.load(f)
+            except (OSError, ValueError):
+                posts = {}
+        st["week"] = week
+        day = lambda n: (d - timedelta(days=n)).strftime("%Y-%m-%d")
+        seven, long = clicks_table(opens, posts, day(6)), clicks_table(opens, posts, day(CLICKS_QUIET_DAYS - 1))
+        quiet, changes = list(self.state.get("quiet_kinds", [])), []
+        if now - st["since"] >= CLICKS_QUIET_DAYS * 86400:   # only with data for the whole span
+            for k in CLICKS_TUNABLE:
+                p, o = long.get(k, [0, 0])
+                if k not in quiet and p >= CLICKS_MIN_POSTS and o == 0:
+                    quiet.append(k)
+                    changes.append(f"{k} now every other time, because {plural(p, 'post')} in {CLICKS_QUIET_DAYS} days got no open")
+                elif k in quiet and o > 0:
+                    quiet.remove(k)
+                    changes.append(f"{k} back to its usual pace, because people opened it {plural(o, 'time')}")
+        for c in changes:
+            log.info("tuned: %s", c)
+        self.state["quiet_kinds"] = quiet
+        self.state.setdefault("tuned", []).extend({"at": round(now), "what": c} for c in changes)
+        self.state["tuned"] = self.state["tuned"][-50:]
+        self.save_state()
+        await asyncio.to_thread(self.tell_owner, clicks_text(seven, quiet, changes))
+
+    async def maybe_poll(self, now: float | None = None):
+        """Wednesday POLL_HOUR UTC: a native Telegram poll in the channel, which of the next closer looks comes next. The
+        first closer look after POLL_OPEN closes it (close_poll) and posts the winner; no vote, the usual order."""
+        if not POLL_ON or not DEEPDIVE_ON:
+            return
+        now = now if now is not None else time.time()
+        d = datetime.fromtimestamp(now, timezone.utc)
+        st = self.state.setdefault("poll", {})
+        week = d.strftime("%G-W%V")
+        if d.weekday() != POLL_WEEKDAY or not POLL_HOUR <= d.hour < POLL_HOUR + 3 or st.get("week") == week or st.get("open"):
+            return
+        dd = self.state.get("deepdives") or {}
+        nxt = [q for q in dd.get("posts") or [] if q["id"] not in (dd.get("posted") or {})][:4]
+        tg = self.tg_on()
+        st["week"] = week
+        if len(nxt) < 2 or not tg:
+            self.save_state()
+            return
+        body = {"chat_id": TELEGRAM_CHAT, "question": "Which page of Tau HUD should get the next closer look?",
+                "options": [{"text": str(q.get("title") or q["id"])[:100]} for q in nxt], "is_anonymous": True}
+        ok, _, err, reply = await asyncio.to_thread(tg[0].call_raw, "sendPoll", json.dumps(body).encode())
+        note_send("telegram", ok, err)
+        if ok:
+            st["open"] = {"msg": (reply.get("result") or {}).get("message_id"), "ids": [q["id"] for q in nxt], "at": round(now)}
+            note_kind("poll", now)
+            log.info("poll: asked which closer look comes next (%s)", ", ".join(st["open"]["ids"]))
+        else:
+            log.warning("poll failed (%s)", err)
+        self.save_state()
+
+    async def close_poll(self, now: float):
+        """Close the open poll once it ran POLL_OPEN: the option with most votes (first on a tie) goes next; none, nothing."""
+        st = self.state.get("poll") or {}
+        op = st.get("open")
+        if not op or now - op["at"] < POLL_OPEN:
+            return
+        tg = self.tg_on()
+        st.pop("open", None)
+        if not tg or not op.get("msg"):
+            self.save_state()
+            return
+        ok, _, err, reply = await asyncio.to_thread(tg[0].call_raw, "stopPoll",
+                                                    json.dumps({"chat_id": TELEGRAM_CHAT, "message_id": op["msg"]}).encode())
+        counts = [o.get("voter_count", 0) for o in ((reply.get("result") or {}).get("options") or [])] if ok else []
+        if counts and max(counts) > 0:
+            win = op["ids"][counts.index(max(counts))]
+            self.state.setdefault("deepdives", {})["voted"] = win
+            log.info("poll: %s won with %s of %s votes", win, max(counts), sum(counts))
+        else:
+            log.info("poll: closed without votes%s", "" if ok else f" ({err})")
+        self.save_state()
+
+    async def maybe_costs(self, now: float | None = None, costs: dict | None = None, don: dict | None = None):
+        """The 1st of each month at COSTS_HOUR UTC (within 3 h): the running costs as billed and the donations so far, on
+        Telegram only; once a month."""
+        if not COSTS_ON:
+            return
+        now = now if now is not None else time.time()
+        d = datetime.fromtimestamp(now, timezone.utc)
+        st = self.state.setdefault("costs", {})
+        month = d.strftime("%Y-%m")
+        if d.day != 1 or not COSTS_HOUR <= d.hour < COSTS_HOUR + 3 or st.get("month") == month:
+            return
+        tg = self.tg_on()
+        if not tg:
+            return
+        if costs is None:
+            costs = await asyncio.to_thread(self.fetch_json_url, COSTS_URL)
+        if don is None:
+            try:
+                with open(os.path.join(PUBLIC_DIR, "donations.json")) as f:
+                    don = json.load(f)
+            except (OSError, ValueError):
+                don = None
+        text = costs_text(costs, don)
+        st["month"] = month
+        if text:
+            ok, _, err = await asyncio.to_thread(tg[0].send_text, text, link_buttons(("💚 Support Tau HUD", f"{SITE}/donate/")))
+            log.info("costs: %s", "posted" if ok else f"failed ({err})")
+        self.save_state()
+
+    def fetch_json_url(self, url: str):
+        try:
+            req = urllib.request.Request(url, headers={"Cache-Control": "no-cache", "User-Agent": "tauhud-alerts"})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                return json.load(r)
+        except (urllib.error.URLError, OSError, ValueError) as exc:
+            log.warning("cannot read %s (%r)", url, exc)
+            return None
+
+    def challenge_line(self) -> str:
+        """The open rule challenge in one Telegram line: its title and task; "" when none is open."""
+        cur = self.state.get("challenge")
+        if not cur:
+            return ""
+        try:
+            c = gazette.challenge_block(cur["id"], cur["since"], cur["ends"])
+        except (KeyError, ValueError, TypeError):
+            return ""
+        en = lambda v: v.get("en", "") if isinstance(v, dict) else str(v or "")
+        return f"<b>This week's task, {html.escape(en(c['title']))}:</b> {html.escape(en(c['task']))}" if en(c["task"]) else ""
+
     async def maybe_challenge(self, now: float | None = None):
         """Every two minutes: write /recap/gazette/challenge.json with the open challenge and its answers so far.
         The first time, open a challenge right away and add it to the edition already out."""
@@ -3281,6 +3652,9 @@ class Watcher:
                         await self.maybe_plan()
                         await self.maybe_deepdive()
                         await self.maybe_idni()
+                        await self.maybe_clicks()
+                        await self.maybe_poll()
+                        await self.maybe_costs()
                         await self.maybe_island()
                         await self.maybe_today()
                         await self.maybe_visitors()
@@ -3296,6 +3670,9 @@ class Watcher:
                 await self.maybe_plan()
                 await self.maybe_deepdive()  # the site's pages are there whether the chain runs or not
                 await self.maybe_idni()      # IDNI's code moves whether our relay answers or not
+                await self.maybe_clicks()
+                await self.maybe_poll()
+                await self.maybe_costs()
                 await self.maybe_ticker()
                 await asyncio.sleep(10)
 
@@ -3319,18 +3696,21 @@ def check_channels() -> int:
 
 
 def send_test() -> int:
-    item = {"kind": "proposed", "headline": "Tau HUD alerts are connected",
-            "body": "This channel will get a post whenever a rule change is proposed, agreed or takes effect on the Tau testnet.",
-            "link": f"{SITE}/proposals/"}
-    code = 0
-    for o in (Telegram(), X()):
-        if not o.enabled():
-            print(f"{o.name}: off (credentials not set in .env)")
-            continue
-        ok, _, err = o.send(item)
-        print(f"{o.name}: {'sent' if ok else 'FAILED ' + err}")
-        code |= 0 if ok else 1
-    return code
+    """One test line to the owner's private chat (up owner), never to the public channel or X: a test post on the
+    channel (3 November 2026) read as a second "alerts are connected" to every follower. --check tests X without posting."""
+    o = Telegram()
+    if not o.enabled():
+        print("telegram: off (credentials not set in .env)")
+        return 1
+    chat = tickerwatch.owner()
+    if not chat:
+        print("telegram: no private chat known yet; run up owner first (the test never goes to the channel)")
+        return 1
+    body = json.dumps({"chat_id": chat, "text": "✅ Tau HUD alerts can post. This test went only to you, not to the channel."}).encode()
+    ok, _, err = o.call("sendMessage", body, "application/json")
+    print(f"telegram (your private chat): {'sent' if ok else 'FAILED ' + err}")
+    print("x: not posted; alerts.py --check tests the X keys without a post")
+    return 0 if ok else 1
 
 
 def x_test() -> int:

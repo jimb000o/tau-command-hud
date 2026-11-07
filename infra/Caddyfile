@@ -11,8 +11,9 @@
 	}
 	# Proposal tracker data, the Atom feed, the weekly recap images (alerts/alerts.py),
 	# the donation list read by About (alerts/donations.py), the build pulse (alerts/devpulse.py) and the blog's
-	# articles, unlisted drafts, pictures and link-preview pages (alerts/blog.py).
-	@alerts path /proposals.json /feed.xml /recap/* /donations.json /devpulse.json /blog/posts.json /blog/drafts/* /blog/img/* /blog/a/*
+	# articles, unlisted drafts, pictures and link-preview pages (alerts/blog.py), and the weekly report for IDNI
+	# as unlisted pages with the pre-filled issue link (alerts/idni_report.py).
+	@alerts path /proposals.json /feed.xml /recap/* /donations.json /devpulse.json /blog/posts.json /blog/drafts/* /blog/img/* /blog/a/* /idni-report/*
 	handle @alerts {
 		root * /srv/alerts
 		header Access-Control-Allow-Origin *
@@ -31,6 +32,13 @@
 		header Access-Control-Allow-Origin *
 		header Cache-Control "public, max-age=120"
 		file_server
+	}
+	# The Guardian's door for tauhud.com/guardian/ (guardian/guardian.py): enrol an authenticator app, confirm a payment.
+	handle /guardian/* {
+		request_body {
+			max_size 4KB
+		}
+		reverse_proxy guardian:8075
 	}
 	# Everything else is the relay.
 	handle {

@@ -5,3 +5,20 @@
 .agz-pl::after { content: ""; position: absolute; inset: 0; background: inherit; -webkit-mask: inherit; mask: inherit; mix-blend-mode: soft-light; opacity: .55; }
 [data-agz-look][data-agz-pendant] .agz-pl { display: block; }
 [data-agz-look] .agz-fur { filter: var(--agz-fur, none); transition: filter 1.2s ease; }
+/* growing up (assets/agz-look.js, as agorzilla.com's style.css "growing up"): the pictures are the stage's own; the eyes and lids
+   shrink with the painted eyes, lids, brows and irises darken with the face, the head sits higher and a little smaller on the risen back */
+[data-agz-look] :is(.eye, .lid) { scale: var(--agz-eye, 1); }
+[data-agz-look] .lid, [data-agz-look] img.brow { filter: grayscale(var(--agz-grey, 0)) brightness(var(--agz-skin, 1)); }
+[data-agz-look] .eye img { filter: brightness(var(--agz-iris, 1)); }
+[data-agz-look] .hd { translate: var(--agz-nx, 0%) var(--agz-ny, 0%); scale: var(--agz-hs, 1); }
+.agz[data-agz-look] .head { translate: calc(var(--nx, 0px) + var(--agz-nx, 0%)) calc(var(--ny, 0px) + var(--agz-ny, 0%)); scale: var(--agz-hs, 1); }
+.agz[data-agz-look]:not(.meshed) .head { translate: var(--agz-nx, 0%) var(--agz-ny, 0%); }
+[data-agz-look] .trunk, [data-agz-look] .agz-pl, [data-agz-look] img.agz-back { scale: var(--agz-bw, 1) 1; transform-origin: 56% 66%; }
+/* the voted back and muzzle: the same picture tinted, through soft masks in the 760×1140 frame */
+[data-agz-look] img.agz-back, [data-agz-look] img.agz-muz { position: absolute; left: 0; top: 0; width: 100%; height: auto; aspect-ratio: 760 / 1140; pointer-events: none; mix-blend-mode: screen; transition: opacity 1.2s ease; }
+[data-agz-look] img.agz-back { opacity: var(--agz-back, 0); filter: var(--agz-backf, none);
+  -webkit-mask-image: radial-gradient(34% 15% at 44% 58%, #000 30%, transparent 100%), radial-gradient(22% 14% at 76% 55%, #000 20%, transparent 100%);
+  mask-image: radial-gradient(34% 15% at 44% 58%, #000 30%, transparent 100%), radial-gradient(22% 14% at 76% 55%, #000 20%, transparent 100%); }
+[data-agz-look] img.agz-muz { opacity: var(--agz-muz, 0); filter: var(--agz-muzf, none);
+  -webkit-mask-image: radial-gradient(11% 6% at 69% 42.5%, #000 35%, transparent 100%), radial-gradient(9% 5% at 49% 22%, #000 0%, transparent 100%), radial-gradient(8% 5% at 78% 18%, #000 0%, transparent 100%);
+  mask-image: radial-gradient(11% 6% at 69% 42.5%, #000 35%, transparent 100%), radial-gradient(9% 5% at 49% 22%, #000 0%, transparent 100%), radial-gradient(8% 5% at 78% 18%, #000 0%, transparent 100%); }

@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Guardian · a second key for your test wallet</title>
+<meta name="description" content="A code from your Authenticator app before a payment goes out, with a daily allowance for small ones. Our Guardian checks the code and co-signs on Tau Testnet Alpha. It can say yes to your payment, never send one, and holds no key of yours.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Guardian">
+<meta property="og:description" content="A code from your Authenticator app before a payment goes out, with a daily allowance for small ones; checked by our Guardian, co-signed on Tau Testnet Alpha. It never sends and holds no key of yours.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/guardian/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber for what is still open. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee; --amber: #ffb13b; --bad: #ff5f56;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 12px; max-width: 1500px; }
+.wrap > * { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.lead { margin: 4px 0 0; font: 500 clamp(20px, 2.4vw, 28px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 80em; }
+.sub b { color: var(--text); font-weight: 500; }
+.main { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: start; }
+summary { list-style: none; cursor: default; } summary::-webkit-details-marker { display: none; }
+.qrOpen #pRule > :not(h2):not(.hint) { display: none; }
+.col { display: grid; gap: 14px; min-width: 0; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px; min-width: 0; }
+.panel h2 { margin: 0 0 8px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.panel h2 i { font-style: normal; color: var(--ok); letter-spacing: .04em; }
+.panel h2 .st { margin-left: auto; letter-spacing: .08em; text-transform: none; font: 12px var(--mono); color: var(--dim); }
+.panel h2 .st.ok { color: var(--ok); }
+.panel h2 .st.sim { color: var(--amber); }
+.panel p { margin: 0 0 8px; }
+.panel.done { border-color: rgba(57,255,138,.28); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; }
+.b { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; background: none; color: var(--text); border: 1px solid var(--hair); border-radius: 6px; padding: 0 12px; min-height: 36px; cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; }
+.b:hover:not(:disabled) { border-color: #fff; color: #fff; }
+.b.go { border-color: var(--ok); color: var(--ok); }
+.b.go:hover:not(:disabled) { background: rgba(57,255,138,.08); }
+.b:disabled { opacity: .4; cursor: not-allowed; }
+input { font: 15px var(--mono); background: #000; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 0 10px; min-height: 36px; width: 9em; }
+input.code { letter-spacing: .3em; width: 8.2em; }
+input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1px; }
+.msg { margin: 6px 0 0; min-height: 1.5em; color: var(--dim); font-size: 12.5px; }
+.modes { display: grid; gap: 5px; margin: 6px 0 2px; }
+.modes label { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: baseline; cursor: pointer; }
+.modes input[type=radio] { width: 14px; height: 14px; min-height: 0; margin: 0; padding: 0; accent-color: var(--ok); align-self: center; }
+.modes input[type=number] { width: 7em; min-height: 30px; font-size: 13px; }
+.modes label:has(input[type=radio]:not(:checked)) input[type=number] { opacity: .5; }
+.modes .fine { margin: 0; }
+.hint { margin: 6px 0 0; color: var(--amber); font-size: 12.5px; }
+.hint:empty { display: none; }
+.msg:empty { min-height: 0; margin: 0; }
+.holders { list-style: none; margin: 4px 0 0; padding: 0; color: var(--dim); font-size: 12px; display: grid; gap: 2px; }
+.holders:empty { display: none; }
+.holders li::before { content: "· "; }
+.msg.bad { color: var(--bad); } .msg.ok { color: var(--ok); } .msg.wait { color: var(--amber); }
+.qr { display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: 14px; align-items: center; margin: 8px 0 4px; }
+.qr .img { background: #fff; border-radius: 6px; padding: 6px; width: 148px; height: 148px; }
+.qr .img svg { width: 100%; height: 100%; display: block; }
+.secret { font: 13px var(--mono); color: #fff; word-break: break-all; letter-spacing: .08em; }
+.fine { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
+.fine b { color: var(--text); font-weight: 500; }
+.words { color: #fff; font: 600 14px var(--display); }
+.pips { display: inline-flex; gap: 5px; align-items: center; color: var(--dim); font-size: 12px; }
+.pip { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--hair); }
+.pip.taken { background: var(--dim); } .pip.mine { background: var(--ok); border-color: var(--ok); }
+.list { list-style: none; margin: 0; padding: 0; display: grid; }
+.list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.list li:first-child { border-top: 0; }
+.list li.hit { background: rgba(57,255,138,.05); }
+.list b { font: 600 13.5px var(--display); color: #fff; }
+.list small { color: var(--dim); display: block; font-size: 11.5px; }
+.list .acts { display: flex; gap: 6px; align-items: center; }
+.list .msg { grid-column: 1 / -1; margin: 0; min-height: 0; }
+.how { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.how li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; }
+.how li i { font-style: normal; color: var(--ok); font: 600 12px var(--display); }
+.how li.no i { color: var(--amber); }
+.note { border: 1px solid rgba(255,177,59,.35); color: var(--text); border-radius: 8px; padding: 10px 14px; }
+.note b { color: var(--amber); font-weight: 500; }
+[hidden] { display: none !important; }
+@media (min-width: 2200px) and (min-height: 1200px) { body { zoom: 1.3; } }
+@media (max-width: 1000px) { .main { grid-template-columns: minmax(0, 1fr); } .main.payFirst .col:last-child { display: contents; } .main.payFirst #pPay { order: -1; } }
+#howD:not([open]) summary { cursor: pointer; } #howD:not([open]) h2 { margin: 0; } #howD:not([open]) h2::after { content: "›"; margin-left: auto; font-size: 14px; }
+/* a laptop (1366 × 768): everything on one screen */
+@media (min-width: 1001px) and (max-height: 820px) { body { font-size: 12px; padding-top: 6px; padding-bottom: 4px; } .wrap { gap: 8px; } .lead { font-size: 21px; } .panel { padding: 8px 16px; } .main, .col { gap: 8px; } .how { gap: 2px; } .how li, .holders, .modes, .sub { font-size: 11.5px; } .lead { font-size: 19px; margin-top: 0; } .modes { gap: 3px; margin: 4px 0 0; } .modes input[type=number] { min-height: 26px; font-size: 12px; } .fine { margin-top: 3px; } .list li { padding: 5px 0; } .panel p { margin-bottom: 5px; } .panel h2 { margin-bottom: 5px; } .row { margin-top: 4px; gap: 6px; } .hint { margin-top: 4px; } .holders { margin-top: 2px; display: flex; flex-wrap: wrap; gap: 0 14px; } .note { padding: 5px 12px; } .sim .sub { display: none; } .qr { margin: 4px 0 2px; } .qr .img, .qr { grid-template-columns: 110px minmax(0, 1fr); } .qr .img { width: 110px; height: 110px; } .busy #payHint { display: none; } }
+@media (max-width: 700px) { .b, input { min-height: 44px; } .qr { grid-template-columns: minmax(0, 1fr); justify-items: start; } .list li { grid-template-columns: minmax(0, 1fr); } }
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Guardian</span></a>
+  </header>
+  <nav class="tnav" data-page="guardian" aria-label="Pages and tools"></nav>
+  <div>
+    <p class="lead">A second key for your test wallet: a code from your phone before a payment goes out.</p>
+    <p class="sub">Your account's own rule says <b>"the Guardian co-signs my payments"</b>. Small ones up to a daily allowance it signs by itself; for the rest you type the 6-digit code from your Authenticator app here, and it co-signs on Tau Testnet Alpha. <b>It can say yes to your payment, never send one</b>, and it holds no key of yours. Test AGRS have no value.</p>
+  </div>
+  <p class="note" id="simNote" hidden><b>Simulation is on: a demo with play values.</b> Scan the demo QR code with your app, or use the play code 123456. Nothing goes on the chain and nothing leaves your browser; on Live the same steps act on Tau Testnet Alpha.</p>
+  <main class="main">
+    <div class="col">
+      <section class="panel" id="pWallet" aria-labelledby="hWallet">
+        <h2 id="hWallet">Your test wallet <span class="st" id="stNode">Asking our node</span></h2>
+        <p id="who">No test wallet in this browser yet.</p>
+        <div class="row" id="makeRow"><a class="b go" href="/wallet/?from=guardian">Make one in the wallet ›</a><span class="fine">Free; the key stays in your browser.</span></div>
+      </section>
+      <section class="panel" id="pApp" aria-labelledby="hApp">
+        <h2 id="hApp"><i>1</i> Connect your Authenticator app <span class="st" id="stApp"></span></h2>
+        <p id="appText">Google Authenticator, Authy, 1Password or any app that shows 6-digit codes. Your wallet signs once to show it is your account; then scan the QR code and type the first code.</p>
+        <div id="qrBox" hidden>
+          <div class="qr"><div class="img" id="qr"></div><div><p class="fine">Scan it, or type this key into the app:</p><p class="secret" id="secret" translate="no"></p><div class="row" id="keyRow"><a class="b go" id="otpOpen" href="#" hidden>Open in my Authenticator app</a><button class="b" type="button" id="copyKey">Copy the key</button><span class="fine" id="copyMsg" style="margin:0"></span></div><p class="fine">The key stays on our server and never goes on the chain. Anyone who sees it can make your codes, so keep it to yourself.</p></div></div>
+        </div>
+        <div class="row" id="appRow">
+          <button class="b go" type="button" id="btnQr">Show my QR code</button>
+          <input class="code" id="codeApp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" aria-label="Code from the app" hidden>
+          <button class="b go" type="button" id="btnConfirm" hidden>Confirm</button>
+          <button class="b" type="button" id="btnRemove" hidden>Disconnect</button>
+        </div>
+        <p class="hint" id="hintApp"></p>
+        <p class="msg" id="msgApp"></p>
+      </section>
+      <section class="panel" id="pRule" aria-labelledby="hRule">
+        <h2 id="hRule"><i>2</i> What the Guardian does <span class="st" id="stRule"></span></h2>
+        <p id="ruleText">Your account's rule sends payments to the Guardian. It signs by itself what you allow here and waits for your code for the rest. Amounts in test AGRS.</p>
+        <div class="modes" id="modes">
+          <label><input type="radio" name="mode" value="allow" checked><span><span>Small payments by themselves:</span> <input id="per" type="number" min="1" max="16777214" step="1" value="100" aria-label="At most per payment"> <span>each, at most</span> <input id="day" type="number" min="1" max="16777214" step="1" value="500" aria-label="At most per day"> <span>a day (UTC). The rest waits for your code.</span></span></label>
+          <label><input type="radio" name="mode" value="always"><span><span>Every payment waits for your code.</span></span></label>
+          <label><input type="radio" name="mode" value="above"><span><span>Only payments above</span> <input id="limit" type="number" min="1" max="16777214" step="1" value="1000" aria-label="Limit in test AGRS"> <span>wait for your code; smaller ones never reach the Guardian.</span> <span class="fine" id="aboveNote">Many small payments are not stopped.</span></span></label>
+        </div>
+        <div class="row">
+          <label class="fine" for="codeRule" id="codeRuleL" style="margin:0">Code from your app:</label><input class="code" id="codeRule" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" aria-label="Code from the app">
+          <button class="b go" type="button" id="btnRule">Save and sign</button>
+          <button class="b" type="button" id="btnUnrule" hidden>Remove the rule</button>
+        </div>
+        <p class="hint" id="whyRule"></p>
+        <ul class="holders" id="holders"></ul>
+        <div class="row"><span class="pips" id="pips"></span><span id="lineRow" class="row" style="margin:0" hidden><button class="b" type="button" id="btnLine">Get in line for a place</button><span class="fine" id="lineText" style="margin:0"></span></span></div>
+        <p class="msg" id="msgRule"></p>
+      </section>
+    </div>
+    <div class="col">
+      <section class="panel" id="pPay" aria-labelledby="hPay">
+        <h2 id="hPay"><i>3</i> Confirm a payment <span class="st" id="stPay"></span></h2>
+        <ul class="list" id="pay"></ul>
+        <p class="fine" id="todayLine"></p>
+        <p class="fine" id="payHint">A payment from the <a href="/wallet/?from=guardian">wallet</a> that the Guardian does not sign by itself waits here for your code. A payment nobody confirms runs out after about 1,000 blocks and the amount stays with you (the fee is spent).</p>
+      </section>
+      <section class="panel" aria-labelledby="hHow">
+        <details id="howD" open><summary><h2 id="hHow">What it can do, and what it cannot</h2></summary>
+        <ul class="how">
+          <li><i>✓</i><span>It co-signs only payments your own account asked for, and only after the right code. It cannot send, move or hold anything.</span></li>
+          <li><i>✓</i><span>The code never goes on the chain: it comes to our server, which checks it and signs. Each code works once; five wrong codes lock your account for 15 minutes.</span></li>
+          <li class="no"><i>!</i><span>With "only payments above", many smaller payments are not stopped: a testnet rule sees only the payment at hand. The other two settings send every payment past the Guardian.</span></li>
+          <li class="no"><i>!</i><span>Whoever holds your wallet key can still change or remove the rule. The Guardian guards against a mistaken or tricked payment, not against a stolen key.</span></li>
+          <li class="no"><i>!</i><span>If our server is down, payments that wait for your code run out unconfirmed; they never go through without the code.</span></li>
+          <li class="no"><i>!</i><span>Tau Testnet Alpha holds personal rules for 2 accounts at a time, so the Guardian guards at most two accounts at once for now.</span></li>
+        </ul>
+        <p class="fine">Built on the reference approver bot that IDNI ships with the testnet (<a href="https://github.com/IDNI/tau-testnet/blob/main/scripts/approval_bot_totp.py" target="_blank" rel="noopener" translate="no">approval_bot_totp.py</a>) and the co-signature rules of <a href="https://github.com/IDNI/tau-testnet/blob/main/docs/approvals.md" target="_blank" rel="noopener" translate="no">docs/approvals.md</a>. A testnet prototype: Tau HUD is a community project, <b>not affiliated with IDNI</b>.</p>
+        </details>
+      </section>
+    </div>
+  </main>
+</div>
+<script src="../wallet/vendor/tau-bls.min.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const NODE = "wss://node.tauhud.com", RELAY = "https://node.tauhud.com";
+const SIM = !!(window.TauSim && TauSim.on), DEMO = SIM;   // the simulation plays the whole way through with play values
+if (SIM) document.body.classList.add("sim");
+if (matchMedia("(max-width: 1000px)").matches) $("howD").open = false;
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));
+const LANG = window.TauI18n ? TauI18n.lang : "en";
+const B = window.TauBLS;
+const fmt = n => Number(n).toLocaleString("en-US");
+const short = h => h ? `${h.slice(0, 8)}…${h.slice(-4)}` : "";
+const MAX_AMOUNT = 2 ** 24 - 1, NEUTRAL = "always ( (o5[t]:bv[24] = { #x000001 }:bv[24]) ).";
+const ALLOW = "(o5[t]:bv[24] = { #x000001 }:bv[24])", BLOCK = "(o5[t]:bv[24] = { #x000000 }:bv[24])";
+const hex6 = n => Math.max(0, Math.min(MAX_AMOUNT, Math.floor(n))).toString(16).padStart(6, "0");
+/* the wallet's co-signer rule (wallet/index.html coSignRule) with the Guardian in slot i18, so the wallet reads it back
+   and sends a payment above the limit as a co-signature request by itself */
+const guardRule = (limit, g) => `always ( (i1[t]:bv[24] > { #x${hex6(limit)} }:bv[24] && !(i18[t]:bv[384] = { #x${g} }:bv[384])) ? ${BLOCK} : ${ALLOW} ).`;
+const W = { sk: null, pk: null, seq: null, tip: null, gov: null, clause: undefined, reqs: null, slots: null, lease: null };
+const G = { info: null, acct: null, down: false };
+try { const k = JSON.parse(localStorage.getItem("tauhud-wallet-key") || "null"); if (k && /^[0-9a-f]{64}$/.test(k.sk) && /^[0-9a-f]{96}$/.test(k.pk)) { W.sk = k.sk; W.pk = k.pk; } } catch (e) {}
+const WORDS = "acorn amber anchor apple arrow atlas badge baker bamboo banjo barley basil beacon beaver berry bison blade blossom bonnet bottle bramble breeze brick bridge bronze brook bucket bugle cabin cactus camel candle canoe canyon carbon carrot castle cedar cello chalk cherry chess cider cinder circus clover cobalt comet copper coral cotton cougar crane crater cricket crystal cupola dahlia daisy delta denim desert dingo dolphin dragon drum eagle easel ember emerald engine falcon feather fennel fern fiddle flint forest fossil fox galaxy garden garnet gecko geyser ginger glacier goblet granite grape gravel guitar hammer harbor harp hazel heron hickory honey hornet husky iceberg igloo indigo iris island ivory jackal jade jaguar jasmine jelly jigsaw jungle kayak kernel kettle kiwi koala ladder lagoon lantern laurel lemon lilac lily linen lizard lobster locket lotus magnet mango maple marble meadow melon meteor mint mitten mosaic moss muffin nectar needle nickel nutmeg oak oasis olive onyx orbit orchid otter oyster paddle panda papaya parrot pebble pecan pelican pepper piano pine planet plum pollen poppy prism puffin pumpkin quartz quill rabbit radish raven reef ribbon river robin rocket rose ruby saddle saffron salmon sapphire satin shell sierra silver sparrow spruce squid statue stone summit sunset swan tango teapot thistle thunder tiger timber toucan tractor trumpet tulip tundra turtle umbrella valley velvet violet volcano walnut walrus willow window winter wizard yarrow yogurt zebra zenith zinc basket beetle bobcat cocoa cobra dune elm glove gopher jasper lark mammoth marsh opal osprey parsley quail rhubarb sable sequoia stork tapir topaz trout vanilla wombat yak nomad".split(" ");
+const words = a => { const h = B.sha256(new TextEncoder().encode(a)); return [h[8], h[9], h[10]].map(x => WORDS[x]).join(" · "); };
+const msg = (id, text, cls = "") => { const m = $(id); m.textContent = text || ""; m.className = "msg " + cls; };
+
+/* ---------- the simulation: a demo with play values (nothing on the chain, nothing leaves the browser) ---------- */
+const DEMO_SECRET = "TAUHUDGUARDIANDEMO2026ABCDEFGHIJ", DEMO_G = "de".repeat(48), DEMO_PK = "5a".repeat(48), DEMO_TO = "c0".repeat(48), DEMO_OTHER = "ab".repeat(48);
+let D = { enrolled: false, since: null, approvals: 0, auto: null, today: null, clause: null, reqs: [] };
+try { const d = JSON.parse(sessionStorage.getItem("guardian-demo") || "null"); if (d && typeof d === "object") D = { ...D, ...d }; } catch (e) {}
+const saveDemo = () => { try { sessionStorage.setItem("guardian-demo", JSON.stringify(D)); } catch (e) {} };
+const base32 = t => { const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; let bits = 0, val = 0; const out = []; for (const c of t) { val = (val << 5) | A.indexOf(c); bits += 5; if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; } } return new Uint8Array(out); };
+/* the demo checks a real TOTP for the demo key (RFC 6238, one step either way), or the play code */
+async function demoCode(code) {
+  if (code === "123456") return true;
+  try {
+    const k = await crypto.subtle.importKey("raw", base32(DEMO_SECRET), { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+    const step = Math.floor(Date.now() / 30000);
+    for (const t of [step - 1, step, step + 1]) {
+      const b = new ArrayBuffer(8); new DataView(b).setUint32(4, t >>> 0);
+      const h = new Uint8Array(await crypto.subtle.sign("HMAC", k, b)), o = h[19] & 15;
+      const v = (((h[o] & 0x7f) << 24) | (h[o + 1] << 16) | (h[o + 2] << 8) | h[o + 3]) % 1000000;
+      if (String(v).padStart(6, "0") === code) return true;
+    }
+  } catch (e) {}
+  return false;
+}
+async function demoApi(path, body) {
+  const p = path.split("?")[0], bad = why => ({ ok: false, why: T(why) });
+  await new Promise(r => setTimeout(r, 250));
+  if (p === "info") return { ok: true, data: { pubkey: DEMO_G, slot: SLOT_DEMO, enabled: true, accounts: D.enrolled ? 1 : 0, max_accounts: 50 } };
+  if (p === "account") return { ok: true, data: D.enrolled ? { enrolled: true, since: D.since, approvals: D.approvals, auto: D.auto, today: D.today } : { enrolled: false } };
+  if (p === "enroll") return { ok: true, data: { secret: DEMO_SECRET, uri: `otpauth://totp/Tau%20HUD%20Guardian%20demo:play%20wallet?secret=${DEMO_SECRET}&issuer=Tau%20HUD%20Guardian%20demo` } };
+  if (!(await demoCode(String(body.code || "")))) return bad("Wrong code (demo): use the code your app shows for the demo key, or the play code 123456.");
+  if (p === "confirm") { D.enrolled = true; D.since = Math.floor(Date.now() / 1000); }
+  else if (p === "remove") { D.enrolled = false; D.auto = null; D.today = null; }
+  else if (p === "settings") { D.auto = body.auto; D.today = body.auto ? { sum: Math.min(80, body.auto.day), count: 1, day: utcDay() } : null; }
+  else if (p === "approve") { const i = D.reqs.findIndex(q => q.request_id === body.request_id); if (i < 0) return bad("No such payment waits (demo)."); D.reqs.splice(i, 1); D.approvals += 1; }
+  saveDemo(); return { ok: true, data: p === "settings" ? { auto: D.auto } : {} };
+}
+const SLOT_DEMO = 18, utcDay = () => new Date().toISOString().slice(0, 10);
+function demoRefresh() {
+  W.seq = 7; W.tip = 12345; W.clause = D.clause; W.reqs = { outgoing: D.reqs };
+  const holders = D.clause ? [W.pk, DEMO_OTHER] : [DEMO_OTHER];
+  W.slots = { places: 2, taken: holders.length, holders }; W.lease = { places: 2, taken: holders.length, holders: holders.map(a => ({ addr: a, managed: false, until: null })), waiting: 0, position: null };
+}
+/* a rule in the demo brings one play payment that waits for the code: above the allowance, or above the limit */
+function demoRule(text) {
+  if (text === NEUTRAL) { D.clause = null; D.reqs = []; }
+  else { D.clause = text; const lim = parseInt((/#x([0-9a-f]{6})/i.exec(text) || [])[1] || "0", 16);
+    D.reqs = [{ request_id: "de".repeat(32), amount: Math.max(lim + 250, 750), recipient_pubkey: DEMO_TO, status: "open", expire_at_height: 12345 + 1000, approvers: { "1": { pubkey: DEMO_G, state: "awaiting" } } }]; }
+  saveDemo(); demoRefresh(); setTimeout(loadGuardian, 50); return { ok: true };
+}
+
+/* ---------- the Guardian's door (infra/guardian/guardian.py) ---------- */
+async function api(path, body) {
+  if (DEMO) return demoApi(path, body);
+  try {
+    const r = await fetch(RELAY + "/guardian/" + path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : { cache: "no-store" });
+    const j = await r.json().catch(() => ({}));
+    G.down = false;
+    return r.ok ? { ok: true, data: j } : { ok: false, why: T(j.error || "Our Guardian refused it.") };
+  } catch (e) { G.down = true; return { ok: false, why: T("Our Guardian does not answer right now. Try again in a minute.") }; }
+}
+/* the account's key signs "tauhud guardian <action> <account> <time>": only the owner can connect or remove an app */
+function proof(action) {
+  if (DEMO) return { account: W.pk, at: 0, signature: "" };
+  const at = Math.floor(Date.now() / 1000);
+  return { account: W.pk, at, signature: B.bytesToHex(B.sign(new TextEncoder().encode(`tauhud guardian ${action} ${W.pk} ${at}`), W.sk)) };
+}
+async function loadGuardian() {
+  const i = await api("info");
+  if (i.ok) G.info = i.data;
+  if (W.pk && G.info) { const a = await api("account?pk=" + W.pk); if (a.ok) G.acct = a.data; }
+  render();
+}
+
+/* ---------- the chain, through our relay (as the wallet does) ---------- */
+const L = { ws: null, retry: 5000, wait: new Map() };
+function connect() {
+  if (SIM) return;
+  let ws;
+  try { ws = new WebSocket(NODE); } catch (e) { return offline(); }
+  L.ws = ws;
+  ws.onopen = () => { L.retry = 5000; ws.send("hello version=1"); ws.send("via guardian"); ws.send("getgovernance"); refresh(); };
+  ws.onmessage = ev => {
+    let m; try { m = JSON.parse(String(ev.data)); } catch { return; }
+    const q = L.wait.get(m.command);
+    if (q && q.length && !(m.data && m.data.pushed)) { q.shift()(m); return; }
+    if (m.status !== "ok") return;
+    if (m.command === "getgovernance") { W.gov = m.data; setNode(true); }
+    else if (m.command === "getblocks" && m.data.pushed) { ws.send("getgovernance"); refresh(); }
+  };
+  ws.onclose = () => { if (L.ws === ws) offline(); };
+  ws.onerror = () => {};
+}
+function offline() {
+  L.ws = null; for (const q of L.wait.values()) while (q.length) q.shift()(null);
+  setNode(false);
+  const w = L.retry; L.retry = Math.min(60000, w * 2); setTimeout(connect, w);
+}
+function setNode(on) { const s = $("stNode"); s.textContent = T(on ? "Live" : "Our node is not reachable right now"); s.className = "st" + (on ? " ok" : ""); }
+function rpc(cmd, timeout = 15000) {
+  return new Promise(res => {
+    if (!L.ws || L.ws.readyState !== 1) return res(null);
+    const c = cmd.split(" ")[0];
+    if (!L.wait.has(c)) L.wait.set(c, []);
+    const q = L.wait.get(c); q.push(res); L.ws.send(cmd);
+    setTimeout(() => { const i = q.indexOf(res); if (i >= 0) { q.splice(i, 1); res(null); } }, timeout);
+  });
+}
+async function lookup(cmd) {
+  for (let i = 0; i < 4; i++) {
+    const m = await rpc(cmd);
+    if (!m || m.status === "ok" || (m.error && m.error.code !== "BUSY")) return m;
+    await new Promise(r => setTimeout(r, 600 + i * 500));
+  }
+  return null;
+}
+let busy = false;
+async function refresh() {
+  if (!W.pk || busy || SIM) return;
+  busy = true;
+  try {
+    const s = await lookup(`getsequence ${W.pk}`);
+    if (s && s.status === "ok") { W.seq = s.data.sequence_number; if (Number.isInteger(s.data.tip_height)) W.tip = s.data.tip_height; }
+    const of = await lookup(`getruleoffers ${W.pk} all`);
+    if (of && of.status === "ok") { const c = (of.data.accepted_clauses || []).find(x => x.target_stream === "o5" || x.target_stream === 5); W.clause = c ? c.clause_body : null; }
+    const rq = await lookup(`getapprovalrequests ${W.pk} out`);
+    if (rq && rq.status === "ok") W.reqs = rq.data;
+  } finally { busy = false; }
+  await loadLease();
+  render();
+}
+/* the two rule places and the line for them (infra/relay/slotlease.py): who holds one, until when, our place in line */
+async function loadLease() {
+  try { const j = await (await fetch(`${RELAY}/lease?pk=${W.pk}`, { cache: "no-store" })).json(); if (j && j.places) { W.lease = j; W.slots = { places: j.places, taken: j.taken, holders: (j.holders || []).map(h => h.addr) }; } } catch (e) {}
+}
+const head = () => (W.gov && W.gov.head_number != null ? W.gov.head_number : W.tip) || 0;
+const baseFee = () => { const m = /o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)/.exec((W.gov && W.gov.consensus_rules) || ""); return m ? parseInt(m[1], 16) : 10; };
+function canon(o) {   // Python's json.dumps(sort_keys=True, separators=(",", ":"))
+  if (Array.isArray(o)) return "[" + o.map(canon).join(",") + "]";
+  if (o === null || typeof o !== "object") return JSON.stringify(o === undefined ? null : o).replace(/[\u007f-￿]/g, c => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"));
+  return "{" + Object.keys(o).sort().map(k => JSON.stringify(k) + ":" + canon(o[k])).join(",") + "}";
+}
+/* a rule-bearing user_tx, signed here with the node's own preimage (consensus/tx_signing.py), as the wallet signs */
+function ruleTx(text, seq, life) {
+  const tx = { tx_type: "user_tx", sender_pubkey: W.pk, sequence_number: seq, expiration_time: Math.floor(Date.now() / 1000) + (life ? 7 * 86400 : 600),
+    expire_at_height: head() + (life ? 9000 : 1000), fee_limit: String(baseFee() * 5), operations: { "0": text } };
+  const d = { sender_pubkey: tx.sender_pubkey, sequence_number: tx.sequence_number, expiration_time: tx.expiration_time, fee_limit: tx.fee_limit, tx_type: tx.tx_type, expire_at_height: tx.expire_at_height, operations: tx.operations };
+  return { ...tx, signature: B.bytesToHex(B.sign(new TextEncoder().encode(canon(d)), W.sk)) };
+}
+async function sendRule(text) {
+  if (DEMO) return demoRule(text);
+  if (W.seq == null) return { ok: false, why: T("Our node has not answered yet; nothing was sent.") };
+  const tx = ruleTx(text, W.seq), body = JSON.stringify(tx);
+  const chk = await rpc("checktx " + body);
+  const bad = m => !m || m.status !== "ok" || (m.data && m.data.ok === false);
+  const why = m => { const e = (m && (m.error || m.data)) || {}, t = String(e.message || e.code || ""); return /author slot|MAX_TIER_AUTHORS|REGISTRY_FULL/i.test(t) ? T("Both of the testnet's rule places are taken right now; nothing was sent.") : F("The node refused it, nothing was sent: {x}", { x: (t || "no answer").slice(0, 160) }); };
+  if (bad(chk)) return { ok: false, why: why(chk) };
+  const res = await rpc("sendtx " + body);
+  if (bad(res)) return { ok: false, why: why(res) };
+  /* fair turns on the two places, as in the wallet: the way back (the neutral rule) is signed now for the next number and
+     left with the relay, which sends it when the turn is over (infra/relay/slotlease.py) */
+  if (text !== NEUTRAL) rpc("leasetx " + JSON.stringify(ruleTx(NEUTRAL, W.seq + 1, true)));
+  W.seq += 1;
+  setTimeout(refresh, 4000);
+  return { ok: true };
+}
+
+/* ---------- what the page shows ---------- */
+const guardPk = () => G.info && G.info.pubkey;
+function myLimit() {   // the limit of a rule that names the Guardian, else null
+  const g = guardPk(); if (!W.clause || !g || !W.clause.includes(g)) return null;
+  const m = /i1\[t\]:bv\[24\]\s*>\s*\{\s*#x([0-9a-f]+)/i.exec(W.clause); return m ? parseInt(m[1], 16) : null;
+}
+/* what the account has set now: "allow" (small payments by themselves), "always" (every payment with a code),
+   "above" (only above a limit), or null (no rule naming the Guardian) */
+function myMode() {
+  const lim = myLimit(); if (lim == null) return null;
+  return lim > 0 ? "above" : (G.acct && G.acct.auto ? "allow" : "always");
+}
+const pickedMode = () => (document.querySelector('input[name="mode"]:checked') || {}).value || "allow";
+let touched = false;   // the visitor changed the choice: the page no longer overwrites it with what is set
+$("modes").addEventListener("input", () => { touched = true; render(); });
+const waiting = () => (((W.reqs && W.reqs.outgoing) || []).filter(q => q.status === "open" || q.status === "pending")
+  .filter(q => Object.values(q.approvers || {}).some(a => a.pubkey === guardPk() && a.state === "awaiting")));
+let shown = null;   // the secret behind the QR code on screen
+function render() {
+  const live = !SIM || DEMO, have = !!W.pk, enrolled = !!(G.acct && G.acct.enrolled), lim = myLimit();
+  $("simNote").hidden = !SIM;
+  if (have) { $("who").replaceChildren(document.createTextNode(T(DEMO && W.pk === DEMO_PK ? "Play wallet (demo): " : "This browser's wallet: ")), Object.assign(document.createElement("span"), { className: "words", textContent: words(W.pk), translate: false }), document.createTextNode("  " + short(W.pk))); $("makeRow").hidden = true; }
+  // 1: the app
+  const appOk = live && have && !!G.info && G.info.enabled !== false;
+  $("pApp").classList.toggle("done", enrolled);
+  $("stApp").textContent = enrolled ? T("connected") : ""; $("stApp").className = "st" + (enrolled ? " ok" : "");
+  $("btnQr").hidden = enrolled || !!shown; $("btnQr").disabled = !appOk;
+  $("qrBox").hidden = !shown || enrolled; document.body.classList.toggle("qrOpen", !!shown && !enrolled);
+  $("codeApp").hidden = !(shown || enrolled) ; $("btnConfirm").hidden = !shown || enrolled; $("btnRemove").hidden = !enrolled;
+  if (enrolled) $("appText").textContent = G.acct.since ? F("Connected since {d}. Codes confirmed so far: {n}.", { d: new Date(G.acct.since * 1000).toLocaleDateString(LANG === "en" ? "en-GB" : LANG), n: G.acct.approvals || 0 }) : T("Connected.");
+  const appWhy = !live ? "" : !have ? T("Make a test wallet first.") : (G.down || !G.info) ? T("Our Guardian does not answer right now. Try again in a minute.")
+    : G.info.enabled === false ? T("The Guardian is switched off on our server right now.") : "";
+  $("hintApp").textContent = enrolled ? "" : appWhy; $("btnQr").title = appWhy;
+  // 2: the rule
+  const s = W.slots, mine = s && (s.holders || []).includes(W.pk), mode = myMode(), auto = G.acct && G.acct.auto;
+  $("pRule").classList.toggle("done", mode != null);
+  $("stRule").textContent = mode === "allow" ? F("by itself up to {a} each, {b} a day", { a: fmt(auto.per), b: fmt(auto.day) }) : mode === "always" ? T("every payment with your code") : mode === "above" ? F("above {n} with your code", { n: fmt(lim) }) : "";
+  $("stRule").className = "st" + (mode ? " ok" : "");
+  if (!touched && mode) {   // show what is set
+    document.querySelector(`input[name="mode"][value="${mode}"]`).checked = true;
+    if (auto) { $("per").value = auto.per; $("day").value = auto.day; }
+    if (mode === "above") $("limit").value = lim;
+  }
+  $("btnUnrule").hidden = !W.clause;
+  const full = s && !mine && s.taken >= s.places;
+  const want = pickedMode(), wantLim = want === "above" ? Math.floor(Number($("limit").value)) : 0;
+  const needRule = lim !== wantLim, needSettings = want === "allow" || !!auto;   // "above" and "always" only clear an allowance that is set
+  const why = ruleWhy({ live, have, enrolled, full: full && needRule });
+  $("btnRule").disabled = !!why; $("btnRule").title = why.replace(/:$/, ".");
+  $("btnRule").textContent = T(needRule && needSettings ? "Save and sign" : needRule ? "Sign the rule" : "Save");
+  $("codeRule").hidden = $("codeRuleL").hidden = !needSettings;
+  $("whyRule").textContent = why || (W.clause && lim == null ? T("Your account has another rule now. Signing this one replaces it.") : "");
+  renderLine(full && !mine);
+  $("btnUnrule").disabled = !(live && have && W.seq != null);
+  if (s) { const p = []; for (let i = 0; i < s.places; i++) p.push(Object.assign(document.createElement("span"), { className: "pip " + (i < s.taken ? (mine && i === 0 ? "mine" : "taken") : "") })); p.push(document.createTextNode(F("{a} of {b} rule places taken on the testnet", { a: s.taken, b: s.places }))); $("pips").replaceChildren(...p); }
+  // 3: payments waiting for the code
+  const list = live && have && guardPk() ? waiting() : [];
+  $("stPay").textContent = list.length ? F("{n} waiting", { n: list.length }) : "";
+  const td = G.acct && G.acct.today;
+  $("todayLine").textContent = mode === "allow" && td ? F(td.count === 1 ? "Today by itself: 1 payment, {a} of {b} test AGRS." : "Today by itself: {n} payments, {a} of {b} test AGRS.", { n: td.count, a: fmt(td.sum), b: fmt(auto.day) }) : "";
+  const hit = (location.hash.match(/r=([0-9a-f]{64})/) || [])[1];
+  document.querySelector(".main").classList.toggle("payFirst", list.length > 0); document.body.classList.toggle("busy", list.length > 0);
+  if (list.length > 0 && matchMedia("(min-width: 1001px) and (max-height: 820px)").matches && !howTouched) $("howD").open = false;
+  const keep = new Map([...$("pay").querySelectorAll("li[data-id]")].map(li => [li.dataset.id, li]));
+  $("pay").replaceChildren(...(list.length ? list.map(q => keep.get(q.request_id) || payRow(q, hit)) : [Object.assign(document.createElement("li"), { className: "fine", textContent: T(DEMO && !W.clause ? "The play payment appears once your rule is set (demo)." : !live ? "Nothing to confirm in the simulation." : !have ? "Nothing to confirm without a wallet." : "Nothing waits for your code right now.") })]));
+  /* from the wallet's "Enter your code ›": land on that payment with the cursor in its code field, once */
+  const row = hit && !jumped && $("pay").querySelector("li.hit"); if (row) { jumped = true; row.scrollIntoView({ block: "center" }); const i = row.querySelector("input"); if (i) i.focus({ preventScroll: true }); }
+}
+let jumped = false, howTouched = false;
+$("howD").addEventListener("toggle", () => { howTouched = true; }, { once: true });
+/* why "Sign the rule" cannot be pressed now, in words; "" when it can */
+function ruleWhy({ live, have, enrolled, full }) {
+  if (!live) return T("The Guardian works only on the real testnet: switch the HUD to Live.");
+  if (!have) return T("Make a test wallet first.");
+  if (!enrolled && (G.down || !G.info)) return T("Our Guardian does not answer right now. Try again in a minute.");
+  if (!enrolled) return T("Connect your app first: otherwise a payment waiting for your code could not be confirmed.");
+  if (W.seq == null) return T("Waiting for our node to answer…");
+  if (full) return T("Both rule places are held by other accounts; the node would refuse a new rule:");
+  if (pickedMode() === "above") { const n = Math.floor(Number($("limit").value)); if (!(n >= 1 && n < MAX_AMOUNT)) return F("Give a limit between 1 and {n} test AGRS.", { n: fmt(MAX_AMOUNT - 1) }); }
+  if (pickedMode() === "allow") { const a = Math.floor(Number($("per").value)), b = Math.floor(Number($("day").value)); if (!(a >= 1 && b >= 1 && a <= b && b < MAX_AMOUNT)) return T("Give two whole numbers: at most per payment, and at most per day, the first no larger than the second."); }
+  return "";
+}
+const hhmm = t => new Date(t * 1000).toLocaleTimeString(LANG === "en" ? "en-GB" : LANG, { hour: "2-digit", minute: "2-digit" });
+function renderLine(full) {
+  const L2 = W.lease;
+  const rows = full && L2 ? (L2.holders || []).filter(h => h.addr !== W.pk).map(h => Object.assign(document.createElement("li"), {
+    textContent: h.managed && h.until ? F("{x}: fair turn from our wallet, frees at {t}", { x: short(h.addr), t: hhmm(h.until) })
+      : F("{x}: set elsewhere, only its owner can free it", { x: short(h.addr) }) })) : [];
+  $("holders").replaceChildren(...rows);
+  /* the line only ends turns that their holders agreed to when they set the rule in our wallet (they left the way back with
+     our relay); a rule set anywhere else stays until its owner removes it, and the line changes nothing about it */
+  const agreed = full && L2 && (L2.holders || []).some(h => h.addr !== W.pk && h.managed);
+  $("lineRow").hidden = !agreed && !(L2 && L2.position);
+  if (!full || !L2) return;
+  const inLine = !!L2.position;
+  $("btnLine").textContent = T(inLine ? "Leave the line" : "Get in line for a place");
+  const lt = inLine ? F("You are number {n} in line. While anyone waits, a turn lasts 30 minutes; sign the rule here as soon as a place shows free.", { n: L2.position })
+    : L2.waiting ? F("{n} waiting. With someone in line, a fair turn ends 30 minutes after it began.", { n: L2.waiting }) : T("Nobody waits. With someone in line, a fair turn ends 30 minutes after it began.");
+  $("lineText").textContent = inLine ? lt : ""; $("btnLine").title = lt;
+}
+function payRow(q, want) {
+  const li = document.createElement("li"); li.dataset.id = q.request_id; if (q.request_id === want) li.className = "hit";
+  const t = document.createElement("div");
+  t.append(Object.assign(document.createElement("b"), { textContent: F("{n} test AGRS to {x}", { n: fmt(q.amount), x: words(q.recipient_pubkey) }) }),
+    Object.assign(document.createElement("small"), { textContent: short(q.recipient_pubkey) + " · " + F("waits for your code for {n} more blocks (until block {a})", { n: fmt(Math.max(0, q.expire_at_height - head())), a: q.expire_at_height }) }));
+  const inp = Object.assign(document.createElement("input"), { className: "code", inputMode: "numeric", maxLength: 6, placeholder: "123456", autocomplete: "one-time-code" });
+  inp.setAttribute("aria-label", T("Code from the app"));
+  const btn = Object.assign(document.createElement("button"), { className: "b go", type: "button", textContent: T("Confirm") });
+  const m = Object.assign(document.createElement("p"), { className: "msg" });
+  btn.onclick = async () => {
+    const code = inp.value.replace(/\D/g, "");
+    if (code.length !== 6) { m.textContent = T("The code has 6 digits."); m.className = "msg bad"; return; }
+    btn.disabled = true; m.textContent = T("Checking the code…"); m.className = "msg wait";
+    const r = await api("approve", { request_id: q.request_id, code });
+    btn.disabled = false; inp.value = "";
+    if (r.ok) { m.textContent = T(DEMO ? "Co-signed (demo). On the real testnet the payment would go through with the next block." : "Co-signed. The payment goes through with the next block."); m.className = "msg ok"; btn.disabled = true; setTimeout(() => { if (DEMO) demoRefresh(); refresh(); loadGuardian(); }, DEMO ? 1200 : 5000); }
+    else { m.textContent = r.why; m.className = "msg bad"; }
+  };
+  inp.onkeydown = e => { if (e.key === "Enter") btn.click(); };
+  const a = document.createElement("span"); a.className = "acts"; a.append(inp, btn);
+  li.append(t, a, m);
+  return li;
+}
+
+/* ---------- buttons ---------- */
+let qrLib = null;
+const loadQr = () => qrLib || (qrLib = new Promise((ok, no) => { const s = document.createElement("script"); s.src = "../wallet/vendor/qrcode.min.js"; s.onload = () => ok(window.qrcode); s.onerror = no; document.head.append(s); }));
+$("btnQr").onclick = async () => {
+  msg("msgApp", T("Your wallet signs, then the QR code comes…"), "wait");
+  const body = proof("enroll");
+  if (G.acct && G.acct.enrolled) body.code = $("codeApp").value.replace(/\D/g, "");
+  const r = await api("enroll", body);
+  if (!r.ok) return msg("msgApp", r.why, "bad");
+  shown = r.data.secret;
+  $("secret").textContent = shown.replace(/(.{4})/g, "$1 ").trim();
+  try { const q = (await loadQr())(0, "M"); q.addData(r.data.uri); q.make(); $("qr").innerHTML = q.createSvgTag({ cellSize: 3, margin: 0, scalable: true }); } catch (e) { $("qr").textContent = ""; }
+  msg("msgApp", T("Scan it, then type the first code the app shows."));
+  $("otpOpen").href = r.data.uri; $("otpOpen").hidden = !matchMedia("(pointer: coarse)").matches;
+  render(); $("codeApp").focus();
+};
+$("copyKey").onclick = async () => { try { await navigator.clipboard.writeText(shown || ""); $("copyMsg").textContent = T("Copied."); } catch (e) { $("copyMsg").textContent = T("Select the key and copy it."); } setTimeout(() => { $("copyMsg").textContent = ""; }, 3000); };
+$("btnConfirm").onclick = async () => {
+  const code = $("codeApp").value.replace(/\D/g, "");
+  if (code.length !== 6) return msg("msgApp", T("The code has 6 digits."), "bad");
+  const r = await api("confirm", { account: W.pk, code });
+  $("codeApp").value = "";
+  if (!r.ok) return msg("msgApp", r.why, "bad");
+  shown = null; msg("msgApp", T("Connected. Now choose what the Guardian does."), "ok"); loadGuardian();
+};
+$("codeApp").onkeydown = e => { if (e.key === "Enter") (shown ? $("btnConfirm") : $("btnRemove")).click(); };
+$("btnRemove").onclick = async () => {
+  const code = $("codeApp").value.replace(/\D/g, "");
+  if (code.length !== 6) return msg("msgApp", T("Type the current code from the app to disconnect it."), "wait");
+  if (myLimit() != null) return msg("msgApp", T("Remove the rule first, or your payments could never be confirmed."), "bad");
+  const r = await api("remove", { ...proof("remove"), code });
+  $("codeApp").value = "";
+  if (!r.ok) return msg("msgApp", r.why, "bad");
+  msg("msgApp", T("Disconnected. You can delete the entry in your app."), "ok"); G.acct = null; loadGuardian();
+};
+$("btnRule").onclick = async () => {
+  const want = pickedMode(), lim = myLimit(), auto = G.acct && G.acct.auto;
+  const wantLim = want === "above" ? Math.floor(Number($("limit").value)) : 0, needRule = lim !== wantLim;
+  const wantAuto = want === "allow" ? { per: Math.floor(Number($("per").value)), day: Math.floor(Number($("day").value)) } : null;
+  const needSettings = want === "allow" || !!auto;
+  if (needSettings) {   // the Guardian's own part, with the key and a code
+    const code = $("codeRule").value.replace(/\D/g, "");
+    if (code.length !== 6) return msg("msgRule", T("Type the current code from the app: changing what the Guardian signs by itself takes it."), "wait");
+    $("btnRule").disabled = true; msg("msgRule", T("Saving…"), "wait");
+    const r = await api("settings", { ...proof("settings"), code, auto: wantAuto });
+    $("codeRule").value = "";
+    if (!r.ok) { render(); return msg("msgRule", r.why, "bad"); }
+    G.acct = { ...G.acct, auto: r.data.auto };
+    if (!needRule) { touched = false; msg("msgRule", T("Saved."), "ok"); render(); return; }
+  }
+  if (waiting().length && !confirm(T("A new rule fails the payments that wait for your code now. Sign it anyway?"))) { render(); return; }
+  $("btnRule").disabled = true; msg("msgRule", T("Signing and sending the rule…"), "wait");
+  const r = await sendRule(guardRule(wantLim, guardPk()));
+  touched = false;
+  msg("msgRule", r.ok ? T(DEMO ? "Set (demo). On the real testnet a block would hold the rule now; a play payment waits in step 3." : "Sent. Once a block holds the rule, the Guardian works as set here.") : r.why, r.ok ? "ok" : "bad");
+  render();
+};
+$("codeRule").onkeydown = e => { if (e.key === "Enter") $("btnRule").click(); };
+$("btnLine").onclick = async () => {
+  const on = !(W.lease && W.lease.position);
+  try { const j = await (await fetch(`${RELAY}/lease/${on ? "wait" : "leave"}?pk=${W.pk}`, { cache: "no-store" })).json(); if (j && j.places) W.lease = j; } catch (e) { msg("msgRule", T("Our relay does not answer right now. Try again in a minute."), "bad"); }
+  render();
+};
+$("btnUnrule").onclick = async () => {
+  if (!confirm(T("Remove your rule? Payments then go through without a code, and payments waiting now fail."))) return;
+  msg("msgRule", T("Signing and sending…"), "wait");
+  const r = await sendRule(NEUTRAL);
+  msg("msgRule", r.ok ? T(DEMO ? "Removed (demo)." : "Sent. Once a block holds it, your rule place is free again.") : r.why, r.ok ? "ok" : "bad");
+};
+
+render();
+if (!SIM) { connect(); loadGuardian(); setInterval(() => { if (!document.hidden) { refresh(); } }, 20000); setInterval(() => { if (!document.hidden) loadGuardian(); }, 60000); }
+else { if (!W.pk) W.pk = DEMO_PK; demoRefresh(); $("stNode").textContent = T("Demo with play values"); $("stNode").className = "st sim"; loadGuardian(); }
+</script>
+</body>
+</html>
