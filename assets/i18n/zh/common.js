@@ -629,6 +629,7 @@ TauI18n.add({ strings: {
   "Rabbit Key": "白兔礁",
   "Rabbit": "白兔礁",
   "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet": "一个岛上选举游戏：法律、盟约、谣言，还有一本谁都改不了的账本；你的一票可以上测试网",
+  "A terminal game: twelve contracts from the crew of the Black Sequence, each a real transaction from your test wallet; make the chain say no for the right reason": "一个终端游戏：Black Sequence 船员的十二个任务，每个都是你测试钱包发出的真实交易；让链为正确的理由说“不”",
   "The chain now": "链的现状",
   "First steps": "第一步",
   "Read and watch": "阅读与观看",

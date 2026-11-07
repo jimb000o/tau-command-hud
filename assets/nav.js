@@ -62,6 +62,7 @@
     vote:       { t: "Vote for real", d: "Vote on the real testnet yourself: node, key, ready commands, practised first", i: "✔", h: "vote/" },
     card:       { t: "My Tau card", d: "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post", i: "▣", h: "card/" },
     rabbit:     { t: "White Rabbit Key", d: "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet", i: `<img src="${ROOT}assets/rabbit-key.webp" alt="">`, h: "rabbit/", live: true, play: "rabbit" },
+    nomemo:     { t: "No Memo", d: "A terminal game: twelve contracts from the crew of the Black Sequence, each a real transaction from your test wallet; make the chain say no for the right reason", i: "▮", h: "nomemo/", live: true },
     facts:      { t: "Tau facts for your AI", d: "What is true about Tau today, each fact with its source in IDNI's code, plus live numbers; point your AI assistant here", i: "¶", h: "facts/" },
     services:   { t: "Services on the testnet", d: "A directory of what runs on the testnet: co-signers, rule givers, apps people pay; found on the chain by itself, live numbers", i: "▦", h: "services/" },
     guardian:   { t: "Guardian", d: "Payments above your own limit wait for a code from your Authenticator app; our Guardian co-signs, never sends", i: "⛨", h: "guardian/" },
@@ -76,7 +77,7 @@
        and Déjà stay reachable from their pages and from search */
     { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "account", "rules", "history"]], ["Testnet health", ["stats", "load", "status"]], ["Road to mainnet", ["nodes", "findings", "roadmap", "devpulse"]]], tab: "≋" },
     { k: "learn", t: "Learn", groups: [["First steps", ["start", "facts"]], ["Read and watch", ["gazette", "blog", "chronicle", "tau"]]], tab: "▸" },
-    { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "whatif"]], ["On the real testnet", ["services", "wallet", "guardian", "vote", "challenge", "card"]], ["Games on the live testnet", ["rabbit", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
+    { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "whatif"]], ["On the real testnet", ["services", "wallet", "guardian", "vote", "challenge", "card"]], ["Games on the live testnet", ["rabbit", "nomemo", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
     { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "meta", "legal"]], ["Use our work", ["developers", "press"]]], tab: "i" },
   ];
   SECTIONS.forEach(s => { if (s.groups) s.items = s.groups.flatMap(g => g[1]); });

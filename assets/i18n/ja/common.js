@@ -624,6 +624,7 @@ TauI18n.add({ strings: {
   "Rabbit Key": "ホワイトラビット・キー",
   "Rabbit": "ホワイトラビット・キー",
   "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet": "島の選挙ゲーム：法律、協定、噂、そして誰にも書き換えられない帳簿。あなたの票はテストネットに送れます",
+  "A terminal game: twelve contracts from the crew of the Black Sequence, each a real transaction from your test wallet; make the chain say no for the right reason": "端末ゲーム：Black Sequence の船員からの 12 件の契約、どれもあなたのテストウォレットからの本物の取引。チェーンに正しい理由で「いいえ」と言わせよう",
   "The chain now": "いまのチェーン",
   "First steps": "はじめの一歩",
   "Read and watch": "読む・観る",
