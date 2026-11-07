@@ -2566,5 +2566,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-07",
     "html": "White Rabbit Key: every move now shows what it is on the chain. A strip under the island says the move was signed into Tau Testnet Alpha and is waiting for a block, then that it was sealed, with the block number, the hash and a link to the Explorer; a chip in the bar counts the campaign's transactions sealed so far and opens the list of all of them with the chain's answer to each. The game asks the relay for the status of what is still waiting."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-07",
+    "html": "Tau HUD: a first visit opens on one screen instead of the whole dashboard: the newest block, one sentence on what makes Tau different, and three doors: watch the chain live, write a money rule in four steps, or run for governor on White Rabbit Key. The full dashboard is one click away and is what every visit after shows. From feedback in the Tau Telegram: a crypto person should get it in twenty seconds without a tour. ?calm=1 shows the door again, ?full=1 the dashboard."
   }
 ]
