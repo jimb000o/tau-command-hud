@@ -36,7 +36,7 @@ log = [{"t": T0, "visit": V, "ship": "dryrun", "kind": "landed", "verdict": "cal
 for i in range(122):
     log.append({"t": T0 + 10 + i * 16, "visit": V, "kind": "pay" if i % 25 else "book", "ok": True, "verdict": "strained" if i > 7 else "calm", "height": 5500 + i})
 for i in range(8):
-    log.append({"t": T0 + 700 + i * 160, "visit": V, "kind": "pay", "ok": False, "err": None, "verdict": "strained"})
+    log.append({"t": T0 + 700 + i * 160, "visit": V, "kind": "pay", "ok": False, "err": None if i % 2 else "null", "verdict": "strained"})
 log.append({"t": T0 + 2041, "visit": V, "kind": "left", "verdict": "refused", "note": "the node refused 5 of the last 20 passenger transactions"})
 summary = {"id": V, "ship": "dryrun", "name": "MS Dry Run", "t0": T0, "landed": True, "end": T0 + 2041,
            "sent": {"pay": 116, "bill": 0, "book": 5, "cancel": 1}, "refused": {"pay": 8, "bill": 0, "book": 0, "cancel": 0},
@@ -108,6 +108,9 @@ try:
 except RuntimeError as e:
     check("no shaped answers here" in str(e) and "400" in str(e), "two 400s stop with the API's reason")
 
+card = blog.card_of({"line": "x", "why": []}, "Queen Mempool stays its full 90 minutes; our node slowed down")
+check(card[0] == "Queen Mempool stays its full 90 minutes; our node slowed", f"a long title is cut at a word on the card {card[0]!r}")
+
 # a draft, then publish: by hand only, and the marked one needs --force
 blog.site_ids = lambda: set()
 blog.get = lambda path: {"entries": log, "visits": [V]} if path.startswith("/cruise/log") else ({"incidents": inc} if "incidents" in path else {})
@@ -172,6 +175,7 @@ qf["what the numbers mean"] = blog.meaning_of(qf)
 b = qf["the ship before"]
 check(b["ship"] == "MS Dry Run" and b["minutes in port"] == 34 and b["refused in all"] == 0 and b["sends our node did not answer in time"] == 8,
       f"the ship before in the same numbers, its timeouts no longer refusals {b}")
+check("the node refused none" in b["left early"]["why"], "why the ship before left is told with the old rule")
 check(any("no longer counts as a refusal" in c for c in b["what we changed after that call"]), "what we changed after the Dry Run")
 check(qf["compared with the ship before"]["minutes in port"] == [34, 90], "side by side: 34 against 90 minutes")
 m = qf["what the numbers mean"]
