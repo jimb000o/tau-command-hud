@@ -3149,7 +3149,11 @@
  },
  {
   "who": "sam",
-  "text": "Three moves a day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."
+  "text": "Every move you make goes to the testnet as a transaction from your test wallet: 1 test AGRS to the place’s jar, signed in this browser. Here is each one, with the chain’s answer."
+ },
+ {
+  "who": "sam",
+  "text": "Three moves a day, six on your first day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."
  },
  {
   "who": "sam",

@@ -469,6 +469,7 @@
   function islandFx(g, t, light) {
     for (const f of FX) {
       if (f.k === "smoke") {
+        if (liveAt(f.x, f.y - 24) > 0.35) continue;   // the living island's own smoke rises there already
         if (spr(g, (f.s || 1) >= 1 ? "smoke-chimney" : "smoke-wisp", f.x, f.y + 3, t, 1, 0, ((f.s || 1) >= 1 ? 80 : 40) * (f.s || 1))) continue;   // the painted strip, once it is there
         for (let i = 0; i < 7; i++) {
           const p = ((t * 0.00012 * (1 + f.s * 0.1) + i / 7) % 1), r = (3 + p * 14) * f.s, x = f.x + Math.sin(p * 5 + i) * 6 * f.s + p * 26 * f.s, y = f.y - p * 70 * f.s;
@@ -1544,6 +1545,7 @@
         clearTimeout(late); clearTimeout(ART.retry);
         if (S.c) size();
         ART.fade = bare;   // over the drawn island (a very slow line, a server back from a restart) it simply takes its place
+        living(f);   // and, where Kling made one of this painting, the island alive
       };
       if (id === "island") im.onerror = settle;
       im.src = ART.base + f;
@@ -1551,6 +1553,49 @@
   }, () => (n < 3 ? setTimeout(() => ask(n + 1), 1000 * 2 ** n) : settle())).catch(settle);
   try { ask(0); } catch (e) { settle(); }
   const painted = id => !!ART.img[id] && !/[?&]art=drawn/.test(location.search);
+  /* the island alive (infra/alerts/kling_island.py): a 10 s clip of the very painting that shows, made by Kling, in
+     which only the sea, the smoke, the palms and the lamps move, and a mask of where it moves. The clip is drawn only
+     there, over the sharp painting, so every roof, face and outline stays the painting's own; it fades in once it
+     plays, loops without a seam, and the light of the hour falls on it as on the painting. Never with reduced motion,
+     a data saver, ?live=0, or a clip made from another painting than the one that shows. */
+  const LIVEBASE = ART.base.replace(/rico\/art\/$/, "kling/");
+  function living(f) {
+    if (/[?&]live=0/.test(location.search) || /[?&]art=drawn/.test(location.search)) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches || (navigator.connection && navigator.connection.saveData)) return;
+    fetch(LIVEBASE + "island.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : null)).then(j => {
+      if (!j || j.of !== f || !j.video || !j.mask) return;
+      const v = document.createElement("video"), m = new Image();
+      v.muted = true; v.loop = true; v.playsInline = true; v.crossOrigin = "anonymous"; v.preload = "auto";
+      v.setAttribute("muted", ""); v.setAttribute("playsinline", "");
+      m.crossOrigin = "anonymous";
+      m.onload = () => {
+        const c = document.createElement("canvas"); c.width = 160; c.height = 90; const g = c.getContext("2d");
+        g.drawImage(m, 0, 0, 160, 90);
+        let md = null; try { md = g.getImageData(0, 0, 160, 90).data; } catch (e) {}
+        v.addEventListener("playing", () => { if (ART.img.island && ART.img.island.f === f) ART.live = { v, m, f, md, a0: performance.now() }; }, { once: true });
+        v.src = LIVEBASE + j.video; const p = v.play(); if (p && p.catch) p.catch(() => {});
+      };
+      m.src = LIVEBASE + j.mask;
+    }).catch(() => {});
+  }
+  /* how much the living island moves at a world point (0 still … 1), from its mask */
+  function liveAt(x, y) {
+    const L = ART.live; if (!L || !L.md) return 0;
+    const i = Math.max(0, Math.min(89, Math.floor(y / WH * 90))) * 160 + Math.max(0, Math.min(159, Math.floor(x / WW * 160)));
+    return L.md[i * 4] / 255;
+  }
+  function liveLayer(w) {
+    const L = ART.live;
+    if (!L || S.still || !ART.img.island || L.f !== ART.img.island.f || L.v.readyState < 2) return;
+    const vw = Math.min(1600, L.v.videoWidth || 1600), vh = Math.round(vw * 9 / 16);
+    if (!L.c || L.c.width !== vw) { L.c = document.createElement("canvas"); L.c.width = vw; L.c.height = vh; L.g = L.c.getContext("2d"); }
+    const g = L.g;
+    g.globalCompositeOperation = "copy"; g.drawImage(L.v, 0, 0, vw, vh);
+    g.globalCompositeOperation = "destination-in"; g.imageSmoothingQuality = "high"; g.drawImage(L.m, 0, 0, vw, vh);
+    g.globalCompositeOperation = "source-over";
+    w.save(); w.globalAlpha = Math.min(1, (performance.now() - L.a0) / 1800); w.imageSmoothingQuality = "high";
+    w.drawImage(L.c, 0, 0, WW, WH); w.restore();
+  }
   /* a painted island drawn from a new sketch (infra/rabbit-art/sketch.py) brings its layout: where the places stand,
      the streets people walk, the windows that light up, smoke, torches and water, the lamp and the mast */
   function useLayout(L) {
@@ -1932,6 +1977,7 @@
       w.strokeStyle = `rgba(255,255,255,${0.25 + surf * 0.35})`; w.lineWidth = 3; shape(w, 1.015 + surf * 0.012, 2); w.stroke();
       w.strokeStyle = `rgba(255,255,255,${0.12 * (1 - surf)})`; w.lineWidth = 2; shape(w, 1.05 + surf * 0.02, 4); w.stroke();
       w.drawImage(S.base, -S.base.e, 0, WW + 2 * S.base.e, WH);
+      if (pi) liveLayer(w);
       islandFx(w, t, sky.light);
     }
     if (!pi && !wait) { flag(w, 470, 470, t, "#3b5f8a", "#fff", "wind"); flag(w, 606, 425, t + 900, "#c0533f", "#fff", "wave"); boat(w, 1110, 770, t); }

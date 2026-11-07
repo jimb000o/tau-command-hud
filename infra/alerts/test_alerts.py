@@ -22,6 +22,21 @@ os.environ.update(RELAY_URL="ws://127.0.0.1:18799", RELAY_HTTP="http://127.0.0.1
 _now = time.gmtime()
 os.environ.update(RECAP_WEEKDAY=str(_now.tm_wday), RECAP_HOUR=str(_now.tm_hour), RECAP_TZ="UTC")  # a recap slot that just passed
 os.environ["SIM_ALERTS"] = "false"  # simulated posts have their own test (test_sim_alerts.py)
+import urllib.request  # noqa: E402
+
+_urlopen = urllib.request.urlopen
+
+
+def _local_only(url, *a, **kw):
+    """Only the mock relay answers: the live site's files (updates, posts plan, deep dives, IDNI) would otherwise reach
+    the posters on a runner with internet and post things this test does not count (each poster has its own test)."""
+    u = url.full_url if isinstance(url, urllib.request.Request) else str(url)
+    if not u.startswith("http://127.0.0.1:"):
+        raise urllib.error.URLError("no internet in this test: " + u)
+    return _urlopen(url, *a, **kw)
+
+
+urllib.request.urlopen = _local_only
 sys.path.insert(0, os.path.dirname(__file__))
 
 from websockets.asyncio.server import serve  # noqa: E402

@@ -1233,7 +1233,8 @@
     ["sam", "Every move on the island is written here with the name of whoever made it. Nobody can tear out a page, not even me. Reading costs nothing."],
     ["sam", "Empty, for now. Every move on the island will be written here, with the name of whoever made it. Nobody can tear out a page."],
     ["sam", "Boats, gulls and a black cat that sometimes walks past twice. Nothing to do here but think. Tau Testnet Alpha is out there too: the Book on this island works a lot like its blocks."],
-    ["sam", "Three moves a day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."],
+    ["sam", "Every move you make goes to the testnet as a transaction from your test wallet: 1 test AGRS to the place’s jar, signed in this browser. Here is each one, with the chain’s answer."],   // the chain strip: game.js "Your moves on Tau Testnet Alpha"
+    ["sam", "Three moves a day, six on your first day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."],
     ["sam", "The island’s numbers are out of reach just now. Your campaign goes on as before."],
     ["sam", "The players here are test wallets, not people. A move counts for a wallet when that wallet signed it into the testnet from the same connection. Each week counts a wallet’s first finished campaign; the result is what its game reports."],
     ["marisol", "Nobody owns her, and nobody feeds her alone: she eats on a day only when three wallets agree, one test AGRS each. Say yes and you are one of the three. The other two? Whoever passes through."],
