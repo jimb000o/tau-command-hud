@@ -2472,5 +2472,10 @@
     "tag": "Services",
     "on": "2026-11-07",
     "html": "Services on the testnet (tauhud.com/services/): a directory of what runs on Tau Testnet Alpha, with categories and search. Accounts appear by themselves once the chain shows them serving other wallets: co-signers others name for their payments, rule givers whose rules get taken, accounts paid with terms (retractable transfers) or by many different wallets. Numbers come straight from the blocks, every minute; nobody signs up. Ours (Guardian, White Rabbit Key, Agorzilla, wallet, API, rules wall, node kit) are listed first and marked. A builder can ask for a name and a link with a pre-filled request. Also open to other sites as JSON: node.tauhud.com/services."
+  },
+  {
+    "tag": "Stats",
+    "on": "2026-11-07",
+    "html": "Stats: a new range, All chains. A testnet restart no longer resets the charts: our relay now writes down what every chain held, hour by hour and day by day, and keeps it when the next chain begins. Block time and transactions run as one timeline across restarts, each restart marked; earlier chains we only know by their length are marked “not kept”. The tiles add up blocks and transactions over every chain, and the day counts on In numbers add up across restarts too."
   }
 ]

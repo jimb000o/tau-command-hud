@@ -50,6 +50,7 @@ from isle import Isle
 from load import Load
 from txsources import TxSources, deja as deja_day
 from walletdays import WalletDays
+from chainhist import ChainHistory
 from services import Services
 from nodehist import NodeHistory
 from setupfunnel import SetupFunnel
@@ -445,6 +446,11 @@ class Relay:
         self.wallets.add_blocks(self.ordered_blocks(), self.sources.sent)
         self.wallets.save(force=True)
         self.wallets_text, self.wallets_at = None, 0.0
+        # what every chain held per hour and day, kept across testnet restarts, for /history (chainhist.py)
+        self.chainhist = ChainHistory()
+        self.chainhist.seed(self.state.get("restarts") or [])
+        self.chainhist.observe(self.ordered_blocks(), force=True)
+        self.history_text, self.history_at = None, 0.0
         # accounts that serve other wallets, found in the blocks alone, for tauhud.com/services/ (services.py)
         self.services = Services()
         self.services.bots = self.wallets.bots
@@ -521,11 +527,13 @@ class Relay:
             # The node wiped its chain data (testnet restarted on the same genesis):
             # everything cached belongs to a dead chain.
             log.warning("chain reset: node has %s blocks, had %s; dropping cached blocks", total, self.total_blocks)
+            self._archive_chain()
             self.blocks.clear()
             reset = True
         elif full and self.blocks and self._other_chain(fetched):
             # typically right after a relay start: the blocks on disk are from a chain that is gone
             log.warning("held blocks belong to an earlier chain; dropping them")
+            self._archive_chain()
             self.blocks.clear()
             dropped = True
             if self.state.get("chain"):
@@ -566,6 +574,10 @@ class Relay:
         self.note_chain()
         if self.wallets.add_blocks(fresh, self.sources.sent):   # before a restart can drop them: days only grow
             self.wallets.save()
+        if self.chainhist.due() or rewrite:
+            if self.chainhist.observe(self.ordered_blocks(), force=True):
+                self.sources_text = None   # a new chain began: the merged day counts change
+            self.history_text = None
         self.stats_text = self.community_text = self.board_text = None
         if len(fresh) > 5:
             log.info("new blocks: %s..%s (%s)", self._height(fresh[0]), self._height(fresh[-1]), len(fresh))
@@ -576,6 +588,18 @@ class Relay:
             "blocks": fresh, "total": self.total_blocks, "truncated": True, "pushed": True,
             # reset: the chain restarted, drop everything you had before these blocks
             **({"reset": True} if reset else {})}))
+
+    def _archive_chain(self):
+        """Right before the blocks of a chain are dropped: count them one last time and freeze that chain's
+        per-day source counts with it (chainhist.py), so long-term charts keep them after the restart."""
+        blocks = self.ordered_blocks()
+        if not blocks:
+            return
+        try:
+            self.chainhist.observe(blocks, force=True, sources=self.sources.by_day(blocks))
+        except Exception:
+            log.exception("could not archive the chain before a restart")
+        self.history_text = self.sources_text = None
 
     def _other_chain(self, fetched: list[dict]) -> bool:
         """True when the node's blocks contradict the ones loaded from disk
@@ -719,6 +743,9 @@ class Relay:
         self.state["restarts"].append({"detected_at": round(time.time()), "old": old, "new_block1_ts": new_block1_ts})
         self.state["restarts"] = self.state["restarts"][-EVENTS_MAX:]
         self._save_state()
+        if getattr(self, "chainhist", None):   # a chain that ended while the relay was away: at least its tip
+            self.chainhist.seed(self.state["restarts"][-1:])
+            self.history_text = None
 
     # ---------- availability history: /uptime ----------
     def _load_uptime(self) -> dict:
@@ -2076,6 +2103,14 @@ class Relay:
                                ("Cache-Control", f"public, max-age={int(STATS_CACHE_SECONDS)}")])
             code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
             return Response(code.value, code.phrase, headers, body)
+        if path == "/history":   # every chain's hours and days, across testnet restarts (chainhist.py)
+            if self.history_text is None or time.monotonic() - self.history_at >= 60:
+                self.history_text = json.dumps(self.chainhist.history(), separators=(",", ":"))
+                self.history_at = time.monotonic()
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=60")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.history_text.encode())
         if path == "/community/board":
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),
@@ -2185,7 +2220,9 @@ class Relay:
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.services_text.encode())
         if path == "/api/v1/sources":
             if self.sources_text is None or time.monotonic() - self.sources_at >= 60:
-                self.sources_text = json.dumps(self.sources.by_day(self.ordered_blocks()), separators=(",", ":"))
+                # earlier chains' day counts are added in (chainhist.py), so a testnet restart does not reset them
+                self.sources_text = json.dumps(self.chainhist.merge_sources(self.sources.by_day(self.ordered_blocks())),
+                                               separators=(",", ":"))
                 self.sources_at = time.monotonic()
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),
