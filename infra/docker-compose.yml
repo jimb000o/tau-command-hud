@@ -176,6 +176,7 @@ services:
       - alerts_state:/state     # what was seen and posted, so nothing is posted twice
       - alerts_public:/public   # proposals.json, feed.xml and recap/, served by Caddy
       - ai_usage:/ai-usage      # the Anthropic API's costs per month (ai_meter.py), for the costs post
+      - /opt/sites/rico/art:/art:ro   # the island painting the game shows: the Key Crier's X picture (island_pic.py)
     depends_on: [relay]
     restart: unless-stopped
     logging: *logging

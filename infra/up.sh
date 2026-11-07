@@ -40,6 +40,9 @@
 #                            node left alone, safe any time; up knowledge status  only what they hold now
 #              up lights     each painted room's lamps found for the night (nothing rebuilt, the node left alone);
 #                            up lights all  every room looked at again; a full up does the new rooms by itself
+#              up crier      the posting service (alerts) rebuilt with the code just pulled and Caddy given /island/*, the
+#                            node left alone, safe any time; then the island picture the posts carry, made from the live
+#                            painting, to look at; up crier status  only the picture made anew
 #              up owner      the same, then a one-time link: open it in your Telegram, and the news line's watchtower
 #                            warns you there privately (never on the channel); up owner test  sends you one test message
 set -e
@@ -270,6 +273,26 @@ if [ "${1:-}" = "knowledge" ]; then
   docker compose exec -T devpulse python knowledge.py 2>&1 | grep -v ' INFO ' | tail -3
   curl -s -o /dev/null -w "          https://node.tauhud.com/tau-today.md answers %{http_code}\n" https://node.tauhud.com/tau-today.md || true
   curl -s -o /dev/null -w "          https://tauhud.com/llms.txt answers %{http_code}\n" https://tauhud.com/llms.txt || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# the posts' island picture (alerts/island_pic.py): the Key Crier's X post and the closer look at the game carry the
+# painting the game shows now, never a repo screenshot. The posting service is rebuilt alone (it gets the art folder),
+# Caddy is recreated for node.tauhud.com/island/* (a few seconds without HTTPS); the node and the relay are left alone.
+if [ "${1:-}" = "crier" ]; then
+  if [ "${2:-}" != "status" ]; then
+    docker compose up -d --build --no-deps alerts
+    docker compose up -d --no-deps --force-recreate caddy >/dev/null
+    echo "waiting 8 s…"; sleep 8
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T alerts python -c 'import alerts
+print("today:   " + str(alerts.island_picture()))
+r = {"date": "6 November", "campaigns": 1, "moves": 3}
+print("preview: " + str(alerts.island_picture(alerts.island_card(r), "preview.jpg")))' 2>&1 | grep -v " INFO " || true
+  curl -s -o /dev/null -w "          https://node.tauhud.com/island/today.jpg answers %{http_code}\n" https://node.tauhud.com/island/today.jpg || true
+  echo "look: https://node.tauhud.com/island/preview.jpg (a sample Key Crier picture, never posted)"
   echo "---------------- to here --------------------------------------"
   exit 0
 fi

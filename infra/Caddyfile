@@ -13,8 +13,9 @@
 	# the donation list read by About (alerts/donations.py), the build pulse (alerts/devpulse.py) and the blog's
 	# articles, unlisted drafts, pictures and link-preview pages (alerts/blog.py), and the weekly report for IDNI
 	# as unlisted pages with the pre-filled issue link (alerts/idni_report.py), and Tau today for AI assistants
-	# (alerts/knowledge.py: sourced facts, live numbers, IDNI's latest work; read by tauhud.com/facts/ and llms.txt).
-	@alerts path /proposals.json /feed.xml /recap/* /donations.json /devpulse.json /blog/posts.json /blog/drafts/* /blog/img/* /blog/a/* /idni-report/* /tau-today.md /tau-today.json
+	# (alerts/knowledge.py: sourced facts, live numbers, IDNI's latest work; read by tauhud.com/facts/ and llms.txt), and the
+	# island painting the game shows now, as the posts carry it (alerts/island_pic.py: /island/today.jpg, /island/crier.jpg).
+	@alerts path /proposals.json /feed.xml /recap/* /donations.json /devpulse.json /blog/posts.json /blog/drafts/* /blog/img/* /blog/a/* /idni-report/* /tau-today.md /tau-today.json /island/*
 	handle @alerts {
 		root * /srv/alerts
 		header Access-Control-Allow-Origin *

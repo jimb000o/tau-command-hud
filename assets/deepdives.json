@@ -19,7 +19,7 @@
       "x": ["🔎 A closer look: White Rabbit Key", "An island election game where every move is a real transaction on Tau Testnet Alpha: speeches, laws, pacts, rumours on Radio Coco, and a Book nobody can edit. Four candidates, five days."],
       "link": "/rabbit/",
       "button": "🐇 Play White Rabbit Key",
-      "image": "/assets/shots/rabbit.png"
+      "image": "https://node.tauhud.com/island/today.jpg"
     },
     {
       "id": "wallet",

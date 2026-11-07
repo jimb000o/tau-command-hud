@@ -247,6 +247,13 @@ ISLAND_GAME_JS = f"{SITE}/rabbit/game.js"
 ISLAND_LINK = f"{SITE}/rabbit/"
 ISLAND_LINE = "🐇 WHITE RABBIT KEY · the Key Crier"
 ISLAND_FOOT = "🐇 White Rabbit Key, a game on Tau HUD"
+# the picture under the Key Crier's X post: the island painting the game shows now (island_pic.py, from the art folder the
+# painting pipeline writes, /opt/sites/rico/art), never a repo screenshot. Until 7 November 2026 the post carried
+# assets/shots/rabbit.png, the drawn island of October. The same painting without a card is kept public at
+# node.tauhud.com/island/today.jpg for the closer look at the game (assets/deepdives.json); none at all when there is no painting.
+ISLAND_ART = os.environ.get("ISLAND_ART", "/art")
+ISLAND_PIC_DIR = os.path.join(PUBLIC_DIR, "island")
+ISLAND_PIC_EVERY = 6 * 3600   # a new painting (up keep) is in the public picture within hours
 # Visitors may propose a rule change to the simulation from the Playground and vote on it (relay/simprops.py, relay/simvotes.py).
 # The channel hears only about the ones visitors voted in, with at least VISITOR_MIN_VOTES votes, at most VISITOR_DAILY_CAP a day.
 VISITOR_MIN_VOTES = int(os.environ.get("SIM_VISITOR_MIN_VOTES", 3))
@@ -1559,6 +1566,29 @@ def island_buttons() -> dict:
     return {"inline_keyboard": [[{"text": "🐇 Play today's island", "url": ISLAND_LINK}]]}
 
 
+def island_card(r: dict) -> list[str]:
+    """The card on the Key Crier's picture: the same facts as the post, so the picture alone says why it matters."""
+    w = r.get("week")
+    if w:
+        return [f"The governor's count, {w['span']}", f"{w['governor']} governs the island this week",
+                f"{plural(w['won'], 'campaign')} won of {w['finished']}, every move a real transaction",
+                "White Rabbit Key on Tau Testnet Alpha"]
+    return [f"Yesterday on the island, {r['date']}", f"{plural(r['campaigns'], 'campaign')}, {plural(r['moves'], 'move')}",
+            "each a real transaction on Tau Testnet Alpha", "White Rabbit Key · tauhud.com/rabbit"]
+
+
+def island_picture(card: list[str] | None = None, name: str = "today.jpg") -> str | None:
+    """The live island painting as a 1600x900 JPEG in ISLAND_PIC_DIR (with `card` when given), or None when there is no
+    painting to make it from: then the post goes out without a picture rather than with an old one."""
+    try:
+        import island_pic
+        os.makedirs(ISLAND_PIC_DIR, exist_ok=True)
+        return island_pic.make(ISLAND_ART, os.path.join(ISLAND_PIC_DIR, name), card)
+    except Exception as exc:  # noqa: BLE001 - no painting, a broken file: no picture, never a stale one
+        log.warning("island picture: none made (%r)", exc)
+        return None
+
+
 def island_x(r: dict) -> str:
     w = r.get("week")
     if w:
@@ -1947,8 +1977,9 @@ class X(Outlet):
         return self.send_text(recap_x(r), media_id)
 
     def send_with_picture(self, text: str, picture: str | None) -> tuple[bool, float | None, str]:
-        """The text with the picture at `picture` (a URL) when it can be fetched and uploaded, else the text alone."""
-        png = fetch_picture(picture) if picture and X_PICTURES else None
+        """The text with the picture at `picture` (a URL, or a file made here) when it can be read and uploaded, else the
+        text alone."""
+        png = (local_picture(picture) if picture.startswith("/") else fetch_picture(picture)) if picture and X_PICTURES else None
         media_id = self.upload(png)[0] if png else None
         if png and not media_id:
             log.info("x: picture %s not uploaded, posting the text alone", picture)
@@ -2006,6 +2037,18 @@ def fetch_picture(url: str) -> bytes | None:
             data = r.read(5 * 2**20 + 1)
     except (urllib.error.URLError, OSError, ValueError) as exc:
         log.info("x: no picture from %s (%r)", url, exc)
+        return None
+    ok = data[:8] == b"\x89PNG\r\n\x1a\n" or data[:3] == b"\xff\xd8\xff"
+    return data if ok and len(data) <= 5 * 2**20 else None
+
+
+def local_picture(path: str) -> bytes | None:
+    """A PNG or JPEG made on this server (island_pic.py), at most 5 MB, or None."""
+    try:
+        with open(path, "rb") as f:
+            data = f.read(5 * 2**20 + 1)
+    except OSError as exc:
+        log.info("x: no picture at %s (%r)", path, exc)
         return None
     ok = data[:8] == b"\x89PNG\r\n\x1a\n" or data[:3] == b"\xff\xd8\xff"
     return data if ok and len(data) <= 5 * 2**20 else None
@@ -2887,6 +2930,9 @@ class Watcher:
         if not ISLAND_ON:
             return
         now = now if now is not None else time.time()
+        if now - getattr(self, "island_pic_at", 0) >= ISLAND_PIC_EVERY or now < getattr(self, "island_pic_at", 0):
+            self.island_pic_at = now   # the public copy (node.tauhud.com/island/today.jpg), made anew after each start
+            await asyncio.to_thread(island_picture)
         st = self.state.setdefault("island", {"days": {}, "posted": {}, "x_posted": {}})
         if snap is not None or now - st.get("checked", 0) >= ISLAND_EVERY:
             st["checked"] = now
@@ -2933,7 +2979,8 @@ class Watcher:
             st["x_posted"][day] = round(now)
             self.save_state()
             if r["week"] or r["players"] and (not last_x or (now - last_x) >= (ISLAND_X_EVERY_DAYS - 0.5) * 86400):
-                await self.post_x(island_x(r), "island " + day, now, f"{SITE}/assets/shots/rabbit.png", spare=True)
+                pic = await asyncio.to_thread(island_picture, island_card(r), "crier.jpg")
+                await self.post_x(island_x(r), "island " + day, now, pic, spare=True)
             else:
                 st["x_posted"][day] = 0   # Telegram only: nobody played, or X had the island lately
                 log.info("island %s: Telegram only", day)
