@@ -2561,5 +2561,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-07",
     "html": "White Rabbit Key: the first day of a campaign has six moves, so a first visit is a real game and not three taps; from then on three a day, as before. One more move for the day comes from your first pact and from the key in the grotto, as it did from the evening bell. What costs no move is now said where the moves run out and in the list of places: asking, reading the Book, The island today and every visit to the school, the dive centre, the works, the camp, the old ship, the stone circle and the drums."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-07",
+    "html": "White Rabbit Key: every move now shows what it is on the chain. A strip under the island says the move was signed into Tau Testnet Alpha and is waiting for a block, then that it was sealed, with the block number, the hash and a link to the Explorer; a chip in the bar counts the campaign's transactions sealed so far and opens the list of all of them with the chain's answer to each. The game asks the relay for the status of what is still waiting."
   }
 ]

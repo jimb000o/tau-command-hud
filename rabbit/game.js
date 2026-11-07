@@ -469,6 +469,7 @@
     $("cvCoins").textContent = F("{n} coins", { n: G.coins[G.me] }); $("cvCoins").title = Fd("{n} coins saved from earlier campaigns", { n: savings().coins });
     if ($("cvAmb")) { $("cvAmb").hidden = !G.amb; if (G.amb) { $("cvAmb").textContent = T(AMB[G.amb.id].name); $("cvAmb").title = ambGoal(); } }
     $("cvMe").replaceChildren(portrait(G.me, 30), el("span", { text: nm(G.me) }));
+    chainChip();
     const last = G.news[G.news.length - 1];
     if (last && last !== DJ.said) { DJ.said = last; const np = [V("book"), last.v ? { t: last.s, v: last.v } : Q(last.s)]; if (DJ.opened) onAir(np, 1); else { DJ.after = np; $("cvNews").textContent = last.s; } }   // before the show opens, the news waits for Rico's opener
     else if (!DJ.text) $("cvNews").textContent = last ? last.s : T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book.");
@@ -2127,7 +2128,7 @@
     return btn(sent ? T("Sent to the testnet ✓") : label, go, { off: !!sent, sub: T("1 test AGRS from your test wallet, signed by you") });
   }
   /* ---------- the Book on the chain ---------- */
-  const CHAIN = { ws: null, wait: new Map(), q: [], payq: [], busy: false, next: 0, fee: null, made: false };
+  const CHAIN = { ws: null, wait: new Map(), q: [], payq: [], busy: false, next: 0, fee: null, made: false, follow: 0 };
   function relay() {
     return new Promise(res => {
       if (CHAIN.ws && CHAIN.ws.readyState === 1) return res(CHAIN.ws);
@@ -2202,12 +2203,73 @@
         hash = (r.data && r.data.tx_hash) || String(Date.now()); CHAIN.next = seq + 1;
         try { const lk = "tauhud-wallet-log-live-" + k.pk, logs = JSON.parse(store.get(lk) || "[]"); logs.unshift({ hash, kind: "pay", label: T("White Rabbit Key") + ": " + label, at: Date.now(), status: "queued", seq, paid: true }); store.set(lk, JSON.stringify(logs.slice(0, 40))); } catch (e) {}
         if (TILL[at]) remember(to, "Key jar · " + ((SC.places[at] || {}).name || at));   // a readable name in the wallet's address book
-        toast(F("Signed into the testnet: {n} test AGRS from your wallet.", { n: pay }));
+        if (!txNote(hash, label, pay)) toast(F("Signed into the testnet: {n} test AGRS from your wallet.", { n: pay }));
         if (CHAIN.payq.length) flushPay();
       } else { CHAIN.payq.length = 0; CHAIN.next = 0; toast(T("The testnet did not take this move just now; the game goes on.")); }
     } catch (e) { if (G && G.onchain) toast(T("The testnet is out of reach just now; the game goes on.")); }
     CHAIN.busy = false; done && done(hash);
     if (CHAIN.q.length) setTimeout(pump, 400);
+  }
+  /* ---------- the chain moment: every move signed into the testnet is shown as what it is ----------
+     A strip under the island says "signed, waiting for a block", then "sealed in block N", with the hash and a link to
+     the Explorer; a chip in the bar counts the campaign's transactions, and opens the list of them with the chain's
+     answer to each. The game keeps the list (G.txs) and asks the relay for the status of what is still waiting. */
+  const txShort = h => h.slice(0, 6) + "…" + h.slice(-4);
+  const txUrl = h => "/explorer/?tx=" + h + (window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "");
+  function txNote(h, label, pay) {
+    if (!G || !/^[0-9a-f]{64}$/i.test(h || "")) return false;
+    G.txs = Array.isArray(G.txs) ? G.txs : [];
+    G.txs.unshift({ h, label, pay: pay || 1, at: Date.now(), st: "queued" }); if (G.txs.length > 60) G.txs.length = 60;
+    save(); chainChip(); chainStrip(G.txs[0]); followTxs();
+    return true;
+  }
+  function chainChip() {
+    const b = $("cvChainChip"); if (!b) return;
+    const txs = (G && G.txs) || []; b.hidden = !txs.length; if (!txs.length) return;
+    const sealed = txs.filter(t => t.st === "in").length, waiting = txs.filter(t => t.st === "queued").length;
+    b.replaceChildren(el("i", { class: "dot" + (waiting ? " now" : ""), "aria-hidden": "true" }), el("b", { class: "num", text: String(sealed + waiting) }), el("span", { class: "lb", text: T("on chain") }));
+    b.title = F("{n} moves on Tau Testnet Alpha this campaign: {m} sealed in a block, {k} waiting. Click: every transaction with the chain’s answer.", { n: txs.length, m: sealed, k: waiting });
+    b.setAttribute("aria-label", F("{n} on chain", { n: sealed + waiting }));
+  }
+  let stripT = 0;
+  function chainStrip(t) {
+    const d = $("cvChain"); if (!d || !t) return;
+    const text = t.st === "in" ? F("Sealed in block {n} on Tau Testnet Alpha", { n: t.block }) : t.st === "out" ? F("Refused by the chain: {x}", { x: t.why || "" }) : F("Signed into Tau Testnet Alpha: {n} test AGRS · waiting for a block", { n: t.pay });
+    d.replaceChildren(el("i", { class: "dot" + (t.st === "in" ? " ok" : t.st === "out" ? " no" : " now"), "aria-hidden": "true" }), el("span", { class: "tx", text: text }), el("code", { class: "h", text: txShort(t.h) }),
+      el("a", { href: txUrl(t.h), target: "_blank", rel: "noopener", text: T("Explorer") }));
+    d.hidden = false; requestAnimationFrame(() => d.classList.add("on"));
+    clearTimeout(stripT); stripT = setTimeout(() => { d.classList.remove("on"); setTimeout(() => { if (!d.classList.contains("on")) d.hidden = true; }, 350); }, t.st === "queued" ? 14000 : 9000);
+  }
+  function followTxs() {
+    if (CHAIN.follow) return;
+    const tick = async () => {
+      CHAIN.follow = 0;
+      if (!G || document.hidden) { CHAIN.follow = setTimeout(tick, 15000); return; }
+      const open = (G.txs || []).filter(t => t.st === "queued" && Date.now() - t.at < 900000).slice(0, 4);
+      if (!open.length) return;
+      let changed = false;
+      for (const t of open) {
+        const m = await ask("gettxstatus " + t.h, 8000); if (!m || m.status !== "ok") continue;
+        const d = m.data || {}, st = String(d.status || d.state || "").toLowerCase();
+        if (d.block_number != null || /confirmed|included|mined|sealed|applied/.test(st)) { t.st = "in"; t.block = d.block_number ?? d.height ?? null; changed = true; if (G.txs[0] === t) chainStrip(t); }
+        else if (/reject|fail|dropped|expired|invalid/.test(st)) { t.st = "out"; t.why = d.reason || d.error || st; changed = true; if (G.txs[0] === t) chainStrip(t); }
+      }
+      if (changed) { save(); chainChip(); if (UI.card && UI.card.classList.contains("chain")) chainCard(); }
+      CHAIN.follow = setTimeout(tick, 6000);
+    };
+    CHAIN.follow = setTimeout(tick, 5000);
+  }
+  function chainCard() {
+    const pk = myPk(), lang = window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "", open = u => window.open(u, "_blank", "noopener");
+    openCard("book", box => {
+      box.classList.add("chain");
+      const rows = ((G && G.txs) || []).map(t => el("li", { class: t.st === "out" ? "k-broke" : "k-fact" },
+        el("small", { text: t.st === "in" ? F("in block {n}", { n: t.block }) : t.st === "out" ? F("refused: {x}", { x: t.why || "" }) : T("waiting for a block") }),
+        el("span", null, el("span", { text: t.label }), " ", el("a", { class: "cv-tx", href: txUrl(t.h), target: "_blank", rel: "noopener", text: txShort(t.h) }))));
+      scene(box, "sam", T("Your moves on Tau Testnet Alpha"), T("Every move you make goes to the testnet as a transaction from your test wallet: 1 test AGRS to the place’s jar, signed in this browser. Here is each one, with the chain’s answer."),
+        [btn(T("Your test wallet"), () => open("/wallet/" + (lang ? "?" + lang.slice(1) : ""))), pk ? btn(T("Your Tau card"), () => open("/card/?a=" + pk + lang)) : null, btn(T("Back to the island"), () => closeCard(), { go: true })].filter(Boolean),
+        el("ol", { class: "cv-book" }, rows.length ? rows : [el("li", { class: "dim", text: T("Nothing yet.") })]));
+    });
   }
   let drawer = null;
   function remember(addr, name) {
@@ -2480,7 +2542,7 @@
   /* ---------- the start: pick your candidate ---------- */
   function start() {
     G = load();
-    if (G) { G.onchain = true; hud(); if (G.picked === "…") G.picked = null; signUp(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); setTimeout(signsOn, 800); return; }
+    if (G) { G.onchain = true; hud(); if (G.picked === "…") G.picked = null; signUp(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); setTimeout(signsOn, 800); followTxs(); return; }
     SC.setHour(0, true); hud();
     openCard(null, introCard);
   }
@@ -2759,6 +2821,7 @@
     $("cvHelp").onclick = () => { wake(); help(); };
     $("cvBookBtn").onclick = () => { wake(); if (G) openCard("book", PLACE.book); };
     $("cvIsle").onclick = () => { wake(); openIsle(); };
+    if ($("cvChainChip")) $("cvChainChip").onclick = () => { wake(); chainCard(); };
     if ($("cvBell")) { $("cvBell").onclick = () => { wake(); answerBell(); }; bellChip(); setInterval(bellChip, 5000); }
     if ($("cvShip")) { $("cvShip").onclick = () => { wake(); shipCard(); }; shipFetch(); setInterval(() => { if (!document.hidden || SND.on) shipFetch(); }, 60000); }
     isleJoin();

@@ -104,6 +104,17 @@ button.chip:hover { border-color: #fff; }
 #cvNews a.blk { color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
 #cvNews a.blk:hover { color: #fff; }
 .news.radio #cvNews { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.35; }
+/* the chain moment: a strip under the island after every signed move, then when the block has it */
+.chainline { position: absolute; z-index: 6; left: 12px; bottom: 64px; display: flex; gap: 8px; align-items: center; max-width: calc(100% - 24px); padding: 7px 12px; border-radius: 10px; background: #050506; border: 1px solid var(--ok); color: #fff; font: 600 12px var(--display); opacity: 0; transform: translateY(6px); transition: .3s; pointer-events: none; }
+.chainline.on { opacity: 1; transform: none; pointer-events: auto; }
+.chainline .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px rgba(57,255,138,.6); }
+.chainline .dot.now { background: #b9ffd6; animation: playing 2.4s ease-in-out infinite; }
+.chainline .dot.no { background: var(--amber); box-shadow: none; }
+.chainline .tx { min-width: 0; }
+.chainline .h { font: 500 11px var(--mono, ui-monospace, monospace); color: var(--dim); white-space: nowrap; }
+.chainline a { color: var(--ok); white-space: nowrap; }
+@media (min-width: 1600px) and (min-height: 800px) { .chainline { left: calc(24px + clamp(270px, 19vw, 340px)); max-width: min(560px, 44%); } }   /* beside the talk box, where it stands */
+@media (max-width: 759px) { .chainline { left: 8px; right: 8px; bottom: auto; top: 100px; font-size: 11.5px; } }
 #cvTip { position: absolute; z-index: 4; pointer-events: none; padding: 5px 10px; border-radius: 6px; background: #050506; border: 1px solid var(--hair); font: 600 12.5px var(--display); color: #fff; white-space: nowrap; }
 #cvToast { position: absolute; z-index: 6; left: 50%; top: 58px; transform: translate(-50%, -8px); opacity: 0; transition: .3s; padding: 8px 16px; border-radius: 999px; background: #050506; border: 1px solid var(--ok); color: #fff; font: 600 13px var(--display); pointer-events: none; max-width: calc(100% - 32px); text-align: center; }
 #cvToast.on { opacity: 1; transform: translate(-50%, 0); }
@@ -409,7 +420,7 @@ footer a { color: var(--dim); }
   .stage { border-radius: 10px; }
   .bar { left: 8px; right: 8px; top: 8px; gap: 6px; }
   .chip { min-height: 32px; padding: 3px 10px; font-size: 12px; }
-  .bar .opt, #cvIsle .lb { display: none; }
+  .bar .opt, #cvIsle .lb, #cvChainChip .lb { display: none; }
   .bar .chip { min-height: 40px; }
   #cvIsle { min-width: 44px; justify-content: center; padding: 3px 8px; }
   .cv-x { width: 44px; height: 44px; right: 6px; top: 6px; }
@@ -456,7 +467,7 @@ html.rk-full .bar .home { display: inline-flex; }
   .wrap > header, .tnav, .tabbar, .tnav-spacer, .tb-pill, .fb-fab, footer { display: none !important; }
   .stage { border-radius: 0; border: 0; }
   .bar { top: max(6px, env(safe-area-inset-top, 0px)); left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); gap: 6px; flex-wrap: nowrap; }
-  .bar .opt, #cvGo .lb, #cvSound .lb, #cvIsle .lb { display: none; }
+  .bar .opt, #cvGo .lb, #cvSound .lb, #cvIsle .lb, #cvChainChip .lb { display: none; }
   .bar .home { display: inline-flex; }
   .chip { min-height: 40px; padding: 3px 10px; font-size: 12px; white-space: nowrap; }
   #cvGo, #cvFull, #cvSound, .bar .home { min-width: 44px; justify-content: center; padding: 3px 8px; }
@@ -532,6 +543,7 @@ html.rk-full .wire { left: max(8px, env(safe-area-inset-left, 0px)); bottom: cal
       <span class="sp"></span>
       <button class="chip" id="cvBookBtn" type="button">The Book</button>
       <button class="chip isle" id="cvIsle" type="button" hidden>The island today</button>
+      <button class="chip isle chain" id="cvChainChip" type="button" hidden>on chain</button>
       <button class="chip bell" id="cvBell" type="button" hidden title="At eight o’clock German time Tobias rings the pier bell. Ring back within two minutes: a real transaction, and one more move today.">🔔 The evening bell at eight</button>
       <button class="chip ship" id="cvShip" type="button" hidden title="A cruise ship with simulated passengers: what they do ashore is real test transactions">🛳</button>
       <button class="chip opt" id="cvHelp" type="button">How it works</button>
@@ -543,6 +555,7 @@ html.rk-full .wire { left: max(8px, env(safe-area-inset-left, 0px)); bottom: cal
     <div class="places" id="cvPlaces" aria-label="Places on the island"></div>
     <div class="news radio" id="cvRadio"><i id="cvDJ"></i><b><span class="onair"></span>Radio Coco 97.3</b><span id="cvNews">A week to the election.</span></div>
     <aside class="wire" id="tbHost" data-room="isle" data-pill="no"></aside>
+    <div id="cvChain" class="chainline" hidden></div>
     <div id="cvTip" hidden></div>
     <div id="cvToast" role="status" aria-live="polite"></div>
   </main>
