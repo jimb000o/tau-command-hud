@@ -109,6 +109,7 @@ def finish(tid, seconds="5"):
 
 
 img = Image.new("RGB", (1600, 900), (10, 20, 30))
+check("a key: the test clip is on (it is no use of KLING_USES)", kling.enabled("test") and not kling.enabled("nope"))
 j = kling.ask("ship-a", "ship", img, "calm sea", tail=True)
 check("asked: submitted with the last frame", j["status"] == "submitted" and j["tail"] and calls[-1][2].get("image_tail"), j)
 check("asked: the picture as base64 JPEG, no data: prefix", base64.b64decode(calls[-1][2]["image"])[:2] == b"\xff\xd8")
