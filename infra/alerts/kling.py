@@ -76,7 +76,8 @@ PUBLIC_USES = ("trailer", "ship", "pirate", "agorzilla")   # posted to a channel
 
 
 def enabled(use: str | None = None) -> bool:
-    return ON and bool(API_KEY or (ACCESS and SECRET)) and (use is None or use in USES)
+    """A key, Kling on, and that use not left out of KLING_USES (`up kling test` is no use: always on with a key)."""
+    return ON and bool(API_KEY or (ACCESS and SECRET)) and (use is None or use == "test" or use in USES)
 
 
 # ---------- the key ----------

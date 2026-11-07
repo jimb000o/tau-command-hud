@@ -143,9 +143,9 @@ if [ "${1:-}" = "kling" ]; then
   docker compose up -d --no-deps --build blog agorzilla >/dev/null 2>&1 || docker compose up -d --no-deps --build blog agorzilla
   docker compose up -d --no-deps --force-recreate caddy >/dev/null 2>&1 || true
   case "${2:-}" in
-    test) docker compose exec -T blog python kling.py test ;;
+    test) docker compose exec -T blog python kling.py test || true ;;
     list) docker compose exec -T blog python kling.py list ;;
-    send) docker compose exec -T blog python kling.py send "${3:-}" ;;
+    send) docker compose exec -T blog python kling.py send "${3:-}" || true ;;
     off) docker compose exec -T blog python kling.py off "${3:-island}" ;;
   esac
   echo "---------------- copy from here into the chat ----------------"
