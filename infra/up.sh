@@ -82,9 +82,11 @@ if [ "${1:-}" = "post" ] && [ -n "${2:-}" ]; then
 fi
 # a set painted elsewhere (paint.py isle), nothing rebuilt, nothing painted, the node left alone: up art  the newest set in
 # infra/rabbit-art/imports/codex, up art isle-36  that one, up art check [isle-36]  only checks it and writes nothing;
-# then the lamps of the places taken over found for the night (one short look each, as a full up does)
+# then the lamps of the places taken over found for the night (one short look each, as a full up does). The blog service
+# is rebuilt first (safe any time, as up kling does), so it knows a cleaned island is the same island (no new trailer)
 if [ "${1:-}" = "art" ]; then
   if [ "${2:-}" = "check" ]; then sh rabbit-art/paint.sh isle ${3:-} --dry; exit 0; fi
+  docker compose up -d --no-deps --build blog >/dev/null 2>&1 || docker compose up -d --no-deps --build blog || true
   A=$(mktemp)
   sh rabbit-art/paint.sh isle ${2:-} 2>&1 | tee "$A" || true
   sh rabbit-art/paint.sh lights --missing 2>&1 | grep -E '^lights:|Error|error|GEMINI|painter' | tail -2 || true
