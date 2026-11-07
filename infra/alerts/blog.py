@@ -89,7 +89,9 @@ in one or two sentences what this one call means for the testnet as a whole and 
 - When the facts have "the ship before": compare this call with that one in its own section, say plainly what \
 improved, what did not and why (use "what we changed after that call"), and note that the two ships differ in size \
 and plan where that matters. The change from the ship before is the news of the article: it belongs in the title or \
-dek when it is real (for example a ship that stayed the whole time after one that left early).
+dek when it is real (for example a ship that stayed the whole time after one that left early). Where "the ship before" \
+has a "note" that its unanswered sends were counted as refusals by the rule of the time, the node refused none of them: \
+write "sends without an answer, counted as refusals by the old rule", never "the node refused them".
 - Never write a line for a thing that did not happen or was not tried (no "0 bookings were checked" on a day without \
 bookings); leave it out.
 - Length: 300 to 500 English words in body.
@@ -177,8 +179,8 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
     f["accepted in all"] = sum(f["sent and accepted"].values())
     f["refused in all"] = sum(f["refused by the node"].values())
     unanswered = [e for e in sends if e.get("ok") is None and "no answer" in str(e.get("note") or "")]
-    # before 6 November 2026 a send without an answer was logged as refused with an empty error
-    silent = [e for e in sends if e.get("ok") is False and not e.get("err")]
+    # before 6 November 2026 a send without an answer was logged as refused with an empty error (written as "null" at times)
+    silent = [e for e in sends if e.get("ok") is False and str(e.get("err") or "").strip().lower() in ("", "null", "none")]
     if unanswered or s.get("unanswered"):
         f["sends our node did not answer in time (not refusals)"] = s.get("unanswered") or len(unanswered)
         if later:
@@ -334,7 +336,10 @@ def compare_with(f: dict, before: dict | None) -> dict:
         b["refused in all"] = (before.get("refused in all") or 0) - old
         b["note"] = f"its {old} unanswered sends were counted as refusals by the rule of the time, and that is why it left early"
     if before.get("left early"):
-        b["left early"] = {"at": before["left early"].get("at"), "why": before["left early"].get("why")}
+        why = str(before["left early"].get("why") or "")
+        if old:
+            why += " (sends without an answer, which the rule of the time counted as refusals; the node refused none)"
+        b["left early"] = {"at": before["left early"].get("at"), "why": why}
     t = before.get("our node's answer time to a send, seconds") or {}
     if t.get("median"):
         b["our node's median answer time, seconds"] = t["median"]
@@ -478,7 +483,9 @@ def article(facts: dict, out: dict, now: float) -> dict:
 def card_of(c, title: str) -> list[str]:
     """The lines on the hero picture: title, the point, "Why it matters" and up to three short points, the footer."""
     c = c if isinstance(c, dict) else {}
-    short = lambda t, n: " ".join(str(t or "").split())[:n]  # noqa: E731
+    def short(t, n):   # cut at a word, never in the middle of one
+        t = " ".join(str(t or "").split())
+        return t if len(t) <= n else t[:n].rsplit(" ", 1)[0].rstrip(" ,;:")
     lines = [short(title, 60)]
     if c.get("line"):
         lines.append(short(c["line"], 64))
