@@ -64,6 +64,8 @@ TASKS = {}
 def fake_call(method, path, body=None):
     calls.append((method, path, body))
     if method == "POST":
+        if body["model_name"] in FAKE["gone"]:
+            raise RuntimeError(f"kling /v1/videos/image2video: HTTP 404 code 1203 The model '{body['model_name']}' has been discontinued")
         if body.get("image_tail") and FAKE["no_tail"]:
             raise RuntimeError("kling /v1/videos/image2video: code 1201 image_tail not supported")
         tid = f"t{len(TASKS) + 1}"
@@ -72,7 +74,7 @@ def fake_call(method, path, body=None):
     return TASKS[path.rsplit("/", 1)[1]]
 
 
-FAKE = {"no_tail": False}
+FAKE = {"no_tail": False, "gone": set()}
 kling._call = fake_call
 CLIP = os.path.join(TMP, "clip.mp4")
 
@@ -126,6 +128,25 @@ j3 = kling.ask("ship-c", "ship", img, "calm sea")
 check("second is a draft, third posts by itself", j2["draft"] and not j3["draft"], (j2, j3))
 j4 = kling.ask("island-x", "island", img, "loop")
 check("the living island is never a draft (not a post)", not j4["draft"])
+
+# a model Kling retired: the next one, remembered
+kling.CAP = 50
+FAKE["gone"] = {kling.MODELS[0]}
+j = kling.ask("ship-m", "ship", img, "x", tail=True)
+check("retired model: the next one asked, with the last frame", j["status"] == "submitted" and calls[-1][2]["model_name"] == kling.MODELS[1]
+      and calls[-1][2].get("image_tail"), calls[-1][2].get("model_name"))
+check("retired model: remembered", kling.state().get("model") == kling.MODELS[1])
+n = len(calls)
+kling.ask("ship-n", "ship", img, "x")
+check("retired model: not tried again", len(calls) == n + 1 and calls[-1][2]["model_name"] == kling.MODELS[1])
+FAKE["gone"] = set(kling.MODELS)
+check("no model offered: an error, no clip", kling.ask("ship-o", "ship", img, "x")["status"] == "error")
+FAKE["gone"] = set()
+st = kling.state()
+for k in ("ship-m", "ship-n"):
+    st["jobs"].pop(k)
+kling.save(st)
+kling.CAP = 5
 
 # a failed clip is not asked again
 TASKS["t2"] = {"task_status": "failed", "task_status_msg": "risk control"}

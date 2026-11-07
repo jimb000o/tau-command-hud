@@ -247,7 +247,7 @@ services:
       KLING_ACCESS_KEY: ${KLING_ACCESS_KEY:-}
       KLING_SECRET_KEY: ${KLING_SECRET_KEY:-}
       KLING_API_BASE: ${KLING_API_BASE:-}
-      KLING_MODEL: ${KLING_MODEL:-kling-v2-1}
+      KLING_MODEL: ${KLING_MODEL:-}
       KLING_MONTH_CAP: ${KLING_MONTH_CAP:-30}
       KLING_REVIEW: ${KLING_REVIEW:-2}
       KLING_USES: ${KLING_USES:-island,trailer,ship,pirate,agorzilla}
@@ -324,7 +324,7 @@ services:
       KLING_ACCESS_KEY: ${KLING_ACCESS_KEY:-}
       KLING_SECRET_KEY: ${KLING_SECRET_KEY:-}
       KLING_API_BASE: ${KLING_API_BASE:-}
-      KLING_MODEL: ${KLING_MODEL:-kling-v2-1}
+      KLING_MODEL: ${KLING_MODEL:-}
       KLING_MONTH_CAP: ${KLING_MONTH_CAP:-30}
       KLING_REVIEW: ${KLING_REVIEW:-2}
       KLING_USES: ${KLING_USES:-island,trailer,ship,pirate,agorzilla}
