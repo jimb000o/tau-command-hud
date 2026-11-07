@@ -206,6 +206,8 @@ const OURS = [
     desc: "An island election game: every move and ballot is a real test payment to the island council or a ballot box." },
   { id: "agorzilla", name: "Agorzilla", icon: "<img src='../assets/agorzilla.webp' alt=''>", cats: ["paid"], href: "https://agorzilla.com", cta: "Feed it",
     desc: "One creature the whole testnet feeds: a meal is a test payment to its bowl, a ballot picks tomorrow's change." },
+  { id: "escrow", name: "Cruise escrow", icon: "⚓", cats: ["terms"], href: "/cruise/", cta: "Open", quiet: true,
+    desc: "Simulated cruise passengers book a call days ahead with a retractable test payment to the ship's till, released when the ship arrives. If the call is called off before, our server takes each booking back. Only the sender can take one back, so no third party decides." },
   { id: "wallet", name: "Tau HUD wallet", icon: "◈", cats: ["tools"], href: "/wallet/", cta: "Open",
     desc: "A testnet wallet in the browser: send, take back a payment, ask for a co-signature, sign one, give your account a rule. Keys stay in your browser." },
   { id: "api", name: "Live API and widgets", icon: "{}", cats: ["tools"], href: "/developers/", cta: "Use it",
@@ -244,6 +246,7 @@ function cards() {
     if (o.id === "guardian" && !row && S.extra.guardian != null) nums = [[S.extra.guardian, "accounts connected"]];
     if (o.id === "rulewall" && S.extra.rules != null) nums = [[S.extra.rules, "rules on the wall"]];
     if (o.id === "nodes" && S.extra.nodes != null) nums = [[S.extra.nodes, "community nodes reporting"]];
+    if (o.id === "escrow" && S.extra.escrow) nums = [[S.extra.escrow.paid, "paid out to the ship's till"], [S.extra.escrow.refunded, "refunded"], [S.extra.escrow.held, "in escrow"]].filter(n => n[0] || n[1] !== "in escrow");
     if (o.id === "wallet" && S.extra.wallet != null) nums = [[S.extra.wallet, "wallets sent through tauhud.com in 7 days"]];
     return { ...o, ours: true, row, nums, cats: [...new Set([...o.cats, ...((row && row.kinds) || [])])] };
   });
@@ -268,7 +271,7 @@ function cardHtml(c) {
   const tags = (c.ours ? `<span class="tag ours">by tauhud.com</span>` : c.idni ? `<span class="tag">testnet start account</span>` : "") + c.cats.map(k => `<span class="tag">${catName(k)}</span>`).join("");
   const desc = c.ours || c.desc ? esc(c.desc) : esc(KIND_DESC[c.cats[0]] || "");
   const nums = c.nums.length ? c.nums.map(([v, l]) => `<div><b>${fmt(v)}</b><span>${esc(l)}</span></div>`).join("")
-    : `<span class="quiet">${c.ours && !c.cats.includes("tools") ? (S.ok === false ? "Numbers come back when the chain answers." : "No use on the chain yet.") : ""}</span>`;
+    : `<span class="quiet">${c.ours && !c.quiet && !c.cats.includes("tools") ? (S.ok === false ? "Numbers come back when the chain answers." : "No use on the chain yet.") : ""}</span>`;
   const title = c.name ? esc(c.name) : `<span>Account</span> ${esc(short(c.key))}`;
   const icon = c.ours ? `<span class="ic">${c.icon}</span>` : `<span class="ic key" aria-hidden="true">${c.icon}</span>`;
   const acts = [];
@@ -321,7 +324,7 @@ const SAMPLE_DATA = { since: 1793232000, rules: { terms_min: 2, paid_min: 3 }, t
 ] };
 
 async function load() {
-  if (SAMPLE) { S.data = SAMPLE_DATA; S.ok = true; S.extra = { guardian: 1, rules: 12, nodes: 2, wallet: 18 }; render(); return; }
+  if (SAMPLE) { S.data = SAMPLE_DATA; S.ok = true; S.extra = { guardian: 1, rules: 12, nodes: 2, wallet: 18, escrow: { paid: 24, refunded: 0, held: 6 } }; render(); return; }
   try { S.data = await get("/services"); S.ok = true; } catch (e) { S.ok = false; }
   render();
 }
@@ -331,6 +334,8 @@ async function extras() {
     get("/guardian/info").then(j => { S.extra.guardian = j.accounts; }),
     get("/rulewall").then(j => { S.extra.rules = (j.rules || []).length; }),
     get("/community").then(j => { S.extra.nodes = (j.nodes || []).length; }),
+    get("/cruise").then(j => { if (!Array.isArray(j.escrow)) return; const sum = k => j.escrow.reduce((a, c) => a + ((c.count || {})[k] || 0), 0);
+      S.extra.escrow = { paid: sum("paid out"), refunded: sum("refunded"), held: sum("in escrow") }; }),
     get("/api/v1/sources").then(j => { const t = j.totals && j.totals.tauhud; if (t && t["7"] != null) S.extra.wallet = t["7"]; }),
   ];
   await Promise.allSettled(tries);

@@ -81,5 +81,10 @@ TauI18n.add({ strings: {
   "(JSON, free, any site may read it), worked out every minute from the blocks our node holds. How each kind is found:": "（JSON、無料、どのサイトでも読めます）。私たちのノードが持つブロックから毎分計算しています。各種類の見つけ方：",
   "Developers": "開発者",
   "Feedback": "フィードバック",
-  "Services": "サービス"
+  "Services": "サービス",
+  "Cruise escrow": "クルーズのエスクロー",
+  "Simulated cruise passengers book a call days ahead with a retractable test payment to the ship's till, released when the ship arrives. If the call is called off before, our server takes each booking back. Only the sender can take one back, so no third party decides.": "シミュレーションの乗客が数日前に、取り消せるテスト支払いで船のレジに寄港を予約し、船が着いた時に支払われます。それまでに寄港が中止になれば、私たちのサーバーが予約を一つずつ取り戻します。取り戻せるのは送った本人だけなので、第三者が決めることはありません。",
+  "paid out to the ship's till": "船のレジに支払い済み",
+  "refunded": "返金済み",
+  "in escrow": "エスクロー中"
 } });
