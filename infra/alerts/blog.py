@@ -1,6 +1,7 @@
 """The Tau HUD blog (tauhud.com/blog/): learnings articles drafted from our own data, published by hand (or, with
 BLOG_AUTO_PUBLISH_HOURS, a clean draft by itself after that many hours); the loop also runs the cruise ships' automatic
-announcements and reports (cruise_crier.py) and the weekly report for IDNI (idni_report.py).
+announcements and reports (cruise_crier.py), the hack of the week's posts (hack_crier.py) and the weekly report for
+IDNI (idni_report.py).
 
   python blog.py loop                 every 10 minutes: a cruise ship visit that is over (and whose bookings were
                                       checked) gets one draft; nothing is published
@@ -583,6 +584,12 @@ def drafts_cli() -> int:
     except Exception as e:  # noqa: BLE001
         print(f"cruise:  not read ({e})")
     try:
+        import hack_crier
+        for line in hack_crier.status_lines():
+            print(line)
+    except Exception as e:  # noqa: BLE001
+        print(f"hack:    not read ({e})")
+    try:
         import idni_report
         for line in idni_report.status_lines():
             print(line)
@@ -738,6 +745,11 @@ def main(argv: list[str]) -> int:
                 cruise_crier.step()
             except Exception as e:  # noqa: BLE001
                 log.warning("cruise crier: %s", e)
+            try:
+                import hack_crier   # the hack of the week: its post after each replay, a finding only to the owner
+                hack_crier.step()
+            except Exception as e:  # noqa: BLE001
+                log.warning("hack crier: %s", e)
             try:
                 import idni_report   # the weekly report for IDNI, Sunday 18:00 to the owner's private chat (never filed by itself)
                 idni_report.step()
