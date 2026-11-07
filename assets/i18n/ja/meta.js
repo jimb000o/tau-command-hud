@@ -129,7 +129,7 @@ TauI18n.add({ strings: {
   "Testnet transactions": "テストネットのトランザクション",
   "Transactions in the testnet's blocks, sorted by where they came from. Counted by the Tau HUD relay from the blocks it keeps; one person can hold several wallets.": "テストネットのブロック内のトランザクションを、出どころ別に。Tau HUD のリレーが保持するブロックから数えます。1 人が複数のウォレットを持つこともあります。",
   "meals and votes: payments to Agorzilla's bowl and ballot boxes": "餌と投票：Agorzilla の餌皿と投票箱への支払い",
-  "sent from a Tau HUD page: wallet, playground, vote, No Memo (our terminal game, real players)": "Tau HUD のページから送信：ウォレット、プレイグラウンド、投票、No Memo（ターミナルゲーム、本物のプレイヤー）",
+  "sent from a Tau HUD page: wallet, playground, vote": "Tau HUD のページから送信：ウォレット、プレイグラウンド、投票",
   "everything else: other wallets, scripts and test tools. On this testnet that is mostly a handful of very busy test wallets, so a small share can still be many people.": "それ以外のすべて：ほかのウォレット、スクリプト、テストツール。このテストネットでは大半がごく少数のとても忙しいテストウォレットなので、小さな割合でも多くの人である可能性があります。",
   "elsewhere": "その他",
   "transactions": "トランザクション",
@@ -391,7 +391,7 @@ TauI18n.add({ strings: {
   "With IDNI's genesis testing: our sites {p} of all {n}": "IDNI ジェネシスのテストを含めると：全 {n} 件のうち私たちのサイトは {p}",
   "through our sites": "私たちのサイトから",
   "White Rabbit Key, our island game on tauhud.com: the players' own lines and ballots. The island bot's moves and wages and the cruise ships' simulated passengers are counted apart, never as users.": "tauhud.com の島のゲーム「ホワイトラビット・キー」：プレイヤー自身の記録と投票。島ボットの手と賃金、クルーズ船の模擬乗客は別に数え、ユーザーには含めません。",
-  "Share of the user transactions in this range that came through our sites: Agorzilla, the Tau HUD pages and White Rabbit Key. User transactions are everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests, and our own server's automation: the cruise ships' simulated passengers and the island bot, shown apart below. Counted in transactions and wallets, not people.": "この期間のユーザーのトランザクションのうち、私たちのサイト（Agorzilla、Tau HUD の各ページ、White Rabbit Key）から来た割合。ユーザーのトランザクションとは、IDNI の 11 のジェネシスアカウント（IDNI のテスト中はトラフィックの大半）と、私たちのサーバー自身の自動の取引（クルーズ船の模擬乗客と島のボット、下に別に表示）を除くテストネットの全トランザクションです。数えているのはトランザクションとウォレットで、人ではありません。",
+  "Share of the user transactions in this range that came through our sites: Agorzilla, the Tau HUD pages, White Rabbit Key and No Memo. User transactions are everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests, and our own server's automation: the cruise ships' simulated passengers and the island bot, shown apart below. Counted in transactions and wallets, not people.": "この期間のユーザーのトランザクションのうち、私たちのサイト（Agorzilla、Tau HUD の各ページ、White Rabbit Key、No Memo）から来た割合。ユーザーのトランザクションとは、IDNI の 11 のジェネシスアカウント（IDNI のテスト中はトラフィックの大半）と、私たちのサーバー自身の自動の取引（クルーズ船の模擬乗客と島のボット、下に別に表示）を除くテストネットの全トランザクションです。数えているのはトランザクションとウォレットで、人ではありません。",
   "Our cruise ships: simulated passengers on White Rabbit Key's island, sent by our server as paced test load (at most 12 a minute). Real transactions on the testnet, but no people: never counted as user transactions.": "私たちのクルーズ船：White Rabbit Key の島の模擬乗客で、私たちのサーバーが一定のペースのテスト負荷として送ります（毎分最大 12 件）。テストネット上の本物の取引ですが、人ではありません。ユーザーのトランザクションには数えません。",
   "The island bot of White Rabbit Key: the rival candidates' moves and the wages the island pays players, sent by our server. Real transactions, but no people: never counted as user transactions.": "White Rabbit Key の島のボット：ライバル候補の手と、島がプレイヤーに払う賃金で、私たちのサーバーが送ります。本物の取引ですが、人ではありません。ユーザーのトランザクションには数えません。",
   "our cruise ships": "私たちのクルーズ船",
@@ -402,4 +402,5 @@ TauI18n.add({ strings: {
   "our sites, by users": "私たちのサイト（ユーザー）",
   "our cruise ships and island bot": "私たちのクルーズ船と島のボット",
   "Our cruise ships and the island bot are not users either.": "私たちのクルーズ船と島のボットもユーザーではありません。",
+  "No Memo, our terminal game on tauhud.com: contracts a player sends from their own test wallet. Real players' transactions.": "No Memo：tauhud.com のターミナルゲーム。プレイヤーが自分のテストウォレットから送る契約です。本物のプレイヤーの取引です。",
 } });

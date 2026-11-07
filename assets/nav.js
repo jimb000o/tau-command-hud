@@ -896,7 +896,7 @@
     const line = el(page === "hud" ? "p" : "span", "tn-real"); line.id = "realLine"; line.hidden = true;
     line.dataset.tnt = "Counted by our relay from the blocks it keeps, UTC day; wallets, not people. White Rabbit Key counts its players; our cruise ships (simulated passengers) and the island bot are our server's own transactions, real but no users, and counted apart. Everything else on this page comes from the chain as it is.";
     if (page === "hud") host.after(line); else host.append(" ", line);
-    const NAMES = [["idni", "IDNI genesis accounts"], ["rabbit", "White Rabbit Key players"], ["agorzilla", "Agorzilla"], ["tauhud", "Tau HUD pages"], ["cruise", "our cruise ships"], ["bot", "island bot"], ["other", "other wallets"]];
+    const NAMES = [["idni", "IDNI genesis accounts"], ["rabbit", "White Rabbit Key players"], ["agorzilla", "Agorzilla"], ["tauhud", "Tau HUD pages"], ["nomemo", "No Memo"], ["cruise", "our cruise ships"], ["bot", "island bot"], ["other", "other wallets"]];
     const fill = j => {
       const k = new Date().toISOString().slice(0, 10), d = j && j.days && j.days[k];
       if (!d) { line.hidden = true; return; }

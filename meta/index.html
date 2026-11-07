@@ -831,7 +831,7 @@ function drawNetDay() {
     fact(fmt(d[3]), "came back", "Wallets that had already acted through our sites on an earlier day.");
   const row = (name, g) => { const v = src[g] || [0, 0]; return `<tr><td>${esc(T(name))}</td><td class="n">${fmt(v[1])}</td><td class="n">${fmt(v[0])}</td><td class="n" data-tip="${esc(`${T("Counting everything, IDNI's genesis accounts included")}: ${share(v[0], all)}`)}">${share(v[0], users)}</td></tr>`; };
   $("dPages").innerHTML = `<tr><th>${esc(T("Site"))}</th><th class="n">${esc(T("wallets"))}</th><th class="n">${esc(T("transactions"))}</th><th class="n" data-tip="${esc(T("Share of the day's user transactions: everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests. Point at a number for its share of everything.") + " " + T("Our cruise ships and the island bot are not users either."))}">${esc(T("share"))}</th></tr>` +
-    row("Agorzilla", "agorzilla") + row("Tau HUD", "tauhud") + (src.rabbit ? row("White Rabbit Key", "rabbit") : "") +
+    row("Agorzilla", "agorzilla") + row("Tau HUD", "tauhud") + (src.rabbit ? row("White Rabbit Key", "rabbit") : "") + ((src.nomemo || [0])[0] ? row("No Memo", "nomemo") : "") +
     AUTO_GROUPS.filter(([g]) => (src[g] || [0])[0]).map(([g, name, what]) => `<tr data-tip="${esc(T(what))}"><td>${esc(T(name))}</td><td class="n">–</td><td class="n">${fmt(src[g][0])}</td><td class="n">${esc(T("not users"))}</td></tr>`).join("") +
     `<tr><td>${esc(T("test AGRS moved"))}</td><td class="n"></td><td class="n">${fmt(d[4] || 0)}</td><td class="n"></td></tr>`;
 }
@@ -866,7 +866,7 @@ function drawAgorzilla() {
    and for Tau HUD the page that led to the wallet. A ring by site, a ranked list by source; kinds in each row's hover */
 const START_FAM = { agorzilla: ["Agorzilla", "var(--ok)"], deja: ["Déjà", "rgba(57,255,138,.45)"], tauhud: ["Tau HUD", "#fff"], rabbit: ["White Rabbit Key", "#b9ffd6"] };
 const KIND_NAMES = { line: "Book lines", ballot: "ballots", meal: "meals", vote: "meals with a vote", wish: "meals with a wish", send: "test AGRS sent", rule: "own rules", vote_net: "network votes", shared: "shared rules", other: "other" };
-const VIA_NAMES = { "": "before 30 Oct", relay: "rule-place turns", direct: "opened directly", wallet: "opened directly", elsewhere: "other sites", agorzilla: "from agorzilla.com", hud: "HUD", start: "Start here", rules: "Rules wall", card: "Tau card", challenge: "Weekly challenge", donate: "Donate" };
+const VIA_NAMES = { "": "before 30 Oct", relay: "rule-place turns", direct: "opened directly", wallet: "opened directly", elsewhere: "other sites", agorzilla: "from agorzilla.com", hud: "HUD", start: "Start here", rules: "Rules wall", card: "Tau card", challenge: "Weekly challenge", donate: "Donate", nomemo: "No Memo" };
 function drawStarts() {
   const el = $("starts"), st = txs && txs.starts;
   if (!st) { el.innerHTML = ""; return false; }
@@ -1123,17 +1123,17 @@ function drawPages() {
 }
 
 /* where the testnet's transactions come from (relay /api/v1/sources): the whole testnet, whichever site is chosen */
-const TX_GROUPS = [["agorzilla", "Agorzilla", "meals and votes: payments to Agorzilla's bowl and ballot boxes"], ["tauhud", "Tau HUD", "sent from a Tau HUD page: wallet, playground, vote, No Memo (our terminal game, real players)"], ["rabbit", "White Rabbit Key", "White Rabbit Key, our island game on tauhud.com: the players' own lines and ballots. The island bot's moves and wages and the cruise ships' simulated passengers are counted apart, never as users."], ["idni", "IDNI genesis", "IDNI genesis accounts: sent by the 11 accounts the testnet started with (its genesis file), which IDNI set up and uses for testing. They make most of the testnet's transactions, so a small share for the others can still be many people."], ["other", "others", "everything else: other wallets, scripts and tools"]];
+const TX_GROUPS = [["agorzilla", "Agorzilla", "meals and votes: payments to Agorzilla's bowl and ballot boxes"], ["tauhud", "Tau HUD", "sent from a Tau HUD page: wallet, playground, vote"], ["rabbit", "White Rabbit Key", "White Rabbit Key, our island game on tauhud.com: the players' own lines and ballots. The island bot's moves and wages and the cruise ships' simulated passengers are counted apart, never as users."], ["nomemo", "No Memo", "No Memo, our terminal game on tauhud.com: contracts a player sends from their own test wallet. Real players' transactions."], ["idni", "IDNI genesis", "IDNI genesis accounts: sent by the 11 accounts the testnet started with (its genesis file), which IDNI set up and uses for testing. They make most of the testnet's transactions, so a small share for the others can still be many people."], ["other", "others", "everything else: other wallets, scripts and tools"]];
 /* our own server's automation: real transactions on the testnet, shown, but never counted as users' */
 const AUTO_GROUPS = [["cruise", "our cruise ships", "Our cruise ships: simulated passengers on White Rabbit Key's island, sent by our server as paced test load (at most 12 a minute). Real transactions on the testnet, but no people: never counted as user transactions."], ["bot", "island bot", "The island bot of White Rabbit Key: the rival candidates' moves and the wages the island pays players, sent by our server. Real transactions, but no people: never counted as user transactions."]];
 const TX_COLORS = ["var(--ok)", "#fff", "rgba(255,255,255,.45)", "rgba(255,255,255,.2)"];
-const GROUP_COL = { agorzilla: "var(--ok)", tauhud: "#fff", rabbit: "#b9ffd6", cruise: "rgba(185,255,214,.3)", bot: "rgba(185,255,214,.3)", idni: "rgba(255,255,255,.45)", other: "rgba(255,255,255,.2)" };
+const GROUP_COL = { agorzilla: "var(--ok)", tauhud: "#fff", rabbit: "#b9ffd6", nomemo: "rgba(185,255,214,.6)", cruise: "rgba(185,255,214,.3)", bot: "rgba(185,255,214,.3)", idni: "rgba(255,255,255,.45)", other: "rgba(255,255,255,.2)" };
 const share = (a, b) => b && a && 100 * a / b < 1 ? "<1%" : pct(a, b);
 function drawTx() {
   const el = $("txsplit");
   if (!txs) { el.innerHTML = ""; return; }
   const keys = range === 1 ? [data.today] : rangeDays().map(([k]) => k);
-  const tot = { agorzilla: [0, 0], tauhud: [0, 0], rabbit: [0, 0], cruise: [0, 0], bot: [0, 0], idni: [0, 0], other: [0, 0] };
+  const tot = { agorzilla: [0, 0], tauhud: [0, 0], rabbit: [0, 0], nomemo: [0, 0], cruise: [0, 0], bot: [0, 0], idni: [0, 0], other: [0, 0] };
   let n = 0;
   for (const k of keys) { const d = txs.days[k]; if (!d) continue; n++; for (const g in tot) { tot[g][0] += (d[g] || [0, 0])[0]; tot[g][1] += (d[g] || [0, 0])[1]; } }
   const all = Object.values(tot).reduce((a, v) => a + v[0], 0);
@@ -1142,15 +1142,15 @@ function drawTx() {
   if (!all) { el.innerHTML = `<div class="sp">${head}<div class="note">${esc(T("No transactions in this range yet."))}</div></div>`; return; }
   const auto = tot.cruise[0] + tot.bot[0], users = all - tot.idni[0] - auto, U = TX_GROUPS.filter(([g]) => g !== "idni"), col = g => GROUP_COL[g];
   const tipOf = (g, what) => `${T(what)}\n${fmt(tot[g][0])} ${T("transactions")} · ${fmt(wallets(g))} ${T(n === 1 ? "wallets" : "wallets a day on average")}\n${T("of everything, IDNI's genesis accounts included")}: ${share(tot[g][0], all)}`;
-  const ours = tot.agorzilla[0] + tot.tauhud[0] + tot.rabbit[0], idni = TX_GROUPS.find(([g]) => g === "idni");
+  const ours = tot.agorzilla[0] + tot.tauhud[0] + tot.rabbit[0] + tot.nomemo[0], idni = TX_GROUPS.find(([g]) => g === "idni");
   // the headline: our share of the user transactions (IDNI's genesis testing left out); below, smaller, the same with everything counted
-  const heroTip = `${T("Share of the user transactions in this range that came through our sites: Agorzilla, the Tau HUD pages and White Rabbit Key. User transactions are everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests, and our own server's automation: the cruise ships' simulated passengers and the island bot, shown apart below. Counted in transactions and wallets, not people.")}\n${T("through our sites")} ${fmt(ours)} · ${T("User transactions")} ${fmt(users)}`;
+  const heroTip = `${T("Share of the user transactions in this range that came through our sites: Agorzilla, the Tau HUD pages, White Rabbit Key and No Memo. User transactions are everything on the testnet except IDNI's 11 genesis accounts, which make most of the traffic while IDNI tests, and our own server's automation: the cruise ships' simulated passengers and the island bot, shown apart below. Counted in transactions and wallets, not people.")}\n${T("through our sites")} ${fmt(ours)} · ${T("User transactions")} ${fmt(users)}`;
   const hero = users && NET() ? `<div class="ours" data-tip="${esc(heroTip)}"><b>${share(ours, users)}</b><span>${esc(T("of user transactions via our sites"))}<em>${esc(T("not counting IDNI's genesis testing"))}</em></span></div>` : "";
   const allBar = [[ours, "var(--ok)"], [auto, GROUP_COL.cruise], [tot.idni[0], "rgba(255,255,255,.45)"], [tot.other[0], "rgba(255,255,255,.2)"]];
   const allTip = `${T("all testnet transactions")} ${fmt(all)}\n${T("our sites, by users")} ${share(ours, all)} · ${T("our cruise ships and island bot")} ${share(auto, all)} · ${T("IDNI genesis")} ${share(tot.idni[0], all)} · ${T("others")} ${share(tot.other[0], all)}`;
   const notUsers = [...AUTO_GROUPS.filter(([g]) => tot[g][0]).map(([g, name, what]) => [name, tot[g][0], what]), ["IDNI's genesis testing", tot.idni[0], idni[2]]].filter(([, v]) => v);
   el.innerHTML = hero + `<div class="sp">${head}<em class="cnt"> · ${fmt(users)}</em><div class="split tx">${U.map(([g]) => `<i style="width:${users ? (100 * tot[g][0] / users).toFixed(1) : 0}%;background:${col(g)}"></i>`).join("")}</div>` +
-    `<div class="splitkey">${U.filter(([g]) => g !== "rabbit" || tot.rabbit[0]).map(([g, name, what]) => `<span data-tip="${esc(tipOf(g, what))}"><i class="k" style="background:${col(g)}"></i>${esc(T(name))} <b>${share(tot[g][0], users)}</b></span>`).join("")}</div></div>` +
+    `<div class="splitkey">${U.filter(([g]) => (g !== "rabbit" && g !== "nomemo") || tot[g][0]).map(([g, name, what]) => `<span data-tip="${esc(tipOf(g, what))}"><i class="k" style="background:${col(g)}"></i>${esc(T(name))} <b>${share(tot[g][0], users)}</b></span>`).join("")}</div></div>` +
     `<div class="sp all" data-tip="${esc(allTip)}"><div class="split thin">${allBar.map(([v, c]) => `<i style="width:${(100 * v / all).toFixed(1)}%;background:${c}"></i>`).join("")}</div>` +
     `<div class="note">${esc(T("Not user transactions"))}: ${notUsers.map(([name, v, what]) => `<span data-tip="${esc(T(what))}">${esc(T(name))} <b>${fmt(v)}</b></span>`).join(" · ")}</div></div>`;
 }
@@ -1215,7 +1215,7 @@ function render() {
 }
 
 async function load() {
-  if (SAMPLE) { raw = sample(); raw.sites = { agorzilla: { days: Object.fromEntries(Object.entries(raw.days).slice(-20).map(([k, d]) => [k, [Math.round(d[0] / 4), Math.round(d[1] / 5), Math.round(d[2] / 4), { agorzilla: Math.round(d[0] / 4) }, { en: Math.round(d[0] / 4) }, {}, {}]])), hours: {} } }; txs = { days: Object.fromEntries(Object.keys(raw.days).map((k, i) => [k, { agorzilla: [i > 120 ? 30 + i % 9 * 4 : 0, i > 120 ? 9 + i % 5 : 0], tauhud: [8 + i % 7, 3 + i % 3], rabbit: [i > 0 ? 20 + i % 6 * 3 : 0, i > 0 ? 2 + i % 3 : 0], cruise: [i % 7 === 3 ? 240 : 0, 0], bot: [i > 0 ? 30 + i % 5 * 4 : 0, 0], idni: [900 + i % 13 * 20, 8], other: [6 + i % 11, 4] }])) };
+  if (SAMPLE) { raw = sample(); raw.sites = { agorzilla: { days: Object.fromEntries(Object.entries(raw.days).slice(-20).map(([k, d]) => [k, [Math.round(d[0] / 4), Math.round(d[1] / 5), Math.round(d[2] / 4), { agorzilla: Math.round(d[0] / 4) }, { en: Math.round(d[0] / 4) }, {}, {}]])), hours: {} } }; txs = { days: Object.fromEntries(Object.keys(raw.days).map((k, i) => [k, { agorzilla: [i > 120 ? 30 + i % 9 * 4 : 0, i > 120 ? 9 + i % 5 : 0], tauhud: [8 + i % 7, 3 + i % 3], rabbit: [i > 0 ? 20 + i % 6 * 3 : 0, i > 0 ? 2 + i % 3 : 0], nomemo: [i > 130 ? 4 + i % 5 : 0, i > 130 ? 1 + i % 2 : 0], cruise: [i % 7 === 3 ? 240 : 0, 0], bot: [i > 0 ? 30 + i % 5 * 4 : 0, 0], idni: [900 + i % 13 * 20, 8], other: [6 + i % 11, 4] }])) };
     const ks = Object.keys(raw.days);
     txs.ours = Object.fromEntries(ks.map((k, i) => { const w = 3 + Math.round(i / 6) + (i > 120 ? 9 + i % 5 : 0); return [k, [w, 8 + i % 7 + (i > 120 ? 30 + i % 9 * 4 : 0), Math.max(1, Math.round(w / 5)), Math.round(w * .6), 400 + i * 9]]; }));
     txs.totals = { ours: { 7: 61, 30: 148, all: 205 }, agorzilla: { 7: 41, 30: 52, all: 52 } };
