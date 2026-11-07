@@ -38,7 +38,7 @@ export const PAGES = {
   developers: ["/developers/", "Developers", "Widgets, badges and a free JSON API"],
   press:      ["/press/", "Press kit", "Films, logo, screenshots and facts, free to use"],
   legal:      ["/legal/", "Privacy", "No cookies, no tracking, no third-party analytics"],
-  nomemo:     ["/nomemo/", "No Memo", "Twelve contracts from the crew of the Black Sequence, each a real transaction"],
+  nomemo:     ["/nomemo/", "No Memo", "Three chapters of contracts from the crew of the Black Sequence, each a real transaction"],
 };
 
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".woff2": "font/woff2", ".mp4": "video/mp4", ".webmanifest": "application/manifest+json" };

@@ -14,6 +14,7 @@ browser ──wss──▶ Caddy (TLS) ──▶ relay ──ws──▶ tau-nod
 - **relay** (`relay/relay.py`): holds one connection to the node, polls it on a fixed
   schedule that stays under the node's own rate limits, and serves every visitor from that
   cache. New blocks, mempool and governance changes are pushed to visitors as they happen.
+- **No Memo's crew purse** (`relay/nomemo.py`, inside the relay): the drop the terminal game pays and its lookalike, both keys made once in the relay's data volume (never in the repository). Pays each chapter's share (500 test AGRS) back to the wallet whose claim (a payment of 101, 102 or 103 to the drop) the chain sealed, the crew's mark once, and, as the Tracer, dust from the lookalike after the first chapter; in the island bot's free slots, one send every 20 s at most, 300 payouts a day. `GET /nomemo` (the drop, the players' board), `GET /nomemo/wallet/<address>`; `up nomemo` prints the state; `NOMEMO_ENABLED=0`, `NOMEMO_TRACER=0`.
 - **Caddy**: HTTPS with automatic Let's Encrypt certificates; also serves the tracker's `proposals.json` and `feed.xml`.
 - **alerts** (`alerts/alerts.py`): proposal tracker; Telegram/X posts and an Atom feed when rules are proposed, agreed or take effect, plus a weekly recap image.
 - **donations** (`alerts/donations.py`): watches the donation address on Ethereum (AGRS and ETH only, public Blockscout API), keeps `/donations.json` for the About section and posts one thank-you per new donation to the channel.

@@ -42,6 +42,7 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 VOICES_JSON = os.path.join(REPO, "rabbit", "voices.json")
+NOMEMO_JSON = os.path.join(REPO, "nomemo", "voices.json")   # the crew of the Black Sequence in No Memo (node tests/nomemo-voices.mjs --write)
 OUT = "/opt/sites/rico"
 API = "https://api.elevenlabs.io/v1"
 MODEL = "eleven_v3"   # the most natural one, and it takes [tags] for how a line is said
@@ -86,6 +87,14 @@ CAST = {
                      "to understand."),
     "tano": ("Tano", "A calm drummer in his fifties who keeps the island's talking drums and its decision circle, deep resonant "
                      "unhurried voice, warm, few words, a quiet smile you can hear, clear and easy to understand."),
+    # the crew of the pirate ship Black Sequence, in the terminal game No Memo (nomemo/game.js)
+    "qm": ("Quartermaster", "An old ship's quartermaster in his sixties, grey-haired, dry measured voice with gravel in it, patient and "
+                            "exact like a man who keeps a ledger, a little menace held back, faint West Country English, clear and "
+                            "easy to understand."),
+    "look": ("Lookout", "A sharp young sailor in her late twenties who reads the horizon, quick bright alert voice, clipped and a "
+                        "little cocky, Caribbean lilt, laughs easily, clear and easy to understand."),
+    "bosun": ("Bosun", "A stout bosun in his fifties with a pipe, slow heavy rumbling voice, unbothered and wry, long pauses, "
+                       "a chuckle like a barrel rolling, Irish lilt, clear and easy to understand."),
 }
 # the listeners who phone Radio Coco (RICO.CALLS): ready voices from the account, given to them by "make" on its own
 # islanders who speak with a ready voice from the account (all ten designed-voice places are taken)
@@ -100,7 +109,8 @@ TALK = (" Talks naturally and casually, straight to the person in front of them,
 TAG = {"rico": "[friendly, leaning in]", "lola": "[warm, teasing]", "sam": "[slowly, kindly]", "marisol": "[friendly, direct]",
        "tobias": "[pompous]", "baako": "[warmly, with a chuckle]", "hana": "[calm, patient]", "frost": "[coolly]",
        "salado": "[smooth, charming]", "ama": "[slowly, warmly]", "wren": "[brisk, amused]", "kai": "[cheerful]",
-       "pim": "[nervously, precise]", "noor": "[dry, matter-of-fact]", "kiko": "[softly, calm]", "tano": "[calmly, warmly]"}
+       "pim": "[nervously, precise]", "noor": "[dry, matter-of-fact]", "kiko": "[softly, calm]", "tano": "[calmly, warmly]",
+       "qm": "[dry, measured, a little menacing]", "look": "[quick, alert, amused]", "bosun": "[slow, rumbling, wry]"}
 ON_AIR = "[excited radio DJ]"   # the callouts that end in "!"
 HYPE = "[shouting with joy, euphoric radio DJ opening the morning show, stretching the long words]"   # the show's opener (voices.json "how": "hype")
 RADIO = "[radio DJ, playful]"     # his other lines on the radio strip
@@ -316,8 +326,12 @@ def hype():
 
 
 def lines(path=None):
-    """Every line anyone can speak, as (who, English text), in the order rico.js all() builds them."""
-    return [(r["who"], r["text"]) for r in json.load(open(path or VOICES_JSON, encoding="utf-8"))]
+    """Every line anyone can speak, as (who, English text), in the order rico.js all() builds them; then the crew of the
+    Black Sequence (nomemo/voices.json), who share the clips store."""
+    out = [(r["who"], r["text"]) for r in json.load(open(path or VOICES_JSON, encoding="utf-8"))]
+    if path is None and os.path.exists(NOMEMO_JSON):
+        out += [(r["who"], r["text"]) for r in json.load(open(NOMEMO_JSON, encoding="utf-8"))]
+    return out
 
 
 def sample(who):

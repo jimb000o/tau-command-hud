@@ -48,6 +48,7 @@ from cruise import Cruise
 from hackweek import HackWeek
 from island import Island
 from isle import Isle
+from nomemo import NoMemo
 from load import Load
 from txsources import TxSources, deja as deja_day
 from walletdays import WalletDays
@@ -402,6 +403,8 @@ class Relay:
         # the hack of the week, replayed on the testnet with our own wallets, after the ships in the bot's free slots (hackweek.py)
         self.hack = HackWeek(verdict=self.load_word)
         self.hack.on_tx = lambda ok: self.load.sent("cruise" if ok else "refused")
+        self.nomemo = NoMemo()   # No Memo's crew purse: the share, the mark and the Tracer's dust (nomemo.py)
+        self.nomemo.on_tx = lambda: self.load.sent("bot")
         self.island.idle = self.idle_step
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
         self.simpredict = SimPredict(os.environ.get("SIMPREDICT_PATH", "/data/simpredict.json"), votes=self.simvotes, names=name_of)
@@ -490,7 +493,8 @@ class Relay:
         # last: the cruise ships' passenger wallets are made in the background; tagged as simulated once known
         self.cruise.on_ready = self.tag_passengers
         self.hack.on_ready = self.tag_passengers
-        if self.cruise.ready or self.hack.ready:
+        self.nomemo.on_ready = self.tag_passengers
+        if self.cruise.ready or self.hack.ready or self.nomemo.ready:
             self.tag_passengers()
 
     # ---------- polling ----------
@@ -1171,13 +1175,15 @@ class Relay:
 
     def simulated(self) -> dict:
         """Our simulated wallets: the cruise ships' passengers and the hack of the week's four (pubkey -> who)."""
-        return {**self.cruise.who, **getattr(getattr(self, "hack", None), "who", {})}
+        return {**self.cruise.who, **getattr(getattr(self, "hack", None), "who", {}), **getattr(getattr(self, "nomemo", None), "who", {})}
 
     async def idle_step(self, ask, gov) -> bool:
         """The island bot's free slot: a cruise ship first, then the hack of the week (never both in one slot)."""
         if await self.cruise.step(ask, gov):
             return True
-        return await self.hack.step(ask, gov)
+        if await self.hack.step(ask, gov):
+            return True
+        return await self.nomemo.step(ask, gov)
 
     def island_spend(self):
         self.island.today += 1   # a passenger's transaction comes out of the island's day budget (ISLAND_DAILY)
@@ -1447,8 +1453,10 @@ class Relay:
             self.sources.note((msg.get("data") or {}).get("tx_hash"), site, via)   # for "where the transactions come from"
             self.island.saw_tx(ip)   # White Rabbit Key may pay this address for the move
             try:   # and the players' board may count this wallet's moves from this address (isle.py)
-                self.isle.saw(ip, json.loads(tx).get("sender_pubkey", ""))
-            except ValueError:
+                parsed = json.loads(tx)
+                self.isle.saw(ip, parsed.get("sender_pubkey", ""))
+                self.nomemo.saw(parsed, (msg.get("data") or {}).get("tx_hash"))   # a No Memo claim to the drop (nomemo.py)
+            except (ValueError, AttributeError):
                 pass
         return json.dumps(msg, separators=(",", ":"))
 
@@ -2104,7 +2112,7 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "no-store")])
             return Response(code.value, code.phrase, headers, json.dumps(sim[1], separators=(",", ":")).encode())
-        isl = self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.hack.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/hack") else self.isle.route(path)
+        isl = self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.hack.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/hack") else self.nomemo.route(path, query) if path.startswith("/nomemo") else self.isle.route(path)
         if isl is not None:
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, json.dumps(isl, separators=(",", ":")).encode())
