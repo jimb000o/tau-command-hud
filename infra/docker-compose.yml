@@ -248,7 +248,8 @@ services:
   # is ahead of the commits our node is built from (read from node/Dockerfile),
   # IDNI's news for the HUD's news line, and whether our node patches still
   # apply to the newest tau-testnet main (`up` prints it as "idni:"), and which
-  # IDNI commits and branches name our issues (moves the Road to mainnet badges).
+  # IDNI commits and branches name our issues (moves the Road to mainnet badges). After each pass it writes Tau today
+  # for AI assistants (knowledge.py): node.tauhud.com/tau-today.md and .json, read by tauhud.com/facts/ and llms.txt.
   devpulse:
     build: ./alerts
     command: ["python", "devpulse.py"]
@@ -270,6 +271,7 @@ services:
       - alerts_public:/public   # devpulse.json, served by Caddy
       - ./node/Dockerfile:/pins/Dockerfile:ro
       - ./node/patches:/pins/patches:ro   # tried on each new upstream main: do our node patches still apply?
+      - ../facts:/facts:ro   # the hand-checked facts for Tau today (knowledge.py, tauhud.com/facts/); a folder, so a pull reaches it
     depends_on: [relay]
     mem_limit: 256m
     restart: unless-stopped
