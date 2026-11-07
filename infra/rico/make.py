@@ -126,8 +126,8 @@ SAY = {
         "Empty, for now. But every move on this island will be written in here, with the name of whoever made it. Nobody can tear out a page.",
     "Boats, gulls and a black cat that sometimes walks past twice. Nothing to do here but think. Tau Testnet Alpha is out there too: the Book on this island works a lot like its blocks.":
         "Boats, gulls, and a black cat that sometimes walks past twice. Nothing to do out here but think. Tau Testnet Alpha's out there too, you know. The Book on this island works a lot like its blocks.",
-    "Three moves a day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book.":
-        "Three moves a day, seven days from Monday to Sunday, and then the island votes. Each of the ten islanders cares about two things. Laws and talk about those, that's what wins them over. Rumours? They work for a day. Until people read the Book.",
+    "Three moves a day, six on your first day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book.":
+        "Three moves a day, six on your first day, seven days from Monday to Sunday, and then the island votes. Each of the ten islanders cares about two things. Laws and talk about those, that's what wins them over. Rumours? They work for a day. Until people read the Book.",
     "Two laws that cannot both hold would leave the island not knowing what is allowed, so the Book will not take it. Repeal the old one first, or pick another law.":
         "Two laws that can't both hold would leave the whole island not knowing what's allowed. So the Book won't take it. Repeal the old one first, or pick another law.",
     "Done, it’s out there. Half the island is talking. The other half will read the Book tomorrow, and the Book says you paid me.":
