@@ -85,6 +85,7 @@
       done: "No business today, my friend: “{x}” is law already, and there’s nothing left for me to buy. My investors will think I’m on holiday. Sit anyway, the loungers are free." },   // his own words (and talk.js, when you come back); the North Wind keeps the diplomat's
   };
   const DAYS = 7, MOVES = 3, RUMOUR = 25, GIFT = 20;   // a campaign is one island week, Monday to Sunday; the election is Sunday night
+  const FIRST_EXTRA = 3;   // the first day of a campaign has six moves, so a first visit is a real game and not three taps; from then on three a day
   /* the island's calendar is the real one: an island day is a real day (Europe/Berlin), three moves each, and the week's
      days not yet played are played in one go. ?today=N pretends it is weekday N (1 Monday … 7 Sunday); ?clock=free lifts
      the lock, so the whole week can be played at once (the sim, and anyone who wants to) */
@@ -321,7 +322,7 @@
     const R = seeded(Date.now() & 0xffffff), sup = {};
     for (const c in CANDS) { sup[c] = {}; PEOPLE.forEach(p => { sup[c][p.id] = 42 + Math.round(R() * 14) + (CANDS[c].cares.some(x => p.cares.includes(x)) ? 6 : 0); }); }
     const trust = {}; for (const c in CANDS) trust[c] = 45;
-    return { v: 1, me, day: 1, move: 0, coins: { marisol: 40, tobias: 30, baako: 30, hana: 30 }, sup, trust, laws: [], book: [], pacts: [], deals: [], lies: [], pending: [], news: [], seed: Math.floor(R() * 1e9), onchain: true, sent: {}, over: null, said: {}, amb: null, declined: [], week: weekId(), waiting: false };
+    return { v: 1, me, day: 1, move: 0, coins: { marisol: 40, tobias: 30, baako: 30, hana: 30 }, sup, trust, laws: [], book: [], pacts: [], deals: [], lies: [], pending: [], news: [], seed: Math.floor(R() * 1e9), onchain: true, sent: {}, over: null, said: {}, amb: null, declined: [], week: weekId(), waiting: false, spare: FIRST_EXTRA };
   }
   const save = () => { if (G) store.set(KEY, JSON.stringify(G)); };
   function load() { try { const g = JSON.parse(store.get(KEY) || "null"); if (g && g.v === 1 && CANDS[g.me]) return g; } catch (e) {} return null; }
@@ -461,11 +462,14 @@
     locks();
     $("cvDay").textContent = dayName(G.day); $("cvDay").title = F("Day {n} of {m}", { n: G.day, m: DAYS }) + " · " + (G.day < todayIdx() ? Fd("catching up: it is {x} already", { x: dayName(todayIdx()) }) : T("today, on the island as in the world"));
     $("cvHour").textContent = T(G.move >= MOVES ? "Night" : HOURS[G.move]);
-    $("cvMoves").replaceChildren(...Array.from({ length: MOVES }, (_, i) => el("i", { class: i < MOVES - G.move ? "on" : "" })));
-    $("cvMoves").setAttribute("aria-label", F("{n} moves left today", { n: Math.max(0, MOVES - G.move) }));
+    const left = Math.max(0, MOVES - G.move) + (G.spare || 0);   // extra moves (the first day, the evening bell, a pact, the key) show as more green dots
+    $("cvMoves").replaceChildren(...Array.from({ length: G.move + left }, (_, i) => el("i", { class: i < left ? "on" : "" })));
+    $("cvMoves").setAttribute("aria-label", F("{n} moves left today", { n: left }));
+    $("cvMoves").parentElement.title = F("{n} moves left today", { n: left }) + " · " + T("Three moves a day, six on your first day. Reading, talking and visiting cost nothing; the evening bell at eight, your first pact and the key in the grotto give one more.");
     $("cvCoins").textContent = F("{n} coins", { n: G.coins[G.me] }); $("cvCoins").title = Fd("{n} coins saved from earlier campaigns", { n: savings().coins });
     if ($("cvAmb")) { $("cvAmb").hidden = !G.amb; if (G.amb) { $("cvAmb").textContent = T(AMB[G.amb.id].name); $("cvAmb").title = ambGoal(); } }
     $("cvMe").replaceChildren(portrait(G.me, 30), el("span", { text: nm(G.me) }));
+    chainChip();
     const last = G.news[G.news.length - 1];
     if (last && last !== DJ.said) { DJ.said = last; const np = [V("book"), last.v ? { t: last.s, v: last.v } : Q(last.s)]; if (DJ.opened) onAir(np, 1); else { DJ.after = np; $("cvNews").textContent = last.s; } }   // before the show opens, the news waits for Rico's opener
     else if (!DJ.text) $("cvNews").textContent = last ? last.s : T("The Key Crier: a week to the election, Sunday night. Everything anyone does is written in the Book.");
@@ -566,7 +570,8 @@
       if (!over()) return;
       /* still too long: leaf through the longest list of the page shown */
       const shown = kids.filter(e => !e.classList.contains("pg-off"));
-      const lists = shown.flatMap(e => [e, ...e.querySelectorAll("ul, .cv-acts, .cv-ask")]).filter(e => e.matches("ul, .cv-acts, .cv-ask"));
+      /* a one-page plate (the start, a paper, the ending) never leafs through its buttons: the way out stays in sight */
+      const lists = shown.flatMap(e => [e, ...e.querySelectorAll("ul, .cv-acts, .cv-ask")]).filter(e => e.matches("ul, .cv-acts, .cv-ask") && !(special && e.matches(".cv-acts")));
       const L = lists.sort((a, b) => b.children.length - a.children.length)[0];
       const items = L ? [...L.children].filter(e => !e.matches(".cv-h, h4")) : [];
       if (items.length < 2) { shrink(); if (over() && innerWidth < 760 && !box._tall) box._tall = "again"; return; }
@@ -676,7 +681,14 @@
     /* what has happened to the island this campaign: eventBoiler, eventStorm, eventCoup, eventCatch, eventRoof */
     events().forEach(e => { if (e.day <= G.day) f["event" + e.id[0].toUpperCase() + e.id.slice(1)] = true; });
     /* a cruise ship near: which one, and whether it comes in a few days, tomorrow, today, is here or has left (shipFacts) */
+    f.dark = darkNow();
     return Object.assign(f, shipFacts());
+  }
+  /* after dark in Germany (the island's own sky: ?hour=22:00 too): roughly half an hour after sunset to sunrise, by month */
+  const SUNSET = [16.6, 17.4, 18.3, 20.1, 20.9, 21.5, 21.4, 20.7, 19.6, 18.5, 16.6, 16.1], SUNRISE = [8.2, 7.6, 6.6, 6.5, 5.4, 4.8, 5.0, 5.8, 6.7, 7.5, 7.3, 8.1];
+  function darkNow() {
+    const b = berlin(), q = /^(\d{1,2}):(\d{2})$/.exec(QS.get("hour") || ""), h = q ? +q[1] + q[2] / 60 : b.h + b.m / 60;
+    return h >= SUNSET[b.mo - 1] + 0.5 || h < SUNRISE[b.mo - 1];
   }
   /* of a list of [when, line]: the first that holds and has not been heard yet, else they take turns.
      A "when" of "a+b" holds when both hold, "!a" when a does not */
@@ -722,7 +734,7 @@
   const did = k => { G.did = G.did || {}; G.did[k] = 1; };
   const movesLeft = () => G.move < MOVES && !G.over;
   /* a move is used up, unless the evening bell kept one for the visitor (BELL) */
-  const useMove = () => { if (G.spare) G.spare--; else G.move++; };
+  const useMove = () => { if (G.spare) G.spare--; else G.move++; if (!store.get(SIGNED)) { store.set(SIGNED, "1"); signsOff(); } };
   /* a move is spent: the sun goes on, and after the evening the night comes */
   function spend() {
     useMove(); save(); hud();
@@ -739,7 +751,7 @@
     if (UI.card) openCard(at, PLACE[at]);
   }
   const treatBtn = (k, label, n, at, line, fx, msg) => btn(label, () => treat(k, n, at, line, fx, msg), { off: treated(k) || G.coins[G.me] < n, sub: treated(k) ? T("Done for today") : F("{n} coins, no move, written in the Book", { n }) });
-  const noMoves = box => box.append(el("p", { class: "cv-note", text: T("That was your last move today. The night comes.") }));
+  const noMoves = box => box.append(el("p", { class: "cv-note", text: T("That was your last move today. The island stays open: reading, talking and visiting cost nothing.") }));
 
   /* ---------- the places ---------- */
   const PLACE = {
@@ -866,7 +878,7 @@
     },
     grotto(box) {
       scene(box, "ama", T(SC.places.grotto.name), T("So you found it. The key on the old fort opens nothing; it never did. The real key was always this: everyone keeps a copy of what was agreed, so nobody can change it alone."), G.key ? null : [
-        btn(T("Take a copy of the Book"), () => { G.key = true; write(G.me, T("found the cave behind the waterfall and took a copy of the Book"), "fact"); bump(G.me, p => p.reads, 6); save(); SND.sfx("yes"); toast(T("You hold the White Rabbit Key.")); if (UI.card) openCard("grotto", PLACE.grotto); }),
+        btn(T("Take a copy of the Book"), () => { G.key = true; write(G.me, T("found the cave behind the waterfall and took a copy of the Book"), "fact"); bump(G.me, p => p.reads, 6); save(); SND.sfx("yes"); toast(T("You hold the White Rabbit Key.")); setTimeout(() => extraMove(T("the key in the grotto")), 2800); if (UI.card) openCard("grotto", PLACE.grotto); }),
       ]);
     },
   };
@@ -887,11 +899,12 @@
     placeKeys();
   }
   /* places by keyboard: the list under the scene, one button each, for the places this island has and are open */
+  const MOVE_AT = new Set(["hall", "market", "radio", "north", "south", "bar"]);   // where a move is made; everywhere else a visit costs nothing
   function placeKeys() {
     const keys = $("cvPlaces"); if (!keys) return;
     const ids = Object.keys(PLACE).filter(id => SC.places[id] && !SC.locked(id)), sig = ids.join();
     if (keys.dataset.sig === sig) return; keys.dataset.sig = sig; keys.textContent = "";
-    ids.forEach(id => keys.append(el("button", { type: "button", onclick: () => { wake(); if (G && !UI.card) openCard(id, PLACE[id]); } }, el("span", { text: T(SC.places[id].name) }))));
+    ids.forEach(id => keys.append(el("button", { type: "button", onclick: () => { wake(); if (G && !UI.card) openCard(id, PLACE[id]); } }, el("span", { text: T(SC.places[id].name) }), MOVE_AT.has(id) ? null : el("small", { text: T("free, no move") }))));
     /* what the bar leaves out on a small screen */
     keys.append(el("button", { type: "button", class: "more", onclick: () => { wake(); help(); } }, el("span", { text: T("How it works") })),
       el("button", { type: "button", class: "more", onclick: () => { wake(); $("cvReset").click(); } }, el("span", { text: T("New game") })));
@@ -982,7 +995,7 @@
   }
   function doPact(c, gift) {
     const ok = gift ? G.trust[c] >= 25 : G.trust[c] >= 50;
-    if (ok) { makePact(G.me, c, gift); SND.sfx("yes"); G.trust[c] = Math.min(100, G.trust[c] + 10); }
+    if (ok) { makePact(G.me, c, gift); SND.sfx("yes"); G.trust[c] = Math.min(100, G.trust[c] + 10); if (!G.pactMove) { G.pactMove = 1; setTimeout(() => extraMove(T("your first pact")), 1200); } }
     else { G.trust[c] = Math.max(0, G.trust[c] - 3); write(G.me, F("offered {x} a pact: turned down", { x: nm(c) }), "down"); SND.sfx("no"); }
     openCard("bar", box => scene(box, c, ok ? T("A pact") : T("No pact"), ok ? T("Fine. I vote for yours, you vote for mine. Lola is our witness, and the Book is our memory.") : T(G.trust[c] < 20 ? "After what you did? Buy yourself a lemonade." : "Not today. Show me how you vote first."), [btn(T("Continue"), () => closeCard())]));
     spend();
@@ -1004,7 +1017,8 @@
       box.classList.add("paper");
       box.append(el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: dayName(G.day) + " · " + T("Night") }),
         el("p", { class: "lead", text: Fd("{x} is done on the island. The next day begins with the real one, after midnight German time ({y}). Your campaign waits here; the rivals sleep too.", { x: dayName(G.day), y: spanText(untilMidnight()) }) }),
-        el("ul", null, el("li", { text: T("Until then: read the Book, talk to people, look at The island today. None of it costs a move.") }),
+        el("ul", null, el("li", { text: T("Until then: read the Book, talk to people, look at The island today, visit the school, the dive centre, the works and the stone circle. None of it costs a move.") }),
+          el("li", { text: T("At eight in the evening Tobias rings the pier bell: ring back within two minutes and you have one more move that day.") }),
           el("li", { text: G.day >= DAYS - 1 ? T("Tomorrow is Sunday: three last moves, then the islanders vote.") : Fd("Governor’s count {x}, Monday 00:00 German time.", { x: countIn() }) })),
         el("div", { class: "cv-acts" }, btn(T("Good night"), () => closeCard(), { go: true })));
     });
@@ -1123,6 +1137,12 @@
     const s = bellState();
     b.hidden = !s; b.classList.toggle("go", s === "open"); b.disabled = s !== "open";
     b.textContent = s === "open" ? T("🔔 Answer the evening bell") : T("🔔 The evening bell at eight");
+  }
+  /* one more move today, earned in the game: like the bell, it first gives back a move spent, so a day that was over goes on */
+  function extraMove(why) {
+    if (!G || G.over) return;
+    if (G.move > 0) G.move--; else G.spare = (G.spare || 0) + 1;
+    save(); hud(); toast(F("One more move today: {x}", { x: why }));
   }
   function answerBell() {
     if (bellState() !== "open") return bellChip();
@@ -1482,7 +1502,7 @@
      transactions (the card says which). The island shows the ship, its tenders, a guide's pennant where a
      group is, and a ring at a place whenever one of their transactions is sealed in a block.
      ?ship=dryrun or ?ship=queen shows a made-up visit, marked as a preview; it sends nothing. ---------- */
-  const SHIPV = { v: null, next: null, last: null };
+  const SHIPV = { v: null, next: null, last: null, lastOf: {}, escrow: [] };
   const SHIPAT = { works: "The Coconut Works", school: "The School", dive: "Reef Proof Dive Centre", ship: "The Old Ship" };   // places only a painted island's layout brings
   const berlinHM = s => { try { return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(new Date(s * 1000)); } catch (e) { return new Date(s * 1000).toISOString().slice(11, 16); } };
   /* &phase=soon, tomorrow, today or close (two hours or less): no ship on the sea yet, only the islanders and Rico
@@ -1492,11 +1512,12 @@
     const now = Math.floor(Date.now() / 1000), q = k === "queen", qs = new URLSearchParams(location.search), phase = qs.get("phase");
     if (phase === "soon" || phase === "tomorrow" || phase === "today" || phase === "close") return null;
     const why = phase === "cut" ? (/^(stalled|refused)$/.test(qs.get("why") || "") ? qs.get("why") : "no landing") : "";
+    if (k === "pirates" && phase === "next") return null;   // the day after: only the talk about her
     if (k === "pirates") return { ship: k, name: "Black Sequence", style: "pirate", why,   // the pirates stay aboard: nobody ashore
       phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : phase === "wait" ? "waiting" : phase === "land" ? "landing" : "ashore",
       t0: phase === "approach" ? now + 90 : phase === "wait" ? now - 120 : phase === "land" ? now - 240 : now - 1800,
       end: phase === "gone" || phase === "cut" ? now : phase === "turn" ? now + 90 : now + 3600, passengers: 20, ashore: 0, at: {},
-      sent: { pay: 38, bill: 0, book: 0, cancel: 0 }, refused: 0, tricks: { tried: 9, stopped: 9 }, kinds: ["pay", "trick"], preview: true };
+      sent: { pay: 38, bill: 0, book: 0, cancel: 0 }, refused: 0, tricks: { tried: 9, stopped: 9, by: { overspend: 2, replay: 2, expired: 1, forged: 1, impostor: 1, freeride: 1, giant: 1 } }, kinds: ["pay", "trick"], preview: true };
     return { ship: k, name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition",
       phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : phase === "wait" ? "waiting" : phase === "land" ? "landing" : "ashore",
       why, t0: phase === "approach" ? now + 90 : phase === "wait" ? now - 120 : phase === "land" ? now - 240 : now - 1800,
@@ -1511,7 +1532,7 @@
     fetch("https://node.tauhud.com/cruise", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(j => {
       if (!j) return;
       SRC.ship = new Set([].concat(...Object.values(j.wallets || {})).map(lc));
-      SHIPV.v = j.now || null; SHIPV.next = j.next || null; SHIPV.last = j.last || null;
+      SHIPV.v = j.now || null; SHIPV.next = j.next || null; SHIPV.last = j.last || null; SHIPV.lastOf = j.last_of || {}; SHIPV.escrow = j.escrow || [];
       shipShow(); shipNews(SHIPV.v); shipLoad();
     }, () => {});
   }
@@ -1521,6 +1542,7 @@
   function shipFacts() {
     const W = window.RABBIT_SHIP_WHEN, k = QS.get("ship"); if (!W) return {};
     if (k === "dryrun" || k === "queen") return W.mark(k, SHIP_SAY[QS.get("phase")] || "shipHere");
+    if (k === "pirates" && W.pirate) return W.pirate(QS.get("phase") || "here", (SHIPV.v || {}).tricks);
     return W({ now: SHIPV.v, next: SHIPV.next, last: SHIPV.last }, Date.now() / 1000);
   }
   /* ---------- Rico on the ships: the nearer a ship, the more he talks about it (rico.js SETS ship*) ----------
@@ -1542,7 +1564,7 @@
   const shipWhy = note => /^no landing/.test(note || "") ? "no landing" : /^left early/.test(note || "") ? (/refused/.test(note) ? "refused" : "stalled") : "";
   function shipStage() {
     const f = shipFacts(); if (!f.ship) return null;
-    const now = Date.now() / 1000, ship = f.queen ? "queen" : "dryrun", v = SHIPV.v, pv = QS.get("ship") === ship;
+    const now = Date.now() / 1000, ship = f.queen ? "queen" : "dryrun", v = SHIPV.v && SHIPV.v.style !== "pirate" ? SHIPV.v : null, pv = QS.get("ship") === ship;
     const st = { ship, q: ship === "queen", preview: pv }, PH = { approach: "approach", waiting: "wait", landing: "land", ashore: "here", boarding: "board" };
     if (v && PH[v.phase]) return Object.assign(st, { stage: PH[v.phase], v, h: Math.max(0, (v.t0 - now) / 3600) });
     if (v && v.phase === "gone") return Object.assign(st, { stage: v.why ? "cut" : "gone", why: v.why || "", v, after: Math.max(0, (now - v.end) / 3600) });
@@ -1556,7 +1578,8 @@
   function shipNews(v) {
     if (!v || v.preview || !v.visit) return;
     const L = SHIPLIVE, S = v.sent || {};
-    if (L.visit !== v.visit) { Object.assign(L, { visit: v.visit, sent: { ...S }, refused: v.refused || 0, brake: v.brake || "none", ev: [], block: null, top: null, said: {} }); return; }
+    const by = { ...((v.tricks || {}).by || {}) };   // the pirates: each trick the chain refused (never one that got through)
+    if (L.visit !== v.visit) { Object.assign(L, { visit: v.visit, sent: { ...S }, refused: v.refused || 0, brake: v.brake || "none", by, ev: [], block: null, top: null, said: {} }); return; }
     const was = L.sent || {}, add = k => { if (!L.ev.some(e => e.k === k)) L.ev.push({ k, at: Date.now() }); };
     if ((S.book || 0) > (was.book || 0)) add("book");
     if ((S.cancel || 0) > (was.cancel || 0)) add("cancel");
@@ -1564,7 +1587,9 @@
     if ((v.refused || 0) > L.refused) add(v.refused >= 3 ? "ref3" : "ref1");
     if (v.brake === "half" && L.brake !== "half") add("half");
     if (L.brake === "half" && v.brake === "none") add("full");
-    L.sent = { ...S }; L.refused = v.refused || 0; L.brake = v.brake || "none";
+    if (v.brake === "slow" && L.brake !== "slow") add("slow");
+    for (const k in by) if ((by[k] || 0) > ((L.by || {})[k] || 0)) add("trick:" + k);
+    L.sent = { ...S }; L.refused = v.refused || 0; L.brake = v.brake || "none"; L.by = by;
   }
   /* how the testnet copes while the passengers are ashore (relay GET /load: the verdict of the last ten minutes) */
   function shipLoad() {
@@ -1594,6 +1619,8 @@
   /* a line with a number: shown exactly, spoken as a band ({where}: shown as the block, spoken as the latest block) */
   const banded = (k, n, h) => ({ t: F(RICO.L[k], h != null ? { n, where: "block " + h } : { n }), v: RICO.fill(RICO.L[k], { n: band(n), ...RICO.BLOCK }) });
   function shipLine() {
+    const ps = pirateStage();   // the pirates first; after they left, the week's other ship may be talked about too
+    if (ps) { const l = pirateLine(ps); if (l || !/^(gone|next|cut)$/.test(ps.stage)) return l; }
     const st = shipStage(), p = shipOdds(st); if (!p) return null;
     const run = ROT.shipAt === ROT.n - 1 ? ROT.shipRun || 0 : 0, port = /^(land|here|board)$/.test(st.stage);
     if (run >= (port ? 2 : 1) || Math.random() >= p) return null;
@@ -1625,14 +1652,96 @@
       : port && v.passengers ? [Q("{a} of {n} passengers ashore, in port until {t}.", { a: v.ashore || 0, n: v.passengers, t: berlinHM(v.end) })] : [];
     const own = () => stage === "cut" ? line(RICO.SETS[{ "no landing": "shipCutLand", stalled: "shipCutStall", refused: "shipCutRefused" }[st.why] || "shipCut"], Q(LOGQ))
       : line(pool({ soon: "shipSoon", tomorrow: "shipTomorrow", today: "shipToday", close: "shipClose", approach: "shipApproach", wait: "shipWait", land: "shipLand", here: "shipHere", board: "shipBoard", gone: "shipGone" }[stage]), ...when);
-    return (r < CALL ? shipCall() : r < CALL + WHY ? why() : null) || own() || why();
+    const learn = r >= CALL + WHY && r < CALL + WHY + 0.3 ? learnLine(st, line) : null;
+    return (r < CALL ? shipCall() : r < CALL + WHY ? why() : null) || learn || own() || why();
+  }
+  /* ---------- the pirates on air (rico.js pp_*): they come unannounced ----------
+     Nothing before she is in sight. Then a bulletin (after dark, lanterns), at anchor the pirate watch and one line for
+     each trick the chain just refused (relay /cruise now.tricks.by, which never counts a trick that got through), weighing
+     anchor, and after: her evening in numbers (only the refused tricks), "every trick refused" only when the logbook's
+     summary says so, the day after now and then. A trick that got through is held back and never mentioned. */
+  function pirateStage() {
+    const f = shipFacts(); if (!f.pirates) return null;
+    const pv = QS.get("ship") === "pirates", v = SHIPV.v && SHIPV.v.style === "pirate" ? SHIPV.v : null, now = Date.now() / 1000;
+    const st = { pirate: true, preview: pv, f, dark: darkNow(), v: v || SHIPV.last };
+    if (f.pirateSight) return Object.assign(st, { stage: "approach" });
+    if (f.pirateHere) return Object.assign(st, { stage: v && v.phase === "boarding" ? "board" : "here" });
+    const end = (st.v || {}).end || now;
+    return Object.assign(st, { stage: f.pirateCut && f.pirateGone ? "cut" : f.pirateNext ? "next" : "gone", after: Math.max(0, (now - end) / 3600) });
+  }
+  function pirateLine(st) {
+    const p = st.stage === "next" ? 0.06 : shipOdds(st); if (!p) return null;
+    const run = ROT.shipAt === ROT.n - 1 ? ROT.shipRun || 0 : 0, port = /^(here|board)$/.test(st.stage);
+    if (run >= (port ? 2 : 1)) return null;
+    const ev = port ? SHIPLIVE.ev.filter(e => /^trick:/.test(e.k) && Date.now() - e.at < 240000) : [];
+    if (!ev.length && Math.random() >= p) return null;
+    const line = (keys, ...more) => { keys = (keys || []).filter(k => RICO.L[k]); if (!keys.some(sayable)) return null; const k = pickLine(keys); return { k, parts: [V(k), ...more] }; };
+    /* live (relay now.tricks): {tried, stopped, by}; after (the logbook's summary): each trick's counts, one that got through only {held} */
+    const v = st.v || {}, T = v.tricks || {}, stopped = T.stopped != null ? Number(T.stopped) || 0
+      : Object.values(T).reduce((a, c) => a + (c && !c.held && !c.through ? Number(c.stopped) || 0 : 0), 0);
+    const done = l => { if (!l) return null; ROT.shipRun = run + 1; ROT.shipAt = ROT.n; ROT.callLast = !!l.call; if (st.preview && !l.call) l.parts.push(Q("(preview)")); return l; };
+    /* a trick the chain just refused: named by the pirate's prop */
+    while (ev.length) {
+      const e = ev.shift(); SHIPLIVE.ev = SHIPLIVE.ev.filter(x => x !== e);
+      const k = e.k.slice(6), l = line(["pp_t_" + k + "1", "pp_t_" + k + "2"], Q("({n} tricks refused by the chain so far)", { n: stopped }));
+      if (l) return done(l);
+    }
+    const r = Math.random(), S = RICO.SETS, id = v.visit || v.id || v.t0;
+    if (st.stage === "approach") return done(line(st.dark ? S.pirSightN : S.pirSight, ...(v.t0 && !st.preview ? [Q("Anchors at {t}, German time.", { t: berlinHM(v.t0) })] : [])));
+    if (st.stage === "here") return done((r < 0.2 ? shipCall() : null) || line(st.dark ? S.pirHereN : S.pirHere, ...(stopped ? [Q("({n} tricks refused by the chain so far)", { n: stopped })] : [])));
+    if (st.stage === "board") return done(line(S.pirBoard));
+    if (st.stage === "cut") return done(line(S.pirCut, Q(LOGQ)));
+    /* after: her evening in numbers once, the refused tricks only */
+    if (st.stage === "gone" && stopped >= 2 && SHIPLIVE.recap !== id && sayable("pp_recap")) {
+      SHIPLIVE.recap = id;
+      return done({ k: "pp_recap", parts: [banded("pp_recap", stopped), Q("({n} tricks refused by the chain)", { n: stopped }), Q(LOGQ)] });
+    }
+    return done((r < 0.15 ? shipCall() : null) || (st.f.pirateClean && st.stage === "gone" && r < 0.5 ? line(S.pirClean, Q(LOGQ)) : null)
+      || line(st.stage === "next" ? S.pirNext : S.pirGone));
+  }
+  /* ---------- what a ship learned (rico.js sk_*, ex_*): from her logbook, each thing once ----------
+     Before her next call: what she changed for it, and why (the relay's tune log, "last_of" her last visit). After a
+     visit: the stops she skipped (our node's answers took their time), the sends it left unanswered in time, a day with
+     no refusal. MS Dry Run: the fares paid days ahead into escrow, one taken back on purpose, paid out at the arrival. */
+  const LEARNQ = "(her logbook: {x} from {y} to {z}, because {w})";
+  function learnLine(st, line) {
+    const once = (k, l) => { if (!l || SHIPLIVE.said[k]) return null; SHIPLIVE.said[k] = Date.now(); return l; };
+    const ahead = /^(soon|tomorrow|today|close)$/.test(st.stage), after = st.stage === "gone" || st.stage === "cut";
+    const esc = (SHIPV.escrow || []).find(e => e.ship === st.ship && (ahead ? st.t0 && e.arrival === st.t0 : (st.v || {}).t0 === e.arrival));
+    if (esc && (ahead || after || /^(land|here|board)$/.test(st.stage))) {
+      const n = esc.count || {}, q = Q("(bookings ahead: {n} in escrow, {m} taken back, {a} paid out)", { n: (n["in escrow"] || 0) + (n.sent || 0), m: (n.refunded || 0) + (n["refund sent"] || 0), a: n["paid out"] || 0 });
+      const k = esc.called_off ? "ex_off" : (n["paid out"] || 0) > 0 ? "ex_paid" : ahead && ((n.refunded || 0) + (n["refund sent"] || 0)) > 0 ? "ex_back" : ahead && ((n["in escrow"] || 0) + (n.sent || 0)) > 0 ? "ex_open" : null;
+      const l = k && once("ex:" + esc.visit + ":" + k, line([k], q)); if (l) return l;
+    }
+    if (ahead) {
+      const lo = (SHIPV.lastOf || {})[st.ship] || {}, c = (lo.changed || []).find(x => x && !x.held && x.what);
+      if (!c) return null;
+      const k = c.what === "transactions a minute" ? (Number(c.to) < Number(c.from) ? "sk_rate_down" : "sk_rate_up") : c.what === "stops planned a minute" ? "sk_plan" : / kind$/.test(c.what) ? "sk_trial" : null;
+      return k ? once("sk:" + (lo.id || "") + ":" + k, line([k], Q(LEARNQ, { x: c.what, y: String(c.from), z: String(c.to), w: c.because || "" }))) : null;
+    }
+    if (!after) return null;
+    const v = st.v || {}, id = v.id || v.visit, sum = (SHIPV.last && SHIPV.last.id === id) ? SHIPV.last : null;   // the logbook's summary of that visit
+    if (!sum || !sum.landed) return null;
+    const rf = Object.values(sum.refused || {}).reduce((a, b) => a + (Number(b) || 0), 0), sent = Object.values(sum.sent || {}).reduce((a, b) => a + (Number(b) || 0), 0);
+    const skip = Number(sum.skipped) || 0, una = Number(sum.unanswered) || 0;
+    /* skipped stops: the lines name our node's answer time as the cause, so not when a strained testnet slowed her */
+    if (skip >= 2 && !(Number(sum.half_strained) > 0)) { const ks = RICO.SETS.shipSkip.filter(sayable); if (ks.length && !SHIPLIVE.said["sk:skip:" + id]) { const k = pickLine(ks); SHIPLIVE.said["sk:skip:" + id] = 1; return { k, parts: [banded(k, skip), Q("({n} of {m} planned stops skipped)", { n: skip, m: Number(sum.planned) || skip + sent })] }; } }
+    if (una >= 2 && sayable("sk_quiet") && !SHIPLIVE.said["sk:quiet:" + id]) { SHIPLIVE.said["sk:quiet:" + id] = 1; return { k: "sk_quiet", parts: [banded("sk_quiet", una), Q("({n} sends without an answer in time)", { n: una })] }; }
+    if (!rf && sent > 0 && st.stage === "gone") { const l = once("sk:clean:" + id, line(["sk_clean"], Q(LOGQ))); if (l) return l; }
+    const c = (sum.changed || []).find(x => x && !x.held && x.what);
+    if (c) {
+      const k = c.what === "transactions a minute" ? (Number(c.to) < Number(c.from) ? "sk_rate_down" : "sk_rate_up") : c.what === "stops planned a minute" ? "sk_plan" : / kind$/.test(c.what) ? "sk_trial" : null;
+      if (k) return once("sk:" + id + ":" + k, line([k], Q(LEARNQ, { x: c.what, y: String(c.from), z: String(c.to), w: c.because || "" })));
+    }
+    return null;
   }
   /* what Rico reports while the passengers are ashore, the newest first; null: nothing new, so a line of the stage */
   function shipPort(st, line) {
     const v = st.v || {}, S = v.sent || {}, L = SHIPLIVE, now = Date.now(), ago = k => now - (L.said[k] || 0);
     L.ev = L.ev.filter(e => now - e.at < 240000);
     while (L.ev.length) {
-      const e = L.ev.shift(), keys = { book: RICO.SETS.shipBook, cancel: RICO.SETS.shipCancel, bill: RICO.SETS.shipBill, half: ["ss_strain"], full: ["se_full"], ref1: ["se_ref1"], ref3: ["se_ref3"] }[e.k];
+      const e = L.ev.shift(), keys = { book: RICO.SETS.shipBook, cancel: RICO.SETS.shipCancel, bill: RICO.SETS.shipBill, half: ["ss_strain"], full: ["se_full"], slow: ["se_slow"], ref1: ["se_ref1"], ref3: ["se_ref3"] }[e.k];
+      if (!keys) continue;   // a pirate trick: pirateLine tells it
       const more = e.k === "book" ? [Q("({n} bookings so far)", { n: S.book || 0 })] : e.k === "cancel" ? [Q("({n} withdrawn so far)", { n: S.cancel || 0 })]
         : e.k === "bill" ? [Q("({n} group bills so far)", { n: S.bill || 0 })] : /^ref/.test(e.k) ? [Q("({n} refused so far)", { n: v.refused || 0 })] : [];
       const l = line(keys, ...more); if (l) return l;
@@ -1666,7 +1775,7 @@
   /* a listener (or an islander) calls about the ship near: each call once, until Rico has said a lot of other things */
   function shipCall() {
     if (ROT.callLast) return null;
-    const sf = shipFacts(), keys = RICO.CALLS.map((c, i) => (c.when && /ship|queen|dryrun/.test(c.when) && holds(sf, c.when) ? "call:" + i : null))
+    const sf = shipFacts(), keys = RICO.CALLS.map((c, i) => (c.when && /ship|queen|dryrun|pirate/.test(c.when) && holds(sf, c.when) ? "call:" + i : null))
       .filter(x => x && !SAID.includes(x) && sayable(x));
     return keys.length ? dial(keys[Math.floor(Math.random() * keys.length)]) : null;
   }
@@ -1679,7 +1788,7 @@
     b.textContent = (ph === "approach" ? F("🛳 {x} at {t}", { x: v.name, t: berlinHM(v.t0) })
       : ph === "waiting" ? F("🛳 {x} waits offshore", { x: v.name })
       : ph === "gone" ? F("🛳 {x} has left", { x: v.name })
-      : v.style === "pirate" ? F("🏴 {x} in port: {n} tricks tried, {m} refused by the chain", { x: v.name, n: (v.tricks || {}).tried || 0, m: (v.tricks || {}).stopped || 0 })
+      : v.style === "pirate" ? F("🏴 {x} at anchor: {m} tricks refused by the chain", { x: v.name, m: (v.tricks || {}).stopped || 0 })
       : F("🛳 {x}: {n} ashore", { x: v.name, n: v.ashore || 0 })) + (v.preview ? " · " + T("preview") : "");
   }
   /* a ring at the place each passenger transaction in a new block paid (a booking: the place it is for); a block with a
@@ -1709,7 +1818,7 @@
         : v.phase === "gone" ? T(v.why === "no landing" ? "It sailed on without landing: the testnet was not calm."
           : v.why === "refused" ? "It left early: the node refused its passengers’ transactions, and the ship took them back at once."
           : "It left early: the testnet stalled, and the ship took its passengers back at once.")
-        : v.style === "pirate" ? F("{n} pirates aboard, in port until {t}: {a} tricks tried so far, {b} refused by the chain.", { n: v.passengers, t: berlinHM(v.end), a: (v.tricks || {}).tried || 0, b: (v.tricks || {}).stopped || 0 })
+        : v.style === "pirate" ? F("{n} pirates aboard, at anchor until {t}: {b} tricks refused by the chain so far.", { n: v.passengers, t: berlinHM(v.end), b: (v.tricks || {}).stopped || 0 })
         : F("{a} of {n} passengers ashore, in port until {t}.", { a: v.ashore || 0, n: v.passengers, t: berlinHM(v.end) });
       box.append(el("h3", { text: v.name + (v.preview ? " · " + T("preview") : "") }),
         el("p", { text: T(v.style === "pirate" ? "A pirate ship. Its crew stays aboard and trades from the boat: rum at Bar La Ola, supplies at the market. Now and then a pirate tries a trick the chain must refuse." : v.style === "expedition" ? "A small expedition ship with curious passengers: the lighthouse, Captain Wren’s Old Ship, the school, a dive on the reef." : "A big luxury liner: the spa at the South Current resort, Bar La Ola, song requests on Radio Coco, souvenirs.") }),
@@ -2116,7 +2225,7 @@
     return btn(sent ? T("Sent to the testnet ✓") : label, go, { off: !!sent, sub: T("1 test AGRS from your test wallet, signed by you") });
   }
   /* ---------- the Book on the chain ---------- */
-  const CHAIN = { ws: null, wait: new Map(), q: [], payq: [], busy: false, next: 0, fee: null, made: false };
+  const CHAIN = { ws: null, wait: new Map(), q: [], payq: [], busy: false, next: 0, fee: null, made: false, follow: 0 };
   function relay() {
     return new Promise(res => {
       if (CHAIN.ws && CHAIN.ws.readyState === 1) return res(CHAIN.ws);
@@ -2191,12 +2300,73 @@
         hash = (r.data && r.data.tx_hash) || String(Date.now()); CHAIN.next = seq + 1;
         try { const lk = "tauhud-wallet-log-live-" + k.pk, logs = JSON.parse(store.get(lk) || "[]"); logs.unshift({ hash, kind: "pay", label: T("White Rabbit Key") + ": " + label, at: Date.now(), status: "queued", seq, paid: true }); store.set(lk, JSON.stringify(logs.slice(0, 40))); } catch (e) {}
         if (TILL[at]) remember(to, "Key jar · " + ((SC.places[at] || {}).name || at));   // a readable name in the wallet's address book
-        toast(F("Signed into the testnet: {n} test AGRS from your wallet.", { n: pay }));
+        if (!txNote(hash, label, pay)) toast(F("Signed into the testnet: {n} test AGRS from your wallet.", { n: pay }));
         if (CHAIN.payq.length) flushPay();
       } else { CHAIN.payq.length = 0; CHAIN.next = 0; toast(T("The testnet did not take this move just now; the game goes on.")); }
     } catch (e) { if (G && G.onchain) toast(T("The testnet is out of reach just now; the game goes on.")); }
     CHAIN.busy = false; done && done(hash);
     if (CHAIN.q.length) setTimeout(pump, 400);
+  }
+  /* ---------- the chain moment: every move signed into the testnet is shown as what it is ----------
+     A strip under the island says "signed, waiting for a block", then "sealed in block N", with the hash and a link to
+     the Explorer; a chip in the bar counts the campaign's transactions, and opens the list of them with the chain's
+     answer to each. The game keeps the list (G.txs) and asks the relay for the status of what is still waiting. */
+  const txShort = h => h.slice(0, 6) + "…" + h.slice(-4);
+  const txUrl = h => "/explorer/?tx=" + h + (window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "");
+  function txNote(h, label, pay) {
+    if (!G || !/^[0-9a-f]{64}$/i.test(h || "")) return false;
+    G.txs = Array.isArray(G.txs) ? G.txs : [];
+    G.txs.unshift({ h, label, pay: pay || 1, at: Date.now(), st: "queued" }); if (G.txs.length > 60) G.txs.length = 60;
+    save(); chainChip(); chainStrip(G.txs[0]); followTxs();
+    return true;
+  }
+  function chainChip() {
+    const b = $("cvChainChip"); if (!b) return;
+    const txs = (G && G.txs) || []; b.hidden = !txs.length; if (!txs.length) return;
+    const sealed = txs.filter(t => t.st === "in").length, waiting = txs.filter(t => t.st === "queued").length;
+    b.replaceChildren(el("i", { class: "dot" + (waiting ? " now" : ""), "aria-hidden": "true" }), el("b", { class: "num", text: String(sealed + waiting) }), el("span", { class: "lb", text: T("on chain") }));
+    b.title = F("{n} moves on Tau Testnet Alpha this campaign: {m} sealed in a block, {k} waiting. Click: every transaction with the chain’s answer.", { n: txs.length, m: sealed, k: waiting });
+    b.setAttribute("aria-label", F("{n} on chain", { n: sealed + waiting }));
+  }
+  let stripT = 0;
+  function chainStrip(t) {
+    const d = $("cvChain"); if (!d || !t) return;
+    const text = t.st === "in" ? F("Sealed in block {n} on Tau Testnet Alpha", { n: t.block }) : t.st === "out" ? F("Refused by the chain: {x}", { x: t.why || "" }) : F("Signed into Tau Testnet Alpha: {n} test AGRS · waiting for a block", { n: t.pay });
+    d.replaceChildren(el("i", { class: "dot" + (t.st === "in" ? " ok" : t.st === "out" ? " no" : " now"), "aria-hidden": "true" }), el("span", { class: "tx", text: text }), el("code", { class: "h", text: txShort(t.h) }),
+      el("a", { href: txUrl(t.h), target: "_blank", rel: "noopener", text: T("Explorer") }));
+    d.hidden = false; requestAnimationFrame(() => d.classList.add("on"));
+    clearTimeout(stripT); stripT = setTimeout(() => { d.classList.remove("on"); setTimeout(() => { if (!d.classList.contains("on")) d.hidden = true; }, 350); }, t.st === "queued" ? 14000 : 9000);
+  }
+  function followTxs() {
+    if (CHAIN.follow) return;
+    const tick = async () => {
+      CHAIN.follow = 0;
+      if (!G || document.hidden) { CHAIN.follow = setTimeout(tick, 15000); return; }
+      const open = (G.txs || []).filter(t => t.st === "queued" && Date.now() - t.at < 900000).slice(0, 4);
+      if (!open.length) return;
+      let changed = false;
+      for (const t of open) {
+        const m = await ask("gettxstatus " + t.h, 8000); if (!m || m.status !== "ok") continue;
+        const d = m.data || {}, st = String(d.status || d.state || "").toLowerCase();
+        if (d.block_number != null || /confirmed|included|mined|sealed|applied/.test(st)) { t.st = "in"; t.block = d.block_number ?? d.height ?? null; changed = true; if (G.txs[0] === t) chainStrip(t); }
+        else if (/reject|fail|dropped|expired|invalid/.test(st)) { t.st = "out"; t.why = d.reason || d.error || st; changed = true; if (G.txs[0] === t) chainStrip(t); }
+      }
+      if (changed) { save(); chainChip(); if (UI.card && UI.card.classList.contains("chain")) chainCard(); }
+      CHAIN.follow = setTimeout(tick, 6000);
+    };
+    CHAIN.follow = setTimeout(tick, 5000);
+  }
+  function chainCard() {
+    const pk = myPk(), lang = window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "", open = u => window.open(u, "_blank", "noopener");
+    openCard("book", box => {
+      box.classList.add("chain");
+      const rows = ((G && G.txs) || []).map(t => el("li", { class: t.st === "out" ? "k-broke" : "k-fact" },
+        el("small", { text: t.st === "in" ? F("in block {n}", { n: t.block }) : t.st === "out" ? F("refused: {x}", { x: t.why || "" }) : T("waiting for a block") }),
+        el("span", null, el("span", { text: t.label }), " ", el("a", { class: "cv-tx", href: txUrl(t.h), target: "_blank", rel: "noopener", text: txShort(t.h) }))));
+      scene(box, "sam", T("Your moves on Tau Testnet Alpha"), T("Every move you make goes to the testnet as a transaction from your test wallet: 1 test AGRS to the place’s jar, signed in this browser. Here is each one, with the chain’s answer."),
+        [btn(T("Your test wallet"), () => open("/wallet/" + (lang ? "?" + lang.slice(1) : ""))), pk ? btn(T("Your Tau card"), () => open("/card/?a=" + pk + lang)) : null, btn(T("Back to the island"), () => closeCard(), { go: true })].filter(Boolean),
+        el("ol", { class: "cv-book" }, rows.length ? rows : [el("li", { class: "dim", text: T("Nothing yet.") })]));
+    });
   }
   let drawer = null;
   function remember(addr, name) {
@@ -2286,6 +2456,7 @@
     ISLE.s = s; ISLE.at = Date.now();
     isleRule(); isleChip();
     document.querySelectorAll(".cv-isle-intro").forEach(p => p.replaceWith(isleIntro()));
+    document.querySelectorAll(".cv-isle-gov").forEach(p => p.replaceChildren(...isleGov()));
     const bd = UI.card && UI.card._board && UI.card.querySelector(".cv-board"); if (bd && s.board) { bd.replaceWith(boardBody(s.board)); fitCard(UI.card); }
   }
   const isleTop = (o, n = 1) => Object.keys(o || {}).sort((a, b) => o[b] - o[a]).slice(0, n);
@@ -2339,16 +2510,16 @@
     b.title = F("{n} playing now, you included: people with White Rabbit Key open, counted live by the relay.", { n: here }) + "\n" + (n ? F("{n} campaigns today. Click: the island today.", { n }) : T("Click: the island today."));
     b.setAttribute("aria-label", F("{n} playing now", { n: here }));
   }
-  /* on the start card: who else is on the island today */
+  /* on the start card: a chip that says the island is shared, and who else is on it right now (counted live by the
+     relay; until it answers, the words alone), and a line under the four with this week's governor */
   function isleIntro() {
-    const s = ISLE.s, p = el("p", { class: "cv-isle-intro cv-note" }); if (!s) return p;
-    const n = s.players.campaigns, here = s.here || 0;
-    p.append(el("b", { text: T("The island today:") }), " ", n
-      ? F("{n} campaigns so far, {m} finished.", { n, m: s.players.finished }) + (here > 1 ? " " + F("{n} people playing right now.", { n: here }) : "")
-      : T("no visitor has campaigned yet today. The islanders are at it already; yours would be the first campaign.") + (here > 1 ? " " + F("{n} people playing right now.", { n: here }) : ""));
-    const last = isleLast(); if (last) p.append(" ", Fd("{x} governs the island this week.", { x: nm(last.governor) }));
-    return p;
+    const s = ISLE.s, c = el("span", { class: "ivc cv-isle-intro", title: T("Everyone this week plays the same island, each their own campaign against the island’s three rivals; every finished campaign counts for its candidate. The relay counts who has the page open right now.") });
+    const n = s ? s.players.campaigns : 0, here = s ? Math.max(1, s.here || 0) : 1;
+    c.append(el("i", { class: "dot" + (here > 1 ? " now" : ""), "aria-hidden": "true" }), el("span", { text: !s ? T("Shared island: everyone plays the same week")
+      : (here > 1 ? F("{n} playing now", { n: here }) : T("Shared island")) + " · " + (n ? F("{n} campaigns today", { n }) : T("yours would be the first campaign today")) }));
+    return c;
   }
+  function isleGov() { const last = isleLast(); return last ? [el("b", { text: T("The island:") }), " ", Fd("{x} governs the island this week.", { x: nm(last.governor) })] : []; }
   /* each morning the paper says what the whole island talks about, and people who care about it lean a little toward
      whoever has that law in force in this game: the same nudge whether one campaign or a thousand were played */
   function isleMorning() {
@@ -2468,18 +2639,55 @@
   /* ---------- the start: pick your candidate ---------- */
   function start() {
     G = load();
-    if (G) { G.onchain = true; hud(); if (G.picked === "…") G.picked = null; signUp(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); return; }
+    if (G) { G.onchain = true; hud(); if (G.picked === "…") G.picked = null; signUp(); if (G.over) return ending(); if (!FREE && G.week && G.week !== weekId()) return decideLate(); if (G.counting) { G.counting = false; return election(); } if (G.waiting) return resume(); if (G.move >= MOVES) return endDay(); setTimeout(signsOn, 800); followTxs(); return; }
     SC.setHour(0, true); hud();
     openCard(null, introCard);
   }
+  /* ---------- signs at the places until the first move: a newcomer sees at once where to go, and that a tap is a move ----------
+     The names stand over the buildings, the council hall marked as the place to start. They follow the island when it is
+     panned on a phone, hide behind every card, and never come back once a move was made in this browser. */
+  const SIGNS = ["hall", "market", "radio", "north", "south", "bar", "book"], SIGNED = "rabbit-first-move";
+  let signsRaf = 0;
+  function signsOn() {
+    if (store.get(SIGNED) || !G || G.over || G.move >= MOVES || $("cvSigns")) return;
+    const host = el("div", { class: "signs", id: "cvSigns", "aria-label": T("Places on the island") });
+    const few = $("cvStage").clientWidth < 700;   // a phone: the four that matter first, the embassies and the bar stay in ☰
+    SIGNS.filter(id => SC.places[id] && PLACE[id] && !SC.locked(id) && !(few && /^(north|south|bar)$/.test(id))).forEach(id => {
+      const b = el("button", { type: "button", class: "sign" + (id === "hall" ? " go" : ""), "data-id": id, onclick: e => { e.stopPropagation(); wake(); if (G && !UI.card) openCard(id, PLACE[id]); } }, el("b", { text: T(SC.places[id].name) }));
+      if (id === "hall") b.append(el("small", { text: T("Start here: propose a law") }));
+      host.append(b);
+    });
+    $("cvStage").append(host);
+    /* each sign hangs under its place's ground point; one that would cover another slides down, one at the edge slides in */
+    const place = () => {
+      if (!host.isConnected) { signsRaf = 0; return; }
+      const W = host.clientWidth, put = [];
+      for (const b of host.querySelectorAll(".sign")) {
+        const p = SC.places[b.dataset.id] || {}, w = b.offsetWidth, h = b.offsetHeight; let [x, y] = SC.toScreen(p.x, p.y);
+        x = Math.max(w / 2 + 4, Math.min(W - w / 2 - 4, x)); y += 10;
+        const base = y;   // a sign in another's way moves up when its place stands higher on the island, else down, until it is clear
+        for (let n = 0, moved = true; moved && n < 8; n++) { moved = false; for (const o of put) if (Math.abs(o.x - x) < (o.w + w) / 2 + 6 && y < o.y + o.h + 6 && y + h + 6 > o.y) { y = base < o.base ? o.y - h - 8 : o.y + o.h + 8; moved = true; } }
+        put.push({ x, y, w, h, base }); b.style.left = x + "px"; b.style.top = y + "px";
+      }
+      signsRaf = requestAnimationFrame(place);
+    };
+    place();
+  }
+  function signsOff() { const s = $("cvSigns"); if (s) s.remove(); if (signsRaf) { cancelAnimationFrame(signsRaf); signsRaf = 0; } }
   /* a laptop or a desktop: the four candidates stand large across the island at dusk, as in a game's opening scene, the
      facts in a quiet strip below them. A phone, or a screen too low for that, keeps the plate with four small faces. */
   const wideIntro = () => { const st = $("cvStage"); return !LAND.matches && innerWidth >= 900 && st.clientWidth >= 860 && st.clientHeight >= 480; };
   function introCard(box) {
     const wide = wideIntro(), stH = $("cvStage").clientHeight;
     box.classList.add("intro"); box.classList.toggle("wide", wide); box.classList.toggle("low", wide && stH < 760); box._wide = wide;
-    box.append(el("div", { class: "iv-head" }, el("p", { class: "kick", text: T("Sunday night the island elects a governor") }), el("h2", { text: T("White Rabbit Key") }),
-      el("p", { class: "cv-line", text: T("Four islanders stand for governor, and you are one of them. Each day you have three moves: propose laws, talk to people, buy a line on the radio, take an embassy’s money, make pacts. Everything anyone does is written into the Book in the lighthouse, where anyone can read it.") })));
+    /* the first twenty seconds, before the four faces: what the game is, what you are after, who the rivals are and why
+       every move is on Tau; three chips under it say the same in three words each, one of them counted live */
+    box.append(el("div", { class: "iv-head" }, el("p", { class: "kick", text: T("An election game on Tau Testnet Alpha") }), el("h2", { text: T("White Rabbit Key") }),
+      el("p", { class: "cv-line", text: T("Run for governor of a small island. Your three rivals are played by the island; ten islanders vote on Sunday night, and whoever wins more of them governs next week. Three moves a day, six on your first, each one a real transaction on Tau Testnet Alpha from a test wallet this browser makes for you. Other people play beside you this week: on Sunday night every campaign counts.") }),
+      el("div", { class: "iv-chips" },
+        el("span", { class: "ivc", title: T("1 test AGRS per move, paid to the place where you make it. Wages and embassy money come back into your wallet; the rivals’ moves go on chain too. Test AGRS have no value.") }, el("i", { class: "dot", "aria-hidden": "true" }), el("span", { text: T("Every move: a real testnet transaction") })),
+        isleIntro(),
+        el("span", { class: "ivc", title: T("Ten islanders vote in every campaign. Every campaign won this week is a ballot for its candidate; the one with the most governs the island next week.") }, el("i", { class: "dot", "aria-hidden": "true" }), el("span", { text: Fd("Election Sunday night · count {x}", { x: countIn() }) })))));
     const pick = el("div", { class: "cv-pick" });
     /* wide: a canvas as large as the figure will stand (about half the stage high), drawn at twice that for sharpness */
     const big = Math.max(240, Math.min(640, Math.round(stH * 0.6)));
@@ -2487,16 +2695,12 @@
       wide ? el("span", { class: "fig" }, portrait(c, big, 0, true)) : portrait(c, innerWidth < 760 || innerHeight < 520 ? 56 : 96),
       el("span", { class: "plate" }, el("b", { translate: "no", text: nm(c) }), el("small", { text: T(CANDS[c].role) }), el("em", { text: T(CANDS[c].pitch) })))));
     box.append(el("div", { class: "iv-cast" }, el("p", { class: "cv-h", text: T("Which candidate are you?") }), pick));
+    /* under the four: the week in one line, who governs, the island's ballot as the chain shows it, the wallet */
     const td = todayIdx();
     const camp = [el("b", { text: T("Your campaign:") }), " ", T("this week, Monday to Sunday. An island day is a real day: three moves, a few minutes. Sunday evening the islanders vote."), " ",
       td === 1 ? T("Today is Monday: the week begins.") : td === DAYS ? T("Today is Sunday: play the whole week now, the vote is tonight.") : Fd("Today is {x}: catch up Monday to {y} briefly or start today, then a day a day.", { x: dayName(td), y: dayName(td - 1) })];
-    const isle = [el("b", { text: T("The island:") }), " ", Fd("every campaign won is a ballot for its candidate; governor’s count {x}, Monday 00:00 German time.", { x: countIn() })];
-    /* every move is a real test transaction, always: said plainly here instead of a box to tick */
-    const chain = el("p", { class: "cv-chain" }, el("span", { text: T("Every move is real: it is signed into Tau Testnet Alpha from a test wallet made for you in this browser, and paid to the place where you make it (1 test AGRS, a line on Radio Coco 25). Wages and embassy money come back into that wallet. The rivals’ moves go there too. Test AGRS have no value.") }), " ", el("a", { href: "/wallet/", text: T("Your test wallet") }));
-    /* the same words either way; wide they stand in three columns (the week, the island, the chain) */
-    box.append(wide
-      ? el("div", { class: "iv-facts" }, el("p", { class: "cv-note" }, ...camp), el("div", null, el("p", { class: "cv-note" }, ...isle), ballotEl(), isleIntro()), chain)
-      : el("div", { class: "iv-facts" }, el("p", { class: "cv-note" }, ...camp, el("br"), ...isle), ballotEl(), isleIntro(), chain));
+    box.append(el("div", { class: "iv-facts" }, el("p", { class: "cv-note" }, ...camp), el("p", { class: "cv-note cv-isle-gov" }, ...isleGov()), ballotEl(),
+      el("p", { class: "cv-note cv-chain" }, el("a", { href: "/wallet/", text: T("Your test wallet") }), " · ", el("span", { text: T("Test AGRS have no value.") }))));
   }
   /* once per browser, after the first move signed into the testnet: where that move can be seen, and the two other pages
      the same test wallet opens. Shown at the first quiet moment, so it never cuts into a scene. */
@@ -2505,7 +2709,7 @@
     const pk = myPk(), h = /^[0-9a-f]{64}$/.test(G.picked || "") ? G.picked : null, lang = window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "";
     const open = u => window.open(u, "_blank", "noopener");
     openCard(null, box => {
-      box.classList.add("paper");
+      box.classList.add("paper", "extra");   // an extra, not the morning paper: it closes like any plate (✕, Escape)
       box.append(el("div", { class: "cv-paper" }, el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: T("Extra") }),
         el("p", { class: "lead", text: T("Your first move is on Tau Testnet Alpha: 1 test AGRS to the Book, signed by the test wallet this browser made for you. The same wallet opens two more pages, and Agorzilla eats transactions like yours.") }),
         el("ul", null, el("li", { text: T("Explorer: the transaction itself, and the block that sealed it.") }),
@@ -2518,7 +2722,8 @@
           btn(T("Back to the island"), () => closeCard())));
     });
   }
-  setInterval(() => { if (G && !G.over && G.picked && G.picked !== "…" && myPk() && !store.get("rabbit-bridged") && !UI.card && !drawer && !document.hidden) bridgeCard(); }, 4000);
+  /* a quiet moment: after the first real move (the signs are down), no plate, no drawer, no chain strip in the way */
+  setInterval(() => { if (G && !G.over && G.picked && G.picked !== "…" && myPk() && !store.get("rabbit-bridged") && store.get(SIGNED) && $("cvChain").hidden && !UI.card && !drawer && !document.hidden) bridgeCard(); }, 4000);
   function dragHint() {
     if (!matchMedia("(pointer: coarse) and (orientation: portrait)").matches || store.get("rabbit-drag-hint")) return;
     setTimeout(() => { if (G && !UI.card && SC.canPan()) { store.set("rabbit-drag-hint", "1"); toast(T("Drag the island to look around, or turn your phone sideways. ☰ lists every place.")); } }, 3500);
@@ -2546,8 +2751,8 @@
       box.append(el("div", { class: "cv-paper" }, el("p", { class: "mast", text: T("The Key Crier") }), el("p", { class: "date", text: dayName(td) }),
         el("p", { class: "lead", text: Fd("It is {x} already: Monday to {y} went by without you. Catch up briefly, or start today with the island as the rivals left it.", { x: dayName(td), y: dayName(td - 1) }) })),
         el("div", { class: "cv-acts" },
-          btn(T("Catch up briefly"), () => { G.brief = true; if (briefDay()) G.move = MOVES - 1; save(); then(); }, { go: true, sub: Fd("{n} days with one move each, then today with three", { n: td - 1 }) }),
-          btn(T("Play from today"), () => { skipTo(td); then(); }, { sub: T("Three moves today; what the rivals did until now is in the Book") })));
+          btn(T("Catch up briefly"), () => { G.brief = true; G.spare = 0; if (briefDay()) G.move = MOVES - 1; save(); then(); }, { go: true, sub: Fd("{n} days with one move each, then today with three", { n: td - 1 }) }),
+          btn(T("Play from today"), () => { skipTo(td); then(); }, { sub: T("Six moves today, then three a day; what the rivals did until now is in the Book") })));
     });
   }
   function skipTo(td) {
@@ -2579,7 +2784,7 @@
     hana: "So it is true, Hana: your name is on the list, in my own hand. Four candidates, one governor’s chair under the council tree, and on Sunday night the ten islanders who vote choose who sits in it. You write everything down, so you know how this works. Laws are made in the Council Hall. Everything else is written here.",
   };
   function welcome() {
-    const after = () => { toast(T("Tap a place on the island to begin.")); dragHint(); };
+    const after = () => { toast(T("Tap a sign for your first move: a real transaction on Tau Testnet Alpha.")); signsOn(); dragHint(); };
     const go = () => { closeCard(); const pend = G.pending.splice(0); if (pend.length) councilQueue(pend, after); else after(); };   // a campaign begun today: the rivals' laws from the skipped nights come to the council first
     openCard("book", box => {
       box.classList.add("welcome");
@@ -2590,11 +2795,12 @@
     });
   }
   function help() {
-    openCard("pier", box => scene(box, "sam", T("How it works"), T("Three moves a day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."), [btn(T("Licence and credits"), () => window.open("https://github.com/jimb000o/tau-command-hud/blob/main/rabbit/LICENSE.md", "_blank", "noopener")), btn(T("Back to the island"), () => closeCard(), { go: true })],
+    openCard("pier", box => scene(box, "sam", T("How it works"), T("Three moves a day, six on your first day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."), [btn(T("Licence and credits"), () => window.open("https://github.com/jimb000o/tau-command-hud/blob/main/rabbit/LICENSE.md", "_blank", "noopener")), btn(T("Back to the island"), () => closeCard(), { go: true })],
       el("ul", { class: "cv-help" }, el("li", { text: T("Council Hall: propose a law. Two of the other three candidates must vote yes. A law that contradicts one in force is refused first.") }),
         el("li", { text: T("Market square: talk about a topic. People who care about it move toward you.") }), el("li", { text: T("Radio Coco: pay for a line on air. True lines are safe. Lies come back when people read the Book.") }),
         el("li", { text: T("Embassies: coins now, for a promise to propose their law. Forget it and they tell everyone.") }), el("li", { text: T("Bar La Ola: pacts. Partners vote for each other’s laws.") }),
         el("li", { text: T("The lighthouse: the Book. Free to read, and nobody can change it.") }),
+        el("li", { text: T("Free, no move: asking anyone a question, reading the Book, The island today, and every visit to the school, the dive centre, the works, the camp, the old ship, the stone circle and the drums. One more move: the evening bell at eight, your first pact, the key in the grotto.") }),
         el("li", { text: T("The coins you have left when a campaign ends are saved in this browser. At the school, the lighthouse and the stone circle they pay for things the island keeps, and everyone sees the count in The island today.") }),
         el("li", { text: T("On day two or three someone who has read the Book makes you an offer: a goal of your own beside the election, with its own ending in the special edition.") }),
         el("li", { text: T("Some mornings something happens to the island. The Key Crier leads with it, you get one choice, and that topic is the talk of the week: speeches about it count more and laws for it pass more easily.") }),
@@ -2713,6 +2919,7 @@
     $("cvHelp").onclick = () => { wake(); help(); };
     $("cvBookBtn").onclick = () => { wake(); if (G) openCard("book", PLACE.book); };
     $("cvIsle").onclick = () => { wake(); openIsle(); };
+    if ($("cvChainChip")) $("cvChainChip").onclick = () => { wake(); chainCard(); };
     if ($("cvBell")) { $("cvBell").onclick = () => { wake(); answerBell(); }; bellChip(); setInterval(bellChip, 5000); }
     if ($("cvShip")) { $("cvShip").onclick = () => { wake(); shipCard(); }; shipFetch(); setInterval(() => { if (!document.hidden || SND.on) shipFetch(); }, 60000); }
     isleJoin();

@@ -258,6 +258,23 @@ html.i18n-zh .ga-nm { font: 900 clamp(20px, 1.6vw, 30px)/1.1 "Noto Serif SC", se
 html.i18n-zh .ga-hl, html.i18n-zh .ga-mo, html.i18n-zh .ga-dk, html.i18n-zh .ga-tx, html.i18n-zh .ga-more { font-family: "Noto Serif SC", serif; letter-spacing: 0; }
 html.i18n-zh .ga-tx { text-align: left; }
 .scroll { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+/* the first visit (body.calm): the door instead of the dashboard, nothing to scroll */
+.door { display: none; align-content: center; justify-items: center; text-align: center; gap: 14px; padding: clamp(12px, 4vh, 48px) 16px; min-height: min(72vh, 760px); }
+body.calm .door { display: grid; }
+body.calm .wrap { grid-template-rows: auto minmax(0, 1fr); }
+body.calm .simbar, body.calm .thesis, body.calm main.grid, body.calm .community, body.calm .fb-fab, body.calm .rail .chips, body.calm .tour { display: none !important; }
+.door .eyebrow { margin: 0; font: 600 11px var(--display); letter-spacing: .3em; text-transform: uppercase; color: var(--ok); }
+.door-h { margin: 0; font: 600 clamp(40px, 6vw, 88px)/1 var(--display); letter-spacing: -.01em; color: #fff; }
+.door-line { margin: 0; max-width: 72ch; font: 400 clamp(14px, 1.1vw, 17px)/1.5 var(--display); color: var(--text); }
+.doors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; max-width: 1100px; margin-top: 8px; }
+.doors .d { display: grid; gap: 6px; align-content: start; text-align: left; padding: 16px 18px; min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.03); color: var(--text); text-decoration: none; font: 13px/1.45 var(--mono); cursor: pointer; transition: border-color .2s, background .2s; }
+.doors .d .k { font: 600 11px var(--display); letter-spacing: .3em; text-transform: uppercase; color: var(--ok); }
+.doors .d b { font: 600 20px/1.2 var(--display); color: #fff; }
+.doors .d:hover, .doors .d:focus-visible { border-color: var(--ok); background: rgba(57,255,138,.06); }
+.door-foot { margin: 0; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: center; color: var(--dim); font-size: 12px; }
+.door-foot .lnk { background: none; border: 1px solid var(--hair); color: #fff; border-radius: 999px; padding: 8px 14px; min-height: 44px; font: 600 12px var(--display); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.door-foot .lnk:hover { border-color: #fff; }
+@media (max-width: 760px) { .doors { grid-template-columns: minmax(0, 1fr); } .door { min-height: 0; padding: 8px 0 16px; } .door-h { font-size: 40px; } }
 .thesis { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr); gap: 8px 16px; align-items: center; padding: 12px 16px; border: 1px solid var(--line); border-radius: 6px; background: linear-gradient(90deg, rgba(255,255,255,.07), rgba(16,16,18,.6) 45%, rgba(57,255,138,.04)); position: relative; }
 .thesis::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 2px; background: var(--brand); border-radius: 2px; }
 .thesis .eyebrow { display: block; font: 600 11px var(--display); letter-spacing: .3em; text-transform: uppercase; color: var(--amber); margin-bottom: 4px; }
@@ -1091,6 +1108,19 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   </header>
 
   <div class="simbar" id="simbar" role="status"><b id="simNext">Simulation · no real chain data</b><a id="simWatch" class="watch" href="proposals/" hidden>Watch in Proposals</a><a id="simGuess" class="watch" href="#predict" data-predict data-full="Every hour the visitors vote on one simulated rule change. Guess before the vote opens whether it comes and how many vote; points add up on a board for the day.">Guess the next round</a><div id="simVote" hidden></div><span id="simAbout">What you see follows the documented tau-testnet protocol but is generated in your browser. To read a real node, switch to Live node and connect your own node. Experimental community project, no claim of accuracy.</span><button type="button" id="btnTour2">Take the guided tour</button></div>
+  <!-- the first visit: one live fact, one sentence, three doors; the full dashboard after a door, and on every visit after -->
+  <section class="door" id="door" aria-label="Start">
+    <p class="eyebrow"><span>Tau Testnet Alpha</span> · <span id="doorMode">live node</span></p>
+    <h1 class="door-h" id="doorHeight">Block #—</h1>
+    <p class="door-line">On other chains, code is law. On Tau, the agreement is law: users write the rules in logic, every rule is checked before it can apply, and nothing changes without the validators’ consent. There is no admin key.</p>
+    <div class="doors">
+      <button class="d" type="button" id="doorWatch"><span class="k">Watch</span><b>The chain, live</b><span>Blocks as they are sealed, the rules in force, who agreed to what. The full dashboard.</span></button>
+      <a class="d" href="start/"><span class="k">Try</span><b>Write a money rule</b><span>A test wallet in your browser, a rule of your own, sealed by the chain. Four short steps.</span></a>
+      <a class="d" href="rabbit/"><span class="k">Play</span><b>Run for governor</b><span>White Rabbit Key: an island election where every move is a real testnet transaction.</span></a>
+    </div>
+    <p class="door-foot"><button type="button" class="lnk" id="doorFull">Full dashboard</button><span>Unofficial community project, not affiliated with IDNI. Test AGRS have no value.</span></p>
+  </section>
+  <script>(() => { try { const q = new URLSearchParams(location.search); if (q.get("calm") === "1" || (q.get("full") !== "1" && !location.hash && !localStorage.getItem("tau-seen"))) document.body.classList.add("calm"); } catch (e) {} })();</script>
   <section class="thesis" aria-label="Why Tau is different">
     <div class="thesis-main">
       <span class="eyebrow">Why this is not a normal blockchain</span>
@@ -2626,7 +2656,7 @@ function renderRadar() {
 /* ---------- readouts ---------- */
 function readouts() {
   renderRadar();
-  $("rH").textContent = fmt(S.height); $("chipH").textContent = "#" + fmt(S.height);
+  $("rH").textContent = fmt(S.height); $("chipH").textContent = "#" + fmt(S.height); $("doorHeight").textContent = "Block #" + fmt(S.height);
   $("rM").textContent = memState().W;
   const pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null, live = S.mode === "live";
   $("rT").textContent = pace != null ? fmtSec(pace) : "—";
@@ -3270,6 +3300,7 @@ function liveStop() { if (window.TauChainLoad) TauChainLoad.stop(); clearInterva
 /* ---------- mode switching ---------- */
 function setMode(mode, status) {
   S.mode = mode; const simUI = mode === "sim" || !!S.simfeed; document.body.dataset.mode = simUI ? "sim" : mode;
+  $("doorMode").textContent = simUI ? "simulation, no real chain data" : "live node";
   $("btnSim").setAttribute("aria-pressed", simUI);
   $("btnLive").setAttribute("aria-pressed", !simUI);
   LIVE.status = status;
@@ -4136,7 +4167,7 @@ addEventListener("resize", () => { if (tourI >= 0) tourPlace(); });
 addEventListener("scroll", () => { if (tourI >= 0) tourPlace(); }, { passive: true });
 /* first visit: offer the tour once; “Not now” is remembered, as is finishing it */
 function tourOffer() {
-  if (tourI >= 0 || store.get("tau-tour") || innerWidth < 900 || document.querySelector(".modal:not([hidden])")) return;
+  if (tourI >= 0 || store.get("tau-tour") || innerWidth < 900 || document.body.classList.contains("calm") || document.querySelector(".modal:not([hidden])")) return;
   tourOffered = true;
   $("tour").classList.remove("top", "anchored", "side-top", "side-bottom", "side-left", "side-right"); $("tour").style.left = $("tour").style.top = ""; TOURPOS.target = null;
   $("tour").hidden = false; $("tourStep").textContent = "New here?"; $("tourTitle").textContent = "How rules change on Tau, in one minute";
@@ -4145,6 +4176,10 @@ function tourOffer() {
   $("tourBack").textContent = "Not now"; $("tourBack").disabled = false; $("tourNext").textContent = "Start the tour";
 }
 $("btnTour").onclick = $("btnTour2").onclick = () => tourShow(0);
+/* the door on a first visit: a door or "Full dashboard" opens the dashboard, now and on every visit after */
+function leaveCalm(keep) { store.set("tau-seen", "1"); if (keep) return; document.body.classList.remove("calm"); setTimeout(() => dispatchEvent(new Event("resize")), 30); }
+$("doorWatch").onclick = $("doorFull").onclick = () => leaveCalm();
+document.querySelectorAll(".doors a").forEach(a => a.addEventListener("click", () => leaveCalm(true)));
 $("btnState").onclick = $("chipCons").onclick = $("btnState2").onclick = $("btnState3").onclick = showState;
 document.addEventListener("tau-nav", e => { const act = { tour: () => tourShow(0), about: () => openModal("mAbout"), donate: () => { openModal("mAbout"); setTimeout(() => $("donate").scrollIntoView({ block: "start" }), 50); }, updates: () => openModal("mFeedback"), state: showState }[e.detail]; if (act) act(); });
 /* links from the subpages land here: /#chain-state, /#updates, /#about, /?tour=1 */

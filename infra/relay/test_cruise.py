@@ -334,6 +334,8 @@ check(all(b["t"] - a["t"] >= cruise.TRICK_GAP for a, b in zip(tr, tr[1:])), f"at
 check(min(a["t"] for a in tr) >= TUE + (cruise.landing("pirates") + 1) * 60, "the first trick only after every pirate has paid the pier")
 check(cruise.where(PP, TUE + 40 * 60, TUE + 80 * 60, "pirates") == {}, "the pirates stay aboard: no group stands on the island")
 check(len(cruise.plan("pirates", TUE, set(), {"trick"}, {k: 1 for k in cruise.TRICKS})) < len(PP), "fewer tricks when it learned so")
+check(C.next_call(TUE - 3600)[1] == "pirates" and C.next_call(TUE - 3600, surprise=False)[1] == "dryrun",
+      "the pirates come unannounced: the next call named to pages and posts is the one after them")
 
 CH = {"seq": {}, "hole": False, "sent": []}
 
@@ -457,6 +459,10 @@ check(all(not i.get("tx") for i in P.route("/cruise/incidents")["incidents"] if 
 over = next(e for e in pub if e.get("kind") == "visit over" and e["visit"] == s3["id"])
 check(over["summary"]["tricks"]["overspend"] == {"held": True} and all(c.get("held") or "overspend" not in json.dumps(c) for c in over["summary"]["changed"]),
       "and the summary hides its count")
+check(P.snapshot()["last_of"]["pirates"]["id"] == s3["id"] and P.snapshot()["last_of"]["pirates"]["tricks"]["overspend"] == {"held": True},
+      "each ship's newest visit for the island's talk, as the public sees it")
+check(P.tricks_seen({"id": "x-pirates", "tricks": {"overspend": {"tried": 2, "stopped": 1, "through": 1}, "replay": {"tried": 3, "stopped": 3}}})
+      == {"tried": 4, "stopped": 4, "by": {"overspend": 1, "replay": 3}}, "live, the game sees only refused tricks: one that got through is not counted")
 check(P.route("/cruise/held").get("error") and P.route("/cruise/held", "", True)["entries"][0]["tx"]["sender_pubkey"],
       "/cruise/held answers only inside the server, with the signed transaction")
 check(P.tune["pirates"]["tricks"]["overspend"] == 1, "a trick that got through is tried once a visit from now on")
