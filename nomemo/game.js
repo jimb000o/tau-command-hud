@@ -1197,6 +1197,7 @@
       ["board", T("the players’ board: wallets by standing")],
       ["findings", T("what this terminal saw the chain do that it must not (kept here only)")],
       ["crew", T("who is who on board")],
+      ["feedback <text>", T("tell the crew what to make better; we read every line")],
       ["sound on|off · ambience on|off · fx on|off · voice on|off · full · boot · clear", T("the terminal itself")],
     ]);
   }
@@ -1249,6 +1250,19 @@
     for (const f of S.findings) say("warn", `${new Date(f.at).toISOString().slice(0, 16)} ${f.id}: ` + JSON.stringify({ tx: f.tx, answer: f.answer }).slice(0, 1500));
     say("sys", T("Please pass this on:"), link("/findings/" + lang(), T("how to report a finding")));
   }
+  /* feedback <text>: the player's words to us, kept on the server (infra/relay/nomemo_feedback.py) with the wallet and how
+     far the player is; nothing is shown to anyone else */
+  async function feedback(text) {
+    if (text.length < 3) { say("sys", T("feedback <text>: what is unclear, too hard, too slow or missing. One line, up to 600 characters."), el("button", { type: "button", class: "abc", text: "feedback …", onclick: () => { const i = $("cmd"); i.value = "feedback "; i.focus(); } })); return; }
+    if (text.length > 600) { say("warn", F("Too long: {n} characters. 600 at most, please.", { n: text.length })); return; }
+    const q = new URLSearchParams({ t: text, d: String(Object.keys(S.done).length), c: String(Object.keys(S.chap).length), l: (window.TauI18n && TauI18n.lang) || "en" });
+    const pk = myPk(); if (pk) q.set("w", pk);
+    let r = null;
+    try { const x = await fetch(RELAY + "/nomemo/feedback?" + q.toString(), { cache: "no-store" }); r = x.ok ? await x.json() : null; } catch (e) { r = null; }
+    if (r && r.ok) { snd.ok(); say("ok", T("Logged. The crew reads every line; thank you.")); return; }
+    const why = r && r.error;
+    say("warn", why === "wait" ? F("One at a time: try again in {n} s.", { n: r.wait || 30 }) : why === "today" ? T("That is enough for today; thank you. Tomorrow the log is open again.") : why === "short" ? T("A few words more, please.") : why === "long" ? T("600 characters at most, please.") : T("The log is out of reach right now; please try again later."));
+  }
   function full(on) {
     const root = document.documentElement, want = on == null ? !root.classList.contains("nm-full") : on;
     root.classList.toggle("nm-full", want);
@@ -1280,6 +1294,7 @@
     if (c === "board") return board();
     if (c === "findings") return findings();
     if (c === "crew") return crewList();
+    if (c === "feedback" || c === "fb") return feedback(s.slice(s.search(/\s/) < 0 ? s.length : s.search(/\s/)).trim());
     if (c === "clear" || c === "cls") return clearScreen();
     if (c === "wallet") { window.open("/wallet/" + lang(), "_blank", "noopener"); return; }
     if (c === "lang") { if (window.TauI18n && TauI18n.set && ["en", "zh", "ja"].includes(args[0])) TauI18n.set(args[0]); else say("sys", "lang en · lang zh · lang ja"); return; }

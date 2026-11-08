@@ -447,5 +447,14 @@ TauI18n.add({ strings: {
   "claim {n} again": "claim {n} again",
   "No share yet for chapter {n}. The purse pays within minutes while it is on; if it stays out: claim {n} again": "第 {n} 章の分け前はまだ来ていない。財布が動いていれば数分以内に払われる。来ないままなら：claim {n} again",
   "claim the crew’s share at a chapter’s end (the drop pays it back); claim <n> again resends an unpaid one": "章の終わりにクルーの分け前を請求する（ドロップが払い戻す）。claim <n> again は未払いの請求を送り直す",
-  "This hunt is settled: the drop is {h}. The next one comes with the next dust.": "この追跡は決着済み：ドロップは {h} だ。次の追跡は次の粉塵とともに来る。"
+  "This hunt is settled: the drop is {h}. The next one comes with the next dust.": "この追跡は決着済み：ドロップは {h} だ。次の追跡は次の粉塵とともに来る。",
+  "tell the crew what to make better; we read every line": "改善してほしい点をクルーに伝える。一行ずつ必ず読む",
+  "feedback <text>: what is unclear, too hard, too slow or missing. One line, up to 600 characters.": "feedback <文>：分かりにくい、難しすぎる、遅すぎる、足りないところ。一行、600 文字まで。",
+  "Too long: {n} characters. 600 at most, please.": "長すぎる：{n} 文字。600 文字までにしてほしい。",
+  "Logged. The crew reads every line; thank you.": "記録した。クルーは一行ずつ必ず読む。ありがとう。",
+  "One at a time: try again in {n} s.": "一つずつ：{n} 秒後にもう一度。",
+  "That is enough for today; thank you. Tomorrow the log is open again.": "今日はここまで。ありがとう。明日また記録が開く。",
+  "A few words more, please.": "もう少し言葉を足してほしい。",
+  "600 characters at most, please.": "600 文字までにしてほしい。",
+  "The log is out of reach right now; please try again later.": "今は記録に届かない。あとでもう一度試してほしい。"
 } });
