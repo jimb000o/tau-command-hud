@@ -441,4 +441,6 @@ TauI18n.add({ strings: {
   "Wallets that played No Memo on the testnet for the first time in this range.": "この期間にテストネットで初めて No Memo を遊んだウォレット。",
   "Visitors of the game": "ゲームの訪問者",
   "Different people who opened tauhud.com/nomemo/, added up per day. Not every visitor plays on the chain.": "tauhud.com/nomemo/ を開いた異なる人を日ごとに合計。すべての訪問者がチェーンで遊ぶわけではありません。",
+  "White Rabbit Key cruise ships": "White Rabbit Key のクルーズ船",
+  "White Rabbit Key island bot": "White Rabbit Key の島のボット",
 } });
