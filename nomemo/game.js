@@ -819,6 +819,20 @@
     } catch (e) { slotFail(T("stopped")); if (e && e.soft) say("no", e.message, btn("claim", "claim")); else say("no", T("The node did not answer in time. Type claim again."), btn("claim", "claim")); }
     RUN.busy = false; chips(); instruments(); topbar(); balance();
   }
+  let markTimer = 0;
+  function watchMark(tries = 0) {
+    clearTimeout(markTimer);
+    markTimer = setTimeout(async () => {
+      const pk = myPk(); if (!pk) return;
+      const w = await serverInfo("/wallet/" + pk), c = w && w.claims && (w.claims[1] || w.claims["1"]);
+      if (c && c.paid && c.paid.mark) {
+        S.chap[1] = { ...S.chap[1], paid: c.paid }; save(); balance(); snd.ok();
+        say("ok", T("And the crew’s mark: 1 test AGRS from the drop. Its hash is your badge."), c.paid.mark.hash ? explorer(c.paid.mark.hash) : null);
+        return;
+      }
+      if (tries < 12) watchMark(tries + 1);
+    }, 15000);
+  }
   let pbTimer = 0;
   function watchPayback(n, tries = 0) {
     clearTimeout(pbTimer);
@@ -829,6 +843,7 @@
         S.chap[n] = { ...S.chap[n], paid: c.paid }; save(); balance(); snd.ok(); flash("ok");
         say("ok", F("The drop paid the share: {n} test AGRS.", { n: c.paid.share ? c.paid.share.amount : SHARE }), c.paid.share && c.paid.share.hash ? explorer(c.paid.share.hash) : null);
         if (c.paid.mark) say("ok", T("And the crew’s mark: 1 test AGRS from the drop. Its hash is your badge."), c.paid.mark.hash ? explorer(c.paid.mark.hash) : null);
+        else if (n === 1) watchMark();   // the mark is a payment of its own, a little after the share
         post("qm", "The share is paid and the ledger balanced. Spend it on nothing: it is worth nothing, like all test AGRS, and that is the point of a testnet.", 1);
         if (n === 1) setTimeout(() => huntWatch(), 12000);
         return;
