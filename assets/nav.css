@@ -35,7 +35,7 @@
 .mi.soon:hover { background: transparent; }
 .mi.soon b::after { content: "soon"; margin-left: 8px; font: 500 11px var(--tn-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--tn-dim); }
 .mi.here .ic { border-color: var(--tn-ok); box-shadow: 0 0 8px rgba(57,255,138,.45); }
-.mi.here b::after { content: "you are here"; margin-left: 8px; font: 500 11px var(--tn-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--tn-ok); }
+.mi.here > b::after { content: "you are here"; margin-left: 8px; font: 500 11px var(--tn-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--tn-ok); }
 .tnav .pill { font: 600 11px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; padding: 7px 15px; border-radius: 999px; border: 1px solid var(--tn-hair); color: var(--tn-dim); white-space: nowrap; cursor: pointer; background: transparent; display: inline-flex; align-items: center; gap: 7px; text-decoration: none; }
 .tnav .pill.primary { border-color: rgba(255,255,255,.6); color: #fff; background: rgba(255,255,255,.06); }
 .tnav .pill.primary:hover { background: #fff; color: #000; }
