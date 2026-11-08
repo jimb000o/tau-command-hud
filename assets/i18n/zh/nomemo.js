@@ -693,5 +693,12 @@ TauI18n.add({ strings: {
   "what must not be": "不该发生的事",
   "tell us": "告诉我们",
   "Trace complete: block {n} passed. {x} is lost.": "追踪完成：区块 {n} 已过。{x} 失败。",
-  "It costs 1 point of standing.": "这扣掉 1 分声望。"
+  "It costs 1 point of standing.": "这扣掉 1 分声望。",
+  "Transmission": "通讯",
+  "incoming · {x}": "来电 · {x}",
+  "signal {n}%": "信号 {n}%",
+  "Esc or click: skip · transmission off": "Esc 或点击：跳过 · transmission off",
+  "— transmission ends —": "— 通讯结束 —",
+  "Transmissions on: a contract's sender appears and reads it out. transmission off for the plain line.": "通讯已开：合约的发送者会出现并念给你听。输入 transmission off 只显示文字。",
+  "Transmissions off: contracts come as plain lines. transmission on brings the crew back on screen.": "通讯已关：合约只以文字出现。输入 transmission on 让船员重新上屏。"
 } });

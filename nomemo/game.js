@@ -590,6 +590,11 @@
     return p;
   }
   function crew(who, text, m) { if (m) mood(who, m); talking(who); speak(who, text); return say("crew", null, el("b", { text: T(CREW[who]) + ":" }), " " + T(text)); }
+  function transmit(who, text, job, m) {   // a contract's brief: the sender appears and reads it out (transmission.js); without that file, the plain crew line
+    const ev = new CustomEvent("nomemo:transmission", { cancelable: true, detail: { who, mood: m || "calm", text, shown: T(text), from: T(CREW[who]), job: job || null, voice: !!(S.voice && S.snd), sim: SIM } });
+    if (document.dispatchEvent(ev)) return crew(who, text, m || "calm");
+    mood(who, m || "calm"); talking(who); return say("crew", null, el("b", { text: T(CREW[who]) + ":" }), " " + T(text));
+  }
   const link = (href, text) => el("a", { href, target: "_blank", rel: "noopener", text });
   const code = t => el("code", { text: t });
   const cols = pairs => { const d = el("div", { class: "cols" }); for (const [a, b] of pairs) d.append(typeof a === "string" ? el("span", { text: a }) : a, typeof b === "string" ? el("span", { text: b }) : b); return say("sys", d); };
@@ -727,7 +732,7 @@
     if (!chapterOpen(ch)) { say("warn", F("Chapter {n} first: its four contracts open chapter {m}.", { n: ch.n - 1, m: ch.n })); const nx = CONTRACTS.find(x => !S.done[x.id]); if (nx) say("sys", F("Next on the board: {n} {t}.", { n: num(nx), t: T(nx.name) }), btn(F("take {n}", { n: num(nx) }), "take " + num(nx))); return; }
     S.taken = c.id; S.span = c.trace; S.deadline = CHAIN.tip != null ? CHAIN.tip + c.trace : null; save(); jobs(); instruments(); topbar(); chips();
     say("sys", F("Contract {n} taken: {t}", { n: num(c), t: T(c.name) }));
-    crew(c.who, c.brief, "calm");
+    transmit(c.who, c.brief, { id: c.id, name: c.name });
     if (c.id === "amount") { S.num = lookoutNumber(); save(); say("sys", F("The lookout’s number: {n}", { n: S.num })); }
     say("sys", S.deadline != null ? F("Trace: until block {n} ({t}). Type run.", { n: fmt(S.deadline), t: inTime(c.trace) || F("{n} blocks", { n: c.trace }) }) : T("Trace: set from the tip as soon as the node answers. Type run."), btn("run", "run"));
     if (S.deadline == null) { const k = myPk(); (k ? envelope(k) : ask("getsequence " + DROP).then(st => { if (st && st.status === "ok") tick(Number(st.data.tip_height) || 0); })).then(() => { if (S.taken === c.id && S.deadline == null && CHAIN.tip != null) { S.deadline = CHAIN.tip + c.trace; save(); instruments(); topbar(); say("sys", F("Trace: until block {n} ({t}).", { n: fmt(S.deadline), t: inTime(c.trace) || F("{n} blocks", { n: c.trace }) })); } }).catch(() => {}); }
@@ -1172,7 +1177,8 @@
   async function speak(who, text) {
     if (SIM || !S.voice || !window.crypto || !crypto.subtle) return;
     await clips(); if (!VOICE.have || !VOICE.have.size) return;
-    const d = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(who + "|" + text))   // the clips are English; the line shown may be translated, key = [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
+    const d = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(who + "|" + text));   // the clips are English; the line shown may be translated
+    const key = [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
     if (!VOICE.have.has(key)) return;
     try { if (VOICE.audio) VOICE.audio.pause(); VOICE.audio = new Audio(CLIPS + key + ".mp3"); VOICE.audio.volume = 0.9; await VOICE.audio.play(); } catch (e) {}
   }
@@ -1320,7 +1326,7 @@
     const j = parseJ(a) || (a ? null : curJob() || S.inbox[0]); if (!j) { say("sys", T("No such contract in the inbox. Type inbox.")); return; }
     const kd = kindOf(j);
     say("sys", F("{x} · {t} · tier {n} · from the {w}", { x: jname(j), t: kd.name, n: j.t, w: CREW[j.who] }));
-    crew(j.who, fill(kd.brief, j), "calm");
+    transmit(j.who, fill(kd.brief, j), { k: j.k, n: j.n, name: kd.name, tier: j.t });
     if (j.k === "p-doors") cols(["a", "b", "c"].map((x, i) => [x, doorAddr(j, i)]));
     if (j.t <= 2 && kd.hint) say("learn", F("Hint: {x}", { x: fill(kd.hint, j) }));
     say("sys", F("Pays +{n} standing. Trace once taken: {m} blocks.", { n: PAYS[j.t], m: j.trace }) + (j.topic ? " " + F("Topic: {x}.", { x: TOPICS[j.topic][0] }) : ""),

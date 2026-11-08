@@ -1,5 +1,6 @@
 // The lines the crew of the Black Sequence speak aloud in No Memo, as the server reads them (nomemo/voices.json), made
-// from nomemo/game.js: every fixed crew line (the briefs, the post, the greetings), without the ones filled with numbers.
+// from nomemo/game.js: every fixed crew line (the briefs, the post, the greetings), without the ones filled with numbers;
+// and the transmissions, one spoken message per kind of inbox contract (nomemo/transmissions.json).
 //   node tests/nomemo-voices.mjs           checks that nomemo/voices.json matches game.js
 //   node tests/nomemo-voices.mjs --write   writes it again after a line changed
 import { readFileSync, writeFileSync } from "node:fs";
@@ -13,6 +14,14 @@ for (const m of src.matchAll(/\{ id: "(\w+)", name: "[^"]*", who: "(\w+)",[\s\S]
 /* crew(who, "line") and post(who, "line") with a fixed English line */
 for (const m of src.matchAll(/\b(?:crew|post)\("(qm|look|bosun)", "((?:[^"\\]|\\.)*)"/g)) add(m[1], m[2]);
 for (const m of src.matchAll(/\bcrew\("(qm|look|bosun)", [^"\n]*?\? "((?:[^"\\]|\\.)*)" : [^"\n]*?\? "((?:[^"\\]|\\.)*)" : "((?:[^"\\]|\\.)*)"/g)) { add(m[1], m[2]); add(m[1], m[3]); add(m[1], m[4]); }
+/* the transmissions: one spoken message per kind of inbox contract (nomemo/transmissions.json), from the kind's own sender */
+const tx = JSON.parse(readFileSync(new URL("nomemo/transmissions.json", root), "utf8"));
+for (const m of src.matchAll(/\{ k: "([\w-]+)", t: \d, who: "(\w+)"/g)) {
+  const x = tx.kinds[m[1]];
+  if (!x) { console.error(`nomemo/transmissions.json has no message for the inbox kind ${m[1]}`); process.exit(1); }
+  if (x.who !== m[2]) { console.error(`nomemo/transmissions.json: ${m[1]} is sent by ${m[2]} in game.js, not ${x.who}`); process.exit(1); }
+  add(x.who, x.say);
+}
 const json = JSON.stringify(list, null, 1) + "\n", file = new URL("nomemo/voices.json", root);
 if (process.argv.includes("--write")) { writeFileSync(file, json); console.log(`nomemo/voices.json: ${list.length} lines, ${list.reduce((a, l) => a + l.text.length, 0)} characters`); }
 else {

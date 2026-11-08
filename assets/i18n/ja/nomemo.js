@@ -693,5 +693,12 @@ TauI18n.add({ strings: {
   "what must not be": "起きてはならないこと",
   "tell us": "知らせる",
   "Trace complete: block {n} passed. {x} is lost.": "追跡完了：ブロック {n} を過ぎた。{x} は失敗。",
-  "It costs 1 point of standing.": "評価が1ポイント下がる。"
+  "It costs 1 point of standing.": "評価が1ポイント下がる。",
+  "Transmission": "通信",
+  "incoming · {x}": "着信 · {x}",
+  "signal {n}%": "信号 {n}%",
+  "Esc or click: skip · transmission off": "Esc かクリック：スキップ · transmission off",
+  "— transmission ends —": "— 通信終了 —",
+  "Transmissions on: a contract's sender appears and reads it out. transmission off for the plain line.": "通信オン：契約の送り主が画面に現れて読み上げます。文字だけなら transmission off。",
+  "Transmissions off: contracts come as plain lines. transmission on brings the crew back on screen.": "通信オフ：契約は文字だけで届きます。transmission on で乗組員が画面に戻ります。"
 } });
