@@ -422,4 +422,8 @@ TauI18n.add({ strings: {
   "Different people who opened tauhud.com/nomemo/, added up per day. Not every visitor plays on the chain.": "打开 tauhud.com/nomemo/ 的不同访客，按天相加。不是每位访客都在链上玩。",
   "White Rabbit Key cruise ships": "白兔礁的游轮",
   "White Rabbit Key island bot": "白兔礁的海岛机器人",
+  "No Memo's own payments": "No Memo 自己的付款",
+  "No Memo's own wallets on our server: the relay purse paying a claimed contract, the Tracer's lookalike dust, the bank topping up the drop. Real transactions, but sent by the game, not by players: never counted as user transactions.": "No Memo 在我们服务器上的自有钱包：中继钱袋为已领取的合约付款、追踪者的仿冒小额转账、银行给投放点补充余额。是真实交易，但由游戏发送，而不是玩家：从不计为用户交易。",
+  "hack of the week": "每周攻击测试",
+  "The hack of the week's four test wallets on our server, trying one known trick against the testnet each Thursday. Real transactions, but no people: never counted as user transactions.": "每周攻击测试在我们服务器上的四个测试钱包，每周四对测试网尝试一个已知手法。是真实交易，但不是人：从不计为用户交易。",
 } });

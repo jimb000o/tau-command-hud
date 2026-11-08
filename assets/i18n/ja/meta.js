@@ -443,4 +443,8 @@ TauI18n.add({ strings: {
   "Different people who opened tauhud.com/nomemo/, added up per day. Not every visitor plays on the chain.": "tauhud.com/nomemo/ を開いた異なる人を日ごとに合計。すべての訪問者がチェーンで遊ぶわけではありません。",
   "White Rabbit Key cruise ships": "White Rabbit Key のクルーズ船",
   "White Rabbit Key island bot": "White Rabbit Key の島のボット",
+  "No Memo's own payments": "No Memo 自身の支払い",
+  "No Memo's own wallets on our server: the relay purse paying a claimed contract, the Tracer's lookalike dust, the bank topping up the drop. Real transactions, but sent by the game, not by players: never counted as user transactions.": "私たちのサーバー上の No Memo 自身のウォレット：請求された契約へのリレー財布の支払い、Tracer のそっくりなダスト、銀行によるドロップへの補充。実際の取引ですが、プレイヤーではなくゲームが送ったもの：ユーザー取引には数えません。",
+  "hack of the week": "今週のハック",
+  "The hack of the week's four test wallets on our server, trying one known trick against the testnet each Thursday. Real transactions, but no people: never counted as user transactions.": "私たちのサーバー上にある今週のハックの4つのテストウォレット。毎週木曜日に既知の手口をひとつテストネットで試します。実際の取引ですが、人ではありません：ユーザー取引には数えません。",
 } });

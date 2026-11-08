@@ -47,9 +47,9 @@ blocks = [
     {"header": {}, "tx_ids": ["h7"], "transactions": [tx(A, B)]},
 ]
 out = s.by_day(blocks)
-check(out["days"]["2026-10-28"] == {"agorzilla": [2, 1, 1, 0, 10], "tauhud": [1, 1, 1, 0, 5], "rabbit": [0, 0, 0, 0, 0], "nomemo": [0, 0, 0, 0, 0], "cruise": [0, 0, 0, 0, 0], "bot": [0, 0, 0, 0, 0], "idni": [0, 0, 0, 0, 0], "other": [1, 1, 1, 0, 5]},
+check(out["days"]["2026-10-28"] == {"agorzilla": [2, 1, 1, 0, 10], "tauhud": [1, 1, 1, 0, 5], "rabbit": [0, 0, 0, 0, 0], "nomemo": [0, 0, 0, 0, 0], "cruise": [0, 0, 0, 0, 0], "nmsrv": [0, 0, 0, 0, 0], "hack": [0, 0, 0, 0, 0], "bot": [0, 0, 0, 0, 0], "idni": [0, 0, 0, 0, 0], "other": [1, 1, 1, 0, 5]},
       "a meal is Agorzilla's, a relay send Tau HUD's, the rest other; wallets counted once a day")
-check(out["days"]["2026-10-29"] == {"agorzilla": [3, 3, 2, 1, 15], "tauhud": [0, 0, 0, 0, 0], "rabbit": [0, 0, 0, 0, 0], "nomemo": [0, 0, 0, 0, 0], "cruise": [0, 0, 0, 0, 0], "bot": [0, 0, 0, 0, 0], "idni": [2, 1, 1, 0, 10], "other": [1, 1, 1, 0, 5]},
+check(out["days"]["2026-10-29"] == {"agorzilla": [3, 3, 2, 1, 15], "tauhud": [0, 0, 0, 0, 0], "rabbit": [0, 0, 0, 0, 0], "nomemo": [0, 0, 0, 0, 0], "cruise": [0, 0, 0, 0, 0], "nmsrv": [0, 0, 0, 0, 0], "hack": [0, 0, 0, 0, 0], "bot": [0, 0, 0, 0, 0], "idni": [2, 1, 1, 0, 10], "other": [1, 1, 1, 0, 5]},
       "a send from agorzilla.com through the relay counts for Agorzilla, a genesis account for IDNI")
 z = out["agorzilla"]["2026-10-28"]
 check(z["meals"] == 2 and z["snacks"] == 1 and z["agrs"] == 10 and z["wallets"] == 1 and z["new"] == 1 and z["hours"][0] == 2,
@@ -149,6 +149,15 @@ no = sn.by_day([{"header": {"timestamp": 1793804400}, "tx_ids": ["n1", "n2"], "t
 nd = no["days"]["2026-11-04"]
 check(nd["nomemo"][:2] == [1, 1] and nd["tauhud"][:2] == [1, 1] and no["ours"]["2026-11-04"][:2] == [2, 2] and no["starts"]["2026-11-04"].get("tauhud:nomemo"),
       "No Memo is its own group, one of our sites, and its page shows where it started")
+
+ss = txsources.TxSources(os.path.join(tempfile.mkdtemp(), "sent.json"))
+purse, hk = "e" * 96, "f" * 96
+ss.passengers = lambda: {pas: "queen", purse: "nomemo", hk: "hack"}
+so = ss.by_day([{"header": {"timestamp": 1793804400}, "tx_ids": ["s1", "s2", "s3"], "transactions": [tx(purse, B), tx(hk, B), tx(pas, B)]}])
+sd = so["days"]["2026-11-04"]
+check(sd["nmsrv"][:2] == [1, 0] and sd["hack"][:2] == [1, 0] and sd["cruise"][:2] == [1, 0] and sd["other"][0] == 0 and "2026-11-04" not in so["ours"]
+      and ss.recent([{"header": {"timestamp": 1793804400}, "tx_ids": ["s1", "s2", "s3"], "transactions": [tx(purse, B), tx(hk, B), tx(pas, B)]}])["n"] == {"nmsrv": 1, "hack": 1, "cruise": 1},
+      "No Memo's own payouts and the hack of the week are our server's, each in its own group, never cruise ships, users or others")
 
 print("\n" + ("all ok" if not failed else f"{failed} failed"))
 sys.exit(1 if failed else 0)
