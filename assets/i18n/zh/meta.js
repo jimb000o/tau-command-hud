@@ -420,4 +420,6 @@ TauI18n.add({ strings: {
   "Wallets that played No Memo on the testnet for the first time in this range.": "本范围内第一次在测试网上玩 No Memo 的钱包。",
   "Visitors of the game": "游戏的访客",
   "Different people who opened tauhud.com/nomemo/, added up per day. Not every visitor plays on the chain.": "打开 tauhud.com/nomemo/ 的不同访客，按天相加。不是每位访客都在链上玩。",
+  "White Rabbit Key cruise ships": "白兔礁的游轮",
+  "White Rabbit Key island bot": "白兔礁的海岛机器人",
 } });
