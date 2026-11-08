@@ -49,6 +49,7 @@ from hackweek import HackWeek
 from island import Island
 from isle import Isle
 from nomemo import NoMemo
+from nomemo_feedback import Feedback as NoMemoFeedback
 from load import Load
 from txsources import TxSources, deja as deja_day
 from walletdays import WalletDays
@@ -405,6 +406,7 @@ class Relay:
         self.hack.on_tx = lambda ok: self.load.sent("cruise" if ok else "refused")
         self.nomemo = NoMemo()   # No Memo's crew purse: the share, the mark and the Tracer's dust (nomemo.py)
         self.nomemo.on_tx = lambda: self.load.sent("bot")
+        self.nomemo_feedback = NoMemoFeedback()   # `feedback <text>` in the No Memo terminal, kept for the owner (nomemo_feedback.py)
         self.island.idle = self.idle_step
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
         self.simpredict = SimPredict(os.environ.get("SIMPREDICT_PATH", "/data/simpredict.json"), votes=self.simvotes, names=name_of)
@@ -2112,7 +2114,7 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "no-store")])
             return Response(code.value, code.phrase, headers, json.dumps(sim[1], separators=(",", ":")).encode())
-        isl = self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.hack.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/hack") else self.nomemo.route(path, query) if path.startswith("/nomemo") else self.isle.route(path)
+        isl = self.nomemo_feedback.route(path, query, ip) if path == "/nomemo/feedback" else self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.hack.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/hack") else self.nomemo.route(path, query) if path.startswith("/nomemo") else self.isle.route(path)
         if isl is not None:
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, json.dumps(isl, separators=(",", ":")).encode())

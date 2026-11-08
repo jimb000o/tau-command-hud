@@ -447,5 +447,14 @@ TauI18n.add({ strings: {
   "claim {n} again": "claim {n} again",
   "No share yet for chapter {n}. The purse pays within minutes while it is on; if it stays out: claim {n} again": "第 {n} 章的份额还没到。钱袋开着时几分钟内就会支付；若一直不到：claim {n} again",
   "claim the crew’s share at a chapter’s end (the drop pays it back); claim <n> again resends an unpaid one": "在章节结束时领取船员份额（投递点会付回来）；claim <n> again 重发未支付的领取",
-  "This hunt is settled: the drop is {h}. The next one comes with the next dust.": "这场追猎已经结束：投递点是 {h}。下一场随下一次粉尘而来。"
+  "This hunt is settled: the drop is {h}. The next one comes with the next dust.": "这场追猎已经结束：投递点是 {h}。下一场随下一次粉尘而来。",
+  "tell the crew what to make better; we read every line": "告诉船员哪里该改进；我们每一行都会读",
+  "feedback <text>: what is unclear, too hard, too slow or missing. One line, up to 600 characters.": "feedback <文字>：哪里不清楚、太难、太慢或缺了什么。一行，最多 600 个字符。",
+  "Too long: {n} characters. 600 at most, please.": "太长了：{n} 个字符。请不超过 600。",
+  "Logged. The crew reads every line; thank you.": "已记下。船员每一行都会读；谢谢。",
+  "One at a time: try again in {n} s.": "一次一条：{n} 秒后再试。",
+  "That is enough for today; thank you. Tomorrow the log is open again.": "今天就到这里；谢谢。明天记录簿会再开放。",
+  "A few words more, please.": "请再多写几个字。",
+  "600 characters at most, please.": "请不超过 600 个字符。",
+  "The log is out of reach right now; please try again later.": "记录簿现在连不上；请稍后再试。"
 } });

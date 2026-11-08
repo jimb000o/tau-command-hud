@@ -31,6 +31,8 @@
 #              up escrow     the relay alone restarted with the code just pulled (not while a ship is due), then the
 #                            cruise bookings ahead in escrow, each with its state; up escrow status  only those
 #              up nomemo     No Memo's crew purse (relay/nomemo.py): the drop, the players' board, what waits to be paid (nothing rebuilt)
+#                            up nomemo feedback  what players wrote with `feedback <text>` since the last look (relay/nomemo_feedback.py),
+#                            up nomemo feedback all  every remark kept
 #              up hack       the hack of the week (relay/hackweek.py, Thursdays 11:00): next replay, last runs step by step
 #                            (nothing rebuilt, nothing sent); up hack preview  the last replay's post texts and picture;
 #                            up hack release 2026-11-12-poisoning  shows a held-back finding in public (after IDNI knows)
@@ -220,6 +222,27 @@ for r in json.load(open("/data/hack-state.json")).get("runs", [])[::-1][:3]:
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
+# What No Memo's players wrote with `feedback <text>` (relay/nomemo_feedback.py), nothing rebuilt: the remarks not read yet
+# (or all), then marked read. /data/nomemo-feedback.seen keeps how many lines were shown.
+if [ "${1:-}" = "nomemo" ] && [ "${2:-}" = "feedback" ]; then
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T relay python -c 'import json,os,sys
+p="/data/nomemo-feedback.jsonl"; m="/data/nomemo-feedback.seen"; allr=sys.argv[1:2]==["all"]
+rows=[json.loads(x) for x in open(p,encoding="utf-8") if x.strip()] if os.path.exists(p) else []
+try: seen=int(open(m).read().strip() or 0)
+except Exception: seen=0
+if seen>len(rows): seen=0
+show=rows if allr else rows[seen:]
+print("nomemo feedback: %d new, %d kept in all%s" % (len(rows)-seen, len(rows), " (all shown)" if allr else ""))
+for r in show:
+  w=(r.get("wallet") or "")
+  print("- %s  %s  %s  %s" % (r.get("at"), (w[:6]+"…"+w[-4:]) if w else "no wallet", "%s settled, %s claimed, %s" % (r.get("d"), r.get("c"), r.get("l")), r.get("text")))
+open(m,"w").write(str(len(rows)))
+if not show: print("  nothing new; players write it in the terminal: feedback <text>")' "${3:-}" 2>&1 || echo "relay not answering yet"
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 # No Memo's crew purse (relay/nomemo.py), nothing rebuilt: the drop's address, the board, what waits, the Tracer
 if [ "${1:-}" = "nomemo" ]; then
   echo
@@ -228,7 +251,12 @@ if [ "${1:-}" = "nomemo" ]; then
 s=json.load(urllib.request.urlopen("http://127.0.0.1:8080/nomemo", timeout=20)); b=s.get("board") or {}
 print("nomemo:  purse %s, tracer %s, drop %s%s%s" % ("on" if s.get("enabled") else "OFF", "on" if s.get("tracer") else "off", s.get("drop_short") or "not made yet", " (making the keys now)" if s.get("making_wallets") else "", " (the bank is filling the drop)" if s.get("filling") else ""))
 print("         board: %d wallets, %s; chapters claimed %s; %d payouts today, %d waiting" % (b.get("wallets",0), ", ".join("%s %d" % kv for kv in (b.get("ranks") or {}).items()), b.get("claims"), s.get("today",0), s.get("waiting",0)))
-print("         test it: https://tauhud.com/nomemo/  (take 1, run; the drop above must match status)")' 2>&1 || echo "relay /nomemo not answering yet"
+print("         test it: https://tauhud.com/nomemo/  (take 1, run; the drop above must match status)")
+import os
+p="/data/nomemo-feedback.jsonl"; n=sum(1 for x in open(p,encoding="utf-8") if x.strip()) if os.path.exists(p) else 0
+try: seen=int(open("/data/nomemo-feedback.seen").read().strip() or 0)
+except Exception: seen=0
+print("         feedback: %d new of %d (read them: up nomemo feedback)" % (max(n-seen,0) if seen<=n else n, n))' 2>&1 || echo "relay /nomemo not answering yet"
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
