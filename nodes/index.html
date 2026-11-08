@@ -138,6 +138,7 @@ tr.free.next .name { color: var(--ok); }
 .faq summary::after { content: "+"; color: var(--dim); }
 .faq details[open] summary::after { content: "–"; }
 .faq details p { margin: 4px 0 2px; color: var(--dim); }
+@media (min-width: 701px) and (max-height: 820px) { .faq details { padding: 4px 0; } }   /* six questions fit a 1366 × 768 screen without squeezing "Run a node" */
 .col1, .col3 { display: grid; gap: 14px; align-content: start; min-width: 0; }
 /* badge */
 select { font: 13px var(--mono); background: #050506; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 6px 8px; max-width: 100%; }
@@ -269,6 +270,7 @@ html.fit.wide .col3 > .faq { flex: 1 1 0; }
         </section>
         <section class="panel faq">
           <h2>Before you start</h2>
+          <details><summary>Can I run it on my own computer?</summary><p>Better on a small rented server. The first start compiles tau-lang from source for about 1.5 hours and needs 4 GB RAM plus 8 GB swap; on a computer you also work on, that can freeze it.</p><p>Once synced it is light: measured on our node (2 CPU, 3.8 GB RAM, November 2026) the node uses about 850 MB of memory and almost no CPU, its relay about 70 MB more.</p><p>Only want to learn Tau Language? You need no node for that. <a href="/learn/">Start with the REPL ›</a></p></details>
           <details><summary>Is it safe for my server?</summary><p>It opens only SSH and the peer port 4001. The node’s own interfaces stay inside Docker; nothing on the server is shared.</p></details>
           <details><summary>Does it need looking after?</summary><p>No. It restarts by itself and resyncs when the testnet restarts. To update, run the same command again.</p></details>
           <details><summary>What does tauhud.com learn?</summary><p>The name, height, latest block hash and kit version, once a minute, and during setup which step it reached, with a random install id. No address, no keys. Leave the name empty and nothing is sent.</p></details>

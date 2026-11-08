@@ -647,6 +647,8 @@ TauI18n.add({ strings: {
   "Close": "閉じる",
   "playing now": "人がプレイ中",
   "People with this game open right now, counted live by the community relay; one browser counts once.": "いまこのゲームを開いている人。コミュニティ中継がリアルタイムで数えます。1 つのブラウザは 1 人と数えます。",
+  "No node needed: install tau, start the REPL, work through IDNI's demos, then write a rule for the testnet": "ノード不要：tau をインストールし、REPL を起動し、IDNI のデモを試し、テストネット用のルールを書く",
+  "Learn Tau Language": "Tau Language を学ぶ",
   "Tau facts for your AI": "AI 向けの Tau の事実",
   "What is true about Tau today, each fact with its source in IDNI's code, plus live numbers; point your AI assistant here": "今日の Tau について正しいこと。各事実に IDNI のコード内の出典、さらに最新の数字。AI アシスタントにここを読ませてください",
   "Services on the testnet": "テストネットのサービス",

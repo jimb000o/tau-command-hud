@@ -652,6 +652,8 @@ TauI18n.add({ strings: {
   "Close": "关闭",
   "playing now": "人正在玩",
   "People with this game open right now, counted live by the community relay; one browser counts once.": "此刻打开着这个游戏的人，由社区中继实时统计；同一个浏览器只算一次。",
+  "No node needed: install tau, start the REPL, work through IDNI's demos, then write a rule for the testnet": "不需要节点：安装 tau，启动 REPL，练习 IDNI 的示例，再为测试网写一条规则",
+  "Learn Tau Language": "学习 Tau 语言",
   "Tau facts for your AI": "给 AI 的 Tau 事实",
   "What is true about Tau today, each fact with its source in IDNI's code, plus live numbers; point your AI assistant here": "今天关于 Tau 成立的事实，每条都附 IDNI 代码中的来源，外加实时数字；让你的 AI 助手读这里",
   "Services on the testnet": "测试网上的服务",
