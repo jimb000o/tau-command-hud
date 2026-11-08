@@ -1,9 +1,9 @@
 {
  "about": "What the crew says aloud when an inbox contract comes in as a transmission (nomemo/transmission.js). One message per kind of contract (KINDS in game.js, by k); the numbers stay on the screen, the voice never says them. The server speaks them with the crew's voices (infra/rico/make.py, through nomemo/voices.json: node tests/nomemo-voices.mjs --write).",
  "mouth": {
-  "qm": [0.515, 0.385, 0.11, 0.06],
-  "look": [0.53, 0.365, 0.10, 0.055],
-  "bosun": [0.535, 0.615, 0.12, 0.06]
+  "qm": [0.516, 0.385, 0.10, 0.05],
+  "look": [0.473, 0.372, 0.09, 0.05],
+  "bosun": [0.5, 0.455, 0.12, 0.05]
  },
  "kinds": {
   "r-fee": { "who": "qm", "say": "Quartermaster to the terminal. A small job. Send the drop a payment that offers the chain too little fee, and let it throw the thing back. The fee limit is yours to set. Show me the chain will not work for free." },
