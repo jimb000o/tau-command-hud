@@ -100,12 +100,12 @@ pre { margin: 6px 0 0; padding: 8px 10px; background: rgba(255,255,255,.04); bor
       <section class="panel go" aria-labelledby="hRepl">
         <h2 id="hRepl">Start the REPL in four steps</h2>
         <ol class="how">
-          <li><i>1</i><div><b>Install tau.</b> IDNI's release v0.7-alpha has packages for Linux (.deb, .rpm) and an installer for Windows. On a Mac, build it from source for now.
-            <div class="btns"><a class="b ok" href="https://github.com/IDNI/tau-lang/releases/tag/v0.7-alpha" target="_blank" rel="noopener">Download v0.7-alpha ↗</a><a class="b" href="https://github.com/IDNI/tau-lang#installing-the-tau-language-framework" target="_blank" rel="noopener">Install guide ↗</a></div></div></li>
+          <li><i>1</i><div><b>Install tau.</b> IDNI's only packaged release, v0.7-alpha from November 2024, has packages for Linux (.deb, .rpm) and an installer for Windows. The newer tau in IDNI's main README is only built from source.
+            <div class="btns"><a class="b ok" href="https://github.com/IDNI/tau-lang/releases/tag/v0.7-alpha" target="_blank" rel="noopener">Download v0.7-alpha ↗</a><a class="b" href="https://github.com/IDNI/tau-lang/blob/v0.7-alpha/README.md" target="_blank" rel="noopener">Guide for 0.7 ↗</a></div></div></li>
           <li><i>2</i><div><b>Start it.</b> Open a terminal and type <code>tau</code>. The REPL opens with a <code>tau&gt;</code> prompt.</div></li>
           <li><i>3</i><div><b>Look around.</b> <code>help examples</code> shows the syntax, <code>help</code> lists every command, <code>q</code> quits.</div></li>
-          <li><i>4</i><div><b>Ask a first question.</b> This line from IDNI's quick start asks whether the spec “output 1 always equals input 1” can be met:
-            <pre>tau -e "sat G(o1[t]:bv[8] = i1[t]:bv[8])"</pre></div></li>
+          <li><i>4</i><div><b>Ask a first question.</b> Type this at the prompt, with the dot at the end. Tau answers T: yes, x = 0 can be true.
+            <pre>sat x = 0.</pre></div></li>
         </ol>
         <p class="fine">The REPL runs only on your computer: no wallet, no server, no testnet.</p>
       </section>
@@ -115,11 +115,11 @@ pre { margin: 6px 0 0; padding: 8px 10px; background: rgba(255,255,255,.04); bor
       <section class="panel" aria-labelledby="hRead">
         <h2 id="hRead">Read and try · IDNI</h2>
         <ul class="links">
-          <li><a href="https://github.com/IDNI/tau-lang#quick-start" target="_blank" rel="noopener">Quick start ↗</a><span>Interpret a spec or compile it, and the first commands.</span></li>
-          <li><a href="https://github.com/IDNI/tau-lang#the-tau-repl" target="_blank" rel="noopener">The Tau REPL ↗</a><span>Every REPL command and option.</span></li>
-          <li><a href="https://github.com/IDNI/tau-lang#tau-specifications" target="_blank" rel="noopener">Tau specifications ↗</a><span>G and F, streams such as i1[t] and o1[t].</span></li>
-          <li><a href="https://github.com/IDNI/tau-lang/tree/main/demos" target="_blank" rel="noopener">Demos ↗</a><span>30 .tau files to work through, from basic syntax to bitvectors.</span></li>
-          <li><a href="https://github.com/IDNI/tau-lang#web-ide" target="_blank" rel="noopener">Web IDE ↗</a><span>An editor in your browser around tau, run on your own computer.</span></li>
+          <li><a href="https://github.com/IDNI/tau-lang/blob/v0.7-alpha/README.md#quick-start" target="_blank" rel="noopener">Quick start ↗</a><span>Your first specs, such as o1[t] = i1[t], for 0.7.</span></li>
+          <li><a href="https://github.com/IDNI/tau-lang/blob/v0.7-alpha/README.md#the-tau-repl" target="_blank" rel="noopener">The Tau REPL ↗</a><span>Every command and option of the 0.7 REPL.</span></li>
+          <li><a href="https://github.com/IDNI/tau-lang/blob/v0.7-alpha/README.md#tau-specifications" target="_blank" rel="noopener">Tau specifications ↗</a><span>How a spec is built, with streams such as i1[t] and o1[t].</span></li>
+          <li><a href="https://github.com/IDNI/tau-lang/tree/v0.7-alpha/demos" target="_blank" rel="noopener">Demos ↗</a><span>Ten .tau files made for 0.7, from basic syntax to the solver.</span></li>
+          <li><a href="https://github.com/IDNI/tau-lang#web-ide" target="_blank" rel="noopener">Web IDE ↗</a><span>A browser editor for the newest tau, which you build from source.</span></li>
         </ul>
       </section>
     </div>
