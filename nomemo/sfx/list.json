@@ -1,0 +1,269 @@
+{
+ "about": "No Memo's sounds. The files here are drawn by infra/nomemo/synth.py; infra/nomemo/sfx.py on the server makes ElevenLabs versions of those with a prompt (eleven) and the ship's voice lines, and the game prefers those when they exist. gain = loudness in the mix (0..1); every file peaks at -1 dB.",
+ "sounds": [
+  {
+   "name": "amb-sea",
+   "kind": "ambience",
+   "gain": 0.55,
+   "what": "The sea round the hull, below decks",
+   "when": "loops under the terminal while sound is on",
+   "eleven": "Gentle sea swell heard from inside the wooden hull of an old sailing ship at night, slow waves, water lapping against planks, muffled, calm, no music",
+   "sec": 20.0
+  },
+  {
+   "name": "amb-hum",
+   "kind": "ambience",
+   "gain": 0.18,
+   "what": "Lamp and tube: mains hum, a lantern's flicker",
+   "when": "loops under the terminal while sound is on",
+   "eleven": "Low electrical hum of an old CRT terminal and a flickering oil-lamp in a dark cabin, steady, faint crackle, no music",
+   "sec": 10.0
+  },
+  {
+   "name": "amb-tension",
+   "kind": "ambience",
+   "gain": 0.5,
+   "what": "A low pulse under the deck",
+   "when": "fades in while the trace has less than a quarter left, out when it ends",
+   "eleven": "Slow low heartbeat pulse with a dark drone, tense, cinematic, steady tempo, no melody",
+   "sec": 4.0
+  },
+  {
+   "name": "creak-1",
+   "kind": "ambience",
+   "gain": 0.35,
+   "what": "The hull creaks",
+   "when": "now and then, every 9 to 26 seconds, one of three",
+   "eleven": "Single wooden ship hull creak, old timber straining, close, dry, no water",
+   "sec": 2.04
+  },
+  {
+   "name": "creak-2",
+   "kind": "ambience",
+   "gain": 0.35,
+   "what": "The hull creaks (long)",
+   "when": "now and then, one of three",
+   "eleven": "Long slow creak of a ship's mast and rope under strain, wooden groan",
+   "sec": 2.53
+  },
+  {
+   "name": "creak-3",
+   "kind": "ambience",
+   "gain": 0.35,
+   "what": "The hull creaks (short)",
+   "when": "now and then, one of three",
+   "eleven": "Short sharp creak of a wooden ship deck plank",
+   "sec": 1.75
+  },
+  {
+   "name": "key-1",
+   "kind": "ui",
+   "gain": 0.32,
+   "what": "Keystroke",
+   "when": "each key typed; one of four, never the same twice",
+   "sec": 0.05
+  },
+  {
+   "name": "key-2",
+   "kind": "ui",
+   "gain": 0.32,
+   "what": "Keystroke",
+   "when": "each key typed",
+   "sec": 0.05
+  },
+  {
+   "name": "key-3",
+   "kind": "ui",
+   "gain": 0.32,
+   "what": "Keystroke",
+   "when": "each key typed",
+   "sec": 0.05
+  },
+  {
+   "name": "key-4",
+   "kind": "ui",
+   "gain": 0.32,
+   "what": "Keystroke",
+   "when": "each key typed",
+   "sec": 0.05
+  },
+  {
+   "name": "enter",
+   "kind": "ui",
+   "gain": 0.45,
+   "what": "Return key",
+   "when": "a command is entered",
+   "sec": 0.32
+  },
+  {
+   "name": "send",
+   "kind": "ui",
+   "gain": 0.5,
+   "what": "Relay transmit chirp",
+   "when": "a signed payment leaves for the relay",
+   "sec": 0.94
+  },
+  {
+   "name": "accepted",
+   "kind": "ui",
+   "gain": 0.5,
+   "what": "Command accepted",
+   "when": "a step goes right (op step, riddle, sound on)",
+   "sec": 0.81
+  },
+  {
+   "name": "refused",
+   "kind": "ui",
+   "gain": 0.4,
+   "what": "Refused",
+   "when": "the chain or the terminal says no",
+   "sec": 0.5
+  },
+  {
+   "name": "block",
+   "kind": "ui",
+   "gain": 0.3,
+   "what": "Ship's bell, far off: a new block",
+   "when": "each new block while a contract is taken",
+   "eleven": "Two strokes of a ship's bell far away in fog, muffled",
+   "sec": 1.99
+  },
+  {
+   "name": "tick",
+   "kind": "ui",
+   "gain": 0.4,
+   "what": "Trace clock",
+   "when": "each new block while the trace has less than a quarter left",
+   "sec": 0.04
+  },
+  {
+   "name": "seal",
+   "kind": "event",
+   "gain": 0.7,
+   "what": "Contract sealed: the wax stamp, then a bell",
+   "when": "a contract settles",
+   "eleven": "A heavy wax seal stamp pressed onto paper on a wooden table, then one small clear bell",
+   "sec": 1.83
+  },
+  {
+   "name": "paid",
+   "kind": "event",
+   "gain": 0.65,
+   "what": "The share is paid: coins on wood",
+   "when": "the drop pays a chapter's share back",
+   "eleven": "A handful of old metal coins dropped and settling onto a wooden table, close, satisfying",
+   "sec": 1.7
+  },
+  {
+   "name": "mark",
+   "kind": "event",
+   "gain": 0.7,
+   "what": "The crew's mark: a blade into the rail",
+   "when": "the crew's mark (1 test AGRS) arrives",
+   "eleven": "A knife carving a single notch into a wooden ship rail, then a low drum hit",
+   "sec": 2.06
+  },
+  {
+   "name": "dust",
+   "kind": "event",
+   "gain": 0.6,
+   "what": "The Tracer: a ping out of the dark",
+   "when": "dust from the lookalike wallet is found",
+   "eleven": "Single eerie sonar ping in a dark ocean with a slightly detuned echo, tense",
+   "sec": 3.0
+  },
+  {
+   "name": "hunt",
+   "kind": "event",
+   "gain": 0.6,
+   "what": "Hunt solved: minor resolves to major",
+   "when": "the right lookalike is marked",
+   "sec": 3.26
+  },
+  {
+   "name": "chapter",
+   "kind": "event",
+   "gain": 0.7,
+   "what": "Chapter done: a low horn and a bell",
+   "when": "a chapter's four contracts are done (the card)",
+   "eleven": "Distant low ship's horn swelling in fog, then one bright bell",
+   "sec": 3.53
+  },
+  {
+   "name": "mail",
+   "kind": "event",
+   "gain": 0.5,
+   "what": "Mail aboard: telegraph dit-dit, a small bell",
+   "when": "a crew message arrives",
+   "eleven": "Old telegraph key tapping two short clicks and one long, then a tiny desk bell",
+   "sec": 1.18
+  },
+  {
+   "name": "board",
+   "kind": "event",
+   "gain": 0.5,
+   "what": "The players' board: a ledger opened",
+   "when": "board",
+   "eleven": "An old leather ledger book opened and two pages turned, close",
+   "sec": 0.57
+  },
+  {
+   "name": "out",
+   "kind": "event",
+   "gain": 0.6,
+   "what": "Trace complete: a falling klaxon, the line drops",
+   "when": "the trace deadline passes on a taken contract",
+   "sec": 2.4
+  },
+  {
+   "name": "boot",
+   "kind": "event",
+   "gain": 0.55,
+   "what": "The terminal comes on",
+   "when": "the boot screen",
+   "sec": 2.2
+  }
+ ],
+ "voice": [
+  {
+   "name": "v-online",
+   "text": "Link established. Node online.",
+   "when": "the boot screen, when the live node answers"
+  },
+  {
+   "name": "v-sealed",
+   "text": "Contract sealed.",
+   "when": "a contract settles"
+  },
+  {
+   "name": "v-refused",
+   "text": "Payment refused.",
+   "when": "the chain refuses a payment that was meant to go through"
+  },
+  {
+   "name": "v-dust",
+   "text": "Dust in your wallet.",
+   "when": "dust from the lookalike is found"
+  },
+  {
+   "name": "v-paid",
+   "text": "Share paid.",
+   "when": "the drop pays a chapter's share"
+  },
+  {
+   "name": "v-chapter",
+   "text": "Chapter complete.",
+   "when": "a chapter's card opens"
+  },
+  {
+   "name": "v-out",
+   "text": "Trace complete. Connection lost.",
+   "when": "the trace deadline passes"
+  },
+  {
+   "name": "v-mark",
+   "text": "Crew mark received.",
+   "when": "the crew's mark arrives"
+  }
+ ]
+}
