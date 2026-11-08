@@ -124,6 +124,10 @@
   "text": "Three blocks or fewer. Brave. The chain will not wait for your fingers."
  },
  {
+  "who": "bosun",
+  "text": "Nice try. On this ship root is a signature, and only your key makes yours. If you want to break something, break the chain’s rules: every contract here is that attempt, and a trick the chain takes is a finding."
+ },
+ {
   "who": "qm",
   "text": "Rule one on this ship: no memo. A payment is from, to, amount, signed; if you have something to say, say it in the amount. Take the first contract."
  },
