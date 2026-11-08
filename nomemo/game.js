@@ -1802,7 +1802,7 @@
   function alias(c, args, s) {
     const line = s.toLowerCase();
     if (/^\d{1,2}$/.test(c) && +c >= 1 && +c <= CONTRACTS.length) { take(CONTRACTS[+c - 1]); return true; }
-    if (/^(score|scores|me|stats|profile|level|xp|balance|money|wallet\?)$/.test(c)) { status(); return true; }
+    if (/^(score|scores|me|stats|profile|level|xp|rank|balance|money|inventory|inv|items|gear)$/.test(c)) { status(); return true; }
     if (/^(leaderboard|highscore|highscores|top|players|player|multiplayer|online|others|who)$/.test(c) || /who (else )?(is )?(playing|online|here)/.test(line)) {
       say("sys", T("You are not alone: everybody at a terminal like this one plays the same chain with you, right now. The board counts their wallets; it never shows names.")); board(); return true; }
     if (/^(missions?|quests?|tasks?|list|ls|dir|menu|contract)$/.test(c)) { exec("jobs"); return true; }
@@ -1813,7 +1813,7 @@
     if (/^(restart|reset|undo|new|newgame)$/.test(c) || /^new game/.test(line)) { say("sys", T("Nothing to restart: your progress lives in this browser and on the chain. A settled contract can be played again: take <n> again."), nextChip()); return true; }
     if (/^(quit|exit|logout|bye|q)$/.test(c)) { say("sys", T("There is no way off a ship at sea. Close the tab whenever you like: the board keeps your place."), nextChip()); return true; }
     if (/^(about|info|intro|story|game)$/.test(c)) { about(); return true; }
-    if (/^(ok|okay|yes|y|sure|k|yep|ja|play|pay|continue)$/.test(c)) { nextStep(); return true; }
+    if (/^(ok|okay|yes|y|sure|k|yep|ja|play|pay|continue|home|map|skip|now)$/.test(c)) { nextStep(); return true; }
     if (/^(no|n|nope|nein)$/.test(c)) { say("sys", T("Fine. Whenever you are ready:"), nextChip()); return true; }
     if (/^(settings|options|config)$/.test(c)) { say("sys", T("Settings are commands: sound, ambience, fx, voice, transmission and scene on|off; lang en|zh|ja.")); return true; }
     return false;
