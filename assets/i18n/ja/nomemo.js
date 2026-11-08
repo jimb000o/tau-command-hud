@@ -784,5 +784,13 @@ TauI18n.add({ strings: {
   "Rule one on this ship: no memo. A payment is from, to, amount, signed; if you have something to say, say it in the amount. Take the first contract.": "この船の第一の掟：メモはなし。支払いは送り手、受け手、金額、そして署名だけ。言いたいことがあるなら金額で言え。最初の契約を取れ。",
   "Eight more after these": "この後にあと八つ",
   "chapters 2 and 3, then an inbox of puzzles without end": "第 2 章と第 3 章、その後は終わりのないパズルの受信箱",
-  "First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right.": "一つ目完了。計器が開いた：右側にブロック、追跡、ウォレット、残高、そしてお前の評判。"
+  "First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right.": "一つ目完了。計器が開いた：右側にブロック、追跡、ウォレット、残高、そしてお前の評判。",
+  "Transmission": "通信",
+  "incoming · {x}": "着信 · {x}",
+  "signal {n}%": "信号 {n}%",
+  "Esc or click: skip · transmission off": "Esc かクリック：スキップ · transmission off",
+  "— transmission ends —": "— 通信終了 —",
+  "Transmissions on: a contract's sender appears and reads it out. transmission off for the plain line.": "通信オン：契約の送り主が画面に現れて読み上げます。文字だけなら transmission off。",
+  "Transmissions off: contracts come as plain lines. transmission on brings the crew back on screen.": "通信オフ：契約は文字だけで届きます。transmission on で乗組員が画面に戻ります。",
+  "the cabin; the crew on screen": "船室・画面のクルー"
 } });

@@ -784,5 +784,13 @@ TauI18n.add({ strings: {
   "Rule one on this ship: no memo. A payment is from, to, amount, signed; if you have something to say, say it in the amount. Take the first contract.": "这条船的第一条规矩：没有备注。一笔付款就是付款方、收款方、金额，再加签名；有话要说，就用金额来说。接下第一份合约。",
   "Eight more after these": "后面还有八份",
   "chapters 2 and 3, then an inbox of puzzles without end": "第 2 章和第 3 章，然后是没有尽头的谜题收件箱",
-  "First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right.": "第一份完成。仪表现在打开了：右侧是区块、追踪、钱包、余额和你的声望。"
+  "First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right.": "第一份完成。仪表现在打开了：右侧是区块、追踪、钱包、余额和你的声望。",
+  "Transmission": "通讯",
+  "incoming · {x}": "来电 · {x}",
+  "signal {n}%": "信号 {n}%",
+  "Esc or click: skip · transmission off": "Esc 或点击：跳过 · transmission off",
+  "— transmission ends —": "— 通讯结束 —",
+  "Transmissions on: a contract's sender appears and reads it out. transmission off for the plain line.": "通讯已开：合约的发送者会出现并念给你听。输入 transmission off 只显示文字。",
+  "Transmissions off: contracts come as plain lines. transmission on brings the crew back on screen.": "通讯已关：合约只以文字出现。输入 transmission on 让船员重新上屏。",
+  "the cabin; the crew on screen": "船舱；船员上屏"
 } });

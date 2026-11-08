@@ -1,0 +1,44 @@
+/* No Memo: a contract as a transmission (transmission.js). It lies over the terminal's screen, the command line stays free. */
+#paneTerm { position: relative; }
+.txm { position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; padding: 14px;
+  background: radial-gradient(ellipse at 50% 45%, rgba(4,14,8,.9), rgba(2,4,3,.97)); opacity: 0; transition: opacity .28s; cursor: pointer; }
+.txm.show { opacity: 1; }
+.txm.gone { opacity: 0; transition: opacity .3s; }
+.txm-win { width: min(100%, 860px); max-height: 100%; display: flex; flex-direction: column; gap: 8px; border: 1px solid rgba(57,255,138,.35); border-radius: 8px;
+  background: rgba(3,10,6,.92); box-shadow: 0 0 0 1px rgba(0,0,0,.6), 0 0 38px rgba(57,255,138,.12), inset 0 0 40px rgba(57,255,138,.05); padding: 10px 12px; }
+.txm-top { display: flex; align-items: center; gap: 10px; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--ok); }
+.txm-rec { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); animation: txmBlink 1s steps(2) infinite; flex: none; }
+.txm-in { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.txm-sig { color: var(--dim); font: 11px var(--mono); letter-spacing: 0; text-transform: none; flex: none; }
+.txm-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; min-height: 0; }
+.txm-pic { position: relative; height: var(--pic, min(46vh, 380px)); aspect-ratio: 1; border-radius: 6px; overflow: hidden; border: 1px solid rgba(57,255,138,.28); background: #010402; }
+.txm-pic canvas { width: 100%; height: 100%; display: block; }
+.txm-pic::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px), radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,.55)); }
+.txm-bar { position: absolute; left: 0; right: 0; top: 0; height: 22%; pointer-events: none; background: linear-gradient(rgba(185,255,214,0), rgba(185,255,214,.07), rgba(185,255,214,0)); }
+.txm-text { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.txm-from { color: var(--mint); font: 600 13px var(--display); letter-spacing: .08em; text-transform: uppercase; }
+.txm-sub { margin: 0; color: #d9ffe8; font: 15px/1.55 var(--mono); text-shadow: 0 0 6px rgba(57,255,138,.35); min-height: 4.6em; }
+.txm-sub.caret::after { content: "▌"; color: var(--ok); animation: txmBlink .8s steps(2) infinite; }
+.txm-end { margin: 0; color: var(--dim); font: 11px var(--mono); min-height: 1.4em; }
+.txm-foot { color: var(--dim); font: 11px var(--mono); text-align: right; }
+/* a narrow terminal: the words lie over the foot of the picture */
+.txm.cap .txm-win { width: auto; }
+.txm.cap .txm-body { grid-template-columns: auto; justify-content: center; }
+.txm.cap .txm-text { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; gap: 2px; padding: 26px 12px 8px; background: linear-gradient(rgba(1,6,3,0), rgba(1,6,3,.86) 34%, rgba(1,6,3,.94)); }
+.txm.cap .txm-from { display: none; }
+.txm.cap .txm-sub { font-size: 13px; line-height: 1.45; min-height: 0; max-height: calc(var(--pic, 300px) * .4); overflow: hidden; }
+.txm.cap .txm-end { min-height: 0; }
+@keyframes txmBlink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .txm-rec, .txm-sub.caret::after { animation: none; } }
+/* narrow: a card at the top of the terminal, the log stays readable below */
+@media (max-width: 760px) {
+  .txm { bottom: auto; padding: 6px; background: none; place-items: stretch; }
+  .txm-win { padding: 8px; gap: 6px; background: #030a06; }
+  .txm-body { grid-template-columns: 96px minmax(0, 1fr); gap: 10px; align-items: start; }
+  .txm-pic { height: auto; width: 96px; }
+  .txm-sub { font-size: 12px; min-height: 0; max-height: 9.5em; overflow: hidden; }
+  .txm-from { font-size: 11px; }
+  .txm-foot { display: none; }
+}
+@media (max-height: 560px) and (min-width: 761px) { .txm-sub { font-size: 13px; } }
