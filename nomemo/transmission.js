@@ -87,8 +87,12 @@
       const wrap = $("screenWrap");
       if (wrap && wrap.offsetParent === pane) { box.style.top = wrap.offsetTop + "px"; box.style.bottom = Math.max(0, pane.clientHeight - wrap.offsetTop - wrap.offsetHeight) + "px"; }
       if (matchMedia("(max-width: 760px)").matches) { box.style.removeProperty("--pic"); box.style.bottom = "auto"; return; }   // a card at the top
-      const h = box.clientHeight - 28 - 74, w = box.clientWidth - 28 - 24 - 260;
-      box.style.setProperty("--pic", Math.max(120, Math.min(480, h, w)) + "px");
+      const h = box.clientHeight - 28 - 74, side = box.clientWidth - 28 - 24 - 260;
+      const cap = side < Math.min(h, 300);   // a narrow terminal (the cabin's screen): one big picture, the words over its foot like a film's
+      box.classList.toggle("cap", cap);
+      const text = box.querySelector(".txm-text"), pic = box.querySelector(".txm-pic"), body = box.querySelector(".txm-body");
+      if (cap && text.parentNode !== pic) pic.append(text); else if (!cap && text.parentNode !== body) body.append(text);
+      box.style.setProperty("--pic", Math.max(120, Math.min(480, h, cap ? box.clientWidth - 28 - 24 : side)) + "px");
     };
     fit(); box.fit = fit;
     requestAnimationFrame(() => box.classList.add("show"));
@@ -147,7 +151,7 @@
     if (!me.alive || me.ending) return;
     me.ending = true; me.speaking = false;
     const end = me.box.querySelector(".txm-end"); end.textContent = T("— transmission ends —");
-    const sub = me.box.querySelector(".txm-sub"); sub.textContent = me.d.shown || me.d.text || "";
+    const sub = me.box.querySelector(".txm-sub"); sub.textContent = me.d.shown || me.d.text || ""; sub.scrollTop = sub.scrollHeight;
     if (me.d.voice && !me.d.sim && ac) crackle(ac, 0.25, 0.14);
     me.glitch = 1;
     me.close = setTimeout(() => { if (cur === me) stop(true); }, 1500);
@@ -185,7 +189,7 @@
       me.glitch = Math.max(0, me.glitch - 0.06);
       if (moving && Math.random() < 0.012) me.glitch = 0.7 + Math.random() * 0.3;
       /* the subtitle keeps pace with the voice */
-      if (!me.ending) { const n = Math.round(shown.length * Math.min(1, p * 1.04)); if (n !== typed) { typed = n; sub.textContent = shown.slice(0, n); sub.classList.toggle("caret", n < shown.length); } }
+      if (!me.ending) { const n = Math.round(shown.length * Math.min(1, p * 1.04)); if (n !== typed) { typed = n; sub.textContent = shown.slice(0, n); sub.classList.toggle("caret", n < shown.length); sub.scrollTop = sub.scrollHeight; } }
       /* the signal */
       if (moving && Math.random() < 0.1) { me.sig = Math.max(31, Math.min(88, me.sig + (Math.random() - 0.5) * 9 - me.glitch * 6)); }
       if (sig) sig.textContent = F("signal {n}%", { n: Math.round(me.sig) });

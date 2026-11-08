@@ -1,7 +1,7 @@
 /* No Memo: a contract as a transmission (transmission.js). It lies over the terminal's screen, the command line stays free. */
 #paneTerm { position: relative; }
 .txm { position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; padding: 14px;
-  background: radial-gradient(ellipse at 50% 45%, rgba(4,14,8,.82), rgba(2,4,3,.94)); opacity: 0; transition: opacity .28s; cursor: pointer; }
+  background: radial-gradient(ellipse at 50% 45%, rgba(4,14,8,.9), rgba(2,4,3,.97)); opacity: 0; transition: opacity .28s; cursor: pointer; }
 .txm.show { opacity: 1; }
 .txm.gone { opacity: 0; transition: opacity .3s; }
 .txm-win { width: min(100%, 860px); max-height: 100%; display: flex; flex-direction: column; gap: 8px; border: 1px solid rgba(57,255,138,.35); border-radius: 8px;
@@ -22,6 +22,13 @@
 .txm-sub.caret::after { content: "▌"; color: var(--ok); animation: txmBlink .8s steps(2) infinite; }
 .txm-end { margin: 0; color: var(--dim); font: 11px var(--mono); min-height: 1.4em; }
 .txm-foot { color: var(--dim); font: 11px var(--mono); text-align: right; }
+/* a narrow terminal: the words lie over the foot of the picture */
+.txm.cap .txm-win { width: auto; }
+.txm.cap .txm-body { grid-template-columns: auto; justify-content: center; }
+.txm.cap .txm-text { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; gap: 2px; padding: 26px 12px 8px; background: linear-gradient(rgba(1,6,3,0), rgba(1,6,3,.86) 34%, rgba(1,6,3,.94)); }
+.txm.cap .txm-from { display: none; }
+.txm.cap .txm-sub { font-size: 13px; line-height: 1.45; min-height: 0; max-height: calc(var(--pic, 300px) * .4); overflow: hidden; }
+.txm.cap .txm-end { min-height: 0; }
 @keyframes txmBlink { 50% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .txm-rec, .txm-sub.caret::after { animation: none; } }
 /* narrow: a card at the top of the terminal, the log stays readable below */
