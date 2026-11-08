@@ -176,6 +176,18 @@
     const inp = $("cmd"); if (inp && fade && matchMedia("(pointer: fine)").matches) inp.focus({ preventScroll: true });
   }
 
+  /* painted mouth frames (art/manifest.json "mouth": {"qm": 2, ...}; art/crew/mouth/<who>-1.webp half open, -2 open):
+     when there, a talking face is the calm portrait with its mouth switched by the voice */
+  let manifest = null; const MF = {};
+  fetch("art/manifest.json", { cache: "no-cache" }).then(r => (r.ok ? r.json() : null)).then(j => { manifest = j; }).catch(() => {});
+  function mouthFrames(who) {
+    if (!who || !manifest || !manifest.mouth || !manifest.mouth[who]) return null;
+    if (!MF[who]) {
+      MF[who] = { ok: 0, im: ["art/crew/" + who + "-calm.webp", "art/crew/mouth/" + who + "-1.webp", "art/crew/mouth/" + who + "-2.webp"].map(src => { const i = new Image(); i.onload = () => { MF[who].ok += 1; }; i.src = src; return i; }) };
+    }
+    return MF[who].ok === 3 ? MF[who].im : null;
+  }
+
   /* the picture, drawn about 30 times a second */
   const low = document.createElement("canvas"); low.width = low.height = 132;
   const lx = low.getContext("2d", { willReadFrequently: true });
@@ -214,9 +226,14 @@
       const z = 1.02 + lv * 0.012 + (moving ? Math.sin(now / 1900) * 0.006 : 0);
       const jx = moving ? (Math.random() - 0.5) * (0.6 + g * 5) : 0, jy = moving ? (Math.random() - 0.5) * (0.4 + g * 2) : 0;
       const dw = W * z, dh = H * z, ox = (W - dw) / 2 + jx, oy = (H - dh) / 2 + jy;
-      lx.drawImage(me.img, ox, oy, dw, dh);
-      /* the mouth: the jaw drops a little and the mouth darkens with the voice */
-      if (lv > 0.04) {
+      const fr = mouthFrames(me.who || (me.d && me.d.who));
+      if (fr) {   // painted mouths: closed, half open, open, chosen by the voice's loudness syllable by syllable
+        const want = lv < 0.16 ? 0 : lv < 0.48 ? 1 : 2;
+        if (want !== me.fi && (now - (me.fiAt || 0) > 65 || me.fi == null)) { me.fi = want; me.fiAt = now; }
+        lx.drawImage(fr[me.fi || 0], ox, oy, dw, dh);
+      } else lx.drawImage(me.img, ox, oy, dw, dh);
+      /* without painted mouths: the jaw drops a little and the mouth darkens with the voice */
+      if (!fr && lv > 0.04) {
         const iw = me.img.naturalWidth, ih = me.img.naturalHeight;
         const [mx, my, mw, mh] = mouth;
         const sx = (mx - mw / 2) * iw, sy = (my - mh * 0.15) * ih, sw = mw * iw, sh = mh * 1.15 * ih;
