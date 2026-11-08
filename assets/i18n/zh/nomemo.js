@@ -446,5 +446,6 @@ TauI18n.add({ strings: {
   "The claim for chapter {n} is on the chain ({h}); the purse pays within a few blocks. If nothing comes: claim {n} again": "第 {n} 章的领取已在链上（{h}）；钱袋会在几个区块内支付。若没有到账：claim {n} again",
   "claim {n} again": "claim {n} again",
   "No share yet for chapter {n}. The purse pays within minutes while it is on; if it stays out: claim {n} again": "第 {n} 章的份额还没到。钱袋开着时几分钟内就会支付；若一直不到：claim {n} again",
-  "claim the crew’s share at a chapter’s end (the drop pays it back); claim <n> again resends an unpaid one": "在章节结束时领取船员份额（投递点会付回来）；claim <n> again 重发未支付的领取"
+  "claim the crew’s share at a chapter’s end (the drop pays it back); claim <n> again resends an unpaid one": "在章节结束时领取船员份额（投递点会付回来）；claim <n> again 重发未支付的领取",
+  "This hunt is settled: the drop is {h}. The next one comes with the next dust.": "这场追猎已经结束：投递点是 {h}。下一场随下一次粉尘而来。"
 } });
