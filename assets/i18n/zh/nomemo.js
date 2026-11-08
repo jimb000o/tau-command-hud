@@ -792,5 +792,6 @@ TauI18n.add({ strings: {
   "— transmission ends —": "— 通讯结束 —",
   "Transmissions on: a contract's sender appears and reads it out. transmission off for the plain line.": "通讯已开：合约的发送者会出现并念给你听。输入 transmission off 只显示文字。",
   "Transmissions off: contracts come as plain lines. transmission on brings the crew back on screen.": "通讯已关：合约只以文字出现。输入 transmission on 让船员重新上屏。",
-  "the cabin; the crew on screen": "船舱；船员上屏"
+  "the cabin; the crew on screen": "船舱；船员上屏",
+  "speaking · signal {n}%": "说话中 · 信号 {n}%"
 } });

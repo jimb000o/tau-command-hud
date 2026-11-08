@@ -100,7 +100,7 @@
   }
 
   async function play(d) {
-    stop(false);
+    stop(false); faceEnd(false);
     const me = { d, box: build(d), alive: true, src: null, t0: 0, dur: 0, env: null, img: null, level: 0, glitch: 0, sig: 55 + Math.random() * 20 };
     if (!me.box) return;
     cur = me;
@@ -137,11 +137,19 @@
     await new Promise(r => setTimeout(r, 380));   // the line opens
     if (!me.alive) return;
     if (buf && c) {
-      const s = c.createBufferSource(); s.buffer = buf; s.connect(radio(c).input);
-      me.src = s; me.env = envelope(buf); me.dur = buf.duration; me.t0 = c.currentTime; me.clock = () => c.currentTime - me.t0;
-      s.onended = () => { if (cur === me) finish(me); };
-      s.start();
-    } else {
+      const go = () => new Promise(done => {   // on the game's voice line: after whoever is still speaking, and a breath
+        if (!me.alive) return done(false);
+        const s = c.createBufferSource(); s.buffer = buf; const nv = window.NoMemoVoice, inp = nv && nv.screen ? nv.screen(c, c.destination) : radio(c).input; s.connect(inp);
+        me.src = s; me.env = envelope(buf); me.dur = buf.duration; me.t0 = c.currentTime; me.clock = () => c.currentTime - me.t0; me.done = () => done(true);
+        s.onended = () => { if (inp.stopRing) inp.stopRing(); done(true); if (cur === me) finish(me); };
+        s.start();
+      });
+      const line = window.NoMemoVoice && window.NoMemoVoice.onAir;
+      if (line) line(go, 20000).then(spoke => { if (!spoke && me.alive && !me.clock) silent(me, shown); }); else go();
+    } else silent(me, shown);
+  }
+  function silent(me, shown) {   // no voice: the picture talks for as long as the words take to read
+    {
       me.dur = Math.max(3.2, shown.length / 26); const t0 = performance.now(); me.clock = () => (performance.now() - t0) / 1000;
       me.fake = setTimeout(() => { if (cur === me) finish(me); }, me.dur * 1000);
     }
@@ -162,6 +170,7 @@
     cur = null; me.alive = false;
     clearTimeout(me.fake); clearTimeout(me.close);
     try { if (me.src) { me.src.onended = null; me.src.stop(); } } catch (e) {}
+    if (me.done) me.done();   // the voice line is free again
     const b = me.box; if (!b) return;
     if (fade) { b.classList.remove("show"); b.classList.add("gone"); setTimeout(() => b.remove(), 320); } else b.remove();
     const inp = $("cmd"); if (inp && fade && matchMedia("(pointer: fine)").matches) inp.focus({ preventScroll: true });
@@ -269,5 +278,84 @@
     b.textContent = on ? T("Transmissions on: a contract's sender appears and reads it out. transmission off for the plain line.") : T("Transmissions off: contracts come as plain lines. transmission on brings the crew back on screen.");
     s.append(a, b); const w = $("screenWrap"); if (w) w.scrollTop = w.scrollHeight;
   }, true);
+  /* every crew line: the speaker's face grows over the crew row and plays as a small live transmission while they talk.
+     With their voice it follows the voice (nomemo:crewvoice from game.js); without, it talks as long as the words take. */
+  let face = null;
+  function faceBox(who) {
+    const pane = $("paneJobs"), row = $("crewBox"); if (!pane || !row || !row.offsetParent) return null;
+    let box = pane.querySelector(".crew-live");
+    if (!box) {
+      box = document.createElement("div"); box.className = "crew-live"; box.setAttribute("aria-hidden", "true");
+      box.innerHTML = '<div class="cl-pic"><canvas width="240" height="240"></canvas><i class="txm-bar"></i></div><div class="cl-cap"><b></b><span></span></div>';
+      box.addEventListener("click", () => faceEnd(true));
+      pane.append(box);
+    }
+    box.style.bottom = Math.max(0, pane.clientHeight - row.offsetTop + 6) + "px";
+    const h2 = pane.querySelector("h2"), room = row.offsetTop - 6 - (h2 ? h2.offsetHeight : 0) - 4 - 16 - 24;   // under the pane's title, never over it
+    box.style.setProperty("--cl", Math.max(90, Math.min(210, room, pane.clientWidth - 40)) + "px");
+    box.querySelector("b").textContent = T(({ qm: "Quartermaster", look: "Lookout", bosun: "Bosun" })[who] || who);
+    return box;
+  }
+  function faceStart(d) {
+    if (cur) return;   // a transmission is on screen already
+    const box = faceBox(d.who); if (!box) return;
+    if (face && face.who !== d.who) faceEnd(false);
+    if (!face) {
+      face = { who: d.who, box, alive: true, img: null, level: 0, glitch: 1, sig: 60, env: null, wait: !!d.voice };
+      const img = new Image(); img.onload = () => { if (face) face.img = img; };
+      img.onerror = () => { if (d.mood && d.mood !== "calm") { img.onerror = null; img.src = "art/crew/" + d.who + "-calm.webp"; } };
+      img.src = "art/crew/" + d.who + "-" + (d.mood || "calm") + ".webp";
+      box.classList.add("show"); faceLoop(face);
+    }
+    face.text = d.text || "";
+    const secs = Math.max(2.6, face.text.length / 15);
+    clearTimeout(face.end);
+    if (d.voice) { face.wait = true; face.end = setTimeout(() => { if (face && face.wait) { face.wait = false; faceFake(face, secs); } }, 4500); }
+    else faceFake(face, secs);
+  }
+  function faceFake(f, secs) {
+    const t0 = performance.now(); f.env = null; f.clock = () => (performance.now() - t0) / 1000; f.dur = secs;
+    clearTimeout(f.end); f.end = setTimeout(() => faceEnd(true), secs * 1000 + 600);
+  }
+  function faceVoice(d) {
+    if (cur) return;
+    if (d.end) { if (face && face.who === d.who) { clearTimeout(face.end); face.env = null; face.clock = null; face.end = setTimeout(() => faceEnd(true), 900); } return; }
+    if (!face || face.who !== d.who) faceStart({ who: d.who, mood: "calm", text: "", voice: true });
+    if (!face) return;
+    face.wait = false; clearTimeout(face.end);
+    face.env = envelope(d.buffer); face.dur = d.buffer.duration; const c = d.ctx, at = d.at; face.clock = () => c.currentTime - at;
+    face.end = setTimeout(() => faceEnd(true), (d.buffer.duration + 3) * 1000);   // in case the end never comes
+  }
+  function faceEnd(fade) {
+    const f = face; if (!f) return;
+    face = null; f.alive = false; clearTimeout(f.end);
+    f.box.classList.remove("show");
+  }
+  function faceLoop(f) {
+    const cv = f.box.querySelector("canvas"), cx = cv.getContext("2d"), bar = f.box.querySelector(".txm-bar"), sig = f.box.querySelector(".cl-cap span");
+    const mouth = (data && data.mouth && data.mouth[f.who]) || [0.52, 0.4, 0.11, 0.06];
+    const moving = fx(); let last = 0, phase = Math.random() * 10;
+    const frame = now => {
+      if (!f.alive) return;
+      requestAnimationFrame(frame);
+      if (now - last < 40) return;
+      last = now;
+      const t = f.clock ? f.clock() : -1;
+      let lv = 0;
+      if (f.env && t >= 0) lv = f.env[Math.min(f.env.length - 1, Math.floor(t * 50))] || 0;
+      else if (f.clock && !f.env && t >= 0 && t < (f.dur || 0)) { phase += 0.36; lv = Math.max(0, Math.sin(phase * 2.1) * 0.5 + Math.sin(phase * 3.7) * 0.35 + 0.25); if ((t * 2.3) % 3 > 2.6) lv *= 0.15; }
+      f.level += (lv - f.level) * 0.55;
+      f.glitch = Math.max(0, f.glitch - 0.07);
+      if (moving && Math.random() < 0.015) f.glitch = 0.6 + Math.random() * 0.4;
+      if (moving && Math.random() < 0.1) f.sig = Math.max(31, Math.min(88, f.sig + (Math.random() - 0.5) * 9 - f.glitch * 6));
+      sig.textContent = f.level > 0.05 ? F("speaking · signal {n}%", { n: Math.round(f.sig) }) : F("signal {n}%", { n: Math.round(f.sig) });
+      draw(f, cx, cv, mouth, moving, now);
+      if (bar) bar.style.transform = "translateY(" + (((now / 22) % 140) - 20) + "%)";
+    };
+    requestAnimationFrame(frame);
+  }
+  document.addEventListener("nomemo:crewline", e => { const d = e.detail || {}; if (on && d.who) { lines(); faceStart(d); } });
+  document.addEventListener("nomemo:crewvoice", e => { const d = e.detail || {}; if (on && d.who) faceVoice(d); });
+
   window.NoMemoTransmission = { play: d => play(d), stop: () => stop(true), get on() { return on; } };
 })();
