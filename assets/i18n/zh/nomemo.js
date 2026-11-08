@@ -801,5 +801,6 @@ TauI18n.add({ strings: {
   "You are wallet number {n} to pay the crew’s drop. The others play the same chain with you.": "你是第 {n} 个向船员投递点付款的钱包。其他人和你在同一条链上玩。",
   "Wallet number {n} to pay the drop.": "第 {n} 个向投递点付款的钱包。",
   "{n} today · {m} this hour": "今天 {n} · 本小时 {m}",
-  "practice board": "练习看板"
+  "practice board": "练习看板",
+  "speaking · signal {n}%": "说话中 · 信号 {n}%"
 } });

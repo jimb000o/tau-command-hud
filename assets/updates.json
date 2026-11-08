@@ -2715,5 +2715,10 @@
     "tag": "No Memo",
     "on": "2026-11-08",
     "html": "No Memo: you see the other players now. The start shows how many wallets paid the crew’s drop in the last 24 hours and the last hour and when the last move was; after your first contract you learn which wallet number you are; board and the Board instrument show the same. Wallets are counted, nobody is named."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-08",
+    "html": "No Memo: the crew talks one at a time now, with a breath between voices, so the ship's computer and the Quartermaster no longer speak over each other. Every crew voice comes through the cabin's screen, a little digital, and whoever speaks appears big over the crew row as a live green transmission that moves with their voice."
   }
 ]

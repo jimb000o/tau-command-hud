@@ -801,5 +801,6 @@ TauI18n.add({ strings: {
   "You are wallet number {n} to pay the crew’s drop. The others play the same chain with you.": "お前はクルーのドロップに支払った {n} 番目のウォレットだ。他の者たちも同じチェーンで一緒に遊んでいる。",
   "Wallet number {n} to pay the drop.": "ドロップに支払った {n} 番目のウォレット。",
   "{n} today · {m} this hour": "今日 {n} · この 1 時間 {m}",
-  "practice board": "練習ボード"
+  "practice board": "練習ボード",
+  "speaking · signal {n}%": "通話中 · 信号 {n}%"
 } });
