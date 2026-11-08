@@ -2649,6 +2649,11 @@
   {
     "tag": "No Memo",
     "on": "2026-11-08",
-    "html": "No Memo: claim takes the lowest finished chapter first (the hints name that one, and the hunt opens with chapter 1); claim <n> picks a chapter, claim <n> again resends a claim the purse has not paid."
+    "html": "No Memo: claim takes the lowest finished chapter first (the hints name that one, and the hunt opens with chapter 1); claim &lt;n&gt; picks a chapter, claim &lt;n&gt; again resends a claim the purse has not paid."
+  },
+  {
+    "tag": "In numbers",
+    "on": "2026-11-08",
+    "html": "In numbers: No Memo has a tab of its own, next to White Rabbit Key: its player wallets and contracts on the chain per day, wallets reached, its share of the user transactions, the visitors of the game and the crew’s board."
   }
 ]

@@ -240,7 +240,7 @@ html.fit.wide .col.side { display: contents; }
   <div class="intro">
     <div>
       <p class="lead"><span id="leadLine">How many people look at Tau through this site.</span></p>
-      <span class="sites" role="group" aria-label="View"><button type="button" data-site="net" data-tip="What our two sites move on Tau Testnet Alpha: wallets that acted through them, their transactions and test AGRS.\nRead from the testnet's public blocks.">On the testnet</button><button type="button" data-site="" data-tip="Visitors of tauhud.com">Tau HUD</button><button type="button" data-site="agorzilla" data-tip="Visitors of Agorzilla, our second site: one creature everyone feeds and shapes on Tau Testnet Alpha.\nCounted the same way, kept apart from Tau HUD's numbers.">Agorzilla</button><button type="button" data-site="nodes" data-tip="Nodes on Tau Testnet Alpha, hour by hour, as our node sees them: before Tau HUD went live and since.">Nodes</button><button type="button" data-site="rabbit" data-tip="White Rabbit Key, our island election game: the rivals' moves, the players' own Book lines and their ballots.\nRead from the testnet's public blocks.">White Rabbit Key</button></span>
+      <span class="sites" role="group" aria-label="View"><button type="button" data-site="net" data-tip="What our two sites move on Tau Testnet Alpha: wallets that acted through them, their transactions and test AGRS.\nRead from the testnet's public blocks.">On the testnet</button><button type="button" data-site="" data-tip="Visitors of tauhud.com">Tau HUD</button><button type="button" data-site="agorzilla" data-tip="Visitors of Agorzilla, our second site: one creature everyone feeds and shapes on Tau Testnet Alpha.\nCounted the same way, kept apart from Tau HUD's numbers.">Agorzilla</button><button type="button" data-site="nodes" data-tip="Nodes on Tau Testnet Alpha, hour by hour, as our node sees them: before Tau HUD went live and since.">Nodes</button><button type="button" data-site="rabbit" data-tip="White Rabbit Key, our island election game: the rivals' moves, the players' own Book lines and their ballots.\nRead from the testnet's public blocks.">White Rabbit Key</button><button type="button" data-site="nomemo" data-tip="No Memo, our terminal game: the contracts its players send from their own test wallets.\nRead from the testnet's public blocks.">No Memo</button></span>
       <p class="sub" id="sourceLine">Visitors per day, growth since counting began and the pages people open most. Counted without cookies and without storing anything in your browser; only daily totals are kept.</p>
     </div>
     <div class="kpis" aria-label="Key numbers">
@@ -311,15 +311,17 @@ const DAY = 86400000;
 const HOUR = 3600000;
 let raw = null, data = null, range = 30, sel = null, failed = false, kind = "line";
 // Agorzilla (agorzilla.com) is counted the same way but apart; the relay lists it under "sites"
-const SITES = { net: "How much our two sites move the testnet.", "": "How many people look at Tau through this site.", agorzilla: "How many people visit Agorzilla, our second site.", rabbit: "What White Rabbit Key, our island game, writes on the testnet.", nodes: "How many nodes keep the testnet running, before Tau HUD went live and since." };
+const SITES = { net: "How much our two sites move the testnet.", "": "How many people look at Tau through this site.", agorzilla: "How many people visit Agorzilla, our second site.", rabbit: "What White Rabbit Key, our island game, writes on the testnet.", nomemo: "What No Memo, our terminal game, writes on the testnet.", nodes: "How many nodes keep the testnet running, before Tau HUD went live and since." };
 const SUBS = { net: "Wallets that acted on Tau Testnet Alpha through Agorzilla or a Tau HUD page, what they sent and how many come back. Read from the testnet's public blocks; a wallet is a key, not a person.", "": "Visitors per day, growth since counting began and the pages people open most. Counted without cookies and without storing anything in your browser; only daily totals are kept." };
 SUBS.agorzilla = SUBS[""];
 SUBS.nodes = "Nodes on Tau Testnet Alpha that our node had contact with, ours included, counted every hour since 30 October 2026. Earlier hours, back to our node's first day, are estimated from when each node was first and last seen. Only peer counts are kept.";
 SUBS.rabbit = "Every move in the island's Book that went to Tau Testnet Alpha as a test transaction: the rivals' moves sent by the island bot, the players' own lines and their ballots for a governor. Read from the testnet's public blocks; a wallet is a key, not a person.";
-let agzLatest = null;   // agorzilla.com/chain/latest.json: the creature's own summary
+SUBS.nomemo = "Every No Memo contract that landed on Tau Testnet Alpha: transactions players signed in their own test wallet, counted by the wallets that sent them. Contracts the chain refuses on purpose never reach a block, so they are not here. Read from the testnet's public blocks; a wallet is a key, not a person.";
+let agzLatest = null;
+let nmSnap = null;   // relay /nomemo: the crew's board (claims paid per chapter, ranks)   // agorzilla.com/chain/latest.json: the creature's own summary
 let txs = null;   // relay /api/v1/sources
 // deep links: ?view=testnet | tauhud | agorzilla | rabbit (the older ?site= still works)
-const VIEWS = { testnet: "net", tauhud: "", agorzilla: "agorzilla", rabbit: "rabbit", nodes: "nodes" }, VIEW_OF = { net: "testnet", "": "tauhud", agorzilla: "agorzilla", rabbit: "rabbit", nodes: "nodes" };
+const VIEWS = { testnet: "net", tauhud: "", agorzilla: "agorzilla", rabbit: "rabbit", nomemo: "nomemo", nodes: "nodes" }, VIEW_OF = { net: "testnet", "": "tauhud", agorzilla: "agorzilla", rabbit: "rabbit", nomemo: "nomemo", nodes: "nodes" };
 const Q0 = new URLSearchParams(location.search);
 const SITE_ASKED = Q0.has("view") ? VIEWS[Q0.get("view")] : Q0.get("site");
 let site = SITE_ASKED ?? "net";
@@ -327,6 +329,7 @@ if (!(site in SITES)) site = "net";
 const pickSite = () => {
   if (site === "net") { data = netData(); return; }
   if (site === "rabbit") { data = rabbitData(); return; }
+  if (site === "nomemo") { data = nomemoData(); return; }
   if (site === "nodes") { data = nodesData(); return; }
   if (!raw) return;
   const o = site && raw.sites && raw.sites[site];
@@ -393,6 +396,24 @@ function nodesData() {
   for (const [k, h] of Object.entries(nh.hours || {})) hours[k] = [h, h.map(() => 0)];
   return { today, now, days, hours, peak: true, hourFirst: nh.since ? nh.since * 1000 : undefined };
 }
+/* "No Memo": the terminal game's transactions on the testnet (relay "nomemo"), in the "On the testnet" shape:
+   days[k] = [wallets, transactions, new wallets, returning wallets, test AGRS]; no hours (the relay keeps those for our sites together) */
+const NM = () => site === "nomemo";
+function nomemoData() {
+  if (!txs || !txs.days) return null;
+  const today = (raw && raw.today) || dayKey(Date.now()), now = (raw && raw.now) || Math.floor(Date.now() / 1000);
+  const ks = Object.keys(txs.days).filter(k => ((txs.days[k] || {}).nomemo || [0])[0]).sort(), days = {};
+  if (!ks.length) return { today, now, days: { [today]: [0, 0, 0, 0, 0] }, hours: {} };
+  for (let t = Date.parse(ks[0] + "T00:00:00Z"), end = Date.parse(today + "T00:00:00Z"); t <= end; t += DAY) {
+    const k = dayKey(t), v = ((txs.days[k] || {}).nomemo) || [0, 0, 0, 0, 0];
+    days[k] = [v[1] || 0, v[0] || 0, v[2] || 0, v[3] || 0, v[4] || 0];
+  }
+  return { today, now, days, hours: {} };
+}
+/* the "On the testnet" texts, said for No Memo in its own view */
+const NM_TEXT = { "Wallets acting through our sites per day": "No Memo player wallets per day", "The testnet numbers appear here once the relay has read the blocks.": "No Memo's numbers appear here with its first contract on the testnet.",
+  "The climb starts with the first wallet that acts through our sites.": "The climb starts with the first wallet that plays No Memo on the testnet." };
+const nmT = t => (NM() && NM_TEXT[t]) || t;
 const CAND_NAMES = { marisol: "Marisol", tobias: "Tobias", baako: "Baako", hana: "Hana" };
 function rabbitData() {
   if (!txs || !txs.rabbit) return null;
@@ -447,6 +468,7 @@ function ticks(lo, hi, want = 4) {
 /* hour by hour: 24H always; 7D, 30D and an "All" of up to a month too, once the relay sends every day of that span by
    the hour (it keeps 31 days); otherwise one point a day */
 function hourly() {
+  if (NM()) return false;
   if (range === 1) return true;
   if (!data || !(range === 7 || range === 30 || range === 0)) return false;
   const keys = Object.keys(data.days).sort(), today = Date.parse(data.today + "T00:00:00Z");
@@ -606,12 +628,12 @@ function lineChart(box, pts, opts) {
 
 function drawDaily() {
   const box = $("cDaily"), days = data ? rangeDays() : [];
-  const net = NET();
+  const net = NET() || NM();
   if (RB()) return drawRabbitDaily(box, days);
   if (ND()) return drawNodesDaily(box, days);
-  if (!days.length) { if (net) $("dailyTitle").textContent = T("Wallets acting through our sites per day"); box.innerHTML = `<p class="empty">${esc(T(net ? "The testnet numbers appear here once the relay has read the blocks." : failed ? "The counter could not be reached. It will try again in a minute." : "Counting began on 28 October 2026. The first numbers appear here as soon as people open a page."))}</p>`; return; }
+  if (!days.length) { if (net) $("dailyTitle").textContent = T(nmT("Wallets acting through our sites per day")); box.innerHTML = `<p class="empty">${esc(T(net ? nmT("The testnet numbers appear here once the relay has read the blocks.") : failed ? "The counter could not be reached. It will try again in a minute." : "Counting began on 28 October 2026. The first numbers appear here as soon as people open a page."))}</p>`; return; }
   const hr = hourly(), six = hr && domain().step > HOUR;
-  $("dailyTitle").textContent = T(net ? (six ? "Transactions through our sites per 6 hours" : hr ? "Transactions through our sites per hour" : "Wallets acting through our sites per day") : six ? "Visitors per 6 hours" : hr ? "Visitors per hour" : "Visitors per day");
+  $("dailyTitle").textContent = T(net ? (six ? "Transactions through our sites per 6 hours" : hr ? "Transactions through our sites per hour" : nmT("Wallets acting through our sites per day")) : six ? "Visitors per 6 hours" : hr ? "Visitors per hour" : "Visitors per day");
   $("lgMain").lastChild.textContent = T(net ? (six ? "transactions per 6 hours (click for that day)" : hr ? "transactions per hour (click for that day)" : "wallets per day (click a day for details)") : six ? "visitors per 6 hours (click for that day's pages)" : hr ? "visitors per hour (click for that day's pages)" : "visitors per day (click a day for its pages)");
   $("lgOpen").lastChild.textContent = T(six ? "these 6 hours, still counting" : hr ? "this hour, still counting" : "today, still counting");
   $("lgVol").lastChild.textContent = T(net ? "transactions" : "pages opened");
@@ -636,7 +658,7 @@ function drawDaily() {
   }).filter(Boolean);
   $("lgAvg").hidden = !avg;
   lineChart(box, pts, {
-    label: T(net ? "Wallets acting through our sites per day" : "Visitors per day"), lo0: true, avg, bars: kind === "bar",
+    label: T(net ? nmT("Wallets acting through our sites per day") : "Visitors per day"), lo0: true, avg, bars: kind === "bar",
     tip: p => `<div class="d">${esc(dayLabel(p.k, true))}${p.open ? " · " + esc(T("still counting")) : ""}</div>` + (net
       ? `<b>${fmt(p.v)}</b> ${esc(T("wallets"))} (${fmt((data.days[p.k] || [])[2] || 0)} ${esc(T("new"))}, ${fmt((data.days[p.k] || [])[3] || 0)} ${esc(T("came back"))})<br><b>${fmt(p.vol)}</b> ${esc(T("transactions"))}`
       : `<b>${fmt(p.v)}</b> ${esc(T("visitors"))}<br><b>${fmt(p.vol)}</b> ${esc(T("pages opened"))}`),
@@ -716,7 +738,7 @@ function drawNodesVs(box) {
 }
 
 function drawGrowth() {
-  const box = $("cGrowth"), days = rangeDays(), all = Object.keys(data.days).sort(), net = NET();
+  const box = $("cGrowth"), days = rangeDays(), all = Object.keys(data.days).sort(), net = NET() || NM();
   box.classList.remove("vsbox");
   if (RB()) return drawRabbitGrowth(box, days, all);
   if (ND()) return drawNodesVs(box);
@@ -770,7 +792,7 @@ function drawGrowth() {
 
 /* wallets that acted through our sites, added up from the first one (each wallet once) */
 function drawNetGrowth(box, days, all) {
-  if (!days.length || !all.some(k => data.days[k][2])) { box.innerHTML = `<p class="empty">${esc(T("The climb starts with the first wallet that acts through our sites."))}</p>`; $("growthNote").textContent = ""; return; }
+  if (!days.length || !all.some(k => data.days[k][2])) { box.innerHTML = `<p class="empty">${esc(T(nmT("The climb starts with the first wallet that acts through our sites.")))}</p>`; $("growthNote").textContent = ""; return; }
   if (hourly()) {
     let run = 0;
     const pts = rangeHours().map(p => { run += p.v || 0; return { ...p, add: p.v || 0, v: run }; });
@@ -972,6 +994,7 @@ function drawNodesDay() {
 
 function drawDay() {
   if (NET()) return drawNetDay();
+  if (NM()) return drawNomemoDay();
   if (RB()) return drawRabbitDay();
   if (ND()) return drawNodesDay();
   const k = sel, d = (data.days[k] || [0, 0, 0, {}]);
@@ -1098,6 +1121,14 @@ function drawPages() {
     $("pages").hidden = true; $("pagesBox").hidden = false;
     return drawNodesPages();
   }
+  if (NM()) {
+    $("pagesTitle").textContent = T("The crew's board");
+    $("whoTitle").textContent = T("Who plays");
+    $("pRange").textContent = T("so far");
+    $("wRange").textContent = range === 1 ? T("today") : range ? T(range === 365 ? "last year" : `last ${range} days`) : T("all blocks held");
+    $("pages").hidden = true; $("pagesBox").hidden = false;
+    return drawNomemoPages();
+  }
   if (RB()) {
     $("pagesTitle").textContent = T("The island in numbers");
     $("whoTitle").textContent = T("Who plays");
@@ -1166,6 +1197,49 @@ function rabbitKpis() {
   $("kWeekBox").classList.remove("up");
 }
 
+function nomemoKpis() {
+  const d = data.days[data.today] || [0, 0], tot = (txs.totals && txs.totals.nomemo) || {};
+  const set = (box, val, label, tipText) => { $(box).hidden = false; $(box).querySelector("b").textContent = val; $(box).lastChild.textContent = T(label); $(box).dataset.tip = T(tipText); };
+  set("kTodayBox", fmt(d[0] || 0), "player wallets today", "Different wallets that landed a No Memo contract on the testnet today (UTC day). A wallet is a key, not a person.");
+  set("kWeekBox", fmt(tot["7"] || 0), "wallets, last 7 days", "Different wallets that played No Memo on the testnet in the last 7 days.");
+  set("kAllBox", fmt(Object.values(data.days).reduce((a, x) => a + (x[1] || 0), 0)), "contracts on the chain", "Every No Memo transaction that landed in a block so far. Contracts the chain refuses on purpose are not in a block, so they are not counted.");
+  set("kBestBox", fmt(tot.all || 0), "player wallets so far", "Every wallet that landed a No Memo contract, in the blocks the relay keeps.");
+  $("kWeekBox").classList.remove("up");
+}
+
+/* one day of No Memo: its wallets and transactions, the visitors of /nomemo/ and its share of the day's user transactions */
+function drawNomemoDay() {
+  const k = sel, d = data.days[k] || [0, 0, 0, 0, 0], users = netUsers(k), seen = ((((raw && raw.days) || {})[k] || [])[3] || {}).nomemo || 0;
+  $("dTitle").textContent = dayLabel(k, true) + (k === data.today ? " · " + T("still counting") : "");
+  $("dayHint").textContent = T("click a day in the chart");
+  $("dFacts").innerHTML = fact(fmt(d[0]), "player wallets", "Different wallets that landed a No Memo contract that day. A wallet is a key, not a person.") +
+    fact(fmt(d[1]), "transactions", "No Memo contracts that landed in a block that day.") +
+    fact(fmt(d[2]), "new wallets", "Wallets playing No Memo on the testnet for the first time (in the blocks the relay keeps).") +
+    fact(fmt(d[3]), "came back", "Wallets that had already played No Memo on an earlier day.");
+  $("dPages").innerHTML = `<tr><td>${esc(T("visitors of the game"))}</td><td class="n">${fmt(seen)}</td></tr>` +
+    `<tr><td data-tip="${esc(T("Share of the day's user transactions: everything on the testnet except IDNI's 11 genesis accounts, our cruise ships and the island bot."))}">${esc(T("share of the user transactions"))}</td><td class="n">${users ? share(d[1], users) : "–"}</td></tr>` +
+    `<tr><td>${esc(T("test AGRS moved"))}</td><td class="n">${fmt(d[4] || 0)}</td></tr>`;
+}
+
+/* the crew's board (relay /nomemo): wallets the crew paid, ranks, claims paid per chapter; beside it who plays */
+function drawNomemoPages() {
+  const b = nmSnap && nmSnap.board, c = (v, label, tipText) => `<div${tipText ? ` data-tip="${esc(T(tipText))}"` : ""}><b>${v}</b><span>${esc(T(label))}</span></div>`;
+  const cl = (b && b.claims) || [], ranks = (b && b.ranks) || {};
+  $("pagesBox").innerHTML = b ? `<div class="agz">` + c(fmt(b.wallets || 0), "wallets on the board", "Wallets that claimed a chapter's share from the crew's purse.") +
+    cl.map((n, i) => c(fmt(n), `chapter ${i + 1} paid`, "Wallets the crew's purse paid the share for this chapter, on the real chain.")).join("") +
+    Object.entries(ranks).map(([name, n]) => c(fmt(n), name, "Wallets at this rank in the crew, by chapters claimed.")).join("") + `</div>`
+    : `<p class="empty">${esc(T("The crew's board appears here once the relay answers."))}</p>`;
+  const days = rangeDays();
+  let tx = 0, w = 0, nw = 0, users = 0, seen = 0;
+  for (const [k, d] of days) { tx += d[1] || 0; w += d[0] || 0; nw += d[2] || 0; users += netUsers(k); seen += ((((raw && raw.days) || {})[k] || [])[3] || {}).nomemo || 0; }
+  const line = (label, v, tipText) => `<div class="sp"><span data-tip="${esc(T(tipText))}">${esc(T(label))}</span><em class="cnt"> · ${v}</em></div>`;
+  $("splits").innerHTML = line("Share of the user transactions", users ? share(tx, users) : "–", "No Memo's transactions in this range, as a share of all user transactions on the testnet: everything except IDNI's 11 genesis accounts, our cruise ships and the island bot.") +
+    line("Contracts on the chain", fmt(tx), "No Memo transactions that landed in a block in this range.") +
+    line("New player wallets", fmt(nw), "Wallets that played No Memo on the testnet for the first time in this range.") +
+    line("Visitors of the game", fmt(seen), "Different people who opened tauhud.com/nomemo/, added up per day. Not every visitor plays on the chain.");
+  $("txsplit").innerHTML = ""; $("starts").innerHTML = ""; $("cross").innerHTML = "";
+}
+
 function nodesKpis() {
   const set = (box, val, label, tipText) => { $(box).hidden = false; $(box).querySelector("b").textContent = val; $(box).lastChild.textContent = T(label); $(box).dataset.tip = tipText; };
   const on = peers && peers.peers ? peers.peers.filter(r => r.online).length + 1 : null;
@@ -1183,6 +1257,7 @@ function kpis() {
   if (NET()) return netKpis();
   if (ND()) return nodesKpis();
   if (RB()) return rabbitKpis();
+  if (NM()) return nomemoKpis();
   const lab = (box, label, tipText) => { $(box).lastChild.textContent = T(label); $(box).dataset.tip = tipText; };
   lab("kTodayBox", "visitors today", "Different people on this site today so far (UTC day).\nThe same person on two pages counts once.");
   lab("kWeekBox", "a day, last 7 days", "Average visitors per day over the last 7 full days,\ncompared with the 7 days before.");
@@ -1209,7 +1284,7 @@ function render() {
   if (!SAMPLE) $("sourceLine").textContent = T(SUBS[site]);
   document.querySelectorAll(".range button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.r === range)));
   document.querySelectorAll(".kind button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.kind === kind)));
-  if (!data) { if (failed || NET() || RB() || ND()) drawDaily(); return; }
+  if (!data) { if (failed || NET() || RB() || NM() || ND()) drawDaily(); return; }
   if (!sel || !rangeDays().some(([k]) => k === sel)) sel = data.today;
   kpis(); drawDaily(); drawGrowth(); drawDay(); drawPages();
 }
@@ -1233,6 +1308,7 @@ async function load() {
     txs.totals.rabbit = { 7: 21, 30: 21, all: 21 };
     for (const k of ks.slice(-8)) raw.days[k][3].rabbit = Math.round(raw.days[k][0] * .15);
     agzLatest = { stage_name: "Baby", rounds: [{ category: "Aura", winner: "Emerald" }], open: { category: "Pendant light" } };
+    nmSnap = { board: { wallets: 6, ranks: { aboard: 2, deckhand: 2, navigator: 1, "quartermaster’s mate": 1 }, claims: [6, 3, 1] } };
     playNow = 3; pickSite(); render(); return; }
   try {
     const r = await fetch(`${RELAY}/visits/public`, { cache: "no-store" });
@@ -1240,6 +1316,7 @@ async function load() {
     raw = await r.json(); failed = false;
     try { const s = await fetch(`${RELAY}/api/v1/sources`, { cache: "no-store" }); if (s.ok) txs = splitAuto(await s.json()); } catch (e) {}
     await loadPlaying();
+    try { const n = await fetch(`${RELAY}/nomemo`, { cache: "no-store" }); if (n.ok) nmSnap = await n.json(); } catch (e) {}
     try { const a = await fetch("https://agorzilla.com/chain/latest.json", { cache: "no-store" }); if (a.ok) agzLatest = await a.json(); } catch (e) {}
     try { const [a, b, c] = await Promise.all([fetch(`${RELAY}/nodes/history`, { cache: "no-store" }), fetch(`${RELAY}/peers`, { cache: "no-store" }), fetch(`${RELAY}/setup/stats`, { cache: "no-store" })]); if (a.ok) nh = await a.json(); if (b.ok) peers = await b.json(); if (c.ok) setupSt = await c.json(); } catch (e) {}
     // until the relay counts by site (or when it cannot be reached), the page opens on Tau HUD's visitors
