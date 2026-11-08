@@ -2665,5 +2665,10 @@
     "tag": "No Memo",
     "on": "2026-11-08",
     "html": "No Memo: the ship sounds around you. The sea against the hull, a creaking hull now and then, the hum of lamp and tube; a low pulse when the trace runs short; a wax seal for a settled contract, coins for a paid share, a blade for the crew’s mark, a ping for the Tracer’s dust, a horn for a finished chapter. ambience off keeps only the terminal’s own sounds; sound off silences all of it; tauhud.com/nomemo/sfx/ plays every one."
+  },
+  {
+    "tag": "Donations",
+    "on": "2026-11-08",
+    "html": "Donations: what the site’s tools were paid now lands on the donation page by itself. Our server reads the receipts of the image credits, voices, clips, the X bot and the AI writing as they come in and lists each top-up with its day and amount as billed, plus the sum so far. Nothing else of a receipt is kept. The first: €10 of image credits on 8 November."
   }
 ]
