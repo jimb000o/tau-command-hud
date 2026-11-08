@@ -2730,5 +2730,10 @@
     "tag": "No Memo",
     "on": "2026-11-08",
     "html": "No Memo plays easier: 100 simulated players showed where people got stuck. In the inbox the main button now leads from read to accept to the hint’s first step to send, and every hint has a button for that step. Typed guesses like score, missions, ls, multiplayer or language lead to the right command; what explains eight more words (players, hash, explorer, hint, board…). The first card is two lines, and Tutorial now plays the first contracts with you instead of explaining them first. On a phone the terminal has twice the room. Fixed: the riddle Where it landed counted the wrong payment, and some Chinese and Japanese lines stayed half English."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-08",
+    "html": "No Memo: a real mailbox. Letters have a sender and a subject; the post window lists them and opens one with a click; mail 3 reads letter 3 in the terminal. The crew writes when something happens to you (your first payment on the chain, where your first coins came from, a refused payment, a lost trace), when your rank grows, on Tuesdays while the ship is in and on Thursdays for the case file. Some letters bring a special order: accept it and it lands in your inbox, paying two points more."
   }
 ]

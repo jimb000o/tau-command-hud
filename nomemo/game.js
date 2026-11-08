@@ -116,6 +116,7 @@
     S.v = 2;
     for (const k of ["done", "cases", "ops", "riddles", "chap", "seen", "hunt"]) S[k] = S[k] || {};
     for (const k of ["findings", "hist", "mail", "inbox", "arch"]) S[k] = S[k] || [];
+    for (const m of S.mail) if (!m.id) { S.mseq = (S.mseq || 0) + 1; m.id = S.mseq; }
     if (S.snd == null) S.snd = true; if (S.amb == null) S.amb = true; if (S.fx == null) S.fx = !REDUCED; if (S.voice == null) S.voice = true;
   }
   const save = () => store.set(SAVE, JSON.stringify(S));
@@ -697,22 +698,111 @@
     $("sndBtn").textContent = S.snd ? "♪" : "♪̸"; $("sndBtn").title = T(S.snd ? "sound on (click: off)" : "sound off (click: on)");
   }
 
-  /* ---------- the post: what the crew sends a block or two later ---------- */
-  function post(who, text, blocks, m) {
-    S.mail.unshift({ who, text, m, at: Date.now(), due: (CHAIN.tip ?? 0) + (blocks == null ? 1 : blocks), read: false }); S.mail = S.mail.slice(0, 40); save(); topbar();
+  /* ---------- the post: real mail. Each letter has a sender, a subject and a body; some bring a special order (a contract
+     of the inbox that pays more), some point at a command. Letters come after a contract settles, when the rank grows,
+     when something new happens to you, and on the ship's days (Tuesday ops, the case file on Thursday). ---------- */
+  const subOf = m => (Array.isArray(m.sub) ? m.sub : [m.sub || "A word from the crew"]).map(x => T(x)).join(" ").replace(/([：。]) /g, "$1");
+  function post(who, text, blocks, m, o) {
+    S.mseq = (S.mseq || 0) + 1;
+    const x = { id: S.mseq, who, text, m, at: Date.now(), due: (CHAIN.tip ?? 0) + (blocks == null ? 1 : blocks), read: false, ...(o || {}) };
+    S.mail.unshift(x); S.mail = S.mail.slice(0, 60); save(); topbar();
     if (blocks === 0) deliverMail();
+    return x;
+  }
+  const mailOf = a => { const n = parseInt(String(a || "").replace(/^m/, ""), 10); return S.mail.find(x => x.id === n) || null; };
+  const mailHave = () => S.mail.filter(m => m.due <= (CHAIN.tip ?? 0));
+  /* the letters: each comes once, when its moment has come */
+  const LETTERS = [
+    { key: "mark", who: "qm", when: () => !!S.done.mark, sub: "Your mark is on the chain",
+      text: "Your first payment sits in a block now, and nobody can take it out again. Every node that follows the chain keeps the same list of payments; that agreement is what this testnet tests. history shows the block yours landed in.", act: "history" },
+    { key: "coins", who: "look", when: () => !!S.done.mark && CHAIN.bal != null && CHAIN.bal > 0, sub: "Where your coins came from",
+      text: "Your wallet held 100,000 test AGRS before anyone paid you a thing. The testnet credits a wallet it has never seen when that wallet first pays. Anyone can get them, which is why test AGRS are worth nothing, and why you can spend them on mistakes.", act: "status" },
+    { key: "inbox", who: "qm", when: () => !!S.inboxHi, sub: "Work of our own",
+      text: "The inbox is the crew’s own work, and it does not run out. Each offer is a puzzle about how the chain decides. Read one, accept it, change the draft with set, send it. A word you do not know: what <word>. Declining costs nothing.", act: "inbox" },
+    { key: "miss", who: "bosun", when: () => S.arch.some(a => a.out === "missed"), sub: "Read the answer",
+      text: "When the node says no, it says why: a code such as FEE_LIMIT_TOO_LOW or INVALID_SEQUENCE. That code is the whole lesson. why explains the last topic; archive keeps what you sent and what came back.", act: "archive" },
+    { key: "clock", who: "look", when: () => S.arch.some(a => a.out === "lapsed" || a.out === "traced"), sub: "The trace counts blocks",
+      text: "A lost contract costs little. The trace bar at the top counts blocks, not minutes: when the chain is quick, so is the trace. Take the next one and send early; a draft can be changed and sent again.", act: "inbox" },
+    { key: "seq", who: "bosun", when: () => rep() >= 4, sub: ["Special order:", "Yesterday’s number"], offer: "r-seq",
+      text: "Every wallet counts its own payments: the sequence number. A payment that uses a number again is refused, so the same payment cannot be played twice. Show me that refusal. This order pays two points more than the inbox." },
+    { key: "fee", who: "qm", when: () => rep() >= 8, sub: ["Special order:", "Read the rules"], offer: "p-fee",
+      text: "The base fee is not written in this terminal. It is in the chain’s own rules, and anyone can read them: peek getgovernance. On Tau the rules can change when the validators agree, so read them fresh each time. Two points more than the inbox." },
+    { key: "order", who: "bosun", when: () => rep() >= 12, sub: ["Special order:", "Two faults"], offer: "predict",
+      text: "A payment can be wrong in two ways and the node names only one: the first check it fails. Learn the order of the checks and you know the answer before you send. Say it with predict. Two points more than the inbox." },
+    { key: "blind", who: "bosun", when: () => rep() >= 35, sub: ["Special order:", "Blind order"], offer: "r-blind",
+      text: "From here on I name the answer and you find the payment, without hints. Every code you have seen is a rule the chain keeps; now make it show one on demand. Two points more than the inbox." },
+    { key: "top", who: "qm", when: () => rep() >= 80, sub: "No memo",
+      text: "You read the chain the way the chain reads itself: from, to, amount, signed, and the rules around them. That is the rank the ship is named for. Every refusal you caused was the chain doing its job, and every one tested it. Thank you for that." },
+  ];
+  function letters() {
+    if (!S.booted) return;
+    S.letters = S.letters || {};
+    for (const L of LETTERS) if (!S.letters[L.key] && L.when()) {
+      if (L.offer) { const kd = KINDS.find(x => x.k === L.offer); if (!kd || kd.t > tierMax()) continue; }
+      S.letters[L.key] = true; post(L.who, L.text, 1, null, { sub: L.sub, offer: L.offer || null, act: L.act || null, key: L.key });
+    }
+    /* the ship's days, by German time: Tuesday's op while the ship is in, Thursday's case file */
+    const d = new Date(), day = d.toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" }), wd = d.toLocaleDateString("en-GB", { timeZone: "Europe/Berlin", weekday: "short" }), hr = +d.toLocaleString("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", hourCycle: "h23" });
+    if (Object.keys(S.done).length && !SIM && shipIn() && !S.letters["op-" + day]) { S.letters["op-" + day] = true; post("bosun", "The Black Sequence lies off White Rabbit Key tonight. While she is in, op opens live contracts: the same tricks the pirates try on the chain, for you to play with them. About two hours, then she sails.", 0, null, { sub: "The ship is in", act: "op" }); }
+    if (Object.keys(S.done).length && wd === "Thu" && hr >= 12 && !S.letters["case-" + day]) { S.letters["case-" + day] = true; post("look", "Thursday is case day. The case file collects what the pirates tried at the island on Tuesday and the hack of the week, with riddles only the chain can answer.", 0, null, { sub: "This week’s case file", act: "case" }); }
   }
   function deliverMail() {
+    letters();
     const due = S.mail.filter(x => !x.told && x.due <= (CHAIN.tip ?? 0)); if (!due.length) return;
-    for (const x of due) x.told = true; save(); topbar(); snd.mail();
-    const x = due[due.length - 1];
-    say("sys", F("post from the {x}: type mail", { x: CREW[x.who] }), btn(T("read"), "mail"));
+    for (const x of due) x.told = true; save(); topbar(); chips(); snd.mail();
+    const x = due[0];
+    say("sys", (F("New mail from the {x}:", { x: CREW[x.who] }) + " " + subOf(x)).replace(/： /g, "：") + (due.length > 1 ? " " + F("(+{n} more)", { n: due.length - 1 }) : ""), btn(T("read"), "mail " + x.id));
   }
-  function mailOpen() {
+  /* a special order from a letter: a contract of the inbox, made now, that pays two points more */
+  function takeOffer(m) {
+    if (!m || !m.offer) { say("sys", T("That letter brings no order.")); return; }
+    if (m.took) { const j = jobOf(m.took); if (j) return readJob(jname(j)); say("sys", T("That order is taken already; it is in the archive.")); return; }
+    if (!inboxOpen()) { say("sys", T("The inbox opens when chapter 1 is done: four contracts, then the crew sends work of its own, without end.")); return; }
+    const kd = KINDS.find(x => x.k === m.offer); if (!kd) return;
+    S.jseq = (S.jseq || 0) + 1;
+    const j = { n: S.jseq, k: kd.k, t: kd.t, who: m.who, topic: kd.topic, born: CHAIN.tip ?? 0, until: (CHAIN.tip ?? 0) + 300, special: 2 };
+    j.trace = { 1: 40, 2: 30, 3: 24, 4: 16 }[j.t] + 10;
+    if (kd.mk) kd.mk(j);
+    S.inbox.unshift(j); m.took = j.n; save(); jobs(); instruments(); chips();
+    say("ok", F("Special order {x} is in the inbox, +{n}:", { x: jname(j), n: PAYS[j.t] + 2 }) + " " + T(kd.name));
+    readJob(jname(j));
+  }
+  function mailBtns(m) {
+    const b = [];
+    if (m.offer) b.push(m.took ? btn(T("open the order"), "accept m" + m.id) : btn(T("accept the order"), "accept m" + m.id));
+    if (m.act) b.push(btn(m.act, m.act));
+    return b;
+  }
+  function mailRead(a) {
+    const m = mailOf(a); if (!m || m.due > (CHAIN.tip ?? 0)) { say("sys", T("No such letter. mail lists them.")); return; }
+    say("sys", F("m{n} · from the {x}", { n: m.id, x: CREW[m.who] }) + " · " + subOf(m));
+    say("crew", null, el("b", { text: T(CREW[m.who]) + ":" }), " " + T(m.text));
+    const b = mailBtns(m); if (b.length) say("sys", T("This letter:"), ...b);
+    m.read = true; save(); topbar(); chips();
+  }
+  function mailList() {
+    const have = mailHave();
+    if (!have.length) { say("sys", T("Nothing yet. The crew writes after a contract settles, and when something happens on the chain.")); return; }
+    say("sys", F("Post: {n} letters, {m} unread.", { n: have.length, m: have.filter(m => !m.read).length }));
+    cols(have.slice(0, 12).map(m => [(m.read ? "  " : "● ") + "m" + m.id, T(CREW[m.who]) + " · " + subOf(m) + (m.offer && !m.took ? " · " + T("special order") : "")]));
+    say("sys", T("mail <n> reads one."), btn(F("mail {n}", { n: have[0].id }), "mail " + have[0].id));
+  }
+  function mailOpen(a) {
+    if (a === "list") return mailList();
+    if (a) return mailRead(a);
     const list = $("mailList"); $("mailTitle").textContent = T("Post");
-    const have = S.mail.filter(m => m.due <= (CHAIN.tip ?? 0));
-    list.replaceChildren(...(have.length ? have.map(m => el("li", { class: m.read ? "" : "new" }, el("b", { text: T(CREW[m.who]) }), el("small", { text: new Date(m.at).toLocaleString([], { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" }) }), el("p", { text: T(m.text), style: "margin:3px 0 0" }))) : [el("li", { text: T("Nothing yet. The crew writes after a contract settles, and when something happens on the chain.") })]));
-    for (const m of have) m.read = true; save(); topbar();
+    const have = mailHave(), first = have.find(m => !m.read);
+    const row = m => {
+      const li = el("li", { class: (m.read ? "" : "new") + (m === first ? " open" : "") });
+      const head = el("div", { class: "mh", role: "button", tabindex: "0" }, el("b", { text: T(CREW[m.who]) }), el("span", { class: "ms", text: subOf(m) }), m.offer && !m.took ? el("em", { text: T("special order") }) : null, el("small", { text: new Date(m.at).toLocaleString([], { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" }) }));
+      const open = () => { li.classList.toggle("open"); if (!m.read) { m.read = true; li.classList.remove("new"); save(); topbar(); chips(); } };
+      head.addEventListener("click", open); head.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
+      const acts = mailBtns(m).map(b => { const o = b.onclick; b.onclick = () => { $("mailWin").classList.remove("show"); o(); }; return b; });
+      li.append(head, el("div", { class: "mb" }, el("p", { text: T(m.text) }), acts.length ? el("div", { class: "ma" }, ...acts) : null));
+      return li;
+    };
+    list.replaceChildren(...(have.length ? have.map(row) : [el("li", { text: T("Nothing yet. The crew writes after a contract settles, and when something happens on the chain.") })]));
+    if (first) { first.read = true; save(); topbar(); chips(); }
     $("mailWin").classList.add("show");
   }
 
@@ -725,7 +815,7 @@
       const rows = S.inbox.map(j => el("li", { class: (S.job === j.n ? "taken" : "") + (j === S.inbox.find(x => x.n !== S.job) && !S.job ? " next" : ""), onclick: () => run("read " + jname(j)), title: fill(kindOf(j).brief, j) },
         el("span", { class: "n", text: jname(j) }), el("span", { class: "t", text: T(kindOf(j).name) }),
         el("span", { class: "st", text: S.job === j.n ? T("taken") : stars(j.t) }),
-        el("span", { class: "w", text: T(CREW[j.who]) + " · " + F("+{n}", { n: PAYS[j.t] }) + (j.topic ? " · " + T(TOPICS[j.topic][0]) : "") })));
+        el("span", { class: "w", text: T(CREW[j.who]) + " · " + F("+{n}", { n: PAYS[j.t] + (j.special || 0) }) + (j.special ? " · " + T("special order") : "") + (j.topic ? " · " + T(TOPICS[j.topic][0]) : "") })));
       if (!rows.length) rows.push(el("li", { class: "lock" }, el("span", { class: "n", text: "" }), el("span", { class: "t", text: T("Empty for the moment") }), el("span", { class: "w", text: T("a new contract comes within a few blocks") })));
       const done = S.arch.filter(a => a.out === "settled").length;
       rows.push(el("li", { class: "chap", onclick: () => run("archive") }, el("span", { class: "n", text: "" }), el("span", { class: "t", text: T("Archive") }), el("span", { class: "st", text: F("{n} settled", { n: done }) })));
@@ -835,7 +925,7 @@
     if (c.id === "mark") tutAt("done1");
     if (chapterDone(CH[0]) && chapterOf(c).n === 1) tutAt("chap1");
     if (again) { chips(); return; }
-    post(c.who, c.after, 1 + Math.floor(Math.random() * 2));
+    post(c.who, c.after, 1 + Math.floor(Math.random() * 2), null, { sub: ["Re:", c.name] });
     const ch = chapterOf(c);
     if (chapterDone(ch)) { chapterCard(ch); return; }
     const next = CONTRACTS.find(x => !S.done[x.id]);
@@ -1043,7 +1133,7 @@
         say("ok", F("The drop paid the share: {n} test AGRS.", { n: c.paid.share ? c.paid.share.amount : SHARE }), c.paid.share && c.paid.share.hash ? explorer(c.paid.share.hash) : null);
         if (c.paid.mark) say("ok", T("And the crew’s mark: 1 test AGRS from the drop. Its hash is your badge."), c.paid.mark.hash ? explorer(c.paid.mark.hash) : null);
         else if (n === 1) watchMark();   // the mark is a payment of its own, a little after the share
-        post("qm", "The share is paid and the ledger balanced. Spend it on nothing: it is worth nothing, like all test AGRS, and that is the point of a testnet.", 1);
+        post("qm", "The share is paid and the ledger balanced. Spend it on nothing: it is worth nothing, like all test AGRS, and that is the point of a testnet.", 1, null, { sub: "Your share is paid" });
         if (n === 1) setTimeout(() => huntWatch(), 12000);
         return;
       }
@@ -1403,7 +1493,7 @@
     jobTick(CHAIN.tip);
     if (!S.inbox.length) { say("sys", T("The inbox is empty for the moment; a new contract comes within a few blocks.")); return; }
     say("sys", F("Inbox: {n} open. Tier {t} of 4 is open to you.", { n: S.inbox.length, t: tierMax() }));
-    cols(S.inbox.map(j => [jname(j) + (S.job === j.n ? " ●" : ""), T(kindOf(j).name) + " · " + stars(j.t) + " · " + T(CREW[j.who]) + " · " + F("+{n}", { n: PAYS[j.t] }) + " · " + F("lapses at block {n}", { n: fmt(j.until) })]));
+    cols(S.inbox.map(j => [jname(j) + (S.job === j.n ? " ●" : ""), T(kindOf(j).name) + " · " + stars(j.t) + " · " + T(CREW[j.who]) + " · " + F("+{n}", { n: PAYS[j.t] + (j.special || 0) }) + " · " + F("lapses at block {n}", { n: fmt(j.until) })]));
     const j = S.inbox.find(x => S.job !== x.n) || S.inbox[0];
     say("sys", T("read <j> opens one; accept <j> takes it; decline <j> clears it."), btn(F("read {x}", { x: jname(j) }), "read " + jname(j)));
   }
@@ -1415,7 +1505,7 @@
     if (j.k === "p-doors") cols(["a", "b", "c"].map((x, i) => [x, doorAddr(j, i)]));
     if (j.t <= 2 && kd.hint) hintLine(j);
     if (S.job !== j.n) { S.lastRead = j.n; save(); chips(); }
-    say("sys", F("Pays +{n} standing. Trace once taken: {m} blocks.", { n: PAYS[j.t], m: j.trace }) + (j.topic ? " " + F("Topic: {x}.", { x: TOPICS[j.topic][0] }) : ""),
+    say("sys", F("Pays +{n} standing. Trace once taken: {m} blocks.", { n: PAYS[j.t] + (j.special || 0), m: j.trace }) + (j.topic ? " " + F("Topic: {x}.", { x: TOPICS[j.topic][0] }) : ""),
       S.job === j.n ? btn("tx", "tx") : btn(F("accept {x}", { x: jname(j) }), "accept " + jname(j)), S.job === j.n ? null : btn(F("decline {x}", { x: jname(j) }), "decline " + jname(j)));
   }
   /* a contract that is not (or no longer) in the inbox: say why and offer what is there */
@@ -1553,7 +1643,7 @@
   }
   function learnTopic(t) { if (!t || !TOPICS[t]) return; S.lastTopic = t; save(); say("learn", T(TOPICS[t][1])); }
   function jobWin(j, rec, less) {
-    const pts = Math.max(1, PAYS[j.t] - (j.t >= 3 && j.hinted ? 1 : 0) - (less || 0));
+    const pts = Math.max(1, PAYS[j.t] + (j.special || 0) - (j.t >= 3 && j.hinted ? 1 : 0) - (less || 0));
     const before = rank();
     S.rep = (S.rep || 0) + pts; archive(j, "settled", pts, rec);
     snd.tension(false); snd.seal(); flash("ok"); mood(j.who, "glad");
@@ -1561,6 +1651,7 @@
     say("ok", F("{x} settled: +{n}. Standing: {r}.", { x: jname(j), n: pts, r: rank() }));
     learnTopic(j.topic);
     if (rank() !== before) { snd.chapter(); crew("qm", F("New rank: {r}. Harder work comes to your inbox now.", { r: rank() }), "glad"); }
+    letters();
     jobs(); instruments(); topbar(); chips(); jobTick(CHAIN.tip);
     const nx = S.inbox[0]; if (nx) say("sys", T("Next in the inbox:"), btn(F("read {x}", { x: jname(nx) }), "read " + jname(nx)));
   }
@@ -1682,7 +1773,7 @@
   const HELP = [
     ["Story", [["jobs", "the twelve contracts"], ["take <n>", "take one"], ["run", "build, sign, send"], ["back", "retract a payment"], ["drop", "put it back"], ["claim [n]", "the chapter’s share"], ["chapter <n>", "the chapter’s card"]]],
     ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["why [topic]", "what just happened"], ["archive · history", "your record"]]],
-    ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail", "post from the crew"], ["crew", "who is who"]]],
+    ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail · mail <n>", "letters; some bring special orders"], ["crew", "who is who"]]],
     ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"]]],
     ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · boot · clear", ""], ["scene · transmission on|off", "the cabin; the crew on screen"]]],
   ];
@@ -1801,7 +1892,7 @@
     if (c === "run") return OP.list ? opGo() : S.job ? jobSend() : carry();
     if (c === "inbox" || c === "in") return inboxList();
     if (c === "read" || c === "open") return readJob(args[0]);
-    if (c === "accept") return accept(args[0]);
+    if (c === "accept") return /^m\d+$/.test(args[0] || "") ? takeOffer(mailOf(args[0])) : accept(args[0]);
     if (c === "decline" || c === "delete" || c === "del") return decline(args[0]);
     if (c === "tx" || c === "draft") return draftShow();
     if (c === "set") return setDraft(args);
@@ -1817,7 +1908,7 @@
     if (c === "drop" || c === "abort") { if (OP.list) { OP.list = null; chips(); return say("sys", T("The op is put down.")); } if (S.job && !RUN.busy) { const x = "j" + S.job; S.job = null; S.deadline = null; S.span = null; S.draft = null; S.pred = null; save(); jobs(); instruments(); topbar(); chips(); return say("sys", F("{x} is back in the inbox.", { x })); } if (!S.taken) return say("sys", T("No contract taken.")); if (RUN.busy) return say("warn", T("A contract is under way; wait for the chain’s answer.")); S.taken = null; S.deadline = null; S.span = null; RUN.ret = S.ret = null; save(); jobs(); instruments(); topbar(); chips(); return say("sys", T("Back on the board.")); }
     if (c === "claim") { if (/^\d+$/.test(args[0] || "") && !/^[123]$/.test(args[0])) return say("warn", T("Chapters are 1, 2 and 3.")); return claim(/^[123]$/.test(args[0] || "") ? +args[0] : 0, args.includes("again")); }
     if (c === "chapter" || c === "ch") { const ch = CH[parseInt(args[0], 10) - 1] || CH.find(x => !chapterDone(x)) || CH[2]; return chapterCard(ch); }
-    if (c === "mail" || c === "post") return mailOpen();
+    if (c === "mail" || c === "post") return mailOpen(args[0]);
     if (c === "op" || c === "ops") return op();
     if (c === "case" || c === "file") return caseFile();
     if (c === "pick") return pick(args[0]);
