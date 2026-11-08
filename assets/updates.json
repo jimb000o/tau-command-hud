@@ -2725,5 +2725,10 @@
     "tag": "No Memo",
     "on": "2026-11-08",
     "html": "No Memo: the crew's lips move with their words. The Quartermaster, the Lookout and the Bosun now have painted mouths, closed, half open and open, and the transmission switches between them syllable by syllable as their voice rises and falls."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-08",
+    "html": "No Memo plays easier: 100 simulated players showed where people got stuck. In the inbox the main button now leads from read to accept to the hint’s first step to send, and every hint has a button for that step. Typed guesses like score, missions, ls, multiplayer or language lead to the right command; what explains eight more words (players, hash, explorer, hint, board…). The first card is two lines, and Tutorial now plays the first contracts with you instead of explaining them first. On a phone the terminal has twice the room. Fixed: the riddle Where it landed counted the wrong payment, and some Chinese and Japanese lines stayed half English."
   }
 ]

@@ -45,6 +45,7 @@
 (() => {
   "use strict";
   const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+  const fill0 = (s, v) => s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m));   // filled, not translated: for a filler of F()
   const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));   // filled first: the dictionaries match the numbers in place
   const $ = id => document.getElementById(id);
   const el = (tag, attrs, ...kids) => {
@@ -442,6 +443,7 @@
     jobTick(tip);
   }
   const pace = () => (SIM && window.TauSim ? TauSim.pace : CHAIN.pace);
+  const inTimeE = blocks => { const s = pace(); if (!s || blocks < 0) return ""; const m = blocks * s / 60; return m < 1 ? "under a minute" : "about " + Math.round(m) + " min"; };   // English: a filler of F(), translated with the line
   const inTime = blocks => { const s = pace(); if (!s || blocks < 0) return ""; const m = blocks * s / 60; return m < 1 ? T("under a minute") : F("about {m} min", { m: Math.round(m) }); };
   const traceLeft = () => ((S.taken || S.job) && S.deadline != null && CHAIN.tip != null ? S.deadline - CHAIN.tip : null);
   const traceFrac = () => { const left = traceLeft(), c = cur(); const span = c ? (S.span || c.trace) : TRACE; return left == null ? 0 : Math.max(0, Math.min(1, left / span)); };
@@ -704,7 +706,7 @@
     const due = S.mail.filter(x => !x.told && x.due <= (CHAIN.tip ?? 0)); if (!due.length) return;
     for (const x of due) x.told = true; save(); topbar(); snd.mail();
     const x = due[due.length - 1];
-    say("sys", F("post from the {x}: type mail", { x: T(CREW[x.who]) }), btn(T("read"), "mail"));
+    say("sys", F("post from the {x}: type mail", { x: CREW[x.who] }), btn(T("read"), "mail"));
   }
   function mailOpen() {
     const list = $("mailList"); $("mailTitle").textContent = T("Post");
@@ -736,7 +738,7 @@
     document.documentElement.classList.toggle("nm-calm", calm);
     for (const ch of calm ? CH.slice(0, 1) : CH) {
       const open = chapterOpen(ch), done = chapterDone(ch);
-      rows.push(el("li", { class: "chap" + (open ? "" : " lock"), onclick: () => run("chapter " + ch.n) }, el("span", { class: "n", text: "" }), el("span", { class: "t", text: F("Chapter {n}: {x}", { n: ch.n, x: T(ch.name) }) }),
+      rows.push(el("li", { class: "chap" + (open ? "" : " lock"), onclick: () => run("chapter " + ch.n) }, el("span", { class: "n", text: "" }), el("span", { class: "t", text: F("Chapter {n}: {x}", { n: ch.n, x: ch.name }) }),
         el("span", { class: "st", text: done ? (S.chap[ch.n] ? T("claimed") : T("claim the share")) : open ? F("{a} of {b}", { a: ch.ids.filter(id => S.done[id]).length, b: ch.ids.length }) : T("locked") })));
       for (const id of ch.ids) {
         const c = byId(id), d = S.done[c.id], taken = S.taken === c.id;
@@ -762,7 +764,7 @@
     box.replaceChildren(
       row(T("Node"), SIM ? T("Simulation") : CHAIN.ok ? T("Live node") : CHAIN.ok === false ? T("Out of reach") : T("Connecting"), SIM ? T("a practice node in this browser; nothing reaches the testnet") : T("node.tauhud.com, the community relay"), "state-" + (SIM ? "sim" : CHAIN.ok ? "live" : CHAIN.ok === false ? "off" : "")),
       row(T("Block"), tip != null ? "#" + fmt(tip) : "—", pace() ? F("about {n} s a block", { n: pace().toFixed(0) }) : T("measuring the pace")),
-      (() => { const r = row(T("Trace"), c ? (left != null ? F("{n} blocks", { n: Math.max(0, left) }) : "…") : T("no contract taken"), c ? (left != null && left >= 0 ? F("until block {n} · {t}", { n: fmt(S.deadline), t: inTime(left) }) : T("the deadline is set from the tip at taking")) : T("take a contract: the block clock starts")); const bar = el("div", { class: "trace" + (frac < 0.25 ? " hot" : "") + (left != null && left < 0 ? " out" : "") }, el("i", { style: "width:" + Math.round(frac * 100) + "%" })); r.append(bar); return r; })(),
+      (() => { const r = row(T("Trace"), c ? (left != null ? F("{n} blocks", { n: Math.max(0, left) }) : "…") : T("no contract taken"), c ? (left != null && left >= 0 ? F("until block {n} · {t}", { n: fmt(S.deadline), t: inTimeE(left) }) : T("the deadline is set from the tip at taking")) : T("take a contract: the block clock starts")); const bar = el("div", { class: "trace" + (frac < 0.25 ? " hot" : "") + (left != null && left < 0 ? " out" : "") }, el("i", { style: "width:" + Math.round(frac * 100) + "%" })); r.append(bar); return r; })(),
       row(T("Wallet"), pk ? short(pk) : T("not made yet"), pk ? el("a", { href: "/wallet/" + lang(), text: T("open in the wallet") }) : T("made at your first contract")),
       row(T("Balance"), CHAIN.bal == null ? "—" : fmt(CHAIN.bal === 0 ? FAUCET : CHAIN.bal) + " " + T("test AGRS"), CHAIN.bal === 0 ? T("unseen wallet: the faucet’s 100,000 at the first payment") : T("test AGRS have no value")),
       (() => { const r = row(T("Standing"), "", nr ? F("{n} points · {m} more to {x}", { n: rep(), m: nr[0] - rep(), x: nr[1] }) : F("{n} points · the top of the ladder", { n: rep() }), "rk"); const b = r.querySelector("b"); b.classList.add("rank"); if (badge) b.append(badge); b.append(T(rank())); return r; })(),
@@ -783,13 +785,15 @@
     if (RUN.busy) { say("warn", T("A contract is under way; wait for the chain’s answer.")); return; }
     if (S.job) { say("warn", F("{x} from the inbox is taken: send it, or drop it first.", { x: "j" + S.job })); return; }
     const ch = chapterOf(c);
-    if (!chapterOpen(ch)) { say("warn", F("Chapter {n} first: its four contracts open chapter {m}.", { n: ch.n - 1, m: ch.n })); const nx = CONTRACTS.find(x => !S.done[x.id]); if (nx) say("sys", F("Next on the board: {n} {t}.", { n: num(nx), t: T(nx.name) }), btn(F("take {n}", { n: num(nx) }), "take " + num(nx))); return; }
+    if (!chapterOpen(ch)) { say("warn", F("Chapter {n} first: its four contracts open chapter {m}.", { n: ch.n - 1, m: ch.n })); const nx = CONTRACTS.find(x => !S.done[x.id]); if (nx) say("sys", F("Next on the board: {n} {t}.", { n: num(nx), t: nx.name }), btn(F("take {n}", { n: num(nx) }), "take " + num(nx))); return; }
     S.taken = c.id; S.span = c.trace; S.deadline = CHAIN.tip != null ? CHAIN.tip + c.trace : null; save(); jobs(); instruments(); topbar(); chips();
-    say("sys", F("Contract {n} taken: {t}", { n: num(c), t: T(c.name) }));
+    say("sys", F("Contract {n} taken: {t}", { n: num(c), t: c.name }));
+    if (c.id === "mark") say("learn", T("The drop: the crew’s own wallet, an address on the chain. You pay it in your contracts; it reads every payment and pays your share back at each chapter’s end."));   // before the word is used bare
     transmit(c.who, c.brief, { id: c.id, name: c.name });
+    tutAt({ mark: "take1", amount: "take2", ghost: "take3" }[c.id]);
     if (c.id === "amount") { S.num = lookoutNumber(); save(); say("sys", F("The lookout’s number: {n}", { n: S.num })); }
-    say("sys", S.deadline != null ? F("Trace: until block {n} ({t}). Type run.", { n: fmt(S.deadline), t: inTime(c.trace) || F("{n} blocks", { n: c.trace }) }) : T("Trace: set from the tip as soon as the node answers. Type run."), btn("run", "run"));
-    if (S.deadline == null) { const k = myPk(); (k ? envelope(k) : ask("getsequence " + DROP).then(st => { if (st && st.status === "ok") tick(Number(st.data.tip_height) || 0); })).then(() => { if (S.taken === c.id && S.deadline == null && CHAIN.tip != null) { S.deadline = CHAIN.tip + c.trace; save(); instruments(); topbar(); say("sys", F("Trace: until block {n} ({t}).", { n: fmt(S.deadline), t: inTime(c.trace) || F("{n} blocks", { n: c.trace }) })); } }).catch(() => {}); }
+    say("sys", S.deadline != null ? F("Trace: until block {n} ({t}). Type run.", { n: fmt(S.deadline), t: inTimeE(c.trace) || fill0("{n} blocks", { n: c.trace }) }) : T("Trace: set from the tip as soon as the node answers. Type run."), btn("run", "run"));
+    if (S.deadline == null) { const k = myPk(); (k ? envelope(k) : ask("getsequence " + DROP).then(st => { if (st && st.status === "ok") tick(Number(st.data.tip_height) || 0); })).then(() => { if (S.taken === c.id && S.deadline == null && CHAIN.tip != null) { S.deadline = CHAIN.tip + c.trace; save(); instruments(); topbar(); say("sys", F("Trace: until block {n} ({t}).", { n: fmt(S.deadline), t: inTimeE(c.trace) || fill0("{n} blocks", { n: c.trace }) })); } }).catch(() => {}); }
     watch();
   }
   const lookoutNumber = () => 100 + ((CHAIN.tip || 0) * 7 + new Date().getUTCDate()) % 900;   // the day's number: from the tip and the date, no secret in it
@@ -828,12 +832,14 @@
     say("ok", F("Contract {n} settled. Standing: {r}.", { n: num(c), r: rank() }));
     if (Object.keys(S.done).length === 1 && !again) { say("sys", T("First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right.")); youAre(); }
     say("learn", T(c.learn));
+    if (c.id === "mark") tutAt("done1");
+    if (chapterDone(CH[0]) && chapterOf(c).n === 1) tutAt("chap1");
     if (again) { chips(); return; }
     post(c.who, c.after, 1 + Math.floor(Math.random() * 2));
     const ch = chapterOf(c);
     if (chapterDone(ch)) { chapterCard(ch); return; }
     const next = CONTRACTS.find(x => !S.done[x.id]);
-    if (next) say("sys", F("Next on the board: {n} {t}.", { n: num(next), t: T(next.name) }), btn(F("take {n}", { n: num(next) }), "take " + num(next)));
+    if (next) say("sys", F("Next on the board: {n} {t}.", { n: num(next), t: next.name }), btn(F("take {n}", { n: num(next) }), "take " + num(next)));
     chips();
   }
   const explorer = h => link(txUrl(h), short(h));
@@ -1090,12 +1096,12 @@
     const k = myKey(true), trick = OP.list[OP.i], [cid, what] = OPS[trick], c = byId(cid);
     RUN.busy = true; chips(); slot(F("op {n} of {m}: {x}", { n: OP.i + 1, m: OP.list.length, x: trick }));
     try {
-      say("sys", F("Op {n} of {m}: {x}", { n: OP.i + 1, m: OP.list.length, x: T(what) }));
+      say("sys", F("Op {n} of {m}: {x}", { n: OP.i + 1, m: OP.list.length, x: what }));
       let ok;
       if (cid === "ghost") { say("step", T("first a real payment, then the same one again")); const tx = await payment(k, DROP, 1, {}); const s = await sendtx(tx); if (!s.hash) refusedEarly(s); sent(tx, s); const w = await sealed(s.hash, null, s.way); if (!w.in) fail(T("Not sealed; type go again.")); ok = await verdict(c, tx, true); }
       else if (cid === "overspend") { const b = await ask("getbalance " + k.pk); const bal = Number(((b || {}).data || {}).balance) || 0; ok = await verdict(c, await payment(k, DROP, (bal === 0 ? FAUCET : bal) + 1000, {}), true); }
       else { const o = { dead: { expired: true }, stale: { stale: true }, freeride: { freeride: true }, giant: {}, forged: { signer: B.keygen() }, impostor: { from: DROP } }[cid]; ok = await verdict(c, await payment(k, DROP, cid === "giant" ? GIANT : 1, o), true); }
-      if (ok) { OP.i += 1; if (OP.i >= OP.list.length) { S.ops[OP.id] = { at: Date.now(), tricks: OP.list }; save(); OP.list = null; snd.seal(); flash("ok"); say("ok", F("Op settled: three refusals, live, beside the pirates’. Standing: {r}.", { r: T(rank()) })); crew("bosun", "That is the real thing: the same answers the chain gives the pirates, from your wallet, the same hour. The logbook has theirs; your terminal has yours.", "glad"); } else say("sys", F("Next: op {n}. Type go.", { n: OP.i + 1 }), btn("go", "go")); }
+      if (ok) { OP.i += 1; if (OP.i >= OP.list.length) { S.ops[OP.id] = { at: Date.now(), tricks: OP.list }; save(); OP.list = null; snd.seal(); flash("ok"); say("ok", F("Op settled: three refusals, live, beside the pirates’. Standing: {r}.", { r: rank() })); crew("bosun", "That is the real thing: the same answers the chain gives the pirates, from your wallet, the same hour. The logbook has theirs; your terminal has yours.", "glad"); } else say("sys", F("Next: op {n}. Type go.", { n: OP.i + 1 }), btn("go", "go")); }
       else say("warn", T("That one stands as a finding; the op goes on with the next. Type go."));
     } catch (e) { slotFail(T("stopped")); say("no", e && e.soft ? e.message : T("The node did not answer in time. Type go again."), btn("go", "go")); }
     RUN.busy = false; chips(); instruments(); topbar(); balance();
@@ -1149,7 +1155,7 @@
     if (chosen === d.friend) {
       snd.hunt(); flash("ok");
       say("ok", T("Right: the friend. The other address was ground to match the first 6 and last 4 characters, the exact parts a wallet shows; the only way to tell is the whole address, or an address book you keep yourself."));
-      if (!S.cases[d.id]) { S.cases[d.id] = { at: Date.now() }; save(); instruments(); say("ok", F("Case file {id} settled. Standing: {r}.", { id: d.id, r: T(rank()) })); mood("bosun", "glad"); }
+      if (!S.cases[d.id]) { S.cases[d.id] = { at: Date.now() }; save(); instruments(); say("ok", F("Case file {id} settled. Standing: {r}.", { id: d.id, r: rank() })); mood("bosun", "glad"); }
     } else {
       snd.no(); flash("bad");
       say("no", T("That is the lookalike. It paid the victim 1 test AGRS so it would stand in the history; the victim copied it from there. Only the whole address tells them apart."));
@@ -1175,7 +1181,7 @@
       snd.ok(); say("ok", key === "fee" ? T("Right: the fee limit is the most, never a promise to pay it; what the chain takes is the base fee, and the rest stays.") : T("Right: the next number, exactly once. A number used twice is the ghost from contract 3; a number skipped waits for the one before it."));
       r.i += 1;
       if (r.i < r.list.length) say("sys", r.list[r.i][1]);
-      else { if (!S.riddles[r.id]) { S.riddles[r.id] = { at: Date.now() }; save(); instruments(); say("ok", F("Riddles of {x} settled. Standing: {r}.", { x: r.id.slice(2), r: T(rank()) })); mood("bosun", "glad"); } CASE.riddle = null; }
+      else { if (!S.riddles[r.id]) { S.riddles[r.id] = { at: Date.now() }; save(); instruments(); say("ok", F("Riddles of {x} settled. Standing: {r}.", { x: r.id.slice(2), r: rank() })); mood("bosun", "glad"); } CASE.riddle = null; }
     } else { snd.no(); say("no", key === "fee" ? T("No. Read the riddle again: the limit is a ceiling, and the ceiling is what you signed.") : T("No. The chain takes each number once and in order; getsequence names the next one.")); }
   }
   function sampleCase() {
@@ -1218,7 +1224,7 @@
     if (chosen === d.drop) {
       snd.hunt(); flash("ok");
       say("ok", T("Right: that is the drop. The dust came from the lookalike, a key ground until its first and last characters matched the drop’s. Never pay an address from your history without reading the whole of it."));
-      if (!S.hunt[d.id]) { S.hunt[d.id] = { at: Date.now() }; save(); instruments(); say("ok", F("Hunt settled. Standing: {r}.", { r: T(rank()) })); mood("look", "glad"); }
+      if (!S.hunt[d.id]) { S.hunt[d.id] = { at: Date.now() }; save(); instruments(); say("ok", F("Hunt settled. Standing: {r}.", { r: rank() })); mood("look", "glad"); }
     } else { snd.no(); flash("bad"); say("no", T("That is the lookalike. Read the middle, not the ends: the ends are what it was made to match.")); }
     say("learn", T("The same trick the hack of the week replays on Thursdays, now done to you. The drop’s whole address is in this terminal (status); a wallet’s address book is the only cure."));
   }
@@ -1243,10 +1249,8 @@
   /* ---------- the boot screen: once per browser, or ?boot=1, or the command boot ---------- */
   /* the door: a first visit gets what this is in four lines and two ways in, before anything else */
   const DOOR = [
-    "A hacker game on Tau Testnet Alpha. The crew of a pirate ship hands you contracts; each one is a real transaction you send to the live test chain.",
-    "No setup: a test wallet is made in your browser. Test AGRS have no value.",
-    "Everybody plays on the same chain at the same time. Every move tests Tau’s rules for real, and you learn how the chain works on the way.",
-    "You earn rank, a share from the crew’s purse for each chapter, and an inbox of puzzles that never runs out.",
+    "A hacker game on Tau Testnet Alpha: a pirate crew hands you contracts, and each one is a real transaction on the live test chain.",
+    "You play the same chain as everybody else, right now. No setup; test coins have no value.",
   ];
   function door() {
     const box = $("bootLines"), over = $("bootScreen"); if (!box || !over) return Promise.resolve(null);
@@ -1333,14 +1337,20 @@
     { k: "p-tight", t: 3, who: "qm", topic: "fee", want: "in", name: "Thin margin", brief: "Land a payment to the drop with a fee limit of at most twice the base fee.", hint: "peek getgovernance, then set fee",
       check: (d, x) => d.fee == null || d.fee > 2 * x.base ? "the fee limit is above twice the base fee" : null },
     { k: "p-last", t: 3, who: "look", topic: "height", want: "in", name: "Where it landed", brief: "Pay the drop the last three digits of the block your last sealed payment from this terminal landed in, plus one.", hint: "history lists your sealed payments and their blocks",
-      ok: () => !!(S.hist[0] && S.hist[0].block != null), mk: j => { j.ref = Number(S.hist[0].block); },
-      check: (d, x, j) => d.amount !== (j.ref % 1000) + 1 ? F("{a} is not the right number", { a: d.amount }) : null },
+      ok: () => !!(S.hist[0] && S.hist[0].block != null),
+      check: (d, x) => x.last == null || d.amount !== (x.last % 1000) + 1 ? F("{a} is not the right number", { a: d.amount }) : null },
     { k: "predict", t: 3, who: "bosun", topic: "order", want: "any", name: "Two faults", brief: "The draft is wrong in two ways already: {x} and {y}. Before you send, say which answer the node will give: predict <CODE>. Right pays in full.", hint: "the node stops at the first check it fails; which runs first?",
       mk: j => { const P = [[["fee", 0], ["payer", "drop"]], [["signer", "other"], ["expiry", "past"]], [["seq", "old"], ["fee", 0]], [["height", "past"], ["signer", "other"]], [["amount", GIANT], ["expiry", "past"]], [["payer", "drop"], ["seq", "old"]]][rnd(6)]; j.lock = P; } },
     { k: "r-blind", t: 4, who: "bosun", topic: null, want: null, name: "Blind order", brief: "Make the chain answer {x}. No hint from me this time.", hint: null,
       mk: j => { const C = ["FEE_LIMIT_TOO_LOW", "INVALID_SIGNATURE", "INVALID_SEQUENCE", "TX_EXPIRED", "INSUFFICIENT_FUNDS"][rnd(5)]; j.code = C; j.want = [C]; j.topic = CODE_TOPIC[C]; } },
   ];
   const kindOf = j => KINDS.find(x => x.k === j.k);
+  /* the hint's first step as a command, one click away: the answer itself for the plain refusals, the place to look it up for the puzzles */
+  const TRY = { "r-fee": "set fee 0", "r-sig": "set signer other", "r-height": "set height past", "r-funds": "status", "p-seq": "peek getsequence me", "p-race": "set height +{m}",
+    "r-clock": "set expiry past", "r-payer": "set payer drop", "r-seq": "set seq old", "r-width": "what width", "p-hex": "status", "p-fee": "peek getgovernance", "p-doors": "status",
+    "r-fee9": "peek getgovernance", "p-tight": "peek getgovernance", "p-last": "history", "predict": "what order" };
+  const tryCmd = j => (j && TRY[j.k] ? fill0(TRY[j.k], { m: j.m }) : null);
+  const hintLine = j => { const kd = kindOf(j), go = tryCmd(j); say("learn", F("Hint: {x}", { x: fill(kd.hint, j) }), go ? btn(go, go) : null); };
   const LOCK_TEXT = { fee: "fee limit 0", payer: "the drop named as payer", signer: "a stranger’s signing key", expiry: "an expiry time in the past", seq: "a used sequence number", height: "a height deadline behind the tip", amount: "an amount of 2^24" };
   const inboxOpen = () => chapterDone(CH[0]);
   const tierMax = () => { const r = rep(); return r >= 35 ? 4 : r >= 12 ? 3 : r >= 4 ? 2 : 1; };
@@ -1366,6 +1376,7 @@
     if (!S.inboxHi) {
       S.inboxHi = true; S.pane = "inbox"; S.nextJob = tip + 3; changed = true;
       while (S.inbox.length < 3) { const j = makeJob(); if (!j) break; S.inbox.push(j); }
+      setTimeout(() => tutAt("inbox"), 4000);
       crew("qm", "Chapter one is behind you, so the crew trusts you with its own work. The inbox fills by itself, a contract every few blocks. Each is a puzzle about the chain, answered with a real transaction you build yourself. Clear what you can, decline what you do not want; harder work comes as your rank grows.", "glad");
       say("sys", T("The inbox is open."), btn("inbox", "inbox"));
     }
@@ -1397,14 +1408,23 @@
     say("sys", T("read <j> opens one; accept <j> takes it; decline <j> clears it."), btn(F("read {x}", { x: jname(j) }), "read " + jname(j)));
   }
   function readJob(a) {
-    const j = parseJ(a) || (a ? null : curJob() || S.inbox[0]); if (!j) { say("sys", T("No such contract in the inbox. Type inbox.")); return; }
+    const j = parseJ(a) || (a ? null : curJob() || S.inbox[0]); if (!j) { noJob(a); return; }
     const kd = kindOf(j);
     say("sys", F("{x} · {t} · tier {n} · from the {w}", { x: jname(j), t: kd.name, n: j.t, w: CREW[j.who] }));
     transmit(j.who, fill(kd.brief, j), { k: j.k, n: j.n, name: kd.name, tier: j.t });
     if (j.k === "p-doors") cols(["a", "b", "c"].map((x, i) => [x, doorAddr(j, i)]));
-    if (j.t <= 2 && kd.hint) say("learn", F("Hint: {x}", { x: fill(kd.hint, j) }));
+    if (j.t <= 2 && kd.hint) hintLine(j);
+    if (S.job !== j.n) { S.lastRead = j.n; save(); chips(); }
     say("sys", F("Pays +{n} standing. Trace once taken: {m} blocks.", { n: PAYS[j.t], m: j.trace }) + (j.topic ? " " + F("Topic: {x}.", { x: TOPICS[j.topic][0] }) : ""),
       S.job === j.n ? btn("tx", "tx") : btn(F("accept {x}", { x: jname(j) }), "accept " + jname(j)), S.job === j.n ? null : btn(F("decline {x}", { x: jname(j) }), "decline " + jname(j)));
+  }
+  /* a contract that is not (or no longer) in the inbox: say why and offer what is there */
+  function noJob(a) {
+    if (!inboxOpen()) { say("sys", T("The inbox opens when chapter 1 is done: four contracts, then the crew sends work of its own, without end."), nextChip()); return; }
+    const gone = a && S.arch.find(x => "j" + x.n === String(a).replace(/^j?/, "j"));
+    say("sys", gone ? F("{x} is no longer in the inbox ({y}).", { x: jname(gone), y: gone.out }) : T("No such contract in the inbox."));
+    if (S.inbox.length) say("sys", T("Open now:"), ...S.inbox.map(j => btn(F("read {x}", { x: jname(j) }), "read " + jname(j))));
+    else say("sys", T("The inbox is empty for the moment; a new contract comes within a few blocks."));
   }
   const doorAddr = (j, i) => (i === j.door ? DROP : DROP.slice(0, 6) + j.mids[i] + DROP.slice(-4));
   function accept(a) {
@@ -1412,12 +1432,13 @@
     if (S.job === j.n) { say("sys", F("{x} is yours already. Build it: tx, set, send.", { x: jname(j) }), btn("tx", "tx")); return; }
     if (RUN.busy) { say("warn", T("A contract is under way; wait for the chain’s answer.")); return; }
     if (S.taken || S.job) { say("warn", T("Finish or drop the taken contract first (drop).")); return; }
-    S.job = j.n; S.draft = DRAFT0(); S.pred = null; j.hinted = j.t <= 2;
+    S.job = j.n; S.draft = DRAFT0(); S.pred = null; j.hinted = j.t <= 2; S.lastRead = null; S.jobStep = false; S.jobMiss = false;
     if (j.lock) for (const [f, v] of j.lock) S.draft[f] = v;
     S.span = j.trace; S.deadline = CHAIN.tip != null ? CHAIN.tip + j.trace : null; save(); jobs(); instruments(); topbar(); chips();
-    say("sys", F("{x} taken: {t}.", { x: jname(j), t: kindOf(j).name }) + " " + (S.deadline != null ? F("Trace: until block {n} ({t}).", { n: fmt(S.deadline), t: inTime(j.trace) || F("{n} blocks", { n: j.trace }) }) : ""));
+    say("sys", F("{x} taken: {t}.", { x: jname(j), t: kindOf(j).name }) + " " + (S.deadline != null ? F("Trace: until block {n} ({t}).", { n: fmt(S.deadline), t: inTimeE(j.trace) || fill0("{n} blocks", { n: j.trace }) }) : ""));
     say("sys", T("Your draft is a plain payment of 1 test AGRS to the drop. Change it with set, look at it with tx, send it with send."));
     draftShow();
+    if (j.hinted && kindOf(j).hint) hintLine(j);
     if (j.t >= 3 && kindOf(j).hint) say("sys", T("No hint at this tier. hint gives one, for 1 point of the pay."), btn("hint", "hint"));
     watch();
   }
@@ -1431,7 +1452,7 @@
     const j = curJob(); if (!j) { say("sys", T("Take a contract from the inbox first.")); return; }
     const kd = kindOf(j); if (!kd.hint) { say("sys", T("The Bosun gives no hints for this one.")); return; }
     if (!j.hinted) { j.hinted = true; save(); say("sys", T("Hint taken: this contract pays 1 point less.")); }
-    say("learn", F("Hint: {x}", { x: fill(kd.hint, j) }));
+    S.jobStep = false; save(); hintLine(j); chips();
   }
   function draftShow() {
     const d = S.draft; if (!d) { say("sys", T("No draft: accept a contract from the inbox first.")); return; }
@@ -1484,7 +1505,7 @@
     if (j.k === "p-doors" && d.to === "drop") { say("sys", T("Choose a door first: set to a, b or c.")); return; }
     const kd = kindOf(j), want = j.want || kd.want;
     RUN.busy = true; chips(); slot(jname(j));
-    const k = myKey(true);
+    const k = myKey(true), last = S.hist[0] && S.hist[0].block != null ? Number(S.hist[0].block) : null;   // the last sealed payment before this one (Where it landed)
     try {
       const { seq, tip } = await envelope(k.pk), base = await fee(), t = now();
       if (d.seq === "old" && seq === 0) fail(T("This wallet has no used sequence number yet."));
@@ -1492,7 +1513,7 @@
       const tx = sign({ tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: d.seq === "old" ? seq - 1 : seq, expiration_time: d.expiry === "past" ? t - 120 : t + 600,
         expire_at_height: d.height === "past" ? Math.max(1, tip - 5) : d.height === "auto" ? tip + 1000 : tip + d.height, fee_limit: String(d.fee == null ? base * 5 : d.fee),
         operations: { "1": [[d.payer === "drop" ? DROP : k.pk, to, String(d.amount)]] } }, d.signer === "other" ? B.keygen() : k.sk);
-      const x = { tx, base, tip }, bad = faults(d, x);
+      const x = { tx, base, tip, last }, bad = faults(d, x);
       say("step", F("signing the draft: {a} test AGRS, fee limit {b}, sequence {c}, deadline block {n}", { a: fmt(d.amount), b: tx.fee_limit, c: tx.sequence_number, n: fmt(tx.expire_at_height) }));
       const s = await sendtx(tx);
       if (!s.r) fail(T("No answer from the node; nothing was sent. Type send again."));
@@ -1528,7 +1549,7 @@
     } catch (e) {
       slotFail(T("stopped"));
       say("no", e && e.soft ? e.message : T("The node did not answer in time; nothing is lost. Type send again."), btn("send", "send"));
-    } finally { RUN.busy = false; chips(); jobs(); instruments(); topbar(); balance(); }
+    } finally { if (S.job === j.n) { S.jobMiss = true; S.jobStep = false; save(); } RUN.busy = false; chips(); jobs(); instruments(); topbar(); balance(); }
   }
   function learnTopic(t) { if (!t || !TOPICS[t]) return; S.lastTopic = t; save(); say("learn", T(TOPICS[t][1])); }
   function jobWin(j, rec, less) {
@@ -1601,6 +1622,14 @@
     [["node", "relay", "peek"], "The node", "The node keeps the chain and answers questions; this terminal talks to it through our relay at node.tauhud.com. peek asks it yourself."],
     [["governance", "rules", "o9"], "Governance", "The chain’s rules, readable by anyone: peek getgovernance. o9 is the base fee, in hex."],
     [["black sequence", "ship", "pirates", "crew"], "The Black Sequence", "The pirate ship that tests the chain at White Rabbit Key every Tuesday. Her crew are game characters; their transactions are real."],
+    [["players", "player", "multiplayer", "others", "other players", "online", "who"], "Other players", "Everybody at a terminal like this one plays the same chain with you, at the same time: every contract is a real transaction on Tau Testnet Alpha. The board counts the wallets that paid the drop today and this hour; it never shows names."],
+    [["hash", "tx hash", "transaction hash"], "Hash", "A transaction’s fingerprint: a string of hex characters made from its bytes. The same payment always has the same hash; the explorer finds a payment by it."],
+    [["explorer"], "The explorer", "tauhud.com/explorer/ shows every block and every payment of the testnet. Click a hash in this terminal and it opens there."],
+    [["hint", "hints"], "Hints", "The crew’s help for an inbox contract. Up to tier 2 it is free and comes with a button for its first step; from tier 3, hint costs 1 point of the pay."],
+    [["board", "leaderboard", "score"], "The board", "board: how many wallets paid the drop today and this hour, and how many stand at each rank. Wallets, not people; nobody is named."],
+    [["findings", "finding", "bug"], "Findings", "A trick the chain takes although it must refuse it. The terminal keeps the record in this browser (findings) and shows how to pass it on; nothing is posted by itself."],
+    [["width", "amount width", "24 bits", "2^24"], "Amount width", "An amount is 24 bits wide here: 16,777,215 at most. 2^24 = 16,777,216 is not even read: TX_INVALID or INVALID_PARAMS."],
+    [["order", "order of checks", "first check"], "Order of checks", "A payment wrong in two ways is refused for one of them: the node answers with the first check it fails. Which check comes first is the node’s own order; its answer shows it."],
     [["testnet", "tau", "chain"], "Tau Testnet Alpha", "IDNI’s public test chain. Its coins have no value; it is there to be tested. This game is one way to test it, together with every other player."],
   ];
   function what(term) {
@@ -1621,7 +1650,22 @@
     ["Chapters", "Four contracts make a chapter. Then claim: you pay the drop 100 + the chapter’s number, and the crew’s purse pays 500 back.", "what claim"],
     ["The inbox", "After chapter 1 the inbox fills with puzzles that never run out. You build each answer yourself: tx shows the draft, set changes it, send sends it. why explains what the chain did, what <word> explains a word, help lists every command.", "help"],
   ];
+  /* the tutorial while playing (the door's Tutorial, or tutorial before the first contract): short notes at the moments they are about */
+  const TUTP = {
+    take1: "Tutorial · This contract is a real payment. Type run, or click it: the terminal builds the payment, signs it in your browser and sends it to the chain.",
+    done1: "Tutorial · That was your first transaction. A test wallet was made for you, and the testnet credited it 100,000 test AGRS. The instruments show block, trace, wallet and balance.",
+    take2: "Tutorial · A Tau payment is from, to, amount, signed. No memo: the amount is the only thing you say, and everybody can read it.",
+    take3: "Tutorial · The top bar counts blocks; your trace is the deadline in blocks. This contract wants a refusal: the chain says no for the right reason, and that is the win.",
+    chap1: "Tutorial · Chapter done. claim pays the drop 101 test AGRS, and the crew’s purse pays 500 back. Then the inbox opens: puzzles you build yourself with set and send.",
+    inbox: "Tutorial · That is all you need. what <word> explains any word, help lists every command, feedback tells us what was unclear.",
+  };
+  function tutAt(ev) {
+    if (!S.tutPlay || !TUTP[ev] || (S.tutSaid || []).includes(ev)) return;
+    S.tutSaid = [...(S.tutSaid || []), ev]; if (ev === "inbox") S.tutPlay = false; save();
+    say("learn", T(TUTP[ev]));
+  }
   function tutorial(arg) {
+    if (!arg && !Object.keys(S.done).length && !S.taken && !S.job) { S.tutPlay = true; S.tutSaid = []; save(); take(CONTRACTS[0]); return; }
     if (arg === "end" || arg === "off") { S.tut = null; save(); chips(); say("sys", T("Tutorial closed. tutorial opens it again.")); return; }
     let n = parseInt(arg, 10); if (!(n >= 1 && n <= TUT.length)) n = arg === "next" ? Math.min(TUT.length, (S.tut || 0) + 1) : 1;
     S.tut = n; save();
@@ -1690,7 +1734,7 @@
     if (!(n >= 2 && n <= 500)) { say("sys", T("trace <blocks>: 2 to 500.")); return; }
     if (CHAIN.tip == null) { say("sys", T("The block clock has no tip yet.")); return; }
     S.deadline = CHAIN.tip + n; S.span = n; save(); instruments(); topbar();
-    say("sys", F("Trace set: until block {n} ({t}).", { n: fmt(S.deadline), t: inTime(n) || F("{n} blocks", { n }) }));
+    say("sys", F("Trace set: until block {n} ({t}).", { n: fmt(S.deadline), t: inTimeE(n) || fill0("{n} blocks", { n }) }));
     if (n <= 3) crew("look", "Three blocks or fewer. Brave. The chain will not wait for your fingers.", "glad");
   }
   /* the other players: how many wallets paid the drop lately (GET /nomemo board.day/hour/last_move, kept by the server) */
@@ -1718,7 +1762,7 @@
     if (b.claims) say("sys", F("Chapters claimed: {a} · {b} · {c}", { a: b.claims[0] || 0, b: b.claims[1] || 0, c: b.claims[2] || 0 }));
     const l = crowdLine(b); if (l) say("sys", l);
     const w = myPk() ? await serverInfo("/wallet/" + myPk()) : null;
-    say("sys", F("You: {x}.", { x: T(rank()) }) + (w && w.nth ? " " + F("Wallet number {n} to pay the drop.", { n: w.nth }) : ""));
+    say("sys", F("You: {x}.", { x: rank() }) + (w && w.nth ? " " + F("Wallet number {n} to pay the drop.", { n: w.nth }) : ""));
   }
   function findings() {
     if (!S.findings.length) { say("sys", T("Nothing. Every refusal so far was the chain doing its job.")); return; }
@@ -1747,10 +1791,12 @@
   function exec(line) {
     const s = line.trim(); if (!s) return; cmdLine(s); snd.wake(); snd.enter();
     const [c, ...args] = s.toLowerCase().split(/\s+/);
+    if (S.job && /^(set|peek|status|history|hist|what|predict)$/.test(c) && !S.jobStep) { S.jobStep = true; save(); setTimeout(chips, 0); }
     if (c === "help" || c === "?") return help();
-    if (c === "jobs" || c === "contracts" || c === "board" && args[0] === "jobs") { for (const ch of CH) { say("sys", F("Chapter {n}: {x}", { n: ch.n, x: T(ch.name) }) + (chapterOpen(ch) ? "" : " · " + T("locked"))); cols(ch.ids.map(id => byId(id)).map(x => [String(num(x)).padStart(2, " ") + (S.done[x.id] ? " ✓" : S.taken === x.id ? " ●" : "  "), T(x.name) + " · " + T(x.task)])); } const nx = CONTRACTS.find(y => !S.done[y.id]); return say("sys", T("take <n> takes one."), nx ? btn(F("take {n}", { n: num(nx) }), "take " + num(nx)) : null); }
+    if (c === "jobs" || c === "contracts" || c === "board" && args[0] === "jobs") { for (const ch of CH) { say("sys", F("Chapter {n}: {x}", { n: ch.n, x: ch.name }) + (chapterOpen(ch) ? "" : " · " + T("locked"))); cols(ch.ids.map(id => byId(id)).map(x => [String(num(x)).padStart(2, " ") + (S.done[x.id] ? " ✓" : S.taken === x.id ? " ●" : "  "), T(x.name) + " · " + T(x.task)])); } const nx = CONTRACTS.find(y => !S.done[y.id]); return say("sys", T("take <n> takes one."), nx ? btn(F("take {n}", { n: num(nx) }), "take " + num(nx)) : null); }
     if (c === "take") { const n = parseInt(args[0], 10), x = args[0] === "next" || !args[0] ? CONTRACTS.find(y => !S.done[y.id]) : n >= 1 && n <= CONTRACTS.length ? CONTRACTS[n - 1] : byId(args[0]); return x ? take(x, args[1] === "again") : say("sys", T("take <n>: a number from the board, or take next.")); }
     if (c === "tutorial" || c === "tut" || c === "run" && args[0] === "tutorial") return tutorial(c === "run" ? args[1] : args[0]);
+    if (c === "what" && /^what (is )?(this|it|no memo|nomemo|this game|the game)\??$/.test(s.toLowerCase())) return about();
     if (c === "what" && args.length && !/^(do|should|now|next|to)$/.test(args[0])) return what(s.slice(4));
     if (c === "run") return OP.list ? opGo() : S.job ? jobSend() : carry();
     if (c === "inbox" || c === "in") return inboxList();
@@ -1787,22 +1833,66 @@
     if (c === "feedback" || c === "fb") return feedback(s.slice(s.search(/\s/) < 0 ? s.length : s.search(/\s/)).trim());
     if (c === "clear" || c === "cls") return clearScreen();
     if (c === "wallet") { window.open("/wallet/" + lang(), "_blank", "noopener"); return; }
-    if (c === "lang") { if (window.TauI18n && TauI18n.set && ["en", "zh", "ja"].includes(args[0])) TauI18n.set(args[0]); else say("sys", "lang en · lang zh · lang ja"); return; }
-    if (c === "sound" || c === "fx" || c === "voice" || c === "ambience" || c === "amb") { const k = c === "amb" ? "ambience" : c; if (!["on", "off"].includes(args[0])) return say("sys", k + " on · " + k + " off"); S[k === "sound" ? "snd" : k === "ambience" ? "amb" : k] = args[0] === "on"; save(); topbar(); if (S.snd) snd.wake(); else snd.ambience(); return say("sys", k + " " + args[0]); }
+    if (c === "lang" || /^(language|languages|chinese|japanese|english|中文|汉语|日本語|日本语)$/.test(c)) { const want = { chinese: "zh", 中文: "zh", 汉语: "zh", japanese: "ja", 日本語: "ja", 日本语: "ja", english: "en" }[c] || args[0]; if (window.TauI18n && TauI18n.set && ["en", "zh", "ja"].includes(want)) TauI18n.set(want); else say("sys", T("Language:"), btn("lang en", "lang en"), btn("lang zh", "lang zh"), btn("lang ja", "lang ja")); return; }
+    if (c === "sound" || c === "fx" || c === "voice" || c === "ambience" || c === "amb") { const k = c === "amb" ? "ambience" : c; if (!["on", "off"].includes(args[0])) return say("sys", k + " on · " + k + " off"); S[k === "sound" ? "snd" : k === "ambience" ? "amb" : k] = args[0] === "on"; save(); topbar(); if (S.snd) snd.wake(); else snd.ambience(); return switched(k, args[0] === "on"); }
     if (c === "full" || c === "fullscreen") return full();
     if (c === "boot") return bootScreen();
+    if (alias(c, args, s)) return;
     if (/^(what|how|where|next|start|begin|go|hi|hello|hilfe|was|wie|\?)$/.test(c) || /what (do|should|now|next)/.test(s.toLowerCase())) return nextStep();
     say("sys", F("Unknown: {x}. Type help, or click:", { x: c }), nextChip(), btn("help", "help"));
+  }
+  /* sound, ambience, fx, voice on|off: what it changed, in words (the command line already shows what was typed) */
+  function switched(k, on) {
+    const L = { sound: ["Sound is on.", "Sound is off."], ambience: ["The sea and the hull are on.", "The sea and the hull are off."], fx: ["Effects are on.", "Effects are off."], voice: ["The crew’s voices are on.", "The crew’s voices are off."] }[k];
+    say("ok", T(L[on ? 0 : 1]));
+    if (on && (k === "voice" || k === "ambience") && !S.snd) say("sys", T("Sound is off, so you hear nothing yet:"), btn("sound on", "sound on"));
+    if (on && k === "voice" && SIM) say("sys", T("The voices play on the live node only, not in the simulation."));
+  }
+  /* what players type before they know the commands: the nearest command, or a short answer and the next step */
+  function about() {
+    say("sys", T(DOOR[0])); say("sys", T(DOOR[1]));
+    say("sys", T("The tutorial plays the first contracts with you, step by step:"), btn("tutorial", "tutorial"), nextChip());
+  }
+  function alias(c, args, s) {
+    const line = s.toLowerCase();
+    if (/^\d{1,2}$/.test(c) && +c >= 1 && +c <= CONTRACTS.length) { take(CONTRACTS[+c - 1]); return true; }
+    if (/^(score|scores|me|stats|profile|level|xp|rank|balance|money|inventory|inv|items|gear)$/.test(c)) { status(); return true; }
+    if (/^(leaderboard|highscore|highscores|top|players|player|multiplayer|online|others|who)$/.test(c) || /who (else )?(is )?(playing|online|here)/.test(line)) {
+      say("sys", T("You are not alone: everybody at a terminal like this one plays the same chain with you, right now. The board counts their wallets; it never shows names.")); board(); return true; }
+    if (/^(missions?|quests?|tasks?|list|ls|dir|menu|contract)$/.test(c)) { exec("jobs"); return true; }
+    if (/^(whoami|id)$/.test(c)) { const pk = myPk(); say("sys", pk ? F("You are wallet {h}: to the chain, whoever holds its key is you.", { h: short(pk) }) : T("Nobody yet: a test wallet is made in this browser at your first contract."), nextChip()); return true; }
+    if (/^(pwd|cd|ssh|telnet|connect|login|logon|register|signup|signin)$/.test(c)) { say("sys", T("No login and no setup: your wallet is your access, made in this browser at your first contract. You are aboard the Black Sequence, at the crew terminal."), nextChip()); return true; }
+    if (/^(sudo|su|root|nmap|hack|crack|exploit|rm|chmod|ping|bruteforce)$/.test(c)) { crew("bosun", "Nice try. On this ship root is a signature, and only your key makes yours. If you want to break something, break the chain’s rules: every contract here is that attempt, and a trick the chain takes is a finding.", "calm"); say("sys", T("Next:"), nextChip()); return true; }
+    if (/^(buy|faucet|coins|agrs|shop|free)$/.test(c)) { what("faucet"); say("sys", T("Next:"), nextChip()); return true; }
+    if (/^(restart|reset|undo|new|newgame)$/.test(c) || /^new game/.test(line)) { say("sys", T("Nothing to restart: your progress lives in this browser and on the chain. A settled contract can be played again: take <n> again."), nextChip()); return true; }
+    if (/^(quit|exit|logout|bye|q)$/.test(c)) { say("sys", T("There is no way off a ship at sea. Close the tab whenever you like: the board keeps your place."), nextChip()); return true; }
+    if (/^(about|info|intro|story|game)$/.test(c)) { about(); return true; }
+    if (/^(ok|okay|yes|y|sure|k|yep|ja|play|pay|continue|home|map|skip|now)$/.test(c)) { nextStep(); return true; }
+    if (/^(no|n|nope|nein)$/.test(c)) { say("sys", T("Fine. Whenever you are ready:"), nextChip()); return true; }
+    if (/^(settings|options|config)$/.test(c)) { say("sys", T("Settings are commands: sound, ambience, fx, voice, transmission and scene on|off; lang en|zh|ja.")); return true; }
+    return false;
+  }
+  /* the inbox's next step for the main button: a contract read is accepted next; a taken one gets the hint's step first
+     (once), the hint after a miss, else send */
+  function inboxGo() {
+    const r = S.lastRead && jobOf(S.lastRead), j = S.inbox[0];
+    return r ? [F("accept {x}", { x: jname(r) }), "accept " + jname(r), true] : [F("read {x}", { x: jname(j) }), "read " + jname(j), true];
+  }
+  function jobGo() {
+    const j = curJob(), go = tryCmd(j);
+    if (j && j.hinted && go && !S.jobStep) return [go, go, true];
+    if (j && !j.hinted && kindOf(j).hint && S.jobMiss) return ["hint", "hint", true];
+    return ["send", "send", true];
   }
   /* what to do now, as a line and a chip: the one answer to "what should I do" */
   function nextChip() {
     const next = CONTRACTS.find(c => !S.done[c.id]), claimable = CH.find(ch => chapterDone(ch) && !S.chap[ch.n]);
     if (OP.list) return btn("go", "go");
     if (S.taken) return RUN.ret && S.taken === "wayback" ? btn("back", "back") : btn("run", "run");
-    if (S.job) return btn("send", "send");
+    if (S.job) { const g = jobGo(); return btn(g[0], g[1]); }
     if (claimable) return btn("claim", "claim");
     if (next) return btn(F("take {n}", { n: num(next) }), "take " + num(next));
-    if (S.inbox.length) return btn(F("read {x}", { x: jname(S.inbox[0]) }), "read " + jname(S.inbox[0]));
+    if (S.inbox.length) { const g = inboxGo(); return btn(g[0], g[1]); }
     return btn("case", "case");
   }
   function nextStep() {
@@ -1824,10 +1914,10 @@
     const list = [["help", "help"]];
     if (OP.list) { if (!RUN.busy) list.push(["go", "go", true]); }
     else if (S.taken) { if (RUN.ret && S.taken === "wayback") list.push(["back", "back", true]); else if (!RUN.busy) list.push(["run", "run", true]); }
-    else if (S.job) { if (!RUN.busy) list.push(["send", "send", true]); list.push(["tx", "tx"]); if (curJob() && curJob().k === "predict" && !S.pred) list.push(["predict …", "predict"]); if (curJob() && !curJob().hinted) list.push(["hint", "hint"]); }
+    else if (S.job) { if (!RUN.busy) list.push(jobGo()); if (jobGo()[1] !== "send") list.push(["send", "send"]); list.push(["tx", "tx"]); if (curJob() && curJob().k === "predict" && !S.pred) list.push(["predict …", "predict"]); if (curJob() && !curJob().hinted) list.push(["hint", "hint"]); }
     else if (claimable) list.push([T("claim"), "claim", true]);
     else if (next) list.push([F("take {n}", { n: num(next) }), "take " + num(next), true]);
-    else if (S.inbox.length) list.push([F("read {x}", { x: jname(S.inbox[0]) }), "read " + jname(S.inbox[0]), true]);
+    else if (S.inbox.length) list.push(inboxGo());
     if (inboxOpen()) list.push([S.inbox.length ? F("inbox {n}", { n: S.inbox.length }) : T("inbox"), "inbox"]);
     if (HUNT.data) list.push(["mark a", "mark a"], ["mark b", "mark b"]);
     else if (CASE.data && !S.cases[CASE.data.id]) list.push(["pick a", "pick a"], ["pick b", "pick b"]);
@@ -1867,13 +1957,13 @@
     const done = Object.keys(S.done).length;
     { const d = await Promise.race([boardLoad(), new Promise(r => setTimeout(() => r(null), 2500))]); const l = crowdLine(d && d.board); if (l) say("sys", (SIM ? T("practice board") + " · " : "") + l); }
     if (!done) crew("qm", "Rule one on this ship: no memo. A payment is from, to, amount, signed; if you have something to say, say it in the amount. Take the first contract.", "calm");
-    else { say("sys", F("{n} of {m} contracts settled before. Standing: {r}.", { n: done, m: CONTRACTS.length, r: T(rank()) })); crew("qm", "Back aboard. The board remembers you; so does the chain.", "calm"); }
+    else { say("sys", F("{n} of {m} contracts settled before. Standing: {r}.", { n: done, m: CONTRACTS.length, r: rank() })); crew("qm", "Back aboard. The board remembers you; so does the chain.", "calm"); }
     if (S.taken === "wayback" && S.ret && S.ret.release > now() + 30) { RUN.ret = S.ret; crew("bosun", F("Your 50 test AGRS still wait in escrow ({h}), release at {t}. Type back.", { h: short(S.ret.id), t: clock(S.ret.release) })); }
-    else if (S.taken) { const c = byId(S.taken); if (c && c.id !== "wayback") say("sys", F("Contract {n} is still yours: {t}. Type run.", { n: num(c), t: T(c.name) }), btn("run", "run")); else { S.taken = null; S.deadline = null; S.ret = null; save(); } }
-    if (S.job) { const j = curJob(); if (j) say("sys", F("{x} is still yours: {t}. tx shows the draft, send sends it.", { x: jname(j), t: T(kindOf(j).name) }), btn("tx", "tx"), btn("send", "send")); else { S.job = null; S.draft = null; S.deadline = null; save(); } }
+    else if (S.taken) { const c = byId(S.taken); if (c && c.id !== "wayback") say("sys", F("Contract {n} is still yours: {t}. Type run.", { n: num(c), t: c.name }), btn("run", "run")); else { S.taken = null; S.deadline = null; S.ret = null; save(); } }
+    if (S.job) { const j = curJob(); if (j) say("sys", F("{x} is still yours: {t}. tx shows the draft, send sends it.", { x: jname(j), t: kindOf(j).name }), btn("tx", "tx"), btn("send", "send")); else { S.job = null; S.draft = null; S.deadline = null; save(); } }
     const claimable = CH.find(ch => chapterDone(ch) && !S.chap[ch.n]);
     if (claimable) say("sys", F("Chapter {n} is done and its share unclaimed.", { n: claimable.n }), btn("claim", "claim"));
-    else if (!done) say("sys", T("New here? The tutorial walks you through it in eight short steps. Or type help, or click:"), btn("tutorial", "tutorial"), btn("take 1", "take 1"), el("span", { class: "cur" }));
+    else if (!done) say("sys", T("New here? The tutorial plays the first contracts with you. Or type help, or click:"), btn("tutorial", "tutorial"), btn("take 1", "take 1"), el("span", { class: "cur" }));
     else { const nx = CONTRACTS.find(x => !S.done[x.id]); say("sys", T("Type help, or click:"), nx ? btn(F("take {n}", { n: num(nx) }), "take " + num(nx)) : btn("case", "case"), el("span", { class: "cur" })); }
     jobs(); instruments(); chips(); topbar(); watch(); world(); boardLoad(); deliverMail();
     for (const n of [1, 2, 3]) if (S.chap[n] && !S.chap[n].paid) watchPayback(n);
