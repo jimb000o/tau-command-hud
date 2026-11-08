@@ -1490,14 +1490,77 @@
     cols(Object.entries(TOPICS).map(([k, v]) => [btn("why " + k, "why " + k), T(v[0])]));
   }
 
+  /* ---------- what <word>: the glossary; tutorial: the walk-through for a first visit ---------- */
+  const WORDS = [
+    [["drop", "dead drop"], "The drop", "The crew’s own wallet, the dead drop. Most contracts pay it; a claim pays it 100 + the chapter; it pays your share back. status shows its whole address."],
+    [["wallet", "my wallet"], "Your wallet", "Your test wallet: a key made in this browser, the same one /wallet/ and White Rabbit Key use. The key never leaves the browser; to the chain, whoever holds it is the wallet."],
+    [["key", "signature", "sign", "signed", "bls"], "Key and signature", "Every payment is signed with the wallet’s private key; the chain checks the signature against the sender’s public key. A wrong key: INVALID_SIGNATURE."],
+    [["address", "pubkey", "hex"], "Address", "An address is a public key written as 96 hex characters (0–9, a–f), each one worth 0 to 15. Lookalikes copy the ends; only the whole address is the wallet."],
+    [["payment", "tx", "transaction", "transfer"], "A transaction", "A Tau payment: from, to, amount, signed, with a sequence number, an expiry time, a block-height deadline and a fee limit. Nothing else, no memo."],
+    [["memo", "no memo"], "No memo", "There is none: a Tau payment has no field for words. The amount is the only thing it says, and anyone can read it. Hence the game’s name."],
+    [["fee", "fees", "base fee", "fee limit", "fee_limit"], "Fees", "The fee is a limit you sign: at most this much may be taken. The chain’s base fee is in its rules (peek getgovernance: o9). A limit below the base fee is refused: FEE_LIMIT_TOO_LOW."],
+    [["block", "blocks", "tip", "height", "block height"], "Blocks", "The chain seals transactions into blocks, one after another. The newest block’s number is the tip; the top bar counts it and the instruments show the pace."],
+    [["deadline", "expire_at_height"], "Block-height deadline", "expire_at_height names the last block a payment may land in. At or behind the tip it is refused: TX_EXPIRED. Blocks are the clock that counts on this chain."],
+    [["expiry", "expiration", "expiration_time"], "Expiry time", "expiration_time is a moment written into the signed payment. Once it has passed, the chain refuses the payment: TX_EXPIRED, whatever the block."],
+    [["sealed", "confirmed", "mempool"], "Mempool and sealed", "A payment the node accepts waits in the mempool; the next block seals it, and then it is in the chain for good."],
+    [["sequence", "seq", "nonce"], "Sequence", "Every wallet numbers its payments: the sequence number. The chain takes only the next number, each once; any other is refused: INVALID_SEQUENCE. peek getsequence <address> shows the next."],
+    [["ghost", "replay", "double spend"], "The ghost", "A sealed payment sent a second time: the same bytes, the same signature. The chain refuses it (INVALID_SEQUENCE): no replay, no double spend."],
+    [["refused", "refusal", "code", "codes", "error"], "Refusals", "The chain says no with a code that names the reason (TX_EXPIRED, FEE_LIMIT_TOO_LOW …), and nothing moves. In many contracts a refusal for the right reason is the win."],
+    [["faucet"], "The faucet", "The testnet credits an unseen wallet 100,000 test AGRS when it first pays. It pays only wallets whose balance is 0."],
+    [["agrs", "test agrs", "coin", "coins", "balance"], "Test AGRS", "The testnet’s coin. Test AGRS have no value; the testnet hands them out so that everybody can test with them."],
+    [["escrow", "retractable", "retract", "back"], "Escrow", "A retractable transfer parks the money until a release time or height; until then only the sender can take it back (retract_transfer, feeless). From the release on, the first block pays the recipient by itself."],
+    [["trace"], "The trace", "Your deadline on a taken contract, in blocks. Pass it and the contract is lost; the bar at the top runs down with every block. trace <blocks> sets your own (after chapter 2)."],
+    [["contract", "contracts", "job", "jobs"], "Contracts", "A job from the crew: one real transaction with a goal. Twelve tell the story in three chapters (jobs); after chapter 1 the inbox brings new ones without end."],
+    [["chapter", "claim", "share"], "Chapters and the share", "Four contracts make a chapter. claim pays the drop 100 + the chapter’s number (the amount says which), and the crew’s purse pays 500 test AGRS back."],
+    [["purse"], "The crew’s purse", "A wallet our server runs: it reads the chain and pays the shares back. Its budget is small, so it pays chapters only, never inbox contracts."],
+    [["mark", "crew mark"], "The crew’s mark", "1 test AGRS from the drop with your first share; its hash is your badge on the chain."],
+    [["tracer", "dust", "lookalike", "hunt"], "The Tracer", "After chapter 1 a lookalike of the drop, with the same first and last characters, sends you 1 test AGRS of dust. hunt asks which address is the real drop."],
+    [["rank", "ranks", "standing", "points", "tier", "tiers"], "Standing and ranks", "Points for what you settled: contracts, cases, ops, hunts and the inbox’s pay. Nine ranks from stowaway to no memo; higher ranks open harder inbox tiers."],
+    [["inbox", "draft"], "The inbox", "After chapter 1: puzzles that keep coming. accept one, look at the draft (tx), change it (set), send it. Every answer is a real transaction."],
+    [["case", "op", "ops"], "Case and ops", "case: this week’s case file, from the pirates’ logbook and the hack of the week. op: live ops while the Black Sequence is in port on Tuesdays."],
+    [["node", "relay", "peek"], "The node", "The node keeps the chain and answers questions; this terminal talks to it through our relay at node.tauhud.com. peek asks it yourself."],
+    [["governance", "rules", "o9"], "Governance", "The chain’s rules, readable by anyone: peek getgovernance. o9 is the base fee, in hex."],
+    [["black sequence", "ship", "pirates", "crew"], "The Black Sequence", "The pirate ship that tests the chain at White Rabbit Key every Tuesday. Her crew are game characters; their transactions are real."],
+    [["testnet", "tau", "chain"], "Tau Testnet Alpha", "IDNI’s public test chain. Its coins have no value; it is there to be tested. This game is one way to test it, together with every other player."],
+  ];
+  function what(term) {
+    const t = term.trim().toLowerCase().replace(/^(is|a|an|the)\s+/, "").replace(/[?.!]+$/, "");
+    const w = WORDS.find(x => x[0].includes(t)) || WORDS.find(x => x[0].some(k => t.includes(k)));
+    if (!w) { say("sys", F("No entry for {x}. Words I can explain:", { x: term.trim() })); say("sys", el("span", null, ...WORDS.map(x => [btn(x[0][0], "what " + x[0][0]), " "]).flat())); return; }
+    say("learn", T(w[1]) + ": " + T(w[2]));
+    const more = WORDS.filter(x => x !== w).sort(() => Math.random() - 0.5).slice(0, 3);
+    say("sys", T("More:"), ...more.map(x => btn("what " + x[0][0], "what " + x[0][0])));
+  }
+  const TUT = [
+    ["What this is", "No Memo is a game on Tau Testnet Alpha, a public test chain. You and the other players test the same chain together; every move is a real transaction from your own test wallet. Test AGRS have no value, so nothing here can cost you money.", "status"],
+    ["Your wallet", "A test wallet is made in this browser at your first contract; its key never leaves it. On its first payment the testnet credits a new wallet 100,000 test AGRS to play with.", "what wallet"],
+    ["A payment", "A Tau payment is from, to, amount, signed. There is no memo field: the amount is the only thing you can say, and everybody can read it.", "what memo"],
+    ["The drop", "The drop is the crew’s own wallet. Most contracts pay it, and it pays your share back at a chapter’s end.", "what drop"],
+    ["The block clock", "The chain seals transactions into blocks, one after another; the top bar counts them. A taken contract has a trace: a deadline in blocks. Miss it and the contract is lost.", "what trace"],
+    ["Your first contract", "take 1, then run: the terminal builds the payment, signs it, sends it and draws its way from wallet to block. Some contracts want the chain to say no: a refusal for the right reason is a win, and nothing is spent.", "take 1"],
+    ["Chapters", "Four contracts make a chapter. Then claim: you pay the drop 100 + the chapter’s number, and the crew’s purse pays 500 back.", "what claim"],
+    ["The inbox", "After chapter 1 the inbox fills with puzzles that never run out. You build each answer yourself: tx shows the draft, set changes it, send sends it. why explains what the chain did, what <word> explains a word, help lists every command.", "help"],
+  ];
+  function tutorial(arg) {
+    if (arg === "end" || arg === "off") { S.tut = null; save(); chips(); say("sys", T("Tutorial closed. tutorial opens it again.")); return; }
+    let n = parseInt(arg, 10); if (!(n >= 1 && n <= TUT.length)) n = arg === "next" ? Math.min(TUT.length, (S.tut || 0) + 1) : 1;
+    S.tut = n; save();
+    const [h, text, tryCmd] = TUT[n - 1];
+    say("sys", F("Tutorial {n} of {m}: {x}", { n, m: TUT.length, x: h }));
+    crew(n === 5 ? "look" : n === 6 || n === 7 ? "qm" : n === 8 ? "bosun" : "qm", text, "calm");
+    say("sys", T("Try it:"), btn(tryCmd, tryCmd), n < TUT.length ? btn(F("tutorial {n}", { n: n + 1 }), "tutorial " + (n + 1)) : btn("tutorial end", "tutorial end"));
+    if (n === TUT.length) { S.tut = null; save(); say("ok", T("That is all you need. The crew is waiting.")); }
+    chips();
+  }
+
   /* ---------- commands ---------- */
   /* help: every command on one screen, in groups side by side; a click on a command types it */
   const HELP = [
     ["Story", [["jobs", "the twelve contracts"], ["take <n>", "take one"], ["run", "build, sign, send"], ["back", "retract a payment"], ["drop", "put it back"], ["claim [n]", "the chapter’s share"], ["chapter <n>", "the chapter’s card"]]],
     ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["why [topic]", "what just happened"], ["archive · history", "your record"]]],
     ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail", "post from the crew"], ["crew", "who is who"]]],
-    ["Tools", [["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"]]],
-    ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · boot · clear", ""]]],
+    ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"]]],
+    ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · boot · clear", ""], ["scene on|off", "the painted cabin"]]],
   ];
   function help() {
     const g = el("div", { class: "helpg" });
@@ -1528,8 +1591,14 @@
   }
   async function peek(args) {
     if (!has("peek")) { say("sys", T("peek opens with chapter 1: four contracts, then the node answers you directly.")); return; }
-    const [c, a, b] = args;
-    if (!["getbalance", "getsequence", "gettxstatus", "getretractables"].includes(c) || !/^[0-9a-f]{64,96}$/.test(a || "")) { say("sys", T("peek getbalance <address> · peek getsequence <address> · peek gettxstatus <hash> · peek getretractables <address>")); return; }
+    const [c, a0, b] = args, a = a0 === "me" ? myPk() || "" : a0 === "drop" ? DROP : a0;
+    if (c === "getgovernance") {
+      const r = await ask("getgovernance"); if (!r || r.status !== "ok") { say("no", T("No answer from the node.")); return; }
+      const rules = String((r.data && r.data.consensus_rules) || ""); say("sys", rules.slice(0, 1200) || JSON.stringify(r.data).slice(0, 1200));
+      const m = /o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)/.exec(rules); if (m) say("learn", F("o9 is the base fee: #x{x} in hex.", { x: m[1] }));
+      return;
+    }
+    if (!["getbalance", "getsequence", "gettxstatus", "getretractables"].includes(c) || !/^[0-9a-f]{64,96}$/.test(a || "")) { say("sys", T("peek getbalance <address> · peek getsequence <address> · peek gettxstatus <hash> · peek getretractables <address> · peek getgovernance; me and drop stand for the two addresses")); return; }
     const r = await ask([c, a, b].filter(Boolean).join(" "));
     if (!r) { say("no", T("No answer from the node.")); return; }
     say(r.status === "ok" ? "sys" : "no", JSON.stringify(r.data || r.error || r, null, 1).slice(0, 1200));
@@ -1583,6 +1652,8 @@
     if (c === "help" || c === "?") return help();
     if (c === "jobs" || c === "contracts" || c === "board" && args[0] === "jobs") { for (const ch of CH) { say("sys", F("Chapter {n}: {x}", { n: ch.n, x: T(ch.name) }) + (chapterOpen(ch) ? "" : " · " + T("locked"))); cols(ch.ids.map(id => byId(id)).map(x => [String(num(x)).padStart(2, " ") + (S.done[x.id] ? " ✓" : S.taken === x.id ? " ●" : "  "), T(x.name) + " · " + T(x.task)])); } const nx = CONTRACTS.find(y => !S.done[y.id]); return say("sys", T("take <n> takes one."), nx ? btn(F("take {n}", { n: num(nx) }), "take " + num(nx)) : null); }
     if (c === "take") { const n = parseInt(args[0], 10), x = args[0] === "next" || !args[0] ? CONTRACTS.find(y => !S.done[y.id]) : n >= 1 && n <= CONTRACTS.length ? CONTRACTS[n - 1] : byId(args[0]); return x ? take(x, args[1] === "again") : say("sys", T("take <n>: a number from the board, or take next.")); }
+    if (c === "tutorial" || c === "tut" || c === "run" && args[0] === "tutorial") return tutorial(c === "run" ? args[1] : args[0]);
+    if (c === "what" && args.length && !/^(do|should|now|next|to)$/.test(args[0])) return what(s.slice(4));
     if (c === "run") return OP.list ? opGo() : S.job ? jobSend() : carry();
     if (c === "inbox" || c === "in") return inboxList();
     if (c === "read" || c === "open") return readJob(args[0]);
@@ -1664,6 +1735,8 @@
     else if (CASE.data && !S.cases[CASE.data.id]) list.push(["pick a", "pick a"], ["pick b", "pick b"]);
     list.push(["jobs", "jobs"], ["status", "status"], ["case", "case"]);
     if (S.lastTopic) list.push(["why", "why"]);
+    if (S.tut && S.tut < TUT.length) list.splice(1, 0, [F("tutorial {n}", { n: S.tut + 1 }), "tutorial " + (S.tut + 1), true]);
+    else if (!Object.keys(S.done).length && !S.taken) list.splice(1, 0, ["tutorial", "tutorial"]);
     if (shipIn() && !OP.list && !SIM) list.push(["op", "op", true]);
     if (S.mail.some(m => !m.read && m.due <= (CHAIN.tip ?? 0))) list.push([T("mail"), "mail"]);
     box.replaceChildren(...list.map(([t, cmd, go]) => el("button", { type: "button", class: go ? "go" : "", text: t, onclick: () => { run(cmd); $("cmd").focus({ preventScroll: true }); } })));
@@ -1700,7 +1773,7 @@
     if (S.job) { const j = curJob(); if (j) say("sys", F("{x} is still yours: {t}. tx shows the draft, send sends it.", { x: jname(j), t: T(kindOf(j).name) }), btn("tx", "tx"), btn("send", "send")); else { S.job = null; S.draft = null; S.deadline = null; save(); } }
     const claimable = CH.find(ch => chapterDone(ch) && !S.chap[ch.n]);
     if (claimable) say("sys", F("Chapter {n} is done and its share unclaimed.", { n: claimable.n }), btn("claim", "claim"));
-    else if (!done) say("sys", T("Type help, or click:"), btn("take 1", "take 1"), el("span", { class: "cur" }));
+    else if (!done) say("sys", T("New here? The tutorial walks you through it in eight short steps. Or type help, or click:"), btn("tutorial", "tutorial"), btn("take 1", "take 1"), el("span", { class: "cur" }));
     else { const nx = CONTRACTS.find(x => !S.done[x.id]); say("sys", T("Type help, or click:"), nx ? btn(F("take {n}", { n: num(nx) }), "take " + num(nx)) : btn("case", "case"), el("span", { class: "cur" })); }
     jobs(); instruments(); chips(); topbar(); watch(); world(); boardLoad(); deliverMail();
     for (const n of [1, 2, 3]) if (S.chap[n] && !S.chap[n].paid) watchPayback(n);
