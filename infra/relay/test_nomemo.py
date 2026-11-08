@@ -113,6 +113,15 @@ node.status["c3"] = {"status": "rejected"}
 T[0] += 30
 asyncio.run(m.step(node.ask, gov))
 check("3" not in m.wallets[PLAYER]["claims"] and not m.jobs, "a claim the chain refused is forgotten, nothing paid")
+OTHER = "b" * 96
+T[0] += 10
+m.saw({"tx_type": "user_tx", "sender_pubkey": OTHER, "operations": {"1": [[OTHER, m.pk["drop"], "1"]]}}, "o1")
+b = m.route("/nomemo")["board"]
+check(b["wallets"] == 2 and b["day"] == 2 and b["hour"] == 2 and b["last_move"] == int(T[0]), "the board counts the wallets of the last day and hour and the last move")
+check(m.route("/nomemo/wallet/" + PLAYER)["nth"] == 1 and m.route("/nomemo/wallet/" + OTHER)["nth"] == 2 and m.route("/nomemo/wallet/" + "c" * 96)["nth"] is None, "nth: the how-many-th wallet to pay the drop")
+T[0] += 7200
+b = m.route("/nomemo")["board"]
+check(b["day"] == 2 and b["hour"] == 0, "after two quiet hours: two today, none this hour")
 m2 = nomemo.NoMemo(keys_path=os.path.join(d, "k"), state_path=os.path.join(d, "s.json"), clock=clock, enabled=True, keys=KEYS)
 check(m2.wallets[PLAYER]["claims"]["1"]["paid"]["share"]["hash"] == "h2", "the state survives a restart")
 check(m.route("/nomemo/wallet/zz") == {"error": "not an address"} and m.route("/other") is None, "bad paths")

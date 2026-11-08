@@ -792,5 +792,14 @@ TauI18n.add({ strings: {
   "— transmission ends —": "— 通信終了 —",
   "Transmissions on: a contract's sender appears and reads it out. transmission off for the plain line.": "通信オン：契約の送り主が画面に現れて読み上げます。文字だけなら transmission off。",
   "Transmissions off: contracts come as plain lines. transmission on brings the crew back on screen.": "通信オフ：契約は文字だけで届きます。transmission on で乗組員が画面に戻ります。",
-  "the cabin; the crew on screen": "船室・画面のクルー"
+  "the cabin; the crew on screen": "船室・画面のクルー",
+  "The last move was just now.": "最後の一手はたった今。",
+  "The last move was {n} min ago.": "最後の一手は {n} 分前。",
+  "The last move was {n} h ago.": "最後の一手は {n} 時間前。",
+  "The last move was {n} days ago.": "最後の一手は {n} 日前。",
+  "{n} wallets paid the crew’s drop in the last 24 hours, {m} in the last hour.": "過去 24 時間で {n} 個のウォレットがクルーのドロップに支払った。直近 1 時間では {m} 個。",
+  "You are wallet number {n} to pay the crew’s drop. The others play the same chain with you.": "お前はクルーのドロップに支払った {n} 番目のウォレットだ。他の者たちも同じチェーンで一緒に遊んでいる。",
+  "Wallet number {n} to pay the drop.": "ドロップに支払った {n} 番目のウォレット。",
+  "{n} today · {m} this hour": "今日 {n} · この 1 時間 {m}",
+  "practice board": "練習ボード"
 } });

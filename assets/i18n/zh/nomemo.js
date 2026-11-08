@@ -792,5 +792,14 @@ TauI18n.add({ strings: {
   "— transmission ends —": "— 通讯结束 —",
   "Transmissions on: a contract's sender appears and reads it out. transmission off for the plain line.": "通讯已开：合约的发送者会出现并念给你听。输入 transmission off 只显示文字。",
   "Transmissions off: contracts come as plain lines. transmission on brings the crew back on screen.": "通讯已关：合约只以文字出现。输入 transmission on 让船员重新上屏。",
-  "the cabin; the crew on screen": "船舱；船员上屏"
+  "the cabin; the crew on screen": "船舱；船员上屏",
+  "The last move was just now.": "上一步就在刚才。",
+  "The last move was {n} min ago.": "上一步在 {n} 分钟前。",
+  "The last move was {n} h ago.": "上一步在 {n} 小时前。",
+  "The last move was {n} days ago.": "上一步在 {n} 天前。",
+  "{n} wallets paid the crew’s drop in the last 24 hours, {m} in the last hour.": "过去 24 小时有 {n} 个钱包向船员的投递点付过款，过去一小时有 {m} 个。",
+  "You are wallet number {n} to pay the crew’s drop. The others play the same chain with you.": "你是第 {n} 个向船员投递点付款的钱包。其他人和你在同一条链上玩。",
+  "Wallet number {n} to pay the drop.": "第 {n} 个向投递点付款的钱包。",
+  "{n} today · {m} this hour": "今天 {n} · 本小时 {m}",
+  "practice board": "练习看板"
 } });
