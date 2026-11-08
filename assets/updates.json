@@ -2694,6 +2694,11 @@
   {
     "tag": "No Memo",
     "on": "2026-11-08",
+    "html": "No Memo: you now sit in the cabin of the Black Sequence. On a wide screen the game shows on the ship's terminal, seen from the chair at the desk, with the lantern, the porthole and the night sea around it; the lantern flickers, a refused transaction flashes red, and on Tuesday evenings during the pirate op a red alarm lamp turns. scene off stands you up, scene on sits you down again; on a phone the terminal stays as it was."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-08",
     "html": "No Memo: what explains a word of the game or the chain in plain terms (what drop, what fee, what nonce, about thirty in all), and tutorial walks a first visit through the game in eight short steps, each with something to try. peek also reads the chain’s rules (peek getgovernance) and takes me and drop for the two addresses."
   }
 ]
