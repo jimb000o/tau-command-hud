@@ -2710,5 +2710,10 @@
     "tag": "No Memo",
     "on": "2026-11-08",
     "html": "No Memo: contracts arrive as transmissions. Open one (read, take) and its sender appears big on the terminal, a green, flickering picture on a weak line, and reads the job out in their own voice while the subtitle keeps pace. Esc or a click skips it; transmission off brings the plain line back. And the crew's voices, made earlier but silent because of a fault in the game, now really play (voice on)."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-08",
+    "html": "No Memo: the crew talks one at a time now, with a breath between voices, so the ship's computer and the Quartermaster no longer speak over each other. Every crew voice comes through the cabin's screen, a little digital, and whoever speaks appears big over the crew row as a live green transmission that moves with their voice."
   }
 ]
