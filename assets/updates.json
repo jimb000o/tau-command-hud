@@ -2660,5 +2660,10 @@
     "tag": "In numbers",
     "on": "2026-11-08",
     "html": "In numbers: Share of the testnet always lists White Rabbit Key and No Memo among the user transactions, also on a day without any; White Rabbit Key’s simulated cruise passengers and island bot are named as White Rabbit Key’s in the line of transactions that are not users’."
+  },
+  {
+    "tag": "In numbers",
+    "on": "2026-11-08",
+    "html": "In numbers: Share of the testnet counts No Memo’s own payments (purse payouts, the Tracer’s dust, bank top-ups) and the hack of the week’s wallets in their own lines among the transactions that are not users’, instead of under White Rabbit Key’s cruise ships; the day table no longer runs out of its panel."
   }
 ]

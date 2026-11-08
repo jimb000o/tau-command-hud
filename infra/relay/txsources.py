@@ -13,6 +13,9 @@ Every transaction in the blocks the relay holds is put in one of five groups:
              "via nomemo"). Real players' transactions, counted like Tau HUD's but apart.
   cruise     a cruise ship's simulated passenger pays a place on the island (cruise.py). Real transactions, sent by our
              server, not by people: never user transactions.
+  nmsrv      No Memo's own wallets (nomemo.py): the relay purse's payouts, the Tracer's lookalike dust, the bank's top-ups
+             of the drop. Sent by our server, not by people: never user transactions.
+  hack       the hack of the week's four test wallets (hackweek.py). Sent by our server: never user transactions.
   bot        the island bot: a rival candidate's move, or a wage or embassy money one of the island's purses pays a
              player (island.py). Sent by our server, not by people: never user transactions.
              The bot's, the purses' and the passengers' wallets are ours, not visitors': they never count in wallets,
@@ -61,8 +64,8 @@ import time
 
 log = logging.getLogger("relay.txsources")
 
-GROUPS = ("agorzilla", "tauhud", "rabbit", "nomemo", "cruise", "bot", "idni", "other")
-AUTO = ("cruise", "bot")   # our own server's automated senders: real transactions, but not users'
+GROUPS = ("agorzilla", "tauhud", "rabbit", "nomemo", "cruise", "nmsrv", "hack", "bot", "idni", "other")
+AUTO = ("cruise", "nmsrv", "hack", "bot")   # our own server's automated senders: real transactions, but not users'
 OURS = ("agorzilla", "tauhud", "rabbit", "nomemo")   # our two sites, with White Rabbit Key and No Memo on tauhud.com counted apart
 SENT_MAX = 50000
 # Agorzilla's addresses (agorilla repo assets/core.js: BOWL, BOXES, ASKS)
@@ -117,6 +120,7 @@ def deja(blocks: list[dict], now: float) -> dict:
             "closes_at": start + 86400, "partial": first is None or first > start}
 VIA_MAX = 24
 GAME_VIA = ("nomemo",)   # pages that are games of their own: No Memo (tauhud.com/nomemo/, sends "via nomemo")
+SIM_GROUP = {"nomemo": "nmsrv", "hack": "hack"}   # simulated() wallets that are not cruise passengers: their own group
 
 
 BOWL = "947c2b8988769f9fb7ada19021e27c51f5d855e4e05ad258d2ca2322821987dbff93e0425f281edded5c372b97e6a108"
@@ -328,7 +332,7 @@ class TxSources:
         that Tau HUD page; other = anything else (a key is not a person, an unknown sender stays unknown)."""
         bs = [b for b in blocks if isinstance(b, dict)][-n:]
         bots = {k.lower() for k in (*self.bots, *self.purses)}
-        ship = {k.lower() for k in (self.passengers() or {})}
+        ship = {k.lower(): v for k, v in (self.passengers() or {}).items()}
         props = {str((b.get("header") or {}).get("proposer_pubkey") or "").lower() for b in bs} - {""}
         out: dict[str, int] = {}
         for b in bs:
@@ -345,7 +349,7 @@ class TxSources:
                 elif s in bots:
                     k = "bot"
                 elif s in ship:
-                    k = "cruise"
+                    k = SIM_GROUP.get(ship[s], "cruise")
                 elif DEJA in to:
                     k = "deja"
                 elif to & AGORZILLA:
@@ -405,7 +409,7 @@ class TxSources:
                 rb = rabbit(tx, bots)
                 server = s in bots or s in self.purses or s in ship   # the island bot's, purses' and passengers' wallets: ours
                 if s in ship:
-                    g = "cruise"
+                    g = SIM_GROUP.get(ship[s], "cruise")
                 elif s in bots or s in self.purses:
                     g = "bot"
                 elif g != "agorzilla" and rb:
@@ -431,7 +435,7 @@ class TxSources:
                     src, kind = start(tx, h, g, self.sent, rb)
                     kinds = starts.setdefault(day, {}).setdefault(src, {})
                     kinds[kind] = kinds.get(kind, 0) + 1
-                if s in ship:   # a simulated cruise passenger: not a player and not a move, counted apart
+                if s in ship and ship[s] not in SIM_GROUP:   # a simulated cruise passenger: not a player and not a move, counted apart
                     r = isle.setdefault(day, {"moves": 0, "rivals": 0, "lines": 0, "votes": 0, "agrs": 0, "wallets": 0,
                                               "new": 0, "cands": {}, "by": {}, "hours": [0] * 24})
                     r["cruise"] = r.get("cruise", 0) + 1

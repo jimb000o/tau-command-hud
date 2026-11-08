@@ -227,6 +227,8 @@ html.fit.wide .col.side { display: contents; }
   #dPages td, #dPages th { padding-left: 4px; padding-right: 4px; }
   #dPages td:first-child { white-space: normal; }
 }
+/* One day: a long name (White Rabbit Key cruise ships) breaks onto two lines instead of pushing the numbers out of the panel */
+#dPages td:first-child { white-space: normal; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -431,7 +433,7 @@ function rabbitData() {
 const netAll = k => { const d = (txs && txs.days[k]) || {}; return Object.values(d).reduce((a, v) => a + (v[0] || 0), 0); };
 /* user transactions: everything but IDNI's genesis accounts, which make most of the testnet's traffic while testing, and
    our own server's automation (the cruise ships' simulated passengers and the island bot: real transactions, not users) */
-const AUTO = ["cruise", "bot"];
+const AUTO = ["cruise", "nmsrv", "hack", "bot"];
 const netUsers = k => { const d = (txs && txs.days[k]) || {}; return netAll(k) - ["idni", ...AUTO].reduce((a, g) => a + ((d[g] || [0])[0] || 0), 0); };
 /* a relay from before it kept the cruise ships and the island bot apart: take the passengers' transactions and the wages
    out of White Rabbit Key's count where the island's own counts know them (the rivals' moves stay until it is updated) */
@@ -1156,22 +1158,22 @@ function drawPages() {
 /* where the testnet's transactions come from (relay /api/v1/sources): the whole testnet, whichever site is chosen */
 const TX_GROUPS = [["agorzilla", "Agorzilla", "meals and votes: payments to Agorzilla's bowl and ballot boxes"], ["tauhud", "Tau HUD", "sent from a Tau HUD page: wallet, playground, vote"], ["rabbit", "White Rabbit Key", "White Rabbit Key, our island game on tauhud.com: the players' own lines and ballots. The island bot's moves and wages and the cruise ships' simulated passengers are counted apart, never as users."], ["nomemo", "No Memo", "No Memo, our terminal game on tauhud.com: contracts a player sends from their own test wallet. Real players' transactions."], ["idni", "IDNI genesis", "IDNI genesis accounts: sent by the 11 accounts the testnet started with (its genesis file), which IDNI set up and uses for testing. They make most of the testnet's transactions, so a small share for the others can still be many people."], ["other", "others", "everything else: other wallets, scripts and tools"]];
 /* our own server's automation: real transactions on the testnet, shown, but never counted as users' */
-const AUTO_GROUPS = [["cruise", "White Rabbit Key cruise ships", "Our cruise ships: simulated passengers on White Rabbit Key's island, sent by our server as paced test load (at most 12 a minute). Real transactions on the testnet, but no people: never counted as user transactions."], ["bot", "White Rabbit Key island bot", "The island bot of White Rabbit Key: the rival candidates' moves and the wages the island pays players, sent by our server. Real transactions, but no people: never counted as user transactions."]];
+const AUTO_GROUPS = [["cruise", "White Rabbit Key cruise ships", "Our cruise ships: simulated passengers on White Rabbit Key's island, sent by our server as paced test load (at most 12 a minute). Real transactions on the testnet, but no people: never counted as user transactions."], ["bot", "White Rabbit Key island bot", "The island bot of White Rabbit Key: the rival candidates' moves and the wages the island pays players, sent by our server. Real transactions, but no people: never counted as user transactions."], ["nmsrv", "No Memo's own payments", "No Memo's own wallets on our server: the relay purse paying a claimed contract, the Tracer's lookalike dust, the bank topping up the drop. Real transactions, but sent by the game, not by players: never counted as user transactions."], ["hack", "hack of the week", "The hack of the week's four test wallets on our server, trying one known trick against the testnet each Thursday. Real transactions, but no people: never counted as user transactions."]];
 const TX_COLORS = ["var(--ok)", "#fff", "rgba(255,255,255,.45)", "rgba(255,255,255,.2)"];
-const GROUP_COL = { agorzilla: "var(--ok)", tauhud: "#fff", rabbit: "#b9ffd6", nomemo: "rgba(185,255,214,.6)", cruise: "rgba(185,255,214,.3)", bot: "rgba(185,255,214,.3)", idni: "rgba(255,255,255,.45)", other: "rgba(255,255,255,.2)" };
+const GROUP_COL = { agorzilla: "var(--ok)", tauhud: "#fff", rabbit: "#b9ffd6", nomemo: "rgba(185,255,214,.6)", cruise: "rgba(185,255,214,.3)", nmsrv: "rgba(185,255,214,.3)", hack: "rgba(185,255,214,.3)", bot: "rgba(185,255,214,.3)", idni: "rgba(255,255,255,.45)", other: "rgba(255,255,255,.2)" };
 const share = (a, b) => b && a && 100 * a / b < 1 ? "<1%" : pct(a, b);
 function drawTx() {
   const el = $("txsplit");
   if (!txs) { el.innerHTML = ""; return; }
   const keys = range === 1 ? [data.today] : rangeDays().map(([k]) => k);
-  const tot = { agorzilla: [0, 0], tauhud: [0, 0], rabbit: [0, 0], nomemo: [0, 0], cruise: [0, 0], bot: [0, 0], idni: [0, 0], other: [0, 0] };
+  const tot = { agorzilla: [0, 0], tauhud: [0, 0], rabbit: [0, 0], nomemo: [0, 0], cruise: [0, 0], nmsrv: [0, 0], hack: [0, 0], bot: [0, 0], idni: [0, 0], other: [0, 0] };
   let n = 0;
   for (const k of keys) { const d = txs.days[k]; if (!d) continue; n++; for (const g in tot) { tot[g][0] += (d[g] || [0, 0])[0]; tot[g][1] += (d[g] || [0, 0])[1]; } }
   const all = Object.values(tot).reduce((a, v) => a + v[0], 0);
   const wallets = g => n ? Math.round(tot[g][1] / n) : 0;
   const head = `<span data-tip="${esc(T("Transactions by users in the testnet's blocks, sorted by where they came from: everything except IDNI's 11 genesis accounts, shown below. Counted by the Tau HUD relay from the blocks it keeps; one person can hold several wallets."))}">${esc(T("User transactions"))}</span>`;
   if (!all) { el.innerHTML = `<div class="sp">${head}<div class="note">${esc(T("No transactions in this range yet."))}</div></div>`; return; }
-  const auto = tot.cruise[0] + tot.bot[0], users = all - tot.idni[0] - auto, U = TX_GROUPS.filter(([g]) => g !== "idni"), col = g => GROUP_COL[g];
+  const auto = AUTO.reduce((a, g) => a + tot[g][0], 0), users = all - tot.idni[0] - auto, U = TX_GROUPS.filter(([g]) => g !== "idni"), col = g => GROUP_COL[g];
   const tipOf = (g, what) => `${T(what)}\n${fmt(tot[g][0])} ${T("transactions")} · ${fmt(wallets(g))} ${T(n === 1 ? "wallets" : "wallets a day on average")}\n${T("of everything, IDNI's genesis accounts included")}: ${share(tot[g][0], all)}`;
   const ours = tot.agorzilla[0] + tot.tauhud[0] + tot.rabbit[0] + tot.nomemo[0], idni = TX_GROUPS.find(([g]) => g === "idni");
   // the headline: our share of the user transactions (IDNI's genesis testing left out); below, smaller, the same with everything counted
