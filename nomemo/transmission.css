@@ -35,11 +35,24 @@
 @media (max-width: 760px) {
   .txm { bottom: auto; padding: 6px; background: none; place-items: stretch; }
   .txm-win { padding: 8px; gap: 6px; background: #030a06; }
-  .txm-body { grid-template-columns: 56px minmax(0, 1fr); gap: 8px; align-items: start; }
-  .txm-pic { height: auto; width: 56px; }
+  .txm-body { grid-template-columns: 72px minmax(0, 1fr); gap: 8px; align-items: start; }
+  .txm-pic { height: auto; width: 72px; }
   .txm-sub { font-size: 12px; min-height: 0; max-height: 6em; overflow: hidden; }
   .txm-top { font-size: 10px; } .txm-end { display: none; }
   .txm-from { font-size: 11px; }
   .txm-foot { display: none; }
 }
 @media (max-height: 560px) and (min-width: 761px) { .txm-sub { font-size: 13px; } }
+
+/* a crew line: the speaker's face, big and live, over the crew row */
+#paneJobs { position: relative; }
+.crew-live { position: absolute; left: 10px; right: 10px; z-index: 20; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px;
+  border: 1px solid rgba(57,255,138,.35); border-radius: 8px; background: #030a06; box-shadow: 0 0 26px rgba(57,255,138,.12), 0 -8px 24px rgba(0,0,0,.55);
+  opacity: 0; transform: translateY(8px) scale(.96); transform-origin: 50% 100%; transition: opacity .22s, transform .22s; pointer-events: none; cursor: pointer; }
+.crew-live.show { opacity: 1; transform: none; pointer-events: auto; }
+.cl-pic { position: relative; width: var(--cl, 160px); aspect-ratio: 1; border-radius: 6px; overflow: hidden; border: 1px solid rgba(57,255,138,.28); background: #010402; }
+.cl-pic canvas { width: 100%; height: 100%; display: block; }
+.cl-pic::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px), radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,.55)); }
+.cl-cap { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; width: max(var(--cl, 160px), 190px); white-space: nowrap; font: 11px var(--mono); color: var(--dim); }
+.cl-cap b { color: var(--mint); font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; }

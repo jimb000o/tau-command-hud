@@ -71,6 +71,42 @@
   const lang = () => (window.TauI18n && TauI18n.lang !== "en" ? "?lang=" + TauI18n.lang : "");
   const txUrl = h => "/explorer/?tx=" + h + (lang() ? "&lang=" + TauI18n.lang : "");
   const REDUCED = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  /* one voice at a time: the ship's, the crew's, a transmission's. Each waits its turn in the order asked, with a breath
+     between (2.5 s); a line that waited too long is dropped, it would come too late. run() ends when its voice has
+     finished: true if it spoke, false if there was nothing to say. transmission.js uses the same line. */
+  const LINE = { tail: Promise.resolve(), gap: 2500, last: -1e9 };
+  function onAir(run, maxWait = 12000) {
+    const asked = performance.now();
+    const turn = LINE.tail.then(async () => {
+      const rest = LINE.last + LINE.gap - performance.now(); if (rest > 0) await sleep(rest);
+      if (performance.now() - asked > maxWait) return false;
+      let spoke = false;
+      try { spoke = await Promise.race([run(), sleep(60000)]); } catch (e) {}
+      if (spoke) LINE.last = performance.now();
+      return spoke;
+    });
+    LINE.tail = turn.catch(() => {});
+    return turn;
+  }
+  /* every crew voice reaches you through the cabin's screen: a narrow band, a few bits, a faint ring of the machine.
+     Done here in the browser, so the clips on the server stay as they are and no credits are spent. */
+  function screenVoice(c, dest) {
+    const hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 340;
+    const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 3300;
+    const pre = c.createGain(); pre.gain.value = 1.6;
+    const crush = c.createWaveShaper(), n = 4096, cv = new Float32Array(n);
+    for (let i = 0; i < n; i++) { const x = i / (n / 2 - 0.5) - 1, y = Math.tanh(1.8 * x) / Math.tanh(1.8); cv[i] = Math.round(y * 28) / 28; }
+    crush.curve = cv;
+    const dry = c.createGain(); dry.gain.value = 0.72;
+    const ring = c.createGain(); ring.gain.value = 0;   // its loudness follows a fast tone: the metallic edge of a digital line
+    const osc = c.createOscillator(); osc.type = "sine"; osc.frequency.value = 62;
+    const depth = c.createGain(); depth.gain.value = 0.3; osc.connect(depth).connect(ring.gain); osc.start();
+    const out = c.createGain(); out.gain.value = 0.95;
+    hp.connect(lp); lp.connect(pre); pre.connect(crush); crush.connect(dry); crush.connect(ring); dry.connect(out); ring.connect(out); out.connect(dest);
+    hp.stopRing = () => { try { osc.stop(); } catch (e) {} };
+    return hp;
+  }
+  window.NoMemoVoice = { onAir, screen: screenVoice };
 
   /* ---------- state ---------- */
   let S = null;
@@ -535,12 +571,28 @@
     const event = (name, fallback) => { duck(); cue(name, fallback); };
     function say(name) {   // the ship's voice: fixed lines the server made, only when they exist and voice is on
       if (!on() || !S.voice || !server.voice.includes(name)) return;
-      try { if (typeof VOICE !== "undefined" && VOICE.audio && !VOICE.audio.paused) return; } catch (e) {}
-      if (buf[name]) { duck(2.4); play(name, { bus: voiceBus, delay: 0.35, gain: 1 }); } else load(name).then(b => { if (b) { duck(2.4); play(name, { bus: voiceBus, gain: 1 }); } });
+      onAir(async () => {   // after any voice still speaking, never over it
+        const b = buf[name] || await load(name); if (!b || !on() || !S.voice) return false;
+        duck(b.duration + 0.8); if (!play(name, { bus: voiceBus, delay: 0.2, gain: 1 })) return false;
+        await sleep(b.duration * 1000 + 250); return true;
+      }, 8000);
+    }
+    async function crew(url, who) {   // a crew clip through the cabin's screen; ends when it has been said (transmission.js moves the face with it)
+      const c = ac(); if (!c) return false;
+      let b = null;
+      try { const r = await fetch(url); if (!r.ok) return false; b = await decode(await r.arrayBuffer()); } catch (e) { return false; }
+      if (!on() || !S.voice) return false;
+      duck(b.duration + 0.8);
+      const src = c.createBufferSource(); src.buffer = b; const inp = screenVoice(c, master); src.connect(inp);
+      const at = c.currentTime + 0.05;
+      document.dispatchEvent(new CustomEvent("nomemo:crewvoice", { detail: { who, buffer: b, at, ctx: c } }));
+      await new Promise(r => { src.onended = r; src.start(at); });
+      document.dispatchEvent(new CustomEvent("nomemo:crewvoice", { detail: { who, end: true } }));
+      inp.stopRing(); return true;
     }
     info();
     return {
-      wake, ambience, say,
+      wake, ambience, say, crew,
       key: () => { let n; do n = 1 + Math.floor(Math.random() * 4); while (n === lastKey); lastKey = n; cue("key-" + n, () => tone(1800 + Math.random() * 400, 18, "square", 0.012), { rate: 0.94 + Math.random() * 0.12 }); },
       enter: () => cue("enter", null),
       send: () => cue("send", () => { tone(520, 70, "square", 0.03, 400); setTimeout(() => tone(900, 60, "square", 0.025, 500), 70); }),
@@ -591,7 +643,7 @@
     if (S.fx && !REDUCED && typeof text === "string" && text.length < 700) { p.hidden = true; Q.push(p); pump(); } else scrollDown();
     return p;
   }
-  function crew(who, text, m) { if (m) mood(who, m); talking(who); speak(who, text); return say("crew", null, el("b", { text: T(CREW[who]) + ":" }), " " + T(text)); }
+  function crew(who, text, m) { if (m) mood(who, m); talking(who); document.dispatchEvent(new CustomEvent("nomemo:crewline", { detail: { who, mood: MOOD[who], text: T(text), voice: !SIM && !!(S.voice && S.snd) } })); speak(who, text); return say("crew", null, el("b", { text: T(CREW[who]) + ":" }), " " + T(text)); }
   function transmit(who, text, job, m) {   // a contract's brief: the sender appears and reads it out (transmission.js); without that file, the plain crew line
     const ev = new CustomEvent("nomemo:transmission", { cancelable: true, detail: { who, mood: m || "calm", text, shown: T(text), from: T(CREW[who]), job: job || null, voice: !!(S.voice && S.snd), sim: SIM } });
     if (document.dispatchEvent(ev)) return crew(who, text, m || "calm");
@@ -1185,11 +1237,13 @@
   }
   async function speak(who, text) {
     if (SIM || !S.voice || !window.crypto || !crypto.subtle) return;
-    await clips(); if (!VOICE.have || !VOICE.have.size) return;
-    const d = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(who + "|" + text));   // the clips are English; the line shown may be translated
-    const key = [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
-    if (!VOICE.have.has(key)) return;
-    try { if (VOICE.audio) VOICE.audio.pause(); VOICE.audio = new Audio(CLIPS + key + ".mp3"); VOICE.audio.volume = 0.9; await VOICE.audio.play(); } catch (e) {}
+    return onAir(async () => {   // its turn on the line: after the ship's voice or another crew line has finished, and a breath
+      await clips(); if (!VOICE.have || !VOICE.have.size || !S.voice) return false;
+      const d = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(who + "|" + text));   // the clips are English; the line shown may be translated
+      const key = [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
+      if (!VOICE.have.has(key)) return false;
+      return snd.crew(CLIPS + key + ".mp3", who);
+    });
   }
 
   /* ---------- the boot screen: once per browser, or ?boot=1, or the command boot ---------- */

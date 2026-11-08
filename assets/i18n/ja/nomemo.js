@@ -802,6 +802,7 @@ TauI18n.add({ strings: {
   "Wallet number {n} to pay the drop.": "ドロップに支払った {n} 番目のウォレット。",
   "{n} today · {m} this hour": "今日 {n} · この 1 時間 {m}",
   "practice board": "練習ボード",
+  "speaking · signal {n}%": "通話中 · 信号 {n}%",
   "Language:": "言語：",
   "The tutorial plays the first contracts with you, step by step:": "チュートリアルが最初の契約を一歩ずつ一緒にプレイします：",
   "You are not alone: everybody at a terminal like this one plays the same chain with you, right now. The board counts their wallets; it never shows names.": "ひとりではありません：このような端末の前にいる全員が、今この瞬間、あなたと同じチェーンで遊んでいます。ボードは彼らのウォレットを数えますが、名前は決して表示しません。",

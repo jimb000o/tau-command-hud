@@ -802,6 +802,7 @@ TauI18n.add({ strings: {
   "Wallet number {n} to pay the drop.": "第 {n} 个向投递点付款的钱包。",
   "{n} today · {m} this hour": "今天 {n} · 本小时 {m}",
   "practice board": "练习看板",
+  "speaking · signal {n}%": "说话中 · 信号 {n}%",
   "Language:": "语言：",
   "The tutorial plays the first contracts with you, step by step:": "教程会一步一步陪你玩前几份合约：",
   "You are not alone: everybody at a terminal like this one plays the same chain with you, right now. The board counts their wallets; it never shows names.": "你不是一个人：每个坐在这样终端前的人都和你在同一条链上玩，就在此刻。看板统计他们的钱包，从不显示名字。",
