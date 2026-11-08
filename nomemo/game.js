@@ -29,6 +29,11 @@
    it is on, the Tracer: after chapter one a lookalike of the drop sends dust to the player's wallet, and the hunt is to
    tell the two apart by their whole address (GET /nomemo, /nomemo/wallet/<address>).
 
+   The inbox: after chapter 1 the crew sends contracts of its own without end (KINDS): two to four offers, a new one
+   every few blocks, lapsing after a couple of hours of blocks. Each is a puzzle about one part of the chain (TOPICS),
+   answered with a real transaction the player builds in a draft (tx, set <field> <value>, send). They pay standing,
+   never test AGRS; standing opens four tiers and nine ranks. why explains what the chain just did.
+
    Weekly ops: while the Black Sequence lies in port on Tuesday (GET /cruise), `op` opens live contracts that mirror
    what the pirates are trying that very hour. The case file (`case`) reads the hack of the week (GET /hack), the
    pirates' logbook (GET /cruise/log) and asks two riddles answered from the chain itself.
@@ -73,12 +78,12 @@
     if (!S || !(S.v === 1 || S.v === 2)) S = { v: 2, done: {}, taken: null, deadline: null, cases: {}, findings: [], hist: [] };
     S.v = 2;
     for (const k of ["done", "cases", "ops", "riddles", "chap", "seen", "hunt"]) S[k] = S[k] || {};
-    for (const k of ["findings", "hist", "mail"]) S[k] = S[k] || [];
+    for (const k of ["findings", "hist", "mail", "inbox", "arch"]) S[k] = S[k] || [];
     if (S.snd == null) S.snd = true; if (S.amb == null) S.amb = true; if (S.fx == null) S.fx = !REDUCED; if (S.voice == null) S.voice = true;
   }
   const save = () => store.set(SAVE, JSON.stringify(S));
-  const rep = () => Object.keys(S.done).length + Object.keys(S.cases).length + Object.keys(S.ops).length + Object.keys(S.riddles).length + Object.keys(S.hunt).length;
-  const RANKS = [[0, "stowaway", "stowaway"], [1, "deckhand", "deckhand"], [4, "rigger", "rigger"], [8, "navigator", "navigator"], [12, "quartermaster’s mate", "master"]];
+  const rep = () => Object.keys(S.done).length + Object.keys(S.cases).length + Object.keys(S.ops).length + Object.keys(S.riddles).length + Object.keys(S.hunt).length + (S.rep || 0);
+  const RANKS = [[0, "stowaway", "stowaway"], [1, "deckhand", "deckhand"], [4, "rigger", "rigger"], [8, "navigator", "navigator"], [12, "quartermaster’s mate", "master"], [20, "sailing master", "sailing"], [35, "first mate", "mate"], [55, "ghost of the ledger", "ghost"], [80, "no memo", "nomemo"]];
   const rankRow = () => { const r = rep(); let out = RANKS[0]; for (const x of RANKS) if (r >= x[0]) out = x; return out; };
   const rank = () => rankRow()[1];
   const nextRank = () => RANKS.find(x => x[0] > rep()) || null;
@@ -181,7 +186,7 @@
       brief: "Last one. A payment that may land in the next six blocks and not one later. The terminal sets the deadline the moment you take it. Go.",
       task: "Land a payment within six blocks of taking the contract.",
       learn: "expire_at_height is the trace: the chain enforces the deadline, nobody has to. A payment that missed its block is TX_EXPIRED, however fast you were.",
-      after: "Made the block. Twelve of twelve: the board is clear. Claim the crew’s share, then come by on a Tuesday evening when the ship is in; the live ops are the real thing." },
+      after: "Made the block. Twelve of twelve: the story is told. Claim the crew’s share; the inbox keeps bringing work, harder as your rank grows, and on a Tuesday evening the ship is in for the live ops." },
   ];
   const byId = id => CONTRACTS.find(c => c.id === id);
   const num = c => CONTRACTS.indexOf(c) + 1;
@@ -395,13 +400,15 @@
     const newBlock = CHAIN.tip != null && tip > CHAIN.tip;
     if (CHAIN.tip == null || tip !== CHAIN.tip) { CHAIN.tip = tip; CHAIN.tipAt = t; }
     setState(true); instruments(); topbar(newBlock);
-    if (newBlock) { if (S.taken) { snd.block(); snd.tick(traceFrac() < 0.25); } else snd.tension(false); deliverMail(); }
+    if (newBlock) { if (S.taken || S.job) { snd.block(); snd.tick(traceFrac() < 0.25); } else snd.tension(false); deliverMail(); }
     if (S.taken && S.deadline != null && tip > S.deadline && !RUN.busy) traced();
+    if (S.job && S.deadline != null && tip > S.deadline && !RUN.busy) jobTraced();
+    jobTick(tip);
   }
   const pace = () => (SIM && window.TauSim ? TauSim.pace : CHAIN.pace);
   const inTime = blocks => { const s = pace(); if (!s || blocks < 0) return ""; const m = blocks * s / 60; return m < 1 ? T("under a minute") : F("about {m} min", { m: Math.round(m) }); };
-  const traceLeft = () => (S.taken && S.deadline != null && CHAIN.tip != null ? S.deadline - CHAIN.tip : null);
-  const traceFrac = () => { const left = traceLeft(), c = S.taken ? byId(S.taken) : null; const span = c ? (S.span || c.trace) : TRACE; return left == null ? 0 : Math.max(0, Math.min(1, left / span)); };
+  const traceLeft = () => ((S.taken || S.job) && S.deadline != null && CHAIN.tip != null ? S.deadline - CHAIN.tip : null);
+  const traceFrac = () => { const left = traceLeft(), c = cur(); const span = c ? (S.span || c.trace) : TRACE; return left == null ? 0 : Math.max(0, Math.min(1, left / span)); };
   let poll = 0;
   function watch() {
     clearTimeout(poll);
@@ -621,7 +628,7 @@
     b.textContent = CHAIN.tip != null ? "#" + fmt(CHAIN.tip) : "—";
     if (newBlock && S.fx && !REDUCED) { b.classList.remove("tick"); void b.offsetWidth; b.classList.add("tick"); }
     $("topPace").textContent = pace() ? F("{n} s a block", { n: pace().toFixed(0) }) : "";
-    const left = traceLeft(), frac = traceFrac(), tr = $("topTrace"), c = S.taken ? byId(S.taken) : null;
+    const left = traceLeft(), frac = traceFrac(), tr = $("topTrace"), c = cur();
     tr.className = "tr" + (c ? (left != null && left < 0 ? " out" : frac < 0.25 ? " hot" : " on") : "");
     tr.style.setProperty("--p", Math.round(frac * 100) + "%");
     $("topTraceText").textContent = c ? (left != null ? F("trace {n} blocks", { n: Math.max(0, left) }) : T("trace …")) : T("no trace");
@@ -653,6 +660,20 @@
   /* ---------- the panes ---------- */
   function jobs() {
     const ol = $("jobs"); if (!ol) return;
+    const tabs = $("ptabs"), open = inboxOpen(), pane = open && S.pane === "inbox" ? "inbox" : "story";
+    if (tabs) { tabs.hidden = !open; for (const b of tabs.querySelectorAll("button")) { b.classList.toggle("on", b.dataset.p === pane); if (b.dataset.p === "inbox") b.textContent = S.inbox.length ? F("Inbox {n}", { n: S.inbox.length }) : T("Inbox"); } }
+    if (pane === "inbox") {
+      const rows = S.inbox.map(j => el("li", { class: (S.job === j.n ? "taken" : "") + (j === S.inbox.find(x => x.n !== S.job) && !S.job ? " next" : ""), onclick: () => run("read " + jname(j)), title: fill(kindOf(j).brief, j) },
+        el("span", { class: "n", text: jname(j) }), el("span", { class: "t", text: T(kindOf(j).name) }),
+        el("span", { class: "st", text: S.job === j.n ? T("taken") : stars(j.t) }),
+        el("span", { class: "w", text: T(CREW[j.who]) + " · " + F("+{n}", { n: PAYS[j.t] }) + (j.topic ? " · " + T(TOPICS[j.topic][0]) : "") })));
+      if (!rows.length) rows.push(el("li", { class: "lock" }, el("span", { class: "n", text: "" }), el("span", { class: "t", text: T("Empty for the moment") }), el("span", { class: "w", text: T("a new contract comes within a few blocks") })));
+      const done = S.arch.filter(a => a.out === "settled").length;
+      rows.push(el("li", { class: "chap", onclick: () => run("archive") }, el("span", { class: "n", text: "" }), el("span", { class: "t", text: T("Archive") }), el("span", { class: "st", text: F("{n} settled", { n: done }) })));
+      ol.replaceChildren(...rows);
+      $("jobsCount").textContent = F("{n} open", { n: S.inbox.length });
+      return;
+    }
     const next = CONTRACTS.find(c => !S.done[c.id]);
     const rows = [];
     for (const ch of CH) {
@@ -674,7 +695,7 @@
   const BOARD = { data: null, at: 0 };
   function instruments() {
     const box = $("inst"); if (!box) return;
-    const pk = myPk(), tip = CHAIN.tip, left = traceLeft(), c = S.taken ? byId(S.taken) : null, frac = traceFrac();
+    const pk = myPk(), tip = CHAIN.tip, left = traceLeft(), c = cur(), frac = traceFrac();
     const row = (h, b, p, cls) => el("div", { class: "row " + (cls || "") }, el("h3", { text: h }), el("b", { text: b }), p ? el("p", null, p) : null);
     const nr = nextRank(), badge = ART.have && ART.have.badges && ART.have.badges.includes(rankRow()[2]) ? el("img", { src: ART.base + "badges/" + rankRow()[2] + ".webp", alt: "", style: "width:28px;height:28px;vertical-align:middle;margin-right:6px" }) : null;
     const gear = el("div", { class: "gear" }, ...GEAR.map(([k, what]) => el("span", { class: has(k) ? "on" : "", text: k, title: T(what) })));
@@ -685,7 +706,8 @@
       (() => { const r = row(T("Trace"), c ? (left != null ? F("{n} blocks", { n: Math.max(0, left) }) : "…") : T("no contract taken"), c ? (left != null && left >= 0 ? F("until block {n} · {t}", { n: fmt(S.deadline), t: inTime(left) }) : T("the deadline is set from the tip at taking")) : T("take a contract: the block clock starts")); const bar = el("div", { class: "trace" + (frac < 0.25 ? " hot" : "") + (left != null && left < 0 ? " out" : "") }, el("i", { style: "width:" + Math.round(frac * 100) + "%" })); r.append(bar); return r; })(),
       row(T("Wallet"), pk ? short(pk) : T("not made yet"), pk ? el("a", { href: "/wallet/" + lang(), text: T("open in the wallet") }) : T("made at your first contract")),
       row(T("Balance"), CHAIN.bal == null ? "—" : fmt(CHAIN.bal === 0 ? FAUCET : CHAIN.bal) + " " + T("test AGRS"), CHAIN.bal === 0 ? T("unseen wallet: the faucet’s 100,000 at the first payment") : T("test AGRS have no value")),
-      (() => { const r = row(T("Standing"), "", nr ? F("{n} settled · {m} more to {x}", { n: rep(), m: nr[0] - rep(), x: T(nr[1]) }) : F("{n} settled · the top of the ladder", { n: rep() }), "rk"); const b = r.querySelector("b"); b.classList.add("rank"); if (badge) b.append(badge); b.append(T(rank())); return r; })(),
+      (() => { const r = row(T("Standing"), "", nr ? F("{n} points · {m} more to {x}", { n: rep(), m: nr[0] - rep(), x: nr[1] }) : F("{n} points · the top of the ladder", { n: rep() }), "rk"); const b = r.querySelector("b"); b.classList.add("rank"); if (badge) b.append(badge); b.append(T(rank())); return r; })(),
+      row(T("Inbox"), inboxOpen() ? (S.job ? F("{x} taken", { x: "j" + S.job }) : F("{n} open", { n: S.inbox.length })) : T("closed"), inboxOpen() ? F("tier {n} of 4 · {m} settled", { n: tierMax(), m: S.arch.filter(a => a.out === "settled").length }) : T("opens when chapter 1 is done")),
       (() => { const r = row(T("Gear"), "", null); r.querySelector("b").remove(); r.append(gear); return r; })(),
       row(T("Board"), bd ? F("{n} wallets", { n: bd.wallets || 0 }) : "—", bd ? Object.entries(bd.ranks || {}).filter(([, n]) => n).map(([k, n]) => T(k) + " " + n).join(" · ") || T("nobody yet") : T("wallets, not people; read from the server when it is there")),
     );
@@ -700,6 +722,7 @@
     if (S.done[c.id] && !again) { say("sys", F("Contract {n} is settled already. To play it again anyway: take {n} again (it counts once).", { n: num(c) }), nextChip()); return; }
     if (S.taken === c.id) { say("sys", F("Contract {n} is yours already. Type run.", { n: num(c) }), btn("run", "run")); return; }
     if (RUN.busy) { say("warn", T("A contract is under way; wait for the chain’s answer.")); return; }
+    if (S.job) { say("warn", F("{x} from the inbox is taken: send it, or drop it first.", { x: "j" + S.job })); return; }
     const ch = chapterOf(c);
     if (!chapterOpen(ch)) { say("warn", F("Chapter {n} first: its four contracts open chapter {m}.", { n: ch.n - 1, m: ch.n })); const nx = CONTRACTS.find(x => !S.done[x.id]); if (nx) say("sys", F("Next on the board: {n} {t}.", { n: num(nx), t: T(nx.name) }), btn(F("take {n}", { n: num(nx) }), "take " + num(nx))); return; }
     S.taken = c.id; S.span = c.trace; S.deadline = CHAIN.tip != null ? CHAIN.tip + c.trace : null; save(); jobs(); instruments(); topbar(); chips();
@@ -743,7 +766,7 @@
     const again = !!S.done[c.id];
     S.done[c.id] = { at: Date.now(), ...rec }; S.taken = null; S.deadline = null; S.span = null; save(); jobs(); instruments(); topbar();
     snd.tension(false); snd.seal(); snd.say("v-sealed"); flash("ok"); mood(c.who, "glad");
-    say("ok", F("Contract {n} settled. Standing: {r}.", { n: num(c), r: T(rank()) }));
+    say("ok", F("Contract {n} settled. Standing: {r}.", { n: num(c), r: rank() }));
     say("learn", T(c.learn));
     if (again) { chips(); return; }
     post(c.who, c.after, 1 + Math.floor(Math.random() * 2));
@@ -905,7 +928,7 @@
     }
     if (!ch) { const open = CH.find(x => !chapterDone(x)); say("sys", open ? F("Nothing to claim yet: chapter {n} is not done.", { n: open.n }) : T("Every chapter’s share is claimed.")); return; }
     if (RUN.busy) { say("warn", T("A contract is under way; wait for the chain’s answer.")); return; }
-    if (S.taken) { say("warn", T("Put the taken contract back first (drop), or finish it.")); return; }
+    if (S.taken || S.job) { say("warn", T("Put the taken contract back first (drop), or finish it.")); return; }
     if (!SIM && CHAIN.ok === false) { say("no", T("The node is out of reach; nothing was sent.")); return; }
     RUN.busy = true; chips(); slot(F("claim, chapter {n}", { n: ch.n }));
     const k = myKey(true), amount = CLAIM_BASE + ch.n;
@@ -991,7 +1014,7 @@
     const v = SIM ? { visit: "sample", tricks: { tried: { replay: 2, forged: 1, overspend: 1, expired: 1 } }, end: now() + 600 } : WORLD.cruise.now;
     const id = "op-" + v.visit;
     if (S.ops[id]) { say("ok", F("Tonight’s op is settled already ({x}). The next ship is next Tuesday.", { x: v.visit })); return; }
-    if (RUN.busy || S.taken) { say("warn", T("Finish or drop the taken contract first; the op needs the terminal.")); return; }
+    if (RUN.busy || S.taken || S.job) { say("warn", T("Finish or drop the taken contract first; the op needs the terminal.")); return; }
     const tried = Object.keys((v.tricks && (v.tricks.tried || v.tricks.by)) || {}).filter(k => OPS[k]);
     const picks = (tried.length ? tried : ["expired", "forged", "overspend"]).slice(0, 3);
     OP.list = picks; OP.i = 0; OP.id = id; OP.end = v.end;
@@ -1175,48 +1198,333 @@
     S.booted = true; save();
   }
 
-  /* ---------- commands ---------- */
-  function help() {
+  /* ---------- the inbox: contracts that keep coming. It opens with chapter 1's end; there are always two to four
+     offers, a new one every few blocks, and an offer nobody takes lapses after a couple of hours of blocks. Each is a
+     puzzle about one part of the chain (TOPICS), answered by a real transaction built in the draft (tx, set, send):
+     a refusal for the right reason, made in the asked way, or a payment whose amount or fields solve a riddle.
+     They pay standing, never test AGRS: the crew's purse pays chapters only. ---------- */
+  const TOPICS = {
+    fee: ["Fees", "The fee is a limit you sign: at most this much may be taken. The chain’s base fee is in its rules (peek getgovernance: o9). A limit below the base fee is refused: FEE_LIMIT_TOO_LOW."],
+    height: ["Block height", "expire_at_height names the last block a payment may land in. At or behind the tip it is refused: TX_EXPIRED. Blocks are the clock that counts on this chain."],
+    clock: ["Expiry time", "expiration_time is a moment written into the signed payment. Once it has passed, the chain refuses the payment: TX_EXPIRED, whatever the block."],
+    seq: ["Sequence", "Every wallet numbers its payments: the sequence number. The chain takes only the next number, each once; any other is refused: INVALID_SEQUENCE. peek getsequence <address> shows the next."],
+    sig: ["Signature", "The signature must verify for the sender’s key, or the payment is refused: INVALID_SIGNATURE. To the chain, whoever holds the key is the wallet."],
+    payer: ["Payer", "The payer named inside a transfer must be the wallet that signed it, or it is refused: TX_INVALID. A good signature on the wrong wallet moves nothing."],
+    funds: ["Balance", "The chain checks the balance against the amount plus the fee: INSUFFICIENT_FUNDS, or TX_REJECTED when the transfer rule says no first."],
+    width: ["Amount width", "An amount is 24 bits wide here: 16,777,215 at most. 2^24 = 16,777,216 is not even read: TX_INVALID or INVALID_PARAMS."],
+    addr: ["Addresses", "An address is a public key written as 96 hex characters (0–9, a–f), each one worth 0 to 15. Lookalikes copy the ends; only the whole address is the wallet."],
+    order: ["Order of checks", "A payment wrong in two ways is refused for one of them: the node answers with the first check it fails. Which check comes first is the node’s own order; its answer shows it."],
+  };
+  const CODE_TOPIC = { FEE_LIMIT_TOO_LOW: "fee", TX_EXPIRED: "height", INVALID_SEQUENCE: "seq", INVALID_SIGNATURE: "sig", TX_INVALID: "payer", INVALID_PARAMS: "width", INSUFFICIENT_FUNDS: "funds", TX_REJECTED: "funds" };
+  const PAYS = { 1: 1, 2: 2, 3: 3, 4: 5 };
+  const DRAFT0 = () => ({ to: "drop", amount: 1, fee: null, expiry: "ok", height: "auto", signer: "you", payer: "you", seq: "next" });
+  const rnd = n => Math.floor(Math.random() * n);
+  /* the kinds of offer: t = the lowest tier that gets it; brief/hint may hold {k} {a} {b}; check(d, x) says what is wrong
+     with the draft for this contract, or null; x = { tx, base, tip } */
+  const KINDS = [
+    { k: "r-fee", t: 1, who: "qm", topic: "fee", want: ["FEE_LIMIT_TOO_LOW"], name: "Short change", brief: "Make the chain refuse a payment for its fee.", hint: "set fee 0" },
+    { k: "r-sig", t: 1, who: "qm", topic: "sig", want: ["INVALID_SIGNATURE"], name: "Wrong hand", brief: "Make the chain refuse your payment for its signature.", hint: "set signer other" },
+    { k: "r-height", t: 1, who: "look", topic: "height", want: ["TX_EXPIRED"], name: "Behind the tip", brief: "TX_EXPIRED by the block height alone: the expiry time must still be good.", hint: "set height past",
+      check: d => d.height !== "past" ? "the height deadline is not behind the tip" : d.expiry === "past" ? "the expiry time has passed too; this one wants the height alone" : null },
+    { k: "r-funds", t: 1, who: "qm", topic: "funds", want: ["INSUFFICIENT_FUNDS", "TX_REJECTED"], name: "Empty pockets", brief: "Pay the drop more than your wallet holds, but no more than a transfer can carry.", hint: "status shows your balance; set amount <a number above it>",
+      check: d => d.amount >= GIANT ? "the amount is wider than a transfer; this one wants a real amount" : null },
+    { k: "p-seq", t: 1, who: "qm", topic: "seq", want: "in", name: "Count your steps", brief: "Pay the drop your wallet’s next sequence number times {m}. The payment itself carries that number.", hint: "peek getsequence <your address>, then set amount", mk: j => { j.m = 2 + rnd(8); },
+      check: (d, x, j) => d.amount !== x.tx.sequence_number * j.m ? F("{a} is not {b} × {m}", { a: d.amount, b: x.tx.sequence_number, m: j.m }) : null },
+    { k: "p-race", t: 1, who: "look", topic: "height", want: "in", name: "Tight window", brief: "Land a payment to the drop whose own deadline (expire_at_height) is at most {m} blocks past the tip when you send it.", hint: "set height +{m}", mk: j => { j.m = 3 + rnd(4); },
+      check: (d, x, j) => typeof d.height !== "number" || d.height > j.m ? F("the deadline is not within {m} blocks of the tip", { m: j.m }) : null },
+    { k: "r-clock", t: 2, who: "look", topic: "clock", want: ["TX_EXPIRED"], name: "Stopped clock", brief: "TX_EXPIRED by the clock alone: the block-height deadline must still lie ahead.", hint: "set expiry past",
+      check: d => d.expiry !== "past" ? "the expiry time has not passed" : d.height === "past" ? "the height deadline has passed too; this one wants the clock alone" : null },
+    { k: "r-payer", t: 2, who: "qm", topic: "payer", want: ["TX_INVALID"], name: "Borrowed name", brief: "Name the drop as the payer, sign with your own key, and let the chain see through it.", hint: "set payer drop",
+      check: d => d.payer !== "drop" ? "the payer is not the drop" : d.signer !== "you" ? "sign it with your own key" : null },
+    { k: "r-seq", t: 2, who: "bosun", topic: "seq", want: ["INVALID_SEQUENCE"], name: "Yesterday’s number", brief: "A fresh payment, rightly signed, but with a sequence number your wallet has already used.", hint: "set seq old",
+      check: d => d.seq !== "old" ? "the sequence number is the next one" : d.signer !== "you" ? "sign it with your own key" : null },
+    { k: "r-width", t: 2, who: "look", topic: "width", want: ["TX_INVALID", "INVALID_PARAMS"], name: "One too wide", brief: "The smallest amount that is too wide for a transfer. Not one more.", hint: "two to the twenty-fourth",
+      check: d => d.amount !== GIANT ? "that is not the smallest amount too wide" : null },
+    { k: "p-hex", t: 2, who: "look", topic: "addr", want: "in", name: "Hidden in the address", brief: "Characters {a} to {b} of the drop’s address, counted from 1, are a number in hex. Pay the drop that number.", hint: "status shows the drop’s whole address; hex: a=10 … f=15",
+      mk: j => { for (let i = 0; i < 20; i++) { j.a = 1 + rnd(90); j.b = j.a + (j.t >= 3 ? 2 : 1); if (parseInt(DROP.slice(j.a - 1, j.b), 16) > 0) break; } },
+      check: (d, x, j) => { const n = parseInt(DROP.slice(j.a - 1, j.b), 16); return d.amount !== n ? F("{a} is not what characters {x} to {y} say", { a: d.amount, x: j.a, y: j.b }) : null; } },
+    { k: "p-fee", t: 2, who: "qm", topic: "fee", want: "in", name: "Read the rules", brief: "Pay the drop the chain’s base fee times {m}.", hint: "peek getgovernance: the base fee is o9, in hex", mk: j => { j.m = 2 + rnd(19); },
+      check: (d, x, j) => d.amount !== x.base * j.m ? F("{a} is not the base fee × {m}", { a: d.amount, m: j.m }) : null },
+    { k: "p-doors", t: 2, who: "look", topic: "addr", want: "in", name: "Three doors", brief: "Three addresses, one of them the drop. Pay 1 test AGRS to the right one: set to a, b or c. The wrong one keeps your coin.", hint: "status shows the drop; read the middle, not the ends",
+      mk: j => { j.door = rnd(3); j.mids = [0, 1, 2].map(() => Array.from({ length: 86 }, () => "0123456789abcdef"[rnd(16)]).join("")); },
+      check: d => d.to !== "drop" && d.to !== "a" && d.to !== "b" && d.to !== "c" ? "set to a, b or c" : d.amount !== 1 ? "1 test AGRS, no more" : null },
+    { k: "r-fee9", t: 3, who: "qm", topic: "fee", want: ["FEE_LIMIT_TOO_LOW"], name: "Just under", brief: "FEE_LIMIT_TOO_LOW, but the fee limit may not be 0: exactly one under the base fee.", hint: "peek getgovernance: o9 is the base fee, in hex",
+      check: (d, x) => d.fee !== x.base - 1 ? "the fee limit is not one under the base fee" : null },
+    { k: "p-tight", t: 3, who: "qm", topic: "fee", want: "in", name: "Thin margin", brief: "Land a payment to the drop with a fee limit of at most twice the base fee.", hint: "peek getgovernance, then set fee",
+      check: (d, x) => d.fee == null || d.fee > 2 * x.base ? "the fee limit is above twice the base fee" : null },
+    { k: "p-last", t: 3, who: "look", topic: "height", want: "in", name: "Where it landed", brief: "Pay the drop the last three digits of the block your last sealed payment from this terminal landed in, plus one.", hint: "history lists your sealed payments and their blocks",
+      ok: () => !!(S.hist[0] && S.hist[0].block != null), mk: j => { j.ref = Number(S.hist[0].block); },
+      check: (d, x, j) => d.amount !== (j.ref % 1000) + 1 ? F("{a} is not the right number", { a: d.amount }) : null },
+    { k: "predict", t: 3, who: "bosun", topic: "order", want: "any", name: "Two faults", brief: "The draft is wrong in two ways already: {x} and {y}. Before you send, say which answer the node will give: predict <CODE>. Right pays in full.", hint: "the node stops at the first check it fails; which runs first?",
+      mk: j => { const P = [[["fee", 0], ["payer", "drop"]], [["signer", "other"], ["expiry", "past"]], [["seq", "old"], ["fee", 0]], [["height", "past"], ["signer", "other"]], [["amount", GIANT], ["expiry", "past"]], [["payer", "drop"], ["seq", "old"]]][rnd(6)]; j.lock = P; } },
+    { k: "r-blind", t: 4, who: "bosun", topic: null, want: null, name: "Blind order", brief: "Make the chain answer {x}. No hint from me this time.", hint: null,
+      mk: j => { const C = ["FEE_LIMIT_TOO_LOW", "INVALID_SIGNATURE", "INVALID_SEQUENCE", "TX_EXPIRED", "INSUFFICIENT_FUNDS"][rnd(5)]; j.code = C; j.want = [C]; j.topic = CODE_TOPIC[C]; } },
+  ];
+  const kindOf = j => KINDS.find(x => x.k === j.k);
+  const LOCK_TEXT = { fee: "fee limit 0", payer: "the drop named as payer", signer: "a stranger’s signing key", expiry: "an expiry time in the past", seq: "a used sequence number", height: "a height deadline behind the tip", amount: "an amount of 2^24" };
+  const inboxOpen = () => chapterDone(CH[0]);
+  const tierMax = () => { const r = rep(); return r >= 35 ? 4 : r >= 12 ? 3 : r >= 4 ? 2 : 1; };
+  const jobOf = n => S.inbox.find(j => j.n === n) || null;
+  const curJob = () => (S.job ? jobOf(S.job) : null);
+  const cur = () => (S.taken ? byId(S.taken) : curJob());
+  const jname = j => "j" + j.n;
+  const fill = (s, j) => { const v = {}; for (const k of ["m", "a", "b"]) if (j[k] != null) v[k] = j[k]; if (j.lock) { v.x = T(LOCK_TEXT[j.lock[0][0]]); v.y = T(LOCK_TEXT[j.lock[1][0]]); } else if (j.code) v.x = j.code; return F(s, v); };
+  function makeJob() {
+    const max = tierMax(), have = new Set(S.inbox.map(j => j.k));
+    const pool = KINDS.filter(x => x.t <= max && !have.has(x.k) && (!x.ok || x.ok()));
+    if (!pool.length) return null;
+    const top = pool.filter(x => x.t === max), pickFrom = top.length && Math.random() < 0.5 ? top : pool, kd = pickFrom[rnd(pickFrom.length)];
+    S.jseq = (S.jseq || 0) + 1;
+    const j = { n: S.jseq, k: kd.k, t: Math.max(kd.t, Math.min(max, kd.t + rnd(2))), who: kd.who, topic: kd.topic, born: CHAIN.tip ?? 0, until: (CHAIN.tip ?? 0) + 100 + rnd(80) };
+    j.trace = { 1: 40, 2: 30, 3: 24, 4: 16 }[j.t];
+    if (kd.mk) kd.mk(j);
+    return j;
+  }
+  function jobTick(tip) {
+    if (!inboxOpen() || tip == null) return;
+    let changed = false;
+    if (!S.inboxHi) {
+      S.inboxHi = true; S.pane = "inbox"; S.nextJob = tip + 3; changed = true;
+      while (S.inbox.length < 3) { const j = makeJob(); if (!j) break; S.inbox.push(j); }
+      crew("qm", "Chapter one is behind you, so the crew trusts you with its own work. The inbox fills by itself, a contract every few blocks. Each is a puzzle about the chain, answered with a real transaction you build yourself. Clear what you can, decline what you do not want; harder work comes as your rank grows.", "glad");
+      say("sys", T("The inbox is open."), btn("inbox", "inbox"));
+    }
+    for (const j of S.inbox.filter(x => x.until < tip && S.job !== x.n)) { archive(j, "lapsed", 0); changed = true; }
+    const news = [];
+    while (S.inbox.length < 2) { const j = makeJob(); if (!j) break; S.inbox.push(j); news.push(j); }
+    if (S.inbox.length < 4 && tip >= (S.nextJob || 0)) { const j = makeJob(); if (j) { S.inbox.push(j); news.push(j); } S.nextJob = tip + 5 + rnd(6); }
+    if (news.length || changed) { save(); jobs(); instruments(); chips(); }
+    if (news.length && S.booted) {
+      snd.mail(); const j = news[news.length - 1];
+      say("sys", news.length > 1 ? F("{n} new contracts in the inbox.", { n: news.length }) : F("New contract in the inbox: {x} {t}, from the {w}.", { x: jname(j), t: kindOf(j).name, w: CREW[j.who] }), btn(F("read {x}", { x: jname(j) }), "read " + jname(j)));
+    }
+  }
+  function archive(j, out, pts, extra) {
+    S.inbox = S.inbox.filter(x => x.n !== j.n);
+    if (S.job === j.n) { S.job = null; S.deadline = null; S.span = null; S.draft = null; S.pred = null; }
+    S.arch.unshift({ n: j.n, k: j.k, t: j.t, out, pts, at: Date.now(), block: CHAIN.tip, ...(extra || {}) }); S.arch = S.arch.slice(0, 60);
+    save();
+  }
+  const parseJ = a => { const m = /^j?(\d+)$/.exec(a || ""); return m ? jobOf(+m[1]) : null; };
+  const stars = t => "▮".repeat(t) + "▯".repeat(4 - t);
+  function inboxList() {
+    if (!inboxOpen()) { say("sys", T("The inbox opens when chapter 1 is done: four contracts, then the crew sends work of its own, without end.")); return; }
+    jobTick(CHAIN.tip);
+    if (!S.inbox.length) { say("sys", T("The inbox is empty for the moment; a new contract comes within a few blocks.")); return; }
+    say("sys", F("Inbox: {n} open. Tier {t} of 4 is open to you.", { n: S.inbox.length, t: tierMax() }));
+    cols(S.inbox.map(j => [jname(j) + (S.job === j.n ? " ●" : ""), T(kindOf(j).name) + " · " + stars(j.t) + " · " + T(CREW[j.who]) + " · " + F("+{n}", { n: PAYS[j.t] }) + " · " + F("lapses at block {n}", { n: fmt(j.until) })]));
+    const j = S.inbox.find(x => S.job !== x.n) || S.inbox[0];
+    say("sys", T("read <j> opens one; accept <j> takes it; decline <j> clears it."), btn(F("read {x}", { x: jname(j) }), "read " + jname(j)));
+  }
+  function readJob(a) {
+    const j = parseJ(a) || (a ? null : curJob() || S.inbox[0]); if (!j) { say("sys", T("No such contract in the inbox. Type inbox.")); return; }
+    const kd = kindOf(j);
+    say("sys", F("{x} · {t} · tier {n} · from the {w}", { x: jname(j), t: kd.name, n: j.t, w: CREW[j.who] }));
+    crew(j.who, fill(kd.brief, j), "calm");
+    if (j.k === "p-doors") cols(["a", "b", "c"].map((x, i) => [x, doorAddr(j, i)]));
+    if (j.t <= 2 && kd.hint) say("learn", F("Hint: {x}", { x: fill(kd.hint, j) }));
+    say("sys", F("Pays +{n} standing. Trace once taken: {m} blocks.", { n: PAYS[j.t], m: j.trace }) + (j.topic ? " " + F("Topic: {x}.", { x: TOPICS[j.topic][0] }) : ""),
+      S.job === j.n ? btn("tx", "tx") : btn(F("accept {x}", { x: jname(j) }), "accept " + jname(j)), S.job === j.n ? null : btn(F("decline {x}", { x: jname(j) }), "decline " + jname(j)));
+  }
+  const doorAddr = (j, i) => (i === j.door ? DROP : DROP.slice(0, 6) + j.mids[i] + DROP.slice(-4));
+  function accept(a) {
+    const j = parseJ(a) || (a ? null : S.inbox[0]); if (!j) { say("sys", T("No such contract in the inbox. Type inbox.")); return; }
+    if (S.job === j.n) { say("sys", F("{x} is yours already. Build it: tx, set, send.", { x: jname(j) }), btn("tx", "tx")); return; }
+    if (RUN.busy) { say("warn", T("A contract is under way; wait for the chain’s answer.")); return; }
+    if (S.taken || S.job) { say("warn", T("Finish or drop the taken contract first (drop).")); return; }
+    S.job = j.n; S.draft = DRAFT0(); S.pred = null; j.hinted = j.t <= 2;
+    if (j.lock) for (const [f, v] of j.lock) S.draft[f] = v;
+    S.span = j.trace; S.deadline = CHAIN.tip != null ? CHAIN.tip + j.trace : null; save(); jobs(); instruments(); topbar(); chips();
+    say("sys", F("{x} taken: {t}.", { x: jname(j), t: kindOf(j).name }) + " " + (S.deadline != null ? F("Trace: until block {n} ({t}).", { n: fmt(S.deadline), t: inTime(j.trace) || F("{n} blocks", { n: j.trace }) }) : ""));
+    say("sys", T("Your draft is a plain payment of 1 test AGRS to the drop. Change it with set, look at it with tx, send it with send."));
+    draftShow();
+    if (j.t >= 3 && kindOf(j).hint) say("sys", T("No hint at this tier. hint gives one, for 1 point of the pay."), btn("hint", "hint"));
+    watch();
+  }
+  function decline(a) {
+    const j = parseJ(a); if (!j) { say("sys", T("decline <j>: a contract from the inbox (inbox lists them).")); return; }
+    if (S.job === j.n) { say("warn", T("That one is taken: drop it first, then decline.")); return; }
+    archive(j, "declined", 0); jobs(); instruments(); chips();
+    say("sys", F("{x} cleared from the inbox. A new one comes within a few blocks.", { x: jname(j) }));
+  }
+  function hintJob() {
+    const j = curJob(); if (!j) { say("sys", T("Take a contract from the inbox first.")); return; }
+    const kd = kindOf(j); if (!kd.hint) { say("sys", T("The Bosun gives no hints for this one.")); return; }
+    if (!j.hinted) { j.hinted = true; save(); say("sys", T("Hint taken: this contract pays 1 point less.")); }
+    say("learn", F("Hint: {x}", { x: fill(kd.hint, j) }));
+  }
+  function draftShow() {
+    const d = S.draft; if (!d) { say("sys", T("No draft: accept a contract from the inbox first.")); return; }
+    const j = curJob(), locked = new Set(((j && j.lock) || []).map(x => x[0]));
+    const L = k => (locked.has(k) ? " 🔒" : "");
     cols([
-      ["help", T("this list")],
-      ["jobs", T("the contracts on the board, in three chapters")],
-      ["take <n>", T("take contract n; the block clock starts")],
-      ["run", T("carry out the taken contract: build, sign, send, read the answer")],
-      ["back", T("take a waiting payment back (contract 11)")],
-      ["drop", T("put the taken contract back")],
-      ["claim [n]", T("claim the crew’s share at a chapter’s end (the drop pays it back); claim <n> again resends an unpaid one")],
-      ["chapter <n>", T("the chapter’s card")],
-      ["mail", T("the post from the crew")],
-      ["op", T("live ops while the Black Sequence is in port (Tuesdays)")],
-      ["case", T("this week’s case file: the pirates’ tricks, the hack of the week, two riddles")],
-      ["pick a|b · answer <n>", T("answer the case file")],
-      ["hunt · mark a|b", T("the Tracer’s dust: which address is the drop (after chapter 1)")],
-      ["status", T("node, block, trace, wallet, standing")],
-      ["peek <cmd> <hex>", T("ask the node yourself: getbalance, getsequence, gettxstatus, getretractables (after chapter 1)")],
-      ["trace <blocks>", T("set your own deadline on the taken contract (after chapter 2)")],
-      ["board", T("the players’ board: wallets by standing")],
-      ["findings", T("what this terminal saw the chain do that it must not (kept here only)")],
-      ["crew", T("who is who on board")],
-      ["feedback <text>", T("tell the crew what to make better; we read every line")],
-      ["sound on|off · ambience on|off · fx on|off · voice on|off · full · boot · clear", T("the terminal itself")],
+      ["to", (d.to === "drop" ? T("the drop") + " " + short(DROP) : d.to + " " + short(doorAddr(j, "abc".indexOf(d.to)))) + L("to")],
+      ["amount", fmt(d.amount) + " " + T("test AGRS") + L("amount")],
+      ["fee", (d.fee == null ? T("auto: 5 × the base fee") : String(d.fee)) + L("fee")],
+      ["expiry", (d.expiry === "past" ? T("two minutes ago") : T("in ten minutes")) + L("expiry")],
+      ["height", (d.height === "past" ? T("five blocks behind the tip") : d.height === "auto" ? T("1,000 blocks ahead") : F("{n} blocks past the tip", { n: d.height })) + L("height")],
+      ["signer", (d.signer === "other" ? T("a stranger’s key, made now") : T("your key")) + L("signer")],
+      ["payer", (d.payer === "drop" ? T("the drop") : T("your wallet")) + L("payer")],
+      ["seq", (d.seq === "old" ? T("a used one (next − 1)") : T("the next one")) + L("seq")],
     ]);
+    say("sys", T("set to|amount|fee|expiry|height|signer|payer|seq <value> · reset · send"), btn("send", "send"));
+  }
+  function setDraft(args) {
+    const d = S.draft, j = curJob(); if (!d || !j) { say("sys", T("No draft: accept a contract from the inbox first.")); return; }
+    const [f, v] = args;
+    if (j.lock && j.lock.some(x => x[0] === f)) { say("warn", F("{x} is locked in this contract: it is one of the two faults.", { x: f })); return; }
+    const n = v != null && /^\d+$/.test(v) ? parseInt(v, 10) : null;
+    const ok = (() => {
+      if (f === "amount" && n != null && n <= GIANT * 2) return d.amount = n, true;
+      if (f === "fee" && (v === "auto" || n != null && n < 1e6)) return d.fee = v === "auto" ? null : n, true;
+      if (f === "expiry" && (v === "past" || v === "ok")) return d.expiry = v, true;
+      if (f === "height") { const m = /^\+?(\d+)$/.exec(v || ""); if (v === "past" || v === "auto") return d.height = v, true; if (m && +m[1] >= 1 && +m[1] <= 1000) return d.height = +m[1], true; }
+      if (f === "signer" && (v === "you" || v === "other")) return d.signer = v, true;
+      if (f === "payer" && (v === "you" || v === "drop")) return d.payer = v, true;
+      if (f === "seq" && (v === "next" || v === "old")) return d.seq = v, true;
+      if (f === "to" && (v === "drop" || (j.k === "p-doors" && ["a", "b", "c"].includes(v)))) return d.to = v, true;
+      return false;
+    })();
+    if (!ok) { cols([["set amount <n>", T("whole test AGRS")], ["set fee <n>|auto", T("the fee limit you sign")], ["set expiry past|ok", T("the expiry time")], ["set height past|+<n>|auto", T("the last block it may land in")], ["set signer you|other", T("whose key signs")], ["set payer you|drop", T("who pays, inside the transfer")], ["set seq next|old", T("the sequence number")], ["set to drop" + (j.k === "p-doors" ? "|a|b|c" : ""), T("who receives")]]); return; }
+    save(); say("ok", F("{f} set.", { f }), btn("tx", "tx"), btn("send", "send"));
+  }
+  function predict(a) {
+    const j = curJob(); if (!j || j.k !== "predict") { say("sys", T("predict belongs to the contract Two faults.")); return; }
+    const c = String(a || "").toUpperCase(); if (!CODES.includes(c)) { say("sys", T("predict <CODE>, one of:") + " " + CODES.slice(0, 8).join(" · ")); return; }
+    S.pred = c; save(); say("ok", F("Prediction: {x}. Now send.", { x: c }), btn("send", "send"));
+  }
+  /* the draft's faults: what the chain must refuse whatever the contract wants */
+  const faults = (d, x) => [d.fee != null && d.fee < x.base && "fee", d.expiry === "past" && "expiry", d.height === "past" && "height", d.signer === "other" && "signer", d.payer === "drop" && "payer", d.seq === "old" && "seq", d.amount >= GIANT && "amount"].filter(Boolean);
+  async function jobSend() {
+    const j = curJob(), d = S.draft; if (!j || !d) { say("sys", T("No contract from the inbox taken. Type inbox.")); return; }
+    if (RUN.busy) { say("warn", T("Already under way.")); return; }
+    if (!B) { say("no", T("This browser cannot sign (no BLS library loaded).")); return; }
+    if (!SIM && CHAIN.ok === false) { say("no", T("The node is out of reach; nothing was sent. Try again in a minute, or switch to the simulation in the header.")); return; }
+    if (j.k === "predict" && !S.pred) { say("sys", T("Predict first: predict <CODE>. Then send."), btn("predict TX_INVALID", "predict TX_INVALID")); return; }
+    if (j.k === "p-doors" && d.to === "drop") { say("sys", T("Choose a door first: set to a, b or c.")); return; }
+    const kd = kindOf(j), want = j.want || kd.want;
+    RUN.busy = true; chips(); slot(jname(j));
+    const k = myKey(true);
+    try {
+      const { seq, tip } = await envelope(k.pk), base = await fee(), t = now();
+      if (d.seq === "old" && seq === 0) fail(T("This wallet has no used sequence number yet."));
+      const to = d.to === "drop" ? DROP : doorAddr(j, "abc".indexOf(d.to));
+      const tx = sign({ tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: d.seq === "old" ? seq - 1 : seq, expiration_time: d.expiry === "past" ? t - 120 : t + 600,
+        expire_at_height: d.height === "past" ? Math.max(1, tip - 5) : d.height === "auto" ? tip + 1000 : tip + d.height, fee_limit: String(d.fee == null ? base * 5 : d.fee),
+        operations: { "1": [[d.payer === "drop" ? DROP : k.pk, to, String(d.amount)]] } }, d.signer === "other" ? B.keygen() : k.sk);
+      const x = { tx, base, tip }, bad = faults(d, x);
+      say("step", F("signing the draft: {a} test AGRS, fee limit {b}, sequence {c}, deadline block {n}", { a: fmt(d.amount), b: tx.fee_limit, c: tx.sequence_number, n: fmt(tx.expire_at_height) }));
+      const s = await sendtx(tx);
+      if (!s.r) fail(T("No answer from the node; nothing was sent. Type send again."));
+      if (s.hash) {
+        sent(tx, s);
+        if (bad.length) {   // taken although it must be refused: a finding, kept in this browser only
+          slotFail(T("taken: a finding")); say("no", T("The chain took it. That is not how it should be."));
+          S.findings.push({ at: Date.now(), id: j.k, tx, answer: s.r }); save();
+          say("warn", T("A finding: the testnet did something it must not. The record is kept in this browser (type findings) and nowhere else. Please pass it on:"), link("/findings/" + lang(), T("how to report a finding")));
+          return;
+        }
+        say("step", T("waiting for a block …"));
+        const w = await sealed(s.hash, S.deadline, s.way);
+        if (!w.in) { say("no", F("Not sealed: {x}", { x: w.why })); if (/EXPIRED/.test(w.why) && S.deadline != null && CHAIN.tip > S.deadline) jobTraced(); return; }
+        say("ok", F("Sealed in block {n}.", { n: fmt(w.block) }), explorer(s.hash));
+        S.hist.unshift({ id: j.k, hash: s.hash, block: w.block, amount: d.amount }); S.hist = S.hist.slice(0, 20); save();
+        if (want !== "in") { say("warn", T("The payment was good, so the chain took it; this contract wanted a refusal. Look at the draft again.")); learnTopic(j.topic); return; }
+        if (j.k === "p-doors" && to !== DROP) { snd.no(); flash("bad"); say("no", T("That door was a lookalike: your coin went to a wallet that is not the drop, and it stays there. The middle of an address is where it differs.")); jobMiss(j, x); return; }
+        const why = kd.check && kd.check(d, x, j);
+        if (why) { say("warn", F("Sealed, but not what was asked: {x}.", { x: why })); learnTopic(j.topic); say("sys", T("The contract stays yours while the trace lasts.")); return; }
+        jobWin(j, { hash: s.hash, block: w.block });
+        return;
+      }
+      const c0 = codeOf(s.r);
+      snd.no(); slotFail(c0 || T("refused"));
+      say(want === "in" ? "no" : "sys", F("The chain said no in {n} ms: {x}", { n: s.ms, x: c0 || plain(s.r) }));
+      if (want === "in") { flash("bad"); say("sys", T("This contract wants a payment that lands. Nothing was spent.")); learnTopic(CODE_TOPIC[c0] || j.topic); return; }
+      if (want === "any") { const right = S.pred === c0; S.predOut = right; jobWin(j, { code: c0, predicted: S.pred }, right ? 0 : PAYS[j.t] - 1); return; }
+      if (!want.includes(c0)) { flash("bad"); say("warn", F("Refused, but this contract wants {x}.", { x: want.join(" / ") })); learnTopic(CODE_TOPIC[c0] || j.topic); return; }
+      const why = kd.check && kd.check(d, x, j);
+      if (why) { flash("bad"); say("warn", F("Right answer, but not the way asked: {x}.", { x: why })); return; }
+      flash("ok"); jobWin(j, { code: c0 });
+    } catch (e) {
+      slotFail(T("stopped"));
+      say("no", e && e.soft ? e.message : T("The node did not answer in time; nothing is lost. Type send again."), btn("send", "send"));
+    } finally { RUN.busy = false; chips(); jobs(); instruments(); topbar(); balance(); }
+  }
+  function learnTopic(t) { if (!t || !TOPICS[t]) return; S.lastTopic = t; save(); say("learn", T(TOPICS[t][1])); }
+  function jobWin(j, rec, less) {
+    const pts = Math.max(1, PAYS[j.t] - (j.t >= 3 && j.hinted ? 1 : 0) - (less || 0));
+    const before = rank();
+    S.rep = (S.rep || 0) + pts; archive(j, "settled", pts, rec);
+    snd.tension(false); snd.seal(); flash("ok"); mood(j.who, "glad");
+    if (rec.predicted) say(rec.predicted === rec.code ? "ok" : "warn", rec.predicted === rec.code ? F("Predicted {x}, and so it was.", { x: rec.code }) : F("You said {x}; the node said {y}. It stopped at another check first.", { x: rec.predicted, y: rec.code }));
+    say("ok", F("{x} settled: +{n}. Standing: {r}.", { x: jname(j), n: pts, r: rank() }));
+    learnTopic(j.topic);
+    if (rank() !== before) { snd.chapter(); crew("qm", F("New rank: {r}. Harder work comes to your inbox now.", { r: rank() }), "glad"); }
+    jobs(); instruments(); topbar(); chips(); jobTick(CHAIN.tip);
+    const nx = S.inbox[0]; if (nx) say("sys", T("Next in the inbox:"), btn(F("read {x}", { x: jname(nx) }), "read " + jname(nx)));
+  }
+  function jobMiss(j) { archive(j, "missed", 0); mood(j.who, "sour"); jobs(); instruments(); topbar(); chips(); jobTick(CHAIN.tip); }
+  function jobTraced() {
+    const j = curJob(); if (!j) return;
+    const loss = j.t >= 2 ? 1 : 0; S.rep = Math.max(0, (S.rep || 0) - loss);
+    archive(j, "traced", -loss);
+    const h = document.documentElement; h.classList.add("tr-out"); setTimeout(() => h.classList.remove("tr-out"), 2500); snd.out(); flash("bad");
+    say("no", F("Trace complete: block {n} passed. {x} is lost.", { n: fmt(CHAIN.tip), x: jname(j) })); if (loss) say("warn", T("It costs 1 point of standing."));
+    crew(j.who, "The block clock does not wait. There is more work in the inbox.", "sour");
+    jobs(); instruments(); topbar(); chips(); jobTick(CHAIN.tip);
+  }
+  function archiveList() {
+    if (!S.arch.length) { say("sys", T("The archive is empty: settled, declined and lapsed contracts land here.")); return; }
+    const OUT = { settled: "settled", declined: "declined", lapsed: "lapsed", traced: "traced", missed: "missed" };
+    cols(S.arch.slice(0, 15).map(a => ["j" + a.n, T(kindOf(a) ? kindOf(a).name : a.k) + " · " + T(OUT[a.out] || a.out) + (a.pts ? " · " + (a.pts > 0 ? "+" : "") + a.pts : "") + (a.code ? " · " + a.code : "")]));
+    const s = S.arch.filter(a => a.out === "settled").length;
+    say("sys", F("{n} settled from the inbox, {m} points.", { n: s, m: S.rep || 0 }));
+  }
+  function historyList() {
+    if (!S.hist.length) { say("sys", T("No sealed payment from this terminal yet.")); return; }
+    cols(S.hist.slice(0, 10).map(h => ["#" + fmt(h.block), F("{a} test AGRS", { a: fmt(h.amount) }) + " · " + short(h.hash)]));
+  }
+  function why(a) {
+    if (a && TOPICS[a]) { S.lastTopic = a; save(); say("learn", T(TOPICS[a][0]) + ": " + T(TOPICS[a][1])); return; }
+    if (S.lastTopic && !a) say("learn", T(TOPICS[S.lastTopic][0]) + ": " + T(TOPICS[S.lastTopic][1]));
+    cols(Object.entries(TOPICS).map(([k, v]) => [btn("why " + k, "why " + k), T(v[0])]));
+  }
+
+  /* ---------- commands ---------- */
+  /* help: every command on one screen, in groups side by side; a click on a command types it */
+  const HELP = [
+    ["Story", [["jobs", "the twelve contracts"], ["take <n>", "take one"], ["run", "build, sign, send"], ["back", "retract a payment"], ["drop", "put it back"], ["claim [n]", "the chapter’s share"], ["chapter <n>", "the chapter’s card"]]],
+    ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["why [topic]", "what just happened"], ["archive · history", "your record"]]],
+    ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail", "post from the crew"], ["crew", "who is who"]]],
+    ["Tools", [["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"]]],
+    ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · boot · clear", ""]]],
+  ];
+  function help() {
+    const g = el("div", { class: "helpg" });
+    for (const [head, rows] of HELP) {
+      const box = el("div", null, el("h4", { text: T(head) }));
+      for (const [c, d] of rows) box.append(el("p", { title: d ? c + " · " + T(d) : c }, el("button", { type: "button", class: "hc", translate: "no", text: c, onclick: () => { const i = $("cmd"); i.value = c.split(/[ ·<\[]/)[0] + (/[<\[]/.test(c) ? " " : ""); if (!/[<\[]/.test(c) && !/ · /.test(c)) run(c); else i.focus(); } }), d ? el("span", { text: T(d) }) : null));
+      g.append(box);
+    }
+    say("sys", g);
   }
   function status() {
-    const pk = myPk(), c = S.taken ? byId(S.taken) : null;
+    const pk = myPk(), c = S.taken ? byId(S.taken) : null, j = curJob();
     cols([
       [T("node"), SIM ? T("simulation, a practice node in this browser") : CHAIN.ok ? "node.tauhud.com · " + T("live") : T("out of reach")],
       [T("block"), CHAIN.tip != null ? "#" + fmt(CHAIN.tip) : "—"],
-      [T("trace"), c ? F("contract {n} until block {m}", { n: num(c), m: S.deadline != null ? fmt(S.deadline) : "…" }) : T("no contract taken")],
+      [T("trace"), c ? F("contract {n} until block {m}", { n: num(c), m: S.deadline != null ? fmt(S.deadline) : "…" }) : j ? F("{x} until block {m}", { x: jname(j), m: S.deadline != null ? fmt(S.deadline) : "…" }) : T("no contract taken")],
       [T("wallet"), pk || T("not made yet")],
       [T("drop"), DROP],
       [T("balance"), CHAIN.bal == null ? "—" : fmt(CHAIN.bal === 0 ? FAUCET : CHAIN.bal) + " " + T("test AGRS")],
-      [T("standing"), T(rank()) + " · " + F("{n} settled", { n: rep() })],
+      [T("standing"), T(rank()) + " · " + F("{n} points", { n: rep() })],
+      [T("inbox"), inboxOpen() ? F("{n} open · tier {m} of 4", { n: S.inbox.length, m: tierMax() }) : T("opens when chapter 1 is done")],
       [T("chapters"), CH.map(ch => ch.n + (S.chap[ch.n] ? " ✓" : chapterDone(ch) ? " ●" : chapterOpen(ch) ? " ○" : " ·")).join("  ")],
     ]);
   }
   function crewList() {
     cols([[T("Quartermaster"), T("hands out the contracts and keeps the ledger; the one who says no memo")], [T("Lookout"), T("reads the block clock, the chain weather and the ship’s calls; gives you the day’s number")], [T("Bosun"), T("keeps the case files and runs the live ops: what the pirates tried, what the hack of the week found")]]);
-    say("sys", T("Nobody on board is a real person. The Black Sequence is the pirate ship that tests the chain at White Rabbit Key every Tuesday; her logbook is public."), link("/cruise/" + lang(), T("cruise logbook")));
+    say("sys", T("The three of them are game characters. The players are real: everybody at a terminal like this one tests the same chain with you, and every move is a real transaction on it. The Black Sequence is the pirate ship that tests the chain at White Rabbit Key every Tuesday; her logbook is public."), link("/cruise/" + lang(), T("cruise logbook")));
   }
   async function peek(args) {
     if (!has("peek")) { say("sys", T("peek opens with chapter 1: four contracts, then the node answers you directly.")); return; }
@@ -1228,7 +1536,7 @@
   }
   function traceSet(arg) {
     if (!has("trace")) { say("sys", T("trace opens with chapter 2.")); return; }
-    const n = parseInt(arg, 10), c = S.taken ? byId(S.taken) : null;
+    const n = parseInt(arg, 10), c = cur();
     if (!c) { say("sys", T("Take a contract first; then trace <blocks> sets its deadline.")); return; }
     if (!(n >= 2 && n <= 500)) { say("sys", T("trace <blocks>: 2 to 500.")); return; }
     if (CHAIN.tip == null) { say("sys", T("The block clock has no tip yet.")); return; }
@@ -1275,10 +1583,23 @@
     if (c === "help" || c === "?") return help();
     if (c === "jobs" || c === "contracts" || c === "board" && args[0] === "jobs") { for (const ch of CH) { say("sys", F("Chapter {n}: {x}", { n: ch.n, x: T(ch.name) }) + (chapterOpen(ch) ? "" : " · " + T("locked"))); cols(ch.ids.map(id => byId(id)).map(x => [String(num(x)).padStart(2, " ") + (S.done[x.id] ? " ✓" : S.taken === x.id ? " ●" : "  "), T(x.name) + " · " + T(x.task)])); } const nx = CONTRACTS.find(y => !S.done[y.id]); return say("sys", T("take <n> takes one."), nx ? btn(F("take {n}", { n: num(nx) }), "take " + num(nx)) : null); }
     if (c === "take") { const n = parseInt(args[0], 10), x = args[0] === "next" || !args[0] ? CONTRACTS.find(y => !S.done[y.id]) : n >= 1 && n <= CONTRACTS.length ? CONTRACTS[n - 1] : byId(args[0]); return x ? take(x, args[1] === "again") : say("sys", T("take <n>: a number from the board, or take next.")); }
-    if (c === "run") return OP.list ? opGo() : carry();
+    if (c === "run") return OP.list ? opGo() : S.job ? jobSend() : carry();
+    if (c === "inbox" || c === "in") return inboxList();
+    if (c === "read" || c === "open") return readJob(args[0]);
+    if (c === "accept") return accept(args[0]);
+    if (c === "decline" || c === "delete" || c === "del") return decline(args[0]);
+    if (c === "tx" || c === "draft") return draftShow();
+    if (c === "set") return setDraft(args);
+    if (c === "reset") { if (S.draft && curJob()) { const j = curJob(); S.draft = DRAFT0(); if (j.lock) for (const [f, v] of j.lock) S.draft[f] = v; save(); return draftShow(); } return say("sys", T("No draft: accept a contract from the inbox first.")); }
+    if (c === "send") return S.job ? jobSend() : say("sys", T("No contract from the inbox taken. Type inbox."));
+    if (c === "predict") return predict(args[0]);
+    if (c === "hint") return hintJob();
+    if (c === "why" || c === "learn") return why(args[0]);
+    if (c === "archive") return archiveList();
+    if (c === "history" || c === "hist") return historyList();
     if (c === "go") return opGo();
     if (c === "back" || c === "retract") return back();
-    if (c === "drop" || c === "abort") { if (OP.list) { OP.list = null; chips(); return say("sys", T("The op is put down.")); } if (!S.taken) return say("sys", T("No contract taken.")); if (RUN.busy) return say("warn", T("A contract is under way; wait for the chain’s answer.")); S.taken = null; S.deadline = null; S.span = null; RUN.ret = S.ret = null; save(); jobs(); instruments(); topbar(); chips(); return say("sys", T("Back on the board.")); }
+    if (c === "drop" || c === "abort") { if (OP.list) { OP.list = null; chips(); return say("sys", T("The op is put down.")); } if (S.job && !RUN.busy) { const x = "j" + S.job; S.job = null; S.deadline = null; S.span = null; S.draft = null; S.pred = null; save(); jobs(); instruments(); topbar(); chips(); return say("sys", F("{x} is back in the inbox.", { x })); } if (!S.taken) return say("sys", T("No contract taken.")); if (RUN.busy) return say("warn", T("A contract is under way; wait for the chain’s answer.")); S.taken = null; S.deadline = null; S.span = null; RUN.ret = S.ret = null; save(); jobs(); instruments(); topbar(); chips(); return say("sys", T("Back on the board.")); }
     if (c === "claim") { if (/^\d+$/.test(args[0] || "") && !/^[123]$/.test(args[0])) return say("warn", T("Chapters are 1, 2 and 3.")); return claim(/^[123]$/.test(args[0] || "") ? +args[0] : 0, args.includes("again")); }
     if (c === "chapter" || c === "ch") { const ch = CH[parseInt(args[0], 10) - 1] || CH.find(x => !chapterDone(x)) || CH[2]; return chapterCard(ch); }
     if (c === "mail" || c === "post") return mailOpen();
@@ -1309,8 +1630,10 @@
     const next = CONTRACTS.find(c => !S.done[c.id]), claimable = CH.find(ch => chapterDone(ch) && !S.chap[ch.n]);
     if (OP.list) return btn("go", "go");
     if (S.taken) return RUN.ret && S.taken === "wayback" ? btn("back", "back") : btn("run", "run");
+    if (S.job) return btn("send", "send");
     if (claimable) return btn("claim", "claim");
     if (next) return btn(F("take {n}", { n: num(next) }), "take " + num(next));
+    if (S.inbox.length) return btn(F("read {x}", { x: jname(S.inbox[0]) }), "read " + jname(S.inbox[0]));
     return btn("case", "case");
   }
   function nextStep() {
@@ -1318,8 +1641,10 @@
     if (OP.list) say("sys", T("An op is open: type go to send the next trick."), nextChip());
     else if (c && RUN.ret && c.id === "wayback") say("sys", T("Your payment waits in escrow: type back to take it back before the release."), nextChip());
     else if (c) say("sys", F("Contract {n} is yours: type run to carry it out.", { n: num(c) }), nextChip());
+    else if (curJob()) say("sys", F("{x} is yours: tx shows the draft, set changes it, send sends it.", { x: jname(curJob()) }), btn("tx", "tx"), nextChip());
     else if (claimable) say("sys", F("Chapter {n} is done: type claim, and the drop pays the crew’s share back.", { n: claimable.n }), nextChip());
     else if (next) say("sys", F("Take the next contract: take {n}. Then run.", { n: num(next) }), nextChip());
+    else if (S.inbox.length) say("sys", T("The story board is clear; the inbox keeps coming. Read one, accept it, build the draft, send."), nextChip());
     else say("sys", T("The board is clear. The case file (case) and the live ops on Tuesdays (op) are what is left; the hunt (hunt) once the Tracer has found you."), nextChip());
   }
   const run = line => exec(line);
@@ -1330,11 +1655,15 @@
     const list = [["help", "help"]];
     if (OP.list) { if (!RUN.busy) list.push(["go", "go", true]); }
     else if (S.taken) { if (RUN.ret && S.taken === "wayback") list.push(["back", "back", true]); else if (!RUN.busy) list.push(["run", "run", true]); }
+    else if (S.job) { if (!RUN.busy) list.push(["send", "send", true]); list.push(["tx", "tx"]); if (curJob() && curJob().k === "predict" && !S.pred) list.push(["predict …", "predict"]); if (curJob() && !curJob().hinted) list.push(["hint", "hint"]); }
     else if (claimable) list.push([T("claim"), "claim", true]);
     else if (next) list.push([F("take {n}", { n: num(next) }), "take " + num(next), true]);
+    else if (S.inbox.length) list.push([F("read {x}", { x: jname(S.inbox[0]) }), "read " + jname(S.inbox[0]), true]);
+    if (inboxOpen()) list.push([S.inbox.length ? F("inbox {n}", { n: S.inbox.length }) : T("inbox"), "inbox"]);
     if (HUNT.data) list.push(["mark a", "mark a"], ["mark b", "mark b"]);
     else if (CASE.data && !S.cases[CASE.data.id]) list.push(["pick a", "pick a"], ["pick b", "pick b"]);
     list.push(["jobs", "jobs"], ["status", "status"], ["case", "case"]);
+    if (S.lastTopic) list.push(["why", "why"]);
     if (shipIn() && !OP.list && !SIM) list.push(["op", "op", true]);
     if (S.mail.some(m => !m.read && m.due <= (CHAIN.tip ?? 0))) list.push([T("mail"), "mail"]);
     box.replaceChildren(...list.map(([t, cmd, go]) => el("button", { type: "button", class: go ? "go" : "", text: t, onclick: () => { run(cmd); $("cmd").focus({ preventScroll: true }); } })));
@@ -1349,6 +1678,7 @@
     input.addEventListener("keydown", e => { if (e.key.length === 1) snd.key(); if (e.key === "ArrowUp" && hist.length) { hi = Math.max(0, hi - 1); input.value = hist[hi]; e.preventDefault(); } else if (e.key === "ArrowDown") { hi = Math.min(hist.length, hi + 1); input.value = hist[hi] || ""; e.preventDefault(); } });
     $("mtabs").addEventListener("click", e => { const b = e.target.closest("button[data-pane]"); if (!b) return; for (const x of $("mtabs").querySelectorAll("button")) x.classList.toggle("on", x === b); const map = { jobs: "paneJobs", term: "paneTerm", stat: "paneStat" }; for (const k in map) $(map[k]).classList.toggle("show", k === b.dataset.pane); });
     $("screenWrap").addEventListener("click", e => { if (!e.target.closest("a") && !e.target.closest("button") && !window.getSelection().toString()) input.focus({ preventScroll: true }); });
+    $("ptabs").addEventListener("click", e => { const b = e.target.closest("button[data-p]"); if (!b) return; S.pane = b.dataset.p; save(); jobs(); });
     $("mailBtn").addEventListener("click", () => run("mail")); $("mailClose").addEventListener("click", () => $("mailWin").classList.remove("show"));
     $("sndBtn").addEventListener("click", () => { S.snd = !S.snd; save(); topbar(); if (S.snd) { snd.wake(); snd.ok(); } else snd.ambience(); });
     document.addEventListener("pointerdown", () => snd.wake(), { once: true }); $("fsBtn").addEventListener("click", () => full());
@@ -1367,6 +1697,7 @@
     else { say("sys", F("{n} of {m} contracts settled before. Standing: {r}.", { n: done, m: CONTRACTS.length, r: T(rank()) })); crew("qm", "Back aboard. The board remembers you; so does the chain.", "calm"); }
     if (S.taken === "wayback" && S.ret && S.ret.release > now() + 30) { RUN.ret = S.ret; crew("bosun", F("Your 50 test AGRS still wait in escrow ({h}), release at {t}. Type back.", { h: short(S.ret.id), t: clock(S.ret.release) })); }
     else if (S.taken) { const c = byId(S.taken); if (c && c.id !== "wayback") say("sys", F("Contract {n} is still yours: {t}. Type run.", { n: num(c), t: T(c.name) }), btn("run", "run")); else { S.taken = null; S.deadline = null; S.ret = null; save(); } }
+    if (S.job) { const j = curJob(); if (j) say("sys", F("{x} is still yours: {t}. tx shows the draft, send sends it.", { x: jname(j), t: T(kindOf(j).name) }), btn("tx", "tx"), btn("send", "send")); else { S.job = null; S.draft = null; S.deadline = null; save(); } }
     const claimable = CH.find(ch => chapterDone(ch) && !S.chap[ch.n]);
     if (claimable) say("sys", F("Chapter {n} is done and its share unclaimed.", { n: claimable.n }), btn("claim", "claim"));
     else if (!done) say("sys", T("Type help, or click:"), btn("take 1", "take 1"), el("span", { class: "cur" }));
