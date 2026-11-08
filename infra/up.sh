@@ -53,6 +53,8 @@
 #              up crier      the posting service (alerts) rebuilt with the code just pulled and Caddy given /island/*, the
 #                            node left alone, safe any time; then the island picture the posts carry, made from the live
 #                            painting, to look at; up crier status  only the picture made anew
+#              up cost       what the site's tools were paid, read from their receipts by mail (nothing rebuilt but that
+#                            service, the node left alone); up cost gemini 10  a payment by hand; up cost mail  the mailbox
 #              up owner      the same, then a one-time link: open it in your Telegram, and the news line's watchtower
 #                            warns you there privately (never on the channel); up owner test  sends you one test message
 set -e
@@ -365,6 +367,37 @@ print("preview: " + str(alerts.island_picture(alerts.island_card(r), "preview.jp
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
+# what the site's tools were paid (alerts/receipts.py, the costs service; tauhud.com/donate/ shows it), the node left
+# alone, safe any time: up cost  the service started with the code just pulled and Caddy given costs-paid.json, then one
+# read of the receipts; up cost mail  asks for the mailbox and its app password once (ssh -t), writes them to .env;
+# up cost gemini 10 [EUR] [2026-11-08]  a payment by hand (its receipt replaces it later); up cost drop <id>  one taken off
+if [ "${1:-}" = "cost" ] || [ "${1:-}" = "costs" ]; then
+  if [ "${2:-}" = "mail" ]; then
+    [ -t 0 ] || { echo "needs a terminal: ssh -t root@node.tauhud.com \"cd /opt/tau-command-hud && sh infra/up.sh cost mail\""; exit 2; }
+    printf "Gmail address the receipts go to: "; read -r U
+    printf "App password (16 letters, https://myaccount.google.com/apppasswords; nothing shows while typing): "
+    stty -echo; read -r P; stty echo; echo
+    P=$(printf %s "$P" | tr -d ' ')
+    [ -n "$U" ] && [ -n "$P" ] || { echo "nothing written"; exit 2; }
+    touch .env; sed -i '/^COSTS_IMAP_USER=/d; /^COSTS_IMAP_PASSWORD=/d' .env
+    printf 'COSTS_IMAP_USER=%s\nCOSTS_IMAP_PASSWORD=%s\n' "$U" "$P" >> .env; chmod 600 .env
+    echo "written to infra/.env"
+  fi
+  docker compose up -d --build --no-deps costs >/dev/null 2>&1 || docker compose up -d --build --no-deps costs
+  if [ -z "${2:-}" ] || [ "${2:-}" = "mail" ]; then
+    docker compose up -d --no-deps --force-recreate caddy >/dev/null 2>&1 || true
+  fi
+  case "${2:-}" in
+    drop) shift 2; docker compose exec -T costs python receipts.py drop "$@" ;;
+    ""|mail|check) docker compose exec -T costs python receipts.py check 2>&1 | grep -v " INFO " | grep -v "^costs:\|^         " || true ;;
+    *) shift; docker compose exec -T costs python receipts.py add "$@" ;;
+  esac
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T costs python receipts.py line
+  curl -s -o /dev/null -w "         https://node.tauhud.com/costs-paid.json answers %{http_code}\n" https://node.tauhud.com/costs-paid.json || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 # the node following IDNI tau-testnet main by itself (follow/idni_follow.py, a systemd timer every 30 min that every up
 # installs): up follow  its state and last log lines, up follow now  one check at once (in the background),
 # up follow off  stops following (the node stays on the commit it runs), up follow on  starts again; nothing rebuilt
@@ -588,6 +621,8 @@ python3 rabbit-art/paint.py usage 2>/dev/null | tee -a "$NOTE" || true
 # what the Anthropic API cost this month (blog drafts, IDNI news and daily post, troll box check), measured at every
 # answer by alerts/ai_meter.py (tokens x Anthropic's list price; the bill itself: platform.claude.com/settings/billing)
 docker compose exec -T alerts python ai_meter.py line 2>/dev/null | tee -a "$NOTE" || true
+# what the site's tools were paid, read from their receipts (alerts/receipts.py; up cost for more)
+docker compose exec -T costs python receipts.py line 2>/dev/null | tee -a "$NOTE" || true
 # Kling's clips this month (alerts/kling.py; KLING_MONTH_CAP in .env, default 30 clips)
 docker compose exec -T blog python kling.py line 2>/dev/null | tee -a "$NOTE" || true
 # a new painted island, only when asked for: up island
@@ -600,4 +635,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up cost, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
