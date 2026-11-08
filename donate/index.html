@@ -152,8 +152,10 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
         <div class="sum"><span>Running costs, not counting time</span><b id="costSum"></b></div>
         <p class="fine" id="costNote">Amounts as billed, rounded, each in the currency of its bill. Further items are added here once their bills are in.</p>
         <div id="oneoff" hidden>
-          <h2 class="sub2">Single purchases <span class="n">recent</span></h2>
+          <h2 class="sub2">Paid so far <span class="n">newest first</span></h2>
           <ul class="rows" id="oneoffRows"></ul>
+          <div class="sum"><span>Paid in all, not counting time</span><b id="paidSum"></b></div>
+          <p class="fine">Top-ups and bills of the tools, as billed. Our server reads them from the receipts as they come in.</p>
         </div>
         <p class="fine">Work on the site is counted rather than claimed: <span id="effort">changes pushed to the public repository, counted live from GitHub</span>. <a href="/#updates">Update log ›</a></p>
       </section>
@@ -189,9 +191,18 @@ const cost = (n, c) => new Intl.NumberFormat(c === "USD" ? "en-US" : L === "en" 
   const sums = {}; known.forEach(c => { sums[c.cur] = (sums[c.cur] || 0) + c.amount; });   // bills in different currencies are added up per currency, never converted
   $("costSum").textContent = G("about {v} a month", { v: Object.entries(sums).map(([c, n]) => cost(n, c)).join(" + ") });
   $("costNote").hidden = known.length === COSTS.length;
-  /* single purchases (image credits and the like), newest first, each with its date; not part of the monthly sum */
-  const once = ONE.filter(c => typeof c.amount === "number" && /^\d{4}-\d{2}-\d{2}$/.test(c.on || "")).sort((a, b) => b.on.localeCompare(a.on));
-  once.forEach(c => { const e = li(c.t, c.d, cost(c.amount, c.cur)); e.querySelector("small").textContent = new Date(c.on + "T12:00:00Z").toLocaleDateString(L === "en" ? "en-GB" : L, { day: "numeric", month: "short", year: "numeric" }) + " · " + T(c.d); $("oneoffRows").append(e); });
+  /* single payments (image credits, voices, clips and the like), newest first, each with its date; not part of the monthly
+     sum (the five newest listed, the sum counts all): the ones in costs.json and the ones our server reads from the receipts (node.tauhud.com/costs-paid.json, alerts/
+     receipts.py); the same payment in both (amount and currency equal, at most 3 days apart) is shown once */
+  let PAID = [];
+  try { const r = await fetch("https://node.tauhud.com/costs-paid.json", { cache: "no-store" }); if (r.ok) PAID = (await r.json()).items || []; } catch (e) {}
+  const ok = c => typeof c.amount === "number" && c.amount > 0 && /^[A-Z]{3}$/.test(c.cur || "") && /^\d{4}-\d{2}-\d{2}$/.test(c.on || "") && typeof c.t === "string";
+  const near = (a, b) => Math.abs(new Date(a.on) - new Date(b.on)) <= 3 * 86400000;
+  PAID = PAID.filter(ok);
+  const once = PAID.concat(ONE.filter(ok).filter(c => !PAID.some(p => p.cur === c.cur && Math.abs(p.amount - c.amount) < 0.01 && near(p, c)))).sort((a, b) => b.on.localeCompare(a.on));
+  once.slice(0, 5).forEach(c => { const e = li(c.t, c.d, cost(c.amount, c.cur)); e.querySelector("small").textContent = new Date(c.on + "T12:00:00Z").toLocaleDateString(L === "en" ? "en-GB" : L, { day: "numeric", month: "short", year: "numeric" }) + " · " + T(c.d); $("oneoffRows").append(e); });
+  const paid = {}; once.forEach(c => { paid[c.cur] = Math.round(((paid[c.cur] || 0) + c.amount) * 100) / 100; });
+  $("paidSum").textContent = Object.entries(paid).map(([c, n]) => cost(n, c)).join(" + ");
   $("oneoff").hidden = !once.length;
 })();
 /* copy + wallet links (EIP-681: an Ethereum wallet app opens with the address filled in; AGRS as a token transfer) */

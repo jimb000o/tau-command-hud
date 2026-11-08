@@ -10,13 +10,13 @@
 		reverse_proxy checker:8090
 	}
 	# Proposal tracker data, the Atom feed, the weekly recap images (alerts/alerts.py),
-	# the donation list read by About (alerts/donations.py), the build pulse (alerts/devpulse.py) and the blog's
+	# the donation list read by About (alerts/donations.py), what the site's tools were paid (alerts/receipts.py), the build pulse (alerts/devpulse.py) and the blog's
 	# articles, unlisted drafts, pictures and link-preview pages (alerts/blog.py), and the weekly report for IDNI
 	# as unlisted pages with the pre-filled issue link (alerts/idni_report.py), and Tau today for AI assistants
 	# (alerts/knowledge.py: sourced facts, live numbers, IDNI's latest work; read by tauhud.com/facts/ and llms.txt), and the
 	# island painting the game shows now, as the posts carry it (alerts/island_pic.py: /island/today.jpg, /island/crier.jpg), and the island alive with its mask, and Kling's
 	# drafts to look at (alerts/kling.py, kling_island.py: /kling/island.json, /kling/*.mp4, /kling/drafts/*).
-	@alerts path /proposals.json /feed.xml /recap/* /donations.json /devpulse.json /blog/posts.json /blog/drafts/* /blog/img/* /blog/a/* /idni-report/* /tau-today.md /tau-today.json /island/* /kling/*
+	@alerts path /proposals.json /feed.xml /recap/* /donations.json /costs-paid.json /devpulse.json /blog/posts.json /blog/drafts/* /blog/img/* /blog/a/* /idni-report/* /tau-today.md /tau-today.json /island/* /kling/*
 	handle @alerts {
 		root * /srv/alerts
 		header Access-Control-Allow-Origin *
