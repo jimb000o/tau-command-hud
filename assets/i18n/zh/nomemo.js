@@ -784,5 +784,14 @@ TauI18n.add({ strings: {
   "Rule one on this ship: no memo. A payment is from, to, amount, signed; if you have something to say, say it in the amount. Take the first contract.": "这条船的第一条规矩：没有备注。一笔付款就是付款方、收款方、金额，再加签名；有话要说，就用金额来说。接下第一份合约。",
   "Eight more after these": "后面还有八份",
   "chapters 2 and 3, then an inbox of puzzles without end": "第 2 章和第 3 章，然后是没有尽头的谜题收件箱",
-  "First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right.": "第一份完成。仪表现在打开了：右侧是区块、追踪、钱包、余额和你的声望。"
+  "First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right.": "第一份完成。仪表现在打开了：右侧是区块、追踪、钱包、余额和你的声望。",
+  "The last move was just now.": "上一步就在刚才。",
+  "The last move was {n} min ago.": "上一步在 {n} 分钟前。",
+  "The last move was {n} h ago.": "上一步在 {n} 小时前。",
+  "The last move was {n} days ago.": "上一步在 {n} 天前。",
+  "{n} wallets paid the crew’s drop in the last 24 hours, {m} in the last hour.": "过去 24 小时有 {n} 个钱包向船员的投递点付过款，过去一小时有 {m} 个。",
+  "You are wallet number {n} to pay the crew’s drop. The others play the same chain with you.": "你是第 {n} 个向船员投递点付款的钱包。其他人和你在同一条链上玩。",
+  "Wallet number {n} to pay the drop.": "第 {n} 个向投递点付款的钱包。",
+  "{n} today · {m} this hour": "今天 {n} · 本小时 {m}",
+  "practice board": "练习看板"
 } });

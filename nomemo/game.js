@@ -312,9 +312,9 @@
         }, 9000);
       },
       get(path) {
-        if (path === "") return { simulated: true, enabled: true, tracer: true, drop: DROP, share: SHARE, board: { wallets: 7, ranks: { stowaway: 2, deckhand: 2, rigger: 1, navigator: 1, "quartermaster’s mate": 1 }, claims: [4, 2, 1] } };
+        if (path === "") return { simulated: true, enabled: true, tracer: true, drop: DROP, share: SHARE, board: { wallets: 7 + (S.done.mark ? 1 : 0), ranks: { stowaway: 2, deckhand: 2, rigger: 1, navigator: 1, "quartermaster’s mate": 1 }, claims: [4, 2, 1], day: 3 + (S.done.mark ? 1 : 0), hour: 1 + (S.done.mark ? 1 : 0), now: Math.floor(Date.now() / 1000), last_move: Math.floor(Date.now() / 1000) - (S.done.mark ? 20 : 240) } };
         const m = /^\/wallet\/([0-9a-f]{96})$/.exec(path); if (!m) return null;
-        const x = w(m[1]); return { wallet: m[1], claims: x.claims, dust: x.dust, drop: DROP };
+        const x = w(m[1]); return { wallet: m[1], claims: x.claims, dust: x.dust, drop: DROP, nth: Object.keys(x.claims).length || S.done.mark ? 8 : null };
       },
     };
   })();
@@ -711,7 +711,7 @@
       (() => { const r = row(T("Standing"), "", nr ? F("{n} points · {m} more to {x}", { n: rep(), m: nr[0] - rep(), x: nr[1] }) : F("{n} points · the top of the ladder", { n: rep() }), "rk"); const b = r.querySelector("b"); b.classList.add("rank"); if (badge) b.append(badge); b.append(T(rank())); return r; })(),
       row(T("Inbox"), inboxOpen() ? (S.job ? F("{x} taken", { x: "j" + S.job }) : F("{n} open", { n: S.inbox.length })) : T("closed"), inboxOpen() ? F("tier {n} of 4 · {m} settled", { n: tierMax(), m: S.arch.filter(a => a.out === "settled").length }) : T("opens when chapter 1 is done")),
       (() => { const r = row(T("Gear"), "", null); r.querySelector("b").remove(); r.append(gear); return r; })(),
-      row(T("Board"), bd ? F("{n} wallets", { n: bd.wallets || 0 }) : "—", bd ? Object.entries(bd.ranks || {}).filter(([, n]) => n).map(([k, n]) => T(k) + " " + n).join(" · ") || T("nobody yet") : T("wallets, not people; read from the server when it is there")),
+      row(T("Board"), bd ? F("{n} wallets", { n: bd.wallets || 0 }) : "—", bd ? [bd.day != null ? F("{n} today · {m} this hour", { n: bd.day, m: bd.hour || 0 }) : "", Object.entries(bd.ranks || {}).filter(([, n]) => n).map(([k, n]) => T(k) + " " + n).join(" · ")].filter(Boolean).join(" · ") || T("nobody yet") : T("wallets, not people; read from the server when it is there")),
     );
   }
   async function balance() { const pk = myPk(); if (!pk) return; const b = await ask("getbalance " + pk); if (b && b.status === "ok") { CHAIN.bal = Number((b.data || {}).balance) || 0; instruments(); } }
@@ -769,7 +769,7 @@
     S.done[c.id] = { at: Date.now(), ...rec }; S.taken = null; S.deadline = null; S.span = null; save(); jobs(); instruments(); topbar();
     snd.tension(false); snd.seal(); snd.say("v-sealed"); flash("ok"); mood(c.who, "glad");
     say("ok", F("Contract {n} settled. Standing: {r}.", { n: num(c), r: rank() }));
-    if (Object.keys(S.done).length === 1 && !again) say("sys", T("First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right."));
+    if (Object.keys(S.done).length === 1 && !again) { say("sys", T("First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right.")); youAre(); }
     say("learn", T(c.learn));
     if (again) { chips(); return; }
     post(c.who, c.after, 1 + Math.floor(Math.random() * 2));
@@ -1633,6 +1633,22 @@
     say("sys", F("Trace set: until block {n} ({t}).", { n: fmt(S.deadline), t: inTime(n) || F("{n} blocks", { n }) }));
     if (n <= 3) crew("look", "Three blocks or fewer. Brave. The chain will not wait for your fingers.", "glad");
   }
+  /* the other players: how many wallets paid the drop lately (GET /nomemo board.day/hour/last_move, kept by the server) */
+  function lastMove(b) {
+    if (!b || !b.last_move) return null;
+    const sec = Math.max(0, (b.now || Date.now() / 1000) - b.last_move);
+    return sec < 90 ? T("The last move was just now.") : sec < 3600 ? F("The last move was {n} min ago.", { n: Math.round(sec / 60) }) : sec < 86400 ? F("The last move was {n} h ago.", { n: Math.round(sec / 3600) }) : F("The last move was {n} days ago.", { n: Math.round(sec / 86400) });
+  }
+  function crowdLine(b) {
+    if (!b || b.day == null) return null;
+    return F("{n} wallets paid the crew’s drop in the last 24 hours, {m} in the last hour.", { n: b.day, m: b.hour || 0 }) + (lastMove(b) ? (/lang=(zh|ja)/.test(lang()) ? "" : " ") + lastMove(b) : "");
+  }
+  async function youAre() {
+    const pk = myPk(); if (!pk) return;
+    BOARD.at = 0; const d = await boardLoad(), w = await serverInfo("/wallet/" + pk);
+    if (w && w.nth) say("sys", F("You are wallet number {n} to pay the crew’s drop. The others play the same chain with you.", { n: w.nth }));
+    const l = crowdLine(d && d.board); if (l) say("sys", l);
+  }
   async function board() {
     const d = await boardLoad();
     if (!d || !d.board) { say("sys", T("The board is on the server; it is out of reach right now.")); return; }
@@ -1640,7 +1656,9 @@
     snd.board(); say("sys", F("The players’ board: {n} wallets have paid the drop. Wallets, not people; nobody is named.", { n: b.wallets || 0 }));
     cols(Object.entries(b.ranks || {}).map(([k, n]) => [T(k), String(n)]));
     if (b.claims) say("sys", F("Chapters claimed: {a} · {b} · {c}", { a: b.claims[0] || 0, b: b.claims[1] || 0, c: b.claims[2] || 0 }));
-    say("sys", F("You: {x}.", { x: T(rank()) }));
+    const l = crowdLine(b); if (l) say("sys", l);
+    const w = myPk() ? await serverInfo("/wallet/" + myPk()) : null;
+    say("sys", F("You: {x}.", { x: T(rank()) }) + (w && w.nth ? " " + F("Wallet number {n} to pay the drop.", { n: w.nth }) : ""));
   }
   function findings() {
     if (!S.findings.length) { say("sys", T("Nothing. Every refusal so far was the chain doing its job.")); return; }
@@ -1787,6 +1805,7 @@
     else { setState(false); say("warn", T("The node is out of reach from here (a blocker, a VPN, a restart). The board can be read; contracts wait until it answers. The header switch opens the simulation.")); }
     say("sys", pk ? F("your wallet {h}", { h: short(pk) }) + (CHAIN.bal != null ? " · " + fmt(CHAIN.bal === 0 ? FAUCET : CHAIN.bal) + " " + T("test AGRS") : "") : T("no test wallet yet: one is made in this browser at your first contract"));
     const done = Object.keys(S.done).length;
+    { const d = await Promise.race([boardLoad(), new Promise(r => setTimeout(() => r(null), 2500))]); const l = crowdLine(d && d.board); if (l) say("sys", (SIM ? T("practice board") + " · " : "") + l); }
     if (!done) crew("qm", "Rule one on this ship: no memo. A payment is from, to, amount, signed; if you have something to say, say it in the amount. Take the first contract.", "calm");
     else { say("sys", F("{n} of {m} contracts settled before. Standing: {r}.", { n: done, m: CONTRACTS.length, r: T(rank()) })); crew("qm", "Back aboard. The board remembers you; so does the chain.", "calm"); }
     if (S.taken === "wayback" && S.ret && S.ret.release > now() + 30) { RUN.ret = S.ret; crew("bosun", F("Your 50 test AGRS still wait in escrow ({h}), release at {t}. Type back.", { h: short(S.ret.id), t: clock(S.ret.release) })); }

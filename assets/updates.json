@@ -2705,5 +2705,10 @@
     "tag": "No Memo",
     "on": "2026-11-08",
     "html": "No Memo: a first visit now opens with a short card that says what the game is (a hacker game on Tau Testnet Alpha, every contract a real transaction, everybody on the same chain, no setup, what you earn) with First contract, Tutorial or just look. Until the first contract settles the screen stays calm: chapter 1 only and no instrument panel; the contract icons in the cabin are smaller."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-08",
+    "html": "No Memo: you see the other players now. The start shows how many wallets paid the crew’s drop in the last 24 hours and the last hour and when the last move was; after your first contract you learn which wallet number you are; board and the Board instrument show the same. Wallets are counted, nobody is named."
   }
 ]

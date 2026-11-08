@@ -784,5 +784,14 @@ TauI18n.add({ strings: {
   "Rule one on this ship: no memo. A payment is from, to, amount, signed; if you have something to say, say it in the amount. Take the first contract.": "この船の第一の掟：メモはなし。支払いは送り手、受け手、金額、そして署名だけ。言いたいことがあるなら金額で言え。最初の契約を取れ。",
   "Eight more after these": "この後にあと八つ",
   "chapters 2 and 3, then an inbox of puzzles without end": "第 2 章と第 3 章、その後は終わりのないパズルの受信箱",
-  "First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right.": "一つ目完了。計器が開いた：右側にブロック、追跡、ウォレット、残高、そしてお前の評判。"
+  "First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right.": "一つ目完了。計器が開いた：右側にブロック、追跡、ウォレット、残高、そしてお前の評判。",
+  "The last move was just now.": "最後の一手はたった今。",
+  "The last move was {n} min ago.": "最後の一手は {n} 分前。",
+  "The last move was {n} h ago.": "最後の一手は {n} 時間前。",
+  "The last move was {n} days ago.": "最後の一手は {n} 日前。",
+  "{n} wallets paid the crew’s drop in the last 24 hours, {m} in the last hour.": "過去 24 時間で {n} 個のウォレットがクルーのドロップに支払った。直近 1 時間では {m} 個。",
+  "You are wallet number {n} to pay the crew’s drop. The others play the same chain with you.": "お前はクルーのドロップに支払った {n} 番目のウォレットだ。他の者たちも同じチェーンで一緒に遊んでいる。",
+  "Wallet number {n} to pay the drop.": "ドロップに支払った {n} 番目のウォレット。",
+  "{n} today · {m} this hour": "今日 {n} · この 1 時間 {m}",
+  "practice board": "練習ボード"
 } });
