@@ -2649,7 +2649,7 @@
   {
     "tag": "No Memo",
     "on": "2026-11-08",
-    "html": "No Memo: claim takes the lowest finished chapter first (the hints name that one, and the hunt opens with chapter 1); claim <n> picks a chapter, claim <n> again resends a claim the purse has not paid."
+    "html": "No Memo: claim takes the lowest finished chapter first (the hints name that one, and the hunt opens with chapter 1); claim &lt;n&gt; picks a chapter, claim &lt;n&gt; again resends a claim the purse has not paid."
   },
   {
     "tag": "In numbers",
