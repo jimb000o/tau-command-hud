@@ -228,6 +228,16 @@ html.tr-out .edge { opacity: 1; box-shadow: inset 0 0 90px rgba(255,77,109,.5); 
 .post li { padding: 8px 0; border-bottom: 1px solid var(--line); }
 .post li b { color: var(--mint); } .post li small { color: var(--dim); margin-left: 8px; }
 .post li.new { box-shadow: inset 2px 0 0 var(--ok); padding-left: 8px; }
+#mailList { max-height: min(60vh, 500px); overflow-y: auto; }
+.post li .mh { display: flex; gap: 8px; align-items: baseline; cursor: pointer; min-height: 28px; }
+.post li .mh .ms { flex: 1; min-width: 0; color: var(--text); }
+.post li .mh em { font-style: normal; font-size: 10.5px; color: var(--ok); border: 1px solid var(--ok); border-radius: 9px; padding: 0 6px; white-space: nowrap; }
+.post li .mh small { margin-left: 0; white-space: nowrap; }
+.post li.new .mh .ms { font-weight: 600; }
+.post li .mb { display: none; }
+.post li.open .mb { display: block; }
+.post li .mb p { margin: 6px 0 0; }
+.post li .ma { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 html.nm-full, html.nm-full body { background: #000; }
 html.nm-full .wrap { max-width: none; } html.nm-full .wrap > header, html.nm-full .tnav, html.nm-full .tabbar, html.nm-full .tnav-spacer, html.nm-full .tb-pill, html.nm-full .fb-fab, html.nm-full footer { display: none !important; }
 @media (prefers-reduced-motion: reduce) { .edge, .term, .top .blk b { animation: none !important; } }

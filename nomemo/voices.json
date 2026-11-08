@@ -96,6 +96,14 @@
   "text": "Made the block. Twelve of twelve: the story is told. Claim the crew’s share; the inbox keeps bringing work, harder as your rank grows, and on a Tuesday evening the ship is in for the live ops."
  },
  {
+  "who": "bosun",
+  "text": "The Black Sequence lies off White Rabbit Key tonight. While she is in, op opens live contracts: the same tricks the pirates try on the chain, for you to play with them. About two hours, then she sails."
+ },
+ {
+  "who": "look",
+  "text": "Thursday is case day. The case file collects what the pirates tried at the island on Tuesday and the hack of the week, with riddles only the chain can answer."
+ },
+ {
   "who": "qm",
   "text": "The share is paid and the ledger balanced. Spend it on nothing: it is worth nothing, like all test AGRS, and that is the point of a testnet."
  },
