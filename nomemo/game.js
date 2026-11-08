@@ -675,8 +675,9 @@
       return;
     }
     const next = CONTRACTS.find(c => !S.done[c.id]);
-    const rows = [];
-    for (const ch of CH) {
+    const rows = [], calm = !Object.keys(S.done).length;   // a first visit sees chapter 1 only, and no instruments, until the first contract settles
+    document.documentElement.classList.toggle("nm-calm", calm);
+    for (const ch of calm ? CH.slice(0, 1) : CH) {
       const open = chapterOpen(ch), done = chapterDone(ch);
       rows.push(el("li", { class: "chap" + (open ? "" : " lock"), onclick: () => run("chapter " + ch.n) }, el("span", { class: "n", text: "" }), el("span", { class: "t", text: F("Chapter {n}: {x}", { n: ch.n, x: T(ch.name) }) }),
         el("span", { class: "st", text: done ? (S.chap[ch.n] ? T("claimed") : T("claim the share")) : open ? F("{a} of {b}", { a: ch.ids.filter(id => S.done[id]).length, b: ch.ids.length }) : T("locked") })));
@@ -689,6 +690,7 @@
           el("span", { class: "w", text: T(c.task) })));
       }
     }
+    if (calm) rows.push(el("li", { class: "lock" }, el("span", { class: "n", text: "" }), el("span", { class: "t", text: T("Eight more after these") }), el("span", { class: "w", text: T("chapters 2 and 3, then an inbox of puzzles without end") })));
     ol.replaceChildren(...rows);
     $("jobsCount").textContent = F("{a} of {b}", { a: Object.keys(S.done).length, b: CONTRACTS.length });
   }
@@ -767,6 +769,7 @@
     S.done[c.id] = { at: Date.now(), ...rec }; S.taken = null; S.deadline = null; S.span = null; save(); jobs(); instruments(); topbar();
     snd.tension(false); snd.seal(); snd.say("v-sealed"); flash("ok"); mood(c.who, "glad");
     say("ok", F("Contract {n} settled. Standing: {r}.", { n: num(c), r: rank() }));
+    if (Object.keys(S.done).length === 1 && !again) say("sys", T("First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right."));
     say("learn", T(c.learn));
     if (again) { chips(); return; }
     post(c.who, c.after, 1 + Math.floor(Math.random() * 2));
@@ -1178,11 +1181,28 @@
   }
 
   /* ---------- the boot screen: once per browser, or ?boot=1, or the command boot ---------- */
+  /* the door: a first visit gets what this is in four lines and two ways in, before anything else */
+  const DOOR = [
+    "A hacker game on Tau Testnet Alpha. The crew of a pirate ship hands you contracts; each one is a real transaction you send to the live test chain.",
+    "No setup: a test wallet is made in your browser. Test AGRS have no value.",
+    "Everybody plays on the same chain at the same time. Every move tests Tau’s rules for real, and you learn how the chain works on the way.",
+    "You earn rank, a share from the crew’s purse for each chapter, and an inbox of puzzles that never runs out.",
+  ];
+  function door() {
+    const box = $("bootLines"), over = $("bootScreen"); if (!box || !over) return Promise.resolve(null);
+    return new Promise(res => {
+      const go = v => { over.classList.remove("show", "door"); S.booted = true; save(); res(v); };
+      box.replaceChildren(el("h2", { text: "No Memo" }), ...DOOR.map((t, i) => el("p", { class: i ? "dim" : "", text: T(t) })));
+      const row = over.querySelector(".row");
+      row.replaceChildren(el("button", { type: "button", text: T("First contract"), onclick: () => go("take 1") }), el("button", { type: "button", class: "ghost", text: T("Tutorial"), onclick: () => go("tutorial") }), el("button", { type: "button", class: "ghost", id: "bootSkip", text: T("just look"), onclick: () => go(null) }));
+      over.classList.add("show", "door");
+    });
+  }
   async function bootScreen() {
     const box = $("bootLines"), over = $("bootScreen"); if (!box || !over) return;
     box.replaceChildren(); over.classList.add("show");
     let skipped = false; const skip = () => { skipped = true; over.classList.remove("show"); };
-    $("bootSkip").onclick = skip; $("bootSkip").textContent = T("skip");
+    over.querySelector(".row").replaceChildren(el("button", { type: "button", class: "ghost", id: "bootSkip", text: T("skip"), onclick: skip }));
     snd.boot();
     const pk = myPk();
     const lines = [["BLACK SEQUENCE · crew terminal", ""], [T("no memo · from, to, amount, signed"), "dim"], [SIM ? T("practice node: this browser") : "node.tauhud.com · " + T("relay"), "dim"], [T("authorisation required"), ""],
@@ -1757,16 +1777,17 @@
     document.addEventListener("pointerdown", () => snd.wake(), { once: true }); $("fsBtn").addEventListener("click", () => full());
     for (const id of ["card", "mailWin"]) $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).classList.remove("show"); });
     document.addEventListener("keydown", e => { if (e.key === "Escape") for (const id of ["card", "mailWin"]) $(id).classList.remove("show"); });
-    if (!S.booted || q.get("boot")) await bootScreen();
-    say("sys", "NO MEMO · " + T("crew terminal of the Black Sequence") + " · Tau Testnet Alpha");
+    let first = null;
+    if (!S.booted) first = await door(); else if (q.get("boot")) await bootScreen();
+    say("sys", "NO MEMO · " + T("a hacker game on Tau Testnet Alpha: every contract is a real transaction from a test wallet in your browser, and everybody plays the same chain."));
     const pk = myPk();
-    say("sys", SIM ? T("simulation: a practice node in this browser, nothing reaches the testnet") : T("connecting to node.tauhud.com …"));
+    if (SIM) say("sys", T("simulation: a practice node in this browser, nothing reaches the testnet"));
     const st = await ask("getsequence " + (pk || DROP));
     if (st && st.status === "ok") { tick(Number(st.data.tip_height) || 0); if (!SIM) snd.say("v-online"); say("sys", (SIM ? T("practice node ready") : T("connected")) + " · " + F("block #{n}", { n: fmt(CHAIN.tip) })); if (pk) { CHAIN.seq = Number(st.data.sequence_number) || 0; await balance(); } }
     else { setState(false); say("warn", T("The node is out of reach from here (a blocker, a VPN, a restart). The board can be read; contracts wait until it answers. The header switch opens the simulation.")); }
     say("sys", pk ? F("your wallet {h}", { h: short(pk) }) + (CHAIN.bal != null ? " · " + fmt(CHAIN.bal === 0 ? FAUCET : CHAIN.bal) + " " + T("test AGRS") : "") : T("no test wallet yet: one is made in this browser at your first contract"));
     const done = Object.keys(S.done).length;
-    if (!done) crew("qm", "Rule one on this ship: no memo. A payment is from, to, amount, signed. Nothing else goes on the chain, so if you have something to say, say it in the amount. Twelve contracts on the board in three chapters; each is a real transaction from your test wallet, and the chain itself is the judge. Take the first.", "calm");
+    if (!done) crew("qm", "Rule one on this ship: no memo. A payment is from, to, amount, signed; if you have something to say, say it in the amount. Take the first contract.", "calm");
     else { say("sys", F("{n} of {m} contracts settled before. Standing: {r}.", { n: done, m: CONTRACTS.length, r: T(rank()) })); crew("qm", "Back aboard. The board remembers you; so does the chain.", "calm"); }
     if (S.taken === "wayback" && S.ret && S.ret.release > now() + 30) { RUN.ret = S.ret; crew("bosun", F("Your 50 test AGRS still wait in escrow ({h}), release at {t}. Type back.", { h: short(S.ret.id), t: clock(S.ret.release) })); }
     else if (S.taken) { const c = byId(S.taken); if (c && c.id !== "wayback") say("sys", F("Contract {n} is still yours: {t}. Type run.", { n: num(c), t: T(c.name) }), btn("run", "run")); else { S.taken = null; S.deadline = null; S.ret = null; save(); } }
@@ -1777,6 +1798,7 @@
     else { const nx = CONTRACTS.find(x => !S.done[x.id]); say("sys", T("Type help, or click:"), nx ? btn(F("take {n}", { n: num(nx) }), "take " + num(nx)) : btn("case", "case"), el("span", { class: "cur" })); }
     jobs(); instruments(); chips(); topbar(); watch(); world(); boardLoad(); deliverMail();
     for (const n of [1, 2, 3]) if (S.chap[n] && !S.chap[n].paid) watchPayback(n);
+    if (first) run(first);
     if (S.chap[1] && !S.seen.dust) huntWatch();
     if (q.get("take")) { const x = byId(q.get("take")) || CONTRACTS[parseInt(q.get("take"), 10) - 1]; if (x) take(x); }
     document.addEventListener("visibilitychange", () => { if (!document.hidden) { watch(); world(); } });

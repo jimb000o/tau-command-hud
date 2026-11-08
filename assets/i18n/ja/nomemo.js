@@ -772,5 +772,17 @@ TauI18n.add({ strings: {
   "peek getbalance <address> · peek getsequence <address> · peek gettxstatus <hash> · peek getretractables <address> · peek getgovernance; me and drop stand for the two addresses": "peek getbalance <address> · peek getsequence <address> · peek gettxstatus <hash> · peek getretractables <address> · peek getgovernance；me と drop は二つのアドレスの代わり",
   "the first steps": "最初の一歩",
   "a word explained": "言葉の説明",
-  "the painted cabin": "描かれた船室"
+  "the painted cabin": "描かれた船室",
+  "A hacker game on Tau Testnet Alpha. The crew of a pirate ship hands you contracts; each one is a real transaction you send to the live test chain.": "Tau Testnet Alpha 上のハッカーゲーム。海賊船のクルーが契約を渡してくる。どれも、稼働中のテストチェーンに送る本物のトランザクションだ。",
+  "No setup: a test wallet is made in your browser. Test AGRS have no value.": "設定は不要。テストウォレットはブラウザ内で作られる。テスト AGRS に価値はない。",
+  "Everybody plays on the same chain at the same time. Every move tests Tau’s rules for real, and you learn how the chain works on the way.": "全員が同じチェーンで同時に遊ぶ。一手ごとに Tau のルールを本当に試し、その途中でチェーンの仕組みを覚えていく。",
+  "You earn rank, a share from the crew’s purse for each chapter, and an inbox of puzzles that never runs out.": "手に入るのは階級、章ごとのクルーの財布からの分け前、そして尽きることのないパズルの受信箱。",
+  "First contract": "最初の契約",
+  "Tutorial": "チュートリアル",
+  "just look": "見るだけ",
+  "a hacker game on Tau Testnet Alpha: every contract is a real transaction from a test wallet in your browser, and everybody plays the same chain.": "Tau Testnet Alpha 上のハッカーゲーム：どの契約もブラウザ内のテストウォレットから送る本物のトランザクションで、全員が同じチェーンで遊ぶ。",
+  "Rule one on this ship: no memo. A payment is from, to, amount, signed; if you have something to say, say it in the amount. Take the first contract.": "この船の第一の掟：メモはなし。支払いは送り手、受け手、金額、そして署名だけ。言いたいことがあるなら金額で言え。最初の契約を取れ。",
+  "Eight more after these": "この後にあと八つ",
+  "chapters 2 and 3, then an inbox of puzzles without end": "第 2 章と第 3 章、その後は終わりのないパズルの受信箱",
+  "First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right.": "一つ目完了。計器が開いた：右側にブロック、追跡、ウォレット、残高、そしてお前の評判。"
 } });

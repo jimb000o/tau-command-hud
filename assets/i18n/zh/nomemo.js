@@ -772,5 +772,17 @@ TauI18n.add({ strings: {
   "peek getbalance <address> · peek getsequence <address> · peek gettxstatus <hash> · peek getretractables <address> · peek getgovernance; me and drop stand for the two addresses": "peek getbalance <address> · peek getsequence <address> · peek gettxstatus <hash> · peek getretractables <address> · peek getgovernance；me 和 drop 代表这两个地址",
   "the first steps": "最初几步",
   "a word explained": "解释一个词",
-  "the painted cabin": "手绘船舱"
+  "the painted cabin": "手绘船舱",
+  "A hacker game on Tau Testnet Alpha. The crew of a pirate ship hands you contracts; each one is a real transaction you send to the live test chain.": "一款运行在 Tau Testnet Alpha 上的黑客游戏。海盗船的船员给你合约；每份合约都是你发送到实时测试链上的一笔真实交易。",
+  "No setup: a test wallet is made in your browser. Test AGRS have no value.": "无需设置：测试钱包在你的浏览器里生成。测试 AGRS 没有价值。",
+  "Everybody plays on the same chain at the same time. Every move tests Tau’s rules for real, and you learn how the chain works on the way.": "所有人同时在同一条链上玩。每一步都在真实地检验 Tau 的规则，你也会顺便学会这条链是怎么运作的。",
+  "You earn rank, a share from the crew’s purse for each chapter, and an inbox of puzzles that never runs out.": "你会获得等级、每章一份船员钱袋的分成，以及永远做不完的谜题收件箱。",
+  "First contract": "第一份合约",
+  "Tutorial": "教程",
+  "just look": "先看看",
+  "a hacker game on Tau Testnet Alpha: every contract is a real transaction from a test wallet in your browser, and everybody plays the same chain.": "Tau Testnet Alpha 上的黑客游戏：每份合约都是从你浏览器里的测试钱包发出的真实交易，所有人都在同一条链上玩。",
+  "Rule one on this ship: no memo. A payment is from, to, amount, signed; if you have something to say, say it in the amount. Take the first contract.": "这条船的第一条规矩：没有备注。一笔付款就是付款方、收款方、金额，再加签名；有话要说，就用金额来说。接下第一份合约。",
+  "Eight more after these": "后面还有八份",
+  "chapters 2 and 3, then an inbox of puzzles without end": "第 2 章和第 3 章，然后是没有尽头的谜题收件箱",
+  "First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right.": "第一份完成。仪表现在打开了：右侧是区块、追踪、钱包、余额和你的声望。"
 } });

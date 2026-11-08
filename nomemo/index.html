@@ -76,6 +76,16 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .jobs li.taken { background: rgba(57,255,138,.05); box-shadow: inset 2px 0 0 var(--ok); }
 .jobs li.taken .st { color: var(--ok); }
 .jobs li.next .n { color: var(--ok); }
+.jobs li .ico { width: 20px; height: 20px; object-fit: contain; vertical-align: -5px; margin-right: 6px; }
+html.nm-calm .deck { grid-template-columns: minmax(230px, 300px) minmax(0, 1fr); }
+html.nm-calm .pane.stat { display: none; }
+html.nm-calm .mtabs { grid-template-columns: repeat(2, 1fr); }
+html.nm-calm .mtabs button[data-pane="stat"] { display: none; }
+#bootScreen.door .boot { min-height: 0; color: var(--text); text-shadow: none; font-size: 14px; line-height: 1.55; padding: 24px 26px 8px; }
+#bootScreen.door .boot h2 { margin: 0 0 10px; font: 700 26px var(--display); color: #fff; letter-spacing: .02em; }
+#bootScreen.door .boot p { margin: 0 0 9px; white-space: normal; }
+#bootScreen.door .boot p.dim { color: var(--dim); }
+#bootScreen.door .row { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 26px 22px; }
 .crewnote { padding: 8px 12px 10px; color: var(--dim); font-size: 11px; border-top: 1px solid var(--line); }
 
 /* the terminal */
