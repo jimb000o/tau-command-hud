@@ -260,6 +260,12 @@ footer p { margin: 0; }
   .top .tr { min-width: 0; overflow: hidden; padding: 4px 8px; gap: 5px; } .top .tr span { overflow: hidden; text-overflow: ellipsis; } .top .tr i { width: 26px; flex: none; }
   .crewbox { padding: 6px 8px; } .face .pic { width: 44px; height: 44px; }
 }
+/* a phone: the site's header gives the terminal room; the Live/Simulation switch stays; the node and the counters are on the Instruments tab */
+@media (max-width: 760px) {
+  header.trail #tnOnline, header.trail #tnCons, header.trail #tnHeight, header.trail #state { display: none; }
+  header.trail { row-gap: 4px; }
+  header.trail .chips { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; }
+}
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <link rel="stylesheet" href="scene.css">

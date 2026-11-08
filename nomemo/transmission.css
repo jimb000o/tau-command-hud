@@ -35,9 +35,10 @@
 @media (max-width: 760px) {
   .txm { bottom: auto; padding: 6px; background: none; place-items: stretch; }
   .txm-win { padding: 8px; gap: 6px; background: #030a06; }
-  .txm-body { grid-template-columns: 96px minmax(0, 1fr); gap: 10px; align-items: start; }
-  .txm-pic { height: auto; width: 96px; }
-  .txm-sub { font-size: 12px; min-height: 0; max-height: 9.5em; overflow: hidden; }
+  .txm-body { grid-template-columns: 56px minmax(0, 1fr); gap: 8px; align-items: start; }
+  .txm-pic { height: auto; width: 56px; }
+  .txm-sub { font-size: 12px; min-height: 0; max-height: 6em; overflow: hidden; }
+  .txm-top { font-size: 10px; } .txm-end { display: none; }
   .txm-from { font-size: 11px; }
   .txm-foot { display: none; }
 }

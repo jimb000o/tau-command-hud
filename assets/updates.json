@@ -2715,5 +2715,10 @@
     "tag": "No Memo",
     "on": "2026-11-08",
     "html": "No Memo: you see the other players now. The start shows how many wallets paid the crew’s drop in the last 24 hours and the last hour and when the last move was; after your first contract you learn which wallet number you are; board and the Board instrument show the same. Wallets are counted, nobody is named."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-08",
+    "html": "No Memo plays easier: 100 simulated players showed where people got stuck. In the inbox the main button now leads from read to accept to the hint’s first step to send, and every hint has a button for that step. Typed guesses like score, missions, ls, multiplayer or language lead to the right command; what explains eight more words (players, hash, explorer, hint, board…). The first card is two lines, and Tutorial now plays the first contracts with you instead of explaining them first. On a phone the terminal has twice the room. Fixed: the riddle Where it landed counted the wrong payment, and some Chinese and Japanese lines stayed half English."
   }
 ]
