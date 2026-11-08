@@ -125,7 +125,7 @@
  },
  {
   "who": "qm",
-  "text": "Rule one on this ship: no memo. A payment is from, to, amount, signed. Nothing else goes on the chain, so if you have something to say, say it in the amount. Twelve contracts on the board in three chapters; each is a real transaction from your test wallet, and the chain itself is the judge. Take the first."
+  "text": "Rule one on this ship: no memo. A payment is from, to, amount, signed; if you have something to say, say it in the amount. Take the first contract."
  },
  {
   "who": "qm",
