@@ -3,7 +3,7 @@
 
    - nomemo/art/cabin/cabin.json lists the paintings (16:9 and 21:9) with the black screen, the lantern and the windows
      as fractions of the picture. Until it is there, nothing changes.
-   - The painting that fits the window is drawn so the screen is at least about 1200 × 600 px (the camera comes close on
+   - The painting that fits the window is drawn so the screen is at least about 1040 × 520 px (the camera comes close on
      a laptop) and covers the window where it can (the whole cabin on a big monitor). Below 900 px wide or on a tall
      window the page stays the plain terminal.
    - Living cabin: the lantern flickers, the cabin rocks a hair, moonlight moves on the water, the screen lights the desk
@@ -60,7 +60,7 @@
   function place(v, W, H, Y0) {
     const AW = W, AH = H - Y0, [x0, y0, x1, y1] = v.screen, sw = (x1 - x0) * v.w, sh = (y1 - y0) * v.h;
     const cover = Math.max(W / v.w, H / v.h);
-    const need = Math.max(Math.min(1200, AW - 24) / sw, Math.min(600, AH - 24) / sh);
+    const need = Math.max(Math.min(1040, AW - 24) / sw, Math.min(520, AH - 24) / sh);
     const most = Math.min((AW - 8) / sw, (AH - 8) / sh);
     const s = Math.min(Math.max(cover, need), most), iw = v.w * s, ih = v.h * s;
     let left = AW / 2 - (x0 + x1) / 2 * iw, top = Y0 + AH / 2 - (y0 + y1) / 2 * ih;
