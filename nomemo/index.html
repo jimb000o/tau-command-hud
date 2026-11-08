@@ -65,7 +65,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 
 /* contracts */
 .jobs { list-style: none; margin: 0; padding: 4px 0; }
-.jobs li { display: grid; grid-template-columns: 22px 1fr auto; gap: 2px 8px; padding: 7px 12px; border-bottom: 1px solid var(--line); cursor: pointer; min-height: 44px; align-items: center; }
+.jobs li { display: grid; grid-template-columns: minmax(22px, auto) 1fr auto; gap: 2px 8px; padding: 7px 12px; border-bottom: 1px solid var(--line); cursor: pointer; min-height: 44px; align-items: center; }
 .jobs li:hover { background: rgba(255,255,255,.03); }
 .jobs li .n { color: var(--dim); font-size: 11px; }
 .jobs li .t { color: #fff; font-weight: 600; }
@@ -94,6 +94,15 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .screen .learn { color: #fff; border-left: 2px solid var(--ok); padding-left: 8px; margin: 6px 0; }
 .screen a { color: var(--mint); }
 .screen code { font: inherit; color: #fff; background: rgba(255,255,255,.07); padding: 0 4px; border-radius: 3px; }
+.screen .helpg { columns: 3 215px; column-gap: 20px; margin: 2px 0 4px; font-size: 11.5px; }
+.screen .helpg > div { margin-bottom: 5px; }
+.screen .helpg h4 { break-after: avoid; }
+.screen .helpg p { break-inside: avoid; }
+.screen .helpg h4 { margin: 0 0 1px; font: 600 10px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.screen .helpg p { margin: 0; line-height: 1.4; padding-left: 1.2em; text-indent: -1.2em; }
+.screen .helpg .hc { font: inherit; color: var(--ok); background: none; border: 0; padding: 0; margin-right: .6em; cursor: pointer; text-indent: 0; }
+.screen .helpg .hc:hover { text-decoration: underline; }
+.screen .helpg span { color: var(--dim); }
 .screen .cols { display: grid; grid-template-columns: max-content 1fr; gap: 0 14px; }
 .screen .cols span:nth-child(odd) { color: var(--ok); }
 .screen .hist { display: grid; grid-template-columns: max-content max-content 1fr; gap: 0 14px; margin: 4px 0; }
@@ -108,6 +117,11 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .chips button:hover { color: #fff; border-color: var(--hair); }
 .chips button.go { color: var(--ok); border-color: rgba(57,255,138,.45); }
 
+.ptabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 12px 6px; }
+.ptabs[hidden] { display: none; }
+.ptabs button { font: 600 10px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; min-height: 28px; cursor: pointer; }
+.ptabs button.on { color: #fff; border-color: var(--hair); }
+.ptabs button:hover { color: #fff; }
 /* instruments */
 .inst { padding: 4px 0; }
 .inst .row { padding: 7px 12px; border-bottom: 1px solid var(--line); }
@@ -224,6 +238,7 @@ footer p { margin: 0; }
   .mtabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .mtabs button { font: 600 11px var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 0 6px; min-height: 44px; cursor: pointer; }
   .mtabs button.on { color: #fff; border-color: var(--hair); }
+  .ptabs button { min-height: 44px; }
   .screen { font-size: 12px; padding: 8px 10px 4px; }
   .cmd input { font-size: 16px; min-height: 44px; }   /* 16px: no zoom-in on focus */
   .chips { padding: 6px 8px 8px; } .chips button { min-height: 44px; font-size: 11px; }
@@ -262,9 +277,10 @@ footer p { margin: 0; }
   <div class="deck" id="deck">
     <aside class="pane jobs-pane" id="paneJobs" aria-label="Contracts">
       <h2><span>Contracts</span><small id="jobsCount"></small></h2>
+      <div class="ptabs" id="ptabs" role="tablist" aria-label="Contracts" hidden><button type="button" data-p="story">Story</button><button type="button" data-p="inbox">Inbox</button></div>
       <div class="scroll"><ol class="jobs" id="jobs"></ol></div>
       <div class="crewbox" id="crewBox"></div>
-      <div class="crewnote">Nobody on board is a real person. What you do here is real: every contract is a test transaction on Tau Testnet Alpha from your own test wallet, signed in this browser. Test AGRS have no value.</div>
+      <div class="crewnote">You and the other players are real: everybody here plays together, and the game is the testnet itself. Every contract is a real test transaction on Tau Testnet Alpha from your own test wallet, signed in this browser. The crew are game characters; test AGRS have no value.</div>
     </aside>
     <section class="pane term show" id="paneTerm" aria-label="Terminal">
       <div class="scroll" id="screenWrap"><div class="screen" id="screen" role="log" aria-live="polite"></div></div>

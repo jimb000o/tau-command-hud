@@ -2680,5 +2680,10 @@
     "tag": "No Memo",
     "on": "2026-11-08",
     "html": "No Memo: tell the crew what to make better. Type feedback, a space and your words in the terminal; every line reaches us with how far you got in the game, and we read them to improve contracts, hints and pace. Nothing of it is shown to anyone else."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-08",
+    "html": "No Memo: the game no longer ends after twelve contracts. Once chapter 1 is done, an inbox fills by itself with a new contract every few blocks: puzzles about fees, block heights, sequence numbers, signatures and addresses, each answered with a real test transaction you build yourself in a draft (tx, set, send). Contracts pay standing, never test AGRS; nine ranks open four tiers of harder work, and why explains what the chain just did. help now fits on one screen, and the note under the crew says what is true: the players are real, and the game is the testnet."
   }
 ]
