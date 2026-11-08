@@ -173,4 +173,9 @@ TauI18n.add({ strings: {
   "Simulation: made-up nodes on the simulated chain, the same on every page. No real nodes.": "シミュレーション：シミュレーションのチェーン上の架空のノードで、どのページでも同じです。本物のノードではありません。",
   "Show the real list →": "本物の一覧を見る →",
   "Simulated": "シミュレーション",
+  "Can I run it on my own computer?": "自分のパソコンで動かせる？",
+  "Better on a small rented server. The first start compiles tau-lang from source for about 1.5 hours and needs 4 GB RAM plus 8 GB swap; on a computer you also work on, that can freeze it.": "小さなレンタルサーバーの方が向いています。最初の起動では tau-lang をソースから約 1.5 時間かけてコンパイルし、4 GB RAM と 8 GB のスワップが必要です。普段使いのパソコンでは固まることがあります。",
+  "Once synced it is light: measured on our node (2 CPU, 3.8 GB RAM, November 2026) the node uses about 850 MB of memory and almost no CPU, its relay about 70 MB more.": "同期が済めば軽量です。私たちのノードでの実測（2 CPU、3.8 GB RAM、2026 年 11 月）では、ノードはメモリ約 850 MB で CPU はほぼ使わず、リレーがさらに約 70 MB です。",
+  "Only want to learn Tau Language? You need no node for that.": "Tau Language を学びたいだけ？それならノードは要りません。",
+  "Start with the REPL ›": "REPL から始める ›",
 } });

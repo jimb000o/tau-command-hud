@@ -175,4 +175,9 @@ TauI18n.add({ strings: {
   "Simulation: made-up nodes on the simulated chain, the same on every page. No real nodes.": "模拟：模拟链上的虚构节点，每个页面都相同。不是真实节点。",
   "Show the real list →": "查看真实列表 →",
   "Simulated": "模拟",
+  "Can I run it on my own computer?": "可以在自己的电脑上运行吗？",
+  "Better on a small rented server. The first start compiles tau-lang from source for about 1.5 hours and needs 4 GB RAM plus 8 GB swap; on a computer you also work on, that can freeze it.": "最好用一台租来的小服务器。第一次启动要从源码编译 tau-lang，约 1.5 小时，需要 4 GB 内存加 8 GB 交换空间；在你平时工作的电脑上，这可能让它卡死。",
+  "Once synced it is light: measured on our node (2 CPU, 3.8 GB RAM, November 2026) the node uses about 850 MB of memory and almost no CPU, its relay about 70 MB more.": "同步完成后就很轻：在我们的节点上实测（2 核 CPU、3.8 GB 内存，2026 年 11 月），节点约占 850 MB 内存，几乎不占 CPU，中继另占约 70 MB。",
+  "Only want to learn Tau Language? You need no node for that.": "只想学 Tau 语言？那不需要节点。",
+  "Start with the REPL ›": "从 REPL 开始 ›",
 } });
