@@ -2709,6 +2709,11 @@
   {
     "tag": "No Memo",
     "on": "2026-11-08",
+    "html": "No Memo: contracts arrive as transmissions. Open one (read, take) and its sender appears big on the terminal, a green, flickering picture on a weak line, and reads the job out in their own voice while the subtitle keeps pace. Esc or a click skips it; transmission off brings the plain line back. And the crew's voices, made earlier but silent because of a fault in the game, now really play (voice on)."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-08",
     "html": "No Memo: you see the other players now. The start shows how many wallets paid the crew’s drop in the last 24 hours and the last hour and when the last move was; after your first contract you learn which wallet number you are; board and the Board instrument show the same. Wallets are counted, nobody is named."
   }
 ]

@@ -142,5 +142,77 @@
  {
   "who": "qm",
   "text": "Third chapter closed and the board is clear. The drop pays the last share. From here the real work is on Tuesdays, when the ship is in."
+ },
+ {
+  "who": "qm",
+  "text": "Quartermaster to the terminal. A small job. Send the drop a payment that offers the chain too little fee, and let it throw the thing back. The fee limit is yours to set. Show me the chain will not work for free."
+ },
+ {
+  "who": "qm",
+  "text": "Quartermaster. I want a payment refused for its signature. Your wallet, your payment, but signed by a hand that is not yours. The chain checks the hand before it reads the amount. Prove it."
+ },
+ {
+  "who": "look",
+  "text": "Lookout here, quick one. Get a payment refused as expired, by the block height alone. The block deadline must be behind the tip, but the clock deadline still good. One fault, not two. Over."
+ },
+ {
+  "who": "qm",
+  "text": "Quartermaster. Pay the drop more than your wallet holds. Not some absurd number, a real amount, just more than you have. The chain counts your coins before it moves any. Let me hear it say no."
+ },
+ {
+  "who": "qm",
+  "text": "Quartermaster. Every wallet counts its own steps: the sequence number. Ask the chain for your next one, multiply it by the number on your screen, and pay the drop exactly that. The ledger will know if you guessed."
+ },
+ {
+  "who": "look",
+  "text": "Lookout. Tight window on this one. Land a payment on the drop whose own deadline sits only a few blocks past the tip. How few is on your screen. Too slow, and it dies waiting. Go."
+ },
+ {
+  "who": "look",
+  "text": "Lookout again. This time, the clock. Get a payment refused as expired by its time alone, while the block deadline still lies ahead. The chain reads the clock inside the signature. Over."
+ },
+ {
+  "who": "qm",
+  "text": "Quartermaster. A test of manners. Name the drop as the one who pays, sign it with your own key, and send it. The chain should see the borrowed name for what it is."
+ },
+ {
+  "who": "bosun",
+  "text": "Bosun here. Old trick, this. A fresh payment, signed right, but wearing a sequence number your wallet has already used. The chain remembers every step you took. Let's hear it remember."
+ },
+ {
+  "who": "look",
+  "text": "Lookout. A riddle for you. A transfer can only carry so much. Find the smallest amount that is too wide for it. Not one more, mind. Exactly the first that does not fit."
+ },
+ {
+  "who": "look",
+  "text": "Lookout. Something is hidden in the drop's own address. A few of its characters are a number, written in hex. Which ones is on your screen. Read them, turn them into a number, and pay the drop that. Over."
+ },
+ {
+  "who": "qm",
+  "text": "Quartermaster. Read the rules before you break them. Ask the chain for its governance, find the base fee, multiply it by the number on your screen, and pay the drop that sum."
+ },
+ {
+  "who": "look",
+  "text": "Lookout. Three addresses on your screen, three doors. Only one of them is the drop, and they all look alike at the ends. Read the middle. Pay one coin to the right door. The wrong one keeps it."
+ },
+ {
+  "who": "qm",
+  "text": "Quartermaster. Finer work now. A payment refused for its fee, but not with a fee of nothing: exactly one under the base fee. The chain's own rules tell you what that is. Precision, please."
+ },
+ {
+  "who": "qm",
+  "text": "Quartermaster. Land a payment on the drop with a thin margin: a fee limit of no more than twice the base fee. Ask the chain for its rules first. A coin you offer and do not need is a coin wasted."
+ },
+ {
+  "who": "look",
+  "text": "Lookout. Memory test. Find the block your last sealed payment from this terminal landed in. Take its last three digits, add one, and pay the drop that. Your history knows. Do you?"
+ },
+ {
+  "who": "bosun",
+  "text": "Bosun. Your draft is broken two ways already, I've seen to that. Before you send it, tell me which answer the node will give. The node stops at the first check it fails. So which one comes first, eh?"
+ },
+ {
+  "who": "bosun",
+  "text": "Bosun. Blind order. Make the chain give the answer on your screen. No hint from me this time. You know enough by now. Off you go."
  }
 ]
