@@ -14,8 +14,9 @@
    The feel: the top bar is the block clock (every new block ticks), what is running shows as a slot with a bar
    (signing, sending, in the mempool, sealed), every transaction draws its way (wallet, relay, node, block), the
    trace is a glow at the screen's edge that quickens as the deadline nears, the screen types, and small synthetic
-   sounds (WebAudio, nothing loaded) mark keys, sends, refusals and seals. All of it can be switched off: fx off,
-   sound off; prefers-reduced-motion is respected.
+   sounds (nomemo/sfx/, drawn by infra/nomemo/synth.py; ElevenLabs versions from infra/nomemo/sfx.py win where they
+   exist) carry the sea, the hull, keys, sends, refusals, seals and the ship's voice. All of it can be switched off: fx off,
+   ambience off, sound off; prefers-reduced-motion is respected.
 
    The crew: three faces (nomemo/art/crew/<who>-<mood>.webp when the painted set is there, drawn placeholders until
    then) with moods, lines spoken aloud when the server has their clips (same clips store as the islanders',
@@ -73,7 +74,7 @@
     S.v = 2;
     for (const k of ["done", "cases", "ops", "riddles", "chap", "seen", "hunt"]) S[k] = S[k] || {};
     for (const k of ["findings", "hist", "mail"]) S[k] = S[k] || [];
-    if (S.snd == null) S.snd = true; if (S.fx == null) S.fx = !REDUCED; if (S.voice == null) S.voice = true;
+    if (S.snd == null) S.snd = true; if (S.amb == null) S.amb = true; if (S.fx == null) S.fx = !REDUCED; if (S.voice == null) S.voice = true;
   }
   const save = () => store.set(SAVE, JSON.stringify(S));
   const rep = () => Object.keys(S.done).length + Object.keys(S.cases).length + Object.keys(S.ops).length + Object.keys(S.riddles).length + Object.keys(S.hunt).length;
@@ -394,7 +395,7 @@
     const newBlock = CHAIN.tip != null && tip > CHAIN.tip;
     if (CHAIN.tip == null || tip !== CHAIN.tip) { CHAIN.tip = tip; CHAIN.tipAt = t; }
     setState(true); instruments(); topbar(newBlock);
-    if (newBlock) { snd.tick(S.taken && traceFrac() < 0.25); deliverMail(); }
+    if (newBlock) { if (S.taken) { snd.block(); snd.tick(traceFrac() < 0.25); } else snd.tension(false); deliverMail(); }
     if (S.taken && S.deadline != null && tip > S.deadline && !RUN.busy) traced();
   }
   const pace = () => (SIM && window.TauSim ? TauSim.pace : CHAIN.pace);
@@ -418,28 +419,137 @@
     instruments();
   }
 
-  /* ---------- sounds: small synthetic ones, made here, nothing loaded ---------- */
+  /* ---------- sounds: the ship around you (sfx/, drawn by infra/nomemo/synth.py; ElevenLabs versions from
+     infra/nomemo/sfx.py on the server win where they exist). Until a file has loaded, a small tone made here stands in.
+     sound off silences all of it; ambience off only the sea, the hull and the hum; voice off the ship's voice. ---------- */
   const snd = (() => {
-    let ctx = null;
+    let ctx = null, master = null, bed = null, voiceBus = null, lastKey = 0, creakT = 0, tens = null, lastCreak = 0;
+    const LOCAL = "sfx/", SERVER = CLIPS + "nomemo-sfx/", buf = {}, wait = {}, layers = {};
+    let meta = null, server = { sounds: [], voice: [] }, metaP = null;
     const on = () => S && S.snd && !q.get("quiet");
-    const ac = () => { if (!on()) return null; try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === "suspended") ctx.resume(); return ctx; } catch (e) { return null; } };
+    const ambOn = () => on() && S.amb !== false;
+    const ac = () => {
+      if (!on()) return null;
+      try {
+        if (!ctx) {
+          ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
+          master = ctx.createGain(); master.gain.value = 0.85; master.connect(comp).connect(ctx.destination);
+          bed = ctx.createGain(); bed.gain.value = 0.7; bed.connect(master);
+          // the ship's voice comes through the speaking tube: a narrow band, a little grit
+          const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 380;
+          const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 3400;
+          const sh = ctx.createWaveShaper(), cv = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 511.5 - 1; cv[i] = Math.tanh(2.2 * x) / Math.tanh(2.2); } sh.curve = cv;
+          voiceBus = ctx.createGain(); voiceBus.gain.value = 0.95; voiceBus.connect(hp); hp.connect(lp); lp.connect(sh); sh.connect(master);
+        }
+        if (ctx.state === "suspended") ctx.resume();
+        return ctx;
+      } catch (e) { return null; }
+    };
+    function info() {
+      if (metaP) return metaP;
+      metaP = (async () => {
+        try { const r = await fetch(LOCAL + "list.json"); const j = await r.json(); meta = {}; for (const s of j.sounds) meta[s.name] = s; } catch (e) { meta = {}; }
+        try { const r = await fetch(SERVER + "index.json", { cache: "no-cache" }); if (r.ok) { const j = await r.json(); server = { sounds: j.sounds || [], voice: j.voice || [] }; } } catch (e) {}
+      })();
+      return metaP;
+    }
+    const decode = ab => new Promise((ok, no) => { const p = ctx.decodeAudioData(ab, ok, no); if (p && p.then) p.then(ok, no); });
+    function load(name) {
+      if (buf[name] || wait[name] || !ac()) return wait[name] || Promise.resolve(buf[name]);
+      wait[name] = (async () => {
+        await info();
+        const urls = (server.sounds.includes(name) || server.voice.includes(name) ? [SERVER] : []).concat(name.startsWith("v-") ? [] : [LOCAL]);
+        for (const u of urls) { try { const r = await fetch(u + name + ".mp3"); if (!r.ok) continue; buf[name] = await decode(await r.arrayBuffer()); return buf[name]; } catch (e) {} }
+        return null;
+      })();
+      return wait[name];
+    }
+    const gainOf = name => (meta && meta[name] && meta[name].gain) || 0.5;
+    function play(name, o = {}) {
+      const c = ac(); if (!c) return true;   // silence asked for: nothing stands in either
+      const b = buf[name]; if (!b) { load(name); return false; }
+      const src = c.createBufferSource(), g = c.createGain(); src.buffer = b;
+      if (o.rate) src.playbackRate.value = o.rate;
+      g.gain.value = gainOf(name) * (o.gain == null ? 1 : o.gain);
+      let out = g;
+      if (o.pan && c.createStereoPanner) { const p = c.createStereoPanner(); p.pan.value = o.pan; g.connect(p); out = p; }
+      src.connect(g); out.connect(o.bus || master);
+      src.start(c.currentTime + (o.delay || 0));
+      return true;
+    }
+    function duck(sec = 1.6) { if (!bed) return; const t = ctx.currentTime; bed.gain.cancelScheduledValues(t); bed.gain.setValueAtTime(bed.gain.value, t); bed.gain.linearRampToValueAtTime(0.35, t + 0.08); bed.gain.linearRampToValueAtTime(0.7, t + sec); }
+    // a loop played from where its sound starts to where it ends, so an MP3's silent padding does not tick at the seam
+    function layer(name, gain = 1) {
+      const c = ac(), b = buf[name]; if (!c || !b || layers[name]) return layers[name];
+      const d = b.getChannelData(0); let a = 0, z = d.length - 1; while (a < d.length && Math.abs(d[a]) < 2e-4) a++; while (z > a && Math.abs(d[z]) < 2e-4) z--;
+      const src = c.createBufferSource(), g = c.createGain(); src.buffer = b; src.loop = true; src.loopStart = a / b.sampleRate; src.loopEnd = (z + 1) / b.sampleRate;
+      g.gain.setValueAtTime(0.0001, c.currentTime); g.gain.exponentialRampToValueAtTime(gainOf(name) * gain, c.currentTime + 2.5);
+      src.connect(g).connect(bed); src.start(c.currentTime, src.loopStart);
+      return (layers[name] = { src, g });
+    }
+    function stopLayer(name, sec = 1.5) { const l = layers[name]; if (!l) return; delete layers[name]; const t = ctx.currentTime; l.g.gain.cancelScheduledValues(t); l.g.gain.setValueAtTime(Math.max(0.0001, l.g.gain.value), t); l.g.gain.exponentialRampToValueAtTime(0.0001, t + sec); l.src.stop(t + sec + 0.05); }
+    function creak() {
+      clearTimeout(creakT);
+      creakT = setTimeout(() => {
+        if (ambOn() && !document.hidden) { let n; do n = 1 + Math.floor(Math.random() * 3); while (n === lastCreak); lastCreak = n; if (play("creak-" + n, { bus: bed, gain: 0.6 + Math.random() * 0.4, rate: 0.85 + Math.random() * 0.25, pan: Math.random() * 1.2 - 0.6 })) {} }
+        if (ambOn()) creak();
+      }, 9000 + Math.random() * 17000);
+    }
+    async function ambience() {
+      if (!ambOn()) { for (const k of Object.keys(layers)) stopLayer(k); clearTimeout(creakT); return; }
+      if (!ac()) return;
+      await Promise.all(["amb-sea", "amb-hum", "creak-1", "creak-2", "creak-3"].map(load));
+      if (!ambOn()) return;
+      layer("amb-sea"); layer("amb-hum"); creak();
+      if (tens) layer("amb-tension");
+    }
+    let woke = false;
+    function wake() {
+      if (!ac()) return null;
+      if (!woke) { woke = true; info().then(() => { for (const n of Object.keys(meta || {})) if (!n.startsWith("amb-")) load(n); }); }
+      ambience();
+      return ctx;
+    }
+    document.addEventListener("visibilitychange", () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else if (on()) { ctx.resume(); ambience(); } });
+    // the small tones that stood in before (and still do until a file has loaded)
     function tone(f, ms, type = "square", gain = 0.05, slide = 0) {
       const c = ac(); if (!c) return;
       const o = c.createOscillator(), g = c.createGain(), t = c.currentTime;
       o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + ms / 1000);
       g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0001, t + ms / 1000);
-      o.connect(g).connect(c.destination); o.start(t); o.stop(t + ms / 1000 + 0.02);
+      o.connect(g).connect(master); o.start(t); o.stop(t + ms / 1000 + 0.02);
     }
+    const ok = () => { tone(660, 90, "triangle", 0.05); setTimeout(() => tone(990, 140, "triangle", 0.05), 90); };
+    const no = () => tone(140, 180, "sawtooth", 0.05, -60);
+    const cue = (name, fallback, o) => { if (!play(name, o) && fallback) fallback(); };
+    const event = (name, fallback) => { duck(); cue(name, fallback); };
+    function say(name) {   // the ship's voice: fixed lines the server made, only when they exist and voice is on
+      if (!on() || !S.voice || !server.voice.includes(name)) return;
+      try { if (typeof VOICE !== "undefined" && VOICE.audio && !VOICE.audio.paused) return; } catch (e) {}
+      if (buf[name]) { duck(2.4); play(name, { bus: voiceBus, delay: 0.35, gain: 1 }); } else load(name).then(b => { if (b) { duck(2.4); play(name, { bus: voiceBus, gain: 1 }); } });
+    }
+    info();
     return {
-      wake: () => ac(),
-      key: () => tone(1800 + Math.random() * 400, 18, "square", 0.012),
-      send: () => { tone(520, 70, "square", 0.03, 400); setTimeout(() => tone(900, 60, "square", 0.025, 500), 70); },
-      ok: () => { tone(660, 90, "triangle", 0.05); setTimeout(() => tone(990, 140, "triangle", 0.05), 90); },
-      no: () => { tone(140, 180, "sawtooth", 0.05, -60); },
-      tick: hot => tone(hot ? 1400 : 1000, hot ? 40 : 30, "square", hot ? 0.03 : 0.015),
-      out: () => { tone(200, 300, "sawtooth", 0.06, -120); setTimeout(() => tone(160, 350, "sawtooth", 0.05, -100), 220); },
-      mail: () => { tone(1200, 60, "triangle", 0.04); setTimeout(() => tone(1600, 90, "triangle", 0.04), 80); },
-      boot: () => { tone(80, 900, "sawtooth", 0.03, 300); setTimeout(() => tone(440, 120, "triangle", 0.04), 900); },
+      wake, ambience, say,
+      key: () => { let n; do n = 1 + Math.floor(Math.random() * 4); while (n === lastKey); lastKey = n; cue("key-" + n, () => tone(1800 + Math.random() * 400, 18, "square", 0.012), { rate: 0.94 + Math.random() * 0.12 }); },
+      enter: () => cue("enter", null),
+      send: () => cue("send", () => { tone(520, 70, "square", 0.03, 400); setTimeout(() => tone(900, 60, "square", 0.025, 500), 70); }),
+      ok: () => cue("accepted", ok),
+      no: () => cue("refused", no),
+      block: () => cue("block", () => tone(1000, 30, "square", 0.015)),
+      tick: hot => { if (hot) cue("tick", () => tone(1400, 40, "square", 0.03)); snd.tension(!!hot); },
+      tension: hot => { if (hot === !!tens) return; tens = hot || null; if (!ctx) return; if (hot) { if (ambOn()) load("amb-tension").then(() => { if (tens && ambOn()) layer("amb-tension"); }); } else stopLayer("amb-tension", 3); },
+      out: () => { snd.tension(false); event("out", () => { tone(200, 300, "sawtooth", 0.06, -120); setTimeout(() => tone(160, 350, "sawtooth", 0.05, -100), 220); }); say("v-out"); },
+      mail: () => event("mail", () => { tone(1200, 60, "triangle", 0.04); setTimeout(() => tone(1600, 90, "triangle", 0.04), 80); }),
+      boot: () => event("boot", () => { tone(80, 900, "sawtooth", 0.03, 300); setTimeout(() => tone(440, 120, "triangle", 0.04), 900); }),
+      seal: () => event("seal", ok),
+      paid: () => event("paid", ok),
+      mark: () => event("mark", ok),
+      dust: () => event("dust", () => { tone(1200, 60, "triangle", 0.04); setTimeout(() => tone(1600, 90, "triangle", 0.04), 80); }),
+      hunt: () => event("hunt", ok),
+      chapter: () => event("chapter", ok),
+      board: () => cue("board", null),
     };
   })();
 
@@ -632,7 +742,7 @@
   function settle(c, rec) {
     const again = !!S.done[c.id];
     S.done[c.id] = { at: Date.now(), ...rec }; S.taken = null; S.deadline = null; S.span = null; save(); jobs(); instruments(); topbar();
-    snd.ok(); flash("ok"); mood(c.who, "glad");
+    snd.tension(false); snd.seal(); snd.say("v-sealed"); flash("ok"); mood(c.who, "glad");
     say("ok", F("Contract {n} settled. Standing: {r}.", { n: num(c), r: T(rank()) }));
     say("learn", T(c.learn));
     if (again) { chips(); return; }
@@ -647,7 +757,7 @@
   function sent(tx, s) {
     say("step", F("signed in this browser (BLS, sequence {n}), sent", { n: tx.sequence_number }), s.hash ? explorer(s.hash) : null, el("span", { class: "sys", text: " · " + F("{n} ms", { n: s.ms }) }));
   }
-  const refusedEarly = s => { snd.no(); flash("bad"); slotFail(codeOf(s.r) || T("refused")); say("no", F("Refused before the mempool: {x}", { x: codeOf(s.r) || plain(s.r) })); fail(T("The payment did not go out. Type run to try again.")); };
+  const refusedEarly = s => { snd.no(); snd.say("v-refused"); flash("bad"); slotFail(codeOf(s.r) || T("refused")); say("no", F("Refused before the mempool: {x}", { x: codeOf(s.r) || plain(s.r) })); fail(T("The payment did not go out. Type run to try again.")); };
   /* a payment that must land */
   async function pay(c, k, amount, race) {
     say("step", F("building a payment: {n} test AGRS to the drop {h}", { n: fmt(amount), h: short(DROP) }));
@@ -749,7 +859,7 @@
       say("step", F("building the retract for {h}: feeless, only the sender may send it", { h: short(r.id) }));
       const s = await sendtx(tx);
       if (!s.r) fail(T("No answer from the node; nothing was sent. Type back again."));
-      if (!s.hash) { snd.no(); flash("bad"); slotFail(codeOf(s.r) || T("refused")); say("no", F("Refused: {x}", { x: codeOf(s.r) || plain(s.r) })); fail(T("Type back to try again.")); }
+      if (!s.hash) { snd.no(); snd.say("v-refused"); flash("bad"); slotFail(codeOf(s.r) || T("refused")); say("no", F("Refused: {x}", { x: codeOf(s.r) || plain(s.r) })); fail(T("Type back to try again.")); }
       sent(tx, s);
       say("step", T("waiting for a block …"));
       const w = await sealed(s.hash, null, s.way);
@@ -780,7 +890,7 @@
       el("p", { text: done ? (claimed ? F("Claimed: the crew’s share of {n} test AGRS came back from the drop.", { n: SHARE }) : F("Done. Claim the crew’s share: a payment of {n} test AGRS to the drop (the amount is the message), and the drop pays {m} back within a few blocks.", { n: CLAIM_BASE + ch.n, m: SHARE })) : chapterOpen(ch) ? F("{a} of {b} contracts settled.", { a: ch.ids.filter(id => S.done[id]).length, b: ch.ids.length }) : F("Opens when chapter {n} is done.", { n: ch.n - 1 }) }),
       ch.unlock ? el("p", { class: "sys", text: F("Unlocks the tool {x}.", { x: ch.unlock }) }) : null,
       el("div", { class: "row" }, done && !claimed ? el("button", { type: "button", text: T("Claim the crew’s share"), onclick: () => { cardClose(); run("claim"); } }) : null, el("button", { type: "button", class: "ghost", text: T("close"), onclick: cardClose })));
-    $("card").classList.add("show"); snd.ok();
+    $("card").classList.add("show"); snd.chapter(); snd.say("v-chapter");
   }
   const cardClose = () => $("card").classList.remove("show");
   async function claim(pick, again) {
@@ -805,14 +915,14 @@
       const tx = await payment(k, DROP, amount, {});
       const s = await sendtx(tx);
       if (!s.r) fail(T("No answer from the node; nothing was sent. Type claim again."));
-      if (!s.hash) { snd.no(); slotFail(codeOf(s.r) || T("refused")); say("no", F("Refused: {x}", { x: codeOf(s.r) || plain(s.r) })); fail(T("Type claim to try again.")); }
+      if (!s.hash) { snd.no(); snd.say("v-refused"); slotFail(codeOf(s.r) || T("refused")); say("no", F("Refused: {x}", { x: codeOf(s.r) || plain(s.r) })); fail(T("Type claim to try again.")); }
       sent(tx, s);
       say("step", T("waiting for a block …"));
       const w = await sealed(s.hash, null, s.way);
       if (!w.in) { say("no", F("Not sealed: {x}", { x: w.why })); fail(T("Type claim to try again.")); }
       say("ok", F("Sealed in block {n}. The crew’s purse reads the chain and pays the share back; it can take a few blocks.", { n: fmt(w.block) }), explorer(s.hash));
       S.chap[ch.n] = { hash: s.hash, block: w.block, at: Date.now(), paid: null, drop: DROP }; save(); jobs(); chips();
-      snd.ok(); mood("qm", "glad");
+      snd.seal(); mood("qm", "glad");
       crew("qm", ch.n === 1 ? "Signed on. The share comes from the drop, and with it the crew’s mark: one test AGRS, the hash of which is your badge on this chain." : ch.n === 2 ? "Second chapter closed. You now know four ways a payment dies before it is one; most wallets never learn the fourth." : "Third chapter closed and the board is clear. The drop pays the last share. From here the real work is on Tuesdays, when the ship is in.", "glad");
       if (!SIM && (!BOARD.data || BOARD.data.enabled === false)) say("warn", T("The crew’s purse on the server is not on yet; the share comes once it is. Your claim is on the chain and counts."));
       watchPayback(ch.n);
@@ -826,7 +936,7 @@
       const pk = myPk(); if (!pk) return;
       const w = await serverInfo("/wallet/" + pk), c = w && w.claims && (w.claims[1] || w.claims["1"]);
       if (c && c.paid && c.paid.mark) {
-        S.chap[1] = { ...S.chap[1], paid: c.paid }; save(); balance(); snd.ok();
+        S.chap[1] = { ...S.chap[1], paid: c.paid }; save(); balance(); snd.mark(); snd.say("v-mark");
         say("ok", T("And the crew’s mark: 1 test AGRS from the drop. Its hash is your badge."), c.paid.mark.hash ? explorer(c.paid.mark.hash) : null);
         return;
       }
@@ -840,7 +950,7 @@
       const pk = myPk(); if (!pk) return;
       const w = await serverInfo("/wallet/" + pk), c = w && w.claims && (w.claims[n] || w.claims[String(n)]);
       if (c && c.paid) {
-        S.chap[n] = { ...S.chap[n], paid: c.paid }; save(); balance(); snd.ok(); flash("ok");
+        S.chap[n] = { ...S.chap[n], paid: c.paid }; save(); balance(); snd.paid(); snd.say("v-paid"); if (c.paid.mark) setTimeout(() => snd.mark(), 1800); flash("ok");
         say("ok", F("The drop paid the share: {n} test AGRS.", { n: c.paid.share ? c.paid.share.amount : SHARE }), c.paid.share && c.paid.share.hash ? explorer(c.paid.share.hash) : null);
         if (c.paid.mark) say("ok", T("And the crew’s mark: 1 test AGRS from the drop. Its hash is your badge."), c.paid.mark.hash ? explorer(c.paid.mark.hash) : null);
         else if (n === 1) watchMark();   // the mark is a payment of its own, a little after the share
@@ -902,7 +1012,7 @@
       if (cid === "ghost") { say("step", T("first a real payment, then the same one again")); const tx = await payment(k, DROP, 1, {}); const s = await sendtx(tx); if (!s.hash) refusedEarly(s); sent(tx, s); const w = await sealed(s.hash, null, s.way); if (!w.in) fail(T("Not sealed; type go again.")); ok = await verdict(c, tx, true); }
       else if (cid === "overspend") { const b = await ask("getbalance " + k.pk); const bal = Number(((b || {}).data || {}).balance) || 0; ok = await verdict(c, await payment(k, DROP, (bal === 0 ? FAUCET : bal) + 1000, {}), true); }
       else { const o = { dead: { expired: true }, stale: { stale: true }, freeride: { freeride: true }, giant: {}, forged: { signer: B.keygen() }, impostor: { from: DROP } }[cid]; ok = await verdict(c, await payment(k, DROP, cid === "giant" ? GIANT : 1, o), true); }
-      if (ok) { OP.i += 1; if (OP.i >= OP.list.length) { S.ops[OP.id] = { at: Date.now(), tricks: OP.list }; save(); OP.list = null; snd.ok(); flash("ok"); say("ok", F("Op settled: three refusals, live, beside the pirates’. Standing: {r}.", { r: T(rank()) })); crew("bosun", "That is the real thing: the same answers the chain gives the pirates, from your wallet, the same hour. The logbook has theirs; your terminal has yours.", "glad"); } else say("sys", F("Next: op {n}. Type go.", { n: OP.i + 1 }), btn("go", "go")); }
+      if (ok) { OP.i += 1; if (OP.i >= OP.list.length) { S.ops[OP.id] = { at: Date.now(), tricks: OP.list }; save(); OP.list = null; snd.seal(); flash("ok"); say("ok", F("Op settled: three refusals, live, beside the pirates’. Standing: {r}.", { r: T(rank()) })); crew("bosun", "That is the real thing: the same answers the chain gives the pirates, from your wallet, the same hour. The logbook has theirs; your terminal has yours.", "glad"); } else say("sys", F("Next: op {n}. Type go.", { n: OP.i + 1 }), btn("go", "go")); }
       else say("warn", T("That one stands as a finding; the op goes on with the next. Type go."));
     } catch (e) { slotFail(T("stopped")); say("no", e && e.soft ? e.message : T("The node did not answer in time. Type go again."), btn("go", "go")); }
     RUN.busy = false; chips(); instruments(); topbar(); balance();
@@ -954,7 +1064,7 @@
     const d = CASE.data; if (!d) { say("sys", T("Open a case file first: type case.")); return; }
     const chosen = d[x]; if (!chosen) { say("sys", T("Type pick a or pick b.")); return; }
     if (chosen === d.friend) {
-      snd.ok(); flash("ok");
+      snd.hunt(); flash("ok");
       say("ok", T("Right: the friend. The other address was ground to match the first 6 and last 4 characters, the exact parts a wallet shows; the only way to tell is the whole address, or an address book you keep yourself."));
       if (!S.cases[d.id]) { S.cases[d.id] = { at: Date.now() }; save(); instruments(); say("ok", F("Case file {id} settled. Standing: {r}.", { id: d.id, r: T(rank()) })); mood("bosun", "glad"); }
     } else {
@@ -1002,7 +1112,7 @@
       const pk = myPk(); if (!pk || !has("hunt") && !S.chap[1]) return;
       const w = await serverInfo("/wallet/" + pk);
       const dust = (w && w.dust) || [];
-      if (dust.length && !S.seen.dust) { S.seen.dust = dust[0].hash || "1"; save(); snd.mail(); crew("look", "Dust! A payment of 1 test AGRS came into your wallet from an address I would swear is the drop’s, if I only read the ends. I do not trust it. Type hunt.", "sour"); say("sys", T("The hunt:"), btn("hunt", "hunt")); chips(); return; }
+      if (dust.length && !S.seen.dust) { S.seen.dust = dust[0].hash || "1"; save(); snd.dust(); snd.say("v-dust"); crew("look", "Dust! A payment of 1 test AGRS came into your wallet from an address I would swear is the drop’s, if I only read the ends. I do not trust it. Type hunt.", "sour"); say("sys", T("The hunt:"), btn("hunt", "hunt")); chips(); return; }
       if (!dust.length && tries < 12) huntWatch(tries + 1);
     }, tries ? 20000 : 3000);
   }
@@ -1023,7 +1133,7 @@
     const chosen = d[x]; if (!chosen) { say("sys", T("Type mark a or mark b.")); return; }
     if (S.hunt[d.id]) { say("sys", F("This hunt is settled: the drop is {h}. The next one comes with the next dust.", { h: short(d.drop) }), nextChip()); return; }
     if (chosen === d.drop) {
-      snd.ok(); flash("ok");
+      snd.hunt(); flash("ok");
       say("ok", T("Right: that is the drop. The dust came from the lookalike, a key ground until its first and last characters matched the drop’s. Never pay an address from your history without reading the whole of it."));
       if (!S.hunt[d.id]) { S.hunt[d.id] = { at: Date.now() }; save(); instruments(); say("ok", F("Hunt settled. Standing: {r}.", { r: T(rank()) })); mood("look", "glad"); }
     } else { snd.no(); flash("bad"); say("no", T("That is the lookalike. Read the middle, not the ends: the ends are what it was made to match.")); }
@@ -1087,7 +1197,7 @@
       ["board", T("the players’ board: wallets by standing")],
       ["findings", T("what this terminal saw the chain do that it must not (kept here only)")],
       ["crew", T("who is who on board")],
-      ["sound on|off · fx on|off · voice on|off · full · boot · clear", T("the terminal itself")],
+      ["sound on|off · ambience on|off · fx on|off · voice on|off · full · boot · clear", T("the terminal itself")],
     ]);
   }
   function status() {
@@ -1129,7 +1239,7 @@
     const d = await boardLoad();
     if (!d || !d.board) { say("sys", T("The board is on the server; it is out of reach right now.")); return; }
     const b = d.board;
-    say("sys", F("The players’ board: {n} wallets have paid the drop. Wallets, not people; nobody is named.", { n: b.wallets || 0 }));
+    snd.board(); say("sys", F("The players’ board: {n} wallets have paid the drop. Wallets, not people; nobody is named.", { n: b.wallets || 0 }));
     cols(Object.entries(b.ranks || {}).map(([k, n]) => [T(k), String(n)]));
     if (b.claims) say("sys", F("Chapters claimed: {a} · {b} · {c}", { a: b.claims[0] || 0, b: b.claims[1] || 0, c: b.claims[2] || 0 }));
     say("sys", F("You: {x}.", { x: T(rank()) }));
@@ -1146,7 +1256,7 @@
     $("fsBtn").textContent = want ? "⤢" : "⛶";
   }
   function exec(line) {
-    const s = line.trim(); if (!s) return; cmdLine(s); snd.wake();
+    const s = line.trim(); if (!s) return; cmdLine(s); snd.wake(); snd.enter();
     const [c, ...args] = s.toLowerCase().split(/\s+/);
     if (c === "help" || c === "?") return help();
     if (c === "jobs" || c === "contracts" || c === "board" && args[0] === "jobs") { for (const ch of CH) { say("sys", F("Chapter {n}: {x}", { n: ch.n, x: T(ch.name) }) + (chapterOpen(ch) ? "" : " · " + T("locked"))); cols(ch.ids.map(id => byId(id)).map(x => [String(num(x)).padStart(2, " ") + (S.done[x.id] ? " ✓" : S.taken === x.id ? " ●" : "  "), T(x.name) + " · " + T(x.task)])); } const nx = CONTRACTS.find(y => !S.done[y.id]); return say("sys", T("take <n> takes one."), nx ? btn(F("take {n}", { n: num(nx) }), "take " + num(nx)) : null); }
@@ -1173,7 +1283,7 @@
     if (c === "clear" || c === "cls") return clearScreen();
     if (c === "wallet") { window.open("/wallet/" + lang(), "_blank", "noopener"); return; }
     if (c === "lang") { if (window.TauI18n && TauI18n.set && ["en", "zh", "ja"].includes(args[0])) TauI18n.set(args[0]); else say("sys", "lang en · lang zh · lang ja"); return; }
-    if (c === "sound" || c === "fx" || c === "voice") { if (!["on", "off"].includes(args[0])) return say("sys", c + " on · " + c + " off"); S[c === "sound" ? "snd" : c] = args[0] === "on"; save(); topbar(); return say("sys", c + " " + args[0]); }
+    if (c === "sound" || c === "fx" || c === "voice" || c === "ambience" || c === "amb") { const k = c === "amb" ? "ambience" : c; if (!["on", "off"].includes(args[0])) return say("sys", k + " on · " + k + " off"); S[k === "sound" ? "snd" : k === "ambience" ? "amb" : k] = args[0] === "on"; save(); topbar(); if (S.snd) snd.wake(); else snd.ambience(); return say("sys", k + " " + args[0]); }
     if (c === "full" || c === "fullscreen") return full();
     if (c === "boot") return bootScreen();
     if (/^(what|how|where|next|start|begin|go|hi|hello|hilfe|was|wie|\?)$/.test(c) || /what (do|should|now|next)/.test(s.toLowerCase())) return nextStep();
@@ -1225,7 +1335,8 @@
     $("mtabs").addEventListener("click", e => { const b = e.target.closest("button[data-pane]"); if (!b) return; for (const x of $("mtabs").querySelectorAll("button")) x.classList.toggle("on", x === b); const map = { jobs: "paneJobs", term: "paneTerm", stat: "paneStat" }; for (const k in map) $(map[k]).classList.toggle("show", k === b.dataset.pane); });
     $("screenWrap").addEventListener("click", e => { if (!e.target.closest("a") && !e.target.closest("button") && !window.getSelection().toString()) input.focus({ preventScroll: true }); });
     $("mailBtn").addEventListener("click", () => run("mail")); $("mailClose").addEventListener("click", () => $("mailWin").classList.remove("show"));
-    $("sndBtn").addEventListener("click", () => { S.snd = !S.snd; save(); topbar(); if (S.snd) snd.ok(); }); $("fsBtn").addEventListener("click", () => full());
+    $("sndBtn").addEventListener("click", () => { S.snd = !S.snd; save(); topbar(); if (S.snd) { snd.wake(); snd.ok(); } else snd.ambience(); });
+    document.addEventListener("pointerdown", () => snd.wake(), { once: true }); $("fsBtn").addEventListener("click", () => full());
     for (const id of ["card", "mailWin"]) $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).classList.remove("show"); });
     document.addEventListener("keydown", e => { if (e.key === "Escape") for (const id of ["card", "mailWin"]) $(id).classList.remove("show"); });
     if (!S.booted || q.get("boot")) await bootScreen();
@@ -1233,7 +1344,7 @@
     const pk = myPk();
     say("sys", SIM ? T("simulation: a practice node in this browser, nothing reaches the testnet") : T("connecting to node.tauhud.com …"));
     const st = await ask("getsequence " + (pk || DROP));
-    if (st && st.status === "ok") { tick(Number(st.data.tip_height) || 0); say("sys", (SIM ? T("practice node ready") : T("connected")) + " · " + F("block #{n}", { n: fmt(CHAIN.tip) })); if (pk) { CHAIN.seq = Number(st.data.sequence_number) || 0; await balance(); } }
+    if (st && st.status === "ok") { tick(Number(st.data.tip_height) || 0); if (!SIM) snd.say("v-online"); say("sys", (SIM ? T("practice node ready") : T("connected")) + " · " + F("block #{n}", { n: fmt(CHAIN.tip) })); if (pk) { CHAIN.seq = Number(st.data.sequence_number) || 0; await balance(); } }
     else { setState(false); say("warn", T("The node is out of reach from here (a blocker, a VPN, a restart). The board can be read; contracts wait until it answers. The header switch opens the simulation.")); }
     say("sys", pk ? F("your wallet {h}", { h: short(pk) }) + (CHAIN.bal != null ? " · " + fmt(CHAIN.bal === 0 ? FAUCET : CHAIN.bal) + " " + T("test AGRS") : "") : T("no test wallet yet: one is made in this browser at your first contract"));
     const done = Object.keys(S.done).length;

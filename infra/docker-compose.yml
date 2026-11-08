@@ -205,6 +205,24 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  # What the site's tools were paid (alerts/receipts.py): reads the receipts of Google AI Studio, ElevenLabs, Kling, the
+  # X API and the Anthropic API from the mailbox in .env (read-only, every 30 min) and keeps costs-paid.json for
+  # tauhud.com/donate/ (tool, amount, day; nothing else of a mail). `up cost` starts it, `up cost mail` sets the mailbox,
+  # `up cost gemini 10` adds a payment by hand.
+  costs:
+    build: ./alerts
+    command: ["python", "receipts.py", "loop"]
+    init: true
+    environment:
+      COSTS_IMAP_HOST: ${COSTS_IMAP_HOST:-imap.gmail.com}
+      COSTS_IMAP_USER: ${COSTS_IMAP_USER:-}
+      COSTS_IMAP_PASSWORD: ${COSTS_IMAP_PASSWORD:-}
+    volumes:
+      - alerts_state:/state
+      - alerts_public:/public
+    restart: unless-stopped
+    logging: *logging
+
   # The blog (alerts/blog.py): after each cruise ship visit, a language model writes one learnings article from the
   # facts counted out of the ship's public logbook (en, zh, ja), as an unlisted draft. Nothing goes on
   # tauhud.com/blog/ or to the channels until `up blog publish <id>`; `up blog` lists the drafts waiting.

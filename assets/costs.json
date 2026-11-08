@@ -1,5 +1,5 @@
 {
- "about": "Running costs as billed, each in the currency of its bill; amount null = bill not in yet, not shown. items: monthly. oneoff: single purchases with their date (YYYY-MM-DD), newest first. Time is never priced. Read by /donate/, the About window and the Updates panel.",
+ "about": "Running costs as billed, each in the currency of its bill; amount null = bill not in yet, not shown. items: monthly. oneoff: single purchases with their date (YYYY-MM-DD), newest first. Time is never priced. Payments read from receipts by the server (node.tauhud.com/costs-paid.json, infra/alerts/receipts.py) are added on /donate/; the same payment in both is shown once. Read by /donate/, the About window and the Updates panel.",
  "items": [
   {
    "t": "Server",
@@ -33,6 +33,13 @@
   }
  ],
  "oneoff": [
+  {
+   "t": "Image credits",
+   "d": "Google AI Studio credits for the drawings on the site",
+   "amount": 10,
+   "cur": "EUR",
+   "on": "2026-11-08"
+  },
   {
    "t": "Image credits",
    "d": "Google AI Studio credits for the drawings on the site",
