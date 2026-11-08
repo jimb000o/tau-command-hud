@@ -446,5 +446,6 @@ TauI18n.add({ strings: {
   "The claim for chapter {n} is on the chain ({h}); the purse pays within a few blocks. If nothing comes: claim {n} again": "第 {n} 章の請求はチェーン上にある（{h}）。財布は数ブロック以内に払う。来なければ：claim {n} again",
   "claim {n} again": "claim {n} again",
   "No share yet for chapter {n}. The purse pays within minutes while it is on; if it stays out: claim {n} again": "第 {n} 章の分け前はまだ来ていない。財布が動いていれば数分以内に払われる。来ないままなら：claim {n} again",
-  "claim the crew’s share at a chapter’s end (the drop pays it back); claim <n> again resends an unpaid one": "章の終わりにクルーの分け前を請求する（ドロップが払い戻す）。claim <n> again は未払いの請求を送り直す"
+  "claim the crew’s share at a chapter’s end (the drop pays it back); claim <n> again resends an unpaid one": "章の終わりにクルーの分け前を請求する（ドロップが払い戻す）。claim <n> again は未払いの請求を送り直す",
+  "This hunt is settled: the drop is {h}. The next one comes with the next dust.": "この追跡は決着済み：ドロップは {h} だ。次の追跡は次の粉塵とともに来る。"
 } });

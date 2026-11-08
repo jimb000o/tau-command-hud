@@ -1021,6 +1021,7 @@
   function markPick(x) {
     const d = HUNT.data; if (!d) { say("sys", T("Open the hunt first: type hunt.")); return; }
     const chosen = d[x]; if (!chosen) { say("sys", T("Type mark a or mark b.")); return; }
+    if (S.hunt[d.id]) { say("sys", F("This hunt is settled: the drop is {h}. The next one comes with the next dust.", { h: short(d.drop) }), nextChip()); return; }
     if (chosen === d.drop) {
       snd.ok(); flash("ok");
       say("ok", T("Right: that is the drop. The dust came from the lookalike, a key ground until its first and last characters matched the drop’s. Never pay an address from your history without reading the whole of it."));
