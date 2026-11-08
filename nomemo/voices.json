@@ -93,7 +93,7 @@
  },
  {
   "who": "look",
-  "text": "Made the block. Twelve of twelve: the board is clear. Claim the crew’s share, then come by on a Tuesday evening when the ship is in; the live ops are the real thing."
+  "text": "Made the block. Twelve of twelve: the story is told. Claim the crew’s share; the inbox keeps bringing work, harder as your rank grows, and on a Tuesday evening the ship is in for the live ops."
  },
  {
   "who": "qm",
@@ -114,6 +114,10 @@
  {
   "who": "look",
   "text": "Dust! A payment of 1 test AGRS came into your wallet from an address I would swear is the drop’s, if I only read the ends. I do not trust it. Type hunt."
+ },
+ {
+  "who": "qm",
+  "text": "Chapter one is behind you, so the crew trusts you with its own work. The inbox fills by itself, a contract every few blocks. Each is a puzzle about the chain, answered with a real transaction you build yourself. Clear what you can, decline what you do not want; harder work comes as your rank grows."
  },
  {
   "who": "look",
