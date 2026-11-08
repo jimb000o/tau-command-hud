@@ -1,0 +1,61 @@
+{
+ "about": "The cabin of the Black Sequence around No Memo's screen. Fractions of the picture: screen = x0,y0,x1,y1 of the black glass; lamp = the lantern flame; windows = where the sea is.",
+ "variants": [
+  {
+   "src": "cabin-16x9.webp",
+   "w": 2930,
+   "h": 1536,
+   "aspect": "16:9",
+   "screen": [
+    0.3038,
+    0.21,
+    0.71,
+    0.599
+   ],
+   "lamp": [
+    0.2288,
+    0.6618
+   ],
+   "windows": [
+    [
+     0.0575,
+     0.3,
+     0.135,
+     0.519
+    ]
+   ],
+   "draft": "std-c1"
+  },
+  {
+   "src": "cabin-21x9.webp",
+   "w": 3448,
+   "h": 1344,
+   "aspect": "21:9",
+   "screen": [
+    0.2737,
+    0.1346,
+    0.7275,
+    0.7147
+   ],
+   "lamp": [
+    0.1791,
+    0.7791
+   ],
+   "windows": [
+    [
+     0.0025,
+     0.1923,
+     0.0625,
+     0.6923
+    ],
+    [
+     0.9025,
+     0.1731,
+     0.995,
+     0.7179
+    ]
+   ],
+   "draft": "wide-c2"
+  }
+ ]
+}
