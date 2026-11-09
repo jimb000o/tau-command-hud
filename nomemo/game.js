@@ -1455,6 +1455,8 @@
       check: (d, x, j) => d.amount !== ones(x.base) * j.m ? F("{a} is not the count of 1s times {m}", { a: d.amount, m: j.m }) : null },
     { k: "p-top", t: 3, who: "qm", topic: "rule", want: "in", name: "The top", brief: "In Tau a bare 1 in a bitvector is not the number one: 1:bv[{m}] is the top, every bit set. Pay the drop the value of 1:bv[{m}].", hint: "what top", mk: j => { j.m = 4 + rnd(5); },
       check: (d, x, j) => d.amount !== 2 ** j.m - 1 ? F("{a} is not 1:bv[{m}]", { a: d.amount, m: j.m }) : null },
+    { k: "p-spec", t: 3, who: "bosun", topic: "rule", tau: true, want: null, name: "Write the rule", brief: "{x}", hint: "{y}",
+      mk: j => { const ks = Object.keys(SPECS); j.spec = ks[rnd(ks.length)]; } },
     { k: "r-fee9", t: 3, who: "qm", topic: "fee", want: ["FEE_LIMIT_TOO_LOW"], name: "Just under", brief: "FEE_LIMIT_TOO_LOW, but the fee limit may not be 0: exactly one under the base fee.", hint: "peek getgovernance: o9 is the base fee, in hex",
       check: (d, x) => d.fee !== x.base - 1 ? "the fee limit is not one under the base fee" : null },
     { k: "p-tight", t: 3, who: "qm", topic: "fee", want: "in", name: "Thin margin", brief: "Land a payment to the drop with a fee limit of at most twice the base fee.", hint: "peek getgovernance, then set fee",
@@ -1472,7 +1474,7 @@
   const TRY = { "r-fee": "set fee 0", "r-sig": "set signer other", "r-height": "set height past", "r-funds": "status", "p-seq": "peek getsequence me", "p-race": "set height +{m}",
     "r-clock": "set expiry past", "r-payer": "set payer drop", "r-seq": "set seq old", "r-width": "what width", "p-hex": "status", "p-fee": "peek getgovernance", "p-doors": "status",
     "r-fee9": "peek getgovernance", "p-tight": "peek getgovernance", "p-last": "history", "predict": "what order",
-    "p-bits": "rule", "p-stream": "rule", "p-ones": "what #b", "p-top": "what top" };
+    "p-bits": "rule", "p-stream": "rule", "p-ones": "what #b", "p-top": "what top", "p-spec": "what stream" };
   const tryCmd = j => (j && TRY[j.k] ? fill0(TRY[j.k], { m: j.m }) : null);
   const hintLine = j => { const kd = kindOf(j), go = tryCmd(j); say("learn", F("Hint: {x}", { x: fill(kd.hint, j) }), go ? btn(go, go) : null); };
   const LOCK_TEXT = { fee: "fee limit 0", payer: "the drop named as payer", signer: "a stranger’s signing key", expiry: "an expiry time in the past", seq: "a used sequence number", height: "a height deadline behind the tip", amount: "an amount of 2^24" };
@@ -1482,7 +1484,7 @@
   const curJob = () => (S.job ? jobOf(S.job) : null);
   const cur = () => (S.taken ? byId(S.taken) : curJob());
   const jname = j => "j" + j.n;
-  const fill = (s, j) => { const v = {}; for (const k of ["m", "a", "b"]) if (j[k] != null) v[k] = j[k]; if (j.lock) { v.x = T(LOCK_TEXT[j.lock[0][0]]); v.y = T(LOCK_TEXT[j.lock[1][0]]); } else if (j.code) v.x = j.code; return F(s, v); };
+  const fill = (s, j) => { const v = {}; for (const k of ["m", "a", "b"]) if (j[k] != null) v[k] = j[k]; if (j.lock) { v.x = T(LOCK_TEXT[j.lock[0][0]]); v.y = T(LOCK_TEXT[j.lock[1][0]]); } else if (j.code) v.x = j.code; else if (j.spec && SPECS[j.spec]) return s === "{x}" ? T(SPECS[j.spec].brief) : s === "{y}" ? T(SPECS[j.spec].hint) : F(s, v); return F(s, v); };
   function makeJob() {
     const max = tierMax(), have = new Set(S.inbox.map(j => j.k));
     const pool = KINDS.filter(x => x.t <= max && !have.has(x.k) && (!x.ok || x.ok()));
@@ -1560,8 +1562,9 @@
     if (j.lock) for (const [f, v] of j.lock) S.draft[f] = v;
     S.span = j.trace; S.deadline = CHAIN.tip != null ? CHAIN.tip + j.trace : null; save(); jobs(); instruments(); topbar(); chips();
     say("sys", F("{x} taken: {t}.", { x: jname(j), t: kindOf(j).name }) + " " + (S.deadline != null ? F("Trace: until block {n} ({t}).", { n: fmt(S.deadline), t: inTimeE(j.trace) || fill0("{n} blocks", { n: j.trace }) }) : ""));
-    say("sys", T("Your draft is a plain payment of 1 test AGRS to the drop. Change it with set, look at it with tx, send it with send."));
-    draftShow();
+    if (kindOf(j).tau) say("sys", T("This one is answered in Tau, not with a payment: type tau and your line. The Tau checker on our server runs it."), btn("what tau", "what tau"));
+    else { say("sys", T("Your draft is a plain payment of 1 test AGRS to the drop. Change it with set, look at it with tx, send it with send."));
+    draftShow(); }
     if (j.hinted && kindOf(j).hint) hintLine(j);
     if (j.t >= 3 && kindOf(j).hint) say("sys", T("No hint at this tier. hint gives one, for 1 point of the pay."), btn("hint", "hint"));
     watch();
@@ -1623,6 +1626,7 @@
   async function jobSend() {
     const j = curJob(), d = S.draft; if (!j || !d) { say("sys", T("No contract from the inbox taken. Type inbox.")); return; }
     if (RUN.busy) { say("warn", T("Already under way.")); return; }
+    if (kindOf(j).tau) { say("sys", T("This one is answered in Tau: tau <your line>."), btn("what tau", "what tau")); return; }
     if (!B) { say("no", T("This browser cannot sign (no BLS library loaded).")); return; }
     if (!SIM && CHAIN.ok === false) { say("no", T("The node is out of reach; nothing was sent. Try again in a minute, or switch to the simulation in the header.")); return; }
     if (j.k === "predict" && !S.pred) { say("sys", T("Predict first: predict <CODE>. Then send."), btn("predict TX_INVALID", "predict TX_INVALID")); return; }
@@ -1783,6 +1787,58 @@
     say("learn", F("Read aloud: at every step, the base fee is {n}.", { n: p.val }), btn("what tau", "what tau"), link("/learn/" + lang(), T("Learn Tau Language")));
     learnTopic("rule");
   }
+  /* p-spec: a rule in words, answered with a line of Tau. The Tau checker on our server (POST /tau, infra/checker) runs the
+     line over a few input steps and the outputs are compared; while it is not reachable (or in the simulation), the line is
+     checked against the shapes we know are right, and the game says that it did so */
+  const SPECS = {
+    copy: { brief: "Write a spec where output o1 always equals input i1, both 8-bit bitvectors.", hint: "G(o1[t]:bv[8] = i1[t]:bv[8]) is close to the whole answer; a stream is typed with :bv[8]",
+      steps: [{ i1: "5" }, { i1: "200" }, { i1: "0" }], out: i => i.i1, shapes: ["o1[t]=i1[t]"] },
+    inc: { brief: "Write a spec where output o1 is always input i1 plus one, as 8-bit bitvectors. Careful: in Tau a bare 1 is not one.", hint: "the number one is {1}:bv[8]; what top",
+      steps: [{ i1: "5" }, { i1: "41" }, { i1: "255" }], out: i => (i.i1 + 1) % 256, shapes: ["o1[t]=i1[t]+{1}", "o1[t]={1}+i1[t]"] },
+    zero: { brief: "Write a spec where output o1 is zero at every step, 8 bits wide.", hint: "G says at every step; {0}:bv[8] is zero",
+      steps: [{}, {}, {}], out: () => 0, shapes: ["o1[t]={0}", "o1[t]=0"] },
+    max: { brief: "Write a spec where output o1 is always the bigger of inputs i1 and i2, 8-bit bitvectors.", hint: "max(x, y) is built in for bitvectors",
+      steps: [{ i1: "5", i2: "9" }, { i1: "200", i2: "7" }, { i1: "3", i2: "3" }], out: i => Math.max(i.i1, i.i2), shapes: ["o1[t]=max(i1[t],i2[t])", "o1[t]=max(i2[t],i1[t])"] },
+  };
+  /* the shape of a line, for the offline check: no spaces, no types, no G( ), no final dot */
+  const shapeOf = line => { let x = line.replace(/\s+/g, "").replace(/\.$/, "").replace(/:bv\[\d+\]/g, ""); if (/^G\(.*\)$/.test(x)) x = x.slice(2, -1); else if (/^G/.test(x)) x = x.slice(1); if (/^\(.*\)$/.test(x)) x = x.slice(1, -1); return x; };
+  async function tauAsk(body) {
+    if (SIM) return null;
+    try { const r = await fetch(RELAY + "/tau", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), cache: "no-store" }); if (r.status === 404) return null; return await r.json(); } catch (e) { return null; }
+  }
+  async function tauCmd(line) {
+    line = String(line || "").trim();
+    if (!line) { say("sys", T("tau <line>: a line of Tau. With a Tau contract taken it is your answer; otherwise the checker says whether the line can hold (sat)."), btn("what tau", "what tau"), link("/learn/" + lang(), T("Learn Tau Language"))); return; }
+    if (line.length > 2048) { say("warn", T("Too long for the checker: 2048 characters at most.")); return; }
+    const j = curJob(), kd = j && kindOf(j);
+    if (!kd || !kd.tau) {
+      say("step", T("asking the Tau checker: sat"));
+      const r = await tauAsk({ op: "sat", spec: line });
+      if (!r) { say("sys", T("The Tau checker on our server is not answering yet. Try the line in your own tau REPL in the meantime."), link("/learn/" + lang(), T("Learn Tau Language"))); return; }
+      if (!r.ok) { say("no", F("The checker refused the line: {x}", { x: String(r.error || "").slice(0, 300) })); return; }
+      say(r.verdict ? "ok" : "warn", r.verdict ? T("Satisfiable: this spec can run forever, whatever the inputs.") : T("Not satisfiable: some inputs would leave it no way to go on."));
+      return;
+    }
+    const sp = SPECS[j.spec]; if (!sp) return;
+    if (RUN.busy) { say("warn", T("Already under way.")); return; }
+    RUN.busy = true; chips();
+    try {
+      say("step", T("asking the Tau checker: run, three steps"));
+      const r = await tauAsk({ op: "run", spec: line, steps: sp.steps });
+      if (r && r.ok && Array.isArray(r.outputs)) {
+        const rows = sp.steps.map((st, i) => { const o = r.outputs[i] || {}, got = o.out ? Number(o.out.o1) : NaN, ins = {}; for (const [k, v] of Object.entries(st)) ins[k] = Number(v); return { st, got, want: sp.out(ins) }; });
+        cols(rows.map((x, i) => ["t=" + i, Object.entries(x.st).map(([k, v]) => k + "=" + v).join(" ") + (Object.keys(x.st).length ? " → " : "") + "o1=" + (isNaN(x.got) ? "—" : x.got) + (x.got === x.want ? " ✓" : " ✗ " + F("(wanted {n})", { n: x.want }))]));
+        if (rows.every(x => x.got === x.want)) { jobWin(j, { tau: line, engine: r.engine || "tau" }); return; }
+        say("no", T("The checker ran your line, and o1 is not what the crew asked for at every step.")); mood(j.who, "sour"); return;
+      }
+      if (r && !r.ok) { say("no", F("The checker refused the line: {x}", { x: String(r.error || "").slice(0, 300) }) + (r.timeout ? " " + T("(it ran out of time)") : "")); mood(j.who, "sour"); return; }
+      /* no checker: the shapes we know are right */
+      const sh = shapeOf(line);
+      say("sys", T("The Tau checker on our server is not answering, so the line is compared with the shapes we know are right."));
+      if (sp.shapes.includes(sh)) { say("ok", T("That is one of them.")); jobWin(j, { tau: line, engine: "offline" }); return; }
+      say("no", T("That is not one of the shapes we know. It may still be right Tau; try it in your own REPL, or when the checker is up."));
+    } finally { RUN.busy = false; chips(); }
+  }
   const TAUWORDS = ["Tau Language", "Streams", "Bitvectors", "Constants", "The top", "G and F", "Two kinds of and/or", "sat and the REPL"];
   function what(term) {
     const t = term.trim().toLowerCase().replace(/^(is|a|an|the)\s+/, "").replace(/[?.!]+$/, "");
@@ -1836,7 +1892,7 @@
     ["Story", [["jobs", "the twelve contracts"], ["take <n>", "take one"], ["run", "build, sign, send"], ["back", "retract a payment"], ["drop", "put it back"], ["claim [n]", "the chapter’s share"], ["chapter <n>", "the chapter’s card"]]],
     ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["why [topic]", "what just happened"], ["archive · history", "your record"]]],
     ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail · mail <n>", "letters; some bring special orders"], ["crew", "who is who"]]],
-    ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"]]],
+    ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"]]],
     ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · boot · clear", ""], ["scene · transmission on|off", "the cabin; the crew on screen"]]],
   ];
   function help() {
@@ -1981,6 +2037,7 @@
     if (c === "peek") return peek(args);
     if (c === "trace") return traceSet(args[0]);
     if (c === "board") return board();
+    if (c === "tau") return tauCmd(s.slice(3));
     if (c === "rule" || c === "rules" || (c === "explain" && /^rules?$/.test(args[0] || ""))) return ruleCmd();
     if (c === "findings") return findings();
     if (c === "crew") return crewList();
