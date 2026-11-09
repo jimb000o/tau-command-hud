@@ -5,6 +5,7 @@ TauI18n.add({ strings: {
   "Explorer: the transaction itself, and the block that sealed it.": "エクスプローラー：取引そのものと、それを封じたブロック。",
   "Your Tau card: one picture of what this wallet did on the testnet, to post or keep.": "あなたの Tau カード：このウォレットがテストネットでしたことを一枚に。投稿しても、とっておいても。",
   "Agorzilla: a creature fed by live testnet transactions, with its own test wallet on agorzilla.com.": "Agorzilla：ライブのテストネット取引で育つ生き物。agorzilla.com に自分のテストウォレットがあります。",
+  "Agorzilla: a creature fed by live testnet transactions; this wallet can feed it from the Tau HUD wallet.": "Agorzilla：本物のテストネット取引で育つ生き物。このウォレットで Tau HUD のウォレットからごはんをあげられます。",
   "See it in the Explorer": "エクスプローラーで見る",
   "Your Tau card": "あなたの Tau カード",
   "Feed Agorzilla": "Agorzilla に食べさせる",

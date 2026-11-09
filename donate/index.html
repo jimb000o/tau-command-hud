@@ -51,6 +51,8 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .lead { margin: 4px 0 0; font: 500 clamp(20px, 2.4vw, 28px)/1.25 var(--display); color: #fff; }
 .sub { margin: 4px 0 0; color: var(--dim); max-width: 80em; }
 .sub b { color: var(--text); font-weight: 500; }
+.oneoff summary { cursor: pointer; list-style: none; } .oneoff summary::-webkit-details-marker { display: none; } .oneoff summary h2::after { content: " ›"; color: var(--dim); } .oneoff[open] summary h2::after { content: " ⌄"; }
+@media (pointer: coarse) { .oneoff summary { min-height: 44px; display: flex; align-items: center; } }
 .main { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.1fr); align-items: start; }
 .col { display: grid; gap: 14px; min-width: 0; }
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; min-width: 0; }
@@ -135,15 +137,6 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
         </div>
         <p class="fine msg" id="msg" aria-live="polite"><b>Ethereum mainnet only.</b> AGRS means the token on Ethereum; test AGRS from the testnet wallet cannot be sent here. Check the address against this page before sending; never trust a copy of it from elsewhere.</p>
       </section>
-      <section class="panel" aria-labelledby="hNot">
-        <h2 id="hNot">What a donation is not</h2>
-        <ul class="not">
-          <li><span>Not a purchase: it buys no access, no feature and no say.</span></li>
-          <li><span>Not a promise: nothing is owed in return, including that the site keeps running.</span></li>
-          <li><span>Not an investment: no share, no reward, no return.</span></li>
-        </ul>
-        <p class="fine">Each donation is public on Ethereum. The shortened sender address and the amount are shown here and thanked in the Telegram channel. <a href="/legal/#donations">Privacy notice, section 11 ›</a></p>
-      </section>
     </div>
     <div class="col">
       <section class="panel" aria-labelledby="hCost">
@@ -151,12 +144,12 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
         <ul class="rows" id="costs"></ul>
         <div class="sum"><span>Running costs, not counting time</span><b id="costSum"></b></div>
         <p class="fine" id="costNote">Amounts as billed, rounded, each in the currency of its bill. Further items are added here once their bills are in.</p>
-        <div id="oneoff" hidden>
-          <h2 class="sub2">Paid so far <span class="n">newest first</span></h2>
+        <details id="oneoff" class="oneoff" hidden>   <!-- folded: the list grows with every bill, the page fits 1366 × 768 (9.11 sim) -->
+          <summary><h2 class="sub2">Paid so far <span class="n">newest first</span></h2></summary>
           <ul class="rows" id="oneoffRows"></ul>
           <div class="sum"><span>Paid in all, not counting time</span><b id="paidSum"></b></div>
           <p class="fine">Top-ups and bills of the tools, as billed. Our server reads them from the receipts as they come in.</p>
-        </div>
+        </details>
         <p class="fine">Work on the site is counted rather than claimed: <span id="effort">changes pushed to the public repository, counted live from GitHub</span>. <a href="/#updates">Update log ›</a></p>
       </section>
     </div>
@@ -166,6 +159,15 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
         <div id="got"><p class="empty"><span class="state">Reading the Ethereum chain</span></p></div>
         <p class="fine"><a id="allTx" href="https://etherscan.io/address/0x23fB76A33A8d70f5c51aB558b85e4b93040003eb" target="_blank" rel="noopener">Every transfer to this address on Etherscan ›</a></p>
         <p class="fine">Read from Ethereum every five minutes. Only AGRS of the real token contract and ETH count; tiny amounts and look-alike tokens are left out. Money values are the price when the donation came in, or that day's price for older ones (CoinGecko). Not advice, and no price of anything is promised.</p>
+      </section>
+      <section class="panel" aria-labelledby="hNot">
+        <h2 id="hNot">What a donation is not</h2>
+        <ul class="not">
+          <li><span>Not a purchase: it buys no access, no feature and no say.</span></li>
+          <li><span>Not a promise: nothing is owed in return, including that the site keeps running.</span></li>
+          <li><span>Not an investment: no share, no reward, no return.</span></li>
+        </ul>
+        <p class="fine">Each donation is public on Ethereum. The shortened sender address and the amount are shown here and thanked in the Telegram channel. <a href="/legal/#donations">Privacy notice, section 11 ›</a></p>
       </section>
     </div>
   </main>

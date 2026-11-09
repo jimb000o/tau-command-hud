@@ -668,10 +668,15 @@
     }
   }
 
+  const QUIET = new Set(["taulang", "blog", "legal", "press", "story", "facts", "chronicle", "gazette", "donate", "roadmap", "findings", "devpulse", "about"]);
   function mount(nav) {
     if (nav.dataset.mounted) return;
     nav.dataset.mounted = "1";
     const page = nav.dataset.page || "hud", isHud = page === "hud", here = SECTION_OF[page];
+    /* phone header (9.11 sim: ~250 px before the title): the icon row moves up beside the brand, and a page that reads
+       nothing from the chain drops the Live/Simulation chips (the games keep their own slim header) */
+    if (!isHud && !["rabbit", "nomemo"].includes(page)) document.documentElement.classList.add("tn-lift");
+    if (QUIET.has(page)) document.documentElement.classList.add("tn-quiet");
     if (!isHud && location.hash === "#updates") setTimeout(() => openUpdates(page), 50);   // the deep link lands in the overlay, not on the HUD
     const tip = (e, txt) => { if (!txt) return; if (isHud) e.dataset.full = txt; else e.dataset.tnt = txt; };
     const slots = {}; nav.querySelectorAll("[data-slot]").forEach(e => { slots[e.dataset.slot] = e; });
@@ -912,6 +917,16 @@
     const load = () => fetch(`https://${RELAY}/api/v1/sources`, { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(fill, () => { line.hidden = true; });
     load(); setInterval(() => { if (!document.hidden) load(); }, 300000);
   }
+  /* phones: rows of thin marks (status days, proposal timelines, explorer blocks) are too narrow for a finger. A tap anywhere
+     in such a row, between the marks too, takes the nearest one (9.11 sim: 133 of 157 status targets under 44 px) */
+  const ROWS = ".bars, .pbar, .tl .tr, #chain .blocks, .chainrow";
+  if (window.matchMedia && matchMedia("(pointer: coarse)").matches) document.addEventListener("click", e => {
+    if (e.target.closest("button, a, input, summary")) return;
+    const row = e.target.closest(ROWS); if (!row) return;
+    let best = null, d = 1e9;
+    row.querySelectorAll("button:not([disabled]), [role=button], .seg").forEach(b => { const r = b.getBoundingClientRect(); if (!r.width) return; const x = Math.abs(e.clientX - (r.left + r.width / 2)); if (x < d) { d = x; best = b; } });
+    if (best && d < 40) best.click();
+  });
   const init = () => { document.querySelectorAll("nav.tnav").forEach(nav => { mount(nav); const pg = nav.dataset.page || "hud"; healthTabs(nav, pg); realLine(pg); }); mountFootLinks(); countVisit(); if (location.hash === "#share") setTimeout(openShare, 60); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
   window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM };

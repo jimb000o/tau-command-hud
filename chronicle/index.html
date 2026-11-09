@@ -125,7 +125,7 @@ html.fit .ev li .d { display: inline; font-size: .92em; margin-right: .5em; }
 html.fit .ev li .t { font-family: var(--display); }
 /* an opened moment shows its details in place; only that list may then scroll, the rest stays put */
 html.fit .ev li.on .more { font-size: .92em; margin-top: 3px; }
-html.fit .ev.open { overflow: auto; padding-right: 2px; }
+html.fit .ev.open, html.fit .eras.roll .ev { overflow: auto; padding-right: 2px; scrollbar-width: thin; }
 html.fit .p-gone .ev li .more { font-size: .92em; margin-top: 1px; color: var(--dim); }
 html.fit .intro { display: flex; align-items: baseline; gap: 6px 28px; flex-wrap: wrap; }
 .panel h2 .n { margin-left: auto; color: var(--dim); font: 11px var(--mono); letter-spacing: 0; text-transform: none; }
@@ -365,7 +365,10 @@ function fitText() {
   eras.style.removeProperty("--fs");
   if (!document.documentElement.classList.contains("fit")) return;
   const over = () => [...eras.querySelectorAll(".ev:not(.open)")].some(l => l.scrollHeight > l.clientHeight + 1);
-  for (let fs = 12.5; fs >= 9.5 && over(); fs -= .25) eras.style.setProperty("--fs", (fs - .25) + "px");
+  /* never under 11 px as seen (the page is zoomed by --z; the date is .92 em): a list that still does not fit scrolls in its panel */
+  const lo = Math.max(11 / ZOOM / .92, 9.5);
+  for (let fs = 12.5; fs - .25 >= lo && over(); fs -= .25) eras.style.setProperty("--fs", (fs - .25) + "px");
+  eras.classList.toggle("roll", over());
 }
 fit();
 renderEras();

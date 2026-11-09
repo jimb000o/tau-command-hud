@@ -1,6 +1,10 @@
 /* Simplified Chinese for /start/. Keys are the English text; {n} {a} {b} are placeholders. */
 TauI18n.add({ strings: {
   "Rather watch first?": "想先看看？",
+  "Rather learn the language?": "想先学这门语言？",
+  "Rather play?": "想先玩？",
+  "Play No Memo": "玩 No Memo",
+  "Play White Rabbit Key": "玩白兔礁",
   "Tau in 60 seconds": "60 秒看懂 Tau",
   "Guided tour of the HUD": "HUD 导览",
   "(one minute, eight steps)": "（一分钟，八步）",

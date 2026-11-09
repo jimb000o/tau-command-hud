@@ -266,7 +266,11 @@ body.calm .simbar, body.calm .thesis, body.calm main.grid, body.calm .community,
 .door .eyebrow { margin: 0; font: 600 11px var(--display); letter-spacing: .3em; text-transform: uppercase; color: var(--ok); }
 .door-h { margin: 0; font: 600 clamp(40px, 6vw, 88px)/1 var(--display); letter-spacing: -.01em; color: #fff; }
 .door-line { margin: 0; max-width: 72ch; font: 400 clamp(14px, 1.1vw, 17px)/1.5 var(--display); color: var(--text); }
-.doors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; max-width: 1100px; margin-top: 8px; }
+.doors { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; width: 100%; max-width: 1240px; margin-top: 8px; }
+.doors .d.play { cursor: default; } .doors .gm { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; } .doors .gm a { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border: 1px solid var(--ok); border-radius: 999px; color: #fff; text-decoration: none; font: 600 12px var(--display); } .doors .gm a:hover, .doors .gm a:focus-visible { background: rgba(57,255,138,.12); }
+@media (pointer: coarse) { .doors .gm a { min-height: 44px; } }
+@media (min-width: 761px) and (max-width: 1100px) { .doors { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .doors { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } .doors .d > span:not(.k):not(.gm) { display: none !important; } .doors .gm { margin-top: 2px; gap: 6px; } .doors .gm a { padding: 0 10px; font-size: 11px; } }   /* phone: four doors two by two, titles only, the dashboard button stays in sight */
 .doors .d { display: grid; gap: 6px; align-content: start; text-align: left; padding: 16px 18px; min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.03); color: var(--text); text-decoration: none; font: 13px/1.45 var(--mono); cursor: pointer; transition: border-color .2s, background .2s; }
 .doors .d .k { font: 600 11px var(--display); letter-spacing: .3em; text-transform: uppercase; color: var(--ok); }
 .doors .d b { font: 600 20px/1.2 var(--display); color: #fff; }
@@ -283,7 +287,7 @@ body.calm .simbar, body.calm .thesis, body.calm main.grid, body.calm .community,
 @media (max-width: 760px) {
   .doors { grid-template-columns: minmax(0, 1fr); gap: 8px; } .door { min-height: 0; padding: 6px 0 12px; gap: 10px; } .door-h { font-size: 36px; } .door .eyebrow { font-size: 10px; letter-spacing: .22em; }
   .door-proof { font-size: 13px; } .door-proof.warn, .door-proof.off, .door-proof.wait { font-size: 12px; } .door-line { font-size: 13px; }
-  .doors .d { padding: 10px 12px; gap: 2px; font-size: 12px; } .doors .d b { font-size: 18px; } .doors .d > span:last-child { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .doors .d { padding: 10px 12px; gap: 2px; font-size: 12px; } .doors .d b { font-size: 18px; } .doors .d > span:not(.gm):not(.k) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
   body.calm .tb-pill { display: none !important; }   /* the troll box pill would sit on the doors */
   /* a phone has the least height: the header's chip row, the eyebrow and the second not-affiliated line (the header has it) step back */
   body.calm nav.tnav, body.calm .door .eyebrow, body.calm .door-foot > span { display: none !important; }
@@ -1133,7 +1137,8 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     <div class="doors">
       <button class="d" type="button" id="doorWatch"><span class="k">Watch</span><b>The chain, live</b><span>Blocks as they are sealed and the rule changes the validators agreed to, read from our own node. The full dashboard.</span></button>
       <a class="d" href="start/"><span class="k">Try</span><b>Write a money rule</b><span>A rule on your own test wallet, a spending cap or a lock: the chain enforces it on every payment, your own key included. Four short steps, no sign-up.</span></a>
-      <a class="d" href="rabbit/"><span class="k">Play</span><b>Run for governor</b><span>A seven-day island election where every move is a real testnet transaction from a wallet your browser makes. Others play beside you; the count is Sunday night. No sign-up.</span></a>
+      <a class="d" href="learn/"><span class="k">Learn</span><b>Write in Tau</b><span>Type a formula and a real Tau engine answers. Short steps from yes or no to a real testnet rule. Nothing to install.</span></a>
+      <div class="d play"><span class="k">Play</span><b>Games on the live chain</b><span>Every move is a real testnet transaction from a wallet your browser makes. No sign-up.</span><span class="gm"><a href="rabbit/">White Rabbit Key</a><a href="nomemo/">No Memo</a></span></div>
     </div>
     <p class="door-foot"><button type="button" class="lnk" id="doorFull">Full dashboard</button><span>Unofficial community project, not affiliated with IDNI. Test AGRS have no value.</span></p>
   </section>
@@ -4221,7 +4226,7 @@ function doorProof() {
   else if (b) b.remove();
 }
 setInterval(doorProof, 1000); doorProof();
-document.querySelectorAll(".doors a").forEach(a => a.addEventListener("click", () => leaveCalm(true)));
+document.querySelectorAll(".doors a, .doors .gm a").forEach(a => a.addEventListener("click", () => leaveCalm(true)));
 $("btnState").onclick = $("chipCons").onclick = $("btnState2").onclick = $("btnState3").onclick = showState;
 document.addEventListener("tau-nav", e => { const act = { tour: () => tourShow(0), about: () => openModal("mAbout"), donate: () => { openModal("mAbout"); setTimeout(() => $("donate").scrollIntoView({ block: "start" }), 50); }, updates: () => openModal("mFeedback"), state: showState }[e.detail]; if (act) act(); });
 /* links from the subpages land here: /#chain-state, /#updates, /#about, /?tour=1 */

@@ -1,6 +1,10 @@
 /* Japanese for /start/. Keys are the English text; {n} {a} {b} are placeholders. */
 TauI18n.add({ strings: {
   "Rather watch first?": "まず見てみますか？",
+  "Rather learn the language?": "言語から学びたい？",
+  "Rather play?": "遊んでみたい？",
+  "Play No Memo": "No Memo で遊ぶ",
+  "Play White Rabbit Key": "White Rabbit Key で遊ぶ",
   "Tau in 60 seconds": "60 秒でわかる Tau",
   "Guided tour of the HUD": "HUD のガイドツアー",
   "(one minute, eight steps)": "（1 分、8 ステップ）",
