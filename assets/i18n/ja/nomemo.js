@@ -1057,5 +1057,8 @@ TauI18n.add({ strings: {
   "Dry run: the node would take it.": "ドライラン：ノードはこれを受け取る。",
   "Nothing was sent. send sends it for real.": "何も送られていない。send で本当に送る。",
   "New gear: {x}, {y}.": "新しい装備：{x}、{y}。",
-  "gear for rank": "階級の装備"
+  "gear for rank": "階級の装備",
+  "scan": "スキャン",
+  "blocks": "ブロック",
+  "dry": "ドライラン"
 } });

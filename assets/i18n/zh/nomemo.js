@@ -1057,5 +1057,8 @@ TauI18n.add({ strings: {
   "Dry run: the node would take it.": "试运行：节点会接收它。",
   "Nothing was sent. send sends it for real.": "什么都没有发送。send 才会真正发送。",
   "New gear: {x}, {y}.": "新装备：{x}，{y}。",
-  "gear for rank": "按等级解锁的装备"
+  "gear for rank": "按等级解锁的装备",
+  "scan": "扫描",
+  "blocks": "区块",
+  "dry": "试运行"
 } });
