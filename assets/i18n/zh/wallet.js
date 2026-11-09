@@ -591,5 +591,12 @@ TauI18n.add({ strings: {
   "Against: a stolen phone": "防范：被盗的手机",
   "Against: a wrong address": "防范：填错的地址",
   "Ready-made": "现成",
-  "Test payments against this rule · {a} go through, {b} stopped, {c} wait": "用这条规则试付 · {a} 笔通过，{b} 笔被拦，{c} 笔等待"
+  "Test payments against this rule · {a} go through, {b} stopped, {c} wait": "用这条规则试付 · {a} 笔通过，{b} 笔被拦，{c} 笔等待",
+  "Challenge of the week": "本周挑战",
+  "Answers": "答案",
+  "Answers count only on the live testnet: a rule signed in the simulation is not read.": "答案只在真实测试网上计数：在模拟中签署的规则不会被读取。",
+  "The rule above fits this task. Sign it, and it shows on the challenge page a few minutes after a block seals it.": "上面的规则符合这项任务。签署它，区块封存后几分钟它就会出现在挑战页面上。",
+  "The rule above does not fit this task yet.": "上面的规则还不符合这项任务。",
+  "Back to the Playground": "返回规则试验场",
+  "Back to the challenge": "返回挑战",
 } });

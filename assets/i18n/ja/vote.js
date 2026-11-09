@@ -149,4 +149,7 @@ TauI18n.add({ strings: {
   "Open proposals from the simulated chain.": "シミュレーションのチェーンからの受付中の提案。",
   "Open proposals read live from node.tauhud.com.": "node.tauhud.com からライブで読み取った受付中の提案。",
   "Validator seat": "バリデーター席",
+  "Your vote does not count on the real testnet right now.": "いまは本物のテストネットであなたの票は数えられません。",
+  "Five steps with IDNI’s own command line, each ready to copy; practise each one on the simulation first.": "IDNI 自身のコマンドラインで 5 ステップ、どれもコピーしてすぐ使えます。まずシミュレーションで一つずつ練習しましょう。",
+  "Retrying in {n} s.": "{n} 秒後に再試行します。",
 } });

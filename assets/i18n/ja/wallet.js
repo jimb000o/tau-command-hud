@@ -591,5 +591,12 @@ TauI18n.add({ strings: {
   "Against: a stolen phone": "防ぐもの：盗まれたスマホ",
   "Against: a wrong address": "防ぐもの：間違ったアドレス",
   "Ready-made": "できあい",
-  "Test payments against this rule · {a} go through, {b} stopped, {c} wait": "このルールで試し払い · {a} 件通過、{b} 件停止、{c} 件待ち"
+  "Test payments against this rule · {a} go through, {b} stopped, {c} wait": "このルールで試し払い · {a} 件通過、{b} 件停止、{c} 件待ち",
+  "Challenge of the week": "今週のチャレンジ",
+  "Answers": "回答",
+  "Answers count only on the live testnet: a rule signed in the simulation is not read.": "回答はライブのテストネットでのみ数えられます。シミュレーションで署名したルールは読み取られません。",
+  "The rule above fits this task. Sign it, and it shows on the challenge page a few minutes after a block seals it.": "上のルールはこの課題に合っています。署名すると、ブロックが封印してから数分でチャレンジのページに表示されます。",
+  "The rule above does not fit this task yet.": "上のルールはまだこの課題に合っていません。",
+  "Back to the Playground": "Playground に戻る",
+  "Back to the challenge": "チャレンジに戻る",
 } });

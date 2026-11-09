@@ -32,4 +32,7 @@ TauI18n.add({ strings: {
   "No answer yet.": "还没有答案。",
   "The first rule that fits shows up here a few minutes after a block seals it.": "第一条符合要求的规则被区块封存几分钟后，会出现在这里。",
   "No rule fitted last week's task.": "上周没有规则符合题目。",
+  "You are in the simulation.": "你正处于模拟模式。",
+  "Answers are read from the live testnet only: a rule signed on the practice chain never shows up here. Switch to the live testnet first.": "答案只从真实测试网读取：在练习链上签署的规则永远不会出现在这里。请先切换到真实测试网。",
+  "Switch to live and write it ›": "切换到真实网络并写下它 ›",
 } });

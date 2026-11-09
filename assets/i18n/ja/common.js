@@ -660,4 +660,5 @@ TauI18n.add({ strings: {
   "our cruise ships {n}": "私たちのクルーズ船 {n}",
   "island bot {n}": "島のボット {n}",
   "No Memo {n}": "No Memo {n}",
+  "Tau Testnet Alpha is live: a public test chain whose rules are written in logic, checked before they apply, and changed only by agreement.": "Tau Testnet Alpha は稼働中：ルールを論理で書き、適用前にチェックし、合意によってのみ変える公開テストチェーンです。",
 } });

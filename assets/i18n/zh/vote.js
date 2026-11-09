@@ -149,4 +149,7 @@ TauI18n.add({ strings: {
   "Open proposals from the simulated chain.": "待投票提案来自模拟链。",
   "Open proposals read live from node.tauhud.com.": "待投票提案实时读取自 node.tauhud.com。",
   "Validator seat": "验证者席位",
+  "Your vote does not count on the real testnet right now.": "你的投票目前在真实测试网上不算数。",
+  "Five steps with IDNI’s own command line, each ready to copy; practise each one on the simulation first.": "用 IDNI 自己的命令行完成五个步骤，每一步都可直接复制；先在模拟中把每一步练一遍。",
+  "Retrying in {n} s.": "{n} 秒后重试。",
 } });

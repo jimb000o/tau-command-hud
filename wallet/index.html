@@ -243,6 +243,11 @@ input.in.md, select.in.md { width: auto; max-width: 15em; padding: 3px 6px; disp
 .fixit { display: block; color: var(--sim); font-size: 12px; margin-top: 3px; }
 .fixit:empty { display: none; }
 /* presets: a whole rule in one click, each saying what it keeps off and what it does not */
+.chal { border: 1px solid rgba(57,255,138,.28); border-radius: 6px; padding: 7px 10px; margin-top: 6px; font-size: 12px; color: var(--dim); display: grid; gap: 2px; }
+.chal b { color: var(--text); font-weight: 500; }
+.chal .fit { color: var(--ok); }
+.chal .sim { color: var(--amber, #ffb13b); }
+.chal a { color: var(--text); }
 .presets { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; align-items: center; }
 .presets .lbl { font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); margin-right: 4px; }
 .preset { display: inline-flex; align-items: center; min-height: 26px; background: none; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; cursor: pointer; color: var(--text); font: 600 11px/1.3 var(--font, inherit); }
@@ -490,7 +495,8 @@ html.focus-feed #signFacts { display: none; }
           <div class="rule" id="ruleNow"></div>
           <div class="slotsbar" id="slotsBar" hidden></div>
           <div class="slotsbar" id="leaseBar" hidden></div>
-          <div class="presets" id="presets" role="group" aria-label="Ready-made rules"></div>
+          <div class="chal" id="chalBox" hidden aria-live="polite"></div>
+<div class="presets" id="presets" role="group" aria-label="Ready-made rules"></div>
           <div class="preshare" id="preshare"></div>
           <div class="build" id="build">
             <label class="blk" id="bkOnly"><input type="checkbox" id="cOnly"><span><b>Only to people in my address book</b><span class="sub2" id="onlyNote">A lookalike address is refused by the chain.</span><span class="chips" id="onlyChips"></span><span class="fixit" id="fxOnly"></span></span></label>
@@ -1211,7 +1217,7 @@ window.addEventListener("hashchange", takeRulesHash);
 (() => {
   const q = new URLSearchParams(location.search);
   const from = q.get("from");
-  const back = { hud: ["/", "Back to the HUD"], start: ["/start/", "Back to Start here"], rules: ["/rules/", "Back to the rules wall"] }[from];
+  const back = { hud: ["/", "Back to the HUD"], start: ["/start/", "Back to Start here"], rules: ["/rules/", "Back to the rules wall"], playground: ["/playground/", "Back to the Playground"], challenge: ["/challenge/", "Back to the challenge"] }[from];
   if (!back) return;
   const lang = q.get("lang");
   $("backHud").href = back[0] + (lang ? "?lang=" + encodeURIComponent(lang) : "");
@@ -1324,8 +1330,28 @@ function probes(r) {
       el("span", { class: cls, text: j.why.length ? FX("stopped: {x}", {}, { x: whyText(j) }) : j.co ? T("waits for a co-signature") : T("goes through") }));
   })];
 }
+/* this week's rule challenge (gazette.py on our node): the task above the builder, and whether the rule being built fits it.
+   Answers are read from the live testnet only, so in the simulation the box says so instead of a tick. */
+var CHAL = null;
+var CHAL_FITS = { ceiling: r => r.cap != null, friends: r => r.only.length >= 1 && r.only.length <= 3, twokeys: r => !!r.co,
+  until: r => r.from != null && r.from > Date.now() / 1000, both: r => [r.only.length > 0, r.cap != null, r.from != null, !!r.co].filter(Boolean).length >= 2 };
+fetch(RELAY + "/recap/gazette/challenge.json", { cache: "no-store" }).then(x => x.ok ? x.json() : null).then(j => { CHAL = j && j.now && j.now.ends * 1000 > Date.now() ? j.now : null; renderChal(ruleDraft()); }).catch(() => {});
+function renderChal(d) {
+  const box = $("chalBox"); if (!box) return;
+  if (!CHAL) { box.hidden = true; return; }
+  const L = window.TauI18n ? TauI18n.lang : "en", tx = x => (x && (x[L] || x.en)) || "";
+  const fit = CHAL_FITS[CHAL.id], fits = fit && d.ok && fit(d.r);
+  box.hidden = false;
+  box.replaceChildren(
+    el("span", {}, el("b", { text: T("Challenge of the week") + (L === "en" ? ": " : "：") + tx(CHAL.title) }), " ", el("a", { href: "/challenge/", text: T("Answers") + " ›" })),
+    el("span", { text: tx(CHAL.task) }),
+    SIM ? el("span", { class: "sim", text: T("Answers count only on the live testnet: a rule signed in the simulation is not read.") })
+      : fits ? el("span", { class: "fit", text: "✓ " + T("The rule above fits this task. Sign it, and it shows on the challenge page a few minutes after a block seals it.") })
+      : fit ? el("span", { text: T("The rule above does not fit this task yet.") }) : null);
+}
 function renderRule() {
   const r = myRule(), box = $("ruleNow"), d = ruleDraft();
+  renderChal(d);
   if (W.clause !== undefined || carried) seedBuilder(r);   // a carried rule fills the builder at once, before the chain answers
   box.className = "rule" + (r ? " on" : "");
   if (!W.pk) box.replaceChildren(el("span", { class: "dim", text: T("Make your account first; then you can give it a rule.") }));

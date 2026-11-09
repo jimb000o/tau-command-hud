@@ -32,4 +32,7 @@ TauI18n.add({ strings: {
   "No answer yet.": "まだ答えはありません。",
   "The first rule that fits shows up here a few minutes after a block seals it.": "条件に合う最初のルールは、ブロックが封印した数分後にここに表示されます。",
   "No rule fitted last week's task.": "先週の課題に合うルールはありませんでした。",
+  "You are in the simulation.": "いまはシミュレーション中です。",
+  "Answers are read from the live testnet only: a rule signed on the practice chain never shows up here. Switch to the live testnet first.": "答えはライブのテストネットからだけ読み取られます。練習チェーンで署名したルールはここに表示されません。先にライブのテストネットに切り替えてください。",
+  "Switch to live and write it ›": "ライブに切り替えて書く ›",
 } });

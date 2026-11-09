@@ -119,6 +119,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .seat .plug { justify-self: start; margin-top: 4px; }
 .prop { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: rgba(255,255,255,.02); }
 .prop h3 { margin: 0 0 8px; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.prop h3 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; }
 .offers { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
 .offer { display: grid; gap: 3px; align-content: start; text-align: left; cursor: pointer; padding: 9px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,.32); background: rgba(255,255,255,.04); color: var(--text); font: 12px/1.4 var(--mono); min-height: 44px; }
 .offer b { font: 600 13.5px/1.3 var(--display); color: #fff; }
@@ -195,6 +196,7 @@ html.wide .mlist { grid-template-columns: minmax(0, 1fr); }
 html.wide .log { max-height: 118px; }
 html.wide .seat .per { min-height: 2.8em; }
 p.sub, .sub, .story, .hint, .real p, .src, .goals li p { max-width: 76ch; }
+.sub.tauwhy { color: var(--text); max-width: none; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -209,6 +211,7 @@ p.sub, .sub, .story, .hint, .real p, .src, .goals li p { max-width: 76ch; }
   <div class="intro">
     <div>
       <p class="lead">Six missions. Change the rules of a chain by agreement.</p>
+      <p class="sub tauwhy">Tau Testnet Alpha is live: a public test chain whose rules are written in logic, checked before they apply, and changed only by agreement.</p>
       <p class="sub">A practice chain of your own, in your browser, one block every two seconds. You hold one validator seat. Each mission ends with where to see the same thing on the real Tau testnet.</p>
     </div>
     <div class="progress">
@@ -543,8 +546,11 @@ function renderProp() {
   const p = S.prop, busy = p && /voting|agreed/.test(p.status);
   const offers = `<div class="offers${p ? "" : " invite"}">${S.m.offers.map(k => { const o = OFFERS[k];
     const gone = (o.kind === "remove" && !S.vals.some(v => v.id === o.value)) || (o.kind === "fee" && S.rules.fee === o.value) || (o.kind === "quorum" && S.rules.quorum === o.value) || (o.kind === "elig" && S.rules.elig === o.value);
-    return `<button class="offer" type="button" data-offer="${k}"${busy || gone ? " disabled" : ""}><b>${esc(o.title)}</b><span>${gone ? "already in force" : esc(o.line)}</span></button>`; }).join("")}</div>`;
-  if (!p) { $("prop").innerHTML = `<h3>Propose a change <small>one vote at a time</small></h3>${offers}`; return; }
+    /* a seat that is still online is not taken off the list: otherwise a quick player removes Cyr before its first missed turn and the mission can never finish */
+    const still = !gone && o.kind === "remove" && S.vals.some(v => v.id === o.value && v.online);
+    return `<button class="offer" type="button" data-offer="${k}"${busy || gone || still ? " disabled" : ""}><b>${esc(o.title)}</b><span>${gone ? "already in force" : still ? `${esc(NAMES[o.value])} is still online: wait for a missed turn` : esc(o.line)}</span></button>`; }).join("")}</div>`;
+  const stakeRow = S.m.stakeBtn ? `<div class="row"><button class="btn" type="button" id="btnStake"${S.balance < 5000 ? " disabled" : ""}>Stake 5,000 AGRS</button><span class="pnote">Your balance: ${fmt(S.balance)} AGRS</span></div>` : "";
+  if (!p) { $("prop").innerHTML = `<h3>Propose a change <small>one vote at a time</small></h3>${offers}${stakeRow}`; return; }
   const N = S.vals.length, y = yesOf(p), n = p.need, pct = x => Math.min(100, x / N * 100);
   let note = "";
   if (p.status === "voting") note = `Deadline in ${blocks(Math.max(0, p.deadline - S.h))} · ${y} of ${n} needed yes votes`;
@@ -558,7 +564,7 @@ function renderProp() {
     ${p.status === "refused" ? "" : `<div class="quorum" data-tnt="Green: yes votes. White line: the ${qWord(S.rules.quorum)} needed (${n} of ${N}). Faint line: half of the seats."><div class="fill" style="width:${pct(y)}%"></div><div class="half" style="left:50%"></div><div class="need" style="left:calc(${pct(n)}% - 1px)"></div><span>${y} yes · ${n} needed</span></div>`}
     <p class="pnote${p.status === "refused" ? " refused" : ""}">${esc(note)}</p>
     ${myVote ? `<div class="row"><button class="btn primary" type="button" data-vote="yes">Vote yes</button><button class="btn" type="button" data-vote="no">Vote no</button></div>` : ""}
-    ${S.m.stakeBtn ? `<div class="row"><button class="btn" type="button" id="btnStake"${S.balance < 5000 ? " disabled" : ""}>Stake 5,000 AGRS</button><span class="pnote">Your balance: ${fmt(S.balance)} AGRS</span></div>` : ""}
+    ${stakeRow}
     ${busy ? "" : `<h3 style="margin-top:12px">Next change</h3>${offers}`}`;
 }
 function renderLog() {
