@@ -762,6 +762,7 @@
       if (L.offer) { const kd = KINDS.find(x => x.k === L.offer); if (!kd || kd.t > tierMax()) continue; }
       S.letters[L.key] = true; post(L.who, L.text, 1, null, { sub: L.sub, offer: L.offer || null, act: L.act || null, key: L.key });
     }
+    if (inboxOpen() && !S.letters["wk-" + weekNo()]) { const th = theme(); S.letters["wk-" + weekNo()] = true; post(th.who, th.text, 1, null, { sub: th.name, act: "week" }); }
     /* the ship's days, by German time: Tuesday's op while the ship is in, Thursday's case file */
     const d = new Date(), day = d.toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" }), wd = d.toLocaleDateString("en-GB", { timeZone: "Europe/Berlin", weekday: "short" }), hr = +d.toLocaleString("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", hourCycle: "h23" });
     if (Object.keys(S.done).length && !SIM && shipIn() && !S.letters["op-" + day]) { S.letters["op-" + day] = true; post("bosun", "The Black Sequence lies off White Rabbit Key tonight. While she is in, op opens live contracts: the same tricks the pirates try on the chain, for you to play with them. About two hours, then she sails.", 0, null, { sub: "The ship is in", act: "op" }); }
@@ -836,7 +837,7 @@
       const rows = S.inbox.map(j => el("li", { class: (S.job === j.n ? "taken" : "") + (j === S.inbox.find(x => x.n !== S.job) && !S.job ? " next" : ""), onclick: () => run("read " + jname(j)), title: fill((heistOf(j) || kindOf(j)).brief, j) },
         el("span", { class: "n", text: jname(j) }), el("span", { class: "t", text: jobName(j) }),
         el("span", { class: "st", text: S.job === j.n ? T("taken") : stars(j.t) }),
-        el("span", { class: "w", text: T(CREW[j.who]) + " · " + F("+{n}", { n: PAYS[j.t] + (j.special || 0) }) + (heistOf(j) ? " · " + T("heist") : j.special ? " · " + T("special order") : "") + (j.topic ? " · " + T(TOPICS[j.topic][0]) : "") })));
+        el("span", { class: "w", text: T(CREW[j.who]) + " · " + F("+{n}", { n: PAYS[j.t] + (j.special || 0) }) + (heistOf(j) ? " · " + T("heist") : j.themed ? " · " + T((THEMES.find(x => x.k === j.themed) || theme()).name) : j.special ? " · " + T("special order") : "") + (j.topic ? " · " + T(TOPICS[j.topic][0]) : "") })));
       if (!rows.length) rows.push(el("li", { class: "lock" }, el("span", { class: "n", text: "" }), el("span", { class: "t", text: T("Empty for the moment") }), el("span", { class: "w", text: T("a new contract comes within a few blocks") })));
       const done = S.arch.filter(a => a.out === "settled").length;
       rows.push(el("li", { class: "chap", onclick: () => run("archive") }, el("span", { class: "n", text: "" }), el("span", { class: "t", text: T("Archive") }), el("span", { class: "st", text: F("{n} settled", { n: done }) })));
@@ -1417,6 +1418,21 @@
   };
   const CODE_TOPIC = { FEE_LIMIT_TOO_LOW: "fee", TX_EXPIRED: "height", INVALID_SEQUENCE: "seq", INVALID_SIGNATURE: "sig", TX_INVALID: "payer", INVALID_PARAMS: "width", INSUFFICIENT_FUNDS: "funds", TX_REJECTED: "funds" };
   const PAYS = { 1: 1, 2: 2, 3: 3, 4: 5 };
+  /* the week's theme, the same for every player: weeks counted from Monday 00:00 UTC; its topics come more often and pay double */
+  const THEMES = [
+    { k: "fee", who: "qm", name: "Fee week", topics: ["fee", "funds", "width"], text: "This week is fee week. Contracts about the fee, empty pockets and amount widths come more often and pay double. Learn what the base fee is, where the chain keeps it, and what a fee limit really promises." },
+    { k: "deadline", who: "look", name: "Deadline week", topics: ["height", "clock"], text: "This week is deadline week. Contracts about block heights and expiry times come more often and pay double. Two clocks guard every payment; learn to tell them apart." },
+    { k: "tau", who: "bosun", name: "Tau week", topics: ["rule", "bool"], text: "This week is Tau week. Contracts about the chain’s rule and Boolean functions come more often and pay double. The rules of this chain are written in Tau; read them, then write your own." },
+    { k: "mask", who: "bosun", name: "Disguise week", topics: ["sig", "payer", "seq"], text: "This week is disguise week. Contracts about signatures, payers and sequence numbers come more often and pay double. Learn what the chain checks to know a payment is really yours." },
+    { k: "eyes", who: "look", name: "Sharp eyes week", topics: ["addr", "order"], text: "This week is sharp eyes week. Contracts about addresses and the order of the node’s checks come more often and pay double. Read the middle of an address, and know which check comes first." },
+  ];
+  const weekNo = () => Math.floor((Date.now() / 86400000 + 3) / 7);   // day 0 was a Thursday: +3 starts weeks on Monday
+  const theme = () => THEMES[weekNo() % THEMES.length];
+  function weekCmd() {
+    const th = theme(), left = 7 - ((Math.floor(Date.now() / 86400000) + 3) % 7);
+    say("sys", F("This week: {x}. Contracts on {y} pay double and come more often.", { x: th.name, y: th.topics.map(t => TOPICS[t] ? TOPICS[t][0] : t).join(", ") }));
+    say("sys", left > 1 ? F("{n} days until the next theme.", { n: left }) : T("The next theme starts tomorrow."), btn("inbox", "inbox"));
+  }
   const DRAFT0 = () => ({ to: "drop", amount: 1, fee: null, expiry: "ok", height: "auto", signer: "you", payer: "you", seq: "next" });
   const rnd = n => Math.floor(Math.random() * n);
   /* the kinds of offer: t = the lowest tier that gets it; brief/hint may hold {k} {a} {b}; check(d, x) says what is wrong
@@ -1510,11 +1526,13 @@
     const max = tierMax(), have = new Set(S.inbox.map(j => j.k));
     const heistIn = S.inbox.some(j => heistOf(j)), pool = KINDS.filter(x => x.t <= max && !have.has(x.k) && (!x.ok || x.ok()) && (!x.heist || (!heistIn && Math.random() < 0.35)));
     if (!pool.length) return null;
-    const top = pool.filter(x => x.t === max), pickFrom = top.length && Math.random() < 0.5 ? top : pool, kd = pickFrom[rnd(pickFrom.length)];
+    const th = theme(), hot = pool.filter(x => th.topics.includes(x.topic)), top = pool.filter(x => x.t === max);
+    const pickFrom = hot.length && Math.random() < 0.4 ? hot : top.length && Math.random() < 0.5 ? top : pool, kd = pickFrom[rnd(pickFrom.length)];
     S.jseq = (S.jseq || 0) + 1;
     const j = { n: S.jseq, k: kd.k, t: Math.max(kd.t, Math.min(max, kd.t + rnd(2))), who: kd.who, topic: kd.topic, born: CHAIN.tip ?? 0, until: (CHAIN.tip ?? 0) + 100 + rnd(80) };
     j.trace = { 1: 40, 2: 30, 3: 24, 4: 16 }[j.t];
     if (kd.mk) kd.mk(j);
+    if (th.topics.includes(kd.topic)) { j.special = (j.special || 0) + PAYS[j.t]; j.themed = th.k; }
     if (kd.heist) { heistStage(j, 0); j.special = 2 * kd.heist.length; j.trace = 26 * kd.heist.length; j.until += 60; }
     return j;
   }
@@ -1550,7 +1568,7 @@
     if (!inboxOpen()) { say("sys", T("The inbox opens when chapter 1 is done: four contracts, then the crew sends work of its own, without end.")); return; }
     jobTick(CHAIN.tip);
     if (!S.inbox.length) { say("sys", T("The inbox is empty for the moment; a new contract comes within a few blocks.")); return; }
-    say("sys", F("Inbox: {n} open. Tier {t} of 4 is open to you.", { n: S.inbox.length, t: tierMax() }));
+    say("sys", F("Inbox: {n} open. Tier {t} of 4 is open to you.", { n: S.inbox.length, t: tierMax() }) + " " + F("This week: {x}.", { x: theme().name }), btn("week", "week"));
     cols(S.inbox.map(j => [jname(j) + (S.job === j.n ? " ●" : ""), jobName(j) + " · " + stars(j.t) + " · " + T(CREW[j.who]) + " · " + F("+{n}", { n: PAYS[j.t] + (j.special || 0) }) + " · " + F("lapses at block {n}", { n: fmt(j.until) })]));
     const j = S.inbox.find(x => S.job !== x.n) || S.inbox[0];
     say("sys", T("read <j> opens one; accept <j> takes it; decline <j> clears it."), btn(F("read {x}", { x: jname(j) }), "read " + jname(j)));
@@ -2144,6 +2162,7 @@
     if (c === "peek") return peek(args);
     if (c === "trace") return traceSet(args[0]);
     if (c === "heat") return heatCmd();
+    if (c === "week") return weekCmd();
     if (c === "board") return board();
     if (c === "tau") return tauCmd(s.slice(3));
     if (c === "rule" || c === "rules" || (c === "explain" && /^rules?$/.test(args[0] || ""))) return ruleCmd();
