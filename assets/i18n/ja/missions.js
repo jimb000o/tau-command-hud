@@ -162,6 +162,7 @@ TauI18n.add({ strings: {
   "the offline seat stops missing turns": "オフラインの席が順番を逃さなくなる",
   "Blocks are never valid": "ブロックは決して有効ではない",
   "a change that breaks the chain": "チェーンを壊す変更",
+  "{who} is still online: wait for a missed turn": "{who} はまだオンライン：ターンの欠落を待とう",
   "already in force": "すでに施行中",
   "Proposed": "提案済み",
   "Checked": "検証済み",
