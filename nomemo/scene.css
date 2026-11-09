@@ -8,8 +8,10 @@
 html.scene .cabin { display: block; position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #050403; pointer-events: none; }
 html.scene, html.scene body { background: #050403; }
 html.scene body { background-image: none; }
-html.scene .wrap { position: relative; z-index: 3; }
-html.scene .wrap > header, html.scene .tnav { position: relative; z-index: 4; }
+/* .wrap makes no stacking layer of its own: its children stack against the cabin, the glass edge and the windows
+   directly, so the site header and its menus (Explore, Learn, Playground, About, Start here) open above the screen */
+html.scene .wrap { position: relative; z-index: auto; }
+html.scene .wrap > header, html.scene .tnav { position: relative; z-index: 9; }
 html.scene footer { display: none; }
 
 /* the room: the painting and the light that lives in it, scaled together */
