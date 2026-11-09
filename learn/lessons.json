@@ -1,5 +1,5 @@
 {
-  "about": "Five short lessons for tauhud.com/learn. The page loads them; `up tau` on the server asks the engine every try and every solution and prints ok or FAIL, so the expected answers here are checked against the real engine. A task's `fill` is the fill-in shown to people who picked 'never written a formula': the pattern with ▢ and the choices for it. `guide` is the step-by-step tour shown to people who picked 'never written a formula': one idea per card, every question is a try or solution of the lessons above, so the self-test already checks it; for a guess, the engine's answer decides which choice was right.",
+  "about": "Five short lessons for tauhud.com/learn. The page loads them; `up tau` on the server asks the engine every try and every solution and prints ok or FAIL, so the expected answers here are checked against the real engine. A task's `fill` is the fill-in shown to people who picked 'never written a formula': the pattern with ▢ and the choices for it. `guide` is the step-by-step tour shown to people who picked 'never written a formula': one idea per card, every question is a try or solution of the lessons above, so the self-test already checks it; for a guess, the engine's answer decides which choice was right. A lesson with \"level\": \"pro\" is shown only to people who picked 'I know logic or Tau'.",
   "lessons": [
     {
       "id": "yesno",
@@ -264,6 +264,144 @@
           "100"
         ],
         "solution": "always ( (i1[t]:bv[24] > { 100 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) )."
+      }
+    },
+    {
+      "id": "terms",
+      "level": "pro",
+      "title": "Terms and formulas",
+      "text": "Tau has two layers. Terms are Boolean functions built with & (and), | (or), ' (complement) and ^ (xor); x y is x & y, and 0 and 1 are bottom and top of the algebra. Formulas relate terms with = != <= and join them with && || ! -> <->. Untyped variables live in the default type tau.",
+      "tries": [
+        {
+          "label": "x ≤ y means x y' = 0",
+          "op": "valid",
+          "spec": "x & y' = 0 <-> x <= y",
+          "expect": {
+            "verdict": true
+          },
+          "says": "T: in any Boolean algebra, x is below y exactly when x meets the complement of y in 0."
+        },
+        {
+          "label": "Two tops that meet in 0?",
+          "op": "sat",
+          "spec": "x y = 0 && x = 1 && y = 1",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: 1 & 1 is 1, never 0."
+        },
+        {
+          "label": "Which parts clash?",
+          "op": "why",
+          "spec": "x y = 0 && x = 1 && y = 1",
+          "expect": {
+            "verdict": false
+          },
+          "says": "The core names the parts that already contradict each other."
+        }
+      ],
+      "task": {
+        "text": "Write a valid formula that uses the complement '.",
+        "op": "valid",
+        "expect": {
+          "verdict": true
+        },
+        "must": [
+          "'"
+        ],
+        "solution": "x | x' = 1"
+      }
+    },
+    {
+      "id": "quant",
+      "level": "pro",
+      "title": "all and ex",
+      "text": "all x and ex x quantify a variable over the algebra. A free variable is read existentially by sat, so sat x = 0 already means ex x x = 0. The default algebra tau is atomless, so it has many more elements than 0 and 1.",
+      "tries": [
+        {
+          "label": "Is every x zero?",
+          "op": "sat",
+          "spec": "all x x = 0",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: the algebra has elements other than 0."
+        },
+        {
+          "label": "Every x has a complement",
+          "op": "sat",
+          "spec": "all x ex y x & y = 0 && x | y = 1",
+          "expect": {
+            "verdict": true
+          },
+          "says": "T: y = x' meets x in 0 and joins it to 1."
+        }
+      ],
+      "task": {
+        "text": "Change all x x = 0 so that it holds, with one word.",
+        "op": "sat",
+        "expect": {
+          "verdict": true
+        },
+        "must": [
+          "ex"
+        ],
+        "solution": "ex x x = 0"
+      }
+    },
+    {
+      "id": "game",
+      "level": "pro",
+      "title": "For all inputs, some output",
+      "text": "sat on a spec with streams is not plain satisfiability: every input is quantified for all, every output exists, in time order, and outputs may depend on inputs of the same step. So a spec cannot constrain its inputs, and it must answer whatever comes in. realizable asks the same question for full LTL.",
+      "tries": [
+        {
+          "label": "Demand the input",
+          "op": "sat",
+          "spec": "i1[t] = 0",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: the input is chosen by the environment and may be anything else."
+        },
+        {
+          "label": "Answer with the complement",
+          "op": "sat",
+          "spec": "o1[t] = i1[t]'",
+          "expect": {
+            "verdict": true
+          },
+          "says": "T: whatever comes in, the output can be its complement."
+        },
+        {
+          "label": "Copy it and be 0",
+          "op": "sat",
+          "spec": "o1[t] = i1[t] && o1[t] = 0",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: once the input is not 0, no output does both."
+        },
+        {
+          "label": "Copy, as realizable",
+          "op": "realizable",
+          "spec": "o1[t] = i1[t]",
+          "expect": {
+            "verdict": true
+          },
+          "says": "T: a strategy exists that answers every input."
+        }
+      ],
+      "task": {
+        "text": "Change one connective in o1[t] = i1[t] && o1[t] = 0 so that sat answers T.",
+        "op": "sat",
+        "expect": {
+          "verdict": true
+        },
+        "must": [
+          "||"
+        ],
+        "solution": "o1[t] = i1[t] || o1[t] = 0"
       }
     }
   ],
