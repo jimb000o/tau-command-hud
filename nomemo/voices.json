@@ -209,6 +209,26 @@
  },
  {
   "who": "qm",
+  "text": "Quartermaster. The chain keeps its rules in the open, written in Tau. The base fee there has a type, a bitvector of a certain width. Read the width off the rule, and pay the drop the sum I put on your screen."
+ },
+ {
+  "who": "look",
+  "text": "Lookout here. In the chain's rule, the base fee is a stream with a number on it, an o and a digit. Find that number, add the base fee to it, and pay the drop the total. The rule tells you both. Over."
+ },
+ {
+  "who": "bosun",
+  "text": "Bosun. Tau can write a number in ones and zeros. Write the base fee that way, count the ones, and multiply by what is on your screen. Pay the drop that. Bits do not lie, so neither should you."
+ },
+ {
+  "who": "qm",
+  "text": "Quartermaster. A trap every new hand falls into. In Tau, a bare one in a bitvector is not the number one, it is the top, every bit set. Work out what that top is worth for the width on your screen, and pay the drop exactly that."
+ },
+ {
+  "who": "bosun",
+  "text": "Bosun. No payment this time. I describe a rule in plain words, and you write it in Tau, one line. Our checker runs your line over a few steps and compares what comes out. Type tau, then your line."
+ },
+ {
+  "who": "qm",
   "text": "Quartermaster. Finer work now. A payment refused for its fee, but not with a fee of nothing: exactly one under the base fee. The chain's own rules tell you what that is. Precision, please."
  },
  {

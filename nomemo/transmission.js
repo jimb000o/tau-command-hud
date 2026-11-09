@@ -140,7 +140,7 @@
       const go = () => new Promise(done => {   // on the game's voice line: after whoever is still speaking, and a breath
         if (!me.alive) return done(false);
         const s = c.createBufferSource(); s.buffer = buf; const nv = window.NoMemoVoice, inp = nv && nv.screen ? nv.screen(c, c.destination) : radio(c).input; s.connect(inp);
-        me.src = s; me.env = envelope(buf); me.dur = buf.duration; me.t0 = c.currentTime; me.clock = () => c.currentTime - me.t0; me.done = () => done(true);
+        me.src = s; me.env = envelope(buf); me.dur = buf.duration; me.t0 = c.currentTime + lag(c); me.clock = () => c.currentTime - me.t0; me.done = () => done(true);
         s.onended = () => { if (inp.stopRing) inp.stopRing(); done(true); if (cur === me) finish(me); };
         s.start();
       });
@@ -201,10 +201,10 @@
       requestAnimationFrame(frame);
       if (now - last < 33) return;
       last = now;
-      const t = me.clock ? me.clock() : 0, p = me.dur ? Math.min(1, t / me.dur) : 0;
+      const t = me.clock ? me.clock() : 0, p = me.dur ? Math.max(0, Math.min(1, t / me.dur)) : 0;
       /* how loud they are now */
       let lv = 0;
-      if (me.env && !me.ending) lv = me.env[Math.min(me.env.length - 1, Math.max(0, Math.floor(t * 50)))] || 0;
+      if (me.env && !me.ending && t >= 0) lv = me.env[Math.min(me.env.length - 1, Math.max(0, Math.floor(t * 50)))] || 0;
       else if (me.clock && !me.ending) { phase += 0.33; lv = Math.max(0, Math.sin(phase * 2.1) * 0.5 + Math.sin(phase * 3.7) * 0.35 + 0.25); if ((t * 2.3) % 3 > 2.6) lv *= 0.15; }
       me.level += (lv - me.level) * 0.55;
       me.glitch = Math.max(0, me.glitch - 0.06);
@@ -313,22 +313,29 @@
     box.querySelector("b").textContent = T(({ qm: "Quartermaster", look: "Lookout", bosun: "Bosun" })[who] || who);
     return box;
   }
+  /* a crew line with a voice waits for its voice (which may wait its turn on the line): the face comes up when the words
+     are heard, not before. Without a voice (none: no clip, or the line was dropped) it talks as long as the words take. */
+  const pend = {};
+  const lag = c => Math.max(0, (c && (c.outputLatency || c.baseLatency)) || 0);   // what the speakers still owe
   function faceStart(d) {
     if (cur) return;   // a transmission is on screen already
-    const box = faceBox(d.who); if (!box) return;
+    if (d.voice) { pend[d.who] = d; return; }
+    if (!faceShow(d)) return;
+    faceFake(face, Math.max(2.6, (d.text || "").length / 15));
+  }
+  function faceShow(d) {
+    const box = faceBox(d.who); if (!box) return null;
     if (face && face.who !== d.who) faceEnd(false);
     if (!face) {
-      face = { who: d.who, box, alive: true, img: null, level: 0, glitch: 1, sig: 60, env: null, wait: !!d.voice };
+      face = { who: d.who, box, alive: true, img: null, level: 0, glitch: 1, sig: 60, env: null };
       const img = new Image(); img.onload = () => { if (face) face.img = img; };
       img.onerror = () => { if (d.mood && d.mood !== "calm") { img.onerror = null; img.src = "art/crew/" + d.who + "-calm.webp"; } };
       img.src = "art/crew/" + d.who + "-" + (d.mood || "calm") + ".webp";
       box.classList.add("show"); faceLoop(face);
     }
     face.text = d.text || "";
-    const secs = Math.max(2.6, face.text.length / 15);
     clearTimeout(face.end);
-    if (d.voice) { face.wait = true; face.end = setTimeout(() => { if (face && face.wait) { face.wait = false; faceFake(face, secs); } }, 4500); }
-    else faceFake(face, secs);
+    return face;
   }
   function faceFake(f, secs) {
     const t0 = performance.now(); f.env = null; f.clock = () => (performance.now() - t0) / 1000; f.dur = secs;
@@ -337,10 +344,11 @@
   function faceVoice(d) {
     if (cur) return;
     if (d.end) { if (face && face.who === d.who) { clearTimeout(face.end); face.env = null; face.clock = null; face.end = setTimeout(() => faceEnd(true), 900); } return; }
-    if (!face || face.who !== d.who) faceStart({ who: d.who, mood: "calm", text: "", voice: true });
-    if (!face) return;
-    face.wait = false; clearTimeout(face.end);
-    face.env = envelope(d.buffer); face.dur = d.buffer.duration; const c = d.ctx, at = d.at; face.clock = () => c.currentTime - at;
+    if (d.none && !pend[d.who]) return;   // it was never waiting for a voice
+    const p = pend[d.who] || { who: d.who, mood: "calm", text: "" }; delete pend[d.who];
+    if (d.none) { if (faceShow(p)) faceFake(face, Math.max(2.6, (p.text || "").length / 15)); return; }
+    if (!faceShow(p)) return;
+    face.env = envelope(d.buffer); face.dur = d.buffer.duration; const c = d.ctx, at = d.at + lag(d.ctx); face.clock = () => c.currentTime - at;
     face.end = setTimeout(() => faceEnd(true), (d.buffer.duration + 3) * 1000);   // in case the end never comes
   }
   function faceEnd(fade) {
