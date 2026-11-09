@@ -308,9 +308,13 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
           <ul>
             <li><code>=</code> <span>equals,</span> <code>!=</code> <span>not equal. There is no <code>==</code>.</span></li>
             <li><code>&amp;&amp;</code> <span>and,</span> <code>||</code> <span>or,</span> <code>!</code> <span>not,</span> <code>-&gt;</code> <span>implies.</span></li>
+            <li><code>c ? a : b</code> <span>if c then a, else b. It joins formulas, not values.</span></li>
+            <li><code>&amp;</code> <code>|</code> <code>'</code> <span>and, or, complement on values (terms);</span> <code>x y</code> <span>is</span> <code>x &amp; y</code><span>.</span></li>
             <li><code>i1[t]</code> <span>input 1 at step t,</span> <code>o1[t]</code> <span>output 1,</span> <code>o1[t-1]</code> <span>the step before.</span></li>
             <li><code>i1[t]:bv[8]</code> <span>an 8-bit number;</span> <code>{ 5 }:bv[8]</code> <span>the constant 5. Bare digits are bits, not numbers.</span></li>
+            <li><code>1:bv[8]</code> <span>is 255, all bits on. The number one is</span> <code>{ 1 }:bv[8]</code><span>.</span></li>
             <li><code>always</code> <span>every step,</span> <code>sometimes</code> <span>at least once. No semicolons; the dot at the end is optional.</span></li>
+            <li><code>all x</code> <span>for every x,</span> <code>ex x</code> <span>for some x. A spec without always or sometimes holds at every step.</span></li>
             <li><code>T</code> <span>and</span> <code>F</code> <span>are true and false.</span> <code>solve</code>, <code>normalize</code> <span>live in the tau REPL on your computer.</span></li>
           </ul>
         </details>
@@ -323,7 +327,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
       <section class="panel lesson" aria-labelledby="hLes">
         <h2 id="hLes">Five short lessons</h2>
         <p class="pro-note" id="newNote" hidden><button type="button" class="backg" id="gReturn">‹ Back to the step-by-step guide</button></p>
-        <p class="pro-note" id="proNote" hidden>Lessons 1 to 4 are the basics. Lesson 5 is a real testnet rule; after it comes the <a href="/playground/">Rule Playground ›</a>.</p>
+        <p class="pro-note" id="proNote" hidden>Lessons 1 to 4 are the basics, lesson 5 is a real testnet rule, and 6 to 8 are for logic people: terms, quantifiers and how sat treats inputs. Then the <a href="/playground/">Rule Playground ›</a>.</p>
         <div class="chips"><span id="chips" role="tablist" aria-label="Lessons"></span><button type="button" id="lNext">Next ›</button></div>
         <h3 id="lTitle"></h3>
         <p id="lText"></p>
@@ -368,6 +372,9 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
           <ul class="links">
             <li><a href="https://arxiv.org/abs/2407.06214" target="_blank" rel="noopener">Guarded Successor ↗</a><span>Ohad Asor's paper on the logic behind Tau.</span></li>
             <li><a href="https://github.com/IDNI/tau-lang/blob/main/docs/Theories-and-Applications-of-Boolean-Algebras-0.25.pdf" target="_blank" rel="noopener">Theories and Applications of Boolean Algebras ↗</a><span>The book in the making, as a PDF.</span></li>
+            <li><a href="https://github.com/IDNI/tau-lang#satisfiability-and-execution" target="_blank" rel="noopener">How sat reads a spec ↗</a><span>Inputs for all, outputs exist, step by step: the exact rule in IDNI's README.</span></li>
+            <li><a href="https://github.com/IDNI/tau-lang#boolean-functions" target="_blank" rel="noopener">Boolean functions and bitvectors ↗</a><span>Every term operator, and why 1:bv[8] is 255.</span></li>
+            <li><a href="https://github.com/IDNI/tau-lang/tree/main/demos" target="_blank" rel="noopener">Demos for the newest tau ↗</a><span>30 .tau files, from basic syntax to LTL and synthesis.</span></li>
             <li><a href="https://www.youtube.com/watch?v=lNU1wS5rqtg&amp;list=PLav2klOnTUlOeakJCbLZxoib_x0jYAQ5f&amp;index=2" target="_blank" rel="noopener">Lectures on atomless Boolean algebra ↗</a><span>Video series by Ohad Asor.</span></li>
           </ul>
         </div>
@@ -426,10 +433,11 @@ function applyLevel(l, how) {
   document.querySelector(".try").classList.remove("doored");
   $("door").hidden = true;
   $("lvl").hidden = false; $("lvl").textContent = T("Level") + ": " + (level ? T(LEVELS[level]) : T("not set"));
-  $("crib").hidden = level !== "code"; if (level === "code") $("crib").open = innerHeight > 820;   // on a short screen it starts folded, so the answer box keeps its room
+  $("crib").hidden = level !== "code" && level !== "pro"; $("crib").open = level === "code" && innerHeight > 820;   // on a short screen it starts folded, so the answer box keeps its room
   document.querySelectorAll(".pro-only").forEach(b => { b.hidden = level !== "pro"; });
   $("proNote").hidden = level !== "pro";
   setView();
+  pickLessons();
   if (lessons.length) openLesson(cur);
 }
 function openDoor() {
@@ -669,7 +677,7 @@ function openLesson(i) {
   $("lTask").textContent = " " + T(l.task.text);
   $("tVerdict").textContent = ""; $("tVerdict").className = "verdict";
   $("lNext").hidden = cur === lessons.length - 1;
-  $("lPlay").hidden = cur !== lessons.length - 1;
+  $("lPlay").hidden = cur !== lessons.length - 1 && l.id !== "rule";
   chips();
   try { const u = new URL(location.href); if (!u.hash.startsWith("#q=")) { u.hash = "l" + (cur + 1); history.replaceState(null, "", u.href); } } catch (e) {}
 }
@@ -687,7 +695,7 @@ $("tCheck").addEventListener("click", async () => {
   if (!r) { v.textContent = ""; return; }
   if (matches(t.expect, r)) {
     const done = store.get(); done[l.id] = new Date().toISOString().slice(0, 10); store.set(done);
-    v.className = "verdict good"; v.textContent = cur === lessons.length - 1 ? T("Solved. You just changed a testnet rule. Next: try it against the testnet's own checks in the Rule Playground.") : cur === 0 ? T("Solved. You wrote your first Tau formula.") : T("Solved. On to the next lesson.");
+    v.className = "verdict good"; v.textContent = l.id === "rule" ? T("Solved. You just changed a testnet rule. Next: try it against the testnet's own checks in the Rule Playground.") : cur === 0 ? T("Solved. You wrote your first Tau formula.") : T("Solved. On to the next lesson.");
     const sb = document.createElement("button"); sb.type = "button"; sb.textContent = T("Copy link to it"); sb.addEventListener("click", () => $("share").click()); v.append(sb);
     chips();
   } else {
@@ -699,7 +707,13 @@ $("tCheck").addEventListener("click", async () => {
    One idea per card, in plain words. A card shows the formula as tokens with their meaning, and asks one question:
    a plain ask, a guess (the engine's answer decides which guess was right) or a fill-in. Every question is a lesson try
    or solution, so `up tau` already checks it against the engine. */
-let guide = [], gAt = 0, gBusy = false;
+let guide = [], gAt = 0, gBusy = false, allLessons = [];
+/* lessons marked "level": "pro" are for people who picked logic or Tau */
+function pickLessons() {
+  lessons = allLessons.filter(l => !l.level || l.level === level);
+  cur = Math.min(cur, Math.max(0, lessons.length - 1));
+  $("hLes").textContent = lessons.length > 5 ? T("Five lessons, then three for logic people") : T("Five short lessons");
+}
 const LEAD = { lead: "", sub: "" };
 function setView() {
   const g = level === "new" && !full && store.get().view !== "full";
@@ -813,7 +827,7 @@ full = h.startsWith("#q=");
 if (store.get().level !== undefined || h.startsWith("#q=")) applyLevel(store.get().level || "");   // came back, or follows a shared link: no door
 else openDoor();
 fetch("lessons.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
-  lessons = d.lessons || []; guide = d.guide || []; gAt = Math.min(store.get().g || 0, guide.length);
+  allLessons = d.lessons || []; pickLessons(); guide = d.guide || []; gAt = Math.min(store.get().g || 0, guide.length);
   setView();
   const m = /^#l(\d)$/.exec(h);
   const done = store.get();
