@@ -385,10 +385,19 @@
     for (const k of SIGNED[tx.tx_type] || []) d[k] = k in tx ? tx[k] : null;
     return d;
   }
+  /* the chain's rules are a Tau specification; the part the game reads: a stream, its bitvector width, a constant */
+  const SIM_RULES = "(o9[t]:bv[24] = {#x00000a}:bv[24])";
+  function parseRule(text) {
+    const m = /\b([a-z]+)(\d+)\[t\]:bv\[(\d+)\]\s*=\s*\{\s*#x([0-9a-fA-F]+)\s*\}/.exec(String(text || ""));
+    return m ? { stream: m[1] + m[2], io: m[1], num: +m[2], bits: +m[3], hex: m[4], val: parseInt(m[4], 16) } : null;
+  }
+  const ruleNow = () => parseRule(CHAIN.rules) || parseRule(SIM_RULES);
+  const ones = n => n.toString(2).split("").filter(c => c === "1").length;
   const sign = (tx, sk) => ({ ...tx, signature: B.bytesToHex(B.sign(new TextEncoder().encode(canon(preimage(tx))), sk)) });
   async function fee() {
     if (CHAIN.fee != null) return CHAIN.fee;
     const g = await ask("getgovernance"), m = /o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)/.exec((g && g.data && g.data.consensus_rules) || "");
+    CHAIN.rules = String((g && g.data && g.data.consensus_rules) || "") || CHAIN.rules || SIM_RULES;
     CHAIN.fee = m ? parseInt(m[1], 16) : 10; return CHAIN.fee;
   }
   /* sequence and tip from the node; the tip also feeds the block clock */
@@ -731,6 +740,10 @@
       text: "When the node says no, it says why: a code such as FEE_LIMIT_TOO_LOW or INVALID_SEQUENCE. That code is the whole lesson. why explains the last topic; archive keeps what you sent and what came back.", act: "archive" },
     { key: "clock", who: "look", when: () => S.arch.some(a => a.out === "lapsed" || a.out === "traced"), sub: "The trace counts blocks",
       text: "A lost contract costs little. The trace bar at the top counts blocks, not minutes: when the chain is quick, so is the trace. Take the next one and send early; a draft can be changed and sent again.", act: "inbox" },
+    { key: "tau", who: "qm", when: () => S.arch.some(a => a.out === "settled" && ["p-fee", "p-bits", "p-stream", "r-fee9", "p-tight"].includes(a.k)), sub: "The rules are written in Tau",
+      text: "You read the chain’s rule to pay that one. The rule is a line of Tau Language, the same language anyone can write in the tau program at home. rule takes it apart word by word; the Learn page shows how to start the REPL.", act: "rule" },
+    { key: "repl", who: "look", when: () => !!(S.letters && S.letters.tau) && rep() >= 20, sub: "Your own REPL",
+      text: "Install tau, start it, and type sat x = 0. at the tau> prompt. Then help examples. Everything the chain decides, it decides by rules written that way; one day you write one. what top explains the first trap.", act: "what top" },
     { key: "seq", who: "bosun", when: () => rep() >= 4, sub: ["Special order:", "Yesterday’s number"], offer: "r-seq",
       text: "Every wallet counts its own payments: the sequence number. A payment that uses a number again is refused, so the same payment cannot be played twice. Show me that refusal. This order pays two points more than the inbox." },
     { key: "fee", who: "qm", when: () => rep() >= 8, sub: ["Special order:", "Read the rules"], offer: "p-fee",
@@ -1398,6 +1411,7 @@
     funds: ["Balance", "The chain checks the balance against the amount plus the fee: INSUFFICIENT_FUNDS, or TX_REJECTED when the transfer rule says no first."],
     width: ["Amount width", "An amount is 24 bits wide here: 16,777,215 at most. 2^24 = 16,777,216 is not even read: TX_INVALID or INVALID_PARAMS."],
     addr: ["Addresses", "An address is a public key written as 96 hex characters (0–9, a–f), each one worth 0 to 15. Lookalikes copy the ends; only the whole address is the wallet."],
+    rule: ["Tau Language", "The chain’s rules are a Tau specification. In (o9[t]:bv[24] = {#x00000a}:bv[24]), o9[t] is output stream 9 at every step t, :bv[24] makes it a bitvector 24 bits wide, and {#x00000a} is a constant written in hex: 10. Learn to write such lines yourself: tauhud.com/learn/."],
     order: ["Order of checks", "A payment wrong in two ways is refused for one of them: the node answers with the first check it fails. Which check comes first is the node’s own order; its answer shows it."],
   };
   const CODE_TOPIC = { FEE_LIMIT_TOO_LOW: "fee", TX_EXPIRED: "height", INVALID_SEQUENCE: "seq", INVALID_SIGNATURE: "sig", TX_INVALID: "payer", INVALID_PARAMS: "width", INSUFFICIENT_FUNDS: "funds", TX_REJECTED: "funds" };
@@ -1433,6 +1447,14 @@
     { k: "p-doors", t: 2, who: "look", topic: "addr", want: "in", name: "Three doors", brief: "Three addresses, one of them the drop. Pay 1 test AGRS to the right one: set to a, b or c. The wrong one keeps your coin.", hint: "status shows the drop; read the middle, not the ends",
       mk: j => { j.door = rnd(3); j.mids = [0, 1, 2].map(() => Array.from({ length: 86 }, () => "0123456789abcdef"[rnd(16)]).join("")); },
       check: d => d.to !== "drop" && d.to !== "a" && d.to !== "b" && d.to !== "c" ? "set to a, b or c" : d.amount !== 1 ? "1 test AGRS, no more" : null },
+    { k: "p-bits", t: 2, who: "qm", topic: "rule", want: "in", name: "How wide", brief: "The chain’s rule gives the base fee a type: bv[n], a bitvector n bits wide. Pay the drop n times {m}.", hint: "rule takes the rule apart", mk: j => { j.m = 2 + rnd(9); },
+      check: (d, x, j) => !x.rule || d.amount !== x.rule.bits * j.m ? F("{a} is not the width times {m}", { a: d.amount, m: j.m }) : null },
+    { k: "p-stream", t: 2, who: "look", topic: "rule", want: "in", name: "Which stream", brief: "In the chain’s rule the base fee is a stream with a number, written like o1[t]. Pay the drop that stream’s number plus the base fee.", hint: "rule takes the rule apart",
+      check: (d, x) => !x.rule || d.amount !== x.rule.num + x.base ? F("{a} is not the stream’s number plus the base fee", { a: d.amount }) : null },
+    { k: "p-ones", t: 3, who: "bosun", topic: "rule", want: "in", name: "Count the ones", brief: "Tau can write a constant in binary: {#b1010} is 10. Write the chain’s base fee in binary and pay the drop the number of 1s in it, times {m}.", hint: "what #b; the base fee is in rule", mk: j => { j.m = 3 + rnd(8); },
+      check: (d, x, j) => d.amount !== ones(x.base) * j.m ? F("{a} is not the count of 1s times {m}", { a: d.amount, m: j.m }) : null },
+    { k: "p-top", t: 3, who: "qm", topic: "rule", want: "in", name: "The top", brief: "In Tau a bare 1 in a bitvector is not the number one: 1:bv[{m}] is the top, every bit set. Pay the drop the value of 1:bv[{m}].", hint: "what top", mk: j => { j.m = 4 + rnd(5); },
+      check: (d, x, j) => d.amount !== 2 ** j.m - 1 ? F("{a} is not 1:bv[{m}]", { a: d.amount, m: j.m }) : null },
     { k: "r-fee9", t: 3, who: "qm", topic: "fee", want: ["FEE_LIMIT_TOO_LOW"], name: "Just under", brief: "FEE_LIMIT_TOO_LOW, but the fee limit may not be 0: exactly one under the base fee.", hint: "peek getgovernance: o9 is the base fee, in hex",
       check: (d, x) => d.fee !== x.base - 1 ? "the fee limit is not one under the base fee" : null },
     { k: "p-tight", t: 3, who: "qm", topic: "fee", want: "in", name: "Thin margin", brief: "Land a payment to the drop with a fee limit of at most twice the base fee.", hint: "peek getgovernance, then set fee",
@@ -1449,7 +1471,8 @@
   /* the hint's first step as a command, one click away: the answer itself for the plain refusals, the place to look it up for the puzzles */
   const TRY = { "r-fee": "set fee 0", "r-sig": "set signer other", "r-height": "set height past", "r-funds": "status", "p-seq": "peek getsequence me", "p-race": "set height +{m}",
     "r-clock": "set expiry past", "r-payer": "set payer drop", "r-seq": "set seq old", "r-width": "what width", "p-hex": "status", "p-fee": "peek getgovernance", "p-doors": "status",
-    "r-fee9": "peek getgovernance", "p-tight": "peek getgovernance", "p-last": "history", "predict": "what order" };
+    "r-fee9": "peek getgovernance", "p-tight": "peek getgovernance", "p-last": "history", "predict": "what order",
+    "p-bits": "rule", "p-stream": "rule", "p-ones": "what #b", "p-top": "what top" };
   const tryCmd = j => (j && TRY[j.k] ? fill0(TRY[j.k], { m: j.m }) : null);
   const hintLine = j => { const kd = kindOf(j), go = tryCmd(j); say("learn", F("Hint: {x}", { x: fill(kd.hint, j) }), go ? btn(go, go) : null); };
   const LOCK_TEXT = { fee: "fee limit 0", payer: "the drop named as payer", signer: "a stranger’s signing key", expiry: "an expiry time in the past", seq: "a used sequence number", height: "a height deadline behind the tip", amount: "an amount of 2^24" };
@@ -1614,7 +1637,7 @@
       const tx = sign({ tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: d.seq === "old" ? seq - 1 : seq, expiration_time: d.expiry === "past" ? t - 120 : t + 600,
         expire_at_height: d.height === "past" ? Math.max(1, tip - 5) : d.height === "auto" ? tip + 1000 : tip + d.height, fee_limit: String(d.fee == null ? base * 5 : d.fee),
         operations: { "1": [[d.payer === "drop" ? DROP : k.pk, to, String(d.amount)]] } }, d.signer === "other" ? B.keygen() : k.sk);
-      const x = { tx, base, tip, last }, bad = faults(d, x);
+      const x = { tx, base, tip, last, rule: ruleNow() }, bad = faults(d, x);
       say("step", F("signing the draft: {a} test AGRS, fee limit {b}, sequence {c}, deadline block {n}", { a: fmt(d.amount), b: tx.fee_limit, c: tx.sequence_number, n: fmt(tx.expire_at_height) }));
       const s = await sendtx(tx);
       if (!s.r) fail(T("No answer from the node; nothing was sent. Type send again."));
@@ -1722,7 +1745,15 @@
     [["inbox", "draft"], "The inbox", "After chapter 1: puzzles that keep coming. accept one, look at the draft (tx), change it (set), send it. Every answer is a real transaction."],
     [["case", "op", "ops"], "Case and ops", "case: this week’s case file, from the pirates’ logbook and the hack of the week. op: live ops while the Black Sequence is in port on Tuesdays."],
     [["node", "relay", "peek"], "The node", "The node keeps the chain and answers questions; this terminal talks to it through our relay at node.tauhud.com. peek asks it yourself."],
-    [["governance", "rules", "o9"], "Governance", "The chain’s rules, readable by anyone: peek getgovernance. o9 is the base fee, in hex."],
+    [["governance", "rules", "o9"], "Governance", "The chain’s rules, readable by anyone: peek getgovernance. They are written in Tau Language; rule takes them apart. o9 is the base fee, in hex."],
+    [["tau language", "tau lang", "tau", "spec", "specification"], "Tau Language", "The language the chain’s rules are written in. A Tau specification (a spec) says how a program’s inputs and outputs relate over time. You can write and test specs on your own computer in the tau REPL: tauhud.com/learn/."],
+    [["stream", "streams", "o1", "i1", "[t]", "t"], "Streams", "A spec talks to the world through streams: o1[t] is output stream 1 at time step t, i1[t] is input stream 1. o1[t-1] is the same stream one step back. In the chain’s rule, o9[t] is the base fee."],
+    [["bv", "bitvector", "bv[24]", "bits"], "Bitvectors", "bv[n] is a bitvector n bits wide: a whole number from 0 to 2^n − 1. The chain’s rule makes the base fee a bv[24]; amounts on this chain are 24 bits wide too."],
+    [["#x", "#b", "constant", "constants", "braces"], "Constants", "A constant sits in braces with its type: {#x0a}:bv[8] is 10 written in hex, {#b1010}:bv[8] the same in binary, {10}:bv[8] in decimal."],
+    [["top", "all ones", "1:bv"], "The top", "In a bitvector a bare 1 is the top, every bit set: 1:bv[8] is 255. The number one is written {1}:bv[8]. A classic first mistake in Tau."],
+    [["g", "f", "globally", "eventually", "always"], "G and F", "G says a local spec holds at every time step, F that it holds at some step. G o1[t] = 0 means output 1 is 0 at all steps."],
+    [["&&", "||", "!", "logic", "boolean", "&", "|", "'"], "Two kinds of and/or", "Tau has Boolean operators inside a term (&, |, ' for complement) and logical ones between formulas (&&, ||, !). x & y = 0 is one formula; x = 0 && y = 0 joins two."],
+    [["sat", "repl", "satisfiable"], "sat and the REPL", "In the tau REPL, sat asks whether a spec is satisfiable: whether it can run forever, whatever the inputs. Try sat x = 0. Start with help examples."],
     [["black sequence", "ship", "pirates", "crew"], "The Black Sequence", "The pirate ship that tests the chain at White Rabbit Key every Tuesday. Her crew are game characters; their transactions are real."],
     [["players", "player", "multiplayer", "others", "other players", "online", "who"], "Other players", "Everybody at a terminal like this one plays the same chain with you, at the same time: every contract is a real transaction on Tau Testnet Alpha. The board counts the wallets that paid the drop today and this hour; it never shows names."],
     [["hash", "tx hash", "transaction hash"], "Hash", "A transaction’s fingerprint: a string of hex characters made from its bytes. The same payment always has the same hash; the explorer finds a payment by it."],
@@ -1734,11 +1765,31 @@
     [["order", "order of checks", "first check"], "Order of checks", "A payment wrong in two ways is refused for one of them: the node answers with the first check it fails. Which check comes first is the node’s own order; its answer shows it."],
     [["testnet", "tau", "chain"], "Tau Testnet Alpha", "IDNI’s public test chain. Its coins have no value; it is there to be tested. This game is one way to test it, together with every other player."],
   ];
+  /* rule: the chain's rules, taken apart token by token */
+  async function ruleCmd() {
+    const r = await ask("getgovernance"); const text = String((r && r.status === "ok" && r.data && r.data.consensus_rules) || "");
+    if (text) CHAIN.rules = text;
+    const src = text || SIM_RULES, p = parseRule(src);
+    say("sys", text ? T("The chain’s rules, as the node gives them:") : T("No answer from the node; the rule as it stood when this game was written:"));
+    say("sys", code(src.slice(0, 600)));
+    if (!p) { say("sys", T("This rule has a shape the game does not know yet. Read it with the words: what stream, what bv, what constant."), link("/learn/" + lang(), T("Learn Tau Language"))); return; }
+    cols([
+      [p.stream, p.io === "o" ? F("output stream number {n}. On this chain: the base fee.", { n: p.num }) : F("input stream number {n}.", { n: p.num })],
+      ["[t]", T("at every time step t; [t-1] would be one step back")],
+      [":bv[" + p.bits + "]", F("a bitvector {n} bits wide: 0 to {m}", { n: p.bits, m: fmt(2 ** p.bits - 1) })],
+      ["=", T("must be equal to")],
+      ["{#x" + p.hex + "}", F("a constant in braces; #x means hex: {n}", { n: p.val })],
+    ]);
+    say("learn", F("Read aloud: at every step, the base fee is {n}.", { n: p.val }), btn("what tau", "what tau"), link("/learn/" + lang(), T("Learn Tau Language")));
+    learnTopic("rule");
+  }
+  const TAUWORDS = ["Tau Language", "Streams", "Bitvectors", "Constants", "The top", "G and F", "Two kinds of and/or", "sat and the REPL"];
   function what(term) {
     const t = term.trim().toLowerCase().replace(/^(is|a|an|the)\s+/, "").replace(/[?.!]+$/, "");
     const w = WORDS.find(x => x[0].includes(t)) || WORDS.find(x => x[0].some(k => t.includes(k)));
     if (!w) { say("sys", F("No entry for {x}. Words I can explain:", { x: term.trim() })); say("sys", el("span", null, ...WORDS.map(x => [btn(x[0][0], "what " + x[0][0]), " "]).flat())); return; }
     say("learn", T(w[1]) + ": " + T(w[2]));
+    if (TAUWORDS.includes(w[1])) say("sys", T("Write Tau yourself:"), link("/learn/" + lang(), T("Learn Tau Language")), btn("rule", "rule"));
     const more = WORDS.filter(x => x !== w).sort(() => Math.random() - 0.5).slice(0, 3);
     say("sys", T("More:"), ...more.map(x => btn("what " + x[0][0], "what " + x[0][0])));
   }
@@ -1785,7 +1836,7 @@
     ["Story", [["jobs", "the twelve contracts"], ["take <n>", "take one"], ["run", "build, sign, send"], ["back", "retract a payment"], ["drop", "put it back"], ["claim [n]", "the chapter’s share"], ["chapter <n>", "the chapter’s card"]]],
     ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["why [topic]", "what just happened"], ["archive · history", "your record"]]],
     ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail · mail <n>", "letters; some bring special orders"], ["crew", "who is who"]]],
-    ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"]]],
+    ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"]]],
     ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · boot · clear", ""], ["scene · transmission on|off", "the cabin; the crew on screen"]]],
   ];
   function help() {
@@ -1930,6 +1981,7 @@
     if (c === "peek") return peek(args);
     if (c === "trace") return traceSet(args[0]);
     if (c === "board") return board();
+    if (c === "rule" || c === "rules" || (c === "explain" && /^rules?$/.test(args[0] || ""))) return ruleCmd();
     if (c === "findings") return findings();
     if (c === "crew") return crewList();
     if (c === "feedback" || c === "fb") return feedback(s.slice(s.search(/\s/) < 0 ? s.length : s.search(/\s/)).trim());
