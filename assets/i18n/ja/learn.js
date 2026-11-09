@@ -328,4 +328,13 @@ TauI18n.add({ strings: {
   "IDNI answers this in the video. Until then, this page sends your formula to a real Tau engine on tauhud's server, so you can try it here.": "IDNI は動画でこれに答えています。それまでは、このページがあなたの式を tauhud のサーバーにある本物の Tau エンジンに送るので、ここで試せます。",
   "How do I get better at writing Tau rules?": "Tau のルールをうまく書けるようになるには？",
   "Practice on small rules. Lesson 5 changes a real testnet limit, and the Rule Playground runs a rule against the testnet's own checks.": "小さなルールで練習することです。レッスン 5 では本物のテストネットの上限を変え、ルール・プレイグラウンドではテストネット自身のチェックでルールを動かせます。",
+  "Two statements joined by and": "「かつ」でつないだ二つの文",
+  "You can join two statements into one with && (read it: and). The joined statement is only true when both halves are true, like “it is raining and the sun is shining”. Here both halves talk about the same box x.": "&& (読み方：かつ) で二つの文を一つにつなげます。つないだ文は、両方の半分が正しいときだけ正しくなります。たとえば「雨が降っていて、かつ日が照っている」。ここでは両方の半分が同じ箱 x について話しています。",
+  "Joined by or instead": "代わりに「または」でつなぐ",
+  "Now join the same two halves with || (read it: or). Then one true half is enough, like “I take the bus or I walk”. Pick the sign that makes Tau say yes.": "今度は同じ二つの半分を || (読み方：または) でつなぎます。すると片方が正しければ十分です。たとえば「バスに乗るか、または歩く」。Tau が「はい」と答える記号を選んでください。",
+  "True for every value": "どの値でも正しい",
+  "Until now Tau looked for one value of x that works. A stronger question is: is it true whatever x is? Tau calls that valid. The sign != means “is not”.": "ここまで Tau は、うまくいく x の値を一つ探していました。もっと強い問いは：x が何であっても正しいか？ Tau はそれを valid と呼びます。記号 != は「ではない」の意味です。",
+  "x cannot be 0 and 1 at once: a box holds one value at a time, so the two halves are never true together.": "x は 0 と 1 に同時にはなれません。箱には一度に一つの値しか入らないので、二つの半分が同時に正しくなることはありません。",
+  "Community": "コミュニティ",
+  "Lessons made by people in the community, facts checked by Tau HUD.": "コミュニティの人たちが作ったレッスンです。事実は Tau HUD が確認しています。",
 } });
