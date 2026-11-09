@@ -237,6 +237,22 @@
  },
  {
   "who": "qm",
+  "text": "Quartermaster. A real job tonight, three parts and one trace. Count the vault's steps, try yesterday's number on the door, then knock with too little fee. Every part is a real payment, and the pay waits at the end. Do not dawdle."
+ },
+ {
+  "who": "look",
+  "text": "Lookout. Three deadlines in a row, and one trace over all of them. A tight window first, then the block height, then the clock. Watch the tip and keep moving."
+ },
+ {
+  "who": "bosun",
+  "text": "Bosun. Three disguises: a stranger's hand, a borrowed name, a used number. The chain sees through every one, and you make it prove it. One trace for the lot."
+ },
+ {
+  "who": "bosun",
+  "text": "Bosun. The rule room. Read the width in the chain's own rule, fill a truth table, then write a rule in Tau yourself. Three doors, one trace. Brains, not luck."
+ },
+ {
+  "who": "qm",
   "text": "Quartermaster. Finer work now. A payment refused for its fee, but not with a fee of nothing: exactly one under the base fee. The chain's own rules tell you what that is. Precision, please."
  },
  {

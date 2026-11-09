@@ -30,6 +30,10 @@
   "p-top": { "who": "qm", "say": "Quartermaster. A trap every new hand falls into. In Tau, a bare one in a bitvector is not the number one, it is the top, every bit set. Work out what that top is worth for the width on your screen, and pay the drop exactly that." },
   "p-spec": { "who": "bosun", "say": "Bosun. No payment this time. I describe a rule in plain words, and you write it in Tau, one line. Our checker runs your line over a few steps and compares what comes out. Type tau, then your line." },
   "p-table": { "who": "look", "say": "Lookout. A little logic. I put a table on your screen, x and y on the left, the answer on the right. Write me the Tau term that gives that table, with and, or, not and exclusive or. Your terminal checks every row. Over." },
-  "p-table3": { "who": "bosun", "say": "Bosun. Three wires this time, x, y and z, and a table of what comes out. Find the Tau term that matches every row. Short is good, right is better." }
+  "p-table3": { "who": "bosun", "say": "Bosun. Three wires this time, x, y and z, and a table of what comes out. Find the Tau term that matches every row. Short is good, right is better." },
+  "h-vault": {"who": "qm", "say": "Quartermaster. A real job tonight, three parts and one trace. Count the vault's steps, try yesterday's number on the door, then knock with too little fee. Every part is a real payment, and the pay waits at the end. Do not dawdle."},
+  "h-tide": {"who": "look", "say": "Lookout. Three deadlines in a row, and one trace over all of them. A tight window first, then the block height, then the clock. Watch the tip and keep moving."},
+  "h-ghost": {"who": "bosun", "say": "Bosun. Three disguises: a stranger's hand, a borrowed name, a used number. The chain sees through every one, and you make it prove it. One trace for the lot."},
+  "h-rule": {"who": "bosun", "say": "Bosun. The rule room. Read the width in the chain's own rule, fill a truth table, then write a rule in Tau yourself. Three doors, one trace. Brains, not luck."}
  }
 }

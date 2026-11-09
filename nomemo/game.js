@@ -833,10 +833,10 @@
     const tabs = $("ptabs"), open = inboxOpen(), pane = open && S.pane === "inbox" ? "inbox" : "story";
     if (tabs) { tabs.hidden = !open; for (const b of tabs.querySelectorAll("button")) { b.classList.toggle("on", b.dataset.p === pane); if (b.dataset.p === "inbox") b.textContent = S.inbox.length ? F("Inbox {n}", { n: S.inbox.length }) : T("Inbox"); } }
     if (pane === "inbox") {
-      const rows = S.inbox.map(j => el("li", { class: (S.job === j.n ? "taken" : "") + (j === S.inbox.find(x => x.n !== S.job) && !S.job ? " next" : ""), onclick: () => run("read " + jname(j)), title: fill(kindOf(j).brief, j) },
-        el("span", { class: "n", text: jname(j) }), el("span", { class: "t", text: T(kindOf(j).name) }),
+      const rows = S.inbox.map(j => el("li", { class: (S.job === j.n ? "taken" : "") + (j === S.inbox.find(x => x.n !== S.job) && !S.job ? " next" : ""), onclick: () => run("read " + jname(j)), title: fill((heistOf(j) || kindOf(j)).brief, j) },
+        el("span", { class: "n", text: jname(j) }), el("span", { class: "t", text: jobName(j) }),
         el("span", { class: "st", text: S.job === j.n ? T("taken") : stars(j.t) }),
-        el("span", { class: "w", text: T(CREW[j.who]) + " · " + F("+{n}", { n: PAYS[j.t] + (j.special || 0) }) + (j.special ? " · " + T("special order") : "") + (j.topic ? " · " + T(TOPICS[j.topic][0]) : "") })));
+        el("span", { class: "w", text: T(CREW[j.who]) + " · " + F("+{n}", { n: PAYS[j.t] + (j.special || 0) }) + (heistOf(j) ? " · " + T("heist") : j.special ? " · " + T("special order") : "") + (j.topic ? " · " + T(TOPICS[j.topic][0]) : "") })));
       if (!rows.length) rows.push(el("li", { class: "lock" }, el("span", { class: "n", text: "" }), el("span", { class: "t", text: T("Empty for the moment") }), el("span", { class: "w", text: T("a new contract comes within a few blocks") })));
       const done = S.arch.filter(a => a.out === "settled").length;
       rows.push(el("li", { class: "chap", onclick: () => run("archive") }, el("span", { class: "n", text: "" }), el("span", { class: "t", text: T("Archive") }), el("span", { class: "st", text: F("{n} settled", { n: done }) })));
@@ -1462,6 +1462,11 @@
       mk: j => { const ks = Object.keys(TABLES).filter(k => TABLES[k].v === 2); j.tab = ks[rnd(ks.length)]; } },
     { k: "p-table3", t: 3, who: "bosun", topic: "bool", tau: true, table: true, want: null, name: "Three wires", brief: "A Boolean function of x, y and z, in Tau. Its table is on your screen: find a term that gives it. Answer with tau and the term.", hint: "{y}",
       mk: j => { const ks = Object.keys(TABLES).filter(k => TABLES[k].v === 3); j.tab = ks[rnd(ks.length)]; } },
+    /* heists: three contracts in a row under one trace; the pay comes at the end, the stage kinds do the work */
+    { k: "h-vault", t: 3, who: "qm", heist: ["p-seq", "r-seq", "r-fee"], name: "The vault run", brief: "A job in three parts, one trace for all of it. Count the vault’s steps, then try yesterday’s number on its door, then knock with too little fee. Each part is a real payment; the pay comes at the end." },
+    { k: "h-tide", t: 3, who: "look", heist: ["p-race", "r-height", "r-clock"], name: "Clock and tide", brief: "Three deadlines in a row, one trace for all of them. Land a payment inside a tight window, then get one refused by the block height alone, then by the clock alone." },
+    { k: "h-ghost", t: 4, who: "bosun", heist: ["r-sig", "r-payer", "r-seq"], name: "The ghost key", brief: "Three disguises the chain must see through, one trace for all of them: a stranger’s signature, a borrowed payer, a used sequence number. Make it refuse each one." },
+    { k: "h-rule", t: 4, who: "bosun", heist: ["p-bits", "p-table", "p-spec"], name: "The rule room", brief: "Into the room where the rules are kept, one trace for all of it. Read the width in the chain’s own rule, fill a truth table in Tau, then write a rule yourself." },
     { k: "r-fee9", t: 3, who: "qm", topic: "fee", want: ["FEE_LIMIT_TOO_LOW"], name: "Just under", brief: "FEE_LIMIT_TOO_LOW, but the fee limit may not be 0: exactly one under the base fee.", hint: "peek getgovernance: o9 is the base fee, in hex",
       check: (d, x) => d.fee !== x.base - 1 ? "the fee limit is not one under the base fee" : null },
     { k: "p-tight", t: 3, who: "qm", topic: "fee", want: "in", name: "Thin margin", brief: "Land a payment to the drop with a fee limit of at most twice the base fee.", hint: "peek getgovernance, then set fee",
@@ -1474,13 +1479,24 @@
     { k: "r-blind", t: 4, who: "bosun", topic: null, want: null, name: "Blind order", brief: "Make the chain answer {x}. No hint from me this time.", hint: null,
       mk: j => { const C = ["FEE_LIMIT_TOO_LOW", "INVALID_SIGNATURE", "INVALID_SEQUENCE", "TX_EXPIRED", "INSUFFICIENT_FUNDS"][rnd(5)]; j.code = C; j.want = [C]; j.topic = CODE_TOPIC[C]; } },
   ];
-  const kindOf = j => KINDS.find(x => x.k === j.k);
+  const kindOf = j => { const b = KINDS.find(x => x.k === j.k); return b && b.heist && j.hs != null ? KINDS.find(x => x.k === b.heist[j.hs]) : b; };
+  const heistOf = j => { const b = KINDS.find(x => x.k === j.k); return b && b.heist ? b : null; };
+  const jobName = j => { const h = heistOf(j); return h ? T(h.name) + " · " + F("{a}/{b}", { a: (j.hs || 0) + 1, b: h.heist.length }) : T(kindOf(j).name); };
+  function heistShow(j) {
+    const h = heistOf(j); if (!h) return;
+    cols(h.heist.map((k, i) => [(i < j.hs ? "✓ " : i === j.hs ? "● " : "○ ") + F("part {n}", { n: i + 1 }), T(KINDS.find(x => x.k === k).name)]));
+  }
+  /* a heist's next stage: the stage kind sets its own numbers */
+  function heistStage(j, n) {
+    const h = heistOf(j); j.hs = n; delete j.m; delete j.tab; delete j.spec;
+    const kd = KINDS.find(x => x.k === h.heist[n]); if (kd.mk) kd.mk(j);
+  }
   /* the hint's first step as a command, one click away: the answer itself for the plain refusals, the place to look it up for the puzzles */
   const TRY = { "r-fee": "set fee 0", "r-sig": "set signer other", "r-height": "set height past", "r-funds": "status", "p-seq": "peek getsequence me", "p-race": "set height +{m}",
     "r-clock": "set expiry past", "r-payer": "set payer drop", "r-seq": "set seq old", "r-width": "what width", "p-hex": "status", "p-fee": "peek getgovernance", "p-doors": "status",
     "r-fee9": "peek getgovernance", "p-tight": "peek getgovernance", "p-last": "history", "predict": "what order",
     "p-bits": "rule", "p-stream": "rule", "p-ones": "what #b", "p-top": "what top", "p-spec": "what stream", "p-table": "what and", "p-table3": "what and" };
-  const tryCmd = j => (j && TRY[j.k] ? fill0(TRY[j.k], { m: j.m }) : null);
+  const tryCmd = j => { const k = j && kindOf(j).k; return k && TRY[k] ? fill0(TRY[k], { m: j.m }) : null; };
   const hintLine = j => { const kd = kindOf(j), go = tryCmd(j); say("learn", F("Hint: {x}", { x: fill(kd.hint, j) }), go ? btn(go, go) : null); };
   const LOCK_TEXT = { fee: "fee limit 0", payer: "the drop named as payer", signer: "a stranger’s signing key", expiry: "an expiry time in the past", seq: "a used sequence number", height: "a height deadline behind the tip", amount: "an amount of 2^24" };
   const inboxOpen = () => chapterDone(CH[0]);
@@ -1492,13 +1508,14 @@
   const fill = (s, j) => { const v = {}; for (const k of ["m", "a", "b"]) if (j[k] != null) v[k] = j[k]; if (j.lock) { v.x = T(LOCK_TEXT[j.lock[0][0]]); v.y = T(LOCK_TEXT[j.lock[1][0]]); } else if (j.code) v.x = j.code; else if (j.tab && TABLES[j.tab] && s === "{y}") return T(TABLES[j.tab].hint); else if (j.spec && SPECS[j.spec]) return s === "{x}" ? T(SPECS[j.spec].brief) : s === "{y}" ? T(SPECS[j.spec].hint) : F(s, v); return F(s, v); };
   function makeJob() {
     const max = tierMax(), have = new Set(S.inbox.map(j => j.k));
-    const pool = KINDS.filter(x => x.t <= max && !have.has(x.k) && (!x.ok || x.ok()));
+    const heistIn = S.inbox.some(j => heistOf(j)), pool = KINDS.filter(x => x.t <= max && !have.has(x.k) && (!x.ok || x.ok()) && (!x.heist || (!heistIn && Math.random() < 0.35)));
     if (!pool.length) return null;
     const top = pool.filter(x => x.t === max), pickFrom = top.length && Math.random() < 0.5 ? top : pool, kd = pickFrom[rnd(pickFrom.length)];
     S.jseq = (S.jseq || 0) + 1;
     const j = { n: S.jseq, k: kd.k, t: Math.max(kd.t, Math.min(max, kd.t + rnd(2))), who: kd.who, topic: kd.topic, born: CHAIN.tip ?? 0, until: (CHAIN.tip ?? 0) + 100 + rnd(80) };
     j.trace = { 1: 40, 2: 30, 3: 24, 4: 16 }[j.t];
     if (kd.mk) kd.mk(j);
+    if (kd.heist) { heistStage(j, 0); j.special = 2 * kd.heist.length; j.trace = 26 * kd.heist.length; j.until += 60; }
     return j;
   }
   function jobTick(tip) {
@@ -1518,7 +1535,7 @@
     if (news.length || changed) { save(); jobs(); instruments(); chips(); }
     if (news.length && S.booted) {
       snd.mail(); const j = news[news.length - 1];
-      say("sys", news.length > 1 ? F("{n} new contracts in the inbox.", { n: news.length }) : F("New contract in the inbox: {x} {t}, from the {w}.", { x: jname(j), t: kindOf(j).name, w: CREW[j.who] }), btn(F("read {x}", { x: jname(j) }), "read " + jname(j)));
+      say("sys", news.length > 1 ? F("{n} new contracts in the inbox.", { n: news.length }) : F("New contract in the inbox: {x} {t}, from the {w}.", { x: jname(j), t: heistOf(j) ? heistOf(j).name : kindOf(j).name, w: CREW[j.who] }), btn(F("read {x}", { x: jname(j) }), "read " + jname(j)));
     }
   }
   function archive(j, out, pts, extra) {
@@ -1534,15 +1551,16 @@
     jobTick(CHAIN.tip);
     if (!S.inbox.length) { say("sys", T("The inbox is empty for the moment; a new contract comes within a few blocks.")); return; }
     say("sys", F("Inbox: {n} open. Tier {t} of 4 is open to you.", { n: S.inbox.length, t: tierMax() }));
-    cols(S.inbox.map(j => [jname(j) + (S.job === j.n ? " ●" : ""), T(kindOf(j).name) + " · " + stars(j.t) + " · " + T(CREW[j.who]) + " · " + F("+{n}", { n: PAYS[j.t] + (j.special || 0) }) + " · " + F("lapses at block {n}", { n: fmt(j.until) })]));
+    cols(S.inbox.map(j => [jname(j) + (S.job === j.n ? " ●" : ""), jobName(j) + " · " + stars(j.t) + " · " + T(CREW[j.who]) + " · " + F("+{n}", { n: PAYS[j.t] + (j.special || 0) }) + " · " + F("lapses at block {n}", { n: fmt(j.until) })]));
     const j = S.inbox.find(x => S.job !== x.n) || S.inbox[0];
     say("sys", T("read <j> opens one; accept <j> takes it; decline <j> clears it."), btn(F("read {x}", { x: jname(j) }), "read " + jname(j)));
   }
   function readJob(a) {
     const j = parseJ(a) || (a ? null : curJob() || S.inbox[0]); if (!j) { noJob(a); return; }
-    const kd = kindOf(j);
-    say("sys", F("{x} · {t} · tier {n} · from the {w}", { x: jname(j), t: kd.name, n: j.t, w: CREW[j.who] }));
-    transmit(j.who, fill(kd.brief, j), { k: j.k, n: j.n, name: kd.name, tier: j.t });
+    const kd = kindOf(j), h = heistOf(j);
+    say("sys", F("{x} · {t} · tier {n} · from the {w}", { x: jname(j), t: h ? h.name : kd.name, n: j.t, w: CREW[j.who] }));
+    transmit(j.who, fill((h || kd).brief, j), { k: j.k, n: j.n, name: (h || kd).name, tier: j.t });
+    if (h) heistShow(j);
     if (j.k === "p-doors") cols(["a", "b", "c"].map((x, i) => [x, doorAddr(j, i)]));
     if (j.tab) tableShow(j);
     if (j.t <= 2 && kd.hint) hintLine(j);
@@ -1567,7 +1585,8 @@
     S.job = j.n; S.draft = DRAFT0(); S.pred = null; j.hinted = j.t <= 2; S.lastRead = null; S.jobStep = false; S.jobMiss = false;
     if (j.lock) for (const [f, v] of j.lock) S.draft[f] = v;
     S.span = j.trace; S.deadline = CHAIN.tip != null ? CHAIN.tip + j.trace : null; save(); jobs(); instruments(); topbar(); chips();
-    say("sys", F("{x} taken: {t}.", { x: jname(j), t: kindOf(j).name }) + " " + (S.deadline != null ? F("Trace: until block {n} ({t}).", { n: fmt(S.deadline), t: inTimeE(j.trace) || fill0("{n} blocks", { n: j.trace }) }) : ""));
+    say("sys", F("{x} taken: {t}.", { x: jname(j), t: heistOf(j) ? heistOf(j).name : kindOf(j).name }) + " " + (S.deadline != null ? F("Trace: until block {n} ({t}).", { n: fmt(S.deadline), t: inTimeE(j.trace) || fill0("{n} blocks", { n: j.trace }) }) : ""));
+    if (heistOf(j)) say("sys", F("A heist: {n} parts, one trace. Part {a} now: {t}.", { n: heistOf(j).heist.length, a: (j.hs || 0) + 1, t: kindOf(j).name }));
     if (kindOf(j).table) { say("sys", T("This one is answered in Tau, not with a payment: type tau and a term in x and y (and z). This terminal checks it against every row."), btn("what and", "what and")); tableShow(j); }
     else if (kindOf(j).tau) say("sys", T("This one is answered in Tau, not with a payment: type tau and your line. The Tau checker on our server runs it."), btn("what tau", "what tau"));
     else { say("sys", T("Your draft is a plain payment of 1 test AGRS to the drop. Change it with set, look at it with tx, send it with send."));
@@ -1688,13 +1707,29 @@
   }
   function learnTopic(t) { if (!t || !TOPICS[t]) return; S.lastTopic = t; save(); say("learn", T(TOPICS[t][1])); }
   function jobWin(j, rec, less) {
-    const pts = Math.max(1, PAYS[j.t] + (j.special || 0) - (j.t >= 3 && j.hinted ? 1 : 0) - (less || 0));
+    const h = heistOf(j);
+    if (h && j.hs < h.heist.length - 1) {   // a part of a heist: the next part, same trace, no pay yet
+      if (j.t >= 3 && j.hinted) j.hpen = (j.hpen || 0) + 1;
+      const done = kindOf(j);
+      heistStage(j, j.hs + 1); S.draft = DRAFT0(); S.pred = null; j.hinted = false; S.jobStep = false; S.jobMiss = false; save();
+      snd.seal(); flash("ok"); learnTopic(done.topic);
+      say("ok", F("Part {a} of {b} done. The trace runs on: block {n}.", { a: j.hs, b: h.heist.length, n: fmt(S.deadline) }));
+      const kd = kindOf(j); heistShow(j);
+      transmit(j.who, fill(kd.brief, j), { k: kd.k, n: j.n, name: kd.name, tier: j.t });
+      if (kd.table) { say("sys", T("This one is answered in Tau, not with a payment: type tau and a term in x and y (and z). This terminal checks it against every row."), btn("what and", "what and")); tableShow(j); }
+      else if (kd.tau) say("sys", T("This one is answered in Tau, not with a payment: type tau and your line. The Tau checker on our server runs it."), btn("what tau", "what tau"));
+      else { say("sys", T("A fresh draft: a plain payment of 1 test AGRS to the drop.")); draftShow(); }
+      if (kd.hint) say("sys", T("No hint at this tier. hint gives one, for 1 point of the pay."), btn("hint", "hint"));
+      jobs(); instruments(); topbar(); chips(); return;
+    }
+    const pts = Math.max(1, PAYS[j.t] + (j.special || 0) - (j.t >= 3 && j.hinted ? 1 : 0) - (j.hpen || 0) - (less || 0));
     const before = rank();
     S.rep = (S.rep || 0) + pts; archive(j, "settled", pts, rec);
     snd.tension(false); snd.seal(); flash("ok"); mood(j.who, "glad");
     if (rec.predicted) say(rec.predicted === rec.code ? "ok" : "warn", rec.predicted === rec.code ? F("Predicted {x}, and so it was.", { x: rec.code }) : F("You said {x}; the node said {y}. It stopped at another check first.", { x: rec.predicted, y: rec.code }));
+    if (h) say("ok", F("The heist is done: all {n} parts.", { n: h.heist.length }));
     say("ok", F("{x} settled: +{n}. Standing: {r}.", { x: jname(j), n: pts, r: rank() }));
-    learnTopic(j.topic);
+    learnTopic(h ? kindOf(j).topic : j.topic);
     if (rank() !== before) { snd.chapter(); crew("qm", F("New rank: {r}. Harder work comes to your inbox now.", { r: rank() }), "glad"); }
     letters();
     jobs(); instruments(); topbar(); chips(); jobTick(CHAIN.tip);
@@ -1703,10 +1738,10 @@
   function jobMiss(j) { archive(j, "missed", 0); mood(j.who, "sour"); jobs(); instruments(); topbar(); chips(); jobTick(CHAIN.tip); }
   function jobTraced() {
     const j = curJob(); if (!j) return;
-    const loss = j.t >= 2 ? 1 : 0; S.rep = Math.max(0, (S.rep || 0) - loss);
+    const loss = heistOf(j) ? 2 : j.t >= 2 ? 1 : 0; S.rep = Math.max(0, (S.rep || 0) - loss);
     archive(j, "traced", -loss);
     const h = document.documentElement; h.classList.add("tr-out"); setTimeout(() => h.classList.remove("tr-out"), 2500); snd.out(); flash("bad");
-    say("no", F("Trace complete: block {n} passed. {x} is lost.", { n: fmt(CHAIN.tip), x: jname(j) })); if (loss) say("warn", T("It costs 1 point of standing."));
+    say("no", F("Trace complete: block {n} passed. {x} is lost.", { n: fmt(CHAIN.tip), x: jname(j) })); if (loss) say("warn", loss > 1 ? T("A blown heist costs 2 points of standing.") : T("It costs 1 point of standing."));
     crew(j.who, "The block clock does not wait. There is more work in the inbox.", "sour");
     jobs(); instruments(); topbar(); chips(); jobTick(CHAIN.tip);
   }
@@ -2220,7 +2255,7 @@
     else { say("sys", F("{n} of {m} contracts settled before. Standing: {r}.", { n: done, m: CONTRACTS.length, r: rank() })); crew("qm", "Back aboard. The board remembers you; so does the chain.", "calm"); }
     if (S.taken === "wayback" && S.ret && S.ret.release > now() + 30) { RUN.ret = S.ret; crew("bosun", F("Your 50 test AGRS still wait in escrow ({h}), release at {t}. Type back.", { h: short(S.ret.id), t: clock(S.ret.release) })); }
     else if (S.taken) { const c = byId(S.taken); if (c && c.id !== "wayback") say("sys", F("Contract {n} is still yours: {t}. Type run.", { n: num(c), t: c.name }), btn("run", "run")); else { S.taken = null; S.deadline = null; S.ret = null; save(); } }
-    if (S.job) { const j = curJob(); if (j) say("sys", F("{x} is still yours: {t}. tx shows the draft, send sends it.", { x: jname(j), t: kindOf(j).name }), btn("tx", "tx"), btn("send", "send")); else { S.job = null; S.draft = null; S.deadline = null; save(); } }
+    if (S.job) { const j = curJob(); if (j) say("sys", F("{x} is still yours: {t}. tx shows the draft, send sends it.", { x: jname(j), t: heistOf(j) ? heistOf(j).name : kindOf(j).name }), btn("tx", "tx"), btn("send", "send")); else { S.job = null; S.draft = null; S.deadline = null; save(); } }
     const claimable = CH.find(ch => chapterDone(ch) && !S.chap[ch.n]);
     if (claimable) say("sys", F("Chapter {n} is done and its share unclaimed.", { n: claimable.n }), btn("claim", "claim"));
     else if (!done) say("sys", T("New here? The tutorial plays the first contracts with you. Or type help, or click:"), btn("tutorial", "tutorial"), btn("take 1", "take 1"), el("span", { class: "cur" }));

@@ -984,5 +984,20 @@ TauI18n.add({ strings: {
   "1 where at least two of the three are 1": "三つのうち少なくとも二つが 1 のところで 1",
   "if x then y, else z": "x なら y、そうでなければ z",
   "1 where an odd number of them are 1": "1 の数が奇数のところで 1",
-  "one row is 1": "1 の行は一つ"
+  "one row is 1": "1 の行は一つ",
+  "The vault run": "金庫破り",
+  "Clock and tide": "時計と潮",
+  "The ghost key": "幽霊の鍵",
+  "The rule room": "規則の部屋",
+  "A job in three parts, one trace for all of it. Count the vault’s steps, then try yesterday’s number on its door, then knock with too little fee. Each part is a real payment; the pay comes at the end.": "三部構成の仕事、追跡は全体で一つ。金庫の歩数を数え、次に昨日の番号で扉を試し、最後に足りない手数料でノックしろ。どの部分も本物の支払いだ。報酬は最後に出る。",
+  "Three deadlines in a row, one trace for all of them. Land a payment inside a tight window, then get one refused by the block height alone, then by the clock alone.": "三つの期限が続く、追跡は全体で一つ。狭い窓の中に支払いを通し、次にブロック高だけで拒否させ、最後に時計だけで拒否させろ。",
+  "Three disguises the chain must see through, one trace for all of them: a stranger’s signature, a borrowed payer, a used sequence number. Make it refuse each one.": "チェーンが見破るべき三つの変装、追跡は全体で一つ：他人の署名、借りた支払者、使用済みのシーケンス番号。一つずつ拒否させろ。",
+  "Into the room where the rules are kept, one trace for all of it. Read the width in the chain’s own rule, fill a truth table in Tau, then write a rule yourself.": "規則が保管された部屋へ、追跡は全体で一つ。チェーン自身の規則から幅を読み、Tau で真理値表を埋め、最後に自分で規則を書け。",
+  "heist": "強奪",
+  "part {n}": "第 {n} 部",
+  "A heist: {n} parts, one trace. Part {a} now: {t}.": "強奪：{n} 部構成、追跡は一つ。今は第 {a} 部：{t}。",
+  "Part {a} of {b} done. The trace runs on: block {n}.": "第 {a} 部（全 {b} 部）完了。追跡は続く：ブロック {n}。",
+  "A fresh draft: a plain payment of 1 test AGRS to the drop.": "新しい下書き：ドロップへ 1 テスト AGRS のただの支払い。",
+  "The heist is done: all {n} parts.": "強奪完了：全 {n} 部。",
+  "A blown heist costs 2 points of standing.": "失敗した強奪は評価 2 点を失う。"
 } });

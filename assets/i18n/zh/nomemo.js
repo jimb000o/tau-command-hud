@@ -984,5 +984,20 @@ TauI18n.add({ strings: {
   "1 where at least two of the three are 1": "三个中至少有两个是 1 时为 1",
   "if x then y, else z": "若 x 则 y，否则 z",
   "1 where an odd number of them are 1": "其中奇数个为 1 时为 1",
-  "one row is 1": "只有一行是 1"
+  "one row is 1": "只有一行是 1",
+  "The vault run": "金库行动",
+  "Clock and tide": "时钟与潮汐",
+  "The ghost key": "幽灵钥匙",
+  "The rule room": "规则室",
+  "A job in three parts, one trace for all of it. Count the vault’s steps, then try yesterday’s number on its door, then knock with too little fee. Each part is a real payment; the pay comes at the end.": "一个分三步的活，整件事只有一条追踪。先数金库的步数，再拿昨天的号码去试它的门，然后用不够的手续费去敲门。每一步都是一笔真实的付款；报酬在最后才给。",
+  "Three deadlines in a row, one trace for all of them. Land a payment inside a tight window, then get one refused by the block height alone, then by the clock alone.": "连续三个截止期限，全部只有一条追踪。先让一笔付款落在狭窄的窗口内，再让一笔只因区块高度被拒，然后只因时钟被拒。",
+  "Three disguises the chain must see through, one trace for all of them: a stranger’s signature, a borrowed payer, a used sequence number. Make it refuse each one.": "链必须识破的三种伪装，全部只有一条追踪：陌生人的签名、借来的付款人、用过的序列号。让它逐一拒绝。",
+  "Into the room where the rules are kept, one trace for all of it. Read the width in the chain’s own rule, fill a truth table in Tau, then write a rule yourself.": "进入存放规则的房间，整件事只有一条追踪。读出链自身规则中的位宽，用 Tau 填一张真值表，然后自己写一条规则。",
+  "heist": "劫案",
+  "part {n}": "第 {n} 步",
+  "A heist: {n} parts, one trace. Part {a} now: {t}.": "一场劫案：{n} 步，一条追踪。现在是第 {a} 步：{t}。",
+  "Part {a} of {b} done. The trace runs on: block {n}.": "第 {a} 步（共 {b} 步）完成。追踪继续：区块 {n}。",
+  "A fresh draft: a plain payment of 1 test AGRS to the drop.": "新的草稿：一笔付给接头点 1 测试 AGRS 的普通付款。",
+  "The heist is done: all {n} parts.": "劫案完成：全部 {n} 步。",
+  "A blown heist costs 2 points of standing.": "搞砸的劫案扣 2 点声望。"
 } });
