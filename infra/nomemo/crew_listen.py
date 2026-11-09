@@ -7,7 +7,7 @@ server's own clips, so nothing is spent and nothing in the game changes.
 """
 import hashlib, html, json, os, shutil, subprocess, sys
 
-REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+REPO = os.environ.get("NOMEMO_REPO") or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 CLIPS = "/opt/sites/rico"
 OUT = os.path.join(CLIPS, "nomemo-sfx", "try", "crew")
 FF = shutil.which("ffmpeg") or sys.exit("No ffmpeg on the server: apt-get install -y ffmpeg")
