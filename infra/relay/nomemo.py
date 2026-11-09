@@ -18,10 +18,11 @@ Everything is test AGRS without value; the point is a real handshake on the chai
 wallet history. Nothing here is posted anywhere.
 
 GET /nomemo                   the drop's address, whether the purse and the Tracer are on, the players' board (wallets
-                              by chapter, never names; how many paid the drop in the last day and hour, the last move),
-                              the limits
-GET /nomemo/wallet/<address>  that wallet's claims, what was paid back (hashes), the dust it got, and nth: the how-many-th
-                              wallet it was to pay the drop
+                              by chapter, never names; how many paid the drop in the last day and hour, the last move;
+                              the week's top wallets, shown short: payments to the drop since Monday 00:00 UTC, at most
+                              one every WEEK_GAP seconds counted), the limits
+GET /nomemo/wallet/<address>  that wallet's claims, what was paid back (hashes), the dust it got, nth: the how-many-th
+                              wallet it was to pay the drop, and its count and place this week
 
 State: NOMEMO_STATE_PATH (wallets, the day's count). NOMEMO_ENABLED=0 switches the purse off (the game still plays;
 claims stay on the chain and are paid when it is on again, within CLAIM_DAYS).
@@ -56,6 +57,14 @@ TRIES = 40                 # gettxstatus asks per claim before it counts as not 
 TOPUP = 99_000             # what the bank sends the drop when the drop runs low (the faucet gives a wallet with balance 0 100,000 when it first pays)
 TOPUP_WAIT = 600           # seconds a top-up may stay unsealed before the drop is checked again
 TAG = (6, 4)
+WEEK_GAP = 30      # the weekly board counts a wallet's payments to the drop at most once every 30 seconds
+WEEK_CAP = 300     # and at most 300 a week
+WEEK_TOP = 10
+
+
+def week_of(t: float) -> int:
+    """Weeks from Monday 00:00 UTC, the same count as the game's (day 0 was a Thursday)."""
+    return int((t / 86400 + 3) // 7)
 WALLETS_KEEP = 5000
 RANKS = (("aboard", 0), ("deckhand", 1), ("navigator", 2), ("quartermaster’s mate", 3))   # by chapters claimed
 
@@ -204,7 +213,13 @@ class NoMemo:
             if to != drop or frm != sender:
                 continue
             w = self.wallet(sender)
-            w["last"] = int(self.clock())
+            now = int(self.clock())
+            wk = week_of(now)
+            if not isinstance(w.get("wk"), list) or len(w["wk"]) != 2 or w["wk"][0] != wk:
+                w["wk"] = [wk, 0]
+            if w["wk"][1] < WEEK_CAP and now - int(w.get("last") or 0) >= WEEK_GAP:
+                w["wk"][1] += 1
+            w["last"] = now
             ch = amount - CLAIM_BASE
             if 1 <= ch <= CHAPTERS and str(ch) not in w["claims"] and tx_hash:
                 w["claims"][str(ch)] = {"hash": tx_hash, "at": int(self.clock()), "paid": None}
@@ -386,7 +401,11 @@ class NoMemo:
                     claims[int(ch) - 1] += 1
         now = int(self.clock())
         lasts = [int(w.get("last") or w.get("first") or 0) for w in self.wallets.values()]
+        wk = week_of(now)
+        week = sorted(((int(w["wk"][1]), int(w.get("first") or 0), k) for k, w in self.wallets.items()
+                       if isinstance(w.get("wk"), list) and len(w["wk"]) == 2 and w["wk"][0] == wk and w["wk"][1] > 0), key=lambda x: (-x[0], x[1]))
         return {"wallets": len(self.wallets), "ranks": ranks, "claims": claims,
+                "week": wk, "week_wallets": len(week), "week_top": [[short(k), n] for n, _, k in week[:WEEK_TOP]],
                 "day": sum(1 for t in lasts if t >= now - 86400), "hour": sum(1 for t in lasts if t >= now - 3600),
                 "last_move": max(lasts) if lasts else None, "now": now}
 
@@ -398,7 +417,12 @@ class NoMemo:
     def wallet_view(self, pk: str) -> dict:
         w = self.wallets.get(pk) or {"claims": {}, "dust": []}
         nth = 1 + sum(1 for x in self.wallets.values() if x.get("first", 0) < w["first"]) if "first" in w else None
-        return {"wallet": pk, "claims": w.get("claims", {}), "dust": w.get("dust", []), "drop": self.pk.get("drop"), "enabled": bool(self.enabled), "nth": nth}
+        wk = week_of(self.clock())
+        mine = w["wk"][1] if isinstance(w.get("wk"), list) and len(w["wk"]) == 2 and w["wk"][0] == wk else 0
+        place = 1 + sum(1 for x in self.wallets.values() if isinstance(x.get("wk"), list) and len(x["wk"]) == 2 and x["wk"][0] == wk
+                        and (x["wk"][1] > mine or x["wk"][1] == mine and x.get("first", 0) < w.get("first", 0))) if mine else None
+        return {"wallet": pk, "claims": w.get("claims", {}), "dust": w.get("dust", []), "drop": self.pk.get("drop"), "enabled": bool(self.enabled), "nth": nth,
+                "week": mine, "week_place": place}
 
     def route(self, path: str, query: str = "") -> dict | None:
         if path == "/nomemo":

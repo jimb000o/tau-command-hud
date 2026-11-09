@@ -165,7 +165,9 @@
   const chapterOf = c => CH.find(ch => ch.ids.includes(c.id));
   const chapterDone = ch => ch.ids.every(id => S.done[id]);
   const chapterOpen = ch => ch.n === 1 || chapterDone(CH[ch.n - 2]);
-  const GEAR = [["jobs", "the board", true], ["case", "the case file", true], ["peek", "ask the node yourself", () => chapterDone(CH[0])], ["trace", "set your own deadline", () => chapterDone(CH[1])], ["hunt", "the Tracer", () => chapterDone(CH[2])]];
+  const GEAR = [["jobs", "the board", true], ["case", "the case file", true], ["peek", "ask the node yourself", () => chapterDone(CH[0])], ["trace", "set your own deadline", () => chapterDone(CH[1])], ["hunt", "the Tracer", () => chapterDone(CH[2])],
+    ["scan", "the mempool scanner: what waits for the next block", () => rep() >= 20], ["blocks", "the block log: what the last blocks sealed", () => rep() >= 35], ["dry", "a dry run of your draft: the node checks it without taking it", () => rep() >= 55]];
+  const GEAR_AT = { scan: "sailing master", blocks: "first mate", dry: "ghost of the ledger" };
   const has = tool => { const g = GEAR.find(x => x[0] === tool); return !g || g[2] === true || g[2](); };
 
   /* ---------- the contracts ---------- */
@@ -329,6 +331,8 @@
           if (c === "getsequence") return ok(c, { address: args[0], sequence_number: a(args[0]).seq, tip_height: head() });
           if (c === "getbalance") return ok(c, { address: args[0], balance: a(args[0]).bal });
           if (c === "getgovernance") return ok(c, { consensus_rules: "(o9[t]:bv[24] = {#x00000a}:bv[24])" });
+          if (c === "getmempool") { const list = Object.entries(txs).filter(([, t]) => head() <= t.tip).map(([h, t]) => ({ tx_hash: h, sender: t.tx.sender_pubkey, sequence_number: t.tx.sequence_number, fee_limit: t.tx.fee_limit, status: "pending", tx_type: t.tx.tx_type })); return ok(c, { transactions: list, count: list.length }); }
+          if (c === "getblocks") { const n = Math.max(1, Math.min(12, +args[0] || 5)), h = head(), blocks = []; for (let b = Math.max(0, h - n + 1); b <= h; b++) blocks.push({ header: { block_number: b }, tx_ids: Object.entries(txs).filter(([, t]) => t.tip + 1 === b).map(([x]) => x), block_hash: B.bytesToHex(B.sha256(new TextEncoder().encode("sim-block-" + b))) }); return ok(c, { blocks, total: h + 1 }); }
           if (c === "gettxstatus") { const t = txs[args[0]]; if (!t) return err(c, "unknown transaction", "NOT_FOUND"); return ok(c, head() > t.tip ? { status: "confirmed", block_number: t.tip + 1 } : { status: "pending" }); }
           if (c === "getretractables") return ok(c, { address: args[0], retractables: Object.values(rets).filter(r => r.status === "open" && (r.sender_pubkey === args[0] || r.recipient_pubkey === args[0])), mempool: [] });
           if (c === "sendtx") return send(JSON.parse(cmd.slice(7)));
@@ -358,7 +362,7 @@
         }, 9000);
       },
       get(path) {
-        if (path === "") return { simulated: true, enabled: true, tracer: true, drop: DROP, share: SHARE, board: { wallets: 7 + (S.done.mark ? 1 : 0), ranks: { stowaway: 2, deckhand: 2, rigger: 1, navigator: 1, "quartermaster’s mate": 1 }, claims: [4, 2, 1], day: 3 + (S.done.mark ? 1 : 0), hour: 1 + (S.done.mark ? 1 : 0), now: Math.floor(Date.now() / 1000), last_move: Math.floor(Date.now() / 1000) - (S.done.mark ? 20 : 240) } };
+        if (path === "") return { simulated: true, enabled: true, tracer: true, drop: DROP, share: SHARE, board: { wallets: 7 + (S.done.mark ? 1 : 0), ranks: { stowaway: 2, deckhand: 2, rigger: 1, navigator: 1, "quartermaster’s mate": 1 }, claims: [4, 2, 1], day: 3 + (S.done.mark ? 1 : 0), hour: 1 + (S.done.mark ? 1 : 0), now: Math.floor(Date.now() / 1000), last_move: Math.floor(Date.now() / 1000) - (S.done.mark ? 20 : 240), week_wallets: 4, week_top: [["3f9a21…07c4", 41], ["b80e5d…a912", 27], ["5c1177…e3d0", 12], ["e04b9a…6b25", 3]] } };
         const m = /^\/wallet\/([0-9a-f]{96})$/.exec(path); if (!m) return null;
         const x = w(m[1]); return { wallet: m[1], claims: x.claims, dust: x.dust, drop: DROP, nth: Object.keys(x.claims).length || S.done.mark ? 8 : null };
       },
@@ -1690,6 +1694,13 @@
         operations: { "1": [[d.payer === "drop" ? DROP : k.pk, to, String(d.amount)]] } }, d.signer === "other" ? B.keygen() : k.sk);
       const x = { tx, base, tip, last, rule: ruleNow() }, bad = faults(d, x);
       say("step", F("signing the draft: {a} test AGRS, fee limit {b}, sequence {c}, deadline block {n}", { a: fmt(d.amount), b: tx.fee_limit, c: tx.sequence_number, n: fmt(tx.expire_at_height) }));
+      if (RUN.dry) {
+        const r = await ask("checktx " + JSON.stringify(tx)); if (!r) fail(T("No answer from the node; nothing was sent."));
+        const bad2 = r.status !== "ok" || (r.data && r.data.ok === false), c1 = bad2 ? codeOf(r) : null;
+        say(bad2 ? "warn" : "ok", bad2 ? F("Dry run: the node would refuse it: {x}", { x: c1 || plain(r) }) : T("Dry run: the node would take it."));
+        say("sys", T("Nothing was sent. send sends it for real."), btn("send", "send"));
+        return;
+      }
       const s = await sendtx(tx);
       if (!s.r) fail(T("No answer from the node; nothing was sent. Type send again."));
       if (s.hash) {
@@ -1724,7 +1735,7 @@
     } catch (e) {
       slotFail(T("stopped"));
       say("no", e && e.soft ? e.message : T("The node did not answer in time; nothing is lost. Type send again."), btn("send", "send"));
-    } finally { if (S.job === j.n) { S.jobMiss = true; S.jobStep = false; save(); } RUN.busy = false; chips(); jobs(); instruments(); topbar(); balance(); }
+    } finally { if (S.job === j.n && !RUN.dry) { S.jobMiss = true; S.jobStep = false; save(); } RUN.busy = false; chips(); jobs(); instruments(); topbar(); balance(); }
   }
   /* Tracer heat: a game rule, not a chain rule. Wrong answers, missed checks and traces raise it; it falls 1 a block and
      with clean work. High heat shortens the next trace; at 80 the crew will not hand you work until you lie low */
@@ -1762,7 +1773,7 @@
       if (kd.hint) say("sys", T("No hint at this tier. hint gives one, for 1 point of the pay."), btn("hint", "hint"));
       jobs(); instruments(); topbar(); chips(); return;
     }
-    const pts = Math.max(1, PAYS[j.t] + (j.special || 0) - (j.t >= 3 && j.hinted ? 1 : 0) - (j.hpen || 0) - (less || 0));
+    const pts = Math.max(1, PAYS[j.t] + (j.special || 0) - (j.t >= 3 && j.hinted ? 1 : 0) - (j.hpen || 0) - (j.dried ? 1 : 0) - (less || 0));
     if (heat()) heatAdd(-10);
     const before = rank();
     S.rep = (S.rep || 0) + pts; archive(j, "settled", pts, rec);
@@ -1771,7 +1782,8 @@
     if (h) say("ok", F("The heist is done: all {n} parts.", { n: h.heist.length }));
     say("ok", F("{x} settled: +{n}. Standing: {r}.", { x: jname(j), n: pts, r: rank() }));
     learnTopic(h ? kindOf(j).topic : j.topic);
-    if (rank() !== before) { snd.chapter(); crew("qm", F("New rank: {r}. Harder work comes to your inbox now.", { r: rank() }), "glad"); }
+    if (rank() !== before) { snd.chapter(); crew("qm", F("New rank: {r}. Harder work comes to your inbox now.", { r: rank() }), "glad");
+      const g = Object.keys(GEAR_AT).find(k => GEAR_AT[k] === rank()); if (g) say("ok", F("New gear: {x}, {y}.", { x: g, y: T(GEAR.find(x => x[0] === g)[1]) }), btn(g, g)); }
     letters();
     jobs(); instruments(); topbar(); chips(); jobTick(CHAIN.tip);
     const nx = S.inbox[0]; if (nx) say("sys", T("Next in the inbox:"), btn(F("read {x}", { x: jname(nx) }), "read " + jname(nx)));
@@ -2016,7 +2028,7 @@
   const HELP = [
     ["Story", [["jobs", "the twelve contracts"], ["take <n>", "take one"], ["run", "build, sign, send"], ["back", "retract a payment"], ["drop", "put it back"], ["claim [n]", "the chapter’s share"], ["chapter <n>", "the chapter’s card"]]],
     ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["why [topic]", "what just happened"], ["archive · history", "your record"]]],
-    ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail · mail <n>", "letters; some bring special orders"], ["crew", "who is who"]]],
+    ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail · mail <n>", "letters; some bring special orders"], ["crew", "who is who"], ["scan · blocks · dry", "gear for rank"]]],
     ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"]]],
     ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · boot · clear", ""], ["scene · transmission on|off", "the cabin; the crew on screen"]]],
   ];
@@ -2061,6 +2073,33 @@
     if (!r) { say("no", T("No answer from the node.")); return; }
     say(r.status === "ok" ? "sys" : "no", JSON.stringify(r.data || r.error || r, null, 1).slice(0, 1200));
   }
+  /* gear for standing: real tools on the real chain */
+  const gearLocked = k => { say("sys", F("{x} is gear for the rank {r}.", { x: k, r: GEAR_AT[k] }) + " " + F("You: {x}.", { x: rank() })); };
+  const shortH = h => (h ? String(h).slice(0, 6) + "…" + String(h).slice(-4) : "—");
+  async function scanCmd() {
+    if (!has("scan")) return gearLocked("scan");
+    say("step", T("scanning the mempool …"));
+    const r = await ask("getmempool"); if (!r || r.status !== "ok") { say("no", T("No answer from the node.")); return; }
+    const list = (r.data && r.data.transactions) || [], me = myPk();
+    say("sys", F("The mempool: {n} transactions taken by the node, waiting for a block.", { n: list.length }));
+    if (list.length) cols(list.slice(0, 8).map(x => [shortH(x.tx_hash), shortH(x.sender) + (x.sender === me ? " · " + T("you") : "") + " · " + F("sequence {n}", { n: x.sequence_number }) + (x.fee_limit != null ? " · " + F("fee limit {n}", { n: x.fee_limit }) : "")]));
+    say("learn", T("A payment the node takes waits in the mempool until a block seals it. The fee limit is the most it may cost; the block takes only the base fee."));
+  }
+  async function blocksCmd() {
+    if (!has("blocks")) return gearLocked("blocks");
+    const r = await ask("getblocks 5"); if (!r || r.status !== "ok") { say("no", T("No answer from the node.")); return; }
+    const bl = ((r.data && r.data.blocks) || []).slice(-5).reverse(), mine = new Set(S.hist.map(h => h.hash));
+    cols(bl.map(b => { const ids = b.tx_ids || [], n = (b.header && b.header.block_number); const m = ids.filter(x => mine.has(x)).length;
+      return ["#" + fmt(n), F("{n} transactions", { n: ids.length }) + (m ? " · " + F("{n} of yours", { n: m }) : "") + " · " + shortH(b.block_hash)]; }));
+    say("learn", T("Each block seals what waited in the mempool, in order, and names the block before it by its hash: that is the chain."));
+  }
+  async function dryCmd() {
+    if (!has("dry")) return gearLocked("dry");
+    const j = curJob(); if (!j || !S.draft || kindOf(j).tau) { say("sys", T("dry checks the draft of a taken contract: accept one, set it up, then dry.")); return; }
+    if (SIM) { say("sys", T("The practice node has no dry run. On the live node, dry asks the node’s own checktx.")); return; }
+    if (!j.dried) { j.dried = true; save(); say("sys", T("A dry run makes this contract pay 1 point less.")); }
+    RUN.dry = true; try { await jobSend(); } finally { RUN.dry = false; }
+  }
   function traceSet(arg) {
     if (!has("trace")) { say("sys", T("trace opens with chapter 2.")); return; }
     const n = parseInt(arg, 10), c = cur();
@@ -2091,12 +2130,19 @@
     const d = await boardLoad();
     if (!d || !d.board) { say("sys", T("The board is on the server; it is out of reach right now.")); return; }
     const b = d.board;
+    if (SIM) say("sys", T("practice board") + ": " + T("made-up numbers in this browser; the live board is on the server."));
     snd.board(); say("sys", F("The players’ board: {n} wallets have paid the drop. Wallets, not people; nobody is named.", { n: b.wallets || 0 }));
     cols(Object.entries(b.ranks || {}).map(([k, n]) => [T(k), String(n)]));
     if (b.claims) say("sys", F("Chapters claimed: {a} · {b} · {c}", { a: b.claims[0] || 0, b: b.claims[1] || 0, c: b.claims[2] || 0 }));
     const l = crowdLine(b); if (l) say("sys", l);
-    const w = myPk() ? await serverInfo("/wallet/" + myPk()) : null;
+    const pk = myPk(), mine = pk ? pk.slice(0, 6) + "…" + pk.slice(-4) : null;
+    if (Array.isArray(b.week_top) && b.week_top.length) {
+      say("sys", F("This week’s board: {n} wallets paid the drop since Monday. A payment counts at most once every 30 seconds; it starts from zero every Monday.", { n: b.week_wallets || b.week_top.length }));
+      cols(b.week_top.map(([w, n], i) => ["#" + (i + 1), w + " · " + F("{n} payments", { n }) + (w === mine ? " · " + T("you") : "")]));
+    } else if (b.week_top) say("sys", T("Nobody has paid the drop this week yet: the first payment leads the week."));
+    const w = pk ? await serverInfo("/wallet/" + pk) : null;
     say("sys", F("You: {x}.", { x: rank() }) + (w && w.nth ? " " + F("Wallet number {n} to pay the drop.", { n: w.nth }) : ""));
+    if (w && w.week && w.week_place) say("sys", F("This week you stand at number {a}, with {b} payments.", { a: w.week_place, b: w.week }));
   }
   function findings() {
     if (!S.findings.length) { say("sys", T("Nothing. Every refusal so far was the chain doing its job.")); return; }
@@ -2163,6 +2209,9 @@
     if (c === "trace") return traceSet(args[0]);
     if (c === "heat") return heatCmd();
     if (c === "week") return weekCmd();
+    if (c === "scan") return scanCmd();
+    if (c === "blocks") return blocksCmd();
+    if (c === "dry") return dryCmd();
     if (c === "board") return board();
     if (c === "tau") return tauCmd(s.slice(3));
     if (c === "rule" || c === "rules" || (c === "explain" && /^rules?$/.test(args[0] || ""))) return ruleCmd();
