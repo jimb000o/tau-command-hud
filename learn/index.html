@@ -366,6 +366,11 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
           <button type="button" role="tab" data-tab="deep" aria-selected="false">Go deeper</button>
           <button type="button" role="tab" data-tab="net" aria-selected="false">Testnet</button>
           <button type="button" role="tab" data-tab="ask" aria-selected="false">People ask</button>
+          <button type="button" role="tab" data-tab="comm" aria-selected="false" id="tabComm" hidden>Community</button>
+        </div>
+        <div data-pane="comm" hidden>
+          <ul class="links" id="commL"></ul>
+          <p class="fine">Lessons made by people in the community, facts checked by Tau HUD.</p>
         </div>
         <div data-pane="own">
           <ol class="how tight">
@@ -866,6 +871,15 @@ function renderAsked(list) {
     });
   });
 }
+
+/* ---- community lessons (assets/community-lessons.json); the tab appears once a checked video exists ---- */
+const MISSION_NAMES = { vote: "Vote a change into law", door: "Get a rule refused at the door", fail: "Let a rule fail at two thirds", bar: "Lower the bar", outage: "Survive a validator outage", stake: "Bring the chain to proof of stake" };
+fetch("../assets/community-lessons.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : Promise.reject()).then(d => {
+  const list = (d.lessons || []).filter(l => l && l.checked && /^https:\/\/(www\.youtube\.com|youtu\.be)\//.test(l.url || ""));
+  if (!list.length) return;
+  $("commL").innerHTML = list.map(l => `<li><a href="${esc(l.url)}" target="_blank" rel="noopener">▶ ${esc(l.title)} ↗</a><span>${l.by ? esc("by " + l.by) : ""}${MISSION_NAMES[l.mission] ? `${l.by ? " · " : ""}for the mission <a href="../missions/#m=${esc(l.mission)}">${esc(MISSION_NAMES[l.mission])}</a>` : ""}</span></li>`).join("");
+  $("tabComm").hidden = false;
+}).catch(() => {});
 
 /* ---- more: tabs ---- */
 document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
