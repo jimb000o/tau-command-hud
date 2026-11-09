@@ -173,6 +173,9 @@ pre.code { margin: 4px 0 8px; padding: 6px 10px; background: #0c0c0d; border: 1p
 .real b { display: block; color: #fff; font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; margin-bottom: 4px; }
 .real p { margin: 0 0 8px; max-width: 76ch; }
 .real .links { display: flex; flex-wrap: wrap; gap: 6px; }
+.real.comm { border-color: rgba(57,255,138,.35); margin-bottom: 8px; }
+.real.comm a { color: var(--ok); display: inline-block; min-height: 32px; padding: 6px 0; }
+.real.comm span, .real.comm .fine { color: var(--dim); font-size: 12px; }
 .copied { color: var(--ok); font-size: 12px; }
 .src { color: var(--dim); font-size: 12px; margin: 0; max-width: 76ch; }
 .src a { color: var(--dim); }
@@ -583,9 +586,22 @@ function renderBrief(tickGoal) {
   $("brief").innerHTML = `<h2>Mission ${m.n} of ${MISSIONS.length} <small>${DONE[m.id] && !S.won ? "done before · play it again" : ""}</small></h2>
     <p class="mtitle">${esc(m.title)}</p><p class="story">${esc(m.story)}</p>
     ${done}<ol class="goals">${goals}</ol>
-    ${S.won ? "" : `<p class="hint"><b>Hint:</b> ${esc(m.hint)}</p>`}${real}
+    ${S.won ? "" : `<p class="hint"><b>Hint:</b> ${esc(m.hint)}</p>`}${commHtml(m)}${real}
     <div class="row"><button class="btn small" type="button" id="btnRestart">Start this mission over</button></div>`;
 }
+
+/* ---------- community lessons: videos people made about a mission (assets/community-lessons.json, shown once facts are checked) ---------- */
+let COMM = [];
+const commOk = l => l && l.checked && /^https:\/\/(www\.youtube\.com|youtu\.be)\//.test(l.url || "");
+function commHtml(m) {
+  const list = COMM.filter(l => l.mission === m.id);
+  if (!list.length) return "";
+  return `<div class="real comm"><b>Community lesson</b>${list.map(l => `<p><a href="${esc(l.url)}" target="_blank" rel="noopener">▶ ${esc(l.title)} ↗</a>${l.by ? ` <span>by ${esc(l.by)}</span>` : ""}</p>`).join("")}<p class="fine">Made by the community, facts checked by Tau HUD.</p></div>`;
+}
+fetch("../assets/community-lessons.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : Promise.reject()).then(d => {
+  COMM = (d.lessons || []).filter(commOk);
+  if (COMM.length && S) { lastBriefKey = ""; renderBrief(-1); }
+}).catch(() => {});
 
 /* ---------- sharing: a link to one mission, or to your progress ---------- */
 const link = hash => SITE + (LANG ? "?lang=" + encodeURIComponent(LANG) : "") + "#" + hash;

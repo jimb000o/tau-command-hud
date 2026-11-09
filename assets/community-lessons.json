@@ -1,0 +1,4 @@
+{
+  "_how": "Lessons made by the community, one entry per video. An entry shows on tauhud.com only when url is a YouTube link and checked is a date (facts reviewed). mission = an id from missions/index.html: vote, door, fail, bar, outage, stake; or \"tau\" for a Tau Language lesson (shows on /learn/ only). Example: {\"mission\": \"fail\", \"title\": \"Why more than half is not enough\", \"by\": \"name the author chose\", \"url\": \"https://www.youtube.com/watch?v=...\", \"lang\": \"en\", \"checked\": \"2026-11-15\"}",
+  "lessons": []
+}
