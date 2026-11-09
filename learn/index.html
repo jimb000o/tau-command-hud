@@ -160,6 +160,55 @@ button.b { background: none; cursor: pointer; }
 }
 @media (max-width: 1100px) { .main > .col.trycol { grid-column: 1 / -1; } .main > .col:first-child { grid-column: auto; } }
 @media (max-width: 700px) { .ops button, .tabs button, .chips button, .tries button { min-height: 44px; } .out { height: 220px; } .inrow input { min-height: 44px; } .chips { flex-wrap: wrap; } }
+/* v3: the door, the level, the cheat sheet, fill-in tasks, the phone echo, the first-win pulse */
+.tries { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.tries button { min-width: 0; max-width: 100%; }
+.tries button code { min-width: 0; }
+.out, .echo, .crib, .fill, textarea, code, pre, .tries button code { font-variant-ligatures: none; }
+.out { overflow-wrap: anywhere; }
+.out .q b { word-break: break-word; }
+.door { display: grid; gap: 8px; margin: 2px 0 6px; }
+.door p { margin: 0 0 2px; color: var(--text); font: 500 14px var(--display); }
+.door button { text-align: left; background: rgba(255,255,255,.03); border: 1px solid var(--hair); border-radius: 8px; padding: 10px 12px; color: #fff; cursor: pointer; font: 600 13.5px var(--display); min-height: 48px; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: center; }
+.door button:hover { border-color: var(--ok); }
+.door button i { font-style: normal; color: var(--ok); font-size: 16px; }
+.door button span { display: block; color: var(--dim); font: 12px var(--mono); margin-top: 2px; }
+.door .skip { background: none; border: 0; color: var(--dim); font: 12px var(--mono); padding: 4px 0; min-height: 0; display: block; cursor: pointer; text-align: left; }
+.door .skip:hover { color: #fff; }
+.try.doored .ops, .try.doored textarea, .try.doored .inrow, .try.doored .act, .try.doored .out, .try.doored .eng, .try.doored .crib { display: none !important; }
+.lvl { margin-left: auto; font: 500 10.5px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; min-height: 24px; cursor: pointer; }
+.lvl:hover { color: #fff; border-color: var(--hair); }
+.panel.try h2 { display: flex; align-items: center; gap: 8px; }
+.crib { margin-top: 8px; border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; }
+.crib summary { cursor: pointer; color: var(--dim); font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 7px 0; list-style: none; }
+.crib summary::-webkit-details-marker { display: none; }
+.crib summary::before { content: "▸ "; color: var(--ok); }
+.crib[open] summary::before { content: "▾ "; }
+.crib ul { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 3px; font-size: 12px; color: var(--text); }
+.crib li code { font-size: 12px; }
+.crib li span { color: var(--dim); }
+.out .tip { color: var(--text); font-family: var(--display); font-size: 12.5px; }
+.out .tip::before { content: "↳ "; color: var(--ok); }
+.out .tip button { font: 600 11px var(--display); color: var(--ok); background: none; border: 1px solid rgba(57,255,138,.4); border-radius: 5px; padding: 2px 8px; margin-left: 6px; cursor: pointer; min-height: 26px; }
+.out .tip button:hover { background: rgba(57,255,138,.08); }
+.out .tip code { color: #b9ffd6; }
+.fill { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 2px; font: 13px var(--mono); color: #b9ffd6; }
+.fill button { font: 700 13px var(--mono); color: var(--ok); background: rgba(57,255,138,.06); border: 1px solid rgba(57,255,138,.45); border-radius: 6px; padding: 0 12px; min-height: 34px; cursor: pointer; }
+.fill button:hover { background: rgba(57,255,138,.14); }
+.fill .slot { color: var(--dim); }
+.echo { display: none; margin: 8px 0 0; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: rgba(0,0,0,.35); font: 12px/1.45 var(--mono); }
+.echo .v { color: #fff; } .echo .v.t { color: var(--ok); } .echo .v.f { color: #ff9aa9; } .echo .err { color: #e5484d; } .echo .say { color: var(--text); font-family: var(--display); } .echo a { color: var(--dim); font-size: 11px; }
+@media (max-width: 700px) { .echo:not(:empty) { display: block; } }
+.pro-note { color: var(--dim); font-size: 12px; margin: 0 0 8px; }
+.pro-note a { color: var(--text); }
+.win { color: var(--ok); font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; margin-left: 4px; animation: winin .4s ease-out; }
+@keyframes winin { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes pulse { 0% { text-shadow: 0 0 0 rgba(57,255,138,0); } 30% { text-shadow: 0 0 14px rgba(57,255,138,.9); } 100% { text-shadow: 0 0 0 rgba(57,255,138,0); } }
+.out .v.t.first { animation: pulse 1.2s ease-out; }
+.task .verdict button { font: 600 11px var(--display); color: var(--text); background: none; border: 1px solid var(--hair); border-radius: 5px; padding: 2px 8px; margin-left: 6px; cursor: pointer; min-height: 26px; }
+.task .verdict button:hover { color: #fff; border-color: #fff; }
+@media (prefers-reduced-motion: reduce) { .out .v.t.first, .win { animation: none; } }
+@media (min-width: 1101px) and (max-height: 820px) { .crib ul { font-size: 11.5px; } .door button { min-height: 42px; padding: 7px 12px; } }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -177,12 +226,21 @@ button.b { background: none; cursor: pointer; }
   <main class="main">
     <div class="col trycol">
       <section class="panel go try" aria-labelledby="hTry">
-        <h2 id="hTry">Try Tau here</h2>
+        <h2 id="hTry">Try Tau here <span class="win" id="win" hidden></span><button type="button" class="lvl" id="lvl" hidden></button></h2>
+        <div class="door" id="door" hidden>
+          <p>Pick your start. One tap, and Tau answers your first question.</p>
+          <button type="button" data-level="new"><i>1</i><div>I have never written a formula<span>Short lessons, one step at a time</span></div></button>
+          <button type="button" data-level="code"><i>2</i><div>I write code<span>Lessons plus a cheat sheet: = not ==, &amp;&amp; and ||</span></div></button>
+          <button type="button" data-level="pro"><i>3</i><div>I know logic or Tau already<span>Straight to the box, the real testnet rule and the Playground</span></div></button>
+          <button type="button" class="skip" data-level="">Just show me the box</button>
+        </div>
         <div class="ops" role="group" aria-label="Question">
           <button type="button" translate="no" data-op="sat" aria-pressed="true" title="Can this be true?">sat</button>
           <button type="button" translate="no" data-op="valid" aria-pressed="false" title="Is this true in every case?">valid</button>
           <button type="button" translate="no" data-op="why" aria-pressed="false" title="Which parts contradict each other?">why</button>
           <button type="button" translate="no" data-op="run" aria-pressed="false" title="Feed inputs in, step by step, and read the outputs">run</button>
+          <button type="button" translate="no" data-op="unsat" aria-pressed="false" title="Can this never be true?" class="pro-only" hidden>unsat</button>
+          <button type="button" translate="no" data-op="realizable" aria-pressed="false" title="Can the outputs always answer the inputs?" class="pro-only" hidden>realizable</button>
           <span class="hint" id="opHint">Can this be true?</span>
         </div>
         <textarea id="spec" spellcheck="false" autocomplete="off" aria-label="Tau formula" placeholder="x = 0">x = 0</textarea>
@@ -192,6 +250,17 @@ button.b { background: none; cursor: pointer; }
           <button type="button" class="b" id="share">Copy link</button>
           <small>Ctrl + Enter asks too. You can also type a REPL line such as <code>sat x = 0.</code></small>
         </div>
+        <details class="crib" id="crib" hidden>
+          <summary>Cheat sheet</summary>
+          <ul>
+            <li><code>=</code> <span>equals,</span> <code>!=</code> <span>not equal. There is no <code>==</code>.</span></li>
+            <li><code>&amp;&amp;</code> <span>and,</span> <code>||</code> <span>or,</span> <code>!</code> <span>not,</span> <code>-&gt;</code> <span>implies.</span></li>
+            <li><code>i1[t]</code> <span>input 1 at step t,</span> <code>o1[t]</code> <span>output 1,</span> <code>o1[t-1]</code> <span>the step before.</span></li>
+            <li><code>i1[t]:bv[8]</code> <span>an 8-bit number;</span> <code>{ 5 }:bv[8]</code> <span>the constant 5. Bare digits are bits, not numbers.</span></li>
+            <li><code>always</code> <span>every step,</span> <code>sometimes</code> <span>at least once. No semicolons; the dot at the end is optional.</span></li>
+            <li><code>T</code> <span>and</span> <code>F</code> <span>are true and false.</span> <code>solve</code>, <code>normalize</code> <span>live in the tau REPL on your computer.</span></li>
+          </ul>
+        </details>
         <div class="out" id="out" aria-live="polite"><div class="miss">Answers appear here. Start with lesson 1 on the right, or ask your own question.</div></div>
         <p class="eng" id="eng"><i></i><span>Looking for the engine…</span></p>
         <p class="fine">Answers come from IDNI's tau-lang, built from source and newer than the 0.7 you can download, running on tauhud's server with a 5 second limit per question. Files, the console and network are switched off. Tau HUD is an unofficial community project, not affiliated with IDNI.</p>
@@ -200,11 +269,14 @@ button.b { background: none; cursor: pointer; }
     <div class="col">
       <section class="panel lesson" aria-labelledby="hLes">
         <h2 id="hLes">Five short lessons</h2>
+        <p class="pro-note" id="proNote" hidden>Lessons 1 to 4 are the basics. Lesson 5 is a real testnet rule; after it comes the <a href="/playground/">Rule Playground ›</a>.</p>
         <div class="chips"><span id="chips" role="tablist" aria-label="Lessons"></span><button type="button" id="lNext">Next ›</button></div>
         <h3 id="lTitle"></h3>
         <p id="lText"></p>
         <div class="tries" id="lTries"></div>
+        <div class="echo" id="echo"></div>
         <div class="task"><b>Your turn</b><span id="lTask"></span>
+          <div class="fill" id="fill" hidden></div>
           <div class="act"><button type="button" class="b ok" id="tCheck">Check my answer</button><button type="button" class="b" id="tSolve">Show a solution</button><a class="b" id="lPlay" href="/playground/" hidden>Rule Playground ›</a></div>
           <p class="verdict" id="tVerdict" aria-live="polite"></p></div>
       </section>
@@ -268,6 +340,67 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 const store = { get() { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { return {}; } }, set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} } };
 const OPS = { sat: "Can this be true?", valid: "Is this true in every case?", why: "Which parts contradict each other?", run: "Feed inputs in, step by step, and read the outputs", unsat: "Can this never be true?", realizable: "Can the outputs always answer the inputs?" };
 let op = "sat", busy = false, engineUp = null, lessons = [], cur = 0, lastAnswer = null;
+const LEVELS = { new: "new to formulas", code: "I write code", pro: "logic or Tau" };
+let level = store.get().level || "";   // "", "new", "code" or "pro"; "" = no door answer, the page infers from what is typed
+
+/* ---- the level: door, chip, what each level changes ---- */
+function applyLevel(l, how) {
+  level = LEVELS[l] ? l : "";
+  const st = store.get(); st.level = level; if (how) st.levelBy = how; store.set(st);
+  document.querySelector(".try").classList.remove("doored");
+  $("door").hidden = true;
+  $("lvl").hidden = false; $("lvl").textContent = T("Level") + ": " + (level ? T(LEVELS[level]) : T("not set"));
+  $("crib").hidden = level !== "code"; if (level === "code") $("crib").open = innerHeight > 820;   // on a short screen it starts folded, so the answer box keeps its room
+  document.querySelectorAll(".pro-only").forEach(b => { b.hidden = level !== "pro"; });
+  $("proNote").hidden = level !== "pro";
+  if (lessons.length) openLesson(cur);
+}
+function openDoor() {
+  document.querySelector(".try").classList.add("doored");
+  $("door").hidden = false; $("lvl").hidden = true;
+}
+/* one tap: the level, and a first question Tau answers at once */
+const FIRST = { new: { op: "sat", spec: "x = 0", says: "That was your first Tau question: can x be 0? Yes. Lesson 1 on the right goes on from here.", lesson: 0 },
+  code: { op: "sat", spec: "x = 0 || x = 1", says: "|| is or, && is and, = is equals: the cheat sheet under the box has the rest. Lesson 1 starts on the right.", lesson: 0 },
+  pro: { op: "sat", spec: "sometimes o1[t] = i1[t]", says: "Streams and time work as you expect; sat quantifies inputs for all, outputs exists, step by step. Lesson 5 is the real testnet rule.", lesson: 4 } };
+document.querySelectorAll("#door button").forEach(b => b.addEventListener("click", () => {
+  const l = b.dataset.level; applyLevel(l, "door");
+  const f = FIRST[l];
+  if (f) { load(f); if (lessons.length) openLesson(f.lesson); ask({ op: f.op, spec: f.spec }, { expect: { verdict: true }, text: f.says }); }
+  else $("spec").focus();
+}));
+$("lvl").addEventListener("click", openDoor);
+
+/* what people type tells their level too: == or words mean code or sentences, REPL commands mean Tau */
+function infer(spec) {
+  if (level) return;
+  if (/^(solve|normalize|qelim|lgrs|n|realizable|unsat|unrealizable)\b/i.test(spec) || /\b(all|ex)\s+\w+/.test(spec)) applyLevel("pro", "typed");
+  else if (/==|!==|\b(or|and|not|true|false)\b|;\s*$/i.test(spec)) applyLevel("code", "typed");
+}
+/* a raw engine error turned into one sentence, with the line to try instead where there is one */
+function explain(spec, err) {
+  const fix = f => ({ text: null, fix: f });
+  let m;
+  if ((m = /^(solve|normalize|qelim|lgrs|n)\s+([\s\S]+)/i.exec(spec))) return { text: T("{x} is a command of the tau REPL on your own computer. This box answers sat, valid, why and run. Ask sat about the same formula:").replace("{x}", m[1]), fix: m[2].trim() };
+  if (/==|!==/.test(spec)) return { text: T("Tau writes = for equals and != for not equal; there is no ==."), fix: spec.replace(/!==/g, "!=").replace(/==/g, "=") };
+  if (/\b(or|and|not)\b/i.test(spec)) return { text: T("Tau spells or as ||, and as &&, not as !."), fix: spec.replace(/\bor\b/gi, "||").replace(/\band\b/gi, "&&").replace(/\bnot\s+/gi, "!").replace(/\bis\b/gi, "=") };
+  if (/\b(true|false)\b/i.test(spec)) return { text: T("True and false are written T and F."), fix: spec.replace(/\btrue\b/gi, "T").replace(/\bfalse\b/gi, "F") };
+  if (/;\s*$/.test(spec)) return { text: T("No semicolon at the end; a dot is optional."), fix: spec.replace(/;\s*$/, "") };
+  if (!/[=<>!]|\[t|\b[TF]\b/.test(spec) && /[a-z]{3,}/i.test(spec)) return { text: T("Tau reads formulas, not sentences. A formula compares things, such as x = 0, or joins comparisons: x = 0 || x = 1."), fix: "x = 0 || x = 1" };
+  if (/\[t\]/.test(spec) && /(^|[^\w{#])\d{2,}(?![\w}])/.test(spec) && !/bv\[/.test(spec)) return { text: T("A number in a stream needs a width: i1[t]:bv[8] for an 8-bit input, { 5 }:bv[8] for the constant 5."), fix: null };
+  if (/\[t\]/.test(spec) && /\{\s*\d+\s*\}(?!\s*:)/.test(spec)) return { text: T("A constant in braces needs its width too: { 5 }:bv[8]."), fix: null };
+  if (/parse|unexpected|syntax/i.test(err || "")) return { text: T("Tau could not read this line. Lesson 1's tries show the shape that works."), fix: null };
+  return null;
+}
+/* the answer repeated under the lesson on the phone, where the answer box is far above */
+function echo(html) { const e = $("echo"); e.innerHTML = html + ` <a href="#out" data-echo>${esc(T("full answer ↑"))}</a>`; }
+$("echo").addEventListener("click", ev => { if (ev.target.dataset.echo !== undefined) { ev.preventDefault(); $("out").scrollIntoView({ block: "center", behavior: "smooth" }); } });
+function firstWin() {
+  const st = store.get(); if (st.firstT) return;
+  st.firstT = new Date().toISOString().slice(0, 10); store.set(st);
+  const w = $("win"); w.hidden = false; w.textContent = T("First answer ✓"); setTimeout(() => { w.hidden = true; }, 4000);
+  const v = $("out").querySelector(".v.t:last-of-type"); if (v) v.classList.add("first");
+}
 
 /* ---- the question ---- */
 function setOp(o) {
@@ -281,6 +414,7 @@ document.querySelectorAll(".ops button").forEach(b => b.addEventListener("click"
 /* "sat x = 0." typed as a REPL line: the first word picks the question */
 function readQuestion() {
   let spec = $("spec").value.trim(), o = op;
+  infer(spec);
   const m = /^(sat|unsat|valid|why|run|realizable)\s+([\s\S]+)$/i.exec(spec);
   if (m) { o = m[1].toLowerCase(); spec = m[2].trim(); setOp(o); }
   return { op: o, spec, steps: o === "run" ? parseInputs($("inputs").value) : undefined };
@@ -307,9 +441,16 @@ function show(q, r, says) {
   clearMiss();
   if ($("out").children.length) line("", "gap");
   line(`tau&gt; <b translate="no">${esc(q.op + " " + q.spec)}</b>` + (q.op === "run" ? ` <span translate="no">· ${esc(inputsText(q.steps))}</span>` : ""), "q");
+  let echoed = "";
   if (!r.ok) {
     line(`<span translate="no">${esc(r.error || "no answer")}</span>`, "err");
     if (r.timeout) line(esc(T("Stopped after the time limit. A smaller formula usually helps.")), "miss");
+    const ex = r.explain || explain(q.spec, r.error);
+    if (ex) {
+      const d = line(esc(ex.text || ""), "tip");
+      if (ex.fix) { const b = document.createElement("button"); b.type = "button"; b.innerHTML = esc(T("Try")) + " <code translate=\"no\">" + esc(ex.fix.length > 60 ? ex.fix.slice(0, 57) + "…" : ex.fix) + "</code>"; b.addEventListener("click", () => { load({ op: q.op === "run" ? "run" : (ex.op || (q.op === "why" ? "why" : "sat")), spec: ex.fix }); ask(readQuestion()); }); d.append(b); }
+    }
+    echoed = `<span class="err" translate="no">${esc((r.error || "").slice(0, 80))}</span>` + (ex && ex.text ? ` <span class="say">${esc(ex.text)}</span>` : "");
   } else if (q.op === "run") {
     const rows = r.outputs || [];
     const ins = [...new Set(rows.flatMap(x => Object.keys(x.in || {})))], outs = [...new Set(rows.flatMap(x => Object.keys(x.out || {})))];
@@ -322,8 +463,14 @@ function show(q, r, says) {
   } else {
     const yes = !!r.verdict;
     line(`<span class="v ${yes ? "t" : "f"}">${yes ? "T" : "F"}</span> ${esc(T(VERDICT[q.op][yes ? 1 : 0]))}`);
+    echoed = `<span class="v ${yes ? "t" : "f"}">${yes ? "T" : "F"}</span> ${esc(T(VERDICT[q.op][yes ? 1 : 0]))}`;
   }
+  if (q.op === "run" && r.ok) echoed = `<span class="v t">${esc(T("ran {n} steps").replace("{n}", (r.outputs || []).length))}</span> · ` + (r.outputs || []).map(x => Object.entries(x.out || {}).map(([k, v]) => k + "=" + v).join(" ")).join(", ");
+  if (q.op === "why" && r.ok) echoed = (r.core || []).length ? `<span class="v f">${esc(T("These parts already contradict each other:"))}</span> ${esc((r.core || []).join(" · "))}` : `<span class="v t">${esc(T("No contradiction: Tau found nothing that rules this out."))}</span>`;
   if (says) line(esc(T(says)), "say");
+  if (says && r.ok) echoed += ` <span class="say">${esc(T(says))}</span>`;
+  echo(echoed);
+  if (r.ok && (r.verdict || q.op === "run")) firstWin();
   if (r.ms !== undefined) line(esc((r.cached ? 0 : r.ms) + " ms") + (r.cached ? " · " + esc(T("asked before, answer kept")) : ""), "miss");
   scrollOut();
 }
@@ -337,6 +484,8 @@ const VERDICT = {
 async function ask(q, says) {
   if (busy) return null;
   if (!q.spec) { $("spec").focus(); return null; }
+  const pre = /==|!==|\b(or|and|not|true|false)\b|^(solve|normalize|qelim|lgrs|n)\s/i.test(q.spec) || (!/[=<>!]|\[t|\b[TF]\b/.test(q.spec) && /[a-z]{3,}/i.test(q.spec));
+  if (pre) { const ex = explain(q.spec, ""); if (ex) { const r = { ok: false, error: T("not a Tau formula yet"), explain: ex }; lastAnswer = { q, r }; show(q, r, null); return r; } }
   busy = true; $("ask").disabled = true; $("ask").textContent = T("Asking…");
   let r;
   try {
@@ -404,9 +553,22 @@ function chips() {
     $("chips").append(b);
   });
 }
+function fillIn(l) {
+  const f = $("fill"), t = l.task;
+  f.innerHTML = ""; f.hidden = true;
+  if (level !== "new" || !t.fill) return;
+  f.hidden = false;
+  const parts = t.fill.pattern.split("▢");
+  parts.forEach((part, i) => {
+    f.append(Object.assign(document.createElement("span"), { textContent: part }));
+    if (i < parts.length - 1) t.fill.choices.forEach(c => { const b = document.createElement("button"); b.type = "button"; b.textContent = c; b.setAttribute("translate", "no"); b.addEventListener("click", () => { load({ op: t.op, spec: t.fill.pattern.replace("▢", c), steps: t.steps }); $("tCheck").click(); }); f.append(b); });
+  });
+}
 function openLesson(i) {
   cur = Math.max(0, Math.min(lessons.length - 1, i));
   const l = lessons[cur];
+  fillIn(l);
+  $("echo").innerHTML = "";
   $("lTitle").textContent = T(l.title);
   $("lText").textContent = T(l.text);
   $("lTries").innerHTML = "";
@@ -438,7 +600,8 @@ $("tCheck").addEventListener("click", async () => {
   if (!r) { v.textContent = ""; return; }
   if (matches(t.expect, r)) {
     const done = store.get(); done[l.id] = new Date().toISOString().slice(0, 10); store.set(done);
-    v.className = "verdict good"; v.textContent = cur === lessons.length - 1 ? T("Solved. You just changed a testnet rule. Next: try it against the testnet's own checks in the Rule Playground.") : T("Solved. On to the next lesson.");
+    v.className = "verdict good"; v.textContent = cur === lessons.length - 1 ? T("Solved. You just changed a testnet rule. Next: try it against the testnet's own checks in the Rule Playground.") : cur === 0 ? T("Solved. You wrote your first Tau formula.") : T("Solved. On to the next lesson.");
+    const sb = document.createElement("button"); sb.type = "button"; sb.textContent = T("Copy link to it"); sb.addEventListener("click", () => $("share").click()); v.append(sb);
     chips();
   } else {
     v.className = "verdict bad"; v.textContent = r.ok ? T("Not yet: Tau answered differently. Look at the answer on the left and try again.") : T("Tau could not read that. The error is on the left.");
@@ -454,12 +617,14 @@ document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click
 /* ---- start ---- */
 setOp("sat");
 const h = location.hash;
+if (store.get().level !== undefined || h.startsWith("#q=")) applyLevel(store.get().level || "");   // came back, or follows a shared link: no door
+else openDoor();
 fetch("lessons.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
   lessons = d.lessons || [];
   const m = /^#l(\d)$/.exec(h);
   const done = store.get();
   const first = lessons.findIndex(l => !done[l.id]);
-  openLesson(m ? +m[1] - 1 : (first < 0 ? 0 : first));
+  openLesson(m ? +m[1] - 1 : level === "pro" && !done.rule && first === 0 ? 4 : (first < 0 ? 0 : first));
 }).catch(() => { $("lTitle").textContent = T("The lessons did not load. Reload the page to try again."); });
 if (h.startsWith("#q=")) {
   try { const q = JSON.parse(unb64(h.slice(3))); if (q && q.spec) { load({ op: q.op, spec: String(q.spec).slice(0, 2048), in: q.in }); ask(readQuestion()); } } catch (e) {}
