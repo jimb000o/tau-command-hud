@@ -328,4 +328,13 @@ TauI18n.add({ strings: {
   "IDNI answers this in the video. Until then, this page sends your formula to a real Tau engine on tauhud's server, so you can try it here.": "IDNI 在视频里回答了这个问题。在那之前，这个页面会把你的公式发送到 tauhud 服务器上真正的 Tau 引擎，所以你可以在这里试。",
   "How do I get better at writing Tau rules?": "怎样把 Tau 规则写得更好？",
   "Practice on small rules. Lesson 5 changes a real testnet limit, and the Rule Playground runs a rule against the testnet's own checks.": "多在小规则上练习。第 5 课会改一条真实的测试网限额，规则试验场会用测试网自己的检查来运行规则。",
+  "Two statements joined by and": "用“且”连起来的两句话",
+  "You can join two statements into one with && (read it: and). The joined statement is only true when both halves are true, like “it is raining and the sun is shining”. Here both halves talk about the same box x.": "你可以用 &&（读作：且）把两句话连成一句。连起来的这句话只有在两半都为真时才为真，比如“在下雨，而且出着太阳”。这里两半说的是同一个盒子 x。",
+  "Joined by or instead": "改用“或”连起来",
+  "Now join the same two halves with || (read it: or). Then one true half is enough, like “I take the bus or I walk”. Pick the sign that makes Tau say yes.": "现在用 ||（读作：或）把同样的两半连起来。这样只要有一半为真就够了，比如“我坐公交或者走路”。选出让 Tau 回答“是”的符号。",
+  "True for every value": "对每个值都为真",
+  "Until now Tau looked for one value of x that works. A stronger question is: is it true whatever x is? Tau calls that valid. The sign != means “is not”.": "到目前为止，Tau 只找一个能成立的 x 值。更强的问题是：不管 x 是什么，它都为真吗？Tau 把这叫作 valid。符号 != 表示“不是”。",
+  "x cannot be 0 and 1 at once: a box holds one value at a time, so the two halves are never true together.": "x 不能同时是 0 和 1：一个盒子一次只能装一个值，所以这两半永远不会同时为真。",
+  "Community": "社区",
+  "Lessons made by people in the community, facts checked by Tau HUD.": "由社区成员制作的课程，事实经 Tau HUD 核对。",
 } });

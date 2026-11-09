@@ -447,8 +447,8 @@
     },
     {
       "id": "and",
-      "title": "Both at once",
-      "text": "&& means and: both parts must be true at the same time.",
+      "title": "Two statements joined by and",
+      "text": "You can join two statements into one with && (read it: and). The joined statement is only true when both halves are true, like “it is raining and the sun is shining”. Here both halves talk about the same box x.",
       "show": [
         [
           "x = 0",
@@ -482,7 +482,7 @@
         "op": "sat",
         "spec": "x = 0 && x = 1"
       },
-      "says": "A box holds one value at a time, so both parts can never be true together.",
+      "says": "x cannot be 0 and 1 at once: a box holds one value at a time, so the two halves are never true together.",
       "learn": [
         [
           "&&",
@@ -492,8 +492,8 @@
     },
     {
       "id": "or",
-      "title": "One or the other",
-      "text": "|| means or: at least one part must be true. Pick the sign that makes Tau say yes.",
+      "title": "Joined by or instead",
+      "text": "Now join the same two halves with || (read it: or). Then one true half is enough, like “I take the bus or I walk”. Pick the sign that makes Tau say yes.",
       "fill": {
         "pattern": "x = 0 ▢ x = 1",
         "choices": [
@@ -516,8 +516,8 @@
     },
     {
       "id": "every",
-      "title": "True every time",
-      "text": "So far Tau looked for one value that works. valid asks something harder: is it true whatever the value is? != means is not.",
+      "title": "True for every value",
+      "text": "Until now Tau looked for one value of x that works. A stronger question is: is it true whatever x is? Tau calls that valid. The sign != means “is not”.",
       "show": [
         [
           "x = 0",
