@@ -875,7 +875,7 @@
     box.replaceChildren(
       row(T("Node"), SIM ? T("Simulation") : CHAIN.ok ? T("Live node") : CHAIN.ok === false ? T("Out of reach") : T("Connecting"), SIM ? T("a practice node in this browser; nothing reaches the testnet") : T("node.tauhud.com, the community relay"), "state-" + (SIM ? "sim" : CHAIN.ok ? "live" : CHAIN.ok === false ? "off" : "")),
       row(T("Block"), tip != null ? "#" + fmt(tip) : "—", pace() ? F("about {n} s a block", { n: pace().toFixed(0) }) : T("measuring the pace")),
-      (() => { const r = row(T("Trace"), c ? (left != null ? F("{n} blocks", { n: Math.max(0, left) }) : "…") : T("no contract taken"), c ? (left != null && left >= 0 ? F("until block {n} · {t}", { n: fmt(S.deadline), t: inTimeE(left) }) : T("the deadline is set from the tip at taking")) : T("take a contract: the block clock starts")); const bar = el("div", { class: "trace" + (frac < 0.25 ? " hot" : "") + (left != null && left < 0 ? " out" : "") }, el("i", { style: "width:" + Math.round(frac * 100) + "%" })); r.append(bar); return r; })(),
+      (() => { const r = row(T("Trace"), c ? (left != null ? F("{n} blocks", { n: Math.max(0, left) }) : "…") : T("no contract taken"), c ? (left != null && left >= 0 ? F("until block {n} · {t}", { n: fmt(S.deadline), t: inTimeE(left) }) : T("the deadline is set from the tip at taking")) : T("take a contract: the block clock starts")); if (heat()) { const p = r.querySelector("p"); if (p) p.append(" · ", el("a", { href: "#", text: F("Tracer heat {n}", { n: heat() }), onclick: e => { e.preventDefault(); run("heat"); } })); } const bar = el("div", { class: "trace" + (frac < 0.25 ? " hot" : "") + (left != null && left < 0 ? " out" : "") }, el("i", { style: "width:" + Math.round(frac * 100) + "%" })); r.append(bar); return r; })(),
       row(T("Wallet"), pk ? short(pk) : T("not made yet"), pk ? el("a", { href: "/wallet/" + lang(), text: T("open in the wallet") }) : T("made at your first contract")),
       row(T("Balance"), CHAIN.bal == null ? "—" : fmt(CHAIN.bal === 0 ? FAUCET : CHAIN.bal) + " " + T("test AGRS"), CHAIN.bal === 0 ? T("unseen wallet: the faucet’s 100,000 at the first payment") : T("test AGRS have no value")),
       (() => { const r = row(T("Standing"), "", nr ? F("{n} points · {m} more to {x}", { n: rep(), m: nr[0] - rep(), x: nr[1] }) : F("{n} points · the top of the ladder", { n: rep() }), "rk"); const b = r.querySelector("b"); b.classList.add("rank"); if (badge) b.append(badge); b.append(T(rank())); return r; })(),
@@ -1582,10 +1582,13 @@
     if (S.job === j.n) { say("sys", F("{x} is yours already. Build it: tx, set, send.", { x: jname(j) }), btn("tx", "tx")); return; }
     if (RUN.busy) { say("warn", T("A contract is under way; wait for the chain’s answer.")); return; }
     if (S.taken || S.job) { say("warn", T("Finish or drop the taken contract first (drop).")); return; }
+    if (heat() >= 80) { say("warn", F("Tracer heat {n}: the crew hands out no work while the Tracer has your scent. It falls 1 a block.", { n: heat() }), btn("heat", "heat")); return; }
     S.job = j.n; S.draft = DRAFT0(); S.pred = null; j.hinted = j.t <= 2; S.lastRead = null; S.jobStep = false; S.jobMiss = false;
     if (j.lock) for (const [f, v] of j.lock) S.draft[f] = v;
-    S.span = j.trace; S.deadline = CHAIN.tip != null ? CHAIN.tip + j.trace : null; save(); jobs(); instruments(); topbar(); chips();
-    say("sys", F("{x} taken: {t}.", { x: jname(j), t: heistOf(j) ? heistOf(j).name : kindOf(j).name }) + " " + (S.deadline != null ? F("Trace: until block {n} ({t}).", { n: fmt(S.deadline), t: inTimeE(j.trace) || fill0("{n} blocks", { n: j.trace }) }) : ""));
+    const span = heatSpan(j.trace);
+    S.span = span; S.deadline = CHAIN.tip != null ? CHAIN.tip + span : null; save(); jobs(); instruments(); topbar(); chips();
+    say("sys", F("{x} taken: {t}.", { x: jname(j), t: heistOf(j) ? heistOf(j).name : kindOf(j).name }) + " " + (S.deadline != null ? F("Trace: until block {n} ({t}).", { n: fmt(S.deadline), t: inTimeE(span) || fill0("{n} blocks", { n: span }) }) : ""));
+    if (span < j.trace) say("warn", F("Tracer heat {n}: this trace is {m} blocks shorter.", { n: heat(), m: j.trace - span }), btn("heat", "heat"));
     if (heistOf(j)) say("sys", F("A heist: {n} parts, one trace. Part {a} now: {t}.", { n: heistOf(j).heist.length, a: (j.hs || 0) + 1, t: kindOf(j).name }));
     if (kindOf(j).table) { say("sys", T("This one is answered in Tau, not with a payment: type tau and a term in x and y (and z). This terminal checks it against every row."), btn("what and", "what and")); tableShow(j); }
     else if (kindOf(j).tau) say("sys", T("This one is answered in Tau, not with a payment: type tau and your line. The Tau checker on our server runs it."), btn("what tau", "what tau"));
@@ -1684,26 +1687,45 @@
         if (!w.in) { say("no", F("Not sealed: {x}", { x: w.why })); if (/EXPIRED/.test(w.why) && S.deadline != null && CHAIN.tip > S.deadline) jobTraced(); return; }
         say("ok", F("Sealed in block {n}.", { n: fmt(w.block) }), explorer(s.hash));
         S.hist.unshift({ id: j.k, hash: s.hash, block: w.block, amount: d.amount }); S.hist = S.hist.slice(0, 20); save();
-        if (want !== "in") { say("warn", T("The payment was good, so the chain took it; this contract wanted a refusal. Look at the draft again.")); learnTopic(j.topic); return; }
+        if (want !== "in") { say("warn", T("The payment was good, so the chain took it; this contract wanted a refusal. Look at the draft again.")); learnTopic(j.topic); heatAdd(8); return; }
         if (j.k === "p-doors" && to !== DROP) { snd.no(); flash("bad"); say("no", T("That door was a lookalike: your coin went to a wallet that is not the drop, and it stays there. The middle of an address is where it differs.")); jobMiss(j, x); return; }
         const why = kd.check && kd.check(d, x, j);
-        if (why) { say("warn", F("Sealed, but not what was asked: {x}.", { x: why })); learnTopic(j.topic); say("sys", T("The contract stays yours while the trace lasts.")); return; }
+        if (why) { say("warn", F("Sealed, but not what was asked: {x}.", { x: why })); learnTopic(j.topic); say("sys", T("The contract stays yours while the trace lasts.")); heatAdd(8); return; }
         jobWin(j, { hash: s.hash, block: w.block });
         return;
       }
       const c0 = codeOf(s.r);
       snd.no(); slotFail(c0 || T("refused"));
       say(want === "in" ? "no" : "sys", F("The chain said no in {n} ms: {x}", { n: s.ms, x: c0 || plain(s.r) }));
-      if (want === "in") { flash("bad"); say("sys", T("This contract wants a payment that lands. Nothing was spent.")); learnTopic(CODE_TOPIC[c0] || j.topic); return; }
+      if (want === "in") { flash("bad"); say("sys", T("This contract wants a payment that lands. Nothing was spent.")); learnTopic(CODE_TOPIC[c0] || j.topic); heatAdd(8); return; }
       if (want === "any") { const right = S.pred === c0; S.predOut = right; jobWin(j, { code: c0, predicted: S.pred }, right ? 0 : PAYS[j.t] - 1); return; }
-      if (!want.includes(c0)) { flash("bad"); say("warn", F("Refused, but this contract wants {x}.", { x: want.join(" / ") })); learnTopic(CODE_TOPIC[c0] || j.topic); return; }
+      if (!want.includes(c0)) { flash("bad"); say("warn", F("Refused, but this contract wants {x}.", { x: want.join(" / ") })); learnTopic(CODE_TOPIC[c0] || j.topic); heatAdd(8); return; }
       const why = kd.check && kd.check(d, x, j);
-      if (why) { flash("bad"); say("warn", F("Right answer, but not the way asked: {x}.", { x: why })); return; }
+      if (why) { flash("bad"); say("warn", F("Right answer, but not the way asked: {x}.", { x: why })); heatAdd(8); return; }
       flash("ok"); jobWin(j, { code: c0 });
     } catch (e) {
       slotFail(T("stopped"));
       say("no", e && e.soft ? e.message : T("The node did not answer in time; nothing is lost. Type send again."), btn("send", "send"));
     } finally { if (S.job === j.n) { S.jobMiss = true; S.jobStep = false; save(); } RUN.busy = false; chips(); jobs(); instruments(); topbar(); balance(); }
+  }
+  /* Tracer heat: a game rule, not a chain rule. Wrong answers, missed checks and traces raise it; it falls 1 a block and
+     with clean work. High heat shortens the next trace; at 80 the crew will not hand you work until you lie low */
+  const heat = () => { const t = CHAIN.tip ?? S.heatAt ?? 0; return Math.max(0, Math.min(100, Math.round((S.heat || 0) - Math.max(0, t - (S.heatAt ?? t))))); };
+  function heatAdd(n) {
+    const was = heat(); S.heat = Math.max(0, Math.min(100, was + n)); S.heatAt = CHAIN.tip ?? S.heatAt ?? 0; save();
+    const h = heat();
+    if (n > 0) say("warn", F("Tracer heat {n}.", { n: h }) + (h >= 80 ? " " + T("The Tracer has your scent: no new contract until it falls below 80.") : h >= 50 ? " " + T("Your next trace will be shorter.") : ""), btn("heat", "heat"));
+    if (n > 0 && was < 50 && h >= 50) crew("look", "The Tracer is sniffing around our wallet. Fewer wild shots: think, then send.", "sour");
+    instruments();
+  }
+  const heatSpan = t => Math.max(8, Math.round(t * (1 - Math.min(heat(), 79) / 160)));
+  function heatCmd() {
+    const h = heat();
+    say("sys", F("Tracer heat: {n} of 100.", { n: h }));
+    cols([[T("raises it"), T("a refusal you did not want, a payment that lands but misses the ask, a wrong Tau answer: +8 · a trace run out: +25")],
+      [T("lowers it"), T("1 a block, and 10 for each contract settled")],
+      [T("50 and up"), T("the next trace is shorter")], [T("80 and up"), T("no new contract until it falls below 80")]]);
+    say("learn", T("The Tracer is part of the game, not of the chain. The testnet itself never punishes a refused payment: it refuses it, for free, and tells you why. The heat is there so that thinking pays more than guessing."));
   }
   function learnTopic(t) { if (!t || !TOPICS[t]) return; S.lastTopic = t; save(); say("learn", T(TOPICS[t][1])); }
   function jobWin(j, rec, less) {
@@ -1723,6 +1745,7 @@
       jobs(); instruments(); topbar(); chips(); return;
     }
     const pts = Math.max(1, PAYS[j.t] + (j.special || 0) - (j.t >= 3 && j.hinted ? 1 : 0) - (j.hpen || 0) - (less || 0));
+    if (heat()) heatAdd(-10);
     const before = rank();
     S.rep = (S.rep || 0) + pts; archive(j, "settled", pts, rec);
     snd.tension(false); snd.seal(); flash("ok"); mood(j.who, "glad");
@@ -1742,7 +1765,7 @@
     archive(j, "traced", -loss);
     const h = document.documentElement; h.classList.add("tr-out"); setTimeout(() => h.classList.remove("tr-out"), 2500); snd.out(); flash("bad");
     say("no", F("Trace complete: block {n} passed. {x} is lost.", { n: fmt(CHAIN.tip), x: jname(j) })); if (loss) say("warn", loss > 1 ? T("A blown heist costs 2 points of standing.") : T("It costs 1 point of standing."));
-    crew(j.who, "The block clock does not wait. There is more work in the inbox.", "sour");
+    crew(j.who, "The block clock does not wait. There is more work in the inbox.", "sour"); heatAdd(25);
     jobs(); instruments(); topbar(); chips(); jobTick(CHAIN.tip);
   }
   function archiveList() {
@@ -1871,7 +1894,7 @@
     catch (e) { say("no", T("That is not a term this terminal can read: use x, y, z, 0, 1, brackets and & | ' ^.")); return; }
     cols([[tb.v === 3 ? "x y z" : "x y", "→"], ...out]);
     if (!bad) { jobWin(j, { tau: term }); return; }
-    say("no", T("Not every row matches. Change the term and send it again with tau."));
+    say("no", T("Not every row matches. Change the term and send it again with tau.")); heatAdd(8);
   }
   const SPECS = {
     copy: { brief: "Write a spec where output o1 always equals input i1, both 8-bit bitvectors.", hint: "G(o1[t]:bv[8] = i1[t]:bv[8]) is close to the whole answer; a stream is typed with :bv[8]",
@@ -1913,7 +1936,7 @@
         const rows = sp.steps.map((st, i) => { const o = r.outputs[i] || {}, got = o.out ? Number(o.out.o1) : NaN, ins = {}; for (const [k, v] of Object.entries(st)) ins[k] = Number(v); return { st, got, want: sp.out(ins) }; });
         cols(rows.map((x, i) => ["t=" + i, Object.entries(x.st).map(([k, v]) => k + "=" + v).join(" ") + (Object.keys(x.st).length ? " → " : "") + "o1=" + (isNaN(x.got) ? "—" : x.got) + (x.got === x.want ? " ✓" : " ✗ " + F("(wanted {n})", { n: x.want }))]));
         if (rows.every(x => x.got === x.want)) { jobWin(j, { tau: line, engine: r.engine || "tau" }); return; }
-        say("no", T("The checker ran your line, and o1 is not what the crew asked for at every step.")); mood(j.who, "sour"); return;
+        say("no", T("The checker ran your line, and o1 is not what the crew asked for at every step.")); mood(j.who, "sour"); heatAdd(8); return;
       }
       if (r && !r.ok) { say("no", F("The checker refused the line: {x}", { x: String(r.error || "").slice(0, 300) }) + (r.timeout ? " " + T("(it ran out of time)") : "")); mood(j.who, "sour"); return; }
       /* no checker: the shapes we know are right */
@@ -2120,6 +2143,7 @@
     if (c === "status") return status();
     if (c === "peek") return peek(args);
     if (c === "trace") return traceSet(args[0]);
+    if (c === "heat") return heatCmd();
     if (c === "board") return board();
     if (c === "tau") return tauCmd(s.slice(3));
     if (c === "rule" || c === "rules" || (c === "explain" && /^rules?$/.test(args[0] || ""))) return ruleCmd();

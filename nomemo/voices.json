@@ -129,6 +129,10 @@
  },
  {
   "who": "look",
+  "text": "The Tracer is sniffing around our wallet. Fewer wild shots: think, then send."
+ },
+ {
+  "who": "look",
   "text": "Three blocks or fewer. Brave. The chain will not wait for your fingers."
  },
  {

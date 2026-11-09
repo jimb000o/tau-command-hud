@@ -999,5 +999,22 @@ TauI18n.add({ strings: {
   "Part {a} of {b} done. The trace runs on: block {n}.": "第 {a} 部（全 {b} 部）完了。追跡は続く：ブロック {n}。",
   "A fresh draft: a plain payment of 1 test AGRS to the drop.": "新しい下書き：ドロップへ 1 テスト AGRS のただの支払い。",
   "The heist is done: all {n} parts.": "強奪完了：全 {n} 部。",
-  "A blown heist costs 2 points of standing.": "失敗した強奪は評価 2 点を失う。"
+  "A blown heist costs 2 points of standing.": "失敗した強奪は評価 2 点を失う。",
+  "Tracer heat {n}.": "トレーサーの熱 {n}。",
+  "The Tracer has your scent: no new contract until it falls below 80.": "トレーサーに嗅ぎつけられた：80 を下回るまで新しい契約はない。",
+  "Your next trace will be shorter.": "次の追跡は短くなる。",
+  "The Tracer is sniffing around our wallet. Fewer wild shots: think, then send.": "トレーサーがうちのウォレットを嗅ぎ回っている。闇雲に撃つな：考えてから送れ。",
+  "Tracer heat: {n} of 100.": "トレーサーの熱：100 のうち {n}。",
+  "raises it": "上がる",
+  "a refusal you did not want, a payment that lands but misses the ask, a wrong Tau answer: +8 · a trace run out: +25": "望まない拒否、通ったが求めと違う支払い、間違った Tau の答え：+8 · 追跡切れ：+25",
+  "lowers it": "下がる",
+  "1 a block, and 10 for each contract settled": "1 ブロックごとに 1、契約を一つ片付けるごとに 10",
+  "50 and up": "50 以上",
+  "the next trace is shorter": "次の追跡が短くなる",
+  "80 and up": "80 以上",
+  "no new contract until it falls below 80": "80 を下回るまで新しい契約はない",
+  "The Tracer is part of the game, not of the chain. The testnet itself never punishes a refused payment: it refuses it, for free, and tells you why. The heat is there so that thinking pays more than guessing.": "トレーサーはゲームの一部で、チェーンの一部ではない。テストネット自体は拒否された支払いを決して罰しない：無料で拒否し、理由を教えてくれる。熱があるのは、当て推量より考えるほうが得になるようにするためだ。",
+  "Tracer heat {n}: the crew hands out no work while the Tracer has your scent. It falls 1 a block.": "トレーサーの熱 {n}：トレーサーに嗅ぎつけられている間、クルーは仕事を渡さない。1 ブロックごとに 1 下がる。",
+  "Tracer heat {n}: this trace is {m} blocks shorter.": "トレーサーの熱 {n}：この追跡は {m} ブロック短い。",
+  "Tracer heat {n}": "トレーサーの熱 {n}"
 } });
