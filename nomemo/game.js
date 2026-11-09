@@ -358,7 +358,7 @@
         }, 9000);
       },
       get(path) {
-        if (path === "") return { simulated: true, enabled: true, tracer: true, drop: DROP, share: SHARE, board: { wallets: 7 + (S.done.mark ? 1 : 0), ranks: { stowaway: 2, deckhand: 2, rigger: 1, navigator: 1, "quartermaster’s mate": 1 }, claims: [4, 2, 1], day: 3 + (S.done.mark ? 1 : 0), hour: 1 + (S.done.mark ? 1 : 0), now: Math.floor(Date.now() / 1000), last_move: Math.floor(Date.now() / 1000) - (S.done.mark ? 20 : 240) } };
+        if (path === "") return { simulated: true, enabled: true, tracer: true, drop: DROP, share: SHARE, board: { wallets: 7 + (S.done.mark ? 1 : 0), ranks: { stowaway: 2, deckhand: 2, rigger: 1, navigator: 1, "quartermaster’s mate": 1 }, claims: [4, 2, 1], day: 3 + (S.done.mark ? 1 : 0), hour: 1 + (S.done.mark ? 1 : 0), now: Math.floor(Date.now() / 1000), last_move: Math.floor(Date.now() / 1000) - (S.done.mark ? 20 : 240), week_wallets: 4, week_top: [["3f9a21…07c4", 41], ["b80e5d…a912", 27], ["5c1177…e3d0", 12], ["e04b9a…6b25", 3]] } };
         const m = /^\/wallet\/([0-9a-f]{96})$/.exec(path); if (!m) return null;
         const x = w(m[1]); return { wallet: m[1], claims: x.claims, dust: x.dust, drop: DROP, nth: Object.keys(x.claims).length || S.done.mark ? 8 : null };
       },
@@ -2091,12 +2091,19 @@
     const d = await boardLoad();
     if (!d || !d.board) { say("sys", T("The board is on the server; it is out of reach right now.")); return; }
     const b = d.board;
+    if (SIM) say("sys", T("practice board") + ": " + T("made-up numbers in this browser; the live board is on the server."));
     snd.board(); say("sys", F("The players’ board: {n} wallets have paid the drop. Wallets, not people; nobody is named.", { n: b.wallets || 0 }));
     cols(Object.entries(b.ranks || {}).map(([k, n]) => [T(k), String(n)]));
     if (b.claims) say("sys", F("Chapters claimed: {a} · {b} · {c}", { a: b.claims[0] || 0, b: b.claims[1] || 0, c: b.claims[2] || 0 }));
     const l = crowdLine(b); if (l) say("sys", l);
-    const w = myPk() ? await serverInfo("/wallet/" + myPk()) : null;
+    const pk = myPk(), mine = pk ? pk.slice(0, 6) + "…" + pk.slice(-4) : null;
+    if (Array.isArray(b.week_top) && b.week_top.length) {
+      say("sys", F("This week’s board: {n} wallets paid the drop since Monday. A payment counts at most once every 30 seconds; it starts from zero every Monday.", { n: b.week_wallets || b.week_top.length }));
+      cols(b.week_top.map(([w, n], i) => ["#" + (i + 1), w + " · " + F("{n} payments", { n }) + (w === mine ? " · " + T("you") : "")]));
+    } else if (b.week_top) say("sys", T("Nobody has paid the drop this week yet: the first payment leads the week."));
+    const w = pk ? await serverInfo("/wallet/" + pk) : null;
     say("sys", F("You: {x}.", { x: rank() }) + (w && w.nth ? " " + F("Wallet number {n} to pay the drop.", { n: w.nth }) : ""));
+    if (w && w.week && w.week_place) say("sys", F("This week you stand at number {a}, with {b} payments.", { a: w.week_place, b: w.week }));
   }
   function findings() {
     if (!S.findings.length) { say("sys", T("Nothing. Every refusal so far was the chain doing its job.")); return; }

@@ -127,5 +127,25 @@ check(m2.wallets[PLAYER]["claims"]["1"]["paid"]["share"]["hash"] == "h2", "the s
 check(m.route("/nomemo/wallet/zz") == {"error": "not an address"} and m.route("/other") is None, "bad paths")
 off = nomemo.NoMemo(keys_path=os.path.join(d, "k2"), state_path=os.path.join(d, "s2.json"), clock=clock, enabled=False, background=False)
 check(not off.ready and off.route("/nomemo")["enabled"] is False, "switched off: no keys made, the page is told")
+# the weekly board: payments to the drop this week, at most one every WEEK_GAP seconds counted
+wk = nomemo.week_of(T[0])
+check(nomemo.week_of(1762732860) == nomemo.week_of(1762732860 + 6 * 86400) and nomemo.week_of(1762732860) + 1 == nomemo.week_of(1762732860 + 7 * 86400), "weeks are seven days long")
+check(nomemo.week_of(1762732799) + 1 == nomemo.week_of(1762732800), "a week starts on Monday 00:00 UTC")   # 2025-11-10 00:00Z was a Monday
+THIRD = "d" * 96
+pay = lambda who, h: m.saw({"tx_type": "user_tx", "sender_pubkey": who, "operations": {"1": [[who, m.pk["drop"], "1"]]}}, h)   # noqa: E731
+for i in range(5):
+    T[0] += nomemo.WEEK_GAP
+    pay(THIRD, "t%d" % i)
+pay(THIRD, "t-quick")   # too soon after the last one: not counted
+b = m.route("/nomemo")["board"]
+top = dict(b["week_top"])
+check(b["week"] == nomemo.week_of(T[0]) and top.get(nomemo.short(THIRD)) == 5, "five payments a gap apart count five; one right after does not")
+check(b["week_top"][0][0] == nomemo.short(THIRD) and all(len(x[0]) < 20 for x in b["week_top"]), "the top wallet leads, shown short")
+v = m.route("/nomemo/wallet/" + THIRD)
+check(v["week"] == 5 and v["week_place"] == 1 and m.route("/nomemo/wallet/" + "c" * 96)["week_place"] is None, "a wallet's own count and place this week")
+T[0] += 7 * 86400
+pay(THIRD, "t-next")
+b = m.route("/nomemo")["board"]
+check(dict(b["week_top"]).get(nomemo.short(THIRD)) == 1, "a new week starts from zero")
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)

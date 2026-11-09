@@ -1030,5 +1030,11 @@ TauI18n.add({ strings: {
   "This week: {x}. Contracts on {y} pay double and come more often.": "本周：{x}。关于 {y} 的合约报酬翻倍，也更常出现。",
   "{n} days until the next theme.": "距下一个主题还有 {n} 天。",
   "This week: {x}.": "本周：{x}。",
-  "The next theme starts tomorrow.": "下一个主题明天开始。"
+  "The next theme starts tomorrow.": "下一个主题明天开始。",
+  "This week’s board: {n} wallets paid the drop since Monday. A payment counts at most once every 30 seconds; it starts from zero every Monday.": "本周榜单：自周一起有 {n} 个钱包付款给接头点。每 30 秒最多计一笔付款；每周一从零开始。",
+  "{n} payments": "{n} 笔付款",
+  "you": "你",
+  "Nobody has paid the drop this week yet: the first payment leads the week.": "本周还没有人付款给接头点：第一笔付款就领先本周。",
+  "This week you stand at number {a}, with {b} payments.": "本周你排在第 {a} 名，共 {b} 笔付款。",
+  "made-up numbers in this browser; the live board is on the server.": "这些是浏览器里编造的数字；真实榜单在服务器上。"
 } });
