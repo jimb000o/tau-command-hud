@@ -88,22 +88,30 @@
     LINE.tail = turn.catch(() => {});
     return turn;
   }
-  /* every crew voice reaches you through the cabin's screen: a narrow band, a few bits, a faint ring of the machine.
-     Done here in the browser, so the clips on the server stay as they are and no credits are spent. */
+  /* every crew voice reaches you through the cabin's screen exactly as the ship's computer does: first what the server does
+     to the ship's clips ("digital level 1" in ffmpeg: a band from 250 to 5200 Hz, about 10 bits, a 7 ms echo of the screen's
+     glass), then what the ship's voice goes through here (the speaking tube: 380 to 3400 Hz, a soft drive that is
+     also its limit).
+     Done in the browser, so the crew's clips on the server stay as they are and no credits are spent. */
   function screenVoice(c, dest) {
-    const hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 340;
-    const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 3300;
-    const pre = c.createGain(); pre.gain.value = 1.6;
-    const crush = c.createWaveShaper(), n = 4096, cv = new Float32Array(n);
-    for (let i = 0; i < n; i++) { const x = i / (n / 2 - 0.5) - 1, y = Math.tanh(1.8 * x) / Math.tanh(1.8); cv[i] = Math.round(y * 28) / 28; }
+    const f = (type, hz) => { const b = c.createBiquadFilter(); b.type = type; b.frequency.value = hz; b.Q.value = 0.707; return b; };
+    const hp = f("highpass", 250), lp = f("lowpass", 5200);
+    const crush = c.createWaveShaper(), n = 8192, cv = new Float32Array(n), mu = 255, L = 512;   // about 10 bits, finer where it is quiet
+    for (let i = 0; i < n; i++) {
+      const x = i / (n / 2 - 0.5) - 1, m = Math.log1p(mu * Math.min(1, Math.abs(x))) / Math.log1p(mu);
+      cv[i] = Math.sign(x) * (Math.pow(1 + mu, Math.round(m * L) / L) - 1) / mu;
+    }
     crush.curve = cv;
-    const dry = c.createGain(); dry.gain.value = 0.72;
-    const ring = c.createGain(); ring.gain.value = 0;   // its loudness follows a fast tone: the metallic edge of a digital line
-    const osc = c.createOscillator(); osc.type = "sine"; osc.frequency.value = 62;
-    const depth = c.createGain(); depth.gain.value = 0.3; osc.connect(depth).connect(ring.gain); osc.start();
+    const inG = c.createGain(); inG.gain.value = 0.8;
+    const dl = c.createDelay(0.05); dl.delayTime.value = 0.007;
+    const dg = c.createGain(); dg.gain.value = 0.35;
+    const mix = c.createGain(); mix.gain.value = 0.5;   // 0.6 on the server; a little lower here, where the drive adds more
+    const thp = f("highpass", 380), tlp = f("lowpass", 3400);
+    const sh = c.createWaveShaper(), sc = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 511.5 - 1; sc[i] = Math.tanh(2.2 * x) / Math.tanh(2.2); } sh.curve = sc;
     const out = c.createGain(); out.gain.value = 0.95;
-    hp.connect(lp); lp.connect(pre); pre.connect(crush); crush.connect(dry); crush.connect(ring); dry.connect(out); ring.connect(out); out.connect(dest);
-    hp.stopRing = () => { try { osc.stop(); } catch (e) {} };
+    hp.connect(lp); lp.connect(crush); crush.connect(inG); crush.connect(dl); dl.connect(dg);
+    inG.connect(mix); dg.connect(mix); mix.connect(thp); thp.connect(tlp); tlp.connect(sh); sh.connect(out); out.connect(dest);
+    hp.stopRing = () => {};   // nothing runs on its own any more; kept for transmission.js
     return hp;
   }
   window.NoMemoVoice = { onAir, screen: screenVoice };
@@ -653,7 +661,7 @@
     if (S.fx && !REDUCED && typeof text === "string" && text.length < 700) { p.hidden = true; Q.push(p); pump(); } else scrollDown();
     return p;
   }
-  function crew(who, text, m) { if (m) mood(who, m); talking(who); document.dispatchEvent(new CustomEvent("nomemo:crewline", { detail: { who, mood: MOOD[who], text: T(text), voice: !SIM && !!(S.voice && S.snd) } })); speak(who, text); return say("crew", null, el("b", { text: T(CREW[who]) + ":" }), " " + T(text)); }
+  function crew(who, text, m) { if (m) mood(who, m); talking(who); document.dispatchEvent(new CustomEvent("nomemo:crewline", { detail: { who, mood: MOOD[who], text: T(text), voice: !SIM && !!(S.voice && S.snd) } })); heard(who, speak(who, text)); return say("crew", null, el("b", { text: T(CREW[who]) + ":" }), " " + T(text)); }
   function transmit(who, text, job, m) {   // a contract's brief: the sender appears and reads it out (transmission.js); without that file, the plain crew line
     const ev = new CustomEvent("nomemo:transmission", { cancelable: true, detail: { who, mood: m || "calm", text, shown: T(text), from: T(CREW[who]), job: job || null, voice: !!(S.voice && S.snd), sim: SIM } });
     if (document.dispatchEvent(ev)) return crew(who, text, m || "calm");
@@ -1337,6 +1345,9 @@
   async function clips() {
     if (SIM || VOICE.have || Date.now() - VOICE.at < 60000) return; VOICE.at = Date.now();
     try { const r = await fetch(CLIPS + "index.json", { cache: "no-cache" }); const j = r.ok ? await r.json() : null; VOICE.have = new Set((j && j.clips) || []); } catch (e) { VOICE.have = new Set(); }
+  }
+  function heard(who, spoke) {   // a line whose voice never came: its face talks without it (transmission.js)
+    Promise.resolve(spoke).then(ok => { if (!ok) document.dispatchEvent(new CustomEvent("nomemo:crewvoice", { detail: { who, none: true } })); });
   }
   async function speak(who, text) {
     if (SIM || !S.voice || !window.crypto || !crypto.subtle) return;
