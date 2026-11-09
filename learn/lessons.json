@@ -1,56 +1,270 @@
 {
-  "about": "Five short lessons for tauhud.com/learn. The page loads them; `up tau` on the server asks the engine every try and every solution and prints ok or FAIL, so the expected answers here are checked against the real engine.",
+  "about": "Five short lessons for tauhud.com/learn. The page loads them; `up tau` on the server asks the engine every try and every solution and prints ok or FAIL, so the expected answers here are checked against the real engine. A task's `fill` is the fill-in shown to people who picked 'never written a formula': the pattern with ▢ and the choices for it.",
   "lessons": [
     {
       "id": "yesno",
       "title": "Yes or no",
       "text": "Tau answers questions about formulas. sat asks: can this be true? A letter such as x is a variable, and the formula counts as true when some value of x makes it true.",
       "tries": [
-        { "label": "Can x be 0?", "op": "sat", "spec": "x = 0", "expect": { "verdict": true }, "says": "T: yes, x = 0 can be true." },
-        { "label": "Can x be 0 and 1?", "op": "sat", "spec": "x = 0 && x = 1", "expect": { "verdict": false }, "says": "F: no value of x is 0 and 1 at once." },
-        { "label": "Why not?", "op": "why", "spec": "x = 0 && x = 1", "expect": { "verdict": false }, "says": "Tau names the smallest set of parts that already contradict each other." }
+        {
+          "label": "Can x be 0?",
+          "op": "sat",
+          "spec": "x = 0",
+          "expect": {
+            "verdict": true
+          },
+          "says": "T: yes, x = 0 can be true."
+        },
+        {
+          "label": "Can x be 0 and 1?",
+          "op": "sat",
+          "spec": "x = 0 && x = 1",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: no value of x is 0 and 1 at once."
+        },
+        {
+          "label": "Why not?",
+          "op": "why",
+          "spec": "x = 0 && x = 1",
+          "expect": {
+            "verdict": false
+          },
+          "says": "Tau names the smallest set of parts that already contradict each other."
+        }
       ],
-      "task": { "text": "Change x = 0 && x = 1 so that Tau answers T again. Hint: && means and, || means or.", "op": "sat", "expect": { "verdict": true }, "must": ["x"], "solution": "x = 0 || x = 1" }
+      "task": {
+        "text": "Change x = 0 && x = 1 so that Tau answers T again. Hint: && means and, || means or.",
+        "op": "sat",
+        "expect": {
+          "verdict": true
+        },
+        "must": [
+          "x"
+        ],
+        "solution": "x = 0 || x = 1",
+        "fill": {
+          "pattern": "x = 0 ▢ x = 1",
+          "choices": [
+            "&&",
+            "||"
+          ]
+        }
+      }
     },
     {
       "id": "valid",
       "title": "True in every case",
       "text": "valid asks the harder question: is this true whatever the values are? sat is happy with one way to make it true, valid needs all of them.",
       "tries": [
-        { "label": "Is x = 0 always true?", "op": "valid", "spec": "x = 0", "expect": { "verdict": false }, "says": "F: x could be something else." },
-        { "label": "Is x 0 or not 0?", "op": "valid", "spec": "x = 0 || x != 0", "expect": { "verdict": true }, "says": "T: whatever x is, it is 0 or it is not." }
+        {
+          "label": "Is x = 0 always true?",
+          "op": "valid",
+          "spec": "x = 0",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: x could be something else."
+        },
+        {
+          "label": "Is x 0 or not 0?",
+          "op": "valid",
+          "spec": "x = 0 || x != 0",
+          "expect": {
+            "verdict": true
+          },
+          "says": "T: whatever x is, it is 0 or it is not."
+        }
       ],
-      "task": { "text": "Write a formula with && in it that is still valid.", "op": "valid", "expect": { "verdict": true }, "must": ["&&"], "solution": "(x = 0 || x != 0) && (y = y)" }
+      "task": {
+        "text": "Write a formula with && in it that is still valid.",
+        "op": "valid",
+        "expect": {
+          "verdict": true
+        },
+        "must": [
+          "&&"
+        ],
+        "solution": "(x = 0 || x != 0) && (y = y)",
+        "fill": {
+          "pattern": "(x = 0 ▢ x != 0) && (y = y)",
+          "choices": [
+            "&&",
+            "||"
+          ]
+        }
+      }
     },
     {
       "id": "streams",
       "title": "Inputs in, outputs out",
       "text": "A testnet rule reads inputs and writes outputs, one step at a time. i1[t] is input 1 at step t, o1[t] is output 1. :bv[8] makes them 8-bit numbers, 0 to 255, and { 1 } is the number 1. run feeds the inputs in and shows what Tau writes.",
       "tries": [
-        { "label": "Add one", "op": "run", "spec": "o1[t]:bv[8] = i1[t]:bv[8] + { 1 }:bv[8]", "steps": [{ "i1": "1" }, { "i1": "2" }, { "i1": "3" }], "expect": { "out": { "o1": ["2", "3", "4"] } }, "says": "At every step Tau writes the input plus one." },
-        { "label": "Past 255", "op": "run", "spec": "o1[t]:bv[8] = i1[t]:bv[8] + { 1 }:bv[8]", "steps": [{ "i1": "255" }], "expect": { "out": { "o1": ["0"] } }, "says": "8-bit numbers wrap around: 255 + 1 is 0. A rule that must not wrap has to say so itself." }
+        {
+          "label": "Add one",
+          "op": "run",
+          "spec": "o1[t]:bv[8] = i1[t]:bv[8] + { 1 }:bv[8]",
+          "steps": [
+            {
+              "i1": "1"
+            },
+            {
+              "i1": "2"
+            },
+            {
+              "i1": "3"
+            }
+          ],
+          "expect": {
+            "out": {
+              "o1": [
+                "2",
+                "3",
+                "4"
+              ]
+            }
+          },
+          "says": "At every step Tau writes the input plus one."
+        },
+        {
+          "label": "Past 255",
+          "op": "run",
+          "spec": "o1[t]:bv[8] = i1[t]:bv[8] + { 1 }:bv[8]",
+          "steps": [
+            {
+              "i1": "255"
+            }
+          ],
+          "expect": {
+            "out": {
+              "o1": [
+                "0"
+              ]
+            }
+          },
+          "says": "8-bit numbers wrap around: 255 + 1 is 0. A rule that must not wrap has to say so itself."
+        }
       ],
-      "task": { "text": "Make o1 twice the input. Run it with the inputs 1, 2, 3.", "op": "run", "steps": [{ "i1": "1" }, { "i1": "2" }, { "i1": "3" }], "expect": { "out": { "o1": ["2", "4", "6"] } }, "solution": "o1[t]:bv[8] = i1[t]:bv[8] * { 2 }:bv[8]" }
+      "task": {
+        "text": "Make o1 twice the input. Run it with the inputs 1, 2, 3.",
+        "op": "run",
+        "steps": [
+          {
+            "i1": "1"
+          },
+          {
+            "i1": "2"
+          },
+          {
+            "i1": "3"
+          }
+        ],
+        "expect": {
+          "out": {
+            "o1": [
+              "2",
+              "4",
+              "6"
+            ]
+          }
+        },
+        "solution": "o1[t]:bv[8] = i1[t]:bv[8] * { 2 }:bv[8]"
+      }
     },
     {
       "id": "time",
       "title": "Promises over time",
       "text": "A spec is a promise for every step. always must hold at each step, sometimes at one step at least. Tau checks the promise against every input anyone could send, and [t-1] reads the step before.",
       "tries": [
-        { "label": "Will the input ever be 1?", "op": "sat", "spec": "sometimes i1[t] = 1", "expect": { "verdict": false }, "says": "F: the input may stay 0 forever, and the spec cannot force it." },
-        { "label": "Will the output ever copy it?", "op": "sat", "spec": "sometimes o1[t] = i1[t]", "expect": { "verdict": true }, "says": "T: the output can copy the input at the step it reads it." },
-        { "label": "Grow forever?", "op": "sat", "spec": "o1[t]:bv[2] > o1[t-1]:bv[2]", "expect": { "verdict": false }, "says": "F: an output that must grow at every step runs out of 2-bit numbers (0 to 3)." }
+        {
+          "label": "Will the input ever be 1?",
+          "op": "sat",
+          "spec": "sometimes i1[t] = 1",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: the input may stay 0 forever, and the spec cannot force it."
+        },
+        {
+          "label": "Will the output ever copy it?",
+          "op": "sat",
+          "spec": "sometimes o1[t] = i1[t]",
+          "expect": {
+            "verdict": true
+          },
+          "says": "T: the output can copy the input at the step it reads it."
+        },
+        {
+          "label": "Grow forever?",
+          "op": "sat",
+          "spec": "o1[t]:bv[2] > o1[t-1]:bv[2]",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: an output that must grow at every step runs out of 2-bit numbers (0 to 3)."
+        }
       ],
-      "task": { "text": "Change the last one so it can hold forever: the output only has to differ from the step before.", "op": "sat", "expect": { "verdict": true }, "must": ["[t-1]"], "solution": "o1[t]:bv[2] != o1[t-1]:bv[2]" }
+      "task": {
+        "text": "Change the last one so it can hold forever: the output only has to differ from the step before.",
+        "op": "sat",
+        "expect": {
+          "verdict": true
+        },
+        "must": [
+          "[t-1]"
+        ],
+        "solution": "o1[t]:bv[2] != o1[t-1]:bv[2]"
+      }
     },
     {
       "id": "rule",
       "title": "A real testnet rule",
       "text": "Every rule on the testnet is a spec like this one. For each transfer the node feeds the amount in on i1, and the rule answers on o5: 1 lets the transfer through, 0 stops it. This rule stops anything over 1,000.",
       "tries": [
-        { "label": "500, then 5,000", "op": "run", "spec": "always ( (i1[t]:bv[24] > { 1000 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).", "steps": [{ "i1": "500" }, { "i1": "5000" }], "expect": { "out": { "o5": ["1", "0"] } }, "says": "500 goes through (1), 5,000 is stopped (0)." }
+        {
+          "label": "500, then 5,000",
+          "op": "run",
+          "spec": "always ( (i1[t]:bv[24] > { 1000 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+          "steps": [
+            {
+              "i1": "500"
+            },
+            {
+              "i1": "5000"
+            }
+          ],
+          "expect": {
+            "out": {
+              "o5": [
+                "1",
+                "0"
+              ]
+            }
+          },
+          "says": "500 goes through (1), 5,000 is stopped (0)."
+        }
       ],
-      "task": { "text": "Lower the limit to 100 and run 500 again: now it should be stopped.", "op": "run", "steps": [{ "i1": "500" }], "expect": { "out": { "o5": ["0"] } }, "must": ["100"], "solution": "always ( (i1[t]:bv[24] > { 100 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) )." }
+      "task": {
+        "text": "Lower the limit to 100 and run 500 again: now it should be stopped.",
+        "op": "run",
+        "steps": [
+          {
+            "i1": "500"
+          }
+        ],
+        "expect": {
+          "out": {
+            "o5": [
+              "0"
+            ]
+          }
+        },
+        "must": [
+          "100"
+        ],
+        "solution": "always ( (i1[t]:bv[24] > { 100 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) )."
+      }
     }
   ]
 }
