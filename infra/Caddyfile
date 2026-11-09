@@ -9,6 +9,13 @@
 		}
 		reverse_proxy checker:8090
 	}
+	# Tau Language questions from tauhud.com/learn (checker/tau_sandbox.py).
+	handle /tau* {
+		request_body {
+			max_size 16KB
+		}
+		reverse_proxy checker:8090
+	}
 	# Proposal tracker data, the Atom feed, the weekly recap images (alerts/alerts.py),
 	# the donation list read by About (alerts/donations.py), what the site's tools were paid (alerts/receipts.py), the build pulse (alerts/devpulse.py) and the blog's
 	# articles, unlisted drafts, pictures and link-preview pages (alerts/blog.py), and the weekly report for IDNI

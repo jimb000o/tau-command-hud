@@ -99,6 +99,8 @@ services:
       PYTHONDONTWRITEBYTECODE: "1"
     volumes:
       - ./checker:/checker:ro
+      # the lesson examples, so `up tau` can check every one of them against this engine
+      - ../learn/lessons.json:/learn/lessons.json:ro
     read_only: true
     tmpfs: [/tmp]
     # Root inside the container only because the engine's libraries live under

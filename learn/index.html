@@ -7,13 +7,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Learn Tau Language</title>
-<meta name="description" content="Learn Tau Language without running a node: install tau, start the REPL, try IDNI's demos, then write a rule for the testnet in the Rule Playground. Unofficial, not affiliated with IDNI.">
+<meta name="description" content="Try Tau Language in your browser: type a formula and a real Tau engine answers. Five short lessons from yes or no to a real testnet rule, then install tau yourself. Unofficial, not affiliated with IDNI.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#09090a">
 <meta property="og:title" content="Tau HUD · Learn Tau Language">
-<meta property="og:description" content="No node needed: install tau, start the REPL, try IDNI's demos, then write a rule for the testnet.">
+<meta property="og:description" content="Type a formula, a real Tau engine answers. Five short lessons, then a real testnet rule.">
 <meta property="og:image" content="https://tauhud.com/assets/og/hud.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -81,6 +81,85 @@ pre { margin: 6px 0 0; padding: 8px 10px; background: rgba(255,255,255,.04); bor
 @media (min-width: 2200px) and (min-height: 1200px) { body { zoom: 1.3; } }
 @media (max-width: 1100px) { .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .main > .col:first-child { grid-column: 1 / -1; } }
 @media (max-width: 700px) { .main { grid-template-columns: minmax(0, 1fr); } .b { min-height: 44px; } .links a { display: inline-block; padding: 6px 0; } body { font-size: 12px; padding-bottom: 24px; } .links span, .fine { font-size: 11px; } }
+/* Try box, lessons, tabs (v2: Tau on tauhud's own engine) */
+.panel { display: flex; flex-direction: column; }
+.try textarea { width: 100%; min-height: 76px; resize: vertical; background: rgba(0,0,0,.35); color: #b9ffd6; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 13px/1.45 var(--mono); }
+.try textarea:focus, .try input:focus { outline: 1px solid var(--ok); outline-offset: 1px; }
+.ops { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+.ops button, .tabs button, .chips button { font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); background: none; border: 1px solid var(--line); border-radius: 6px; min-height: 30px; padding: 0 10px; cursor: pointer; }
+.ops button[aria-pressed=true], .tabs button[aria-selected=true] { color: var(--ok); border-color: rgba(57,255,138,.5); }
+.ops button:hover, .tabs button:hover, .chips button:hover { color: #fff; }
+.ops .hint { color: var(--dim); font-size: 11.5px; align-self: center; margin-left: 4px; flex: 1 1 160px; }
+.inrow { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+.inrow label { color: var(--dim); font-size: 12px; white-space: nowrap; }
+.inrow input { flex: 1; min-width: 0; min-height: 32px; background: rgba(0,0,0,.35); color: #b9ffd6; border: 1px solid var(--hair); border-radius: 6px; padding: 0 10px; font: 12.5px var(--mono); }
+.act { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.act .b { cursor: pointer; background: none; }
+.act .b[disabled] { opacity: .5; cursor: wait; }
+.act small { color: var(--dim); font-size: 11.5px; }
+.out { margin-top: 10px; height: 190px; overflow-y: auto; background: rgba(0,0,0,.35); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: 12px/1.5 var(--mono); }
+.out .q { color: var(--dim); }
+.out .q b { color: var(--text); font-weight: 400; }
+.out .v { color: #fff; }
+.out .v.t { color: var(--ok); }
+.out .v.f { color: #ff9aa9; }
+.out .err { color: #e5484d; }
+.out .say { color: var(--text); font-family: var(--display); font-size: 12.5px; }
+.out .say::before { content: "→ "; color: var(--ok); }
+.out .miss { color: var(--dim); }
+.out table { border-collapse: collapse; margin: 2px 0 4px; }
+.out td, .out th { padding: 1px 12px 1px 0; text-align: left; font-weight: 400; }
+.out th { color: var(--dim); }
+.out .gap { height: 8px; }
+.eng { color: var(--dim); font-size: 11.5px; margin: 8px 0 0; }
+.eng i { font-style: normal; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--dim); margin-right: 6px; vertical-align: 1px; }
+.eng.on i { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.eng.off i { background: #e5484d; }
+.chips, #chips { display: flex; gap: 6px; }
+.chips { margin: 0 0 10px; justify-content: space-between; flex-wrap: wrap; }
+#lNext { color: var(--text); }
+button.b { background: none; cursor: pointer; }
+.chips button { min-width: 34px; padding: 0 8px; }
+.chips button[aria-current=true] { color: #fff; border-color: #fff; }
+.chips button.done { color: var(--ok); }
+.lesson h3 { margin: 0 0 6px; font: 600 15px var(--display); color: #fff; }
+.lesson p { margin: 0 0 10px; }
+.tries { display: grid; gap: 6px; margin: 0 0 12px; }
+.tries button { text-align: left; background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; color: var(--text); cursor: pointer; font: 12.5px var(--display); min-height: 36px; }
+.tries button:hover { border-color: var(--hair); color: #fff; }
+.tries button code { display: block; font-size: 11.5px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task { border-top: 1px solid var(--line); padding-top: 10px; }
+.task b { color: var(--ok); font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; display: block; margin-bottom: 4px; }
+.task .verdict { margin: 6px 0 0; font-size: 12px; min-height: 18px; }
+.task .verdict.good { color: var(--ok); }
+.task .verdict.bad { color: #ff9aa9; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.how.tight { gap: 7px; }
+/* desktop: the page is exactly one screen high; the answer box and long panels give way inside, never the page */
+@media (min-width: 1101px) and (min-height: 600px) {
+  html, body { height: 100%; }
+  body { box-sizing: border-box; overflow: hidden; }
+  .wrap { height: 100%; }
+  .main { flex: 1 1 auto !important; min-height: 0; align-items: stretch; }
+  .main > .col { min-height: 0; display: flex; flex-direction: column; }
+  .main .panel { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  .try { overflow: hidden !important; }
+  .try .out { flex: 1 1 60px; height: auto; min-height: 60px; }
+}
+@media (min-width: 1101px) and (max-height: 820px) {
+  .sub { display: none; }
+  .lead { font-size: 20px; }
+  .panel { padding: 12px 14px; }
+  .try textarea { min-height: 54px; }
+  .act small, .try .fine { display: none; }
+  .lesson p, .lesson .task { font-size: 12px; }
+  .lesson p { margin-bottom: 8px; }
+  .tries { gap: 5px; margin-bottom: 8px; }
+  .tries button { padding: 4px 10px; min-height: 0; }
+  .how.tight li .btns .b + .b { display: none; }
+}
+@media (max-width: 1100px) { .main > .col.trycol { grid-column: 1 / -1; } .main > .col:first-child { grid-column: auto; } }
+@media (max-width: 700px) { .ops button, .tabs button, .chips button, .tries button { min-height: 44px; } .out { height: 220px; } .inrow input { min-height: 44px; } .chips { flex-wrap: wrap; } }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -92,56 +171,300 @@ pre { margin: 6px 0 0; padding: 8px 10px; background: rgba(255,255,255,.04); bor
   </header>
   <nav class="tnav" data-page="taulang" aria-label="Pages and tools"></nav>
   <div>
-    <p class="lead">Learn Tau Language. No node needed.</p>
-    <p class="sub">Every rule on the Tau testnet is a <b>Tau specification</b>. To learn to write them you only need the <code>tau</code> program on your own computer: its REPL answers each line you type. A node is something else: it follows the chain and wants a server.</p>
+    <p class="lead">Learn Tau Language. Try it right here.</p>
+    <p class="sub">Every rule on the Tau testnet is a <b>Tau specification</b>. Type a formula and the Tau engine on our server answers in a few seconds. Five short lessons take you from yes or no to a real testnet rule. No install, no wallet, no node.</p>
   </div>
   <main class="main">
-    <div class="col">
-      <section class="panel go" aria-labelledby="hRepl">
-        <h2 id="hRepl">Start the REPL in four steps</h2>
-        <ol class="how">
-          <li><i>1</i><div><b>Install tau.</b> IDNI's only packaged release, v0.7-alpha from November 2024, has packages for Linux (.deb, .rpm) and an installer for Windows. The newer tau in IDNI's main README is only built from source.
-            <div class="btns"><a class="b ok" href="https://github.com/IDNI/tau-lang/releases/tag/v0.7-alpha" target="_blank" rel="noopener">Download v0.7-alpha ↗</a><a class="b" href="https://github.com/IDNI/tau-lang/blob/v0.7-alpha/README.md" target="_blank" rel="noopener">Guide for 0.7 ↗</a></div></div></li>
-          <li><i>2</i><div><b>Start it.</b> Open a terminal and type <code>tau</code>. The REPL opens with a <code>tau&gt;</code> prompt.</div></li>
-          <li><i>3</i><div><b>Look around.</b> <code>help examples</code> shows the syntax, <code>help</code> lists every command, <code>q</code> quits.</div></li>
-          <li><i>4</i><div><b>Ask a first question.</b> Type this at the prompt, with the dot at the end. Tau answers T: yes, x = 0 can be true.
-            <pre>sat x = 0.</pre></div></li>
-        </ol>
-        <p class="fine">The REPL runs only on your computer: no wallet, no server, no testnet.</p>
-      </section>
-      <p class="fine">Links marked ↗ go to IDNI's own pages and papers. Tau HUD is an unofficial community project, not affiliated with IDNI.</p>
-    </div>
-    <div class="col">
-      <section class="panel" aria-labelledby="hRead">
-        <h2 id="hRead">Read and try · IDNI</h2>
-        <ul class="links">
-          <li><a href="https://github.com/IDNI/tau-lang/blob/v0.7-alpha/README.md#quick-start" target="_blank" rel="noopener">Quick start ↗</a><span>Your first specs, such as o1[t] = i1[t], for 0.7.</span></li>
-          <li><a href="https://github.com/IDNI/tau-lang/blob/v0.7-alpha/README.md#the-tau-repl" target="_blank" rel="noopener">The Tau REPL ↗</a><span>Every command and option of the 0.7 REPL.</span></li>
-          <li><a href="https://github.com/IDNI/tau-lang/blob/v0.7-alpha/README.md#tau-specifications" target="_blank" rel="noopener">Tau specifications ↗</a><span>How a spec is built, with streams such as i1[t] and o1[t].</span></li>
-          <li><a href="https://github.com/IDNI/tau-lang/tree/v0.7-alpha/demos" target="_blank" rel="noopener">Demos ↗</a><span>Ten .tau files made for 0.7, from basic syntax to the solver.</span></li>
-          <li><a href="https://github.com/IDNI/tau-lang#web-ide" target="_blank" rel="noopener">Web IDE ↗</a><span>A browser editor for the newest tau, which you build from source.</span></li>
-        </ul>
+    <div class="col trycol">
+      <section class="panel go try" aria-labelledby="hTry">
+        <h2 id="hTry">Try Tau here</h2>
+        <div class="ops" role="group" aria-label="Question">
+          <button type="button" translate="no" data-op="sat" aria-pressed="true" title="Can this be true?">sat</button>
+          <button type="button" translate="no" data-op="valid" aria-pressed="false" title="Is this true in every case?">valid</button>
+          <button type="button" translate="no" data-op="why" aria-pressed="false" title="Which parts contradict each other?">why</button>
+          <button type="button" translate="no" data-op="run" aria-pressed="false" title="Feed inputs in, step by step, and read the outputs">run</button>
+          <span class="hint" id="opHint">Can this be true?</span>
+        </div>
+        <textarea id="spec" spellcheck="false" autocomplete="off" aria-label="Tau formula" placeholder="x = 0">x = 0</textarea>
+        <div class="inrow" id="inRow" hidden><label for="inputs">Inputs</label><input id="inputs" spellcheck="false" autocomplete="off" placeholder="i1 = 1, 2, 3" value="i1 = 1, 2, 3"></div>
+        <div class="act">
+          <button type="button" class="b ok" id="ask">Ask Tau</button>
+          <button type="button" class="b" id="share">Copy link</button>
+          <small>Ctrl + Enter asks too. You can also type a REPL line such as <code>sat x = 0.</code></small>
+        </div>
+        <div class="out" id="out" aria-live="polite"><div class="miss">Answers appear here. Start with lesson 1 on the right, or ask your own question.</div></div>
+        <p class="eng" id="eng"><i></i><span>Looking for the engine…</span></p>
+        <p class="fine">Answers come from IDNI's tau-lang, built from source and newer than the 0.7 you can download, running on tauhud's server with a 5 second limit per question. Files, the console and network are switched off. Tau HUD is an unofficial community project, not affiliated with IDNI.</p>
       </section>
     </div>
     <div class="col">
-      <section class="panel" aria-labelledby="hDeep">
-        <h2 id="hDeep">Go deeper</h2>
-        <ul class="links">
-          <li><a href="https://arxiv.org/abs/2407.06214" target="_blank" rel="noopener">Guarded Successor ↗</a><span>Ohad Asor's paper on the logic behind Tau.</span></li>
-          <li><a href="https://github.com/IDNI/tau-lang/blob/main/docs/Theories-and-Applications-of-Boolean-Algebras-0.25.pdf" target="_blank" rel="noopener">Theories and Applications of Boolean Algebras ↗</a><span>The book in the making, as a PDF.</span></li>
-          <li><a href="https://www.youtube.com/watch?v=lNU1wS5rqtg&amp;list=PLav2klOnTUlOeakJCbLZxoib_x0jYAQ5f&amp;index=2" target="_blank" rel="noopener">Lectures on atomless Boolean algebra ↗</a><span>Video series by Ohad Asor.</span></li>
-        </ul>
+      <section class="panel lesson" aria-labelledby="hLes">
+        <h2 id="hLes">Five short lessons</h2>
+        <div class="chips"><span id="chips" role="tablist" aria-label="Lessons"></span><button type="button" id="lNext">Next ›</button></div>
+        <h3 id="lTitle"></h3>
+        <p id="lText"></p>
+        <div class="tries" id="lTries"></div>
+        <div class="task"><b>Your turn</b><span id="lTask"></span>
+          <div class="act"><button type="button" class="b ok" id="tCheck">Check my answer</button><button type="button" class="b" id="tSolve">Show a solution</button><a class="b" id="lPlay" href="/playground/" hidden>Rule Playground ›</a></div>
+          <p class="verdict" id="tVerdict" aria-live="polite"></p></div>
       </section>
-      <section class="panel" aria-labelledby="hHere">
-        <h2 id="hHere">Then on the testnet</h2>
-        <ul class="links">
-          <li><a href="/playground/">Rule Playground ›</a><span>Write a transfer rule and run the testnet's checks on it, in your browser.</span></li>
-          <li><a href="/start/">Start here ›</a><span>A test wallet and a rule of your own on the real chain.</span></li>
-          <li><a href="/nodes/#join">Run a node ›</a><span>Later, if you like: a small server, about 850 MB of memory once synced.</span></li>
-        </ul>
+    </div>
+    <div class="col">
+      <section class="panel" aria-labelledby="hMore">
+        <h2 id="hMore">More</h2>
+        <div class="tabs" role="tablist" aria-label="More">
+          <button type="button" role="tab" data-tab="own" aria-selected="true">Your computer</button>
+          <button type="button" role="tab" data-tab="read" aria-selected="false">Read</button>
+          <button type="button" role="tab" data-tab="deep" aria-selected="false">Go deeper</button>
+          <button type="button" role="tab" data-tab="net" aria-selected="false">Testnet</button>
+        </div>
+        <div data-pane="own">
+          <ol class="how tight">
+            <li><i>1</i><div><b>Install tau.</b> IDNI's only packaged release, v0.7-alpha from November 2024, has packages for Linux (.deb, .rpm) and an installer for Windows. The newer tau in IDNI's main README is only built from source.
+              <div class="btns"><a class="b ok" href="https://github.com/IDNI/tau-lang/releases/tag/v0.7-alpha" target="_blank" rel="noopener">Download v0.7-alpha ↗</a><a class="b" href="https://github.com/IDNI/tau-lang/blob/v0.7-alpha/README.md" target="_blank" rel="noopener">Guide for 0.7 ↗</a></div></div></li>
+            <li><i>2</i><div><b>Start it.</b> Open a terminal and type <code>tau</code>. The REPL opens with a <code>tau&gt;</code> prompt.</div></li>
+            <li><i>3</i><div><b>Look around.</b> <code>help examples</code> shows the syntax, <code>help</code> lists every command, <code>q</code> quits.</div></li>
+            <li><i>4</i><div><b>Ask a first question.</b> Type this at the prompt, with the dot at the end. Tau answers T: yes, x = 0 can be true.
+              <pre>sat x = 0.</pre></div></li>
+          </ol>
+          <p class="fine">The REPL runs only on your computer: no wallet, no server, no testnet. A line from these lessons may read differently in 0.7.</p>
+        </div>
+        <div data-pane="read" hidden>
+          <ul class="links">
+            <li><a href="https://github.com/IDNI/tau-lang/blob/v0.7-alpha/README.md#quick-start" target="_blank" rel="noopener">Quick start ↗</a><span>Your first specs, such as o1[t] = i1[t], for 0.7.</span></li>
+            <li><a href="https://github.com/IDNI/tau-lang/blob/v0.7-alpha/README.md#the-tau-repl" target="_blank" rel="noopener">The Tau REPL ↗</a><span>Every command and option of the 0.7 REPL.</span></li>
+            <li><a href="https://github.com/IDNI/tau-lang/blob/v0.7-alpha/README.md#tau-specifications" target="_blank" rel="noopener">Tau specifications ↗</a><span>How a spec is built, with streams such as i1[t] and o1[t].</span></li>
+            <li><a href="https://github.com/IDNI/tau-lang/tree/v0.7-alpha/demos" target="_blank" rel="noopener">Demos ↗</a><span>Ten .tau files made for 0.7, from basic syntax to the solver.</span></li>
+            <li><a href="https://github.com/IDNI/tau-lang#web-ide" target="_blank" rel="noopener">Web IDE ↗</a><span>A browser editor for the newest tau, which you build from source.</span></li>
+          </ul>
+        </div>
+        <div data-pane="deep" hidden>
+          <ul class="links">
+            <li><a href="https://arxiv.org/abs/2407.06214" target="_blank" rel="noopener">Guarded Successor ↗</a><span>Ohad Asor's paper on the logic behind Tau.</span></li>
+            <li><a href="https://github.com/IDNI/tau-lang/blob/main/docs/Theories-and-Applications-of-Boolean-Algebras-0.25.pdf" target="_blank" rel="noopener">Theories and Applications of Boolean Algebras ↗</a><span>The book in the making, as a PDF.</span></li>
+            <li><a href="https://www.youtube.com/watch?v=lNU1wS5rqtg&amp;list=PLav2klOnTUlOeakJCbLZxoib_x0jYAQ5f&amp;index=2" target="_blank" rel="noopener">Lectures on atomless Boolean algebra ↗</a><span>Video series by Ohad Asor.</span></li>
+          </ul>
+        </div>
+        <div data-pane="net" hidden>
+          <ul class="links">
+            <li><a href="/playground/">Rule Playground ›</a><span>Write a transfer rule and run the testnet's checks on it, in your browser.</span></li>
+            <li><a href="/nomemo/">No Memo ›</a><span>The terminal game where you learn the testnet by playing it.</span></li>
+            <li><a href="/start/">Start here ›</a><span>A test wallet and a rule of your own on the real chain.</span></li>
+            <li><a href="/nodes/#join">Run a node ›</a><span>Later, if you like: a small server, about 850 MB of memory once synced.</span></li>
+          </ul>
+        </div>
+        <p class="fine">Links marked ↗ go to IDNI's own pages and papers.</p>
       </section>
     </div>
   </main>
 </div>
+<script>
+(() => {
+"use strict";
+const TAU_URL = "https://node.tauhud.com/tau", KEY = "tauhud-learn";
+const $ = id => document.getElementById(id);
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const store = { get() { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { return {}; } }, set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} } };
+const OPS = { sat: "Can this be true?", valid: "Is this true in every case?", why: "Which parts contradict each other?", run: "Feed inputs in, step by step, and read the outputs", unsat: "Can this never be true?", realizable: "Can the outputs always answer the inputs?" };
+let op = "sat", busy = false, engineUp = null, lessons = [], cur = 0, lastAnswer = null;
+
+/* ---- the question ---- */
+function setOp(o) {
+  op = OPS[o] ? o : "sat";
+  document.querySelectorAll(".ops button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.op === op)));
+  $("opHint").textContent = T(OPS[op]);
+  $("inRow").hidden = op !== "run";
+}
+document.querySelectorAll(".ops button").forEach(b => b.addEventListener("click", () => setOp(b.dataset.op)));
+
+/* "sat x = 0." typed as a REPL line: the first word picks the question */
+function readQuestion() {
+  let spec = $("spec").value.trim(), o = op;
+  const m = /^(sat|unsat|valid|why|run|realizable)\s+([\s\S]+)$/i.exec(spec);
+  if (m) { o = m[1].toLowerCase(); spec = m[2].trim(); setOp(o); }
+  return { op: o, spec, steps: o === "run" ? parseInputs($("inputs").value) : undefined };
+}
+function parseInputs(text) {
+  const streams = {};
+  text.split(/[;\n]/).forEach(part => {
+    const m = /^\s*([a-z]\w*)\s*[=:]\s*(.+)$/i.exec(part);
+    if (m) streams[m[1]] = m[2].split(/[,\s]+/).filter(Boolean);
+  });
+  const n = Math.min(8, Math.max(1, ...Object.values(streams).map(v => v.length), 0) || 3);
+  return Array.from({ length: n }, (_, t) => { const s = {}; for (const k in streams) if (streams[k][t] !== undefined) s[k] = streams[k][t]; return s; });
+}
+function inputsText(steps) {
+  const names = [...new Set((steps || []).flatMap(s => Object.keys(s)))];
+  return names.map(n => n + " = " + steps.map(s => s[n] ?? "0").join(", ")).join("; ");
+}
+
+function line(html, cls) { const d = document.createElement("div"); if (cls) d.className = cls; d.innerHTML = html; $("out").append(d); return d; }
+function clearMiss() { $("out").querySelectorAll(".miss").forEach(e => e.remove()); }
+function scrollOut() { const o = $("out"); o.scrollTop = o.scrollHeight; }
+
+function show(q, r, says) {
+  clearMiss();
+  if ($("out").children.length) line("", "gap");
+  line(`tau&gt; <b translate="no">${esc(q.op + " " + q.spec)}</b>` + (q.op === "run" ? ` <span translate="no">· ${esc(inputsText(q.steps))}</span>` : ""), "q");
+  if (!r.ok) {
+    line(`<span translate="no">${esc(r.error || "no answer")}</span>`, "err");
+    if (r.timeout) line(esc(T("Stopped after the time limit. A smaller formula usually helps.")), "miss");
+  } else if (q.op === "run") {
+    const rows = r.outputs || [];
+    const ins = [...new Set(rows.flatMap(x => Object.keys(x.in || {})))], outs = [...new Set(rows.flatMap(x => Object.keys(x.out || {})))];
+    line(`<table translate="no"><tr><th>t</th>${ins.map(n => `<th>${esc(n)}</th>`).join("")}${outs.map(n => `<th>${esc(n)}</th>`).join("")}</tr>` +
+      rows.map(x => `<tr><td>${x.t}</td>${ins.map(n => `<td>${esc((x.in || {})[n] ?? "")}</td>`).join("")}${outs.map(n => `<td class="v t">${esc((x.out || {})[n] ?? "")}</td>`).join("")}</tr>`).join("") + "</table>");
+  } else if (q.op === "why") {
+    const core = r.core || [];
+    if (!core.length) line(`<span class="v t">${esc(T("No contradiction: Tau found nothing that rules this out."))}</span>`);
+    else { line(esc(T("These parts already contradict each other:")), "v f"); core.forEach(c => line(`<span translate="no">  ${esc(c)}</span>`, "v")); }
+  } else {
+    const yes = !!r.verdict;
+    line(`<span class="v ${yes ? "t" : "f"}">${yes ? "T" : "F"}</span> ${esc(T(VERDICT[q.op][yes ? 1 : 0]))}`);
+  }
+  if (says) line(esc(T(says)), "say");
+  if (r.ms !== undefined) line(esc((r.cached ? 0 : r.ms) + " ms") + (r.cached ? " · " + esc(T("asked before, answer kept")) : ""), "miss");
+  scrollOut();
+}
+const VERDICT = {
+  sat: ["no, this can never be true", "yes, this can be true"],
+  unsat: ["no, it can be true", "yes, it can never be true"],
+  valid: ["no, not in every case", "yes, true in every case"],
+  realizable: ["no, some inputs leave the outputs stuck", "yes, the outputs can always answer"],
+};
+
+async function ask(q, says) {
+  if (busy) return null;
+  if (!q.spec) { $("spec").focus(); return null; }
+  busy = true; $("ask").disabled = true; $("ask").textContent = T("Asking…");
+  let r;
+  try {
+    const res = await fetch(TAU_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(q) });
+    r = await res.json().catch(() => ({ ok: false, error: "the engine sent no answer (" + res.status + ")" }));
+    if (res.status === 429 && r.retry_after) r.error = "Too many questions from your address. Try again in " + r.retry_after + " s.";
+    setEngine(true);
+  } catch (e) {
+    r = { ok: false, error: T("The engine is not reachable right now. Install tau under Your computer to try it on your own machine.") };
+    setEngine(false);
+  }
+  busy = false; $("ask").disabled = false; $("ask").textContent = T("Ask Tau");
+  lastAnswer = { q, r };
+  show(q, r, r.ok && says && matches(says.expect, r) ? says.text : null);
+  if (says && r.ok && !matches(says.expect, r)) line(esc(T("This engine answered differently from what the lesson says. Please tell us with Feedback.")), "err");
+  return r;
+}
+$("ask").addEventListener("click", () => ask(readQuestion()));
+$("spec").addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); ask(readQuestion()); } });
+$("inputs").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); ask(readQuestion()); } });
+
+/* share: the question in the address, #q=<base64url JSON> */
+const b64 = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const unb64 = s => decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/"))));
+$("share").addEventListener("click", async () => {
+  const q = readQuestion();
+  const u = new URL(location.href); u.hash = "q=" + b64(JSON.stringify({ op: q.op, spec: q.spec, in: q.op === "run" ? $("inputs").value : undefined }));
+  history.replaceState(null, "", u.href);
+  try { await navigator.clipboard.writeText(u.href); $("share").textContent = T("Link copied"); } catch (e) { $("share").textContent = T("Link in the address bar"); }
+  setTimeout(() => { $("share").textContent = T("Copy link"); }, 2200);
+});
+function load(q) { setOp(q.op); $("spec").value = q.spec; if (q.steps) $("inputs").value = inputsText(q.steps); else if (q.in) $("inputs").value = q.in; }
+
+/* ---- the engine ---- */
+function setEngine(up, label) {
+  if (up === engineUp && !label) return;
+  engineUp = up;
+  const e = $("eng");
+  e.className = "eng " + (up ? "on" : "off");
+  e.querySelector("span").textContent = up ? T("Engine ready") + (label ? " · " + label : "") : T("The engine is not reachable right now. Install tau under Your computer to try it on your own machine.");
+}
+fetch(TAU_URL + "/health", { cache: "no-store" }).then(r => r.ok ? r.json() : Promise.reject()).then(h => setEngine(true, h.engine || "")).catch(() => setEngine(false));
+
+/* ---- lessons ---- */
+function matches(expect, r) {
+  if (!expect || !r || !r.ok) return false;
+  if ("verdict" in expect && !!r.verdict !== expect.verdict) return false;
+  for (const name in expect.out || {}) {
+    const seen = (r.outputs || []).map(x => String((x.out || {})[name]));
+    if (seen.join("|") !== expect.out[name].join("|")) return false;
+  }
+  return true;
+}
+function chips() {
+  const done = store.get();
+  $("chips").innerHTML = "";
+  lessons.forEach((l, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.setAttribute("role", "tab");
+    b.textContent = (done[l.id] ? "✓ " : "") + (i + 1);
+    b.title = T(l.title);
+    if (done[l.id]) b.classList.add("done");
+    b.setAttribute("aria-current", String(i === cur));
+    b.addEventListener("click", () => openLesson(i));
+    $("chips").append(b);
+  });
+}
+function openLesson(i) {
+  cur = Math.max(0, Math.min(lessons.length - 1, i));
+  const l = lessons[cur];
+  $("lTitle").textContent = T(l.title);
+  $("lText").textContent = T(l.text);
+  $("lTries").innerHTML = "";
+  l.tries.forEach(t => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML = `${esc(T(t.label))}<code translate="no">${esc(t.op + " " + t.spec)}</code>`;
+    b.addEventListener("click", () => { load(t); ask({ op: t.op, spec: t.spec, steps: t.steps }, { expect: t.expect, text: t.says }); });
+    $("lTries").append(b);
+  });
+  $("lTask").textContent = " " + T(l.task.text);
+  $("tVerdict").textContent = ""; $("tVerdict").className = "verdict";
+  $("lNext").hidden = cur === lessons.length - 1;
+  $("lPlay").hidden = cur !== lessons.length - 1;
+  chips();
+  try { const u = new URL(location.href); if (!u.hash.startsWith("#q=")) { u.hash = "l" + (cur + 1); history.replaceState(null, "", u.href); } } catch (e) {}
+}
+$("lNext").addEventListener("click", () => openLesson(cur + 1));
+$("tSolve").addEventListener("click", () => { const t = lessons[cur].task; load({ op: t.op, spec: t.solution, steps: t.steps }); $("tVerdict").textContent = T("A solution is in the box. Press Check my answer to run it."); $("tVerdict").className = "verdict"; });
+$("tCheck").addEventListener("click", async () => {
+  const l = lessons[cur], t = l.task, v = $("tVerdict");
+  const q = readQuestion();
+  if (q.op !== t.op) { setOp(t.op); q.op = t.op; }
+  if (t.op === "run") { q.steps = t.steps; $("inputs").value = inputsText(t.steps); }   // the task's own inputs, so the check is fair
+  const missing = (t.must || []).filter(m => !q.spec.includes(m));
+  if (missing.length) { v.className = "verdict bad"; v.textContent = "Not yet: use " + missing.join(" ") + " in your answer."; return; }
+  v.className = "verdict"; v.textContent = T("Asking…");
+  const r = await ask(q);
+  if (!r) { v.textContent = ""; return; }
+  if (matches(t.expect, r)) {
+    const done = store.get(); done[l.id] = new Date().toISOString().slice(0, 10); store.set(done);
+    v.className = "verdict good"; v.textContent = cur === lessons.length - 1 ? T("Solved. You just changed a testnet rule. Next: try it against the testnet's own checks in the Rule Playground.") : T("Solved. On to the next lesson.");
+    chips();
+  } else {
+    v.className = "verdict bad"; v.textContent = r.ok ? T("Not yet: Tau answered differently. Look at the answer on the left and try again.") : T("Tau could not read that. The error is on the left.");
+  }
+});
+
+/* ---- more: tabs ---- */
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", String(x === b)));
+  document.querySelectorAll("[data-pane]").forEach(p => { p.hidden = p.dataset.pane !== b.dataset.tab; });
+}));
+
+/* ---- start ---- */
+setOp("sat");
+const h = location.hash;
+fetch("lessons.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
+  lessons = d.lessons || [];
+  const m = /^#l(\d)$/.exec(h);
+  const done = store.get();
+  const first = lessons.findIndex(l => !done[l.id]);
+  openLesson(m ? +m[1] - 1 : (first < 0 ? 0 : first));
+}).catch(() => { $("lTitle").textContent = T("The lessons did not load. Reload the page to try again."); });
+if (h.startsWith("#q=")) {
+  try { const q = JSON.parse(unb64(h.slice(3))); if (q && q.spec) { load({ op: q.op, spec: String(q.spec).slice(0, 2048), in: q.in }); ask(readQuestion()); } } catch (e) {}
+}
+})();
+</script>
 </body>
 </html>
