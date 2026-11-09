@@ -255,6 +255,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
 .gloss code { font: 600 15px var(--mono); font-variant-ligatures: none; }
 .gside .fine { margin-top: 14px; }
 .gloss .none { color: var(--dim); display: block; font-size: 13px; }
+.gloss li.empty { display: block; }
 .gside .btns { margin-top: 14px; }
 .gside .b { min-height: 44px; }
 .backg { background: none; border: 1px solid var(--line); color: var(--text); border-radius: 6px; font: 600 12px var(--display); padding: 0 10px; min-height: 32px; cursor: pointer; }
@@ -262,6 +263,23 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
 @media (max-width: 1100px) { body.lv-new .main { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } }
 @media (max-width: 700px) { body.lv-new .main { grid-template-columns: minmax(0, 1fr); } .guide { font-size: 14.5px; } .tok code { font-size: 17px; } .gfull, .backg { min-height: 44px; } .gloss li { grid-template-columns: 60px minmax(0, 1fr); } }
 @media (min-width: 1101px) and (max-height: 820px) { .guide { font-size: 14px; } .gtext { margin-bottom: 10px !important; } .tok { padding: 6px 12px; } .tok code { font-size: 18px; } .gask { margin: 10px 0 8px !important; } .gans { margin-top: 10px; } .gans .big { font-size: 28px; } .gloss { gap: 5px; } }
+/* v5: questions people asked in IDNI's monthly Q&A, answered in our words */
+.asked { display: grid; gap: 6px; }
+.asked details { border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; }
+.asked summary { cursor: pointer; list-style: none; padding: 8px 0; font: 600 13px/1.4 var(--display); color: #fff; min-height: 36px; }
+.asked summary::-webkit-details-marker { display: none; }
+.asked summary::before { content: "▸ "; color: var(--ok); }
+.asked details[open] summary::before { content: "▾ "; }
+.asked p { margin: 0 0 8px; font: 13px/1.5 var(--display); color: var(--text); }
+.asked .row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 0 0 8px; }
+.asked button { font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--ok); background: none; border: 1px solid rgba(57,255,138,.45); border-radius: 6px; padding: 0 10px; min-height: 32px; cursor: pointer; }
+.asked button:hover { background: rgba(57,255,138,.08); }
+.asked a { color: var(--dim); font: 12px var(--mono); }
+.asked a:hover { color: #fff; }
+.asked .res { font: 13px/1.5 var(--mono); color: var(--text); margin: 0 0 8px; font-variant-ligatures: none; }
+.asked .res b { color: var(--ok); } .asked .res b.f { color: #ff9aa9; }
+.gside h2.gh2 { margin-top: 16px; }
+@media (max-width: 700px) { .asked summary { min-height: 44px; padding: 12px 0; } .asked button { min-height: 44px; } .asked a { display: inline-block; padding: 10px 0; } }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -347,6 +365,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
           <button type="button" role="tab" data-tab="read" aria-selected="false">Read</button>
           <button type="button" role="tab" data-tab="deep" aria-selected="false">Go deeper</button>
           <button type="button" role="tab" data-tab="net" aria-selected="false">Testnet</button>
+          <button type="button" role="tab" data-tab="ask" aria-selected="false">People ask</button>
         </div>
         <div data-pane="own">
           <ol class="how tight">
@@ -378,6 +397,10 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
             <li><a href="https://www.youtube.com/watch?v=lNU1wS5rqtg&amp;list=PLav2klOnTUlOeakJCbLZxoib_x0jYAQ5f&amp;index=2" target="_blank" rel="noopener">Lectures on atomless Boolean algebra ↗</a><span>Video series by Ohad Asor.</span></li>
           </ul>
         </div>
+        <div data-pane="ask" hidden>
+          <div class="asked" id="askedM"></div>
+          <p class="fine">Questions from the community in IDNI's monthly Q&amp;A videos, answered in our own words. The video has IDNI's own answer.</p>
+        </div>
         <div data-pane="net" hidden>
           <ul class="links">
             <li><a href="/playground/">Rule Playground ›</a><span>Write a transfer rule and run the testnet's checks on it, in your browser.</span></li>
@@ -407,6 +430,8 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
       <section class="panel" aria-labelledby="hGloss">
         <h2 id="hGloss">What you know so far</h2>
         <ul class="gloss" id="gGloss"></ul>
+        <h2 class="gh2">People ask</h2>
+        <div class="asked" id="askedG"></div>
         <p class="fine">Every answer comes from a real Tau engine on tauhud's server, the same kind of engine that checks the testnet's rules. No install, no wallet.</p>
         <div class="btns"><button type="button" class="b" id="gWork">Open the full lessons</button></div>
       </section>
@@ -729,7 +754,7 @@ function setView() {
 function gState() { const st = store.get(); st.gOk = st.gOk || {}; return st; }
 function gloss() {
   const st = gState(), seen = guide.filter((c, i) => i < gAt || st.gOk[c.id]).flatMap(c => c.learn || []);
-  $("gGloss").innerHTML = seen.length ? seen.map(([k, v]) => `<li><code translate="no">${esc(k)}</code><span>${esc(T(v))}</span></li>`).join("") : `<li><span class="none">${esc(T("Each sign you meet appears here with its meaning."))}</span></li>`;
+  $("gGloss").innerHTML = seen.length ? seen.map(([k, v]) => `<li><code translate="no">${esc(k)}</code><span>${esc(T(v))}</span></li>`).join("") : `<li class="empty"><span class="none">${esc(T("Each sign you meet appears here with its meaning."))}</span></li>`;
 }
 function guideTo(i) {
   if (!guide.length) return;
@@ -814,6 +839,34 @@ $("gWork").addEventListener("click", toLessons);
 $("gReturn").addEventListener("click", () => { const st = store.get(); delete st.view; store.set(st); full = false; setView(); });
 $("lvl2").addEventListener("click", openDoor);
 
+/* ---- questions people asked in IDNI's monthly Q&A ---- */
+function renderAsked(list) {
+  ["askedG", "askedM"].forEach(id => {
+    const box = $(id); box.innerHTML = "";
+    list.forEach(a => {
+      const d = document.createElement("details");
+      d.innerHTML = `<summary>${esc(T(a.q))}</summary><p>${esc(T(a.a))}</p><div class="res" hidden></div><div class="row"></div>`;
+      const row = d.querySelector(".row"), res = d.querySelector(".res");
+      if (a.try) {
+        const b = document.createElement("button"); b.type = "button"; b.textContent = a.try.op === "run" ? T("Run it") : T("Ask Tau");
+        b.addEventListener("click", async () => {
+          res.hidden = false; res.textContent = T("Asking the Tau engine…");
+          const r = await engine(a.try);
+          if (!r.ok) { res.textContent = r.error || T("no answer"); return; }
+          const head = a.try.op === "run" ? (r.outputs || []).map(x => `${esc(Object.values(x.in || {})[0])} → <b>${esc(Object.values(x.out || {})[0])}</b>`).join("  ") : `<b class="${r.verdict ? "" : "f"}">${r.verdict ? "T" : "F"}</b>`;
+          const same = allLessons.flatMap(l => l.tries).find(t => t.op === a.try.op && t.spec === a.try.spec && JSON.stringify(t.steps) === JSON.stringify(a.try.steps));
+          const ok = same ? matches(same.expect, r) : false;
+          res.innerHTML = `<span translate="no">${esc(a.try.op + " " + a.try.spec)}</span><br>${a.try.op === "run" ? head + " " : ""}<span>${esc(ok ? T(a.says || "") : T("This engine answered differently from what the lesson says. Please tell us with Feedback."))}</span>`;
+        });
+        row.append(b);
+      }
+      const l = document.createElement("a"); l.href = "https://www.youtube.com/watch?v=" + encodeURIComponent(a.video); l.target = "_blank"; l.rel = "noopener";
+      l.textContent = T("IDNI's Q&A video") + " " + a.when + " ↗"; row.append(l);
+      box.append(d);
+    });
+  });
+}
+
 /* ---- more: tabs ---- */
 document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", String(x === b)));
@@ -827,7 +880,7 @@ full = h.startsWith("#q=");
 if (store.get().level !== undefined || h.startsWith("#q=")) applyLevel(store.get().level || "");   // came back, or follows a shared link: no door
 else openDoor();
 fetch("lessons.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
-  allLessons = d.lessons || []; pickLessons(); guide = d.guide || []; gAt = Math.min(store.get().g || 0, guide.length);
+  allLessons = d.lessons || []; pickLessons(); guide = d.guide || []; renderAsked(d.asked || []); gAt = Math.min(store.get().g || 0, guide.length);
   setView();
   const m = /^#l(\d)$/.exec(h);
   const done = store.get();
