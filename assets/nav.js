@@ -63,7 +63,7 @@
     card:       { t: "My Tau card", d: "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post", i: "▣", h: "card/" },
     rabbit:     { t: "White Rabbit Key", d: "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet", i: `<img src="${ROOT}assets/rabbit-key.webp" alt="">`, h: "rabbit/", live: true, play: "rabbit" },
     nomemo:     { t: "No Memo", d: "A terminal game: twelve contracts from the crew of the Black Sequence, each a real transaction from your test wallet; make the chain say no for the right reason", i: "▮", h: "nomemo/", live: true },
-    taulang:    { t: "Learn Tau Language", d: "No node needed: install tau, start the REPL, work through IDNI's demos, then write a rule for the testnet", i: "⌨", h: "learn/" },
+    taulang:    { t: "Learn Tau Language", d: "Type a formula and a real Tau engine answers, five short lessons, then install tau yourself", i: "⌨", h: "learn/" },
     facts:      { t: "Tau facts for your AI", d: "What is true about Tau today, each fact with its source in IDNI's code, plus live numbers; point your AI assistant here", i: "¶", h: "facts/" },
     services:   { t: "Services on the testnet", d: "A directory of what runs on the testnet: co-signers, rule givers, apps people pay; found on the chain by itself, live numbers", i: "▦", h: "services/" },
     guardian:   { t: "Guardian", d: "Payments above your own limit wait for a code from your Authenticator app; our Guardian co-signs, never sends", i: "⛨", h: "guardian/" },
