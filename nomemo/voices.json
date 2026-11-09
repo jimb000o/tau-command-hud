@@ -228,6 +228,14 @@
   "text": "Bosun. No payment this time. I describe a rule in plain words, and you write it in Tau, one line. Our checker runs your line over a few steps and compares what comes out. Type tau, then your line."
  },
  {
+  "who": "look",
+  "text": "Lookout. A little logic. I put a table on your screen, x and y on the left, the answer on the right. Write me the Tau term that gives that table, with and, or, not and exclusive or. Your terminal checks every row. Over."
+ },
+ {
+  "who": "bosun",
+  "text": "Bosun. Three wires this time, x, y and z, and a table of what comes out. Find the Tau term that matches every row. Short is good, right is better."
+ },
+ {
   "who": "qm",
   "text": "Quartermaster. Finer work now. A payment refused for its fee, but not with a fee of nothing: exactly one under the base fee. The chain's own rules tell you what that is. Precision, please."
  },

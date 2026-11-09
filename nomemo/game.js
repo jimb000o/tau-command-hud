@@ -1411,6 +1411,7 @@
     funds: ["Balance", "The chain checks the balance against the amount plus the fee: INSUFFICIENT_FUNDS, or TX_REJECTED when the transfer rule says no first."],
     width: ["Amount width", "An amount is 24 bits wide here: 16,777,215 at most. 2^24 = 16,777,216 is not even read: TX_INVALID or INVALID_PARAMS."],
     addr: ["Addresses", "An address is a public key written as 96 hex characters (0–9, a–f), each one worth 0 to 15. Lookalikes copy the ends; only the whole address is the wallet."],
+    bool: ["Boolean functions", "In Tau a Boolean function is built with & (and), | (or), ' (not, written after) and ^ (exclusive or); ' binds first, then &, then ^, then |. Over the two values 0 and 1 a function is just its table; Tau works the same way over much bigger Boolean algebras."],
     rule: ["Tau Language", "The chain’s rules are a Tau specification. In (o9[t]:bv[24] = {#x00000a}:bv[24]), o9[t] is output stream 9 at every step t, :bv[24] makes it a bitvector 24 bits wide, and {#x00000a} is a constant written in hex: 10. Learn to write such lines yourself: tauhud.com/learn/."],
     order: ["Order of checks", "A payment wrong in two ways is refused for one of them: the node answers with the first check it fails. Which check comes first is the node’s own order; its answer shows it."],
   };
@@ -1457,6 +1458,10 @@
       check: (d, x, j) => d.amount !== 2 ** j.m - 1 ? F("{a} is not 1:bv[{m}]", { a: d.amount, m: j.m }) : null },
     { k: "p-spec", t: 3, who: "bosun", topic: "rule", tau: true, want: null, name: "Write the rule", brief: "{x}", hint: "{y}",
       mk: j => { const ks = Object.keys(SPECS); j.spec = ks[rnd(ks.length)]; } },
+    { k: "p-table", t: 2, who: "look", topic: "bool", tau: true, table: true, want: null, name: "Fill the table", brief: "A Boolean function of x and y, in Tau. Its table is on your screen: find a term that gives it. & is and, | is or, ' is not, ^ is exclusive or. Answer with tau and the term.", hint: "{y}",
+      mk: j => { const ks = Object.keys(TABLES).filter(k => TABLES[k].v === 2); j.tab = ks[rnd(ks.length)]; } },
+    { k: "p-table3", t: 3, who: "bosun", topic: "bool", tau: true, table: true, want: null, name: "Three wires", brief: "A Boolean function of x, y and z, in Tau. Its table is on your screen: find a term that gives it. Answer with tau and the term.", hint: "{y}",
+      mk: j => { const ks = Object.keys(TABLES).filter(k => TABLES[k].v === 3); j.tab = ks[rnd(ks.length)]; } },
     { k: "r-fee9", t: 3, who: "qm", topic: "fee", want: ["FEE_LIMIT_TOO_LOW"], name: "Just under", brief: "FEE_LIMIT_TOO_LOW, but the fee limit may not be 0: exactly one under the base fee.", hint: "peek getgovernance: o9 is the base fee, in hex",
       check: (d, x) => d.fee !== x.base - 1 ? "the fee limit is not one under the base fee" : null },
     { k: "p-tight", t: 3, who: "qm", topic: "fee", want: "in", name: "Thin margin", brief: "Land a payment to the drop with a fee limit of at most twice the base fee.", hint: "peek getgovernance, then set fee",
@@ -1474,7 +1479,7 @@
   const TRY = { "r-fee": "set fee 0", "r-sig": "set signer other", "r-height": "set height past", "r-funds": "status", "p-seq": "peek getsequence me", "p-race": "set height +{m}",
     "r-clock": "set expiry past", "r-payer": "set payer drop", "r-seq": "set seq old", "r-width": "what width", "p-hex": "status", "p-fee": "peek getgovernance", "p-doors": "status",
     "r-fee9": "peek getgovernance", "p-tight": "peek getgovernance", "p-last": "history", "predict": "what order",
-    "p-bits": "rule", "p-stream": "rule", "p-ones": "what #b", "p-top": "what top", "p-spec": "what stream" };
+    "p-bits": "rule", "p-stream": "rule", "p-ones": "what #b", "p-top": "what top", "p-spec": "what stream", "p-table": "what and", "p-table3": "what and" };
   const tryCmd = j => (j && TRY[j.k] ? fill0(TRY[j.k], { m: j.m }) : null);
   const hintLine = j => { const kd = kindOf(j), go = tryCmd(j); say("learn", F("Hint: {x}", { x: fill(kd.hint, j) }), go ? btn(go, go) : null); };
   const LOCK_TEXT = { fee: "fee limit 0", payer: "the drop named as payer", signer: "a stranger’s signing key", expiry: "an expiry time in the past", seq: "a used sequence number", height: "a height deadline behind the tip", amount: "an amount of 2^24" };
@@ -1484,7 +1489,7 @@
   const curJob = () => (S.job ? jobOf(S.job) : null);
   const cur = () => (S.taken ? byId(S.taken) : curJob());
   const jname = j => "j" + j.n;
-  const fill = (s, j) => { const v = {}; for (const k of ["m", "a", "b"]) if (j[k] != null) v[k] = j[k]; if (j.lock) { v.x = T(LOCK_TEXT[j.lock[0][0]]); v.y = T(LOCK_TEXT[j.lock[1][0]]); } else if (j.code) v.x = j.code; else if (j.spec && SPECS[j.spec]) return s === "{x}" ? T(SPECS[j.spec].brief) : s === "{y}" ? T(SPECS[j.spec].hint) : F(s, v); return F(s, v); };
+  const fill = (s, j) => { const v = {}; for (const k of ["m", "a", "b"]) if (j[k] != null) v[k] = j[k]; if (j.lock) { v.x = T(LOCK_TEXT[j.lock[0][0]]); v.y = T(LOCK_TEXT[j.lock[1][0]]); } else if (j.code) v.x = j.code; else if (j.tab && TABLES[j.tab] && s === "{y}") return T(TABLES[j.tab].hint); else if (j.spec && SPECS[j.spec]) return s === "{x}" ? T(SPECS[j.spec].brief) : s === "{y}" ? T(SPECS[j.spec].hint) : F(s, v); return F(s, v); };
   function makeJob() {
     const max = tierMax(), have = new Set(S.inbox.map(j => j.k));
     const pool = KINDS.filter(x => x.t <= max && !have.has(x.k) && (!x.ok || x.ok()));
@@ -1539,6 +1544,7 @@
     say("sys", F("{x} · {t} · tier {n} · from the {w}", { x: jname(j), t: kd.name, n: j.t, w: CREW[j.who] }));
     transmit(j.who, fill(kd.brief, j), { k: j.k, n: j.n, name: kd.name, tier: j.t });
     if (j.k === "p-doors") cols(["a", "b", "c"].map((x, i) => [x, doorAddr(j, i)]));
+    if (j.tab) tableShow(j);
     if (j.t <= 2 && kd.hint) hintLine(j);
     if (S.job !== j.n) { S.lastRead = j.n; save(); chips(); }
     say("sys", F("Pays +{n} standing. Trace once taken: {m} blocks.", { n: PAYS[j.t] + (j.special || 0), m: j.trace }) + (j.topic ? " " + F("Topic: {x}.", { x: TOPICS[j.topic][0] }) : ""),
@@ -1562,7 +1568,8 @@
     if (j.lock) for (const [f, v] of j.lock) S.draft[f] = v;
     S.span = j.trace; S.deadline = CHAIN.tip != null ? CHAIN.tip + j.trace : null; save(); jobs(); instruments(); topbar(); chips();
     say("sys", F("{x} taken: {t}.", { x: jname(j), t: kindOf(j).name }) + " " + (S.deadline != null ? F("Trace: until block {n} ({t}).", { n: fmt(S.deadline), t: inTimeE(j.trace) || fill0("{n} blocks", { n: j.trace }) }) : ""));
-    if (kindOf(j).tau) say("sys", T("This one is answered in Tau, not with a payment: type tau and your line. The Tau checker on our server runs it."), btn("what tau", "what tau"));
+    if (kindOf(j).table) { say("sys", T("This one is answered in Tau, not with a payment: type tau and a term in x and y (and z). This terminal checks it against every row."), btn("what and", "what and")); tableShow(j); }
+    else if (kindOf(j).tau) say("sys", T("This one is answered in Tau, not with a payment: type tau and your line. The Tau checker on our server runs it."), btn("what tau", "what tau"));
     else { say("sys", T("Your draft is a plain payment of 1 test AGRS to the drop. Change it with set, look at it with tx, send it with send."));
     draftShow(); }
     if (j.hinted && kindOf(j).hint) hintLine(j);
@@ -1756,6 +1763,7 @@
     [["#x", "#b", "constant", "constants", "braces"], "Constants", "A constant sits in braces with its type: {#x0a}:bv[8] is 10 written in hex, {#b1010}:bv[8] the same in binary, {10}:bv[8] in decimal."],
     [["top", "all ones", "1:bv"], "The top", "In a bitvector a bare 1 is the top, every bit set: 1:bv[8] is 255. The number one is written {1}:bv[8]. A classic first mistake in Tau."],
     [["g", "f", "globally", "eventually", "always"], "G and F", "G says a local spec holds at every time step, F that it holds at some step. G o1[t] = 0 means output 1 is 0 at all steps."],
+    [["and", "or", "not", "xor", "^", "boolean function", "truth table", "table"], "Boolean functions", "In Tau a Boolean function is built with & (and), | (or), ' (not, written after: x' is not x) and ^ (exclusive or). ' binds first, then &, then ^, then |. (x & y)' is not both; x' | y is if x then y."],
     [["&&", "||", "!", "logic", "boolean", "&", "|", "'"], "Two kinds of and/or", "Tau has Boolean operators inside a term (&, |, ' for complement) and logical ones between formulas (&&, ||, !). x & y = 0 is one formula; x = 0 && y = 0 joins two."],
     [["sat", "repl", "satisfiable"], "sat and the REPL", "In the tau REPL, sat asks whether a spec is satisfiable: whether it can run forever, whatever the inputs. Try sat x = 0. Start with help examples."],
     [["black sequence", "ship", "pirates", "crew"], "The Black Sequence", "The pirate ship that tests the chain at White Rabbit Key every Tuesday. Her crew are game characters; their transactions are real."],
@@ -1790,6 +1798,46 @@
   /* p-spec: a rule in words, answered with a line of Tau. The Tau checker on our server (POST /tau, infra/checker) runs the
      line over a few input steps and the outputs are compared; while it is not reachable (or in the simulation), the line is
      checked against the shapes we know are right, and the game says that it did so */
+  /* p-table: a truth table in x, y (and z); the player's term is evaluated here, row by row, with Tau's operators and
+     precedence (IDNI's README: ' > & > ^ > |, & may be left out between operands) */
+  const TABLES = {
+    and: { v: 2, f: (x, y) => x & y, hint: "one row is 1: both x and y" },
+    or: { v: 2, f: (x, y) => x | y, hint: "one row is 0: neither x nor y" },
+    xor: { v: 2, f: (x, y) => x ^ y, hint: "1 where x and y differ" },
+    nand: { v: 2, f: (x, y) => 1 - (x & y), hint: "the opposite of and; ' after a bracket negates it" },
+    nor: { v: 2, f: (x, y) => 1 - (x | y), hint: "the opposite of or" },
+    xnoty: { v: 2, f: (x, y) => x & (1 - y), hint: "x, but not y" },
+    imp: { v: 2, f: (x, y) => (1 - x) | y, hint: "0 only where x is 1 and y is 0" },
+    eq: { v: 2, f: (x, y) => 1 - (x ^ y), hint: "1 where x and y are the same" },
+    maj: { v: 3, f: (x, y, z) => (x & y) | (x & z) | (y & z), hint: "1 where at least two of the three are 1" },
+    mux: { v: 3, f: (x, y, z) => x ? y : z, hint: "if x then y, else z" },
+    odd: { v: 3, f: (x, y, z) => x ^ y ^ z, hint: "1 where an odd number of them are 1" },
+    all3: { v: 3, f: (x, y, z) => x & y & z, hint: "one row is 1" },
+  };
+  function boolEval(src, env) {   // a term over x y z, 0 1, ( ) ' & ^ |; throws on anything else
+    const t = String(src).replace(/\s+/g, "").replace(/\.$/, ""); let i = 0;
+    const peek = () => t[i], eat = c => { if (t[i] !== c) throw new Error(c); i++; };
+    const atom = () => { let v; const c = peek(); if (c === "(") { i++; v = or(); eat(")"); } else if (c === "0" || c === "1") { i++; v = +c; } else if (c && "xyz".includes(c)) { i++; v = env[c]; if (v == null) throw new Error(c); } else throw new Error(c || "end"); while (peek() === "'") { i++; v = 1 - v; } return v; };
+    const and = () => { let v = atom(); while (peek() === "&" || (peek() && "xyz01(".includes(peek()))) { if (peek() === "&") i++; v &= atom(); } return v; };
+    const xor = () => { let v = and(); while (peek() === "^" || peek() === "+") { i++; v ^= and(); } return v; };
+    const or = () => { let v = xor(); while (peek() === "|") { i++; v |= xor(); } return v; };
+    const v = or(); if (i !== t.length) throw new Error(t[i]); return v;
+  }
+  const rowsOf = n => (n === 3 ? [[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]] : [[0, 0], [0, 1], [1, 0], [1, 1]]);
+  function tableShow(j) {
+    const tb = TABLES[j.tab]; if (!tb) return;
+    const names = tb.v === 3 ? "x y z" : "x y";
+    cols([[names, "→"], ...rowsOf(tb.v).map(r => [r.join(" "), String(tb.f(...r))])]);
+  }
+  function tableCheck(j, term) {
+    const tb = TABLES[j.tab]; if (!tb) return;
+    let bad = null; const out = [];
+    try { for (const r of rowsOf(tb.v)) { const env = { x: r[0], y: r[1], z: r[2] }, got = boolEval(term, env), want = tb.f(...r); out.push([r.join(" "), got + (got === want ? " ✓" : " ✗ " + F("(wanted {n})", { n: want }))]); if (got !== want && !bad) bad = r; } }
+    catch (e) { say("no", T("That is not a term this terminal can read: use x, y, z, 0, 1, brackets and & | ' ^.")); return; }
+    cols([[tb.v === 3 ? "x y z" : "x y", "→"], ...out]);
+    if (!bad) { jobWin(j, { tau: term }); return; }
+    say("no", T("Not every row matches. Change the term and send it again with tau."));
+  }
   const SPECS = {
     copy: { brief: "Write a spec where output o1 always equals input i1, both 8-bit bitvectors.", hint: "G(o1[t]:bv[8] = i1[t]:bv[8]) is close to the whole answer; a stream is typed with :bv[8]",
       steps: [{ i1: "5" }, { i1: "200" }, { i1: "0" }], out: i => i.i1, shapes: ["o1[t]=i1[t]"] },
@@ -1819,6 +1867,7 @@
       say(r.verdict ? "ok" : "warn", r.verdict ? T("Satisfiable: this spec can run forever, whatever the inputs.") : T("Not satisfiable: some inputs would leave it no way to go on."));
       return;
     }
+    if (kd.table) { tableCheck(j, line); return; }
     const sp = SPECS[j.spec]; if (!sp) return;
     if (RUN.busy) { say("warn", T("Already under way.")); return; }
     RUN.busy = true; chips();
@@ -1839,7 +1888,7 @@
       say("no", T("That is not one of the shapes we know. It may still be right Tau; try it in your own REPL, or when the checker is up."));
     } finally { RUN.busy = false; chips(); }
   }
-  const TAUWORDS = ["Tau Language", "Streams", "Bitvectors", "Constants", "The top", "G and F", "Two kinds of and/or", "sat and the REPL"];
+  const TAUWORDS = ["Boolean functions", "Tau Language", "Streams", "Bitvectors", "Constants", "The top", "G and F", "Two kinds of and/or", "sat and the REPL"];
   function what(term) {
     const t = term.trim().toLowerCase().replace(/^(is|a|an|the)\s+/, "").replace(/[?.!]+$/, "");
     const w = WORDS.find(x => x[0].includes(t)) || WORDS.find(x => x[0].some(k => t.includes(k)));
