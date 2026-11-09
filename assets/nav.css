@@ -331,3 +331,20 @@ header.trail .unoff.q:hover, header.rail > button.chip.unoff.unoff:hover { color
 .tn-real { color: var(--tn-dim); font: 500 11px/1.5 var(--tn-mono); }
 p.tn-real { margin: 4px 0 0; padding: 4px 12px; border: 1px solid var(--tn-hair); border-radius: 4px; }
 span.tn-real { display: block; margin-top: 4px; }
+
+/* phones: the icon row (Telegram/X, feedback, radio, gear) stands beside the brand instead of in a row of its own, and a page
+   that reads nothing from the chain hides the Live/Simulation chips; the title comes about 150 px sooner (9.11 sim) */
+@media (max-width: 700px) and (orientation: portrait) {
+  html.tn-lift .wrap:has(> header.trail + nav.tnav) { position: relative; }
+  html.tn-lift header.trail + nav.tnav { position: absolute; top: 4px; right: 0; margin: 0; width: auto; }
+  html.tn-lift header.trail + nav.tnav .tnav-r { gap: 6px; }
+  html.tn-quiet header.trail .chips { display: none; }
+}
+/* phones: the rows of thin marks are 44 px tall so a finger lands in the row; nav.js picks the nearest mark */
+@media (pointer: coarse) {
+  .bars, html.fit .p-days .bars { min-height: 44px; }
+  .pbar { min-height: 44px; } .pbar button { top: 16px; }
+  .tl .tr { min-height: 44px; }
+  summary { padding-top: 12px; padding-bottom: 12px; }
+  input[type=checkbox], input[type=radio] { min-width: 22px; min-height: 22px; }
+}

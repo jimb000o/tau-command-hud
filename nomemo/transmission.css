@@ -38,7 +38,7 @@
   .txm-body { grid-template-columns: 72px minmax(0, 1fr); gap: 8px; align-items: start; }
   .txm-pic { height: auto; width: 72px; }
   .txm-sub { font-size: 12px; min-height: 0; max-height: 6em; overflow: hidden; }
-  .txm-top { font-size: 10px; } .txm-end { display: none; }
+  .txm-top { font-size: 11px; } .txm-end { display: none; }
   .txm-from { font-size: 11px; }
   .txm-foot { display: none; }
 }

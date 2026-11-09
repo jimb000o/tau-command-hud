@@ -2729,11 +2729,11 @@
         el("p", { class: "lead", text: T("Your first move is on Tau Testnet Alpha: 1 test AGRS to the Book, signed by the test wallet this browser made for you. The same wallet opens two more pages, and Agorzilla eats transactions like yours.") }),
         el("ul", null, el("li", { text: T("Explorer: the transaction itself, and the block that sealed it.") }),
           el("li", { text: T("Your Tau card: one picture of what this wallet did on the testnet, to post or keep.") }),
-          el("li", { text: T("Agorzilla: a creature fed by live testnet transactions, with its own test wallet on agorzilla.com.") }))),
+          el("li", { text: T("Agorzilla: a creature fed by live testnet transactions; this wallet can feed it from the Tau HUD wallet.") }))),
         el("div", { class: "cv-acts" },
           btn(T("See it in the Explorer"), () => open(h ? "/explorer/?tx=" + h + lang : "/explorer/?a=" + pk + lang), { go: true }),
           btn(T("Your Tau card"), () => open("/card/?a=" + pk + lang)),
-          btn(T("Feed Agorzilla"), () => open("https://agorzilla.com/")),
+          btn(T("Feed Agorzilla"), () => open("/wallet/?to=947c2b8988769f9fb7ada19021e27c51f5d855e4e05ad258d2ca2322821987dbff93e0425f281edded5c372b97e6a108&amount=5" + lang)),   // this same wallet: agorzilla.com would make a second one
           btn(T("Back to the island"), () => closeCard())));
     });
   }

@@ -291,12 +291,13 @@ html.rk-full #cvFull { border-color: var(--ok); }
 .stage.pre .bar .chip:not(button) { visibility: hidden; }
 @keyframes pop { from { opacity: 0; transform: translateY(10px); } }
 @keyframes popc { from { opacity: 0; } }
-.cv-x { position: absolute; right: 10px; top: 10px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--hair); background: none; color: var(--text); cursor: pointer; font-size: 14px; }
+.cv-x { position: absolute; right: 10px; top: 10px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--hair); background: none; color: var(--text); cursor: pointer; font-size: 14px; z-index: 6; }   /* above a zoomed paper (the zh/ja extra covered it, 9.11) */
 .cv-x:hover { border-color: #fff; }
 .cv-card.intro .cv-x, .cv-card.paper:not(.extra) .cv-x, .cv-card.locked .cv-x { display: none; }
+.cv-card.paper.extra .cv-x { background: rgba(12,12,12,.8); border-color: rgba(255,255,255,.5); color: #fff; }
 /* the Key Crier extra: four short buttons two by two where the plate is wide enough, so a phone held sideways keeps them all in sight */
 .cv-card.paper.extra .cv-acts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (max-width: 479px) { .cv-card.paper.extra .cv-acts { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 479px) { .cv-card.paper.extra .cv-acts { gap: 6px; } .cv-card.paper.extra .cv-acts .cv-b { font-size: 12px; white-space: normal; line-height: 1.25; padding-left: 8px; padding-right: 8px; } }   /* two by two on a phone too: one under the other, the Japanese extra ran 95 px past the plate and hid its ✕ (9.11) */
 .cv-who { display: flex; gap: 12px; align-items: center; padding-right: 40px; }
 .cv-who .face { flex: none; border-radius: 12px; background: radial-gradient(circle at 50% 35%, rgba(255,214,160,.18), rgba(255,255,255,.03)); border: 1px solid var(--line); }
 .cv-who b { display: block; font: 700 17px var(--display); color: #fff; }
@@ -443,7 +444,7 @@ footer a { color: var(--dim); }
   .stage:has(.cv-card.talk:not(.locked):not(.intro):not(.end):not(.paper)) #cvToast { top: auto; bottom: 12px; z-index: 7; }
   .cv-card.talk:not(.locked):not(.intro):not(.end) .cv-who .face { display: none; }
   .cv-card.talk .cv-who { padding-right: 48px; }
-  .cv-card.paper { left: 8px; right: 8px; width: auto; transform: translateY(-50%); }
+  .cv-card.paper { left: 8px; right: 8px; width: auto; top: 50%; bottom: auto; max-height: calc(100% - 16px); transform: translateY(-50%); }   /* top 50 %: the talk sheet rule set bottom 0, and the half-height shift pushed a tall paper over the top edge, ✕ included (9.11) */
   .cv-card.edition { top: 8px; bottom: 8px; transform: none; max-height: none; overflow-y: auto; }   /* the special edition is long: a sheet from the top of the island down, read by scrolling */
   .cv-pick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cv-cand em { display: none; }

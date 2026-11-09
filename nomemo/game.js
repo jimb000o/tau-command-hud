@@ -805,6 +805,8 @@
     say("crew", null, el("b", { text: T(CREW[m.who]) + ":" }), " " + T(m.text));
     const b = mailBtns(m); if (b.length) say("sys", T("This letter:"), ...b);
     m.read = true; save(); topbar(); chips();
+    /* a letter never ends the way on: the newest button after it is the game's next step, not "read" again (9 of 9 tappers looped here, 9.11) */
+    if (NEXTGO && NEXTGO[1] !== "mail") say("sys", T("Next:"), btn(NEXTGO[0], NEXTGO[1]));
   }
   function mailList() {
     const have = mailHave();
@@ -2295,6 +2297,7 @@
   }
   const run = line => exec(line);
   /* the chips: the next sensible command is always one click away */
+  let NEXTGO = null;   // the green chip's [label, command], for a "Next:" button where the terminal would otherwise end on "read"
   function chips() {
     const box = $("chips"); if (!box) return;
     const next = CONTRACTS.find(c => !S.done[c.id]), claimable = CH.find(ch => chapterDone(ch) && !S.chap[ch.n]);
@@ -2314,6 +2317,7 @@
     else if (!Object.keys(S.done).length && !S.taken) list.splice(1, 0, ["tutorial", "tutorial"]);
     if (shipIn() && !OP.list && !SIM) list.push(["op", "op", true]);
     if (S.mail.some(m => !m.read && m.due <= (CHAIN.tip ?? 0))) list.push([T("mail"), "mail"]);
+    NEXTGO = list.find(x => x[2]) || null;
     box.replaceChildren(...list.map(([t, cmd, go]) => el("button", { type: "button", class: go ? "go" : "", text: t, onclick: () => { run(cmd); $("cmd").focus({ preventScroll: true }); } })));
   }
 
@@ -2355,6 +2359,9 @@
     jobs(); instruments(); chips(); topbar(); watch(); world(); boardLoad(); deliverMail();
     for (const n of [1, 2, 3]) if (S.chap[n] && !S.chap[n].paid) watchPayback(n);
     if (first) run(first);
+    /* "First contract" at the door is the decision: contract 1 (1 test AGRS to the drop) runs by itself after the crew's line,
+       so the first sealed block comes about 5 s sooner (24 s median in the 9.11 run, 20 s is the aim) */
+    if (first === "take 1" && S.taken && !S.done[CONTRACTS[0].id]) setTimeout(() => { if (S.taken && !RUN.busy) run("run"); }, 1500);
     if (S.chap[1] && !S.seen.dust) huntWatch();
     if (q.get("take")) { const x = byId(q.get("take")) || CONTRACTS[parseInt(q.get("take"), 10) - 1]; if (x) take(x); }
     document.addEventListener("visibilitychange", () => { if (!document.hidden) { watch(); world(); } });
