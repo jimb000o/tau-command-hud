@@ -209,6 +209,59 @@ button.b { background: none; cursor: pointer; }
 .task .verdict button:hover { color: #fff; border-color: #fff; }
 @media (prefers-reduced-motion: reduce) { .out .v.t.first, .win { animation: none; } }
 @media (min-width: 1101px) and (max-height: 820px) { .crib ul { font-size: 11.5px; } .door button { min-height: 42px; padding: 7px 12px; } }
+/* v4: the step-by-step guide for "never written a formula": one idea per card, plain words, tap an answer, the engine checks it */
+body.lv-new .main { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol, body:not(.lv-new) .main > .gside { display: none !important; }
+.guide { font: 15px/1.6 var(--display); }
+.guide h2 { display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; }
+.gdots { display: inline-flex; gap: 5px; }
+.gdots i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--hair); }
+.gdots i.on { background: var(--ok); border-color: var(--ok); }
+.gdots i.cur { border-color: #fff; background: #fff; }
+.guide h3 { margin: 4px 0 8px; font: 600 clamp(20px, 1.9vw, 26px)/1.25 var(--display); color: #fff; }
+.gtext { margin: 0 0 14px !important; max-width: 46em; color: var(--text); }
+.gshow { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 6px; }
+.tok { border: 1px solid var(--line); background: rgba(255,255,255,.03); border-radius: 8px; padding: 8px 14px; text-align: center; min-width: 64px; }
+.tok code { display: block; font: 600 20px/1.3 var(--mono); color: #b9ffd6; white-space: nowrap; font-variant-ligatures: none; }
+.tok span { display: block; color: var(--dim); font: 12px var(--display); margin-top: 2px; }
+.gfull { background: none; border: 0; color: var(--dim); font: 12px var(--mono); padding: 4px 0; cursor: pointer; text-align: left; }
+.gfull:hover { color: #fff; }
+.guide pre { margin: 2px 0 8px; font-size: 11.5px; }
+.gask { margin: 14px 0 10px !important; font: 600 16px var(--display); color: #fff; }
+.gchoices { display: flex; flex-wrap: wrap; gap: 10px; }
+.gchoices button, .gchoices a { font: 600 15px var(--display); color: #fff; background: rgba(57,255,138,.06); border: 1px solid rgba(57,255,138,.45); border-radius: 8px; padding: 0 22px; min-height: 48px; min-width: 96px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; font-variant-ligatures: none; }
+.gchoices button:hover, .gchoices a:hover { background: rgba(57,255,138,.14); }
+.gchoices button[disabled] { opacity: .45; cursor: default; }
+.gchoices button.picked { opacity: 1; border-color: #fff; }
+.gchoices .slot { color: #b9ffd6; font: 600 20px var(--mono); align-self: center; font-variant-ligatures: none; }
+.gchoices.fillrow button { font: 700 20px var(--mono); min-width: 64px; padding: 0 16px; }
+.gans { margin-top: 14px; min-height: 64px; }
+.gans .row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.gans .big { font: 700 34px/1 var(--mono); color: var(--ok); }
+.gans .big.f { color: #ff9aa9; }
+.gans .verd { font: 600 16px var(--display); color: #fff; }
+.gans .gmark { font: 600 13px var(--display); color: var(--ok); margin: 0 0 4px; }
+.gans .gmark.no { color: #ff9aa9; }
+.gans .says { margin: 6px 0 0; color: var(--text); max-width: 46em; }
+.gans .flow { display: flex; flex-wrap: wrap; gap: 8px 14px; font: 600 18px var(--mono); color: #fff; }
+.gans .flow b { color: var(--ok); font-weight: 600; }
+.gans .wait { color: var(--dim); }
+.gans .err { color: #e5484d; font-size: 13px; }
+.gnav { display: flex; gap: 8px; margin-top: auto; padding-top: 14px; }
+.gnav .b { min-height: 44px; }
+.gnav #gNext.ready { border-color: var(--ok); color: var(--ok); }
+.gloss { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.gloss li { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px; align-items: baseline; font: 14px var(--display); }
+.gloss code { font: 600 15px var(--mono); font-variant-ligatures: none; }
+.gside .fine { margin-top: 14px; }
+.gloss .none { color: var(--dim); display: block; font-size: 13px; }
+.gside .btns { margin-top: 14px; }
+.gside .b { min-height: 44px; }
+.backg { background: none; border: 1px solid var(--line); color: var(--text); border-radius: 6px; font: 600 12px var(--display); padding: 0 10px; min-height: 32px; cursor: pointer; }
+.backg:hover { border-color: var(--ok); color: #fff; }
+@media (max-width: 1100px) { body.lv-new .main { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } }
+@media (max-width: 700px) { body.lv-new .main { grid-template-columns: minmax(0, 1fr); } .guide { font-size: 14.5px; } .tok code { font-size: 17px; } .gfull, .backg { min-height: 44px; } .gloss li { grid-template-columns: 60px minmax(0, 1fr); } }
+@media (min-width: 1101px) and (max-height: 820px) { .guide { font-size: 14px; } .gtext { margin-bottom: 10px !important; } .tok { padding: 6px 12px; } .tok code { font-size: 18px; } .gask { margin: 10px 0 8px !important; } .gans { margin-top: 10px; } .gans .big { font-size: 28px; } .gloss { gap: 5px; } }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
@@ -269,6 +322,7 @@ button.b { background: none; cursor: pointer; }
     <div class="col">
       <section class="panel lesson" aria-labelledby="hLes">
         <h2 id="hLes">Five short lessons</h2>
+        <p class="pro-note" id="newNote" hidden><button type="button" class="backg" id="gReturn">‹ Back to the step-by-step guide</button></p>
         <p class="pro-note" id="proNote" hidden>Lessons 1 to 4 are the basics. Lesson 5 is a real testnet rule; after it comes the <a href="/playground/">Rule Playground ›</a>.</p>
         <div class="chips"><span id="chips" role="tablist" aria-label="Lessons"></span><button type="button" id="lNext">Next ›</button></div>
         <h3 id="lTitle"></h3>
@@ -328,6 +382,28 @@ button.b { background: none; cursor: pointer; }
         <p class="fine">Links marked ↗ go to IDNI's own pages and papers.</p>
       </section>
     </div>
+    <div class="col gcol">
+      <section class="panel go guide" aria-labelledby="hGuide">
+        <h2 id="hGuide"><span id="gStep"></span><span class="gdots" id="gDots"></span><button type="button" class="lvl" id="lvl2"></button></h2>
+        <h3 id="gTitle"></h3>
+        <p class="gtext" id="gText"></p>
+        <div class="gshow" id="gShow"></div>
+        <button type="button" class="gfull" id="gFullBtn" hidden>See the full Tau line</button>
+        <pre id="gFull" translate="no" hidden></pre>
+        <p class="gask" id="gAsk"></p>
+        <div class="gchoices" id="gChoices"></div>
+        <div class="gans" id="gAns" aria-live="polite"></div>
+        <div class="gnav"><button type="button" class="b" id="gBack">‹ Back</button><button type="button" class="b" id="gNext">Next step ›</button></div>
+      </section>
+    </div>
+    <div class="col gside">
+      <section class="panel" aria-labelledby="hGloss">
+        <h2 id="hGloss">What you know so far</h2>
+        <ul class="gloss" id="gGloss"></ul>
+        <p class="fine">Every answer comes from a real Tau engine on tauhud's server, the same kind of engine that checks the testnet's rules. No install, no wallet.</p>
+        <div class="btns"><button type="button" class="b" id="gWork">Open the full lessons</button></div>
+      </section>
+    </div>
   </main>
 </div>
 <script>
@@ -353,18 +429,24 @@ function applyLevel(l, how) {
   $("crib").hidden = level !== "code"; if (level === "code") $("crib").open = innerHeight > 820;   // on a short screen it starts folded, so the answer box keeps its room
   document.querySelectorAll(".pro-only").forEach(b => { b.hidden = level !== "pro"; });
   $("proNote").hidden = level !== "pro";
+  setView();
   if (lessons.length) openLesson(cur);
 }
 function openDoor() {
+  document.body.classList.remove("lv-new");
   document.querySelector(".try").classList.add("doored");
   $("door").hidden = false; $("lvl").hidden = true;
 }
 /* one tap: the level, and a first question Tau answers at once */
+let full = false;   // true for this visit only: a shared #q= link shows the box even to a beginner
 const FIRST = { new: { op: "sat", spec: "x = 0", says: "That was your first Tau question: can x be 0? Yes. Lesson 1 on the right goes on from here.", lesson: 0 },
   code: { op: "sat", spec: "x = 0 || x = 1", says: "|| is or, && is and, = is equals: the cheat sheet under the box has the rest. Lesson 1 starts on the right.", lesson: 0 },
   pro: { op: "sat", spec: "sometimes o1[t] = i1[t]", says: "Streams and time work as you expect; sat quantifies inputs for all, outputs exists, step by step. Lesson 5 is the real testnet rule.", lesson: 4 } };
 document.querySelectorAll("#door button").forEach(b => b.addEventListener("click", () => {
-  const l = b.dataset.level; applyLevel(l, "door");
+  const l = b.dataset.level;
+  if (l === "new") { const st = store.get(); delete st.view; store.set(st); full = false; }
+  applyLevel(l, "door");
+  if (l === "new") { guideTo(store.get().g || 0); return; }   // the guide's first card asks the first question, with the visitor's own tap
   const f = FIRST[l];
   if (f) { load(f); if (lessons.length) openLesson(f.lesson); ask({ op: f.op, spec: f.spec }, { expect: { verdict: true }, text: f.says }); }
   else $("spec").focus();
@@ -481,12 +563,8 @@ const VERDICT = {
   realizable: ["no, some inputs leave the outputs stuck", "yes, the outputs can always answer"],
 };
 
-async function ask(q, says) {
-  if (busy) return null;
-  if (!q.spec) { $("spec").focus(); return null; }
-  const pre = /==|!==|\b(or|and|not|true|false)\b|^(solve|normalize|qelim|lgrs|n)\s/i.test(q.spec) || (!/[=<>!]|\[t|\b[TF]\b/.test(q.spec) && /[a-z]{3,}/i.test(q.spec));
-  if (pre) { const ex = explain(q.spec, ""); if (ex) { const r = { ok: false, error: T("not a Tau formula yet"), explain: ex }; lastAnswer = { q, r }; show(q, r, null); return r; } }
-  busy = true; $("ask").disabled = true; $("ask").textContent = T("Asking…");
+/* one question to the engine on tauhud's server; never throws */
+async function engine(q) {
   let r;
   try {
     const res = await fetch(TAU_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(q) });
@@ -497,6 +575,15 @@ async function ask(q, says) {
     r = { ok: false, error: T("The engine is not reachable right now. Install tau under Your computer to try it on your own machine.") };
     setEngine(false);
   }
+  return r;
+}
+async function ask(q, says) {
+  if (busy) return null;
+  if (!q.spec) { $("spec").focus(); return null; }
+  const pre = /==|!==|\b(or|and|not|true|false)\b|^(solve|normalize|qelim|lgrs|n)\s/i.test(q.spec) || (!/[=<>!]|\[t|\b[TF]\b/.test(q.spec) && /[a-z]{3,}/i.test(q.spec));
+  if (pre) { const ex = explain(q.spec, ""); if (ex) { const r = { ok: false, error: T("not a Tau formula yet"), explain: ex }; lastAnswer = { q, r }; show(q, r, null); return r; } }
+  busy = true; $("ask").disabled = true; $("ask").textContent = T("Asking…");
+  const r = await engine(q);
   busy = false; $("ask").disabled = false; $("ask").textContent = T("Ask Tau");
   lastAnswer = { q, r };
   show(q, r, r.ok && says && matches(says.expect, r) ? says.text : null);
@@ -608,6 +695,111 @@ $("tCheck").addEventListener("click", async () => {
   }
 });
 
+/* ---- the step-by-step guide for people who never wrote a formula ----
+   One idea per card, in plain words. A card shows the formula as tokens with their meaning, and asks one question:
+   a plain ask, a guess (the engine's answer decides which guess was right) or a fill-in. Every question is a lesson try
+   or solution, so `up tau` already checks it against the engine. */
+let guide = [], gAt = 0, gBusy = false;
+const LEAD = { lead: "", sub: "" };
+function setView() {
+  const g = level === "new" && !full && store.get().view !== "full";
+  document.body.classList.toggle("lv-new", g);
+  $("newNote").hidden = !(level === "new" && !g);
+  const lead = document.querySelector(".lead"), sub = document.querySelector(".sub");
+  if (!LEAD.lead) { LEAD.lead = lead.innerHTML; LEAD.sub = sub.innerHTML; }
+  if (g) { lead.textContent = T("Learn Tau Language, one small step at a time."); sub.textContent = T("No maths needed. Each step shows one idea, you tap an answer, and a real Tau engine on our server checks it."); }
+  else { lead.innerHTML = LEAD.lead; sub.innerHTML = LEAD.sub; }
+  $("lvl2").textContent = $("lvl").textContent;
+  if (g && guide.length) guideTo(gAt);
+}
+function gState() { const st = store.get(); st.gOk = st.gOk || {}; return st; }
+function gloss() {
+  const st = gState(), seen = guide.filter((c, i) => i < gAt || st.gOk[c.id]).flatMap(c => c.learn || []);
+  $("gGloss").innerHTML = seen.length ? seen.map(([k, v]) => `<li><code translate="no">${esc(k)}</code><span>${esc(T(v))}</span></li>`).join("") : `<li><span class="none">${esc(T("Each sign you meet appears here with its meaning."))}</span></li>`;
+}
+function guideTo(i) {
+  if (!guide.length) return;
+  gAt = Math.max(0, Math.min(guide.length, i));
+  const st = gState(); st.g = gAt; store.set(st);
+  const end = gAt === guide.length, c = guide[gAt];
+  $("gStep").textContent = end ? T("Done") : T("Step {n} of {m}").replace("{n}", gAt + 1).replace("{m}", guide.length);
+  $("gDots").innerHTML = guide.map((x, k) => `<i class="${k === gAt ? "cur" : st.gOk[x.id] ? "on" : ""}"></i>`).join("");
+  $("gAns").innerHTML = ""; $("gChoices").innerHTML = ""; $("gChoices").className = "gchoices";
+  $("gShow").innerHTML = ""; $("gFull").hidden = true; $("gFullBtn").hidden = true;
+  $("gBack").hidden = gAt === 0; $("gNext").hidden = end; $("gNext").classList.remove("ready");
+  gloss();
+  if (end) {
+    $("gTitle").textContent = T("You did it");
+    $("gText").textContent = T("In seven steps you asked Tau real questions and read a real testnet rule. Next, write your own lines in the lessons, test a rule against the testnet's own checks, or play the testnet as a game.");
+    $("gAsk").textContent = "";
+    const go = [["Write your own lines", null], ["Rule Playground ›", "/playground/"], ["No Memo ›", "/nomemo/"]];
+    go.forEach(([label, href]) => {
+      const a = document.createElement(href ? "a" : "button");
+      if (href) a.href = href; else { a.type = "button"; a.addEventListener("click", toLessons); }
+      a.textContent = T(label); $("gChoices").append(a);
+    });
+    return;
+  }
+  $("gTitle").textContent = T(c.title);
+  $("gText").textContent = T(c.text);
+  (c.show || []).forEach(([k, v]) => { const d = document.createElement("div"); d.className = "tok"; d.innerHTML = `<code translate="no">${esc(k)}</code><span>${esc(T(v))}</span>`; $("gShow").append(d); });
+  const q = c.q || null;
+  if (q && q.spec !== (c.show || []).map(x => x[0]).join(" ")) { $("gFullBtn").hidden = false; $("gFull").textContent = q.op + " " + q.spec; }
+  $("gAsk").textContent = c.ask ? T(c.ask) : "";
+  $("gFullBtn").textContent = T("See the full Tau line");
+  if (c.fill) {
+    $("gChoices").classList.add("fillrow");
+    $("gAsk").textContent = T("Fill the gap:");
+    const parts = c.fill.pattern.split("▢");
+    parts.forEach((part, k) => {
+      $("gChoices").append(Object.assign(document.createElement("span"), { className: "slot", textContent: part.trim() }));
+      if (k < parts.length - 1) c.fill.choices.forEach(ch => { const b = document.createElement("button"); b.type = "button"; b.textContent = ch; b.setAttribute("translate", "no"); b.addEventListener("click", () => gAnswer(c, { op: c.fill.op, spec: c.fill.pattern.replace("▢", ch) }, b, c.fill.expect)); $("gChoices").append(b); });
+    });
+  } else if (c.choices) {
+    c.choices.forEach(ch => { const b = document.createElement("button"); b.type = "button"; b.textContent = T(ch.label); b.addEventListener("click", () => gAnswer(c, q, b, ch.expect, true)); $("gChoices").append(b); });
+  } else {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = q.op === "run" ? T("Run it") : T("Ask Tau"); b.addEventListener("click", () => gAnswer(c, q, b, null)); $("gChoices").append(b);
+  }
+}
+async function gAnswer(c, q, btn, want, guess) {
+  if (gBusy) return;
+  gBusy = true;
+  $("gChoices").querySelectorAll("button").forEach(b => { b.classList.toggle("picked", b === btn); });
+  $("gAns").innerHTML = `<p class="wait">${esc(T("Asking the Tau engine…"))}</p>`;
+  const r = await engine({ op: q.op, spec: q.spec, steps: q.steps });
+  gBusy = false;
+  if (!r.ok) { $("gAns").innerHTML = `<p class="err">${esc(r.error || T("no answer"))}</p>`; return; }
+  let html = "";
+  if (q.op === "run") {
+    const outs = (r.outputs || []).map(x => [Object.values(x.in || {})[0], Object.values(x.out || {})[0]]);
+    html = `<div class="flow" translate="no">${outs.map(([a, b]) => `<span>${esc(a)} → <b>${esc(b)}</b></span>`).join("")}</div>`;
+  } else {
+    const yes = !!r.verdict;
+    html = `<div class="row"><span class="big ${yes ? "" : "f"}" translate="no">${yes ? "T" : "F"}</span><span class="verd">${esc(T(yes ? "Yes" : "No"))}</span></div>`;
+  }
+  let good = true;
+  if (want) good = matches(want, r);
+  if (guess) html = `<p class="gmark ${good ? "" : "no"}">${esc(T(good ? "Your guess was right." : "Not this time. Here is what Tau says:"))}</p>` + html;
+  else if (want && !good) html += `<p class="gmark no">${esc(T("Close. Tau said no, so try the other sign."))}</p>`;
+  if (good || guess) html += `<p class="says">${esc(T(c.says))}</p>`;
+  $("gAns").innerHTML = html;
+  if (good || guess) {
+    const st = gState(); st.gOk[c.id] = 1;
+    if (c.done && good) st[c.done] = new Date().toISOString().slice(0, 10);
+    store.set(st);
+    $("gNext").classList.add("ready"); gloss();
+    $("gDots").children[gAt] && $("gDots").children[gAt].classList.add("on");
+    if (!st.firstT) firstWin();
+  }
+}
+function toLessons() { const st = store.get(); st.view = "full"; store.set(st); setView(); if (lessons.length) openLesson(lessons.findIndex(l => !store.get()[l.id]) < 0 ? 0 : lessons.findIndex(l => !store.get()[l.id])); }
+$("gNext").addEventListener("click", () => guideTo(gAt + 1));
+$("gBack").addEventListener("click", () => guideTo(gAt - 1));
+$("gFullBtn").addEventListener("click", () => { $("gFull").hidden = !$("gFull").hidden; $("gFullBtn").textContent = T($("gFull").hidden ? "See the full Tau line" : "Hide the full Tau line"); });
+$("gWork").addEventListener("click", toLessons);
+$("gReturn").addEventListener("click", () => { const st = store.get(); delete st.view; store.set(st); full = false; setView(); });
+$("lvl2").addEventListener("click", openDoor);
+
 /* ---- more: tabs ---- */
 document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", String(x === b)));
@@ -617,10 +809,12 @@ document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click
 /* ---- start ---- */
 setOp("sat");
 const h = location.hash;
+full = h.startsWith("#q=");
 if (store.get().level !== undefined || h.startsWith("#q=")) applyLevel(store.get().level || "");   // came back, or follows a shared link: no door
 else openDoor();
 fetch("lessons.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
-  lessons = d.lessons || [];
+  lessons = d.lessons || []; guide = d.guide || []; gAt = Math.min(store.get().g || 0, guide.length);
+  setView();
   const m = /^#l(\d)$/.exec(h);
   const done = store.get();
   const first = lessons.findIndex(l => !done[l.id]);

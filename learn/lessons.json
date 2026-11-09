@@ -1,5 +1,5 @@
 {
-  "about": "Five short lessons for tauhud.com/learn. The page loads them; `up tau` on the server asks the engine every try and every solution and prints ok or FAIL, so the expected answers here are checked against the real engine. A task's `fill` is the fill-in shown to people who picked 'never written a formula': the pattern with ▢ and the choices for it.",
+  "about": "Five short lessons for tauhud.com/learn. The page loads them; `up tau` on the server asks the engine every try and every solution and prints ok or FAIL, so the expected answers here are checked against the real engine. A task's `fill` is the fill-in shown to people who picked 'never written a formula': the pattern with ▢ and the choices for it. `guide` is the step-by-step tour shown to people who picked 'never written a formula': one idea per card, every question is a try or solution of the lessons above, so the self-test already checks it; for a guess, the engine's answer decides which choice was right.",
   "lessons": [
     {
       "id": "yesno",
@@ -265,6 +265,332 @@
         ],
         "solution": "always ( (i1[t]:bv[24] > { 100 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) )."
       }
+    }
+  ],
+  "guide": [
+    {
+      "id": "statement",
+      "title": "A formula is a statement",
+      "text": "A formula is a short statement that is either true or false, like “the light is on”. Tau writes it with letters and signs. The letter x is a box that can hold a value.",
+      "show": [
+        [
+          "x",
+          "a box"
+        ],
+        [
+          "=",
+          "is"
+        ],
+        [
+          "0",
+          "zero"
+        ]
+      ],
+      "ask": "Can the box hold 0? Ask the real Tau engine.",
+      "q": {
+        "op": "sat",
+        "spec": "x = 0"
+      },
+      "says": "Tau answers T for yes and F for no. Here: yes, x can be 0.",
+      "learn": [
+        [
+          "=",
+          "is"
+        ],
+        [
+          "T",
+          "yes, true"
+        ],
+        [
+          "F",
+          "no, false"
+        ]
+      ]
+    },
+    {
+      "id": "and",
+      "title": "Both at once",
+      "text": "&& means and: both parts must be true at the same time.",
+      "show": [
+        [
+          "x = 0",
+          "x is 0"
+        ],
+        [
+          "&&",
+          "and"
+        ],
+        [
+          "x = 1",
+          "x is 1"
+        ]
+      ],
+      "ask": "Your guess: can x be 0 and 1 at the same time?",
+      "choices": [
+        {
+          "label": "Yes",
+          "expect": {
+            "verdict": true
+          }
+        },
+        {
+          "label": "No",
+          "expect": {
+            "verdict": false
+          }
+        }
+      ],
+      "q": {
+        "op": "sat",
+        "spec": "x = 0 && x = 1"
+      },
+      "says": "A box holds one value at a time, so both parts can never be true together.",
+      "learn": [
+        [
+          "&&",
+          "and"
+        ]
+      ]
+    },
+    {
+      "id": "or",
+      "title": "One or the other",
+      "text": "|| means or: at least one part must be true. Pick the sign that makes Tau say yes.",
+      "fill": {
+        "pattern": "x = 0 ▢ x = 1",
+        "choices": [
+          "&&",
+          "||"
+        ],
+        "op": "sat",
+        "expect": {
+          "verdict": true
+        }
+      },
+      "says": "With or, x = 0 is enough. You just wrote your first Tau formula.",
+      "done": "yesno",
+      "learn": [
+        [
+          "||",
+          "or"
+        ]
+      ]
+    },
+    {
+      "id": "every",
+      "title": "True every time",
+      "text": "So far Tau looked for one value that works. valid asks something harder: is it true whatever the value is? != means is not.",
+      "show": [
+        [
+          "x = 0",
+          "x is 0"
+        ],
+        [
+          "||",
+          "or"
+        ],
+        [
+          "x != 0",
+          "x is not 0"
+        ]
+      ],
+      "ask": "Your guess: is this true whatever x is?",
+      "choices": [
+        {
+          "label": "Yes",
+          "expect": {
+            "verdict": true
+          }
+        },
+        {
+          "label": "No",
+          "expect": {
+            "verdict": false
+          }
+        }
+      ],
+      "q": {
+        "op": "valid",
+        "spec": "x = 0 || x != 0"
+      },
+      "says": "Any x is either 0 or not 0, so this holds every time.",
+      "learn": [
+        [
+          "!=",
+          "is not"
+        ],
+        [
+          "valid",
+          "true in every case"
+        ]
+      ]
+    },
+    {
+      "id": "machine",
+      "title": "A rule is a little machine",
+      "text": "On the testnet a rule reads a number that comes in and writes a number that goes out, one step at a time. i1 is the number in, o1 the number out. This machine adds one.",
+      "show": [
+        [
+          "o1",
+          "out"
+        ],
+        [
+          "=",
+          "is"
+        ],
+        [
+          "i1 + 1",
+          "in plus one"
+        ]
+      ],
+      "ask": "Run it with the numbers 1, 2 and 3.",
+      "q": {
+        "op": "run",
+        "spec": "o1[t]:bv[8] = i1[t]:bv[8] + { 1 }:bv[8]",
+        "steps": [
+          {
+            "i1": "1"
+          },
+          {
+            "i1": "2"
+          },
+          {
+            "i1": "3"
+          }
+        ]
+      },
+      "says": "Every number that goes in comes out one bigger.",
+      "learn": [
+        [
+          "i1",
+          "number in"
+        ],
+        [
+          "o1",
+          "number out"
+        ]
+      ]
+    },
+    {
+      "id": "wrap",
+      "title": "Numbers have a size",
+      "text": "These numbers have 8 bits, so they go from 0 to 255 and no further.",
+      "show": [
+        [
+          "o1",
+          "out"
+        ],
+        [
+          "=",
+          "is"
+        ],
+        [
+          "i1 + 1",
+          "in plus one"
+        ]
+      ],
+      "ask": "Your guess: what comes out when 255 goes in?",
+      "choices": [
+        {
+          "label": "256",
+          "expect": {
+            "out": {
+              "o1": [
+                "256"
+              ]
+            }
+          }
+        },
+        {
+          "label": "0",
+          "expect": {
+            "out": {
+              "o1": [
+                "0"
+              ]
+            }
+          }
+        }
+      ],
+      "q": {
+        "op": "run",
+        "spec": "o1[t]:bv[8] = i1[t]:bv[8] + { 1 }:bv[8]",
+        "steps": [
+          {
+            "i1": "255"
+          }
+        ]
+      },
+      "says": "Like a trip counter, it rolls over to 0 after 255. A rule that must not roll over has to say so itself.",
+      "learn": [
+        [
+          "bv[8]",
+          "a number from 0 to 255"
+        ]
+      ]
+    },
+    {
+      "id": "rule",
+      "title": "A real testnet rule",
+      "text": "Every transfer on the testnet passes a rule like this one. The amount comes in, and the rule answers 1 to let it through or 0 to stop it. This one stops anything over 1,000.",
+      "show": [
+        [
+          "i1 > 1000",
+          "amount over 1,000?"
+        ],
+        [
+          "? 0",
+          "then 0: stop"
+        ],
+        [
+          ": 1",
+          "else 1: let through"
+        ]
+      ],
+      "ask": "Your guess: what happens to a transfer of 5,000?",
+      "choices": [
+        {
+          "label": "Let through",
+          "expect": {
+            "out": {
+              "o5": [
+                "1",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "label": "Stopped",
+          "expect": {
+            "out": {
+              "o5": [
+                "1",
+                "0"
+              ]
+            }
+          }
+        }
+      ],
+      "q": {
+        "op": "run",
+        "spec": "always ( (i1[t]:bv[24] > { 1000 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+        "steps": [
+          {
+            "i1": "500"
+          },
+          {
+            "i1": "5000"
+          }
+        ]
+      },
+      "says": "500 goes through, 5,000 is stopped. You just read a real testnet rule.",
+      "learn": [
+        [
+          "?  :",
+          "if, then, else"
+        ]
+      ]
     }
   ]
 }
