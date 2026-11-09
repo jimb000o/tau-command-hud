@@ -1,5 +1,5 @@
 {
-  "about": "Five short lessons for tauhud.com/learn. The page loads them; `up tau` on the server asks the engine every try and every solution and prints ok or FAIL, so the expected answers here are checked against the real engine. A task's `fill` is the fill-in shown to people who picked 'never written a formula': the pattern with ▢ and the choices for it. `guide` is the step-by-step tour shown to people who picked 'never written a formula': one idea per card, every question is a try or solution of the lessons above, so the self-test already checks it; for a guess, the engine's answer decides which choice was right. A lesson with \"level\": \"pro\" is shown only to people who picked 'I know logic or Tau'.",
+  "about": "Five short lessons for tauhud.com/learn. The page loads them; `up tau` on the server asks the engine every try and every solution and prints ok or FAIL, so the expected answers here are checked against the real engine. A task's `fill` is the fill-in shown to people who picked 'never written a formula': the pattern with ▢ and the choices for it. `guide` is the step-by-step tour shown to people who picked 'never written a formula': one idea per card, every question is a try or solution of the lessons above, so the self-test already checks it; for a guess, the engine's answer decides which choice was right. A lesson with \"level\": \"pro\" is shown only to people who picked 'I know logic or Tau'. `asked` holds questions from the community in IDNI's monthly Q&A videos, answered in our own words; a `try` is always a lesson try, so the self-test covers it.",
   "lessons": [
     {
       "id": "yesno",
@@ -729,6 +729,109 @@
           "if, then, else"
         ]
       ]
+    }
+  ],
+  "asked": [
+    {
+      "q": "Do I have to learn Boolean algebra to use Tau?",
+      "a": "No. The guide on this page uses none: you compare things with = and join them with and (&&) and or (||). Boolean algebra is what Tau does underneath; it helps later, when you want to know why an answer is what it is.",
+      "video": "1RoPTERgnkU",
+      "when": "2026-01"
+    },
+    {
+      "q": "How does Tau tell an input from an output?",
+      "a": "By the name: a stream whose name starts with i is an input, one that starts with o is an output, unless the spec declares it otherwise. Inputs come from outside, so a spec cannot demand them; outputs are what the spec decides.",
+      "try": {
+        "op": "sat",
+        "spec": "i1[t] = 0"
+      },
+      "says": "F: the spec cannot decide what comes in.",
+      "video": "0jITO0yOnkY",
+      "when": "2024-08"
+    },
+    {
+      "q": "What goes inside the curly brackets?",
+      "a": "A constant of a given type: { 1 }:bv[8] is the number 1 as an 8-bit value. Without braces, 1 means all bits on, so 1:bv[8] is 255.",
+      "try": {
+        "op": "run",
+        "spec": "o1[t]:bv[8] = i1[t]:bv[8] + { 1 }:bv[8]",
+        "steps": [
+          {
+            "i1": "1"
+          },
+          {
+            "i1": "2"
+          },
+          {
+            "i1": "3"
+          }
+        ]
+      },
+      "says": "Every number that goes in comes out one bigger.",
+      "video": "EGCXbDfU2Y8",
+      "when": "2024-09"
+    },
+    {
+      "q": "Does always mean the rule has to hold forever?",
+      "a": "Yes: at every step, on a timeline without an end. A spec without always or sometimes is read as always. That is why a promise that cannot last forever gets an F.",
+      "try": {
+        "op": "sat",
+        "spec": "o1[t]:bv[2] > o1[t-1]:bv[2]"
+      },
+      "says": "F: an output that must grow at every step runs out of 2-bit numbers (0 to 3).",
+      "video": "6Em0cJU8cx4",
+      "when": "2025-11"
+    },
+    {
+      "q": "How do I switch from step-by-step code to Tau?",
+      "a": "Stop writing steps and write what must be true. o1[t] = i1[t] + 1 is not an order to add; it is a promise about every step, and Tau finds the outputs that keep it.",
+      "try": {
+        "op": "run",
+        "spec": "o1[t]:bv[8] = i1[t]:bv[8] + { 1 }:bv[8]",
+        "steps": [
+          {
+            "i1": "1"
+          },
+          {
+            "i1": "2"
+          },
+          {
+            "i1": "3"
+          }
+        ]
+      },
+      "says": "Every number that goes in comes out one bigger.",
+      "video": "DzuyDyMVp1c",
+      "when": "2025-07"
+    },
+    {
+      "q": "What does valid mean?",
+      "a": "True in every case, whatever the values are. sat is happy with one way to make it true.",
+      "try": {
+        "op": "valid",
+        "spec": "x = 0"
+      },
+      "says": "F: x could be something else.",
+      "video": "qZY8KDYWCVE",
+      "when": "2025-09"
+    },
+    {
+      "q": "What is a normalizer?",
+      "a": "It rewrites a formula into a simplest equivalent form that Tau can work with. In the tau REPL on your computer, normalize shows that form; this page answers sat, valid, why and run.",
+      "video": "-qi-S7kUI2U",
+      "when": "2024-03"
+    },
+    {
+      "q": "When can I try Tau in a web browser?",
+      "a": "IDNI answers this in the video. Until then, this page sends your formula to a real Tau engine on tauhud's server, so you can try it here.",
+      "video": "S6ggPxF1o5g",
+      "when": "2026-08"
+    },
+    {
+      "q": "How do I get better at writing Tau rules?",
+      "a": "Practice on small rules. Lesson 5 changes a real testnet limit, and the Rule Playground runs a rule against the testnet's own checks.",
+      "video": "6Em0cJU8cx4",
+      "when": "2025-11"
     }
   ]
 }
