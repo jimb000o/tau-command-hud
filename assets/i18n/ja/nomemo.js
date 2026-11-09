@@ -1016,5 +1016,19 @@ TauI18n.add({ strings: {
   "The Tracer is part of the game, not of the chain. The testnet itself never punishes a refused payment: it refuses it, for free, and tells you why. The heat is there so that thinking pays more than guessing.": "トレーサーはゲームの一部で、チェーンの一部ではない。テストネット自体は拒否された支払いを決して罰しない：無料で拒否し、理由を教えてくれる。熱があるのは、当て推量より考えるほうが得になるようにするためだ。",
   "Tracer heat {n}: the crew hands out no work while the Tracer has your scent. It falls 1 a block.": "トレーサーの熱 {n}：トレーサーに嗅ぎつけられている間、クルーは仕事を渡さない。1 ブロックごとに 1 下がる。",
   "Tracer heat {n}: this trace is {m} blocks shorter.": "トレーサーの熱 {n}：この追跡は {m} ブロック短い。",
-  "Tracer heat {n}": "トレーサーの熱 {n}"
+  "Tracer heat {n}": "トレーサーの熱 {n}",
+  "Fee week": "手数料週間",
+  "Deadline week": "期限週間",
+  "Tau week": "Tau 週間",
+  "Disguise week": "変装週間",
+  "Sharp eyes week": "鋭い目の週間",
+  "This week is fee week. Contracts about the fee, empty pockets and amount widths come more often and pay double. Learn what the base fee is, where the chain keeps it, and what a fee limit really promises.": "今週は手数料週間。手数料、空のポケット、金額の幅についての契約がよく届き、報酬は倍になる。基本手数料とは何か、チェーンがそれをどこに置いているか、手数料上限が本当は何を約束するのかを学べ。",
+  "This week is deadline week. Contracts about block heights and expiry times come more often and pay double. Two clocks guard every payment; learn to tell them apart.": "今週は期限週間。ブロック高と有効期限についての契約がよく届き、報酬は倍になる。どの支払いも二つの時計が見張っている。見分け方を学べ。",
+  "This week is Tau week. Contracts about the chain’s rule and Boolean functions come more often and pay double. The rules of this chain are written in Tau; read them, then write your own.": "今週は Tau 週間。チェーンの規則とブール関数についての契約がよく届き、報酬は倍になる。このチェーンの規則は Tau で書かれている。読んで、それから自分のを書け。",
+  "This week is disguise week. Contracts about signatures, payers and sequence numbers come more often and pay double. Learn what the chain checks to know a payment is really yours.": "今週は変装週間。署名、支払者、シーケンス番号についての契約がよく届き、報酬は倍になる。支払いが本当に自分のものだとチェーンが何で確かめるのかを学べ。",
+  "This week is sharp eyes week. Contracts about addresses and the order of the node’s checks come more often and pay double. Read the middle of an address, and know which check comes first.": "今週は鋭い目の週間。アドレスとノードの検査順についての契約がよく届き、報酬は倍になる。アドレスの真ん中を読み、どの検査が先かを知れ。",
+  "This week: {x}. Contracts on {y} pay double and come more often.": "今週：{x}。{y} についての契約は報酬が倍で、よく届く。",
+  "{n} days until the next theme.": "次のテーマまであと {n} 日。",
+  "This week: {x}.": "今週：{x}。",
+  "The next theme starts tomorrow.": "次のテーマは明日から。"
 } });

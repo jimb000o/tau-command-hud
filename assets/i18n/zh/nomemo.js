@@ -1016,5 +1016,19 @@ TauI18n.add({ strings: {
   "The Tracer is part of the game, not of the chain. The testnet itself never punishes a refused payment: it refuses it, for free, and tells you why. The heat is there so that thinking pays more than guessing.": "追踪者是游戏的一部分，不是链的一部分。测试网本身从不惩罚被拒绝的付款：它免费拒绝，并告诉你原因。热度的存在，是为了让思考比乱猜更划算。",
   "Tracer heat {n}: the crew hands out no work while the Tracer has your scent. It falls 1 a block.": "追踪热度 {n}：追踪者盯着你的时候，船员不会派活。它每个区块降 1。",
   "Tracer heat {n}: this trace is {m} blocks shorter.": "追踪热度 {n}：这条追踪短了 {m} 个区块。",
-  "Tracer heat {n}": "追踪热度 {n}"
+  "Tracer heat {n}": "追踪热度 {n}",
+  "Fee week": "手续费周",
+  "Deadline week": "期限周",
+  "Tau week": "Tau 周",
+  "Disguise week": "伪装周",
+  "Sharp eyes week": "火眼周",
+  "This week is fee week. Contracts about the fee, empty pockets and amount widths come more often and pay double. Learn what the base fee is, where the chain keeps it, and what a fee limit really promises.": "本周是手续费周。关于手续费、空口袋和金额位宽的合约会更常出现，报酬翻倍。弄清基础手续费是什么、链把它存在哪里，以及手续费上限真正承诺了什么。",
+  "This week is deadline week. Contracts about block heights and expiry times come more often and pay double. Two clocks guard every payment; learn to tell them apart.": "本周是期限周。关于区块高度和过期时间的合约会更常出现，报酬翻倍。每笔付款都有两座钟守着；学会分清它们。",
+  "This week is Tau week. Contracts about the chain’s rule and Boolean functions come more often and pay double. The rules of this chain are written in Tau; read them, then write your own.": "本周是 Tau 周。关于链的规则和布尔函数的合约会更常出现，报酬翻倍。这条链的规则是用 Tau 写的；先读懂它们，再写你自己的。",
+  "This week is disguise week. Contracts about signatures, payers and sequence numbers come more often and pay double. Learn what the chain checks to know a payment is really yours.": "本周是伪装周。关于签名、付款人和序列号的合约会更常出现，报酬翻倍。弄清链检查什么，才能知道一笔付款真的是你的。",
+  "This week is sharp eyes week. Contracts about addresses and the order of the node’s checks come more often and pay double. Read the middle of an address, and know which check comes first.": "本周是火眼周。关于地址和节点检查顺序的合约会更常出现，报酬翻倍。读地址的中间部分，并弄清哪项检查先来。",
+  "This week: {x}. Contracts on {y} pay double and come more often.": "本周：{x}。关于 {y} 的合约报酬翻倍，也更常出现。",
+  "{n} days until the next theme.": "距下一个主题还有 {n} 天。",
+  "This week: {x}.": "本周：{x}。",
+  "The next theme starts tomorrow.": "下一个主题明天开始。"
 } });
