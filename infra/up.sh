@@ -57,6 +57,8 @@
 #                            painting, to look at; up crier status  only the picture made anew
 #              up cost       what the site's tools were paid, read from their receipts by mail (nothing rebuilt but that
 #                            service, the node left alone); up cost gemini 10  a payment by hand; up cost mail  the mailbox
+#              up tau        Tau Language on tauhud.com/learn: the checker recreated with the code just pulled (nothing built,
+#                            the node left alone, safe any time), then every lesson example asked of the engine; up tau status  only that
 #              up owner      the same, then a one-time link: open it in your Telegram, and the news line's watchtower
 #                            warns you there privately (never on the channel); up owner test  sends you one test message
 set -e
@@ -319,6 +321,21 @@ if [ "${1:-}" = "guardian" ]; then
   echo "---------------- copy from here into the chat ----------------"
   docker compose exec -T guardian python /guardian/guardian.py status 2>&1 || docker compose logs --tail 15 guardian 2>&1
   curl -s -o /dev/null -w "          door https://node.tauhud.com/guardian/info answers %{http_code}\n" https://node.tauhud.com/guardian/info || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# Tau Language on tauhud.com/learn (checker/tau_sandbox.py, POST /tau): the checker recreated with the code just pulled,
+# nothing built, Caddy given /tau, the node left alone (safe any time); then every lesson example asked of the real engine
+if [ "${1:-}" = "tau" ]; then
+  if [ "${2:-}" != "status" ]; then
+    docker compose up -d --no-deps --force-recreate checker >/dev/null
+    docker compose up -d --no-deps --force-recreate caddy >/dev/null
+    echo "waiting 8 s…"; sleep 8
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T checker python -I /checker/tau_selftest.py 2>&1 || docker compose logs --tail 15 checker 2>&1
+  curl -s -o /dev/null -w "          door https://node.tauhud.com/tau/health answers %{http_code}\n" https://node.tauhud.com/tau/health || true
   echo "---------------- to here --------------------------------------"
   exit 0
 fi

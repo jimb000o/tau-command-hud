@@ -1,0 +1,82 @@
+"""Every lesson on tauhud.com/learn asked of this engine: `up tau` prints the result for the chat.
+
+Each try and each task solution in learn/lessons.json (mounted at /learn/lessons.json)
+goes through tau_sandbox exactly as a visitor's question does. A line says ok or
+FAIL, what the engine answered and how long it took; a FAIL means the lesson text
+promises something this engine does not do, so the lesson has to change.
+"""
+import json
+import os
+import resource
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import tau_sandbox  # noqa: E402
+
+LESSONS = os.environ.get("TAU_LESSONS", "/learn/lessons.json")
+
+
+def matches(expect, got):
+    if not got.get("ok"):
+        return False
+    if "verdict" in expect and bool(got.get("verdict")) != expect["verdict"]:
+        return False
+    for name, values in (expect.get("out") or {}).items():
+        seen = [str((row.get("out") or {}).get(name)) for row in got.get("outputs") or []]
+        if seen != list(values):
+            return False
+    return True
+
+
+def shown(got):
+    if not got.get("ok"):
+        return "error: " + str(got.get("error"))[:240]
+    if got.get("outputs") is not None:
+        return "; ".join(f"t{r['t']} in {r.get('in')} out {r.get('out')}" for r in got["outputs"])
+    text = "T" if got.get("verdict") else "F"
+    if got.get("core"):
+        text += " core " + " | ".join(got["core"])[:200]
+    return text
+
+
+def main():
+    lessons = json.load(open(LESSONS, encoding="utf-8"))["lessons"]
+    fails = total = 0
+    for n, lesson in enumerate(lessons, 1):
+        items = [(t["label"], t) for t in lesson["tries"]]
+        task = lesson.get("task")
+        if task:
+            items.append(("solution", dict(task, spec=task["solution"])))
+        for label, item in items:
+            req = tau_sandbox.parse({"op": item["op"], "spec": item["spec"], "steps": item.get("steps")})
+            got = tau_sandbox.ask(req)
+            good = matches(item["expect"], got)
+            total += 1
+            fails += not good
+            print(f"{'ok  ' if good else 'FAIL'} {n} {lesson['id']} · {label}: {item['op']} {item['spec'][:70]}")
+            print(f"       → {shown(got)} ({got.get('ms')} ms)" + ("" if good else f"  expected {item['expect']}"))
+            if not good and got.get("log"):
+                print("       log: " + got["log"][-300:].replace("\n", " / "))
+    # No Memo's `tau <line>` contract (nomemo/game.js) sends this shape: G(...) with inline types and {1} constants
+    for label, item in [("No Memo contract", {"op": "run", "spec": "G(o1[t]:bv[8] = i1[t]:bv[8] + {1}:bv[8])",
+                                               "steps": [{"i1": "5"}], "expect": {"out": {"o1": ["6"]}}})]:
+        got = tau_sandbox.ask(tau_sandbox.parse(item))
+        good = matches(item["expect"], got)
+        total += 1
+        fails += not good
+        print(f"{'ok  ' if good else 'FAIL'} nomemo · {label}: run {item['spec']}")
+        print(f"       → {shown(got)} ({got.get('ms')} ms)")
+    # a guard that must hold: a file stream is refused before the engine sees it
+    try:
+        tau_sandbox.parse({"op": "run", "spec": "o1[t] = i1[t] && x := ifile(\"/etc/passwd\")"})
+        print("FAIL guard: a file stream was let through")
+        fails += 1
+    except tau_sandbox.BadRequest:
+        print("ok   guard: file streams refused")
+    peak = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss // 1024
+    print(f"tau:     {total - fails} of {total} lesson answers as the page says, biggest worker {peak} MB, "
+          f"limit {tau_sandbox.BUDGET:g} s per question")
+
+
+if __name__ == "__main__":
+    main()
