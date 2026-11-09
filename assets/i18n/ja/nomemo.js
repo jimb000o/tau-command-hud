@@ -1030,5 +1030,11 @@ TauI18n.add({ strings: {
   "This week: {x}. Contracts on {y} pay double and come more often.": "今週：{x}。{y} についての契約は報酬が倍で、よく届く。",
   "{n} days until the next theme.": "次のテーマまであと {n} 日。",
   "This week: {x}.": "今週：{x}。",
-  "The next theme starts tomorrow.": "次のテーマは明日から。"
+  "The next theme starts tomorrow.": "次のテーマは明日から。",
+  "This week’s board: {n} wallets paid the drop since Monday. A payment counts at most once every 30 seconds; it starts from zero every Monday.": "今週のボード：月曜から {n} 個のウォレットがドロップに支払った。支払いは 30 秒に最大 1 回だけ数える。毎週月曜にゼロから始まる。",
+  "{n} payments": "{n} 回の支払い",
+  "you": "あなた",
+  "Nobody has paid the drop this week yet: the first payment leads the week.": "今週はまだ誰もドロップに支払っていない：最初の支払いが今週の首位だ。",
+  "This week you stand at number {a}, with {b} payments.": "今週のあなたは {b} 回の支払いで第 {a} 位。",
+  "made-up numbers in this browser; the live board is on the server.": "このブラウザの作り物の数字。本物のボードはサーバーにある。"
 } });
