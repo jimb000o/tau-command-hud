@@ -999,5 +999,22 @@ TauI18n.add({ strings: {
   "Part {a} of {b} done. The trace runs on: block {n}.": "第 {a} 步（共 {b} 步）完成。追踪继续：区块 {n}。",
   "A fresh draft: a plain payment of 1 test AGRS to the drop.": "新的草稿：一笔付给接头点 1 测试 AGRS 的普通付款。",
   "The heist is done: all {n} parts.": "劫案完成：全部 {n} 步。",
-  "A blown heist costs 2 points of standing.": "搞砸的劫案扣 2 点声望。"
+  "A blown heist costs 2 points of standing.": "搞砸的劫案扣 2 点声望。",
+  "Tracer heat {n}.": "追踪热度 {n}。",
+  "The Tracer has your scent: no new contract until it falls below 80.": "追踪者嗅到了你的气味：热度降到 80 以下之前没有新合约。",
+  "Your next trace will be shorter.": "你的下一条追踪会更短。",
+  "The Tracer is sniffing around our wallet. Fewer wild shots: think, then send.": "追踪者在我们的钱包周围嗅来嗅去。少一些乱试：先想，再发。",
+  "Tracer heat: {n} of 100.": "追踪热度：{n}/100。",
+  "raises it": "升高",
+  "a refusal you did not want, a payment that lands but misses the ask, a wrong Tau answer: +8 · a trace run out: +25": "你不想要的拒绝、落地但没达到要求的付款、错误的 Tau 答案：+8 · 追踪耗尽：+25",
+  "lowers it": "降低",
+  "1 a block, and 10 for each contract settled": "每个区块降 1，每完成一份合约降 10",
+  "50 and up": "50 及以上",
+  "the next trace is shorter": "下一条追踪更短",
+  "80 and up": "80 及以上",
+  "no new contract until it falls below 80": "降到 80 以下之前没有新合约",
+  "The Tracer is part of the game, not of the chain. The testnet itself never punishes a refused payment: it refuses it, for free, and tells you why. The heat is there so that thinking pays more than guessing.": "追踪者是游戏的一部分，不是链的一部分。测试网本身从不惩罚被拒绝的付款：它免费拒绝，并告诉你原因。热度的存在，是为了让思考比乱猜更划算。",
+  "Tracer heat {n}: the crew hands out no work while the Tracer has your scent. It falls 1 a block.": "追踪热度 {n}：追踪者盯着你的时候，船员不会派活。它每个区块降 1。",
+  "Tracer heat {n}: this trace is {m} blocks shorter.": "追踪热度 {n}：这条追踪短了 {m} 个区块。",
+  "Tracer heat {n}": "追踪热度 {n}"
 } });
