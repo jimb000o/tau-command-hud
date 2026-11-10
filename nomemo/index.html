@@ -171,6 +171,7 @@ html.nm-calm .mtabs button[data-pane="stat"] { display: none; }
 .top button { font: 11px var(--mono); color: var(--dim); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 0 10px; min-height: 28px; min-width: 28px; cursor: pointer; white-space: nowrap; }
 .top button:hover { color: #fff; border-color: var(--hair); }
 .top button.has { color: var(--ok); border-color: rgba(57,255,138,.4); }
+#rebootBtn { font-size: 13px; }
 .top button.has::before { content: "●"; margin-right: 5px; animation: blink 1.4s steps(1) infinite; }
 /* the trace at the screen's edge: a glow that quickens as the deadline nears, visible on a phone without comparing anything */
 .edge { position: fixed; inset: 0; pointer-events: none; z-index: 30; opacity: 0; transition: opacity .6s; }
@@ -261,6 +262,7 @@ footer p { margin: 0; }
   .mtabs button { font: 600 11px var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 0 6px; min-height: 44px; cursor: pointer; }
   .mtabs button.on { color: #fff; border-color: var(--hair); }
   .ptabs button { min-height: 44px; }
+  #rebootBtn { display: none; }   /* phone: the command and the chip when the node is lost; the header row is full */
   .screen { font-size: 12px; padding: 8px 10px 4px; }
   .cmd input { font-size: 16px; min-height: 44px; }   /* 16px: no zoom-in on focus */
   .chips { padding: 6px 8px 8px; } .chips button { min-height: 44px; font-size: 11px; }
@@ -299,6 +301,7 @@ footer p { margin: 0; }
     <div class="right">
       <button type="button" id="mailBtn" title="post">post</button>
       <span class="tr" id="topTrace"><span id="topTraceText">no trace</span><i></i></span>
+      <button type="button" id="rebootBtn" title="reboot: the terminal starts again and dials the node">⟳</button>
       <button type="button" id="sndBtn" title="sound">♪</button>
       <button type="button" id="fsBtn" title="full screen">⛶</button>
     </div>

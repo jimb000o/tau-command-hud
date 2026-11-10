@@ -2759,5 +2759,10 @@
   "on": "2026-11-10",
   "html": "Learn Tau Language: Check a brief with Tau. A new small page shows five plain requirements for a game's save system, each with its Tau line. Ask Tau and the real engine marks the three that cannot all hold; switch one off and ask again. For people who build software from written requirements, by hand or with an AI. At tauhud.com/learn/brief/."
  },
+ {
+  "tag": "No Memo",
+  "on": "2026-11-10",
+  "html": "No Memo: reboot. Type reboot, or press ⟳ in the terminal's header, and the terminal starts again: the boot screen plays, it dials the node afresh and shows the real block it got back, then your balance, the board and your mail. Your wallet, standing, open contract and trace stay as they are. When the node is out of reach, a reboot button comes with the message, so you can try again once it is back."
+ },
   {"tag": "No Memo", "on": "2026-11-10", "html": "No Memo: two new contracts from the testnet’s newest rules. Since 10 November 2026 the node refuses a payment to an address that is no key at all, and a payment to the wallet that sends it. Before, it took the first kind into its queue. Mirror asks you to pay yourself and make the chain say no. No such wallet shows three addresses, two of them real: find the one that only looks like a wallet. Both answer TX_INVALID on the real testnet, and the glossary explains why (what curve, what self).", "major": {"id": "nomemo-tx-checks", "title": "No Memo: two contracts from the testnet’s newest rules", "text": "The testnet now refuses a payment to an address that is no key, and a payment to yourself. Two new No Memo contracts let you make it say no, from your own test wallet.", "link": "/nomemo/", "image": "/assets/shots/nomemo-tx-checks.png"}}
 ]
