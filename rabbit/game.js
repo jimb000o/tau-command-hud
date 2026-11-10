@@ -1532,7 +1532,7 @@
       phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : phase === "wait" ? "waiting" : phase === "land" ? "landing" : "ashore",
       t0: phase === "approach" ? now + 90 : phase === "wait" ? now - 120 : phase === "land" ? now - 240 : now - 1800,
       end: phase === "gone" || phase === "cut" ? now : phase === "turn" ? now + 90 : now + 3600, passengers: 20, ashore: 0, at: {},
-      sent: { pay: 38, bill: 0, book: 0, cancel: 0 }, refused: 0, tricks: { tried: 9, stopped: 9, by: { overspend: 2, replay: 2, expired: 1, forged: 1, impostor: 1, freeride: 1, giant: 1 } }, kinds: ["pay", "trick"], preview: true };
+      sent: { pay: 38, bill: 0, book: 0, cancel: 0 }, refused: 0, tricks: { tried: 13, stopped: 13, by: { overspend: 2, replay: 2, expired: 1, forged: 1, impostor: 1, freeride: 1, giant: 1, double: 1, poison: 1, cram: 1, governance: 1 } }, kinds: ["pay", "trick"], preview: true };
     return { ship: k, name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition",
       phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : phase === "wait" ? "waiting" : phase === "land" ? "landing" : "ashore",
       why, t0: phase === "approach" ? now + 90 : phase === "wait" ? now - 120 : phase === "land" ? now - 240 : now - 1800,

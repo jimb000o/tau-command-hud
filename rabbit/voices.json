@@ -1565,6 +1565,38 @@
  },
  {
   "who": "rico",
+  "text": "Two payments, one sequence number, sent at the same moment! The chain took the first and refused the second. Every wallet's payments go one number at a time. No twins on this lagoon."
+ },
+ {
+  "who": "rico",
+  "text": "Another pirate tried to use the same turn twice. The first payment went through, the second found its number already taken. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "Clever one! A pirate paid several places in one payment, and the last transfer was more than his wallet holds. The chain didn't take the cheap ones and drop the rest. It took none of it. All or nothing, folks."
+ },
+ {
+  "who": "rico",
+  "text": "A poisoned basket from the black ship: good coins on top, an empty promise at the bottom. The chain checks the whole basket. Refused, every coin of it."
+ },
+ {
+  "who": "rico",
+  "text": "A pirate just stuffed more transfers into one payment than a payment may carry. Over sixty-four! The chain counted. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "Another overstuffed payment from the black ship. Rico has packed suitcases like that. The chain doesn't sit on them to close them. It just says no."
+ },
+ {
+  "who": "rico",
+  "text": "Now that's bold. A pirate slipped a field into his payment that only the chain's own transactions may set. Like writing a new law on a bar receipt. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "Another pirate tried to smuggle a rule change inside a rum payment. Rules on this chain change by agreement, not in a bottle. Refused."
+ },
+ {
+  "who": "rico",
   "text": "The black ship is weighing anchor. The lanterns go in one by one. They leave as they came: without a word to Tobias."
  },
  {
@@ -1669,7 +1701,7 @@
  },
  {
   "who": "rico",
-  "text": "Good news for every wallet on this lagoon: the chain checked balance, order, time, deadline, signature, sender, fee and size, and every pirate trick failed one of those checks. Your payments get the very same checks."
+  "text": "Good news for every wallet on this lagoon: the chain checked balance, order, time, deadline, signature, sender, fee, size, how many transfers, and who may set what, and every pirate trick failed one of those checks. Your payments get the very same checks."
  },
  {
   "who": "rico",
@@ -5382,6 +5414,10 @@
  },
  {
   "who": "ama",
+  "text": "A pirate hid a change to the rules inside a payment for rum. Rules are not changed in a bottle. Here they change when the island agrees, and on the chain the same. Refused."
+ },
+ {
+  "who": "ama",
   "text": "Every trick the pirates tried, the chain refused, and each time it said why. When I was young, a no came without a reason. This chain explains itself. I approve."
  },
  {
@@ -5766,6 +5802,10 @@
  },
  {
   "who": "sam",
+  "text": "Two pirate payments with the same number, sent together. The Book has one line for every number. The first payment got the line. The second found it taken. Refused."
+ },
+ {
+  "who": "sam",
   "text": "A pirate payment with a block deadline that had already passed. The chain counts blocks the way I count pages. Past the page, past the deadline. Refused."
  },
  {
@@ -6050,7 +6090,7 @@
  },
  {
   "who": "hana",
-  "text": "Each refusal has a name in the logbook. Insufficient funds, when the wallet is too poor. Invalid sequence, for a payment already taken. Tx expired, when its time or its block deadline ran out. Invalid signature, for the wrong key. Fee limit too low, for no fee. The class has them all on the wall."
+  "text": "Each refusal has a name in the logbook. Insufficient funds, when the wallet is too poor. Invalid sequence, for a number already taken. Tx expired, when its time or its block deadline ran out. Invalid signature, for the wrong key. Fee limit too low, for no fee. Tx invalid or tx rejected, when the payment itself breaks the rules: the wrong payer, too big, too many transfers. The class has them all on the wall."
  },
  {
   "who": "hana",
@@ -6163,6 +6203,10 @@
  {
   "who": "baako",
   "text": "Pirates ordering coconuts from the boat, one basket at a time. One price on the board, the same for pirates. Noor wanted a pirate price. I said no."
+ },
+ {
+  "who": "baako",
+  "text": "A pirate sent one payment for a whole row of baskets, Noor, and the last basket cost more than he has. The chain didn’t send the others and keep the last. It sent none. Whole order or no order."
  },
  {
   "who": "baako",
@@ -6367,6 +6411,10 @@
  {
   "who": "wren",
   "text": "Item four hundred and sixteen, dear: one pirate ship, one evening, and the chain’s answer to their tricks in the logbook. I’ve filed it under maritime history."
+ },
+ {
+  "who": "wren",
+  "text": "A pirate packed more transfers into one payment than one may carry, dear. I tried to count them from the Old Ship. The chain counted faster. Refused. Catalogued under overpacking."
  },
  {
   "who": "wren",
