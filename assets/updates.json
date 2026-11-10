@@ -2869,5 +2869,10 @@
     "tag": "Cruise",
     "on": "2026-11-10",
     "html": "Cruise: the Black Sequence now tries four stronger tricks the chain must refuse. Two payments for one sequence number (the chain seals the first and refuses the second), a payment to several places whose last transfer is more than the wallet holds (the chain applies none of it), a payment with more transfers than one may carry, and a payment carrying a field only the chain's own transactions may set. Each goes out like any payment; the logbook shows the chain's own refusal, and a trick that ever gets through is held back from the public and reported privately first."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-10",
+    "html": "White Rabbit Key: the islanders and Radio Coco now talk about the pirates' evening. New voiced lines for each trick the chain refused, for the evening when every trick was turned away and for the day after, a new question for Hana about the chain's answers, why the tricks never reach a block, and two new phone-in calls."
   }
 ]
