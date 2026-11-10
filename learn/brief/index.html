@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Check a brief with Tau</title>
+<meta name="description" content="Five requirements for a piece of software, three of them cannot all hold. A real Tau engine finds the three. An education demo, unofficial, not affiliated with IDNI.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Check a brief with Tau">
+<meta property="og:description" content="Five requirements, three cannot all hold. A real Tau engine finds the three.">
+<meta property="og:image" content="https://tauhud.com/assets/og/hud.png">
+<meta property="og:url" content="https://tauhud.com/learn/brief/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee; --refused: #e5484d;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; max-width: 1280px; display: flex; flex-direction: column; gap: 12px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+header nav a { color: var(--dim); font: 12px var(--mono); text-decoration: none; display: inline-block; padding: 8px 0; }
+header nav a:hover { color: #fff; }
+.lead { margin: 4px 0 0; font: 500 clamp(20px, 2.4vw, 28px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 78em; }
+.sub b { color: var(--text); font-weight: 500; }
+.main { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; min-width: 0; }
+.panel.go { border-color: rgba(57,255,138,.28); }
+.panel h2 { margin: 0 0 10px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.panel.go h2 { color: var(--ok); }
+.panel p { margin: 0 0 8px; }
+code { color: #b9ffd6; font: 12.5px var(--mono); font-variant-ligatures: none; }
+.reqs { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+.reqs label { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 4px 10px; align-items: start; padding: 8px 10px; min-height: 44px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; background: rgba(255,255,255,.03); }
+.reqs label:hover { border-color: var(--hair); }
+.reqs input { width: 16px; height: 16px; margin: 3px 0 0; accent-color: var(--ok); }
+.reqs b { font: 500 14px/1.4 var(--display); color: #fff; }
+.reqs small { grid-column: 2; color: var(--dim); font-size: 12px; }
+.reqs li.off label { opacity: .5; }
+.reqs li.clash label { border-color: var(--refused); background: rgba(229,72,77,.08); }
+.reqs li.clash b::after { content: " ✕"; color: var(--refused); }
+.reqs li.fine label { border-color: rgba(57,255,138,.4); }
+.act { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.b { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--text); background: none; border: 1px solid var(--hair); border-radius: 6px; padding: 0 12px; min-height: 36px; display: inline-flex; align-items: center; text-decoration: none; cursor: pointer; }
+.b:hover { border-color: #fff; color: #fff; }
+.b.ok { border-color: var(--ok); color: var(--ok); }
+.b.ok:hover { background: rgba(57,255,138,.08); }
+.b[disabled] { opacity: .5; cursor: wait; }
+.verdict { margin: 0 0 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; font: 500 14px/1.45 var(--display); color: var(--text); min-height: 62px; }
+.verdict.t { border-color: rgba(57,255,138,.5); color: var(--ok); }
+.verdict.f { border-color: var(--refused); color: #ff9aa9; }
+.verdict.err { border-color: var(--refused); color: var(--refused); }
+.verdict small { display: block; margin-top: 4px; color: var(--dim); font: 12px var(--mono); font-variant-ligatures: none; }
+pre { margin: 0 0 10px; padding: 8px 10px; background: rgba(0,0,0,.35); border: 1px solid var(--line); border-radius: 6px; color: #b9ffd6; font: 12px/1.5 var(--mono); white-space: pre-wrap; word-break: break-word; font-variant-ligatures: none; min-height: 60px; }
+pre i { font-style: normal; color: var(--dim); }
+.how { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.how li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; }
+.how li > i { font-style: normal; color: var(--ok); font: 600 12px var(--display); padding-top: 1px; }
+.how b { color: #fff; font-weight: 600; font-family: var(--display); }
+.fine { color: var(--dim); font-size: 12px; margin: 10px 0 0; }
+.fine a { color: var(--text); }
+.eng { color: var(--dim); font-size: 11.5px; margin: 8px 0 0; }
+.eng i { font-style: normal; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--dim); margin-right: 6px; vertical-align: 1px; }
+.eng.on i { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.eng.off i { background: var(--refused); }
+.side { display: grid; gap: 14px; min-width: 0; }
+[hidden] { display: none !important; }
+@media (min-width: 2200px) and (min-height: 1200px) { body { zoom: 1.3; } }
+@media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr); } .b { min-height: 44px; } body { font-size: 12px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Check a brief with Tau</span></a>
+    <nav aria-label="Pages"><a href="../">← Learn Tau Language</a></nav>
+  </header>
+  <div>
+    <p class="lead">Five requirements. Three of them cannot all hold.</p>
+    <p class="sub">A brief can contradict itself, and whoever builds from it, a person or an AI, finds out late. <b>Tau Language</b> is made for requirements: write each one as a line of logic and a Tau engine says whether they can all hold together, and if not, which ones clash. Press the button, then switch requirements off and ask again.</p>
+  </div>
+  <main class="main">
+    <section class="panel go" aria-labelledby="hBrief">
+      <h2 id="hBrief">The brief: <span id="title">a save system</span></h2>
+      <ul class="reqs" id="reqs"></ul>
+      <div class="act">
+        <button type="button" class="b ok" id="ask">Ask Tau</button>
+        <button type="button" class="b" id="reset">All five on</button>
+        <a class="b" id="open" href="../">Open in the Tau box</a>
+      </div>
+      <p class="eng" id="eng"><i></i><span id="engText">Looking for the engine…</span></p>
+    </section>
+    <div class="side">
+      <section class="panel" aria-labelledby="hAns" aria-live="polite">
+        <h2 id="hAns">Tau's answer</h2>
+        <div class="verdict" id="verdict">Nothing asked yet. Press Ask Tau.</div>
+        <pre id="sent"><i>The question sent to the engine appears here.</i></pre>
+      </section>
+      <section class="panel" aria-labelledby="hHow">
+        <h2 id="hHow">What is checked, and what is not</h2>
+        <ol class="how">
+          <li><i>1</i><div><b>The check is exact.</b> Tau does not guess. For the lines it gets, the answer is a proof: they can hold together, or they cannot.</div></li>
+          <li><i>2</i><div><b>The translation is not.</b> The Tau line under each requirement was written by hand for this page. Whoever writes that line, a person or a language model, can get it wrong, and Tau only sees the line.</div></li>
+          <li><i>3</i><div><b>Small on purpose.</b> Tau Language is an alpha. This box answers within 5 seconds and takes 2 KB at most.</div></li>
+        </ol>
+        <p class="fine">An education demo on tauhud's own server. Unofficial, not affiliated with IDNI. Tau Language is IDNI's work under <a href="https://github.com/IDNI/tau-lang" rel="noopener">its own licence</a>; using it in a commercial product needs IDNI's permission.</p>
+      </section>
+    </div>
+  </main>
+</div>
+<script>
+(() => {
+"use strict";
+const TAU_URL = "https://node.tauhud.com/tau";
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const b64 = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+let reqs = [], busy = false;
+
+const on = () => reqs.filter(r => $("c-" + r.id).checked);
+const specOf = list => list.map(r => r.tau).join(" && ");
+const squash = s => { let t = String(s).replace(/\s+/g, ""); while (/^\(.*\)$/.test(t) && balanced(t.slice(1, -1))) t = t.slice(1, -1); return t; };
+function balanced(s) { let d = 0; for (const c of s) { if (c === "(") d++; else if (c === ")" && --d < 0) return false; } return d === 0; }
+
+function setEngine(up, label) {
+  $("eng").className = "eng " + (up ? "on" : "off");
+  $("engText").textContent = up ? "A real Tau engine on tauhud's server answers" + (label ? " (" + label + ")" : "") + "." : "The engine is not reachable right now, so nothing here is answered. Try again in a minute.";
+}
+/* one question to the engine; never throws */
+async function engine(q) {
+  try {
+    const res = await fetch(TAU_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(q) });
+    const r = await res.json().catch(() => ({ ok: false, error: "the engine sent no answer (" + res.status + ")" }));
+    if (res.status === 429 && r.retry_after) r.error = "Too many questions from your address. Try again in " + r.retry_after + " s.";
+    setEngine(true);
+    return r;
+  } catch (e) { setEngine(false); return { ok: false, error: "The engine is not reachable right now." }; }
+}
+function mark(clash, fine) {
+  reqs.forEach(r => {
+    const li = $("li-" + r.id), ticked = $("c-" + r.id).checked;
+    li.className = !ticked ? "off" : clash && clash.includes(r) ? "clash" : fine ? "fine" : "";
+  });
+}
+function verdict(kind, html) { $("verdict").className = "verdict " + kind; $("verdict").innerHTML = html; }
+function refreshLink() {
+  const list = on();
+  $("open").href = list.length ? "../#q=" + b64(JSON.stringify({ op: "why", spec: specOf(list) })) : "../";
+}
+
+/* The clash: Tau's own core when its parts are our lines; otherwise found with the engine's verdicts alone,
+   by leaving out one requirement at a time and keeping it out while the rest still cannot hold. */
+async function clashOf(list, core) {
+  const byLine = new Map(list.map(r => [squash(r.tau), r]));
+  const named = (core || []).map(c => byLine.get(squash(c)));
+  if (named.length && named.every(Boolean)) return { clash: named, asked: 0 };
+  let keep = list.slice(), asked = 0;
+  for (const r of list) {
+    const rest = keep.filter(x => x !== r);
+    if (!rest.length) break;
+    const a = await engine({ op: "sat", spec: specOf(rest) }); asked++;
+    if (!a.ok) return { error: a.error };
+    if (!a.verdict) keep = rest;
+  }
+  return { clash: keep, asked };
+}
+
+async function ask() {
+  if (busy) return;
+  const list = on();
+  if (!list.length) { mark(null, false); verdict("", "Switch at least one requirement on."); return; }
+  busy = true; $("ask").disabled = true; $("ask").textContent = "Asking…";
+  const spec = specOf(list);
+  $("sent").innerHTML = "<i>why</i> " + esc(spec);
+  mark(null, false);
+  const r = await engine({ op: "why", spec });
+  if (!r.ok) verdict("err", esc(r.error || "The engine gave no answer.") + "<small>Nothing was checked.</small>");
+  else if (r.verdict) {
+    mark(null, true);
+    verdict("t", "These " + (list.length === 1 ? "requirement holds" : list.length + " requirements can all hold together") + "." + `<small>Tau found no contradiction${r.ms != null ? " · " + r.ms + " ms" : ""}</small>`);
+  } else {
+    const found = await clashOf(list, r.core);
+    if (found.error) verdict("err", esc(found.error) + "<small>Tau says the requirements contradict each other, but the page could not name them.</small>");
+    else {
+      mark(found.clash, false);
+      const n = found.clash.length, nums = found.clash.map(c => reqs.indexOf(c) + 1);
+      verdict("f", (n === 1 ? "Requirement " + nums[0] + " contradicts itself." : "Requirements " + nums.slice(0, -1).join(", ") + " and " + nums[n - 1] + " cannot all hold. Switch one of them off, or change it, and ask again.")
+        + `<small>Tau's core: ${esc((r.core || []).join("  ·  ")) || "none named"}${r.ms != null ? " · " + r.ms + " ms" : ""}${found.asked ? " · " + found.asked + " more questions to name them" : ""}</small>`);
+    }
+  }
+  busy = false; $("ask").disabled = false; $("ask").textContent = "Ask Tau";
+}
+
+fetch("../lessons.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
+  const brief = d.brief; reqs = brief.reqs;
+  $("title").textContent = brief.title.charAt(0).toLowerCase() + brief.title.slice(1);
+  $("reqs").innerHTML = reqs.map((r, n) => `<li id="li-${r.id}"><label><input type="checkbox" id="c-${r.id}" checked><b>${n + 1}. ${esc(r.text)}</b><small><code translate="no">${esc(r.tau)}</code> &nbsp;${esc(r.note)}</small></label></li>`).join("");
+  reqs.forEach(r => $("c-" + r.id).addEventListener("change", () => { mark(null, false); refreshLink(); verdict("", "Changed. Press Ask Tau to check this set."); }));
+  refreshLink();
+}).catch(() => verdict("err", "The brief did not load. Reload the page to try again."));
+$("ask").addEventListener("click", ask);
+$("reset").addEventListener("click", () => { reqs.forEach(r => { $("c-" + r.id).checked = true; }); mark(null, false); refreshLink(); verdict("", "All five are on. Press Ask Tau."); });
+fetch(TAU_URL + "/health", { cache: "no-store" }).then(r => r.ok ? r.json() : Promise.reject()).then(h => setEngine(true, h.engine || "")).catch(() => setEngine(false));
+})();
+</script>
+</body>
+</html>

@@ -66,6 +66,18 @@ def main():
         fails += not good
         print(f"{'ok  ' if good else 'FAIL'} nomemo · {label}: run {item['spec']}")
         print(f"       → {shown(got)} ({got.get('ms')} ms)")
+    # the brief on tauhud.com/learn/brief/: each listed set of requirements, joined with &&, must get the verdict the page shows
+    brief = json.load(open(LESSONS, encoding="utf-8")).get("brief") or {}
+    lines = {r["id"]: r["tau"] for r in brief.get("reqs") or []}
+    for check in brief.get("checks") or []:
+        spec = " && ".join(lines[i] for i in check["on"])
+        for op in ("sat", "why"):
+            got = tau_sandbox.ask(tau_sandbox.parse({"op": op, "spec": spec}))
+            good = matches(check["expect"], got)
+            total += 1
+            fails += not good
+            print(f"{'ok  ' if good else 'FAIL'} brief · {' '.join(check['on'])}: {op} {spec[:70]}")
+            print(f"       → {shown(got)} ({got.get('ms')} ms)" + ("" if good else f"  expected {check['expect']}"))
     # a guard that must hold: a file stream is refused before the engine sees it
     try:
         tau_sandbox.parse({"op": "run", "spec": "o1[t] = i1[t] && x := ifile(\"/etc/passwd\")"})
