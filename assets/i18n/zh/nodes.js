@@ -180,4 +180,15 @@ TauI18n.add({ strings: {
   "Once synced it is light: measured on our node (2 CPU, 3.8 GB RAM, November 2026) the node uses about 850 MB of memory and almost no CPU, its relay about 70 MB more.": "同步完成后就很轻：在我们的节点上实测（2 核 CPU、3.8 GB 内存，2026 年 11 月），节点约占 850 MB 内存，几乎不占 CPU，中继另占约 70 MB。",
   "Only want to learn Tau Language? You need no node for that.": "只想学 Tau 语言？那不需要节点。",
   "Start with the REPL ›": "从 REPL 开始 ›",
+  "Not now. tau-testnet-v2 starts with one validator, listed in the genesis. A new seat needs a rule change that an existing validator proposes and that reaches the agreement threshold. IDNI said in its": "现在不能。tau-testnet-v2 从创世区块里的一个验证者开始。新席位需要现有验证者提出、并达到同意门槛的规则更改。IDNI 在它的",
+  "Q&A of November 2026 ↗": "2026 年 11 月问答 ↗",
+  "that seats stay limited on purpose while the testnet is at its engineering stage, that anyone can run a node, and that the chain may move to proof of stake later. The kit can carry a validator key for that day (": "里说：测试网处于工程阶段时，席位有意保持有限；任何人都可以运行节点；这条链以后可能转向权益证明。为了那一天，套件可以带上验证者密钥（",
+  ").": "）。",
+  "Is there a reward for running one?": "运行节点有奖励吗？",
+  "No. In the same": "没有。在同一场",
+  "Q&A ↗": "问答 ↗",
+  "IDNI said no incentives are planned yet and that it would like to hear ideas. What helps the testnet most, in IDNI’s words: run a node, and open an issue on": "里，IDNI 说目前还没有计划任何激励，并希望听到大家的想法。用 IDNI 的话说，对测试网帮助最大的是：运行一个节点，并且在它无法同步或找不到对等节点时，到",
+  "tau-testnet ↗": "tau-testnet ↗",
+  "when it fails to sync or to find peers, with its log (": "开一个 issue，附上它的日志（",
+  "IDNI’s words": "IDNI 的话"
 } });

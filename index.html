@@ -1140,7 +1140,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <a class="d" href="learn/"><span class="k">Learn</span><b>Write in Tau</b><span>Type a formula and a real Tau engine answers. Short steps from yes or no to a real testnet rule. Nothing to install.</span></a>
       <div class="d play"><span class="k">Play</span><b>Games on the live chain</b><span>Every move is a real testnet transaction from a wallet your browser makes. No sign-up.</span><span class="gm"><a href="rabbit/">White Rabbit Key</a><a href="nomemo/">No Memo</a></span></div>
     </div>
-    <p class="door-foot"><button type="button" class="lnk" id="doorFull">Full dashboard</button><span>Unofficial community project, not affiliated with IDNI. Test AGRS have no value.</span></p>
+    <p class="door-foot"><button type="button" class="lnk" id="doorFull">Full dashboard</button><span>Unofficial community project, not affiliated with IDNI. The testnet is at its engineering stage: test AGRS have no value, and nothing is slashed.</span></p>
   </section>
   <script>(() => { try { const q = new URLSearchParams(location.search); if (q.get("calm") === "1" || (q.get("full") !== "1" && !location.hash && !localStorage.getItem("tau-seen"))) document.body.classList.add("calm"); } catch (e) {} })();</script>
   <section class="thesis" aria-label="Why Tau is different">
@@ -2715,7 +2715,7 @@ const KV_TIP = {
   "Validators": "How many validators are active and which one is proposing the next block.",
   "Approval threshold": "How many votes a rule change needs, as the node reports it from its governance state (derived from the validator count and the quorum policy).",
   "Next height": "The height of the next block the node expects to seal.",
-  "Consensus mode": "Who may seal the next block. Fixed validator list (PoA): the host keeps the list and Tau checks it. Validator list in Tau logic, or stake-based: the Tau rules (stream o7) are the binding authority. The mode is itself chain state and switches only by an agreed rule change (eligibility_mode in a host contract patch).",
+  "Consensus mode": "Who may seal the next block. Fixed validator list (PoA): the host keeps the list and Tau checks it. Validator list in Tau logic, or stake-based: the Tau rules (stream o7) are the binding authority. The mode is itself chain state and switches only by an agreed rule change (eligibility_mode in a host contract patch). IDNI said in its Q&A of November 2026 that the chain will most likely move from proof of authority to proof of stake, decided by its users, during the testnet or at mainnet; the day it happens, this panel shows it at the block where it takes effect.",
   "Mode switches": "How often the consensus mode changed by agreement: switches recorded in activated rule changes, plus any this page saw happen.",
   "Eligibility": "How the node decides who may seal the next block, as reported by the node.",
 };

@@ -268,7 +268,7 @@ footer p { margin: 0; }
       ${p.image ? `<figure class="hero">${img(p.image, pick(p.image_alt) || pick(p.title), "hero")}</figure>` : ""}
       ${why ? `<div class="why"><h3>${esc(T("Why it matters"))}</h3><ul>${why}</ul></div>` : ""}
       ${bodyWith(p, mark)}
-      <p class="src">${esc(T("Every number comes from our public logbooks:"))} ${src}</p>
+      <p class="src">${esc(T(p.kind === "cruise" ? "Every number comes from our public logbooks:" : "Sources:"))} ${src}</p>
 `;
     const sh = $("share");
     if (p.status !== "draft") {

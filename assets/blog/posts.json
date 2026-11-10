@@ -1,6 +1,84 @@
 {
  "posts": [
   {
+   "id": "2026-11-10-idni-qa-november",
+   "on": "2026-11-10",
+   "kind": "learnings",
+   "title": {
+    "en": "IDNI answered our questions in its November Q&A",
+    "zh": "IDNI 在 11 月问答里回答了我们的问题",
+    "ja": "IDNI が 11 月の Q&A で私たちの質問に答えました"
+   },
+   "dek": {
+    "en": "Node rewards, validator seats, the help the testnet needs most and how personal rules will scale: the answers in short, and what we change on tauhud.com because of them.",
+    "zh": "节点奖励、验证者席位、测试网最需要的帮助，以及个人规则将如何扩展：答案简述，以及我们因此在 tauhud.com 上做的改动。",
+    "ja": "ノードの報酬、バリデーターの席、テストネットにいちばん必要な手助け、パーソナルルールの拡張：答えを短くまとめ、それを受けて tauhud.com で変えることを紹介します。"
+   },
+   "why": [
+    {
+     "en": "For node runners: the official answers. No rewards are planned yet, validator seats stay limited for now, and a sync or peering failure reported with its log is the help IDNI asks for.",
+     "zh": "对节点运营者：这是官方答案。目前没有计划奖励，验证者席位暂时有限，而附上日志报告同步或对等连接失败，正是 IDNI 请求的帮助。",
+     "ja": "ノードを動かす人へ：公式の答えです。報酬はまだ予定されておらず、バリデーターの席は当面限られ、同期やピア接続の失敗をログ付きで報告することが IDNI の求める手助けです。"
+    },
+    {
+     "en": "For IDNI: we take the advice. Our node's weekly report now lists its sync and peering failures with log lines, ready to file as one issue.",
+     "zh": "对 IDNI：我们采纳这个建议。我们节点的每周报告现在会列出它的同步和对等连接失败，并附上日志行，可以直接作为一个 issue 提交。",
+     "ja": "IDNI へ：助言を取り入れます。私たちのノードの週報は、同期とピア接続の失敗をログの行とともに載せるようになり、そのまま 1 つの issue として出せます。"
+    },
+    {
+     "en": "For everyone: the two levels of rules, rules for everyone and rules for one wallet, as IDNI explained them, are now on the Learn page and in No Memo.",
+     "zh": "对所有人：IDNI 讲解的两层规则，即面向所有人的规则和只管一个钱包的规则，现在出现在学习页面和 No Memo 里。",
+     "ja": "みんなへ：IDNI が説明したルールの 2 つの層、全員のルールとひとつのウォレットのルールが、Learn ページと No Memo に入りました。"
+    }
+   ],
+   "intro": {
+    "en": "On 10 November 2026 IDNI, the team behind Tau, published its monthly Q&A video. Five of the questions came from us, Tau HUD, a community project not affiliated with IDNI. Here are the answers in short, with the minute in the video, and what we do with them.",
+    "zh": "2026 年 11 月 10 日，Tau 背后的团队 IDNI 发布了每月问答视频。其中五个问题来自我们 Tau HUD，一个与 IDNI 无关的社区项目。下面是答案的简述、它在视频里的分钟数，以及我们怎么用它们。",
+    "ja": "2026 年 11 月 10 日、Tau を作るチーム IDNI が毎月の Q&A 動画を公開しました。そのうち 5 つの質問は、IDNI とは無関係のコミュニティプロジェクト Tau HUD の私たちからでした。答えを短く、動画の何分目かとともにまとめ、それをどう活かすかを書きます。"
+   },
+   "body": {
+    "en": "## Our five questions\n- **Rewards for running a node?** None are planned yet. IDNI is focused on the alpha release and would like to hear ideas from the community. (12:00)\n- **Can community members run validators before mainnet?** Not now: the seats stay limited on purpose while the testnet is at its engineering stage. Anyone can run a node and connect, and the chain may move to proof of stake later. (12:39)\n- **What still has to happen, and where does community help save the most time?** Personal rules that scale, and peer sync and reconnection that hold up. The most useful help: run a node, open GitHub issues for sync and peering failures with their logs, and write real Tau rules, submit them and report what fails. (13:37)\n- **Will personal rules scale?** That is the main effort now. Tau Language is already about 1.5 times faster, and the plan is to scope each user's rule to its own inputs and outputs, so that one big formula becomes many small ones. (15:03)\n- **A consensus switch on the live testnet?** The chain runs on proof of authority now and will most likely move to proof of stake, decided by its users. Whether on the testnet or at the start of mainnet is still open. (16:22)\n\n## Also in the video\n- **Two levels of rules.** Rules for everyone, such as the validator set, change only with a supermajority of the validators and after a delay. Rules on your own wallet, such as a transfer limit, need no vote. (5:20)\n- **The testnet's stage.** It is for engineering: no economic finality, no slashing, no token value. Making Tau rules run correctly and fast enough is the main bottleneck. (4:35)\n- **Why Python.** The Tau engine is C++ in separate worker processes; Python only runs networking, storage and the interface. (6:21)\n- **The web wallet** lives at app.tau.net, password-gated for early access for now. The Tau engine is meant to check every draft the wallet's assistant writes. (3:35, 8:02)\n- **Tau Language's release** still needs the anti-prenexing algorithm, two features called functions and tables, and speed work. (1:38)\n\n## What we change on tauhud.com\n- [Run a node](/nodes/): the official answers on rewards and validator seats, and how to report a failure.\n- [Learn Tau Language](/learn/): five new questions under People ask, each with the minute in IDNI's video.\n- [No Memo](/nomemo/): the case file asks how many validators a change for everyone needs, and how many your own rule needs (none). what levels explains why.\n- The start page now says that the testnet is at its engineering stage, in IDNI's words.\n- The Validators panel says what IDNI expects for the consensus switch, and shows the switch at its block when it comes.\n- Our weekly report to IDNI now carries our node's sync and peering failures, with log lines, as asked.\n\n## Thank you\nIn the community highlights at the end of the video, IDNI showed Tau HUD and Agorzilla. Thank you. (17:36)",
+    "zh": "## 我们的五个问题\n- **运行节点有奖励吗？** 目前还没有计划。IDNI 正专注于 alpha 发布，也希望听到社区的想法。(12:00)\n- **社区成员能在主网之前运行验证者吗？** 现在不能：测试网处于工程阶段，席位有意保持有限。任何人都可以运行节点并连接，这条链以后可能转向权益证明。(12:39)\n- **还有什么要完成，社区在哪里帮忙最省时间？** 能够扩展的个人规则，以及稳健的对等同步与重连。最有用的帮助：运行节点，为同步和对等连接失败开 GitHub issue 并附上日志，编写真正的 Tau 规则、提交它们并报告哪里失败。(13:37)\n- **个人规则能扩展吗？** 这是眼下的主要工作。Tau 语言已经快了大约 1.5 倍；计划是把每个用户的规则限制在它自己的输入和输出上，让一个大公式变成许多小公式。(15:03)\n- **在线测试网上会切换共识吗？** 这条链现在运行权威证明，很可能会转向权益证明，由用户决定。是在测试网期间还是在主网开始时，还没有定。(16:22)\n\n## 视频里还有\n- **两层规则。** 面向所有人的规则，比如验证者集合，只有在验证者绝对多数同意并经过一段延迟后才会改变。你自己钱包上的规则，比如转账上限，不需要投票。(5:20)\n- **测试网的阶段。** 它用于工程开发：没有经济上的最终性，没有罚没，代币没有价值。让 Tau 规则正确且足够快地运行，是主要瓶颈。(4:35)\n- **为什么是 Python。** Tau 引擎是 C++，在独立的工作进程里运行；Python 只负责网络、存储和接口。(6:21)\n- **网页钱包**位于 app.tau.net，目前用密码限制为早期访问。Tau 引擎将检查钱包助手写出的每一份草稿。(3:35, 8:02)\n- **Tau 语言的发布**还需要 anti-prenexing 算法、名为函数和表的两项功能，以及提速工作。(1:38)\n\n## 我们在 tauhud.com 上的改动\n- [运行节点](/nodes/)：关于奖励和验证者席位的官方答案，以及如何报告失败。\n- [学习 Tau 语言](/learn/)：“大家在问”里新增五个问题，每个都标出 IDNI 视频中的分钟数。\n- [No Memo](/nomemo/)：案件档案会问，一项全体更改需要多少个验证者，你自己的规则又需要多少个（一个都不需要）。what levels 会解释原因。\n- 首页现在用 IDNI 的话说明测试网正处于工程阶段。\n- 验证者面板说明 IDNI 对共识切换的预期，并在切换到来时，在它生效的区块显示出来。\n- 我们给 IDNI 的每周报告现在会按要求附上我们节点的同步与对等连接失败及日志行。\n\n## 谢谢\n在视频结尾的社区亮点里，IDNI 展示了 Tau HUD 和 Agorzilla。谢谢。(17:36)",
+    "ja": "## 私たちの 5 つの質問\n- **ノードを動かすと報酬はある？** まだ予定されていません。IDNI は alpha のリリースに集中していて、コミュニティのアイデアを聞きたいとのことです。(12:00)\n- **メインネットの前にコミュニティがバリデーターになれる？** 今はなれません：テストネットがエンジニアリング段階のあいだ、席は意図的に限られます。誰でもノードを動かして接続でき、チェーンは後でプルーフ・オブ・ステークに移るかもしれません。(12:39)\n- **まだ何が必要で、コミュニティはどこでいちばん時間を節約できる？** 拡張できるパーソナルルールと、崩れないピアの同期と再接続。いちばん役立つのは：ノードを動かし、同期やピア接続の失敗をログ付きで GitHub の issue にし、本物の Tau ルールを書いて提出し、失敗したところを報告することです。(13:37)\n- **パーソナルルールは拡張できる？** それがいまの主な仕事です。Tau 言語はすでに約 1.5 倍速くなり、各ユーザーのルールをそのユーザー自身の入力と出力に限ることで、1 つの大きな式をたくさんの小さな式に分ける計画です。(15:03)\n- **稼働中のテストネットでコンセンサスを切り替える？** チェーンはいまプルーフ・オブ・オーソリティで動いており、おそらくプルーフ・オブ・ステークへ移ります。決めるのはユーザーです。テストネットの間かメインネットの始まりかはまだ決まっていません。(16:22)\n\n## 動画ではほかにも\n- **ルールの 2 つの層。** バリデーターの集合のような全員のルールは、バリデーターの特別多数と一定の遅延を経てはじめて変わります。送金の上限のような自分のウォレットのルールに投票は要りません。(5:20)\n- **テストネットの段階。** エンジニアリングのためのもので、経済的なファイナリティも、スラッシングも、トークンの価値もありません。Tau ルールを正しく十分速く動かすことが主なボトルネックです。(4:35)\n- **なぜ Python か。** Tau エンジンは C++ で別のワーカープロセスとして動き、Python はネットワーク、保存、インターフェースだけを担います。(6:21)\n- **ウェブウォレット**は app.tau.net にあり、今はパスワードで早期アクセスに限られています。ウォレットのアシスタントが書く下書きは、すべて Tau エンジンが確かめる予定です。(3:35, 8:02)\n- **Tau 言語のリリース**には、anti-prenexing アルゴリズム、関数と表という 2 つの機能、そして高速化がまだ必要です。(1:38)\n\n## tauhud.com で変えること\n- [ノードを動かす](/nodes/)：報酬とバリデーターの席についての公式の答えと、失敗の報告のしかた。\n- [Tau 言語を学ぶ](/learn/)：People ask に新しい質問を 5 つ。どれも IDNI の動画の何分目かつき。\n- [No Memo](/nomemo/)：ケースファイルが、全員の変更に何人のバリデーターが要るか、自分のルールには何人要るか（ゼロ）を問います。what levels が理由を説明します。\n- スタートページは、IDNI の言葉どおり、テストネットがエンジニアリング段階にあると伝えるようになりました。\n- Validators パネルは、コンセンサスの切り替えについて IDNI が見込んでいることを伝え、切り替えが来たらそのブロックで示します。\n- IDNI への週報に、頼まれたとおり、私たちのノードの同期とピア接続の失敗をログの行とともに載せます。\n\n## ありがとう\n動画の最後のコミュニティハイライトで、IDNI は Tau HUD と Agorzilla を紹介してくれました。ありがとうございます。(17:36)"
+   },
+   "sources": [
+    "https://www.youtube.com/watch?v=_4DnQImw4tQ"
+   ],
+   "card": [
+    "IDNI answered our questions",
+    "November Q&A: nodes, seats, rules that scale",
+    "## Why it matters",
+    "- No node rewards planned yet",
+    "- Validator seats limited for now",
+    "- Sync failures with logs help most",
+    "Tau HUD blog · community project, not affiliated with IDNI"
+   ],
+   "image": "https://node.tauhud.com/blog/img/2026-11-10-idni-qa-november-hero.jpg",
+   "image_alt": {
+    "en": "White Rabbit Key, painted as in the game, with the article's card",
+    "zh": "与游戏中一样绘制的白兔礁，配上文章的卡片",
+    "ja": "ゲームと同じ絵のホワイトラビット・キーと、記事のカード"
+   },
+   "stats": [
+    [
+     "5",
+     "of our questions answered"
+    ],
+    [
+     "1.5×",
+     "faster Tau Language, says IDNI"
+    ],
+    [
+     "0",
+     "node rewards planned yet"
+    ],
+    [
+     "2",
+     "levels of rules"
+    ]
+   ]
+  },
+  {
    "id": "2026-11-04-dryrun-learnings",
    "on": "2026-11-06",
    "kind": "cruise",

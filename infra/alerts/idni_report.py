@@ -36,6 +36,7 @@ import urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import blog  # noqa: E402  (relay access, the logbook's facts, local time, json files)
+import node_logs  # noqa: E402  (our node's own log: sync and peering failures, kept by the nodelog service)
 
 log = logging.getLogger("idni-report")
 
@@ -111,6 +112,7 @@ def gather(t0: float, t1: float) -> dict:
     except Exception:  # noqa: BLE001 - the server's list is enough
         pass
     raw["posts"] = posts
+    raw["node_log"] = node_logs.from_state(t0, t1)
     return raw
 
 
@@ -188,6 +190,7 @@ def facts(raw: dict, t0: float, t1: float) -> dict:
         f["node"] = {"pin": (t.get("pin") or "")[:7], "head": (t.get("head") or "")[:7], "ahead": t.get("ahead"),
                      "patches": len(pa.get("results") or []) or None,
                      "patches ok": pa.get("ok") if pa else None, "patches on": (pa.get("sha") or "")[:7]}
+    f["log"] = raw.get("node_log")
     f["posts"] = []
     seen = set()
     for a in raw.get("posts") or []:
@@ -280,6 +283,7 @@ def body(f: dict, short: int = 0) -> str:
         ours.append(f"- Over the week our node answered {f['node answering'] * 100:.1f}% and was in sync {f['in sync'] * 100:.1f}% of {n(f['checks'])} checks (one a minute).")
     L += ours or ["- Nothing to report on our side this week."]
     L.append("")
+    L += node_logs.section(f.get("log"), short)   # IDNI asked for sync and peering failures with their logs (Q&A, Nov 2026)
 
     if vs:
         L.append("### Test traffic from our cruise ships")
@@ -385,6 +389,9 @@ def summary(f: dict) -> list[str]:
         out.append(f"{len(vs)} ship visits: {n(sum(v['accepted'] for v in vs))} accepted, {sum(v['refused'] for v in vs)} refused, {sum(v['timeouts'] for v in vs)} timeouts on our side")
     if f.get("in sync") is not None:
         out.append(f"our node in sync {f['in sync'] * 100:.1f}% of the week")
+    if f.get("log") is not None:
+        lg = f["log"]
+        out.append(f"node log: {lg['lines']} sync or peering warnings in {len(lg['groups'])} kinds" if lg["lines"] else "node log: no sync or peering warning")
     return out
 
 

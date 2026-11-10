@@ -178,4 +178,15 @@ TauI18n.add({ strings: {
   "Once synced it is light: measured on our node (2 CPU, 3.8 GB RAM, November 2026) the node uses about 850 MB of memory and almost no CPU, its relay about 70 MB more.": "同期が済めば軽量です。私たちのノードでの実測（2 CPU、3.8 GB RAM、2026 年 11 月）では、ノードはメモリ約 850 MB で CPU はほぼ使わず、リレーがさらに約 70 MB です。",
   "Only want to learn Tau Language? You need no node for that.": "Tau Language を学びたいだけ？それならノードは要りません。",
   "Start with the REPL ›": "REPL から始める ›",
+  "Not now. tau-testnet-v2 starts with one validator, listed in the genesis. A new seat needs a rule change that an existing validator proposes and that reaches the agreement threshold. IDNI said in its": "今はなれません。tau-testnet-v2 はジェネシスに記された 1 人のバリデーターで始まります。新しい席には、既存のバリデーターが提案し、合意の閾値に届くルール変更が必要です。IDNI は",
+  "Q&A of November 2026 ↗": "2026 年 11 月の Q&A ↗",
+  "that seats stay limited on purpose while the testnet is at its engineering stage, that anyone can run a node, and that the chain may move to proof of stake later. The kit can carry a validator key for that day (": "で、テストネットがエンジニアリング段階のあいだは席を意図的に限ること、誰でもノードを動かせること、チェーンが後でプルーフ・オブ・ステークに移るかもしれないことを話しました。キットはその日のためにバリデーター鍵を持てます（",
+  ").": "）。",
+  "Is there a reward for running one?": "ノードを動かすと報酬はありますか？",
+  "No. In the same": "ありません。同じ",
+  "Q&A ↗": "Q&A ↗",
+  "IDNI said no incentives are planned yet and that it would like to hear ideas. What helps the testnet most, in IDNI’s words: run a node, and open an issue on": "で IDNI は、インセンティブはまだ予定しておらず、アイデアを聞きたいと話しました。IDNI の言葉で、テストネットにいちばん役立つのは：ノードを動かし、同期やピア探しに失敗したらログを添えて",
+  "tau-testnet ↗": "tau-testnet ↗",
+  "when it fails to sync or to find peers, with its log (": "に issue を開くことです（ログ：",
+  "IDNI’s words": "IDNI の言葉"
 } });
