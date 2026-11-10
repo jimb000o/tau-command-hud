@@ -176,8 +176,13 @@ button.b { background: none; cursor: pointer; }
 .door .skip { background: none; border: 0; color: var(--dim); font: 12px var(--mono); padding: 4px 0; min-height: 0; display: block; cursor: pointer; text-align: left; }
 .door .skip:hover { color: #fff; }
 .try.doored .ops, .try.doored textarea, .try.doored .inrow, .try.doored .act, .try.doored .out, .try.doored .eng, .try.doored .crib { display: none !important; }
-.lvl { margin-left: auto; font: 500 10.5px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; min-height: 24px; cursor: pointer; }
-.lvl:hover { color: #fff; border-color: var(--hair); }
+.lvl { margin-left: auto; font: 500 10.5px var(--mono); letter-spacing: 0; text-transform: none; color: var(--text); background: none; border: 1px solid var(--hair); border-radius: 6px; padding: 0 8px; min-height: 26px; cursor: pointer; white-space: nowrap; }
+.lvl b { color: var(--ok); font-weight: 600; margin-left: 4px; }
+.lvl:hover { color: #fff; border-color: var(--ok); }
+.door button[aria-current="true"] { border-color: var(--ok); background: rgba(57,255,138,.06); }
+.door button[aria-current="true"] div::after { content: attr(data-now); display: block; color: var(--ok); font: 600 10.5px var(--display); letter-spacing: .12em; text-transform: uppercase; margin-top: 3px; }
+.door .keep { color: var(--ok); }
+@media (max-width: 700px) { .lvl { min-height: 44px; padding: 0 10px; font-size: 11.5px; } .door .skip { min-height: 44px; } }
 .panel.try h2 { display: flex; align-items: center; gap: 8px; }
 .crib { margin-top: 8px; border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; }
 .crib summary { cursor: pointer; color: var(--dim); font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 7px 0; list-style: none; }
@@ -304,6 +309,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
           <button type="button" data-level="code"><i>2</i><div>I write code<span>Lessons plus a cheat sheet: = not ==, &amp;&amp; and ||</span></div></button>
           <button type="button" data-level="pro"><i>3</i><div>I know logic or Tau already<span>Straight to the box, the real testnet rule and the Playground</span></div></button>
           <button type="button" class="skip" data-level="">Just show me the box</button>
+          <button type="button" class="skip keep" id="keepLvl" hidden></button>
         </div>
         <div class="ops" role="group" aria-label="Question">
           <button type="button" translate="no" data-op="sat" aria-pressed="true" title="Can this be true?">sat</button>
@@ -462,7 +468,8 @@ function applyLevel(l, how) {
   const st = store.get(); st.level = level; if (how) st.levelBy = how; store.set(st);
   document.querySelector(".try").classList.remove("doored");
   $("door").hidden = true;
-  $("lvl").hidden = false; $("lvl").textContent = T("Level") + ": " + (level ? T(LEVELS[level]) : T("not set"));
+  $("lvl").hidden = false; $("lvl").innerHTML = esc(T("Level") + ": " + (level ? T(LEVELS[level]) : T("not set"))) + "<b>" + esc(T("change")) + "</b>";
+  $("lvl").title = T("Change your level at any time");
   $("crib").hidden = level !== "code" && level !== "pro"; $("crib").open = level === "code" && innerHeight > 820;   // on a short screen it starts folded, so the answer box keeps its room
   document.querySelectorAll(".pro-only").forEach(b => { b.hidden = level !== "pro"; });
   $("proNote").hidden = level !== "pro";
@@ -470,17 +477,29 @@ function applyLevel(l, how) {
   pickLessons();
   if (lessons.length) openLesson(cur);
 }
+/* the door again, any time: the level now is marked, and one tap keeps it */
 function openDoor() {
+  const chosen = store.get().level !== undefined;
   document.body.classList.remove("lv-new");
   document.querySelector(".try").classList.add("doored");
   $("door").hidden = false; $("lvl").hidden = true;
+  $("door").querySelector("p").textContent = chosen ? T("Change your level. Your progress stays.") : T("Pick your start. One tap, and Tau answers your first question.");
+  document.querySelectorAll("#door button[data-level]").forEach(b => {
+    const now = chosen && b.dataset.level === level && !b.classList.contains("skip");
+    b.setAttribute("aria-current", String(now));
+    if (now) b.querySelector("div").dataset.now = T("Your level now");
+  });
+  $("keepLvl").hidden = !chosen;
+  $("keepLvl").textContent = "‹ " + T("Keep my level") + (level ? " (" + T(LEVELS[level]) + ")" : "");
+  if (chosen) $("door").scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
+$("keepLvl").addEventListener("click", () => { applyLevel(level); });
 /* one tap: the level, and a first question Tau answers at once */
 let full = false;   // true for this visit only: a shared #q= link shows the box even to a beginner
 const FIRST = { new: { op: "sat", spec: "x = 0", says: "That was your first Tau question: can x be 0? Yes. Lesson 1 on the right goes on from here.", lesson: 0 },
   code: { op: "sat", spec: "x = 0 || x = 1", says: "|| is or, && is and, = is equals: the cheat sheet under the box has the rest. Lesson 1 starts on the right.", lesson: 0 },
   pro: { op: "sat", spec: "sometimes o1[t] = i1[t]", says: "Streams and time work as you expect; sat quantifies inputs for all, outputs exists, step by step. Lesson 5 is the real testnet rule.", lesson: 4 } };
-document.querySelectorAll("#door button").forEach(b => b.addEventListener("click", () => {
+document.querySelectorAll("#door button[data-level]").forEach(b => b.addEventListener("click", () => {
   const l = b.dataset.level;
   if (l === "new") { const st = store.get(); delete st.view; store.set(st); full = false; }
   applyLevel(l, "door");
@@ -490,6 +509,7 @@ document.querySelectorAll("#door button").forEach(b => b.addEventListener("click
   else $("spec").focus();
 }));
 $("lvl").addEventListener("click", openDoor);
+$("lvl2").addEventListener("click", openDoor);
 
 /* what people type tells their level too: == or words mean code or sentences, REPL commands mean Tau */
 function infer(spec) {
@@ -753,7 +773,7 @@ function setView() {
   if (!LEAD.lead) { LEAD.lead = lead.innerHTML; LEAD.sub = sub.innerHTML; }
   if (g) { lead.textContent = T("Learn Tau Language, one small step at a time."); sub.textContent = T("No maths needed. Each step shows one idea, you tap an answer, and a real Tau engine on our server checks it."); }
   else { lead.innerHTML = LEAD.lead; sub.innerHTML = LEAD.sub; }
-  $("lvl2").textContent = $("lvl").textContent;
+  $("lvl2").innerHTML = $("lvl").innerHTML; $("lvl2").title = $("lvl").title;
   if (g && guide.length) guideTo(gAt);
 }
 function gState() { const st = store.get(); st.gOk = st.gOk || {}; return st; }
