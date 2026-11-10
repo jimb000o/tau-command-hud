@@ -39,7 +39,9 @@ KEEP_IPS = {"34.251.82.246", "2.31.101.42"}   # IDNI's bootnode (public in the R
 LINE = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})(?:,\d+)? (WARNING|ERROR|CRITICAL) \[([\w.]+)\] (.*)$")
 STAMP = re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}")
 WATCH = re.compile(r"^(network|sync|p2p|libp2p|gossip|dht|peer)|\.(host|sync|discovery|gossip|dht_manager|bootstrap)$", re.I)
-WORDS = re.compile(r"sync|peer|dial|handshake|connect|bootstrap|gossip|header|block bodies|ingest|genesis", re.I)
+# "connect" alone is not enough: the node's WebSocket server logs browsers and our relay hanging up as "WS connection
+# task crashed" (tau.server); those are clients, not peers, and stay out (first week's report, 10.11.2026)
+WORDS = re.compile(r"sync|peer|dial|handshake|reconnect|bootstrap|gossip|header|block bodies|ingest|genesis", re.I)
 IP = re.compile(r"\b(\d{1,3}(?:\.\d{1,3}){3})\b")
 PEER = re.compile(r"\b(12D3Koo[1-9A-HJ-NP-Za-km-z]{30,}|Qm[1-9A-HJ-NP-Za-km-z]{40,})\b")
 HEX = re.compile(r"\b[0-9a-f]{16,}\b", re.I)
