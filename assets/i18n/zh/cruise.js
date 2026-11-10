@@ -147,4 +147,8 @@ TauI18n.add({ strings: {
   "allows no fee at all for a payment": "付款时不允许任何手续费",
   "sends a payment whose block height deadline has passed": "发送区块高度期限已过的付款",
   "pays more than a transfer can carry": "支付超过一笔转账所能承载的金额",
+  "sends two different payments for the same sequence number at once": "同时为同一个序号发送两笔不同的付款",
+  "pays several places in one payment, the last more than the wallet holds": "在一笔付款里支付给多个地方，最后一笔超过钱包余额",
+  "packs more transfers into one payment than it may carry (over 64)": "在一笔付款里塞进超过上限的转账（超过 64 笔）",
+  "sends a payment carrying a field only the chain’s own transactions may set": "发送一笔只有链自身交易才能设置的字段的付款",
 } });

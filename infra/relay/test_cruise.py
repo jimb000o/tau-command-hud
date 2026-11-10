@@ -329,7 +329,9 @@ TUE = next(t for t, k in cruise.calls_near(WED + 7 * 86400) if k == "pirates")
 check(cruise.berlin_day(TUE).weekday() == 1 and (TUE - cruise.berlin_t(cruise.berlin_day(TUE), 0)) == 18 * 3600, "the pirates call on Tuesday at 18:00")
 PP = cruise.plan("pirates", TUE, set(), {"trick"})
 tr = [a for a in PP if a["kind"] == "trick"]
-check(len(tr) == len(cruise.TRICKS) * cruise.TRICK_START and {a["trick"] for a in tr} == set(cruise.TRICKS), f"each of the {len(cruise.TRICKS)} tricks {cruise.TRICK_START} times a visit at first")
+counts = [sum(x["trick"] == k for x in tr) for k in cruise.TRICKS]
+check({a["trick"] for a in tr} == set(cruise.TRICKS) and 1 <= min(counts) and max(counts) <= cruise.TRICK_START and max(counts) - min(counts) <= 1,
+      f"every one of the {len(cruise.TRICKS)} tricks is tried, the keenest up to {cruise.TRICK_START} times, as many as fit between landing and leaving")
 check(all(b["t"] - a["t"] >= cruise.TRICK_GAP for a, b in zip(tr, tr[1:])), f"at most one trick every {cruise.TRICK_GAP} s")
 check(min(a["t"] for a in tr) >= TUE + (cruise.landing("pirates") + 1) * 60, "the first trick only after every pirate has paid the pier")
 check(cruise.where(PP, TUE + 40 * 60, TUE + 80 * 60, "pirates") == {}, "the pirates stay aboard: no group stands on the island")
@@ -359,6 +361,10 @@ async def chain(cmd: str):
     if not G2Basic.Verify(bytes.fromhex(pk), hashlib.sha256(cruise.signing_bytes(tx)).digest(), bytes.fromhex(tx["signature"])):
         return err("INVALID_SIGNATURE")
     ops = tx.get("operations", {}).get("1", []) if tx["tx_type"] == "user_tx" else []
+    if tx["tx_type"] == "user_tx" and "rule_revisions" in tx:
+        return err("TX_REJECTED")
+    if len(ops) > 64:
+        return err("TX_INVALID")
     if any(x[0] != pk for x in ops):
         return err("TX_INVALID")
     if any(int(x[2]) > (1 << 24) - 1 for x in ops):
@@ -366,7 +372,7 @@ async def chain(cmd: str):
     if tx["tx_type"] == "user_tx" and int(tx["fee_limit"]) < 1:
         return err("FEE_LIMIT_TOO_LOW")
     amount = sum(int(x[2]) for x in ops) if tx["tx_type"] == "user_tx" else int(tx.get("amount") or 0)
-    if amount > 100000 and not CH["hole"]:
+    if amount > 100000 and not (CH["hole"] and len(ops) <= 1):   # the modelled hole only lets a single-transfer overspend slip
         return err("INSUFFICIENT_FUNDS")
     CH["seq"][pk] = CH["seq"].get(pk, 0) + 1
     CH["sent"].append(tx)
@@ -387,8 +393,8 @@ tricks = [e for e in P.logbook if e.get("kind") == "trick" and e.get("ok") is no
 check(s1["ship"] == "pirates" and not P.visits[-1]["note"], "the pirate ship stays the whole visit: refused tricks never send it away")
 check(len(tricks) >= 28 and all(e["ok"] is False and e["right"] for e in tricks),
       f"every trick is refused by the chain, each with the answer it should get ({len(tricks)} tricks)")
-check({e["code"] for e in tricks} == {"INSUFFICIENT_FUNDS", "INVALID_SEQUENCE", "TX_EXPIRED", "INVALID_SIGNATURE", "TX_INVALID", "FEE_LIMIT_TOO_LOW"}
-      and {e["trick"] for e in tricks} == set(cruise.TRICKS), "eight tricks, every one refused, six different answers")
+check({e["code"] for e in tricks} == {"INSUFFICIENT_FUNDS", "INVALID_SEQUENCE", "TX_EXPIRED", "INVALID_SIGNATURE", "TX_INVALID", "FEE_LIMIT_TOO_LOW", "TX_REJECTED"}
+      and {e["trick"] for e in tricks} == set(cruise.TRICKS), f"{len(cruise.TRICKS)} tricks, every one refused, seven different answers")
 check(all(x is True for x in LOADS) and sum(s1["refused"].values()) == 0, "tricks are no refusals: not for the brakes, not on the load page")
 check(all(c["right"] == c["tried"] > 0 for c in s1["tricks"].values()), "the summary counts each trick: tried, stopped, stopped for the right reason")
 check(s1["per_min"] == cruise.RATE and [c for c in s1["changed"] if c["what"] != "stops planned a minute"] == [],

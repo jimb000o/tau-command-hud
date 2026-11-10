@@ -134,6 +134,8 @@ RATE_MIN = 6               # the slowest a ship tunes itself down to, transactio
 TUNE_UNANSWERED = 3        # sends our node left unanswered in one visit that make the next visit one a minute slower
 TRICK_GAP = 120            # seconds between two pirate tricks, at least
 TRICK_START, TRICK_MIN, TRICK_CALM = 4, 2, 3   # each trick a visit at first; at least; visits stopped rightly before fewer
+MAX_TRANSFERS = 64         # tau-testnet MAX_TRANSFERS_PER_TX: the transfers one payment may carry; a payment over it is refused whole
+POISON_TRANSFERS = 10      # the "poison" trick's transfers: the first ones the wallet can pay, the last it cannot, so the node applies none
 # the pirates' tricks: what the pirate does, and the node's answers that mean the chain said no for the right reason
 # (tau-testnet commands/sendtx.py; an overspend may also be refused by the transfer rule itself, TX_REJECTED)
 TRICKS = {
@@ -145,6 +147,10 @@ TRICKS = {
     "freeride": (("FEE_LIMIT_TOO_LOW",), "allows no fee at all for a payment"),
     "stale": (("TX_EXPIRED",), "sends a payment whose block height deadline has passed"),
     "giant": (("TX_INVALID", "INVALID_PARAMS"), "pays more than a transfer can carry (2^24 test AGRS)"),
+    "double": (("INVALID_SEQUENCE",), "sends two different payments for the same sequence number at once"),
+    "poison": (("INSUFFICIENT_FUNDS", "TX_INVALID", "TX_REJECTED"), "pays several places in one payment, the last more than the wallet holds"),
+    "cram": (("TX_INVALID", "TX_REJECTED"), "packs more transfers into one payment than it may carry (over 64)"),
+    "governance": (("TX_REJECTED",), "sends a payment carrying a field only the chain’s own transactions may set"),
 }
 CODES = sorted({c for codes, _ in TRICKS.values() for c in codes} | {"TX_INVALID", "INVALID_PARAMS", "TX_REJECTED"})
 # MS Dry Run, 4 November 2026: eight sendtx went unanswered within 20 s (two a day on other days), were counted as
@@ -337,8 +343,12 @@ def plan(ship: str, t0: int, trial: set | None = None, allowed: set | None = Non
                 acts.append({"t": t, "p": p, "kind": "pay", "to": place, "amount": S["stops"][place][0]})
             t += R.uniform(*S["dwell"]) * 60
     if "trick" in allowed:   # a pirate's tricks, once the landing is over (every pirate has paid the pier by then), spaced out
-        bag = [k for k in TRICKS for _ in range(max(0, int((tricks or {}).get(k, TRICK_START))))]
-        R.shuffle(bag)
+        want = {k: max(0, int((tricks or {}).get(k, TRICK_START))) for k in TRICKS}   # how many of each this visit tries
+        bag = []   # round by round, so when more are planned than fit between landing and leaving, every trick is tried before any is tried again
+        for r in range(max(want.values(), default=0)):
+            row = [k for k in TRICKS if want[k] > r]
+            R.shuffle(row)
+            bag += row
         t, last = t0 + (landing(ship) + 1) * 60, end - 5 * 60
         step_ = max(TRICK_GAP, (last - t) / max(1, len(bag)))
         for k in bag:
@@ -958,6 +968,15 @@ class Cruise:
             env["expiration_time"] = min(env["expiration_time"], act["rel"] - 1)
             env["expire_at_height"] = tip + 100
             tx = {"tx_type": "retract_transfer", **env, "fee_limit": "0", "retractable_id": rid}
+        elif k == "poison":   # several transfers in one payment, the last more than the wallet holds: the node must apply none of them
+            ops = [[pk, PLACES[act["to"]], str(fee)] for _ in range(act["n"] - 1)] + [[pk, PLACES[act["to"]], str(act["amount"])]]
+            tx = {"tx_type": "user_tx", **env, "fee_limit": str(fee * 5 * act["n"]), "operations": {"1": ops}}
+        elif k == "cram":   # more transfers in one payment than a payment may carry (over MAX_TRANSFERS)
+            ops = [[pk, PLACES[act["to"]], "1"] for _ in range(act["n"])]
+            tx = {"tx_type": "user_tx", **env, "fee_limit": str(fee * 5 * act["n"]), "operations": {"1": ops}}
+        elif k == "gov":   # a passenger's payment carrying a governance field only the chain's own transactions may set (not in the signed preimage)
+            tx = {"tx_type": "user_tx", **env, "fee_limit": str(fee * 5),
+                  "operations": {"1": [[pk, PLACES[act["to"]], str(act["amount"])]]}, act["field"]: act["value"]}
         else:
             raise ValueError(k)
         tx["signature"] = G2Basic.Sign(self.sk[signer or name], hashlib.sha256(signing_bytes(tx)).digest()).hex()
@@ -998,6 +1017,21 @@ class Cruise:
             _, name, tx = max(fresh, key=lambda x: x[0])
             entry.update(p=int(name.rsplit("-", 1)[1]), **{"from": tx["sender_pubkey"]})
             entry["amount"] = int(((tx.get("operations") or {}).get("1") or [[0, 0, 0]])[0][2])
+        elif trick == "double":   # a first valid payment takes the sequence number; the second at the same number must be refused
+            st = await ask(f"getsequence {pk}")
+            if not st or st.get("status") != "ok":
+                return skip("no answer from the node to getsequence")
+            d = st.get("data") or {}
+            seq, tip = int(d.get("sequence_number") or 0), int(d.get("tip_height") or 0)
+            entry.update(seq=seq, height=tip)
+            fee = base_fee(gov())
+            first = await asyncio.to_thread(self.build, ship, {**pay, "amount": act["amount"]}, seq, tip, fee)
+            r1 = await ask("sendtx " + json.dumps(first, separators=(",", ":")))
+            if not (r1 and r1.get("status") == "ok" and (r1.get("data") or {}).get("ok") is not False):
+                return skip("could not place the first payment, so the second has nothing to collide with")
+            self.spend()   # the first payment is a real transfer that takes the sequence number
+            pay["amount"] = entry["amount"] = act["amount"] + 1   # a different payment, sent for the same sequence number
+            tx = await asyncio.to_thread(self.build, ship, pay, seq, tip, fee)
         else:
             st = await ask(f"getsequence {pk}")
             if not st or st.get("status") != "ok":
@@ -1025,6 +1059,18 @@ class Cruise:
                 signer = f"{ship}-{(act['p'] + 1) % SHIPS[ship]['passengers']}"
             elif trick == "impostor":   # the transfer names another pirate's wallet as payer, signed by this pirate
                 pay["from"] = self.pk[f"{ship}-{(act['p'] + 1) % SHIPS[ship]['passengers']}"]
+            elif trick == "poison":   # nine transfers the wallet can pay, the last one it cannot: the whole payment must be refused
+                b = await ask(f"getbalance {pk}")
+                if not b or b.get("status") != "ok":
+                    return skip("no answer from the node to getbalance")
+                bal = int((b.get("data") or {}).get("balance") or 0)
+                pay["kind"], pay["n"], pay["amount"] = "poison", POISON_TRANSFERS, bal
+                entry["amount"], entry["balance"] = bal, bal
+            elif trick == "cram":   # one transfer more than a payment may carry
+                pay["kind"], pay["n"] = "cram", MAX_TRANSFERS + 1
+                entry["amount"] = pay["n"]
+            elif trick == "governance":   # a payment carrying a field only the chain's own transactions may set
+                pay["kind"], pay["field"], pay["value"] = "gov", "rule_revisions", []
             tx = await asyncio.to_thread(self.build, ship, pay, seq, tip, base_fee(gov()), None, signer)
         t_ask = time.monotonic()
         res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))
