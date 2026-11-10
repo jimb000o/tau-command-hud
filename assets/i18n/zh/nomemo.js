@@ -1060,5 +1060,12 @@ TauI18n.add({ strings: {
   "gear for rank": "按等级解锁的装备",
   "scan": "扫描",
   "blocks": "区块",
-  "dry": "试运行"
+  "dry": "试运行",
+  "reboot: dial the node again": "reboot：重新拨号连接节点",
+  "reboot: the terminal starts again and dials the node": "reboot：终端重新启动，并重新连接节点",
+  "reboot · wallet, standing and contracts stay in this browser": "重启 · 钱包、声望和合约都留在这个浏览器里",
+  "handshake · block #{n}": "握手 · 区块 #{n}",
+  "no handshake · the node is silent": "没有握手 · 节点没有回应",
+  "Not now: a payment is on its way. Reboot once it has landed.": "现在不行：有一笔付款正在途中。等它落定后再重启。",
+  "When it is back, reboot dials it again:": "节点恢复后，reboot 会重新拨号："
 } });

@@ -716,7 +716,7 @@
     const h = document.documentElement; h.classList.toggle("tr-on", !!c && frac >= 0.25); h.classList.toggle("tr-hot", !!c && frac < 0.25 && !(left != null && left < 0));
     const unread = S.mail.filter(m => !m.read && m.due <= (CHAIN.tip ?? 0)).length;
     const mb = $("mailBtn"); mb.textContent = unread ? F("post {n}", { n: unread }) : T("post"); mb.classList.toggle("has", unread > 0);
-    $("sndBtn").textContent = S.snd ? "♪" : "♪̸"; $("sndBtn").title = T(S.snd ? "sound on (click: off)" : "sound off (click: on)");
+    $("sndBtn").textContent = S.snd ? "♪" : "♪̸"; $("sndBtn").title = T(S.snd ? "sound on (click: off)" : "sound off (click: on)"); $("rebootBtn").title = T("reboot: the terminal starts again and dials the node");
   }
 
   /* ---------- the post: real mail. Each letter has a sender, a subject and a body; some bring a special order (a contract
@@ -927,7 +927,7 @@
     if (RUN.busy) { say("warn", T("Already under way.")); return; }
     if (c.id === "wayback" && RUN.ret) { say("sys", F("Your 50 test AGRS already wait in escrow ({h}). Type back, not run.", { h: short(RUN.ret.id) }), btn("back", "back")); return; }
     if (!B) { say("no", T("This browser cannot sign (no BLS library loaded).")); return; }
-    if (!SIM && CHAIN.ok === false) { say("no", T("The node is out of reach; nothing was sent. Try again in a minute, or switch to the simulation in the header.")); return; }
+    if (!SIM && CHAIN.ok === false) { say("no", T("The node is out of reach; nothing was sent. Try again in a minute, or switch to the simulation in the header."), btn("reboot", "reboot")); return; }
     RUN.busy = true; chips(); slot(F("contract {n}", { n: num(c) }));
     const k = myKey(true);
     try {
@@ -1367,7 +1367,7 @@
     });
   }
 
-  /* ---------- the boot screen: once per browser, or ?boot=1, or the command boot ---------- */
+  /* ---------- the boot screen: once per browser, or ?boot=1, or the command reboot ---------- */
   /* the door: a first visit gets what this is in four lines and two ways in, before anything else */
   const DOOR = [
     "A hacker game on Tau Testnet Alpha: a pirate crew hands you contracts, and each one is a real transaction on the live test chain.",
@@ -1383,8 +1383,9 @@
       over.classList.add("show", "door");
     });
   }
-  async function bootScreen() {
+  async function bootScreen(again) {
     const box = $("bootLines"), over = $("bootScreen"); if (!box || !over) return;
+    const pk0 = myPk(), dial = again ? ask("getsequence " + (pk0 || DROP), 8000) : null;   // reboot: the handshake is real, asked while the lines type
     box.replaceChildren(); over.classList.add("show");
     let skipped = false; const skip = () => { skipped = true; over.classList.remove("show"); };
     over.querySelector(".row").replaceChildren(el("button", { type: "button", class: "ghost", id: "bootSkip", text: T("skip"), onclick: skip }));
@@ -1392,8 +1393,13 @@
     const pk = myPk();
     const lines = [["BLACK SEQUENCE · crew terminal", ""], [T("no memo · from, to, amount, signed"), "dim"], [SIM ? T("practice node: this browser") : "node.tauhud.com · " + T("relay"), "dim"], [T("authorisation required"), ""],
       [pk ? F("access code: wallet {h} (made in this browser)", { h: short(pk) }) : T("access code: none yet, a wallet is made at the first contract"), "dim"], [T("granted. welcome aboard."), ""]];
-    for (const [t, cls] of lines) {
+    if (again) {
+      lines.unshift([T("reboot · wallet, standing and contracts stay in this browser"), "dim"]);
+      lines.splice(4, 0, [() => dial.then(st => st && st.status === "ok" ? F("handshake · block #{n}", { n: fmt(Number(st.data.tip_height) || 0) }) : T("no handshake · the node is silent")), ""]);
+    }
+    for (let [t, cls] of lines) {
       if (skipped) break;
+      if (typeof t === "function") t = await t();
       const p = el("p", { class: cls }); box.append(p);
       p.textContent = t;   // the whole line is in the page from the start (readers and checks see it); the reveal is a width
       if (S.fx && !REDUCED) { p.classList.add("typing"); for (let i = 1; i <= t.length; i++) { p.style.width = i + "ch"; if (i % 2 === 0) snd.key(); await sleep(14); if (skipped) break; } p.classList.remove("typing"); p.style.width = ""; }
@@ -1401,6 +1407,23 @@
     }
     if (!skipped) { await sleep(700); over.classList.remove("show"); }
     S.booted = true; save();
+  }
+  /* reboot: the boot screen again, then a fresh line to the node (a new socket, block, balance, board, mail) and the
+     start lines. Nothing of the player is touched: wallet, standing, open contract and trace stay as they are. */
+  let rebooting = false;
+  async function reboot() {
+    if (rebooting) return;
+    if (RUN.busy) { say("sys", T("Not now: a payment is on its way. Reboot once it has landed.")); return; }
+    rebooting = true;
+    try {
+      if (CHAIN.ws) { const ws = CHAIN.ws; CHAIN.ws = null; ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null; try { ws.close(); } catch (e) { } }
+      for (const w of CHAIN.wait.values()) while (w.length) w.shift()(null);
+      CHAIN.ok = null; { const st = $("state"), tx = $("stateText"); if (st) st.className = "state" + (SIM ? " sim" : ""); if (tx) tx.textContent = SIM ? T("Simulation") : T("Connecting"); }
+      clearScreen(); snd.wake();
+      await bootScreen(true);
+      await hello();
+      jobs(); instruments(); chips(); topbar(); watch(); world(); boardLoad(); deliverMail();
+    } finally { rebooting = false; }
   }
 
   /* ---------- the inbox: contracts that keep coming. It opens with chapter 1's end; there are always two to four
@@ -1681,7 +1704,7 @@
     if (RUN.busy) { say("warn", T("Already under way.")); return; }
     if (kindOf(j).tau) { say("sys", T("This one is answered in Tau: tau <your line>."), btn("what tau", "what tau")); return; }
     if (!B) { say("no", T("This browser cannot sign (no BLS library loaded).")); return; }
-    if (!SIM && CHAIN.ok === false) { say("no", T("The node is out of reach; nothing was sent. Try again in a minute, or switch to the simulation in the header.")); return; }
+    if (!SIM && CHAIN.ok === false) { say("no", T("The node is out of reach; nothing was sent. Try again in a minute, or switch to the simulation in the header."), btn("reboot", "reboot")); return; }
     if (j.k === "predict" && !S.pred) { say("sys", T("Predict first: predict <CODE>. Then send."), btn("predict TX_INVALID", "predict TX_INVALID")); return; }
     if (j.k === "p-doors" && d.to === "drop") { say("sys", T("Choose a door first: set to a, b or c.")); return; }
     const kd = kindOf(j), want = j.want || kd.want;
@@ -2032,7 +2055,7 @@
     ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["why [topic]", "what just happened"], ["archive · history", "your record"]]],
     ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail · mail <n>", "letters; some bring special orders"], ["crew", "who is who"], ["scan · blocks · dry", "gear for rank"]]],
     ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"]]],
-    ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · boot · clear", ""], ["scene · transmission on|off", "the cabin; the crew on screen"]]],
+    ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · reboot · clear", "reboot: dial the node again"], ["scene · transmission on|off", "the cabin; the crew on screen"]]],
   ];
   function help() {
     const g = el("div", { class: "helpg" });
@@ -2225,7 +2248,7 @@
     if (c === "lang" || /^(language|languages|chinese|japanese|english|中文|汉语|日本語|日本语)$/.test(c)) { const want = { chinese: "zh", 中文: "zh", 汉语: "zh", japanese: "ja", 日本語: "ja", 日本语: "ja", english: "en" }[c] || args[0]; if (window.TauI18n && TauI18n.set && ["en", "zh", "ja"].includes(want)) TauI18n.set(want); else say("sys", T("Language:"), btn("lang en", "lang en"), btn("lang zh", "lang zh"), btn("lang ja", "lang ja")); return; }
     if (c === "sound" || c === "fx" || c === "voice" || c === "ambience" || c === "amb") { const k = c === "amb" ? "ambience" : c; if (!["on", "off"].includes(args[0])) return say("sys", k + " on · " + k + " off"); S[k === "sound" ? "snd" : k === "ambience" ? "amb" : k] = args[0] === "on"; save(); topbar(); if (S.snd) snd.wake(); else snd.ambience(); return switched(k, args[0] === "on"); }
     if (c === "full" || c === "fullscreen") return full();
-    if (c === "boot") return bootScreen();
+    if (c === "reboot" || c === "boot" || c === "restart") return reboot();
     if (alias(c, args, s)) return;
     if (/^(what|how|where|next|start|begin|go|hi|hello|hilfe|was|wie|\?)$/.test(c) || /what (do|should|now|next)/.test(s.toLowerCase())) return nextStep();
     say("sys", F("Unknown: {x}. Type help, or click:", { x: c }), nextChip(), btn("help", "help"));
@@ -2321,29 +2344,15 @@
     box.replaceChildren(...list.map(([t, cmd, go]) => el("button", { type: "button", class: go ? "go" : "", text: t, onclick: () => { run(cmd); $("cmd").focus({ preventScroll: true }); } })));
   }
 
-  /* ---------- boot ---------- */
-  async function boot() {
-    load(); faces(); jobs(); instruments(); chips(); topbar(); art();
-    const hist = []; let hi = 0;
-    const input = $("cmd");
-    $("cmdForm").addEventListener("submit", e => { e.preventDefault(); const v = input.value; input.value = ""; if (v.trim()) { hist.push(v); hi = hist.length; } run(v); });
-    input.addEventListener("keydown", e => { if (e.key.length === 1) snd.key(); if (e.key === "ArrowUp" && hist.length) { hi = Math.max(0, hi - 1); input.value = hist[hi]; e.preventDefault(); } else if (e.key === "ArrowDown") { hi = Math.min(hist.length, hi + 1); input.value = hist[hi] || ""; e.preventDefault(); } });
-    $("mtabs").addEventListener("click", e => { const b = e.target.closest("button[data-pane]"); if (!b) return; for (const x of $("mtabs").querySelectorAll("button")) x.classList.toggle("on", x === b); const map = { jobs: "paneJobs", term: "paneTerm", stat: "paneStat" }; for (const k in map) $(map[k]).classList.toggle("show", k === b.dataset.pane); });
-    $("screenWrap").addEventListener("click", e => { if (!e.target.closest("a") && !e.target.closest("button") && !window.getSelection().toString()) input.focus({ preventScroll: true }); });
-    $("ptabs").addEventListener("click", e => { const b = e.target.closest("button[data-p]"); if (!b) return; S.pane = b.dataset.p; save(); jobs(); });
-    $("mailBtn").addEventListener("click", () => run("mail")); $("mailClose").addEventListener("click", () => $("mailWin").classList.remove("show"));
-    $("sndBtn").addEventListener("click", () => { S.snd = !S.snd; save(); topbar(); if (S.snd) { snd.wake(); snd.ok(); } else snd.ambience(); });
-    document.addEventListener("pointerdown", () => snd.wake(), { once: true }); $("fsBtn").addEventListener("click", () => full());
-    for (const id of ["card", "mailWin"]) $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).classList.remove("show"); });
-    document.addEventListener("keydown", e => { if (e.key === "Escape") for (const id of ["card", "mailWin"]) $(id).classList.remove("show"); });
-    let first = null;
-    if (!S.booted) first = await door(); else if (q.get("boot")) await bootScreen();
+  /* the start lines: the node is asked afresh (block, wallet, balance, the board), then what is still yours.
+     boot() runs it once; reboot runs it again after the boot screen, and nothing of the player is reset */
+  async function hello() {
     say("sys", "NO MEMO · " + T("a hacker game on Tau Testnet Alpha: every contract is a real transaction from a test wallet in your browser, and everybody plays the same chain."));
     const pk = myPk();
     if (SIM) say("sys", T("simulation: a practice node in this browser, nothing reaches the testnet"));
     const st = await ask("getsequence " + (pk || DROP));
     if (st && st.status === "ok") { tick(Number(st.data.tip_height) || 0); if (!SIM) snd.say("v-online"); say("sys", (SIM ? T("practice node ready") : T("connected")) + " · " + F("block #{n}", { n: fmt(CHAIN.tip) })); if (pk) { CHAIN.seq = Number(st.data.sequence_number) || 0; await balance(); } }
-    else { setState(false); say("warn", T("The node is out of reach from here (a blocker, a VPN, a restart). The board can be read; contracts wait until it answers. The header switch opens the simulation.")); }
+    else { setState(false); say("warn", T("The node is out of reach from here (a blocker, a VPN, a restart). The board can be read; contracts wait until it answers. The header switch opens the simulation.")); say("sys", T("When it is back, reboot dials it again:"), btn("reboot", "reboot")); }
     say("sys", pk ? F("your wallet {h}", { h: short(pk) }) + (CHAIN.bal != null ? " · " + fmt(CHAIN.bal === 0 ? FAUCET : CHAIN.bal) + " " + T("test AGRS") : "") : T("no test wallet yet: one is made in this browser at your first contract"));
     const done = Object.keys(S.done).length;
     { const d = await Promise.race([boardLoad(), new Promise(r => setTimeout(() => r(null), 2500))]); const l = crowdLine(d && d.board); if (l) say("sys", (SIM ? T("practice board") + " · " : "") + l); }
@@ -2356,6 +2365,26 @@
     if (claimable) say("sys", F("Chapter {n} is done and its share unclaimed.", { n: claimable.n }), btn("claim", "claim"));
     else if (!done) say("sys", T("New here? The tutorial plays the first contracts with you. Or type help, or click:"), btn("tutorial", "tutorial"), btn("take 1", "take 1"), el("span", { class: "cur" }));
     else { const nx = CONTRACTS.find(x => !S.done[x.id]); say("sys", T("Type help, or click:"), nx ? btn(F("take {n}", { n: num(nx) }), "take " + num(nx)) : btn("case", "case"), el("span", { class: "cur" })); }
+  }
+
+  /* ---------- boot ---------- */
+  async function boot() {
+    load(); faces(); jobs(); instruments(); chips(); topbar(); art();
+    const hist = []; let hi = 0;
+    const input = $("cmd");
+    $("cmdForm").addEventListener("submit", e => { e.preventDefault(); const v = input.value; input.value = ""; if (v.trim()) { hist.push(v); hi = hist.length; } run(v); });
+    input.addEventListener("keydown", e => { if (e.key.length === 1) snd.key(); if (e.key === "ArrowUp" && hist.length) { hi = Math.max(0, hi - 1); input.value = hist[hi]; e.preventDefault(); } else if (e.key === "ArrowDown") { hi = Math.min(hist.length, hi + 1); input.value = hist[hi] || ""; e.preventDefault(); } });
+    $("mtabs").addEventListener("click", e => { const b = e.target.closest("button[data-pane]"); if (!b) return; for (const x of $("mtabs").querySelectorAll("button")) x.classList.toggle("on", x === b); const map = { jobs: "paneJobs", term: "paneTerm", stat: "paneStat" }; for (const k in map) $(map[k]).classList.toggle("show", k === b.dataset.pane); });
+    $("screenWrap").addEventListener("click", e => { if (!e.target.closest("a") && !e.target.closest("button") && !window.getSelection().toString()) input.focus({ preventScroll: true }); });
+    $("ptabs").addEventListener("click", e => { const b = e.target.closest("button[data-p]"); if (!b) return; S.pane = b.dataset.p; save(); jobs(); });
+    $("mailBtn").addEventListener("click", () => run("mail")); $("mailClose").addEventListener("click", () => $("mailWin").classList.remove("show"));
+    $("sndBtn").addEventListener("click", () => { S.snd = !S.snd; save(); topbar(); if (S.snd) { snd.wake(); snd.ok(); } else snd.ambience(); });
+    document.addEventListener("pointerdown", () => snd.wake(), { once: true }); $("fsBtn").addEventListener("click", () => full()); $("rebootBtn").addEventListener("click", () => run("reboot"));
+    for (const id of ["card", "mailWin"]) $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).classList.remove("show"); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") for (const id of ["card", "mailWin"]) $(id).classList.remove("show"); });
+    let first = null;
+    if (!S.booted) first = await door(); else if (q.get("boot")) await bootScreen();
+    await hello();
     jobs(); instruments(); chips(); topbar(); watch(); world(); boardLoad(); deliverMail();
     for (const n of [1, 2, 3]) if (S.chap[n] && !S.chap[n].paid) watchPayback(n);
     if (first) run(first);

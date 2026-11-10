@@ -1060,5 +1060,12 @@ TauI18n.add({ strings: {
   "gear for rank": "階級の装備",
   "scan": "スキャン",
   "blocks": "ブロック",
-  "dry": "ドライラン"
+  "dry": "ドライラン",
+  "reboot: dial the node again": "reboot：ノードにもう一度つなぐ",
+  "reboot: the terminal starts again and dials the node": "reboot：端末を再起動し、ノードにつなぎ直す",
+  "reboot · wallet, standing and contracts stay in this browser": "再起動 · ウォレット、評価、契約はこのブラウザに残る",
+  "handshake · block #{n}": "ハンドシェイク · ブロック #{n}",
+  "no handshake · the node is silent": "ハンドシェイクなし · ノードが応答しない",
+  "Not now: a payment is on its way. Reboot once it has landed.": "今は無理：支払いが送信中。届いてから再起動を。",
+  "When it is back, reboot dials it again:": "戻ったら reboot でつなぎ直せる："
 } });
