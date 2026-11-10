@@ -412,7 +412,16 @@ for n in range(40):
     M.logbook.append({"visit": vq["id"], "kind": "pay", "ok": True, "ms": 6000 + n * 40})
 ch = M.measure(vq)
 check(ch and ch["what"] == "stops planned a minute" and ch["to"] == round(cruise.PLAN_MARGIN * 60000 / M.node["answer_ms"], 1)
-      and "6.8 s" in ch["because"], f"after a slow visit: {ch and ch['to']} stops a minute planned, and the logbook says why")
+      and M.node["answer_ms"] == 7280 and "8 of 10 sends within 7.3 s" in ch["because"] and "median 6.8 s" in ch["because"],
+      f"after a slow visit: {ch and ch['to']} stops a minute planned from the slow answers, and the logbook says why")
+# the node of 10 November: half the sends answered in 0.4 s, half in 5 to 8 s; the median would plan for the fast half
+vp = {"id": "2026-11-10-pirates", "ship": "pirates"}
+for n in range(34):
+    M.logbook.append({"visit": vp["id"], "kind": "pay", "ok": True, "ms": 400 if n % 2 else 5000 + n * 90})
+ch = M.measure(vp)
+check(ch and M.node["answer_ms"] >= 5000 and ch["to"] <= round(cruise.PLAN_MARGIN * 60000 / 5000, 1),
+      f"a node that answers half the sends slowly plans for the slow half: {ch and ch['to']} stops a minute, not {round(cruise.PLAN_MARGIN * 12, 1)}")
+M.node = {"answer_ms": 7280, "sends": 40, "visit": vq["id"], "median_ms": 6800}
 check(M.measure(vq) is None, "the same answer time again changes nothing")
 M.save_state()
 M2 = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s9"), "log_path": os.path.join(d, "l9b"), "incidents_path": os.path.join(d, "i9")}, clock=clock,
@@ -424,7 +433,7 @@ with open(lq, "w") as f:
         f.write(json.dumps({"t": int(T[0]), "visit": "2026-11-07-queen", "kind": "pay", "ok": True, "ms": 6000 + n * 40}) + "\n")
 M3 = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s10"), "log_path": lq, "incidents_path": os.path.join(d, "i10")}, clock=clock,
                    enabled=True, verdict=lambda: "calm", background=False)
-check(M3.node.get("answer_ms") == 6800 and M3.node.get("visit") == "2026-11-07-queen",
+check(M3.node.get("answer_ms") == 7280 and M3.node.get("visit") == "2026-11-07-queen",
       "first start with this rule: the Queen's timed sends already in the logbook measure the node")
 rp = [e for e in tricks if e["trick"] == "replay"]
 check(rp and all(e["tx"] in CH["sent"] for e in rp), "the replay sends a payment the chain already took, byte for byte")

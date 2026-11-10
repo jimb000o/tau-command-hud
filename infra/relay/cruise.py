@@ -64,9 +64,11 @@ visits in a row comes less often (never below TRICK_MIN a visit); one that got t
 then on, to see when it is closed. At most one change of pace or kinds a visit; each change is written into the
 logbook ("tuned") and the visit's summary ("changed": what, from, to, because), and the blog tells it.
 The plan follows our node: one send waits for the answer to the last, so a node that answers in 6.8 s takes at most
-~9 a minute whatever the pace. After each visit with PLAN_MIN_SENDS answered sends, its median answer time is kept
-(for all ships: it is the node's); the next plan holds at most PLAN_MARGIN of what that allows, or of the pace if
-lower, in every PLAN_WINDOW minutes. Extra stops leave the plan before the visit, not by falling behind in it
+~9 a minute whatever the pace. After each visit with PLAN_MIN_SENDS answered sends, its slow answer time is kept
+(PLAN_QUANTILE: the time 8 of 10 sends were answered within; for all ships: it is the node's); the next plan holds at
+most PLAN_MARGIN of what that allows, or of the pace if lower, in every PLAN_WINDOW minutes. The median would not do:
+on 10 November the node answered half the sends in 0.4 s and the other half in 5 to 8 s, and a plan made from the
+median would have run into the slow half, as the Queen did on 7 November (10 sends unanswered at 12 a minute). Extra stops leave the plan before the visit, not by falling behind in it
 (MISS); bookings, bills, withdrawals and tricks stay. Written into the logbook too ("landed": thinned, because). What a test
 checks on the chain never changes by itself: that stays with a person.
 
@@ -126,6 +128,7 @@ QUIET_HOLD = 30            # seconds the ship waits after a send the node did no
 QUIET_SLOW = 10 * 60       # and for this long after it, half pace: the node is slow, the ship gives it room
 PLAN_MARGIN = 0.85         # stops planned per minute: this share of what our node can answer (one send waits for the last answer)
 PLAN_MIN_SENDS = 20        # answered sends a visit needs before its answer time counts
+PLAN_QUANTILE = 0.8        # the answer time kept: this share of the visit's sends were answered within it (not the median: half the sends can be slow)
 PLAN_WINDOW = 10           # minutes: the plan is thinned window by window, so the landing waves fit too
 RATE_MIN = 6               # the slowest a ship tunes itself down to, transactions a minute
 TUNE_UNANSWERED = 3        # sends our node left unanswered in one visit that make the next visit one a minute slower
@@ -668,19 +671,21 @@ class Cruise:
         return round(PLAN_MARGIN * min(self.rate_of(ship), 60000 / ms), 1)
 
     def measure(self, v: dict) -> dict | None:
-        """After a visit: our node's median answer time to a send, kept for every ship's next plan; the change, if any."""
+        """After a visit: our node's slow answer time to a send (PLAN_QUANTILE), kept for every ship's next plan; the
+        change, if any."""
         ms = sorted(e["ms"] for e in self.logbook if e.get("visit") == v["id"] and e.get("kind") in KINDS
                     and isinstance(e.get("ms"), int) and e.get("ok") is not None)
         if len(ms) < PLAN_MIN_SENDS:
             return None
-        med = ms[len(ms) // 2]
+        slow = ms[min(len(ms) - 1, int(len(ms) * PLAN_QUANTILE))]
         before = self.plan_pace(v["ship"])
-        self.node = {"answer_ms": med, "sends": len(ms), "visit": v["id"]}
+        self.node = {"answer_ms": slow, "sends": len(ms), "visit": v["id"], "median_ms": ms[len(ms) // 2]}
         after = self.plan_pace(v["ship"])
         if before is not None and abs(after - before) < 0.5:
             return None
         return {"what": "stops planned a minute", "from": before if before is not None else "as timetabled", "to": after,
-                "because": f"our node answered a send in {med / 1000:.1f} s (median of {len(ms)}), one send waits for the last answer"}
+                "because": f"our node answered {int(PLAN_QUANTILE * 10)} of 10 sends within {slow / 1000:.1f} s ({len(ms)} timed, median "
+                           f"{ms[len(ms) // 2] / 1000:.1f} s), one send waits for the last answer"}
 
     def tricks_of(self, ship: str) -> dict:
         n = (self.tune.get(ship) or {}).get("tricks") or {}

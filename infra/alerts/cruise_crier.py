@@ -365,7 +365,7 @@ def report_text(f: dict) -> str:
         lines.append(f"• planned {f['landed'].get('transactions planned')}, skipped {f.get('stops skipped', 0)}, first send {f.get('first send')}, last {f.get('last send')}")
     a = f.get("our node's answer time to a send, seconds")
     if a:
-        lines.append(f"• our node's answer time: median {a['median']} s, slowest tenth from {a['slowest tenth from']} s, slowest {a['slowest']} s")
+        lines.append(f"• our node's answer time: median {a['median']} s, 8 of 10 within {a.get('8 of 10 within', '?')} s, slowest tenth from {a['slowest tenth from']} s, slowest {a['slowest']} s")
     if f.get("sends per 10 minutes"):
         lines.append("• sends per 10 minutes: " + " ".join(str(x) for x in f["sends per 10 minutes"]))
     if f.get("testnet load at each send"):
