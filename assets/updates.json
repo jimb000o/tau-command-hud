@@ -2758,5 +2758,10 @@
   "tag": "Learn",
   "on": "2026-11-10",
   "html": "Learn Tau Language: Check a brief with Tau. A new small page shows five plain requirements for a game's save system, each with its Tau line. Ask Tau and the real engine marks the three that cannot all hold; switch one off and ask again. For people who build software from written requirements, by hand or with an AI. At tauhud.com/learn/brief/."
+ },
+ {
+  "tag": "No Memo",
+  "on": "2026-11-10",
+  "html": "No Memo: reboot. Type reboot, or press ⟳ in the terminal's header, and the terminal starts again: the boot screen plays, it dials the node afresh and shows the real block it got back, then your balance, the board and your mail. Your wallet, standing, open contract and trace stay as they are. When the node is out of reach, a reboot button comes with the message, so you can try again once it is back."
  }
 ]
