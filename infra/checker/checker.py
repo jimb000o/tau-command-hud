@@ -42,6 +42,9 @@ from consensus.rule_offers import (  # noqa: E402
 import tau_native  # noqa: E402
 import tau_speculation  # noqa: E402
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import tau_sandbox  # noqa: E402  the Tau Language sandbox for tauhud.com/learn (POST /tau)
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s checker %(levelname)s %(message)s")
 log = logging.getLogger("checker")
 
@@ -57,6 +60,7 @@ QUEUE_WAIT = 30.0                  # seconds a request may wait for the engine
 MAX_WAITING = 4                    # requests allowed to wait at once
 # per client address; only real engine runs count (cached answers and text refusals are free)
 RATE_WINDOW, RATE_MAX = 300.0, int(os.environ.get("RATE_MAX", "24"))
+TAU_RATE_MAX = int(os.environ.get("TAU_RATE_MAX", "40"))  # /tau questions per address per window
 MAX_BV24 = (1 << 24) - 1
 MAX_TIME = (1 << 64) - 1
 HEX96 = re.compile(r"^[0-9a-f]{96}$")
@@ -90,14 +94,14 @@ _cache: "collections.OrderedDict[str, dict]" = collections.OrderedDict()
 _cache_lock = threading.Lock()
 
 
-def _rate_wait(addr: str) -> int:
+def _rate_wait(addr: str, limit: int = RATE_MAX) -> int:
     """Seconds until this address may start another engine run (0 = now)."""
     now = time.monotonic()
     with _hits_lock:
         q = _hits.get(addr)
         while q and now - q[0] > RATE_WINDOW:
             q.popleft()
-        if not q or len(q) < RATE_MAX:
+        if not q or len(q) < limit:
             return 0
         return max(1, int(q[0] + RATE_WINDOW - now + 0.999))
 
@@ -275,10 +279,70 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path.rstrip("/") in ("/check/health", "/health"):
             return self._json(200, {"ok": True, "engine": ENGINE_LABEL})
+        if self.path.rstrip("/") == "/tau/health":
+            return self._json(200, {"ok": True, "engine": ENGINE_LABEL, "budget_s": tau_sandbox.BUDGET,
+                                    "max_spec": tau_sandbox.MAX_SPEC, "max_steps": tau_sandbox.MAX_STEPS})
         self._json(404, {"error": "not found"})
+
+    def _engine_slot(self) -> bool:
+        """Wait for the one engine slot the Playground and /tau share; False when it stays busy."""
+        global _waiting
+        with _waiting_lock:
+            if _waiting >= MAX_WAITING:
+                return False
+            _waiting += 1
+        try:
+            return _engine.acquire(timeout=QUEUE_WAIT)
+        finally:
+            with _waiting_lock:
+                _waiting -= 1
+
+    def _tau(self):
+        """POST /tau: one Tau Language question from tauhud.com/learn (tau_sandbox.py)."""
+        origin = self.headers.get("Origin")
+        if origin and origin not in ALLOWED_ORIGINS and "*" not in ALLOWED_ORIGINS:
+            return self._json(403, {"ok": False, "error": "origin not allowed"})
+        size = int(self.headers.get("Content-Length") or 0)
+        if size <= 0 or size > MAX_BODY:
+            return self._json(413, {"ok": False, "error": f"body must be 1 to {MAX_BODY} bytes"})
+        try:
+            req = tau_sandbox.parse(json.loads(self.rfile.read(size)))
+        except (ValueError, tau_sandbox.BadRequest) as exc:
+            return self._json(400, {"ok": False, "error": str(exc)})
+        key = "tau:" + hashlib.sha256(json.dumps(req, sort_keys=True).encode()).hexdigest()
+        with _cache_lock:
+            if key in _cache:
+                _cache.move_to_end(key)
+                return self._json(200, dict(_cache[key], cached=True))
+        client = "tau:" + self._client()
+        wait = _rate_wait(client, TAU_RATE_MAX)
+        if wait:
+            return self._json(429, {"ok": False, "error": "too many questions from this address, wait a little",
+                                    "retry_after": wait}, {"Retry-After": str(wait)})
+        if not self._engine_slot():
+            return self._json(503, {"ok": False, "error": "the engine is busy, try again in a few seconds"})
+        try:
+            result = tau_sandbox.ask(req)
+        except Exception:
+            log.exception("tau failed")
+            result = {"ok": False, "error": "internal error"}
+        finally:
+            _engine.release()
+        _rate_charge(client)
+        result.update(op=req["op"], engine=ENGINE_LABEL)
+        # a timeout or a crash is as deterministic as a verdict for the same text, so it is cached too
+        if "ms" in result:
+            with _cache_lock:
+                _cache[key] = result
+                while len(_cache) > 256:
+                    _cache.popitem(last=False)
+        log.info("tau: %s ok=%s %sms", req["op"], result.get("ok"), result.get("ms", "-"))
+        self._json(200, result)
 
     def do_POST(self):
         global _waiting
+        if self.path.rstrip("/") == "/tau":
+            return self._tau()
         if self.path.rstrip("/") != "/check":
             return self._json(404, {"error": "not found"})
         origin = self.headers.get("Origin")

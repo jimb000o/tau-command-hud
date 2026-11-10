@@ -9,6 +9,8 @@ what `up post cruise-… send` and `up cruise` did by hand:
                     assets/share/cruise-<ship>.json, when its "date" is that day; else written here from the timetable
                     and the ship's last call as the public logbook counts it (blog.facts_of), so each week's post is
                     new and every number in it comes from the logbook.
+  after the pirates' call  a clip of every trick the chain refused, to Telegram and X (trick_clip.py; none when a
+                    trick got through)
   after the call    the visit in numbers (the same facts the blog draft is written from) once to the owner's private
                     Telegram chat (tickerwatch.tell; `up owner` sets it), never to the channel, and kept in
                     /state/cruise-reports/<visit>.json; the blog draft, once written, is told there too, with the
@@ -41,6 +43,8 @@ log = logging.getLogger("cruise-crier")
 ON = os.environ.get("CRUISE_CRIER", "true").lower() in ("1", "true", "yes")
 ANNOUNCE = int(os.environ.get("CRUISE_ANNOUNCE_MINUTES", "150"))
 LATEST = 30            # minutes before the call: she is on the horizon then, "today at 14:00" comes too late
+SIGHT = 30             # a surprise ship (the pirates) is posted from the moment she is in sight (relay APPROACH)
+SIGHTED = 15           # until this long after her arrival; later, the clip and the blog tell it
 STATE = os.environ.get("CRUISE_CRIER_STATE", os.path.join(os.path.dirname(blog.STATE), "cruise-crier.json"))
 REPORTS = os.path.join(os.path.dirname(STATE), "cruise-reports")
 LOGBOOK = f"{blog.NODE}/cruise/log"
@@ -52,9 +56,10 @@ FOOT = "White Rabbit Key · community project, not affiliated with IDNI"
 SHIPS = {
     "pirates": {
         "name": "Black Sequence", "file": "cruise-pirates", "art": "pirate", "hour": 18, "passengers": 20, "emoji": "🏴",
-        "on_x": False,   # a new ship is announced on Telegram only; on X it gets its one post when the blog tells the visit
-        "head": "Pirates off White Rabbit Key: Black Sequence drops anchor today at {hh}:00",
-        "story": ("From {hz}:30 German time her dark sails are on the horizon, at {hh}:00 she anchors off the island. "
+        "on_x": False,   # a new ship is announced on Telegram only; on X it gets the clip after the call (trick_clip.py) and the blog's post
+        "surprise": True,   # she comes unannounced: posted only once she is in sight (due_call), never hours before
+        "head": "Pirates in sight off White Rabbit Key: Black Sequence drops anchor at {hh}:00",
+        "story": ("Nobody announced her. Her dark sails are on the horizon now, and at {hh}:00 German time she anchors off the island. "
                   "Her 20 pirates stay aboard and trade from their boat: rum at Bar La Ola, supplies at the market. And "
                   "now and then one of them tries a trick: paying more than the wallet holds, sending a payment the chain "
                   "already took a second time, a payment whose time ran out, a payment signed with another pirate's key, a payment "
@@ -209,9 +214,13 @@ def hand_written(ship: str, t0: float) -> dict | None:
 # ---------- announcing ----------
 def due_call(cruise: dict | None, now: float) -> tuple[str, int] | None:
     """(ship, arrival) when the next call's announcement is due now."""
+    cur = (cruise or {}).get("now") or {}
+    if SHIPS.get(cur.get("ship"), {}).get("surprise") and cur.get("t0"):   # a surprise ship: once she is in sight, until she has landed
+        t0 = int(cur["t0"])
+        return (cur["ship"], t0) if cur.get("phase") in ("approach", "waiting", "landing") and t0 - SIGHT * 60 <= now < t0 + SIGHTED * 60 else None
     nxt = (cruise or {}).get("next") or {}
     ship, t0 = nxt.get("ship"), nxt.get("t0")
-    if ship not in SHIPS or not t0:
+    if ship not in SHIPS or not t0 or SHIPS[ship].get("surprise"):   # an older relay may still name her as the next call
         return None
     return (ship, int(t0)) if t0 - ANNOUNCE * 60 <= now < t0 - LATEST * 60 else None
 
@@ -273,13 +282,80 @@ def announce(now: float, cruise: dict | None, st: dict) -> str | None:
         return None
     t = compose(ship, t0)
     pic = picture(t, f"/tmp/cruise-{ship}.jpg")   # a failure here is tried again in 10 minutes
+    clip = ship_clip(vid, t, pic)   # the same picture as a video, when Kling's clip of it is there (kling.py)
     st["announced"][vid] = {"at": round(now), "result": "posting"}
     save(st)   # before posting: a crash while posting never posts twice
-    said = post(t, pic)
+    if clip and not clip["draft"]:
+        said = clip_post(t, clip["video"])
+    else:
+        said = post(t, pic)
+        if clip:   # one of the first clips of this kind: the photo went out, the clip waits for a look
+            import kling
+            url = kling.draft(clip["key"], clip["video"], clip_texts(t))
+            tell(kling.draft_note(clip["key"], "ship", url, f"{SHIPS[ship]['name']}'s announcement as a video"))
     st["announced"][vid] = {"at": round(now), "texts": t.get("written"), "result": said}
     save(st)
     log.info("announced %s (%s texts): %s", vid, t.get("written"), "; ".join(said))
     return vid
+
+
+# ---------- Kling: the announcement as a video ----------
+SHIP_PROMPT = ("A hand-painted tropical island with a ship at anchor, as a living painting. The camera is completely "
+               "still. The ship rocks very gently on the swell, its flags and pennants move in the breeze, the sea "
+               "ripples and glints, smoke drifts from the funnel and the chimneys, palm fronds stir. The island, the "
+               "ship's shape and every colour stay exactly as painted. Calm, minimal, premium.")
+
+
+def kling_prepare(now: float, cruise: dict | None) -> None:
+    """Asks Kling for the clips the next posts will want, early enough to be there: the announcement's scene (the
+    ship at anchor, no card) from 45 minutes before the announcement; the pirates' living sea from the moment she is
+    in sight (the clip after their call uses it). Picks up the clips already asked for."""
+    import kling
+    if not kling.enabled():
+        return
+    nxt = (cruise or {}).get("next") or {}
+    ship, t0 = nxt.get("ship"), nxt.get("t0")
+    if kling.enabled("ship") and ship in SHIPS and not SHIPS[ship].get("surprise") and t0 and \
+            t0 - (ANNOUNCE + 45) * 60 <= now < t0 - LATEST * 60:
+        k = "ship-" + visit_id(int(t0), ship)
+        if k in kling.state()["jobs"]:
+            kling.poll(k)
+        else:
+            t = compose(ship, int(t0))
+            scene = picture({**t, "card": None}, f"/tmp/cruise-{ship}-scene.jpg")
+            kling.ask(k, "ship", scene, SHIP_PROMPT, duration="5", tail=True, now=now)
+    cur = (cruise or {}).get("now") or {}
+    if kling.enabled("pirate") and cur.get("ship") == "pirates" and cur.get("t0"):
+        import trick_clip
+        trick_clip.kling_ask(visit_id(int(cur["t0"]), "pirates"), now)
+
+
+def clip_texts(t: dict) -> dict:
+    return {"telegram": t["telegram"], "x": t.get("x") if t.get("on_x") is not False else "", "size": (1600, 900)}
+
+
+def ship_clip(vid: str, t: dict, pic: str) -> dict | None:
+    """{"video", "draft", "key"} when Kling's clip of this call's scene is there: the clip, then the picture's card
+    fading in over its last frame; None otherwise (the photo goes out, as before)."""
+    try:
+        import kling
+        k = "ship-" + vid
+        j = kling.ready(k) if kling.enabled("ship") else None
+        if not j:
+            return None
+        out = kling.then_card(j["file"], pic, f"/tmp/cruise-{vid}.mp4", float(j.get("seconds") or 5))
+        return {"video": out, "draft": bool(j.get("draft")), "key": k}
+    except Exception as e:  # noqa: BLE001 - the photo instead
+        log.warning("ship clip %s: %s", vid, e)
+        return None
+
+
+def clip_post(t: dict, video: str) -> list[str]:
+    import kling
+    said = kling.post_video(video, clip_texts(t))
+    if t.get("on_x") is False or not t.get("x"):
+        said.append("x: not for this ship (its one X post is the blog's)")
+    return [s + " (video)" for s in said]
 
 
 # ---------- the report after the visit ----------
@@ -407,6 +483,10 @@ def step(now: float | None = None) -> None:
     except Exception as e:  # noqa: BLE001 - the relay may be restarting
         log.warning("cruise not read: %s", e)
         return
+    try:   # Kling's clips for the next posts, asked for early (kling.py; nothing when there is no key)
+        kling_prepare(now, cruise)
+    except Exception as e:  # noqa: BLE001
+        log.warning("kling: %s", e)
     try:
         announce(now, cruise, st)
     except Exception as e:  # noqa: BLE001 - marked as tried: never a second post of the same call
@@ -419,6 +499,11 @@ def step(now: float | None = None) -> None:
         held(now, st)
     except Exception as e:  # noqa: BLE001
         log.warning("held findings: %s", e)
+    try:   # the pirates' clip after their Tuesday call: every refused trick, to Telegram and X (trick_clip.py)
+        import trick_clip
+        trick_clip.step(now, st, save, lambda text: tell(text))
+    except Exception as e:  # noqa: BLE001 - tried again in 10 minutes; marked before posting, never posted twice
+        log.warning("pirate clip: %s", e)
 
 
 def status_lines(now: float | None = None) -> list[str]:
@@ -438,6 +523,12 @@ def status_lines(now: float | None = None) -> list[str]:
                    + (" (done)" if visit_id(nxt["t0"], nxt["ship"]) in st["announced"] else ""))
     else:
         out.append("cruise:  no call ahead (ships switched off?), nothing to announce")
+    if st.get("clipped"):
+        vid = max(st["clipped"])
+        r = st["clipped"][vid].get("result")
+        out.append(f"         pirate clip {vid}: " + ("; ".join(r) if isinstance(r, list) else str(r)))
+    elif os.environ.get("TRICK_CLIP", "true").lower() in ("1", "true", "yes"):
+        out.append("         pirate clip: by itself after each Tuesday call (look first: up clip)")
     if st["reported"]:
         vid = max(st["reported"])
         out.append(f"         last report {vid}: {st['reported'][vid].get('told')}")

@@ -118,6 +118,12 @@ async def main():
     w.process()
     check(list(st["seen"]) == ["returnable"] and [f["key"] for f in st["pending"]] == ["returnable"], "a new chain has its own firsts")
     check(firsts.headline(st["pending"]) == "First on the testnet: a returnable payment", "one first has its own headline")
+    w = "ab" * 48
+    f1 = {"key": "returnable", "h": 2141, "tx": "7FFF88", "from": w}
+    check(firsts.who(f1, {w: "rabbit"}) == "a White Rabbit Key player", "a wallet's tag names who it is")
+    check(firsts.who(f1, {w: "rabbit"}, {"7fff88": "nomemo"}) == "a player in No Memo, our terminal game",
+          "a transaction sent from No Memo says No Memo, even from a wallet that played White Rabbit Key before")
+    check("No Memo" in firsts.telegram_text([f1], "line", {w: "rabbit"}, {"7fff88": "nomemo"}), "the post names No Memo")
     sys.exit(1 if failed else 0)
 
 

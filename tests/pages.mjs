@@ -26,7 +26,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "tests", "out");
 const SETTLE = +(process.env.SETTLE_MS || 4000);   // the pages build in steps (sim chain, dictionaries, first fetches)
 const SKIP = new Set(["assets", "go", "infra", "kit", "tests", "node_modules", "embed"]);   // embed is a widget, checked on its own below
-const LAYOUT = ["account", "start", "rules", "chronicle", "explorer", "findings", "roadmap", "gazette", "history", "hud", "missions", "nodes", "playground", "proposals", "stats", "load", "status", "vote", "wallet", "whatif", "developers", "devpulse", "rabbit", "cruise", "services"];
+const LAYOUT = ["hud-calm", "account", "start", "rules", "chronicle", "explorer", "findings", "roadmap", "gazette", "history", "hud", "missions", "nodes", "playground", "proposals", "stats", "load", "status", "vote", "wallet", "whatif", "developers", "devpulse", "rabbit", "cruise", "services", "facts", "nomemo", "learn"];
 const SCREENS = [[2560, 1440], [2000, 1125]];
 const CLOCK = new Date(process.env.CLOCK || "2026-10-28T10:24:00Z");
 
@@ -53,7 +53,7 @@ for (const d of await readdir(ROOT, { withFileTypes: true })) {
   try { await stat(join(ROOT, d.name, "index.html")); dirs.push(d.name); } catch (e) {}
 }
 const only = process.argv.slice(2);
-const pages = [["hud", ""], ...dirs.sort().map(d => [d, d + "/"]), ["embed", "embed/?h=320"], ["story-zh", "story/zh/"]]
+const pages = [["hud", "?full=1"], ["hud-calm", "?calm=1"], ...dirs.sort().map(d => [d, d + "/"]), ["embed", "embed/?h=320"], ["story-zh", "story/zh/"]]   // the HUD twice: the dashboard, and the door a first visit sees
   .filter(([n]) => !only.length || only.includes(n));
 
 /* console noise that is not a bug: refused network requests are the point of this run */

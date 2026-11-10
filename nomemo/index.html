@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<script src="transmission.js" defer></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>No Memo</title>
+<meta name="description" content="A terminal game on Tau Testnet Alpha: twelve contracts from the crew of the Black Sequence, each a real transaction from your test wallet. Make the chain say no for the right reason, beat the block clock, take a payment back in time, and read the week's case file.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · No Memo">
+<meta property="og:description" content="Twelve contracts from the crew of the Black Sequence, each a real transaction on Tau Testnet Alpha. No memo field: say it in the amount.">
+<meta property="og:image" content="https://tauhud.com/assets/og/nomemo.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://tauhud.com/nomemo/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<meta name="twitter:image" content="https://tauhud.com/assets/og/nomemo.png">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<link rel="stylesheet" href="transmission.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent, amber for the simulation, red for offline. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --behind: #ffb13b; --bad: #ff4d6d; --dim: #8a8a94; --text: #ebebee; --mint: #b9ffd6;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 10px max(14px, env(safe-area-inset-right, 0px)) 10px max(14px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.05), transparent 55%),
+    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow: hidden; display: flex; flex-direction: column;
+}
+a { color: #fff; }
+.wrap { max-width: 1480px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto; min-height: 0; }
+.wrap > *, .wrap > .tnav { min-width: 0; flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; padding: 6px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.state { display: inline-flex; align-items: center; gap: 7px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+.state.live { color: var(--ok); border-color: rgba(57,255,138,.4); } .state.live i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.sim { color: var(--behind); border-color: rgba(255,177,59,.4); } .state.sim i { background: var(--behind); }
+.state.off { color: var(--bad); border-color: rgba(255,77,109,.4); } .state.off i { background: var(--bad); }
+
+/* the deck: contracts on the left, the terminal in the middle, the instruments on the right; it fills the window, each pane scrolls inside */
+.deck { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(230px, 300px) minmax(0, 1fr) minmax(210px, 270px); gap: 8px; }
+.pane { border: 1px solid var(--line); border-radius: 8px; background: rgba(12,12,14,.9); min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.pane h2 { margin: 0; padding: 9px 12px 7px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.pane h2 small { font: 11px var(--mono); text-transform: none; letter-spacing: 0; color: var(--dim); }
+.scroll { overflow: auto; min-height: 0; flex: 1 1 auto; overscroll-behavior: contain; }
+
+/* contracts */
+.jobs { list-style: none; margin: 0; padding: 4px 0; }
+.jobs li { display: grid; grid-template-columns: minmax(22px, auto) 1fr auto; gap: 2px 8px; padding: 7px 12px; border-bottom: 1px solid var(--line); cursor: pointer; min-height: 44px; align-items: center; }
+.jobs li:hover { background: rgba(255,255,255,.03); }
+.jobs li .n { color: var(--dim); font-size: 11px; }
+.jobs li .t { color: #fff; font-weight: 600; }
+.jobs li .w { color: var(--dim); font-size: 11px; grid-column: 2 / 4; }
+.jobs li .st { font-size: 11px; color: var(--dim); white-space: nowrap; }
+.jobs li.done .t { color: var(--dim); font-weight: 500; text-decoration: line-through; text-decoration-color: rgba(255,255,255,.3); }
+.jobs li.done .st { color: var(--ok); }
+.jobs li.taken { background: rgba(57,255,138,.05); box-shadow: inset 2px 0 0 var(--ok); }
+.jobs li.taken .st { color: var(--ok); }
+.jobs li.next .n { color: var(--ok); }
+.jobs li .ico { width: 20px; height: 20px; object-fit: contain; vertical-align: -5px; margin-right: 6px; }
+html.nm-calm .deck { grid-template-columns: minmax(230px, 300px) minmax(0, 1fr); }
+html.nm-calm .pane.stat { display: none; }
+html.nm-calm .mtabs { grid-template-columns: repeat(2, 1fr); }
+html.nm-calm .mtabs button[data-pane="stat"] { display: none; }
+#bootScreen.door .boot { min-height: 0; color: var(--text); text-shadow: none; font-size: 14px; line-height: 1.55; padding: 24px 26px 8px; }
+#bootScreen.door .boot h2 { margin: 0 0 10px; font: 700 26px var(--display); color: #fff; letter-spacing: .02em; }
+#bootScreen.door .boot p { margin: 0 0 9px; white-space: normal; }
+#bootScreen.door .boot p.dim { color: var(--dim); }
+#bootScreen.door .row { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 26px 22px; }
+.crewnote { padding: 8px 12px 10px; color: var(--dim); font-size: 11px; border-top: 1px solid var(--line); }
+
+/* the terminal */
+.term { background: #050506; }
+.screen { padding: 10px 14px 6px; font-size: 13px; line-height: 1.5; }
+.screen p { margin: 0 0 2px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.screen .sys { color: var(--dim); }
+.screen .you { color: #fff; }
+.screen .you::before { content: "nomemo> "; color: var(--ok); }
+.screen .crew b { color: var(--mint); font-weight: 600; }
+.screen .crew { color: var(--text); }
+.screen .ok { color: var(--ok); }
+.screen .no { color: var(--bad); }
+.screen .warn { color: var(--behind); }
+.screen .step { color: var(--dim); } .screen .step::before { content: "› "; }
+.screen .learn { color: #fff; border-left: 2px solid var(--ok); padding-left: 8px; margin: 6px 0; }
+.screen a { color: var(--mint); }
+.screen code { font: inherit; color: #fff; background: rgba(255,255,255,.07); padding: 0 4px; border-radius: 3px; }
+.screen .helpg { columns: 3 215px; column-gap: 20px; margin: 2px 0 4px; font-size: 11.5px; }
+.screen .helpg > div { margin-bottom: 5px; }
+.screen .helpg h4 { break-after: avoid; }
+.screen .helpg p { break-inside: avoid; }
+.screen .helpg h4 { margin: 0 0 1px; font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.screen .helpg p { margin: 0; line-height: 1.4; padding-left: 1.2em; text-indent: -1.2em; }
+.screen .helpg .hc { font: inherit; color: var(--ok); background: none; border: 0; padding: 0; margin-right: .6em; cursor: pointer; text-indent: 0; }
+.screen .helpg .hc:hover { text-decoration: underline; }
+.screen .helpg span { color: var(--dim); }
+.screen .cols { display: grid; grid-template-columns: max-content 1fr; gap: 0 14px; }
+.screen .cols span:nth-child(odd) { color: var(--ok); }
+.screen .hist { display: grid; grid-template-columns: max-content max-content 1fr; gap: 0 14px; margin: 4px 0; }
+.screen .hist span:nth-child(3n+1) { color: var(--dim); }
+.screen .cur { display: inline-block; width: 8px; height: 14px; background: var(--ok); vertical-align: -2px; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.cmd { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-top: 1px solid var(--line); background: rgba(255,255,255,.02); }
+.cmd .ps { color: var(--ok); flex: none; }
+.cmd input { flex: 1 1 auto; min-width: 0; background: transparent; border: 0; outline: 0; color: #fff; font: 13px var(--mono); padding: 8px 0; caret-color: var(--ok); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 12px 8px; border-top: 1px solid var(--line); }
+.chips button { font: 11px var(--mono); color: var(--dim); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 6px 11px; cursor: pointer; min-height: 32px; }
+.chips button:hover { color: #fff; border-color: var(--hair); }
+.chips button.go { color: var(--ok); border-color: rgba(57,255,138,.45); }
+
+.ptabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 12px 6px; }
+.ptabs[hidden] { display: none; }
+.ptabs button { font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; min-height: 28px; cursor: pointer; }
+.ptabs button.on { color: #fff; border-color: var(--hair); }
+.ptabs button:hover { color: #fff; }
+/* instruments */
+.inst { padding: 4px 0; }
+.inst .row { padding: 7px 12px; border-bottom: 1px solid var(--line); }
+.inst .row h3 { margin: 0; font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.inst .row b { display: block; font: 600 15px var(--display); color: #fff; margin-top: 2px; letter-spacing: .01em; overflow-wrap: anywhere; }
+.inst .row p { margin: 1px 0 0; color: var(--dim); font-size: 11px; }
+.inst .row a { color: var(--dim); font-size: 11px; }
+.trace { height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); margin-top: 6px; overflow: hidden; }
+.trace i { display: block; height: 100%; background: var(--ok); width: 0; transition: width .6s linear; }
+.trace.hot i { background: var(--behind); }
+.trace.out i { background: var(--bad); }
+.rank { color: var(--ok) !important; }
+.inst .row.state-live b { color: var(--ok); } .inst .row.state-sim b { color: var(--behind); } .inst .row.state-off b { color: var(--bad); }
+
+/* the top bar: the block clock, what is running, the post, the trace; always in view, on the phone in every tab */
+.top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 14px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 8px; background: rgba(12,12,14,.9); font-size: 11px; color: var(--dim); min-height: 36px; }
+.top .blk { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.top .blk b { color: #fff; font: 600 13px var(--mono); }
+.top .blk b.tick { animation: tick .5s ease-out; }
+@keyframes tick { 0% { color: var(--ok); text-shadow: 0 0 10px var(--ok); } 100% { color: #fff; text-shadow: none; } }
+.top .slots { display: flex; gap: 10px; overflow: hidden; min-width: 0; }
+.top .slot { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: center; min-width: 120px; max-width: 220px; }
+.top .slot span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.top .slot i { display: block; height: 4px; border-radius: 2px; background: rgba(255,255,255,.1); overflow: hidden; }
+.top .slot i::after { content: ""; display: block; height: 100%; width: var(--p, 0%); background: var(--ok); transition: width .4s; }
+.top .slot.bad i::after { background: var(--bad); } .top .slot.ok i::after { background: var(--ok); width: 100%; }
+.top .slot small { grid-column: 1 / 3; color: var(--dim); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top .right { display: flex; align-items: center; gap: 6px; }
+.top .tr { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; min-height: 28px; white-space: nowrap; color: var(--dim); }
+.top .tr i { width: 46px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.1); overflow: hidden; }
+.top .tr i::after { content: ""; display: block; height: 100%; width: var(--p, 0%); background: var(--ok); transition: width .6s linear; }
+.top .tr.on { color: var(--ok); border-color: rgba(57,255,138,.35); }
+.top .tr.hot { color: var(--behind); border-color: rgba(255,177,59,.45); } .top .tr.hot i::after { background: var(--behind); }
+.top .tr.out { color: var(--bad); border-color: rgba(255,77,109,.5); } .top .tr.out i::after { background: var(--bad); }
+.top button { font: 11px var(--mono); color: var(--dim); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 0 10px; min-height: 28px; min-width: 28px; cursor: pointer; white-space: nowrap; }
+.top button:hover { color: #fff; border-color: var(--hair); }
+.top button.has { color: var(--ok); border-color: rgba(57,255,138,.4); }
+#rebootBtn { font-size: 13px; }
+.top button.has::before { content: "●"; margin-right: 5px; animation: blink 1.4s steps(1) infinite; }
+/* the trace at the screen's edge: a glow that quickens as the deadline nears, visible on a phone without comparing anything */
+.edge { position: fixed; inset: 0; pointer-events: none; z-index: 30; opacity: 0; transition: opacity .6s; }
+html.tr-on .edge { opacity: 1; box-shadow: inset 0 0 40px rgba(57,255,138,.10); }
+html.tr-hot .edge { opacity: 1; box-shadow: inset 0 0 60px rgba(255,177,59,.28); animation: pulse 1.2s ease-in-out infinite; }
+html.tr-out .edge { opacity: 1; box-shadow: inset 0 0 90px rgba(255,77,109,.5); animation: pulse .5s ease-in-out 4; }
+@keyframes pulse { 50% { opacity: .35; } }
+.term.flash-bad { animation: flashbad .45s; } .term.flash-ok { animation: flashok .5s; }
+@keyframes flashbad { 0% { box-shadow: inset 0 0 0 2px var(--bad); transform: translateX(0); } 20% { transform: translateX(-4px); } 40% { transform: translateX(4px); } 60% { transform: translateX(-2px); } 100% { box-shadow: inset 0 0 0 0 transparent; transform: none; } }
+@keyframes flashok { 0% { box-shadow: inset 0 0 0 2px var(--ok); } 100% { box-shadow: inset 0 0 0 0 transparent; } }
+/* a transaction's way, drawn as it goes: wallet, relay, node, block */
+.screen .route { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; color: var(--dim); margin: 3px 0 4px; }
+.screen .route span { border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; color: var(--dim); transition: color .3s, border-color .3s; }
+.screen .route span.on { color: var(--ok); border-color: rgba(57,255,138,.45); text-shadow: 0 0 8px rgba(57,255,138,.4); }
+.screen .route span.bad { color: var(--bad); border-color: rgba(255,77,109,.5); }
+.screen .route em { font-style: normal; color: var(--dim); padding: 0 5px; } .screen .route em.on { color: var(--ok); }
+.screen .mail { border-left: 2px solid var(--mint); padding-left: 8px; margin: 4px 0; }
+.screen .mail b { color: var(--mint); }
+.screen .cols button, .screen .abc { font: 12px var(--mono); color: var(--ok); background: transparent; border: 1px solid rgba(57,255,138,.4); border-radius: 4px; padding: 2px 8px; cursor: pointer; min-height: 28px; }
+.screen p.typing::after { content: "▮"; color: var(--ok); animation: blink .7s steps(1) infinite; }
+/* the crew: three faces, each in a mood; painted when nomemo/art is there, drawn until then */
+.crewbox { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 8px 10px; border-top: 1px solid var(--line); }
+.face { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; color: var(--dim); text-align: center; cursor: pointer; min-height: 44px; }
+.face .pic { width: 56px; height: 56px; border-radius: 6px; border: 1px solid var(--line); background: #0a0c0b; display: grid; place-items: center; overflow: hidden; position: relative; }
+.face .pic img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) sepia(1) hue-rotate(85deg) saturate(2.4) brightness(.85) contrast(1.1); }
+.face .pic::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px); pointer-events: none; }
+.face .pic svg { width: 44px; height: 44px; fill: none; stroke: var(--ok); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
+.face.glad .pic { border-color: rgba(57,255,138,.5); box-shadow: 0 0 10px rgba(57,255,138,.25); }
+.face.sour .pic { border-color: rgba(255,77,109,.45); }
+.face.talk .pic { box-shadow: 0 0 0 1px var(--mint), 0 0 12px rgba(185,255,214,.35); }
+.face b { color: var(--text); font-weight: 600; }
+/* the gear: what the terminal can do, unlocked chapter by chapter */
+.inst .gear { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.inst .gear span { font-size: 11px; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; color: var(--dim); }
+.inst .gear span.on { color: var(--ok); border-color: rgba(57,255,138,.4); }
+/* windows over the terminal: the boot screen, a chapter card, the post */
+.over { position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; background: rgba(5,5,6,.92); padding: 16px; }
+.over.show { display: flex; }
+.over .win { width: min(760px, 100%); max-height: 100%; overflow: auto; border: 1px solid var(--hair); border-radius: 8px; background: #050506; box-shadow: 0 0 60px rgba(57,255,138,.08); }
+.over .pic { width: 100%; aspect-ratio: 16 / 9; background: #0a0a0c center / cover no-repeat; border-bottom: 1px solid var(--line); display: grid; place-items: end start; }
+.over .pic h3 { margin: 0; padding: 14px 18px; font: 700 22px var(--display); color: #fff; text-shadow: 0 2px 14px #000; }
+.over .pic h3 small { display: block; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--ok); }
+.over .body { padding: 14px 18px 16px; color: var(--text); font-size: 13px; }
+.over .body p { margin: 0 0 8px; }
+.over .body .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.over button { font: 600 12px var(--display); color: #000; background: var(--ok); border: 0; border-radius: 999px; padding: 0 16px; min-height: 36px; cursor: pointer; }
+.over button.ghost { color: var(--dim); background: transparent; border: 1px solid var(--line); }
+#bootScreen .win { background: #050506 center / cover no-repeat; border-color: var(--line); }
+#bootScreen .boot { padding: 22px 24px; min-height: 300px; font-size: 13px; color: var(--ok); text-shadow: 0 0 8px rgba(57,255,138,.35); background: linear-gradient(rgba(5,5,6,.78), rgba(5,5,6,.9)); }
+#bootScreen .boot p { margin: 0 0 3px; white-space: pre-wrap; }
+#bootScreen .boot p.typing { white-space: nowrap; overflow: hidden; max-width: 100%; }
+#bootScreen .boot p.dim { color: var(--dim); text-shadow: none; }
+#bootScreen .row { padding: 0 24px 18px; background: rgba(5,5,6,.9); }
+.post { list-style: none; margin: 0; padding: 0; }
+.post li { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.post li b { color: var(--mint); } .post li small { color: var(--dim); margin-left: 8px; }
+.post li.new { box-shadow: inset 2px 0 0 var(--ok); padding-left: 8px; }
+#mailList { max-height: min(60vh, 500px); overflow-y: auto; }
+.post li .mh { display: flex; gap: 8px; align-items: baseline; cursor: pointer; min-height: 28px; }
+.post li .mh .ms { flex: 1; min-width: 0; color: var(--text); }
+.post li .mh em { font-style: normal; font-size: 11px; color: var(--ok); border: 1px solid var(--ok); border-radius: 9px; padding: 0 6px; white-space: nowrap; }
+.post li .mh small { margin-left: 0; white-space: nowrap; }
+.post li.new .mh .ms { font-weight: 600; }
+.post li .mb { display: none; }
+.post li.open .mb { display: block; }
+.post li .mb p { margin: 6px 0 0; }
+.post li .ma { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+html.nm-full, html.nm-full body { background: #000; }
+html.nm-full .wrap { max-width: none; } html.nm-full .wrap > header, html.nm-full .tnav, html.nm-full .tabbar, html.nm-full .tnav-spacer, html.nm-full .tb-pill, html.nm-full .fb-fab, html.nm-full footer { display: none !important; }
+@media (prefers-reduced-motion: reduce) { .edge, .term, .top .blk b { animation: none !important; } }
+
+.mtabs { display: none; }
+footer { color: var(--dim); font-size: 11px; padding: 0; }
+footer a { color: var(--dim); }
+footer p { margin: 0; }
+
+@media (max-width: 1100px) { .deck { grid-template-columns: minmax(200px, 250px) minmax(0, 1fr); } .pane.stat { display: none; } .inst-sm { display: block; } }
+@media (max-height: 760px) { .screen { font-size: 12px; } footer { display: none; } }
+@media (max-width: 760px) {
+  body { padding: 6px 10px 62px; }
+  .brand span { display: none; }
+  .deck { display: block; }
+  .pane { height: 100%; }
+  .pane:not(.show) { display: none; }
+  .pane.stat { display: flex; }
+  .pane.stat:not(.show) { display: none; }
+  .mtabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .mtabs button { font: 600 11px var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 0 6px; min-height: 44px; cursor: pointer; }
+  .mtabs button.on { color: #fff; border-color: var(--hair); }
+  .ptabs button { min-height: 44px; }
+  #rebootBtn { display: none; }   /* phone: the command and the chip when the node is lost; the header row is full */
+  .screen { font-size: 12px; padding: 8px 10px 4px; }
+  .cmd input { font-size: 16px; min-height: 44px; }   /* 16px: no zoom-in on focus */
+  .chips { padding: 6px 8px 8px; } .chips button { min-height: 44px; font-size: 11px; }
+  .jobs li { min-height: 52px; }
+  footer { display: none; }
+  .top { grid-template-columns: auto 1fr; gap: 6px; padding: 5px 8px; } .top .slots, .top .blk > span:first-child, #topPace { display: none; } .top .right { grid-column: 2; justify-content: flex-end; min-width: 0; }
+  .top .tr { min-width: 0; overflow: hidden; padding: 4px 8px; gap: 5px; } .top .tr span { overflow: hidden; text-overflow: ellipsis; } .top .tr i { width: 26px; flex: none; }
+  .crewbox { padding: 6px 8px; } .face .pic { width: 44px; height: 44px; }
+}
+/* a phone: the site's header gives the terminal room; the Live/Simulation switch stays; the node and the counters are on the Instruments tab */
+@media (max-width: 760px) {
+  header.trail #tnOnline, header.trail #tnCons, header.trail #tnHeight, header.trail #state { display: none; }
+  header.trail { row-gap: 4px; }
+  header.trail .chips { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<link rel="stylesheet" href="scene.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>No Memo</span></a>
+    <span class="state" id="state" data-tip="Where this terminal talks to.\nEvery contract is a transaction signed in this browser and sent to Tau Testnet Alpha through our node at node.tauhud.com."><i></i><span id="stateText">Connecting</span></span>
+  </header>
+  <nav class="tnav" data-page="nomemo" aria-label="Pages and tools"></nav>
+  <div class="mtabs" id="mtabs" role="tablist" aria-label="Panes">
+    <button type="button" data-pane="jobs">Contracts</button>
+    <button type="button" data-pane="term" class="on">Terminal</button>
+    <button type="button" data-pane="stat">Instruments</button>
+  </div>
+  <div class="top" id="top" aria-label="Status">
+    <div class="blk"><span>NO MEMO</span><b id="topBlock">—</b><span id="topPace"></span></div>
+    <div class="slots" id="slots" aria-live="off"></div>
+    <div class="right">
+      <button type="button" id="mailBtn" title="post">post</button>
+      <span class="tr" id="topTrace"><span id="topTraceText">no trace</span><i></i></span>
+      <button type="button" id="rebootBtn" title="reboot: the terminal starts again and dials the node">⟳</button>
+      <button type="button" id="sndBtn" title="sound">♪</button>
+      <button type="button" id="fsBtn" title="full screen">⛶</button>
+    </div>
+  </div>
+  <div class="deck" id="deck">
+    <aside class="pane jobs-pane" id="paneJobs" aria-label="Contracts">
+      <h2><span>Contracts</span><small id="jobsCount"></small></h2>
+      <div class="ptabs" id="ptabs" role="tablist" aria-label="Contracts" hidden><button type="button" data-p="story">Story</button><button type="button" data-p="inbox">Inbox</button></div>
+      <div class="scroll"><ol class="jobs" id="jobs"></ol></div>
+      <div class="crewbox" id="crewBox"></div>
+      <div class="crewnote">You and the other players are real: everybody here plays together, and the game is the testnet itself. Every contract is a real test transaction on Tau Testnet Alpha from your own test wallet, signed in this browser. The crew are game characters; test AGRS have no value.</div>
+    </aside>
+    <section class="pane term show" id="paneTerm" aria-label="Terminal">
+      <div class="scroll" id="screenWrap"><div class="screen" id="screen" role="log" aria-live="polite"></div></div>
+      <form class="cmd" id="cmdForm" autocomplete="off"><span class="ps" aria-hidden="true">nomemo&gt;</span><input id="cmd" name="cmd" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Command" placeholder="help"></form>
+      <div class="chips" id="chips"></div>
+    </section>
+    <aside class="pane stat" id="paneStat" aria-label="Instruments">
+      <h2><span>Instruments</span></h2>
+      <div class="scroll inst" id="inst"></div>
+    </aside>
+  </div>
+  <footer><p>Unofficial, not affiliated with IDNI. A game on the public testnet: your test wallet is the one <a href="/wallet/">the wallet page</a> and <a href="/rabbit/">White Rabbit Key</a> use, made in this browser, never sent anywhere. The crew of the Black Sequence also calls at the island on Tuesdays: <a href="/cruise/">cruise logbook</a>.</p></footer>
+</div>
+<div class="edge" aria-hidden="true"></div>
+<div class="over" id="bootScreen" role="dialog" aria-label="Boot"><div class="win"><div class="boot" id="bootLines"></div><div class="row"><button type="button" class="ghost" id="bootSkip">skip</button></div></div></div>
+<div class="over" id="card" role="dialog" aria-label="Chapter"><div class="win"><div class="pic" id="cardPic"><h3 id="cardTitle"></h3></div><div class="body" id="cardBody"></div></div></div>
+<div class="over" id="mailWin" role="dialog" aria-label="Post"><div class="win"><div class="body"><h3 id="mailTitle" style="margin:0 0 8px;font:600 11px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)"></h3><ul class="post" id="mailList"></ul><div class="row"><button type="button" class="ghost" id="mailClose">close</button></div></div></div></div>
+<script src="../wallet/vendor/tau-bls.min.js"></script>
+<script src="game.js" defer></script>
+<script src="scene.js" defer></script>
+</body>
+</html>

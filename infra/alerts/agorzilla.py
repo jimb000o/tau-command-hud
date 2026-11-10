@@ -94,7 +94,8 @@ def tonight(latest: dict, html: bool) -> str:
     e = esc if html else str
     if is_rule(o) and o.get("question"):
         return f"Tonight is a rule evening, a vote on the rules of the game: {e(o['question'])} ({e(', '.join(o['options']))})."
-    return f"Tonight's choice: {e(o['category'])} ({e(', '.join(o['options']))})."
+    opts = [f"keep {o['keep']}" if o.get("keep") and k == 0 and v == o["keep"] else v for k, v in enumerate(o["options"])]   # rules v5: box 1 keeps it
+    return f"Tonight's choice: {e(o['category'])} ({e(', '.join(opts))})."
 
 
 def rule_head(r: dict, latest: dict, was: str | None, html: bool) -> tuple[str, str]:
@@ -124,6 +125,10 @@ def text(r: dict, latest: dict, was: str | None = None) -> str:
     votes = sum(r.get("tally") or [])
     if is_rule(r):
         head = "\n".join(rule_head(r, latest, was, html=True))
+    elif r.get("winner") and r.get("kept"):   # rules v5: "keep" won, or no other option had enough wallets
+        tally = " / ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"]))
+        head = f"🦍 Agorzilla, evening {r['n'] + 1}: {esc(r['category'])} stays <b>{esc(r['winner'])}</b>"
+        head += f" ({esc(tally)}). Not enough wallets wanted a change."
     elif r.get("winner"):
         tally = " / ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"]))
         head = f"🦍 Agorzilla, evening {r['n'] + 1}: {esc(r['category'])} became <b>{esc(r['winner'])}</b>"
@@ -148,6 +153,9 @@ def x_text(r: dict, latest: dict, was: str | None = None) -> str:
     """The evening on X: what changed first, then how it grows and tonight's choice; no link, no HTML."""
     if is_rule(r):
         head, body = rule_head(r, latest, was, html=False)
+    elif r.get("winner") and r.get("kept"):
+        head = f"🦍 Evening {r['n'] + 1}: {r['category']} stays {r['winner']}"
+        body = " · ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"])) + ". Not enough wallets wanted a change"
     elif r.get("winner"):
         head = f"🦍 Evening {r['n'] + 1}: {r['category']} became {r['winner']}"
         body = " · ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"])) + (", a tie settled by the state hash" if r.get("tie") else "")
@@ -235,7 +243,7 @@ def evening_card(r: dict) -> bytes | None:
     A rule evening does not change the look: its card is the ballot (rule_card)."""
     if is_rule(r):
         return rule_card(r)
-    if not r.get("winner"):
+    if not r.get("winner") or r.get("kept"):   # a kept look has no before and after
         return None
     paths = shots_of(r)
     if not paths:
@@ -331,17 +339,93 @@ def growth_x(old: str, latest: dict) -> str:
     return x_post([head, f"It was {old} until now. The wallets that feed it every day decide how it looks."], foot=X_FOOT, tag=X_TAG)
 
 
-def grow(latest: dict, state: dict, send_x=None) -> str | None:
-    """An X post when the growth stage changed since the last read; the first read only records it."""
+GROW_PROMPT = ("A friendly hand-drawn creature on its rock among plants, as a living picture. The camera is completely "
+               "still. The creature breathes slowly, blinks once and looks around a little, the plants sway gently. Its "
+               "shape, colours and the drawing style stay exactly as they are; no new objects, no text.")
+GROW_WAIT = 30 * 60   # the growth post waits this long for its clip at most, then goes out with the picture as before
+
+
+def newest_shot(since: float) -> str | None:
+    """The newest evening's after-picture (agorzilla-shots), only when it was taken after `since`: an older one may
+    still show the creature before it grew."""
+    try:
+        names = [n for n in os.listdir(SHOTS) if n.startswith("evening-") and n.endswith("-after.jpg")]
+    except OSError:
+        return None
+    best = max(names, key=lambda n: int(n.split("-")[1]) if n.split("-")[1].isdigit() else -1, default=None)
+    p = os.path.join(SHOTS, best) if best else None
+    return p if p and os.path.getmtime(p) >= since else None
+
+
+def grow_clip(state: dict, send_x, now: float) -> str | None:
+    """The growth post waiting for its Kling clip (kling.py): posted as a video once the clip is there, with the
+    picture as before when it fails or takes too long; one of the first clips is a draft for the owner."""
+    g = state.get("growth")
+    if not g:
+        return None
+    import kling
+    j = kling.poll(g["key"]) if g.get("key") else {"status": "off"}
+    if not g.get("key"):   # no clip asked for yet: a new picture of the grown creature may have come meanwhile
+        shot = newest_shot(g["since"] - 3600)
+        if shot:
+            j = kling.ask(f"agorzilla-{g['stage']}-{int(g['since'])}", "agorzilla", shot, GROW_PROMPT, duration="5", now=now)
+            if j.get("status") in ("submitted", "processing"):
+                g["key"] = f"agorzilla-{g['stage']}-{int(g['since'])}"
+                return None
+    if j.get("status") == "succeed":
+        try:
+            video = kling.web(j["file"], j["file"].replace(".mp4", "-post.mp4"), w=-2, h=-2)
+            post = {"x": g["msg"], "account": "agorzilla"}
+            if j.get("draft"):
+                (send_x or post_x)(g["msg"], state)
+                url = kling.draft(g["key"], video, post)
+                kling.tell(kling.draft_note(g["key"], "agorzilla", url, "Agorzilla's growth as a video, for @Agorzilla"))
+            else:
+                said = kling.post_video(video, post)
+                log.info("growth clip: %s", "; ".join(said))
+                if not any(x.startswith("x: https") for x in said):
+                    (send_x or post_x)(g["msg"], state)
+        except Exception as e:  # noqa: BLE001 - the picture instead
+            log.warning("growth clip: %s", e)
+            (send_x or post_x)(g["msg"], state)
+        state.pop("growth", None)
+        return g["msg"]
+    if j.get("status") in ("failed", "capped", "off", "error", "none") and g.get("key") or now - g["since"] > GROW_WAIT:
+        (send_x or post_x)(g["msg"], state)
+        state.pop("growth", None)
+        return g["msg"]
+    return None
+
+
+def grow(latest: dict, state: dict, send_x=None, now: float | None = None) -> str | None:
+    """An X post when the growth stage changed since the last read; the first read only records it. With a Kling key
+    the post waits (at most GROW_WAIT) for a short clip of the grown creature and goes out as a video."""
+    now = time.time() if now is None else now
+    done = None
+    if state.get("growth"):
+        try:
+            done = grow_clip(state, send_x, now)
+        except Exception as e:  # noqa: BLE001
+            log.warning("growth clip: %s", e)
+            (send_x or post_x)(state["growth"]["msg"], state)
+            done = state.pop("growth")["msg"]
     stage, name = latest.get("stage"), latest.get("stage_name")
     if stage is None:
-        return None
+        return done
     last = state.get("stage")
     state["stage"], prev = stage, state.get("stage_name")
     state["stage_name"] = name
     if last is None or last == stage:
-        return None
+        return done
     msg = growth_x(prev or "smaller", latest)
+    try:
+        import kling
+        clip = kling.enabled("agorzilla") and bool(SHOTS)
+    except Exception:  # noqa: BLE001
+        clip = False
+    if clip:
+        state["growth"] = {"msg": msg, "stage": stage, "since": round(now)}
+        return grow_clip(state, send_x, now) or msg
     (send_x or post_x)(msg, state)
     return msg
 

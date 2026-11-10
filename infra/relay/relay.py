@@ -45,8 +45,11 @@ from simvotes import SimVotes, name_of
 from simwallet import SimWallet
 from slotlease import SlotLease
 from cruise import Cruise
+from hackweek import HackWeek
 from island import Island
 from isle import Isle
+from nomemo import NoMemo
+from nomemo_feedback import Feedback as NoMemoFeedback
 from load import Load
 from txsources import TxSources, deja as deja_day
 from walletdays import WalletDays
@@ -135,6 +138,11 @@ HEALTH_WEIGHTS = {"node": 20, "sync": 15, "last_block": 20, "pace": 10, "availab
 # this long afterwards (the block poll may still be catching up)
 DROP_GRACE_SECONDS = _env_float("DROP_GRACE_SECONDS", 30)
 UPSTREAM_TIMEOUT = _env_float("UPSTREAM_TIMEOUT_SECONDS", 20)
+# A visitor's own transaction (sendtx/checktx from tauhud.com/wallet, agorzilla.com, White Rabbit Key): the node runs
+# Tau once per transfer in it, so a feed with a vote and a suggestion (three transfers) takes about three times as
+# long as one payment. At the 6.8 s median the node answered the Queen's sends with (7.11), 20 s cut those off and
+# the page said "nothing was sent" for transactions that then arrived.
+WALLET_TIMEOUT = _env_float("WALLET_TIMEOUT_SECONDS", 60)
 # The island bot and cruise ships use a second node connection of their own (Relay.sender); 0 = share the visitors' one
 SENDER_CONNECTION = os.environ.get("SENDER_CONNECTION", "1") != "0"
 SENDER_FALLBACK = _env_float("SENDER_FALLBACK_SECONDS", 60)   # sender down this long -> borrow the visitors' connection
@@ -339,7 +347,7 @@ class Upstream:
             await asyncio.sleep(backoff)
             backoff = min(backoff * 2, 30)
 
-    async def request(self, command: str) -> dict | None:
+    async def request(self, command: str, timeout: float | None = None) -> dict | None:
         """Send one command and return the parsed envelope, or None."""
         async with self.lock:
             if command.split()[0] in HEAVY_COMMANDS:
@@ -349,7 +357,7 @@ class Upstream:
                 return None
             try:
                 await ws.send(command)
-                raw = await asyncio.wait_for(ws.recv(), UPSTREAM_TIMEOUT)
+                raw = await asyncio.wait_for(ws.recv(), timeout or UPSTREAM_TIMEOUT)
             except (ConnectionClosed, asyncio.TimeoutError) as exc:
                 log.warning("%s %s failed: %r", self.name, command.split()[0], exc)
                 await ws.close()
@@ -393,7 +401,13 @@ class Relay:
         self.cruise = Cruise(verdict=self.load_word, chain=self.chain_view, spend=self.island_spend,
                              budget=lambda: self.island.today + len(self.island.queue) < self.island.daily // 2)
         self.cruise.on_tx = lambda ok: self.load.sent("cruise" if ok else "refused")
-        self.island.idle = self.cruise.step
+        # the hack of the week, replayed on the testnet with our own wallets, after the ships in the bot's free slots (hackweek.py)
+        self.hack = HackWeek(verdict=self.load_word)
+        self.hack.on_tx = lambda ok: self.load.sent("cruise" if ok else "refused")
+        self.nomemo = NoMemo()   # No Memo's crew purse: the share, the mark and the Tracer's dust (nomemo.py)
+        self.nomemo.on_tx = lambda: self.load.sent("bot")
+        self.nomemo_feedback = NoMemoFeedback()   # `feedback <text>` in the No Memo terminal, kept for the owner (nomemo_feedback.py)
+        self.island.idle = self.idle_step
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
         self.simpredict = SimPredict(os.environ.get("SIMPREDICT_PATH", "/data/simpredict.json"), votes=self.simvotes, names=name_of)
         self.visits = Visits()   # cookie-free visitor numbers for the site owner (visits.py)
@@ -429,7 +443,7 @@ class Relay:
         self.sources = TxSources()              # which transactions came through this relay, for /api/v1/sources
         self.sources.bots = {pk: c for c, pk in self.island.pk.items()}   # White Rabbit Key's rival moves
         self.sources.purses = {pk: p for p, pk in self.island.ppk.items()}   # and the money it pays the visitors
-        self.sources.passengers = lambda: self.cruise.who   # and the cruise ships' simulated passengers
+        self.sources.passengers = self.simulated   # and the cruise ships' simulated passengers
         self.sources_text, self.sources_at = None, 0.0
         self.uptime = self._load_uptime()       # hourly availability buckets and outages
         self.uptime_text: str | None = None
@@ -454,7 +468,7 @@ class Relay:
         # accounts that serve other wallets, found in the blocks alone, for tauhud.com/services/ (services.py)
         self.services = Services()
         self.services.bots = self.wallets.bots
-        self.services.passengers = lambda: self.cruise.who
+        self.services.passengers = self.simulated
         self.services_text, self.services_at = None, 0.0
         self.mempool_seen: dict[str, dict] = {}  # tx_hash -> summary, while in the mempool
         self.left_mempool: dict[str, dict] = {}  # tx_hash -> summary, waiting for a block
@@ -480,7 +494,9 @@ class Relay:
         self.rules_text: str | None = None      # /rules, refreshed by poll_rules
         # last: the cruise ships' passenger wallets are made in the background; tagged as simulated once known
         self.cruise.on_ready = self.tag_passengers
-        if self.cruise.ready:
+        self.hack.on_ready = self.tag_passengers
+        self.nomemo.on_ready = self.tag_passengers
+        if self.cruise.ready or self.hack.ready or self.nomemo.ready:
             self.tag_passengers()
 
     # ---------- polling ----------
@@ -1156,8 +1172,20 @@ class Relay:
         passengers are simulated, so they are counted apart from real wallets, from before the first one sends."""
         w = getattr(self, "wallets", None)
         if w is not None and hasattr(w, "retag"):
-            w.cruise = {pk.lower() for pk in self.cruise.who}
+            w.cruise = {pk.lower() for pk in self.simulated()}
             w.retag()
+
+    def simulated(self) -> dict:
+        """Our simulated wallets: the cruise ships' passengers and the hack of the week's four (pubkey -> who)."""
+        return {**self.cruise.who, **getattr(getattr(self, "hack", None), "who", {}), **getattr(getattr(self, "nomemo", None), "who", {})}
+
+    async def idle_step(self, ask, gov) -> bool:
+        """The island bot's free slot: a cruise ship first, then the hack of the week (never both in one slot)."""
+        if await self.cruise.step(ask, gov):
+            return True
+        if await self.hack.step(ask, gov):
+            return True
+        return await self.nomemo.step(ask, gov)
 
     def island_spend(self):
         self.island.today += 1   # a passenger's transaction comes out of the island's day budget (ISLAND_DAILY)
@@ -1413,8 +1441,13 @@ class Relay:
             if cmd == "sendtx":
                 self.load.sent("refused")
             return envelope_error(cmd, "Relay is busy; retry shortly.", "BUSY")
-        msg = await self.upstream.request(f"{cmd} {tx}")
+        # Through the sending connection while it is up, so a slow send never holds the visitors' reads (pages keep
+        # loading), and with the longer WALLET_TIMEOUT. A send the node did not answer in time may still be in its mempool.
+        way = self.sender if (self.sender is not None and self.sender.ws is not None) else self.upstream
+        msg = await way.request(f"{cmd} {tx}", WALLET_TIMEOUT)
         if msg is None:
+            if cmd == "sendtx":
+                return envelope_error(cmd, "The node did not answer in time; the transaction may still arrive.", "NO_ANSWER")
             return envelope_error(cmd, "Node is not reachable right now.", "UPSTREAM_DOWN")
         if cmd == "sendtx":
             self.load.sent("sent" if msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False else "refused")
@@ -1422,8 +1455,10 @@ class Relay:
             self.sources.note((msg.get("data") or {}).get("tx_hash"), site, via)   # for "where the transactions come from"
             self.island.saw_tx(ip)   # White Rabbit Key may pay this address for the move
             try:   # and the players' board may count this wallet's moves from this address (isle.py)
-                self.isle.saw(ip, json.loads(tx).get("sender_pubkey", ""))
-            except ValueError:
+                parsed = json.loads(tx)
+                self.isle.saw(ip, parsed.get("sender_pubkey", ""))
+                self.nomemo.saw(parsed, (msg.get("data") or {}).get("tx_hash"))   # a No Memo claim to the drop (nomemo.py)
+            except (ValueError, AttributeError):
                 pass
         return json.dumps(msg, separators=(",", ":"))
 
@@ -2079,7 +2114,7 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "no-store")])
             return Response(code.value, code.phrase, headers, json.dumps(sim[1], separators=(",", ":")).encode())
-        isl = self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.isle.route(path)
+        isl = self.nomemo_feedback.route(path, query, ip) if path == "/nomemo/feedback" else self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.hack.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/hack") else self.nomemo.route(path, query) if path.startswith("/nomemo") else self.isle.route(path)
         if isl is not None:
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, json.dumps(isl, separators=(",", ":")).encode())
@@ -2184,7 +2219,7 @@ class Relay:
                             json.dumps(self.summary(), separators=(",", ":")).encode())
         if path == "/wallets/tags":   # which known app or owner each wallet belongs to, for the chain core (walletdays.py)
             if getattr(self, "wtags_text", None) is None or time.monotonic() - self.wtags_at >= 60:
-                self.wtags_text = json.dumps({"tags": self.wallets.known()}, separators=(",", ":"))
+                self.wtags_text = json.dumps({"tags": self.wallets.known(), "via": self.sources.games()}, separators=(",", ":"))
                 self.wtags_at = time.monotonic()
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),

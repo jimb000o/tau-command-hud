@@ -307,6 +307,58 @@
     ss_busy1: "The lagoon is busy now. Busy is fine. Busy is what a harbour is for. The blocks are fuller, and the queue still moves.",
     ss_busy2: "Busy lagoon, folks: a hundred and more transactions in the last ten minutes, and not one of them waited more than a minute for its block. The ship is doing her job. So is the chain.",
     ss_strain: "The lagoon is straining, so the ship has slowed to half pace. If it stalls, she leaves at once. That's the safety rope, and Rico is holding it.",
+    /* the pirates, Black Sequence (game.js pirateLine): they come unannounced, so nothing before she is in sight (pp_sight,
+       pp_sightN after dark), at anchor (pp_here), one line for each trick the chain just refused (pp_t_<trick>, never one that
+       got through), weighing anchor, gone (pp_gone; pp_clean only when every trick was refused), cut, the day after (pp_next).
+       What a ship learned, from her logbook (sk_), the bookings paid ahead into escrow (ex_), our node answering slowly (se_slow) */
+    pp_sight1: "We interrupt this song! A ship off the reef that is on nobody's timetable. Black hull, dark sails, a flag with three chain links. Rico has no idea who they are. Rico has never been happier.",
+    pp_sight2: "Breaking news from the harbour: Tobias is running up and down the pier with a telescope. There's a ship out there nobody booked, and she is not answering his horn.",
+    pp_sight3: "That's not the Queen, folks, and it isn't Wednesday. That's a pirate ship. Made up by our relay, like every passenger, but whatever they try goes to the real chain. Stay tuned.",
+    pp_sightN1: "Lanterns on the water, folks, coming round the reef in the dark. No timetable, no tenders, just a black ship and a lot of lanterns. Rico is turning up the torches at the studio.",
+    pp_sightN2: "Out there in the dark: a ship with every lantern lit and no name anyone knows. Pirates. Rico would love to say he saw this coming. He did not.",
+    pp_here1: "The pirates are at anchor and staying aboard. They trade from the boat: rum from Bar La Ola, supplies from the market, by rope and basket. And now and then, a trick.",
+    pp_here2: "Pirate watch, live on Radio Coco. Every trick they try goes to the chain like any payment, and the chain has to say no. Rico tells you each time it does.",
+    pp_here3: "The pirates pay for their rum like anyone else, same price, same chain. It's their other payments you have to watch. The chain is watching. So is Rico.",
+    pp_hereN1: "Still at anchor, lanterns swinging. The bar has its torches lit, the market sends baskets out on a rope. A pirate evening on White Rabbit Key. Nobody planned this. Well. The relay did.",
+    pp_t_overspend1: "A pirate with an empty purse just tried to pay more than his wallet holds. The chain checked the balance and said no. You can't spend what isn't there. Not even at sea.",
+    pp_t_overspend2: "Another overspend from the black ship! Big promises, small purse. The chain refused it before the rum was poured.",
+    pp_t_replay1: "Two receipts, one payment: a pirate just sent a payment the chain had already taken, a second time. The chain counts every wallet's payments. Refused.",
+    pp_t_replay2: "The old double trick! The same payment, sent again. The chain has a long memory for that sort of thing. No.",
+    pp_t_expired1: "The pirate with the pocket watch sent a payment whose time had run out. The chain looked at the clock and said: too late, friend. Refused.",
+    pp_t_expired2: "Another expired payment from the pirates. Late is late, even with a very nice watch.",
+    pp_t_stale1: "The pirate with the calendar just tried a payment past its block deadline. The chain checks the deadline on every payment, and that one had passed. Refused.",
+    pp_t_stale2: "A payment from an old page of the calendar: past its block deadline. The chain said no.",
+    pp_t_forged1: "The wax seal trick! A payment signed with another pirate's key. The chain checks every signature against the wallet, and this one didn't match. Refused.",
+    pp_t_forged2: "Another forged signature from the black ship. A seal is only as good as the hand behind it, and the chain knows the hand.",
+    pp_t_impostor1: "The pirate in the false moustache just paid from another pirate's wallet, signed with his own key. The chain looked straight past the moustache. Refused.",
+    pp_t_impostor2: "An impostor again: somebody else's wallet, his own signature. The chain doesn't care about moustaches. Only keys.",
+    pp_t_freeride1: "The pirate with the empty hat sent a payment that allows no fee at all. On this lagoon every payment pays its way. Not that one. Refused.",
+    pp_t_freeride2: "A free ride attempt from the pirates: a payment with no room for a fee. The chain said: everybody pays the ferryman.",
+    pp_t_giant1: "A sack of coins bigger than the island! A pirate just tried an amount bigger than a payment can even hold. The chain checks that too. Refused.",
+    pp_t_giant2: "Another giant payment from the black ship. Too big to carry, so the chain won't carry it. Rico admires the ambition, though.",
+    pp_board1: "The black ship is weighing anchor. The lanterns go in one by one. They leave as they came: without a word to Tobias.",
+    pp_gone1: "The pirates have gone. What the chain answered to their tricks is in the logbook, with the time and the chain's own words. Rico recommends it as bedtime reading.",
+    pp_gone2: "Black sails on the horizon, going the other way. The island has counted its coconuts. All there. The chain was on watch all evening.",
+    pp_gone3: "That was the Black Sequence. She doesn't tell the island when she comes. You'll know when Tobias starts shouting.",
+    pp_clean1: "Tonight's pirate report: every trick they tried, the chain refused, each with the answer it should give. Rico would like to thank the chain. And the pirates, for trying so hard.",
+    pp_clean2: "Not one trick got past the chain tonight. Every refusal is in the logbook. Hana's class will have them all by morning.",
+    pp_recap: "The pirates' evening in numbers: the chain refused {n} pirate tricks. Every refusal is in the logbook, with the chain's answer.",
+    pp_cut1: "The pirate ship didn't stay her time. The logbook says why. Even pirates keep the rule of this harbour: when the lagoon isn't right, ships go.",
+    pp_next1: "Last night's pirates are still the talk of the island. Tobias wants a pirate page in the harbour book, Hana's class wants a pirate test, and Rico wants a pirate jingle. Only one of us will get it.",
+    pp_next2: "About last night's pirate ship: when is she back? She doesn't tell the island. You'll know when Tobias starts shouting. Again.",
+    sk_rate_down: "Since her last call, this ship sends a little slower: some of her transactions got no answer from our node in time, so she takes it gently. She writes down why, in her logbook.",
+    sk_rate_up: "Good news from the logbook: her last call ran clean, every send answered, so this time she may send a little faster. Never more than twelve a minute, though.",
+    sk_plan: "The ship has learned something: last time each answer from our node took a few seconds, and she sends one at a time. So she plans fewer stops now, and makes the ones she plans.",
+    sk_trial: "One kind of transaction goes back to a small trial on her next call: the node refused some of them last time, though they went through before. Trust, earned again.",
+    sk_skip1: "She skipped {n} planned stops today. Not a refusal: our ship sends one transaction at a time and waits for the answer, and a stop that comes too late is skipped, not forced.",
+    sk_skip2: "{n} stops skipped today, and the logbook says why: our node's answers took their time. Next time she plans for it. Ships that learn. Rico is taking notes.",
+    sk_quiet: "Our node left {n} sends without an answer in time today. That is not a no. The ship waited, slowed down, and checked afterwards which ones reached the chain anyway.",
+    sk_clean: "Not one refusal today, folks. Every transaction the node answered, it took. Rico has nothing dramatic to report, and that is the best report there is.",
+    se_slow: "Our node is answering slowly just now, so the ship waits a little and goes at half pace for a while. Nobody refused anything. It's patience, not a problem.",
+    ex_open: "Wednesday's ship has bookings already: a few passengers paid their fare days ahead, and the coins wait in escrow until she arrives. If the call is cancelled, they go back by themselves.",
+    ex_back: "One of Wednesday's passengers has taken the booking back, on purpose. Only the one who paid can do that, and the coins went straight home. A rehearsal, folks.",
+    ex_paid: "The fares booked days ago paid out at her arrival. Nobody pressed a button: the escrow let go at the hour, by itself.",
+    ex_off: "The call was cancelled, and every fare waiting in escrow went back to its passenger before the hour. That is what escrow is for.",
     /* the real numbers, shown exactly and spoken as a band */
     sl_total1: "Ship report: so far the node has taken {n} transactions from her passengers. Each one is in the logbook, with its time, its place and the node's answer.",
     sl_total2: "Ship report from the island: {n} passenger transactions so far. Rico would count them for you, but the logbook already did.",
@@ -695,6 +747,16 @@
     shipBusy: ["ss_busy1", "ss_busy2"],
     shipTotal: ["sl_total1", "sl_total2"],
     shipBlock: ["sl_block1", "sl_block2"],
+    pirSight: ["pp_sight1", "pp_sight2", "pp_sight3"],
+    pirSightN: ["pp_sightN1", "pp_sightN2", "pp_sight2"],
+    pirHere: ["pp_here1", "pp_here2", "pp_here3"],
+    pirHereN: ["pp_hereN1", "pp_here1", "pp_here2", "pp_here3"],
+    pirBoard: ["pp_board1"],
+    pirGone: ["pp_gone1", "pp_gone2", "pp_gone3"],
+    pirClean: ["pp_clean1", "pp_clean2"],
+    pirCut: ["pp_cut1"],
+    pirNext: ["pp_next1", "pp_next2"],
+    shipSkip: ["sk_skip1", "sk_skip2"],
   };
   /* the numbers in a wave line are shown exactly and spoken as a band, so every line has its clips: {n} a count of
      transactions or wallets (BANDS.count) or an amount of lagoon coins (BANDS.coins); a count line never says "one" (a
@@ -702,7 +764,7 @@
      block, shown as "block 1234" (a name that starts with b, n, m, a, c, h, g or e would be read as a number or a hash by
      assets/i18n.js). */
   const BANDS = { count: ["a couple of", "a handful of", "a dozen", "dozens of", "a hundred and more"], coins: ["a few hundred", "thousands of", "tens of thousands of", "a hundred thousand and more"] };
-  const NUMERIC = { fw4: "count", pl1: "count", pl2: "count", pl3: "count", pl4: "count", pl5: "count", pl6: "count", pl7: "count", rv1: "count", rv2: "count", rv3: "count", rv4: "count", cz1: "count", cz2: "count", un2: "count", rf1: "count", rf2: "count", dk3: "count", isN: "count", ndm1: "count", ndm2: "count", ndm3: "count", ndm4: "count", ngm1: "count", un1: "coins", un3: "coins", sl_total1: "count", sl_total2: "count", sl_block1: "count", sl_block2: "count", sl_recap: "count" };
+  const NUMERIC = { fw4: "count", pl1: "count", pl2: "count", pl3: "count", pl4: "count", pl5: "count", pl6: "count", pl7: "count", rv1: "count", rv2: "count", rv3: "count", rv4: "count", cz1: "count", cz2: "count", un2: "count", rf1: "count", rf2: "count", dk3: "count", isN: "count", ndm1: "count", ndm2: "count", ndm3: "count", ndm4: "count", ngm1: "count", un1: "coins", un3: "coins", sl_total1: "count", sl_total2: "count", sl_block1: "count", sl_block2: "count", sl_recap: "count", pp_recap: "count", sk_skip1: "count", sk_skip2: "count", sk_quiet: "count" };
   const VARIANTS = { dejaN: [{ n: "one" }, { n: "two" }], isWin: NAMES.map(x => ({ x })), isGov: NAMES.map(x => ({ x })) };   // the other fills a line takes, one clip each
   const BLOCK = { where: "the latest block" };   // how the block is spoken
   /* callers who phone the studio, each in their own voice through the telephone: listeners (ready voices, make.py
@@ -958,6 +1020,17 @@
       "Can I give one a name? Like Gerald?",
       "Gerald is taken, Zia. Gerald is a founder wallet. Pick another.",
       "Okay. Then mine is Captain Coconut. Bye, Rico!"] },
+    /* the pirates (talk.js RABBIT_SHIP_WHEN pirate facts): while she is at anchor, and after one of her tricks was refused */
+    { who: "gus", when: "pirateHere", say: ["Rico! Gus here, out on my boat by the reef. There's a black ship right next to me with lanterns everywhere. Should I be worried?",
+      "Not for your boat, Gus. The pirates are made up by our relay, and their tricks go to the chain, not to fishermen. The chain says no for all of us.",
+      "So if one of them wants my catch?",
+      "Then he'd need your key, Gus. Keep it in your pocket and your catch stays yours.",
+      "Pocket. Got it. Bye, Rico!"] },
+    { who: "zia", when: "pirateAfter+tImpostor", say: ["Rico, it's Zia! We did pirate bingo in class. Why does the chain refuse a payment from someone else's wallet, even when it looks right?",
+      "Because looking right isn't enough, Zia. Every payment is signed, and the chain checks that the signature belongs to the wallet that pays. No match, no payment.",
+      "So the false moustache didn't help?",
+      "Not one bit. The chain never looks at the moustache. Only at the key.",
+      "I knew it! Bye Rico!"] },
   ];
   /* the Night Line's callers (L.nlo*): somebody with a problem on the lagoon, Rico listens and helps; always
      technically right (the testnet as it runs), the humour only around it. Same shape as CALLS: caller first, then Rico,
@@ -1160,7 +1233,8 @@
     ["sam", "Every move on the island is written here with the name of whoever made it. Nobody can tear out a page, not even me. Reading costs nothing."],
     ["sam", "Empty, for now. Every move on the island will be written here, with the name of whoever made it. Nobody can tear out a page."],
     ["sam", "Boats, gulls and a black cat that sometimes walks past twice. Nothing to do here but think. Tau Testnet Alpha is out there too: the Book on this island works a lot like its blocks."],
-    ["sam", "Three moves a day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."],
+    ["sam", "Every move you make goes to the testnet as a transaction from your test wallet: 1 test AGRS to the place’s jar, signed in this browser. Here is each one, with the chain’s answer."],   // the chain strip: game.js "Your moves on Tau Testnet Alpha"
+    ["sam", "Three moves a day, six on your first day, seven days from Monday to Sunday, then the island votes. Each of the ten islanders cares about two things; laws and talk about those win them over. Rumours work for a day, until people read the Book."],
     ["sam", "The island’s numbers are out of reach just now. Your campaign goes on as before."],
     ["sam", "The players here are test wallets, not people. A move counts for a wallet when that wallet signed it into the testnet from the same connection. Each week counts a wallet’s first finished campaign; the result is what its game reports."],
     ["marisol", "Nobody owns her, and nobody feeds her alone: she eats on a day only when three wallets agree, one test AGRS each. Say yes and you are one of the three. The other two? Whoever passes through."],

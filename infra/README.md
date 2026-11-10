@@ -14,6 +14,7 @@ browser ──wss──▶ Caddy (TLS) ──▶ relay ──ws──▶ tau-nod
 - **relay** (`relay/relay.py`): holds one connection to the node, polls it on a fixed
   schedule that stays under the node's own rate limits, and serves every visitor from that
   cache. New blocks, mempool and governance changes are pushed to visitors as they happen.
+- **No Memo's crew purse** (`relay/nomemo.py`, inside the relay): the drop the terminal game pays and its lookalike, both keys made once in the relay's data volume (never in the repository). Pays each chapter's share (500 test AGRS) back to the wallet whose claim (a payment of 101, 102 or 103 to the drop) the chain sealed, the crew's mark once, and, as the Tracer, dust from the lookalike after the first chapter; in the island bot's free slots, one send every 20 s at most, 300 payouts a day. `GET /nomemo` (the drop, the players' board), `GET /nomemo/wallet/<address>`; `up nomemo` prints the state; `NOMEMO_ENABLED=0`, `NOMEMO_TRACER=0`.
 - **Caddy**: HTTPS with automatic Let's Encrypt certificates; also serves the tracker's `proposals.json` and `feed.xml`.
 - **alerts** (`alerts/alerts.py`): proposal tracker; Telegram/X posts and an Atom feed when rules are proposed, agreed or take effect, plus a weekly recap image.
 - **donations** (`alerts/donations.py`): watches the donation address on Ethereum (AGRS and ETH only, public Blockscout API), keeps `/donations.json` for the About section and posts one thank-you per new donation to the channel.
@@ -251,6 +252,35 @@ repeated texts. The container uses the node's image (nothing extra to compile), 
 outbound network, a read-only filesystem, no capabilities, 512 MB, 1 CPU and 64 processes.
 `GET /check/health` answers `{"ok": true}`.
 
+## Node follows IDNI main
+
+`follow/idni_follow.py` keeps the node on the newest IDNI tau-testnet main by itself. Every `up` installs a systemd timer
+(`tau-idni-follow.timer`, minute 05 and 35 of every hour); nothing else schedules it. One check:
+
+1. Asks GitHub for IDNI/tau-testnet main. Same commit as the node runs: done.
+2. Waits while a ship window is on or starts within 90 minutes (`IDNI_FOLLOW_QUIET`, German time, default
+   `sat 12-17,tue 16-20,wed 14-18,thu 10-12`) and while a ship is in port or due within 2 hours (relay `/cruise`).
+3. Leaves a commit whose IDNI `Dockerfile.standalone` moved to another tau-lang for a repin by hand (a tau-lang rebuild
+   takes hours on a CAX11).
+4. Builds the node image of the new commit next to the running one; our node patches must still apply, otherwise the
+   build stops and the note names the patch.
+5. Starts a trial node from that image with an empty chain on the live testnet (no published ports, 1 CPU, 1.5 GB): it
+   must sync from genesis to the live tip within `IDNI_FOLLOW_TRIAL_MINUTES` (45) and hold the same blocks as our node.
+6. Switches: stops the node, copies its chain data to the volume `tau-follow-snapshot`, sets `TAU_TESTNET_REF` in `.env`,
+   `docker compose up -d --no-build`, then the node must answer and be within 3 blocks of the network tip, twice,
+   3 minutes apart.
+7. If not: the old image and the copied chain data go back, and the commit is not tried again (the next IDNI commit is).
+
+The owner's private Telegram chat (`up owner`) hears about every switch and once about every commit held back.
+`up` shows it under `idni:` as `auto-follow:`. State and log: `/var/lib/tau-idni-follow/`.
+
+The followed commit outlives `up`: `up` builds it as long as `.env.example`'s pin is the one it followed from. A repin
+merged here wins.
+
+Turn it off: `up follow off` (or `IDNI_FOLLOW=0` in `.env` and `up`). The node stays on the commit it runs. On again:
+`up follow on`. One check now: `up follow now`. Back to the repo pin by hand: `up follow off`, then
+`rm /var/lib/tau-idni-follow/state.json` and `up`.
+
 ## Validator seat
 
 tau-testnet-v2 is proof of authority: only keys in the on-chain validator set propose
@@ -382,7 +412,9 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
   moves), only for a day a real player moved (since 6 November 2026; a day nobody played gets no report, the
   islanders' own politics are not news), with the standing explanation of the campaign cycle on Monday only, with
   the governor's count; its length is read from `rabbit/game.js` (`ISLAND_DAYS`, 5, when unreachable). X gets it
-  only for a day real players moved and at most every `ISLAND_X_EVERY_DAYS` (2) days, as a spare post.
+  only for a day with a story (an election won or a law passed by real players, since 7 November 2026; a day of moves
+  alone stays on Telegram), told as that story with the live island painting, at most every `ISLAND_X_EVERY_DAYS` (1)
+  days, as a spare post; the Monday governor's count always.
   `--island-preview` prints today's so far; `ISLAND_CRIER=false` stops it.
 - Nothing is posted late in a burst after a restart: the Monday recap is skipped once it is `RECAP_LATE_HOURS` (3)
   late, Agorzilla's evenings older than `AGORZILLA_LATE_HOURS` (6) are noted and not posted (on 2 November 2026 the

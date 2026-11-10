@@ -7,11 +7,19 @@ Every transaction in the blocks the relay holds is put in one of five groups:
              wherever it was signed.
   tauhud     it was sent through this relay's wallet door from a Tau HUD page (wallet, playground, vote, …), or by the
              relay itself (the end of a turn on a rule place).
-  rabbit     White Rabbit Key, the island game on tauhud.com/rabbit/: it pays the island council, a place's till or a
-             ballot box (a player's line or ballot, a rival's move from the island bot), or it is a wage or embassy money
-             one of the island's purses pays a player, or a cruise ship's simulated passenger pays a place (cruise.py).
-             The bot's, the purses' and the passengers' wallets are ours, not visitors': their transactions count in
-             this group's transactions only, never in wallets, "ours", "hours" or "starts".
+  rabbit     White Rabbit Key, the island game on tauhud.com/rabbit/: a player pays the island council, a place's till or
+             a ballot box (a line or a ballot).
+  nomemo     No Memo, the terminal game on tauhud.com/nomemo/: sent through this relay's wallet door from No Memo (it says
+             "via nomemo"). Real players' transactions, counted like Tau HUD's but apart.
+  cruise     a cruise ship's simulated passenger pays a place on the island (cruise.py). Real transactions, sent by our
+             server, not by people: never user transactions.
+  nmsrv      No Memo's own wallets (nomemo.py): the relay purse's payouts, the Tracer's lookalike dust, the bank's top-ups
+             of the drop. Sent by our server, not by people: never user transactions.
+  hack       the hack of the week's four test wallets (hackweek.py). Sent by our server: never user transactions.
+  bot        the island bot: a rival candidate's move, or a wage or embassy money one of the island's purses pays a
+             player (island.py). Sent by our server, not by people: never user transactions.
+             The bot's, the purses' and the passengers' wallets are ours, not visitors': they never count in wallets,
+             "ours", "hours" or "starts".
   idni       sent by one of the accounts the testnet started with (tau-testnet networks/tau-testnet-v2/genesis.json,
              accounts_state), which IDNI set up; on this testnet they make most of the traffic.
   other      everything else: other wallets, scripts and tools.
@@ -56,8 +64,9 @@ import time
 
 log = logging.getLogger("relay.txsources")
 
-GROUPS = ("agorzilla", "tauhud", "rabbit", "idni", "other")
-OURS = ("agorzilla", "tauhud", "rabbit")   # our two sites, with White Rabbit Key on tauhud.com counted apart
+GROUPS = ("agorzilla", "tauhud", "rabbit", "nomemo", "cruise", "nmsrv", "hack", "bot", "idni", "other")
+AUTO = ("cruise", "nmsrv", "hack", "bot")   # our own server's automated senders: real transactions, but not users'
+OURS = ("agorzilla", "tauhud", "rabbit", "nomemo")   # our two sites, with White Rabbit Key and No Memo on tauhud.com counted apart
 SENT_MAX = 50000
 # Agorzilla's addresses (agorilla repo assets/core.js: BOWL, BOXES, ASKS)
 AGORZILLA = frozenset({
@@ -110,6 +119,8 @@ def deja(blocks: list[dict], now: float) -> dict:
     return {"day": day, "agreed": len(wallets), "needed": DEJA_AGREE, "fed": len(wallets) >= DEJA_AGREE,
             "closes_at": start + 86400, "partial": first is None or first > start}
 VIA_MAX = 24
+GAME_VIA = ("nomemo",)   # pages that are games of their own: No Memo (tauhud.com/nomemo/, sends "via nomemo")
+SIM_GROUP = {"nomemo": "nmsrv", "hack": "hack"}   # simulated() wallets that are not cruise passengers: their own group
 
 
 BOWL = "947c2b8988769f9fb7ada19021e27c51f5d855e4e05ad258d2ca2322821987dbff93e0425f281edded5c372b97e6a108"
@@ -141,6 +152,7 @@ RABBIT_TILLS = {
     "82a45ff8fd1bbba834c5c9f89e8ebb712935f83aa2709cdda051deebec517483e73fc6eeb997ebbaf2dc582a2eea56dc",
     "a974149276f73fa2021068c89521bc68e8877cbfdb7d75b348951269bc3ab6c0677997f31bdbb1d28c95dc3aacacd34e",
     "9266b7dbca59d06c60517e815e32169aaba70056101d394c6ab851a99925f18e23da324cf0c73ab5fe27c951c8bb024e",
+    "8beb2ce1c29053e23ed0df5df1b47cceb4082b13f507707cc0c015494bd1a23e121f66b46c76fc39d2c8d681e80a0709",   # the Parasol Café
 }
 RABBIT_BOXES = {
     "b44a202e884682b8677daf5f2685b5775f3c9ea9443a89651013bc455bc66061f2cf8d092897893bad3311e598f2cb11": "marisol",
@@ -239,7 +251,8 @@ def group(tx: dict, tx_hash: str, sent: dict) -> str:
             return "agorzilla"
     site = sent.get(tx_hash)
     if site is not None:
-        return site.split("|")[0] or "tauhud"
+        s, _, via = site.partition("|")
+        return "nomemo" if not s and via in GAME_VIA else s or "tauhud"
     if str(tx.get("sender_pubkey") or "").lower() in GENESIS:
         return "idni"
     return "other"
@@ -298,6 +311,19 @@ class TxSources:
                 log.warning("cannot write %s: %r; sent hashes live in memory only", self.path, exc)
                 self._warned = True
 
+    def games(self, n: int = 2000) -> dict:
+        """{tx hash: page} for the newest n sends that came from one of our games with a page of its own (GAME_VIA), not
+        from the wallet in general: the same browser wallet plays White Rabbit Key and No Memo, so its tag alone cannot
+        say which game a transaction came from (GET /wallets/tags "via")."""
+        out = {}
+        for h in reversed(self.sent):
+            page = self.sent[h].partition("|")[2]
+            if page in GAME_VIA:
+                out[h] = page
+                if len(out) >= n:
+                    break
+        return out
+
     def recent(self, blocks: list[dict], n: int = 12) -> dict:
         """Who sent the transactions in the last n blocks (oldest first in, the newest n counted), for Rico's chain weather:
         totals per source only, like "starts" in by_day. idni = the accounts the testnet started with, or the wallet that
@@ -306,7 +332,7 @@ class TxSources:
         that Tau HUD page; other = anything else (a key is not a person, an unknown sender stays unknown)."""
         bs = [b for b in blocks if isinstance(b, dict)][-n:]
         bots = {k.lower() for k in (*self.bots, *self.purses)}
-        ship = {k.lower() for k in (self.passengers() or {})}
+        ship = {k.lower(): v for k, v in (self.passengers() or {}).items()}
         props = {str((b.get("header") or {}).get("proposer_pubkey") or "").lower() for b in bs} - {""}
         out: dict[str, int] = {}
         for b in bs:
@@ -323,7 +349,7 @@ class TxSources:
                 elif s in bots:
                     k = "bot"
                 elif s in ship:
-                    k = "cruise"
+                    k = SIM_GROUP.get(ship[s], "cruise")
                 elif DEJA in to:
                     k = "deja"
                 elif to & AGORZILLA:
@@ -382,7 +408,11 @@ class TxSources:
                 s = str(tx.get("sender_pubkey") or "").lower()
                 rb = rabbit(tx, bots)
                 server = s in bots or s in self.purses or s in ship   # the island bot's, purses' and passengers' wallets: ours
-                if g != "agorzilla" and (rb or s in self.purses or s in ship):
+                if s in ship:
+                    g = SIM_GROUP.get(ship[s], "cruise")
+                elif s in bots or s in self.purses:
+                    g = "bot"
+                elif g != "agorzilla" and rb:
                     g = "rabbit"
                 amount = moved(tx)
                 row = days.setdefault(day, {k: [0, 0, 0, 0, 0] for k in GROUPS})
@@ -405,7 +435,7 @@ class TxSources:
                     src, kind = start(tx, h, g, self.sent, rb)
                     kinds = starts.setdefault(day, {}).setdefault(src, {})
                     kinds[kind] = kinds.get(kind, 0) + 1
-                if s in ship:   # a simulated cruise passenger: not a player and not a move, counted apart
+                if s in ship and ship[s] not in SIM_GROUP:   # a simulated cruise passenger: not a player and not a move, counted apart
                     r = isle.setdefault(day, {"moves": 0, "rivals": 0, "lines": 0, "votes": 0, "agrs": 0, "wallets": 0,
                                               "new": 0, "cands": {}, "by": {}, "hours": [0] * 24})
                     r["cruise"] = r.get("cruise", 0) + 1

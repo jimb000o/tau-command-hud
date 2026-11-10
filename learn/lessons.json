@@ -1,0 +1,964 @@
+{
+  "about": "Five short lessons for tauhud.com/learn. The page loads them; `up tau` on the server asks the engine every try and every solution and prints ok or FAIL, so the expected answers here are checked against the real engine. A task's `fill` is the fill-in shown to people who picked 'never written a formula': the pattern with ▢ and the choices for it. `guide` is the step-by-step tour shown to people who picked 'never written a formula': one idea per card, every question is a try or solution of the lessons above, so the self-test already checks it; for a guess, the engine's answer decides which choice was right. A lesson with \"level\": \"pro\" is shown only to people who picked 'I know logic or Tau'. `asked` holds questions from the community in IDNI's monthly Q&A videos, answered in our own words; a `try` is always a lesson try, so the self-test covers it. `brief` feeds tauhud.com/learn/brief/: a short software brief, each requirement in plain English with the Tau line written for it by hand; `checks` lists which requirements are switched on and the verdict the engine must give, and the self-test asks each of them.",
+  "lessons": [
+    {
+      "id": "yesno",
+      "title": "Yes or no",
+      "text": "Tau answers questions about formulas. sat asks: can this be true? A letter such as x is a variable, and the formula counts as true when some value of x makes it true.",
+      "tries": [
+        {
+          "label": "Can x be 0?",
+          "op": "sat",
+          "spec": "x = 0",
+          "expect": {
+            "verdict": true
+          },
+          "says": "T: yes, x = 0 can be true."
+        },
+        {
+          "label": "Can x be 0 and 1?",
+          "op": "sat",
+          "spec": "x = 0 && x = 1",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: no value of x is 0 and 1 at once."
+        },
+        {
+          "label": "Why not?",
+          "op": "why",
+          "spec": "x = 0 && x = 1",
+          "expect": {
+            "verdict": false
+          },
+          "says": "Tau names the smallest set of parts that already contradict each other."
+        }
+      ],
+      "task": {
+        "text": "Change x = 0 && x = 1 so that Tau answers T again. Hint: && means and, || means or.",
+        "op": "sat",
+        "expect": {
+          "verdict": true
+        },
+        "must": [
+          "x"
+        ],
+        "solution": "x = 0 || x = 1",
+        "fill": {
+          "pattern": "x = 0 ▢ x = 1",
+          "choices": [
+            "&&",
+            "||"
+          ]
+        }
+      }
+    },
+    {
+      "id": "valid",
+      "title": "True in every case",
+      "text": "valid asks the harder question: is this true whatever the values are? sat is happy with one way to make it true, valid needs all of them.",
+      "tries": [
+        {
+          "label": "Is x = 0 always true?",
+          "op": "valid",
+          "spec": "x = 0",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: x could be something else."
+        },
+        {
+          "label": "Is x 0 or not 0?",
+          "op": "valid",
+          "spec": "x = 0 || x != 0",
+          "expect": {
+            "verdict": true
+          },
+          "says": "T: whatever x is, it is 0 or it is not."
+        }
+      ],
+      "task": {
+        "text": "Write a formula with && in it that is still valid.",
+        "op": "valid",
+        "expect": {
+          "verdict": true
+        },
+        "must": [
+          "&&"
+        ],
+        "solution": "(x = 0 || x != 0) && (y = y)",
+        "fill": {
+          "pattern": "(x = 0 ▢ x != 0) && (y = y)",
+          "choices": [
+            "&&",
+            "||"
+          ]
+        }
+      }
+    },
+    {
+      "id": "streams",
+      "title": "Inputs in, outputs out",
+      "text": "A testnet rule reads inputs and writes outputs, one step at a time. i1[t] is input 1 at step t, o1[t] is output 1. :bv[8] makes them 8-bit numbers, 0 to 255, and { 1 } is the number 1. run feeds the inputs in and shows what Tau writes.",
+      "tries": [
+        {
+          "label": "Add one",
+          "op": "run",
+          "spec": "o1[t]:bv[8] = i1[t]:bv[8] + { 1 }:bv[8]",
+          "steps": [
+            {
+              "i1": "1"
+            },
+            {
+              "i1": "2"
+            },
+            {
+              "i1": "3"
+            }
+          ],
+          "expect": {
+            "out": {
+              "o1": [
+                "2",
+                "3",
+                "4"
+              ]
+            }
+          },
+          "says": "At every step Tau writes the input plus one."
+        },
+        {
+          "label": "Past 255",
+          "op": "run",
+          "spec": "o1[t]:bv[8] = i1[t]:bv[8] + { 1 }:bv[8]",
+          "steps": [
+            {
+              "i1": "255"
+            }
+          ],
+          "expect": {
+            "out": {
+              "o1": [
+                "0"
+              ]
+            }
+          },
+          "says": "8-bit numbers wrap around: 255 + 1 is 0. A rule that must not wrap has to say so itself."
+        }
+      ],
+      "task": {
+        "text": "Make o1 twice the input. Run it with the inputs 1, 2, 3.",
+        "op": "run",
+        "steps": [
+          {
+            "i1": "1"
+          },
+          {
+            "i1": "2"
+          },
+          {
+            "i1": "3"
+          }
+        ],
+        "expect": {
+          "out": {
+            "o1": [
+              "2",
+              "4",
+              "6"
+            ]
+          }
+        },
+        "solution": "o1[t]:bv[8] = i1[t]:bv[8] * { 2 }:bv[8]"
+      }
+    },
+    {
+      "id": "time",
+      "title": "Promises over time",
+      "text": "A spec is a promise for every step. always must hold at each step, sometimes at one step at least. Tau checks the promise against every input anyone could send, and [t-1] reads the step before.",
+      "tries": [
+        {
+          "label": "Will the input ever be 1?",
+          "op": "sat",
+          "spec": "sometimes i1[t] = 1",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: the input may stay 0 forever, and the spec cannot force it."
+        },
+        {
+          "label": "Will the output ever copy it?",
+          "op": "sat",
+          "spec": "sometimes o1[t] = i1[t]",
+          "expect": {
+            "verdict": true
+          },
+          "says": "T: the output can copy the input at the step it reads it."
+        },
+        {
+          "label": "Grow forever?",
+          "op": "sat",
+          "spec": "o1[t]:bv[2] > o1[t-1]:bv[2]",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: an output that must grow at every step runs out of 2-bit numbers (0 to 3)."
+        }
+      ],
+      "task": {
+        "text": "Change the last one so it can hold forever: the output only has to differ from the step before.",
+        "op": "sat",
+        "expect": {
+          "verdict": true
+        },
+        "must": [
+          "[t-1]"
+        ],
+        "solution": "o1[t]:bv[2] != o1[t-1]:bv[2]"
+      }
+    },
+    {
+      "id": "rule",
+      "title": "A real testnet rule",
+      "text": "Every rule on the testnet is a spec like this one. For each transfer the node feeds the amount in on i1, and the rule answers on o5: 1 lets the transfer through, 0 stops it. This rule stops anything over 1,000.",
+      "tries": [
+        {
+          "label": "500, then 5,000",
+          "op": "run",
+          "spec": "always ( (i1[t]:bv[24] > { 1000 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+          "steps": [
+            {
+              "i1": "500"
+            },
+            {
+              "i1": "5000"
+            }
+          ],
+          "expect": {
+            "out": {
+              "o5": [
+                "1",
+                "0"
+              ]
+            }
+          },
+          "says": "500 goes through (1), 5,000 is stopped (0)."
+        }
+      ],
+      "task": {
+        "text": "Lower the limit to 100 and run 500 again: now it should be stopped.",
+        "op": "run",
+        "steps": [
+          {
+            "i1": "500"
+          }
+        ],
+        "expect": {
+          "out": {
+            "o5": [
+              "0"
+            ]
+          }
+        },
+        "must": [
+          "100"
+        ],
+        "solution": "always ( (i1[t]:bv[24] > { 100 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) )."
+      }
+    },
+    {
+      "id": "terms",
+      "level": "pro",
+      "title": "Terms and formulas",
+      "text": "Tau has two layers. Terms are Boolean functions built with & (and), | (or), ' (complement) and ^ (xor); x y is x & y, and 0 and 1 are bottom and top of the algebra. Formulas relate terms with = != <= and join them with && || ! -> <->. Untyped variables live in the default type tau.",
+      "tries": [
+        {
+          "label": "x ≤ y means x y' = 0",
+          "op": "valid",
+          "spec": "x & y' = 0 <-> x <= y",
+          "expect": {
+            "verdict": true
+          },
+          "says": "T: in any Boolean algebra, x is below y exactly when x meets the complement of y in 0."
+        },
+        {
+          "label": "Two tops that meet in 0?",
+          "op": "sat",
+          "spec": "x y = 0 && x = 1 && y = 1",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: 1 & 1 is 1, never 0."
+        },
+        {
+          "label": "Which parts clash?",
+          "op": "why",
+          "spec": "x y = 0 && x = 1 && y = 1",
+          "expect": {
+            "verdict": false
+          },
+          "says": "The core names the parts that already contradict each other."
+        }
+      ],
+      "task": {
+        "text": "Write a valid formula that uses the complement '.",
+        "op": "valid",
+        "expect": {
+          "verdict": true
+        },
+        "must": [
+          "'"
+        ],
+        "solution": "x | x' = 1"
+      }
+    },
+    {
+      "id": "quant",
+      "level": "pro",
+      "title": "all and ex",
+      "text": "all x and ex x quantify a variable over the algebra. A free variable is read existentially by sat, so sat x = 0 already means ex x x = 0. The default algebra tau is atomless, so it has many more elements than 0 and 1.",
+      "tries": [
+        {
+          "label": "Is every x zero?",
+          "op": "sat",
+          "spec": "all x x = 0",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: the algebra has elements other than 0."
+        },
+        {
+          "label": "Every x has a complement",
+          "op": "sat",
+          "spec": "all x ex y x & y = 0 && x | y = 1",
+          "expect": {
+            "verdict": true
+          },
+          "says": "T: y = x' meets x in 0 and joins it to 1."
+        }
+      ],
+      "task": {
+        "text": "Change all x x = 0 so that it holds, with one word.",
+        "op": "sat",
+        "expect": {
+          "verdict": true
+        },
+        "must": [
+          "ex"
+        ],
+        "solution": "ex x x = 0"
+      }
+    },
+    {
+      "id": "game",
+      "level": "pro",
+      "title": "For all inputs, some output",
+      "text": "sat on a spec with streams is not plain satisfiability: every input is quantified for all, every output exists, in time order, and outputs may depend on inputs of the same step. So a spec cannot constrain its inputs, and it must answer whatever comes in. realizable asks the same question for full LTL.",
+      "tries": [
+        {
+          "label": "Demand the input",
+          "op": "sat",
+          "spec": "i1[t] = 0",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: the input is chosen by the environment and may be anything else."
+        },
+        {
+          "label": "Answer with the complement",
+          "op": "sat",
+          "spec": "o1[t] = i1[t]'",
+          "expect": {
+            "verdict": true
+          },
+          "says": "T: whatever comes in, the output can be its complement."
+        },
+        {
+          "label": "Copy it and be 0",
+          "op": "sat",
+          "spec": "o1[t] = i1[t] && o1[t] = 0",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: once the input is not 0, no output does both."
+        },
+        {
+          "label": "Copy, as realizable",
+          "op": "realizable",
+          "spec": "o1[t] = i1[t]",
+          "expect": {
+            "verdict": true
+          },
+          "says": "T: a strategy exists that answers every input."
+        }
+      ],
+      "task": {
+        "text": "Change one connective in o1[t] = i1[t] && o1[t] = 0 so that sat answers T.",
+        "op": "sat",
+        "expect": {
+          "verdict": true
+        },
+        "must": [
+          "||"
+        ],
+        "solution": "o1[t] = i1[t] || o1[t] = 0"
+      }
+    }
+  ],
+  "guide": [
+    {
+      "id": "statement",
+      "title": "A formula is a statement",
+      "text": "A formula is a short statement that is either true or false, like “the light is on”. Tau writes it with letters and signs. The letter x is a box that can hold a value.",
+      "show": [
+        [
+          "x",
+          "a box"
+        ],
+        [
+          "=",
+          "is"
+        ],
+        [
+          "0",
+          "zero"
+        ]
+      ],
+      "ask": "Can the box hold 0? Ask the real Tau engine.",
+      "q": {
+        "op": "sat",
+        "spec": "x = 0"
+      },
+      "says": "Tau answers T for yes and F for no. Here: yes, x can be 0.",
+      "learn": [
+        [
+          "=",
+          "is"
+        ],
+        [
+          "T",
+          "yes, true"
+        ],
+        [
+          "F",
+          "no, false"
+        ]
+      ]
+    },
+    {
+      "id": "and",
+      "title": "Two statements joined by and",
+      "text": "You can join two statements into one with && (read it: and). The joined statement is only true when both halves are true, like “it is raining and the sun is shining”. Here both halves talk about the same box x.",
+      "show": [
+        [
+          "x = 0",
+          "x is 0"
+        ],
+        [
+          "&&",
+          "and"
+        ],
+        [
+          "x = 1",
+          "x is 1"
+        ]
+      ],
+      "ask": "Your guess: can x be 0 and 1 at the same time?",
+      "choices": [
+        {
+          "label": "Yes",
+          "expect": {
+            "verdict": true
+          }
+        },
+        {
+          "label": "No",
+          "expect": {
+            "verdict": false
+          }
+        }
+      ],
+      "q": {
+        "op": "sat",
+        "spec": "x = 0 && x = 1"
+      },
+      "says": "x cannot be 0 and 1 at once: a box holds one value at a time, so the two halves are never true together.",
+      "learn": [
+        [
+          "&&",
+          "and"
+        ]
+      ]
+    },
+    {
+      "id": "or",
+      "title": "Joined by or instead",
+      "text": "Now join the same two halves with || (read it: or). Then one true half is enough, like “I take the bus or I walk”. Pick the sign that makes Tau say yes.",
+      "fill": {
+        "pattern": "x = 0 ▢ x = 1",
+        "choices": [
+          "&&",
+          "||"
+        ],
+        "op": "sat",
+        "expect": {
+          "verdict": true
+        }
+      },
+      "says": "With or, x = 0 is enough. You just wrote your first Tau formula.",
+      "done": "yesno",
+      "learn": [
+        [
+          "||",
+          "or"
+        ]
+      ]
+    },
+    {
+      "id": "every",
+      "title": "True for every value",
+      "text": "Until now Tau looked for one value of x that works. A stronger question is: is it true whatever x is? Tau calls that valid. The sign != means “is not”.",
+      "show": [
+        [
+          "x = 0",
+          "x is 0"
+        ],
+        [
+          "||",
+          "or"
+        ],
+        [
+          "x != 0",
+          "x is not 0"
+        ]
+      ],
+      "ask": "Your guess: is this true whatever x is?",
+      "choices": [
+        {
+          "label": "Yes",
+          "expect": {
+            "verdict": true
+          }
+        },
+        {
+          "label": "No",
+          "expect": {
+            "verdict": false
+          }
+        }
+      ],
+      "q": {
+        "op": "valid",
+        "spec": "x = 0 || x != 0"
+      },
+      "says": "Any x is either 0 or not 0, so this holds every time.",
+      "learn": [
+        [
+          "!=",
+          "is not"
+        ],
+        [
+          "valid",
+          "true in every case"
+        ]
+      ]
+    },
+    {
+      "id": "machine",
+      "title": "A rule is a little machine",
+      "text": "On the testnet a rule reads a number that comes in and writes a number that goes out, one step at a time. i1 is the number in, o1 the number out. This machine adds one.",
+      "show": [
+        [
+          "o1",
+          "out"
+        ],
+        [
+          "=",
+          "is"
+        ],
+        [
+          "i1 + 1",
+          "in plus one"
+        ]
+      ],
+      "ask": "Run it with the numbers 1, 2 and 3.",
+      "q": {
+        "op": "run",
+        "spec": "o1[t]:bv[8] = i1[t]:bv[8] + { 1 }:bv[8]",
+        "steps": [
+          {
+            "i1": "1"
+          },
+          {
+            "i1": "2"
+          },
+          {
+            "i1": "3"
+          }
+        ]
+      },
+      "says": "Every number that goes in comes out one bigger.",
+      "learn": [
+        [
+          "i1",
+          "number in"
+        ],
+        [
+          "o1",
+          "number out"
+        ]
+      ]
+    },
+    {
+      "id": "wrap",
+      "title": "Numbers have a size",
+      "text": "These numbers have 8 bits, so they go from 0 to 255 and no further.",
+      "show": [
+        [
+          "o1",
+          "out"
+        ],
+        [
+          "=",
+          "is"
+        ],
+        [
+          "i1 + 1",
+          "in plus one"
+        ]
+      ],
+      "ask": "Your guess: what comes out when 255 goes in?",
+      "choices": [
+        {
+          "label": "256",
+          "expect": {
+            "out": {
+              "o1": [
+                "256"
+              ]
+            }
+          }
+        },
+        {
+          "label": "0",
+          "expect": {
+            "out": {
+              "o1": [
+                "0"
+              ]
+            }
+          }
+        }
+      ],
+      "q": {
+        "op": "run",
+        "spec": "o1[t]:bv[8] = i1[t]:bv[8] + { 1 }:bv[8]",
+        "steps": [
+          {
+            "i1": "255"
+          }
+        ]
+      },
+      "says": "Like a trip counter, it rolls over to 0 after 255. A rule that must not roll over has to say so itself.",
+      "learn": [
+        [
+          "bv[8]",
+          "a number from 0 to 255"
+        ]
+      ]
+    },
+    {
+      "id": "rule",
+      "title": "A real testnet rule",
+      "text": "Every transfer on the testnet passes a rule like this one. The amount comes in, and the rule answers 1 to let it through or 0 to stop it. This one stops anything over 1,000.",
+      "show": [
+        [
+          "i1 > 1000",
+          "amount over 1,000?"
+        ],
+        [
+          "? 0",
+          "then 0: stop"
+        ],
+        [
+          ": 1",
+          "else 1: let through"
+        ]
+      ],
+      "ask": "Your guess: what happens to a transfer of 5,000?",
+      "choices": [
+        {
+          "label": "Let through",
+          "expect": {
+            "out": {
+              "o5": [
+                "1",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "label": "Stopped",
+          "expect": {
+            "out": {
+              "o5": [
+                "1",
+                "0"
+              ]
+            }
+          }
+        }
+      ],
+      "q": {
+        "op": "run",
+        "spec": "always ( (i1[t]:bv[24] > { 1000 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+        "steps": [
+          {
+            "i1": "500"
+          },
+          {
+            "i1": "5000"
+          }
+        ]
+      },
+      "says": "500 goes through, 5,000 is stopped. You just read a real testnet rule.",
+      "learn": [
+        [
+          "?  :",
+          "if, then, else"
+        ]
+      ]
+    }
+  ],
+  "asked": [
+    {
+      "q": "When will Tau Language be released, and what is still missing?",
+      "a": "IDNI named three things in November 2026: finishing the anti-prenexing algorithm, part of how the engine handles formulas, then two features called functions and tables, and speed work so that the chain keeps up with Tau. No date was given.",
+      "video": "_4DnQImw4tQ",
+      "t": 98,
+      "when": "2026-11"
+    },
+    {
+      "q": "What is the difference between a rule for everyone and a rule for my wallet?",
+      "a": "A rule for everyone, such as the fee or who may seal blocks, changes only when the validators agree: a proposal, a two-thirds majority, then a wait of some blocks. A rule on your own wallet, such as a spending cap, needs no vote: you sign it, and the chain checks your payments against it.",
+      "video": "_4DnQImw4tQ",
+      "t": 320,
+      "when": "2026-11"
+    },
+    {
+      "q": "Will personal rules work for many accounts?",
+      "a": "That is IDNI's main work now. Tau Language became about 1.5 times faster, and the plan is to limit each account's rule to its own inputs and outputs, so that one big formula for everyone becomes many small ones.",
+      "video": "_4DnQImw4tQ",
+      "t": 903,
+      "when": "2026-11"
+    },
+    {
+      "q": "Why is the node written in Python and not in Rust?",
+      "a": "The slow part is the Tau engine, written in C++ and run in separate worker processes; Python only does networking, storage and the interface. What limits speed is how long the engine takes for a formula, and another language around it would not change that.",
+      "video": "_4DnQImw4tQ",
+      "t": 381,
+      "when": "2026-11"
+    },
+    {
+      "q": "Will AI make logic tools like Tau unnecessary?",
+      "a": "IDNI thinks not: a logic solver is fully reliable and far cheaper for the tasks it is built for, so AI agents are more likely to use such tools than to replace them, the way AI-written proofs are checked by a logic engine today.",
+      "video": "_4DnQImw4tQ",
+      "t": 501,
+      "when": "2026-11"
+    },
+    {
+      "q": "Do I have to learn Boolean algebra to use Tau?",
+      "a": "No. The guide on this page uses none: you compare things with = and join them with and (&&) and or (||). Boolean algebra is what Tau does underneath; it helps later, when you want to know why an answer is what it is.",
+      "video": "1RoPTERgnkU",
+      "when": "2026-01"
+    },
+    {
+      "q": "How does Tau tell an input from an output?",
+      "a": "By the name: a stream whose name starts with i is an input, one that starts with o is an output, unless the spec declares it otherwise. Inputs come from outside, so a spec cannot demand them; outputs are what the spec decides.",
+      "try": {
+        "op": "sat",
+        "spec": "i1[t] = 0"
+      },
+      "says": "F: the spec cannot decide what comes in.",
+      "video": "0jITO0yOnkY",
+      "when": "2024-08"
+    },
+    {
+      "q": "What goes inside the curly brackets?",
+      "a": "A constant of a given type: { 1 }:bv[8] is the number 1 as an 8-bit value. Without braces, 1 means all bits on, so 1:bv[8] is 255.",
+      "try": {
+        "op": "run",
+        "spec": "o1[t]:bv[8] = i1[t]:bv[8] + { 1 }:bv[8]",
+        "steps": [
+          {
+            "i1": "1"
+          },
+          {
+            "i1": "2"
+          },
+          {
+            "i1": "3"
+          }
+        ]
+      },
+      "says": "Every number that goes in comes out one bigger.",
+      "video": "EGCXbDfU2Y8",
+      "when": "2024-09"
+    },
+    {
+      "q": "Does always mean the rule has to hold forever?",
+      "a": "Yes: at every step, on a timeline without an end. A spec without always or sometimes is read as always. That is why a promise that cannot last forever gets an F.",
+      "try": {
+        "op": "sat",
+        "spec": "o1[t]:bv[2] > o1[t-1]:bv[2]"
+      },
+      "says": "F: an output that must grow at every step runs out of 2-bit numbers (0 to 3).",
+      "video": "6Em0cJU8cx4",
+      "when": "2025-11"
+    },
+    {
+      "q": "How do I switch from step-by-step code to Tau?",
+      "a": "Stop writing steps and write what must be true. o1[t] = i1[t] + 1 is not an order to add; it is a promise about every step, and Tau finds the outputs that keep it.",
+      "try": {
+        "op": "run",
+        "spec": "o1[t]:bv[8] = i1[t]:bv[8] + { 1 }:bv[8]",
+        "steps": [
+          {
+            "i1": "1"
+          },
+          {
+            "i1": "2"
+          },
+          {
+            "i1": "3"
+          }
+        ]
+      },
+      "says": "Every number that goes in comes out one bigger.",
+      "video": "DzuyDyMVp1c",
+      "when": "2025-07"
+    },
+    {
+      "q": "What does valid mean?",
+      "a": "True in every case, whatever the values are. sat is happy with one way to make it true.",
+      "try": {
+        "op": "valid",
+        "spec": "x = 0"
+      },
+      "says": "F: x could be something else.",
+      "video": "qZY8KDYWCVE",
+      "when": "2025-09"
+    },
+    {
+      "q": "What is a normalizer?",
+      "a": "It rewrites a formula into a simplest equivalent form that Tau can work with. In the tau REPL on your computer, normalize shows that form; this page answers sat, valid, why and run.",
+      "video": "-qi-S7kUI2U",
+      "when": "2024-03"
+    },
+    {
+      "q": "When can I try Tau in a web browser?",
+      "a": "IDNI answers this in the video. Until then, this page sends your formula to a real Tau engine on tauhud's server, so you can try it here.",
+      "video": "S6ggPxF1o5g",
+      "when": "2026-08"
+    },
+    {
+      "q": "How do I get better at writing Tau rules?",
+      "a": "Practice on small rules. Lesson 5 changes a real testnet limit, and the Rule Playground runs a rule against the testnet's own checks.",
+      "video": "6Em0cJU8cx4",
+      "when": "2025-11"
+    }
+  ],
+ "brief": {
+  "title": "Save system for a small game",
+  "reqs": [
+   {
+    "id": "r1",
+    "text": "Players can play without an account.",
+    "tau": "a = 0",
+    "note": "a = 1 would mean: an account is required"
+   },
+   {
+    "id": "r2",
+    "text": "Progress syncs between a player's devices.",
+    "tau": "s = 1",
+    "note": "s = 1 means: sync is on"
+   },
+   {
+    "id": "r3",
+    "text": "Sync only works with an account.",
+    "tau": "(s = 1 -> a = 1)",
+    "note": "if sync is on, an account is required"
+   },
+   {
+    "id": "r4",
+    "text": "Saves are also kept on the device.",
+    "tau": "l = 1",
+    "note": "l = 1 means: there is a local save"
+   },
+   {
+    "id": "r5",
+    "text": "Local co-op works offline.",
+    "tau": "c = 1",
+    "note": "c = 1 means: co-op needs no connection"
+   }
+  ],
+  "checks": [
+   {
+    "on": [
+     "r1",
+     "r2",
+     "r3",
+     "r4",
+     "r5"
+    ],
+    "expect": {
+     "verdict": false
+    }
+   },
+   {
+    "on": [
+     "r1",
+     "r2",
+     "r3"
+    ],
+    "expect": {
+     "verdict": false
+    }
+   },
+   {
+    "on": [
+     "r2",
+     "r3",
+     "r4",
+     "r5"
+    ],
+    "expect": {
+     "verdict": true
+    }
+   },
+   {
+    "on": [
+     "r1",
+     "r3",
+     "r4",
+     "r5"
+    ],
+    "expect": {
+     "verdict": true
+    }
+   },
+   {
+    "on": [
+     "r1",
+     "r2",
+     "r4",
+     "r5"
+    ],
+    "expect": {
+     "verdict": true
+    }
+   }
+  ]
+ }
+}

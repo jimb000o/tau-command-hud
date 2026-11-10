@@ -188,6 +188,9 @@ textarea:focus, input:focus, select:focus { outline: 1px solid var(--ok); border
   .steps li.tick, .steps li.run .ic, .settle, .stamp.settle, #tests .rc.fresh { animation: none; }
 }
 .verdict { margin: 10px 0 0; padding: 10px 12px; border-left: 2px solid var(--ok); background: rgba(57,255,138,.06); font: 500 14px/1.4 var(--display); color: #fff; }
+.pnext { margin: 8px 0 0; display: grid; gap: 6px; font-size: 12px; color: var(--dim); }
+.pnext .row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.pnext a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .verdict.bad { border-left-color: var(--refused); background: rgba(229,72,77,.09); }
 .verdict.idle { border-left-color: var(--hair); background: rgba(255,255,255,.03); color: var(--dim); }
 pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 var(--mono); color: var(--text); }
@@ -244,6 +247,7 @@ td input, td select { width: 100%; min-width: 0; background: #0c0c0d; color: #ff
 .log li.ok { border-left-color: var(--ok); } .log li.bad { border-left-color: #fff; }
 .log li em { font-style: normal; color: var(--dim); margin-right: 6px; }
 .simtag { font: 600 11px var(--display); letter-spacing: .2em; color: var(--dim); border: 1px solid var(--hair); border-radius: 3px; padding: 1px 6px; }
+.seatnext { margin: 8px 0 0; font-size: 12px; }
 .realbox { border: 1px dashed var(--hair); border-radius: 6px; padding: 8px 10px; font-size: 12px; color: var(--dim); margin-top: 10px; }
 .realbox b { color: #fff; }
 /* feedback: same floating button as the HUD, opens a pre-filled GitHub issue */
@@ -329,6 +333,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
       </table>
       <div class="row"><button class="btn" id="btnAddTest" type="button">Add transfer</button></div>
       <p class="note" id="testNote">Results come from an in-browser preview of the rule. When the Tau engine on the community node is reachable, “Check rule” also runs every transfer through it and its answer replaces the preview.</p>
+      <div class="pnext" id="pgNext" hidden></div>
     </div>
   </section>
 
@@ -340,7 +345,8 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
       <h3 class="pick" id="pickHead"><span class="num">1</span>Pick a proposal, or write your own</h3>
       <div class="props" id="proposals"></div>
       <div class="seats" id="seats"></div>
-      <div class="realbox"><b>The real testnet today:</b> one validator (<code>a1fe40…7d2b</code>, most likely run by IDNI), so the quorum is 1. The network also runs with open governance admission: a proposal or a vote from any key counts, so a single yes vote schedules a change. Here the seat is simulated and only validators vote, which is the code’s default. Counting, quorum and the delay before a change takes effect work as on the real node.</div>
+      <div class="realbox"><b>The real testnet today:</b> one validator (<code>a1fe40…7d2b</code>, most likely run by IDNI), so the quorum is 1. Whether other accounts’ votes count is a network setting that the Vote page reads live; open admission was switched off on 1 November 2026. Here the seat is simulated and only validators vote, which is the code’s default. Counting, quorum and the delay before a change takes effect work as on the real node.</div>
+      <p class="note seatnext">Next: votes that fail at two thirds, a validator outage, proof of stake: <a href="../missions/">six Missions ›</a></p>
     </div>
 
     <div class="panel pprop">
@@ -839,6 +845,7 @@ async function runCheck(animate) {
   if (animate === true && checking) return;
   clearTimeout(editTimer); clearInterval(holdTimer);
   const text = ruleEl.value, seq = ++checkSeq, t0 = performance.now();
+  $("pgNext").hidden = true;
   const gap = animate === true && !reducedMotion.matches ? STEP_MS : 0;
   const a = admission(text);
   const steps = a.steps;
@@ -866,6 +873,7 @@ async function runCheck(animate) {
     stepsEl.innerHTML = allSteps(steps, { title: "Tau engine", ok: null, detail: "Not reached: the node stops at the first failed check." }).map(stepHtml).join("");
     const fail = steps.find(s => s.ok === false);
     verdictEl.className = "verdict bad"; verdictEl.textContent = `Refused at “${fail.title}”. The testnet would not take this rule.`;
+    if (!/\balways\b/.test(text) && text.trim()) showNext(null, true);   // plain words instead of Tau: point to the examples and the wallet's blocks
     finish(seq, t0, `refused at check ${steps.length} of ${n + 1}`, gap > 0);
     return;
   }
@@ -911,7 +919,35 @@ async function runCheck(animate) {
   testsEl.classList.remove("pending");
   renderTests();
   if (gap && res && res.accepted) testsEl.querySelectorAll(".rc").forEach((td, i) => { td.style.animationDelay = `${i * 70}ms`; td.classList.add("fresh"); });
+  if (!(res && !res.accepted && !res.hold && !res.busy)) showNext(text);
   finish(seq, t0, note, gap > 0);
+}
+/* what next once a rule passes: the wallet signs rules built from four blocks (a limit, a list, a date, a co-signer). A rule shaped like one
+   of them is carried over and fills that block (nothing is signed); anything else opens the builder empty. Then the votes: Missions. */
+const WALLET_DRAFT = "tauhud-wallet-draft";
+function walletDraftOf(text) {
+  const s = stripComments(text).replace(/\s+/g, " "), num = v => /^#x/i.test(v) ? parseInt(v.slice(2), 16) : Number(v);
+  const blocks0 = /\?\s*\(\s*o5\[t\]:bv\[24\]\s*=\s*\{\s*#x0+\s*\}/.test(s);   // the "then" side blocks the transfer
+  if (!blocks0 || /i4\[t\]/.test(s)) return null;
+  let m = /i1\[t\]:bv\[24\]\s*>\s*\{\s*(#x[0-9a-f]+|\d+)\s*\}/i.exec(s);
+  if (m && !/i5\[t\]/.test(s)) { const n = num(m[1]); return n >= 1 && n < 16777215 ? { only: [], cap: n, from: null, co: null } : null; }
+  m = /i5\[t\]:bv\[64\]\s*<\s*\{\s*(\d+)\s*\}/.exec(s);
+  if (m && !/i1\[t\]/.test(s)) { const n = Number(m[1]); return n > Date.now() / 1000 ? { only: [], cap: null, from: n, co: null } : null; }
+  return null;
+}
+function showNext(text, plain) {
+  const box = $("pgNext"), d = text ? walletDraftOf(text) : null, lang = (new URLSearchParams(location.search).get("lang") || "");
+  const w = "/wallet/?from=playground" + (lang ? "&lang=" + encodeURIComponent(lang) : "") + "#rules-mine";
+  box.innerHTML = "";
+  const p = document.createElement("p"); p.style.margin = "0";
+  p.textContent = plain ? "Rules are written in Tau, not in plain words. Start from an example above, or let the wallet build one from blocks: a limit, a list of who may be paid, a date, a co-signer."
+    : d ? "Next: put a rule like this on your own test account. The wallet fills in the same block; you check it and sign."
+    : "Next: the wallet builds and signs rules like this from blocks: a limit, a list of who may be paid, a date, a co-signer.";
+  const row = document.createElement("div"); row.className = "row";
+  const a = document.createElement("a"); a.className = "btn primary"; a.href = w; a.textContent = d ? "Sign it in my wallet ›" : "Open the wallet’s rule builder ›";
+  a.addEventListener("click", () => { try { if (d) localStorage.setItem(WALLET_DRAFT, JSON.stringify(d)); } catch (e) {} });
+  const m = document.createElement("a"); m.className = "btn"; m.href = "../missions/"; m.textContent = "Rules for everyone: Missions ›";
+  row.append(a, m); box.append(p, row); box.hidden = false;
 }
 function holdStep(sec) {
   return { title: "Tau engine", ok: null, detail: `Paused for your connection after many engine runs. Back in ${mmss(sec)}. The text checks above ran as usual.` };

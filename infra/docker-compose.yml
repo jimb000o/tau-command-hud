@@ -67,11 +67,15 @@ services:
       CHAT_AI_DAILY: ${CHAT_AI_DAILY:-3000}   # at most this many AI checks per UTC day
       ROADMAP_ENABLED: ${ROADMAP_ENABLED:-1}   # comments on tauhud.com/roadmap/ (relay/roadmap.py, moderated with the troll box); 0 closes them, reading stays
       CRUISE_ENABLED: ${CRUISE_ENABLED:-1}   # cruise ships at White Rabbit Key (relay/cruise.py): simulated passengers, real test transactions; 0 keeps them away
+      HACK_ENABLED: ${HACK_ENABLED:-1}   # the hack of the week replayed on the testnet, Thursdays 11:00 German time (relay/hackweek.py); 0 stops it
+      NOMEMO_ENABLED: ${NOMEMO_ENABLED:-1}   # No Memo's crew purse (relay/nomemo.py): pays the chapters' shares back; 0 switches it off
+      NOMEMO_TRACER: ${NOMEMO_TRACER:-1}   # the Tracer: dust from a lookalike of the drop after the first chapter; 0 keeps it quiet
       SENDER_CONNECTION: ${SENDER_CONNECTION:-1}   # island bot + cruise ships send through their own node connection (relay.py Relay.sender); 0 = share the visitors one as before
     volumes:
       # chain restarts and dropped transactions for /stats (relay.py EVENTS_PATH),
       # availability history for /uptime (UPTIME_PATH)
       - relay_data:/data
+      - ai_usage:/ai-usage   # what the troll box's AI check costs (ai_meter.py), read by the monthly costs post
     depends_on: [tau-node]
     restart: unless-stopped
     logging: *logging
@@ -95,6 +99,8 @@ services:
       PYTHONDONTWRITEBYTECODE: "1"
     volumes:
       - ./checker:/checker:ro
+      # the lesson examples, so `up tau` can check every one of them against this engine
+      - ../learn/lessons.json:/learn/lessons.json:ro
     read_only: true
     tmpfs: [/tmp]
     # Root inside the container only because the engine's libraries live under
@@ -164,7 +170,7 @@ services:
       IDNI_DIGEST_LATE_HOURS: ${IDNI_DIGEST_LATE_HOURS:-3}
       ISLAND_CRIER: ${ISLAND_CRIER:-true}
       ISLAND_HOUR: ${ISLAND_HOUR:-7}
-      ISLAND_X_EVERY_DAYS: ${ISLAND_X_EVERY_DAYS:-2}
+      ISLAND_X_EVERY_DAYS: ${ISLAND_X_EVERY_DAYS:-1}
       # the news line's watchtower (alerts/tickerwatch.py): a stale HUD news line is told to the owner only, privately
       # (up owner sets that chat; TICKER_OWNER_CHAT sets a chat id directly), never to the channel
       TICKER_WATCH: ${TICKER_WATCH:-true}
@@ -173,6 +179,8 @@ services:
     volumes:
       - alerts_state:/state     # what was seen and posted, so nothing is posted twice
       - alerts_public:/public   # proposals.json, feed.xml and recap/, served by Caddy
+      - ai_usage:/ai-usage      # the Anthropic API's costs per month (ai_meter.py), for the costs post
+      - /opt/sites/rico/art:/art:ro   # the island painting the game shows: the Key Crier's X picture (island_pic.py)
     depends_on: [relay]
     restart: unless-stopped
     logging: *logging
@@ -193,6 +201,24 @@ services:
       X_ACCESS_SECRET: ${X_ACCESS_SECRET:-}
       ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY:-}
       DONATION_IGNORE_FROM: ${DONATION_IGNORE_FROM:-}  # own wallets, comma separated: transfers from them are not donations
+    volumes:
+      - alerts_state:/state
+      - alerts_public:/public
+    restart: unless-stopped
+    logging: *logging
+
+  # What the site's tools were paid (alerts/receipts.py): reads the receipts of Google AI Studio, ElevenLabs, Kling, the
+  # X API and the Anthropic API from the mailbox in .env (read-only, every 30 min) and keeps costs-paid.json for
+  # tauhud.com/donate/ (tool, amount, day; nothing else of a mail). `up cost` starts it, `up cost mail` sets the mailbox,
+  # `up cost gemini 10` adds a payment by hand.
+  costs:
+    build: ./alerts
+    command: ["python", "receipts.py", "loop"]
+    init: true
+    environment:
+      COSTS_IMAP_HOST: ${COSTS_IMAP_HOST:-imap.gmail.com}
+      COSTS_IMAP_USER: ${COSTS_IMAP_USER:-}
+      COSTS_IMAP_PASSWORD: ${COSTS_IMAP_PASSWORD:-}
     volumes:
       - alerts_state:/state
       - alerts_public:/public
@@ -222,6 +248,10 @@ services:
       # after it; CRUISE_CRIER=false stops both (CRUISE_ENABLED=0 keeps the ships themselves away)
       CRUISE_CRIER: ${CRUISE_CRIER:-true}
       CRUISE_ANNOUNCE_MINUTES: ${CRUISE_ANNOUNCE_MINUTES:-150}
+      # after each Tuesday call of the pirates, a ~22 s clip of every trick the chain refused, to Telegram and X (alerts/
+      # trick_clip.py; none when a trick got through); X only while the day's X posts leave room. false stops it
+      TRICK_CLIP: ${TRICK_CLIP:-true}
+      X_DAILY_CAP: ${X_DAILY_CAP:-8}
       TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
       # a clean blog draft on the blog by itself this many hours after it was written (24 since 6.11.2026); 0 = only by hand (up blog publish)
       BLOG_AUTO_PUBLISH_HOURS: ${BLOG_AUTO_PUBLISH_HOURS:-24}
@@ -231,12 +261,48 @@ services:
       IDNI_REPORT: ${IDNI_REPORT:-true}
       IDNI_REPORT_WEEKDAY: ${IDNI_REPORT_WEEKDAY:-6}
       IDNI_REPORT_HOUR: ${IDNI_REPORT_HOUR:-18}
+      # Kling, the AI video maker (alerts/kling.py): the island painting alive on /rabbit/, a trailer for a new island, the
+      # cruise announcements as videos, the pirates' clip on a living sea, Agorzilla's growth as a video. KLING_API_KEY
+      # (or KLING_ACCESS_KEY + KLING_SECRET_KEY) in .env; without one every post goes out with its still picture as before.
+      # KLING_MONTH_CAP clips a month for all uses together; the first KLING_REVIEW clips of each public use are drafts
+      KLING_API_KEY: ${KLING_API_KEY:-}
+      KLING_ACCESS_KEY: ${KLING_ACCESS_KEY:-}
+      KLING_SECRET_KEY: ${KLING_SECRET_KEY:-}
+      KLING_API_BASE: ${KLING_API_BASE:-}
+      KLING_MODEL: ${KLING_MODEL:-}
+      KLING_MONTH_CAP: ${KLING_MONTH_CAP:-30}
+      KLING_REVIEW: ${KLING_REVIEW:-2}
+      KLING_USES: ${KLING_USES:-island,trailer,ship,pirate,agorzilla}
+      KLING: ${KLING:-true}
+      KLING_WHO: blog
     volumes:
       - alerts_state:/state     # /state/blog.json: which visits have a draft, which drafts were posted
       - alerts_public:/public   # /public/blog/posts.json and drafts/, served by Caddy
+      - ai_usage:/ai-usage      # what each draft cost (ai_meter.py)
       - /opt/sites/rico/art:/art:ro         # the island's paintings: each article's hero picture is made from them
       - ../rabbit/art/ships:/ships:ro       # the painted ships on that picture
     depends_on: [relay]
+    mem_limit: 384m        # the pirates' clip: Pillow frames into ffmpeg (two threads, 720p) for about a minute a week
+    restart: unless-stopped
+    logging: *logging
+
+  # Our node's own log for the weekly IDNI report (alerts/node_logs.py): IDNI asked for sync and peering failures with
+  # their logs (Q&A, November 2026). Docker keeps container logs readable by root only, so this one small service runs
+  # as root, with that folder read-only and no network, and once an hour writes the node's sync and peering warnings of
+  # the last days, addresses masked, to /state/node-log.json; the blog service (not root) reads only that file.
+  nodelog:
+    build: ./alerts
+    command: ["python", "node_logs.py", "loop"]
+    init: true
+    user: root
+    network_mode: none
+    environment:
+      NODE_LOG_DIR: /dockerlogs
+      NODE_LOG_SERVICE: tau-node
+      NODE_LOG_STATE: /state/node-log.json
+    volumes:
+      - /var/lib/docker/containers:/dockerlogs:ro
+      - alerts_state:/state
     mem_limit: 128m
     restart: unless-stopped
     logging: *logging
@@ -247,7 +313,8 @@ services:
   # is ahead of the commits our node is built from (read from node/Dockerfile),
   # IDNI's news for the HUD's news line, and whether our node patches still
   # apply to the newest tau-testnet main (`up` prints it as "idni:"), and which
-  # IDNI commits and branches name our issues (moves the Road to mainnet badges).
+  # IDNI commits and branches name our issues (moves the Road to mainnet badges). After each pass it writes Tau today
+  # for AI assistants (knowledge.py): node.tauhud.com/tau-today.md and .json, read by tauhud.com/facts/ and llms.txt.
   devpulse:
     build: ./alerts
     command: ["python", "devpulse.py"]
@@ -267,8 +334,10 @@ services:
     volumes:
       - alerts_state:/state     # the clones, in /state/devpulse; digests.json (the daily IDNI post)
       - alerts_public:/public   # devpulse.json, served by Caddy
+      - ai_usage:/ai-usage      # what the news line and the daily IDNI post cost (ai_meter.py)
       - ./node/Dockerfile:/pins/Dockerfile:ro
       - ./node/patches:/pins/patches:ro   # tried on each new upstream main: do our node patches still apply?
+      - ../facts:/facts:ro   # the hand-checked facts for Tau today (knowledge.py, tauhud.com/facts/); a folder, so a pull reaches it
     depends_on: [relay]
     mem_limit: 256m
     restart: unless-stopped
@@ -290,10 +359,26 @@ services:
       AGORZILLA_X_ACCESS_TOKEN: ${AGORZILLA_X_ACCESS_TOKEN:-}
       AGORZILLA_X_ACCESS_SECRET: ${AGORZILLA_X_ACCESS_SECRET:-}
       AGORZILLA_X_DAILY_CAP: ${AGORZILLA_X_DAILY_CAP:-8}
+      # Kling, the AI video maker (alerts/kling.py): the island painting alive on /rabbit/, a trailer for a new island, the
+      # cruise announcements as videos, the pirates' clip on a living sea, Agorzilla's growth as a video. KLING_API_KEY
+      # (or KLING_ACCESS_KEY + KLING_SECRET_KEY) in .env; without one every post goes out with its still picture as before.
+      # KLING_MONTH_CAP clips a month for all uses together; the first KLING_REVIEW clips of each public use are drafts
+      KLING_API_KEY: ${KLING_API_KEY:-}
+      KLING_ACCESS_KEY: ${KLING_ACCESS_KEY:-}
+      KLING_SECRET_KEY: ${KLING_SECRET_KEY:-}
+      KLING_API_BASE: ${KLING_API_BASE:-}
+      KLING_MODEL: ${KLING_MODEL:-}
+      KLING_MONTH_CAP: ${KLING_MONTH_CAP:-30}
+      KLING_REVIEW: ${KLING_REVIEW:-2}
+      KLING_USES: ${KLING_USES:-island,trailer,ship,pirate,agorzilla}
+      KLING: ${KLING:-true}
+      KLING_WHO: agorzilla
+      TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
     volumes:
       - alerts_state:/state     # remembers the last evening posted, /state/agorzilla.json
       - agorzilla_shots:/shots:ro   # the evening's before/after photographs (agorzilla-shots below)
-    mem_limit: 128m
+      - alerts_public:/public   # /public/kling/drafts/: a growth clip to look at (kling.py)
+    mem_limit: 256m        # a growth clip through ffmpeg, a few times a month
     restart: unless-stopped
     logging: *logging
 
@@ -434,6 +519,7 @@ volumes:
   relay_data:
   alerts_state:
   alerts_public:
+  ai_usage:
   agorzilla_shots:
   guardian_data:
   caddy_data:

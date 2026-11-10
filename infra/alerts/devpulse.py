@@ -19,6 +19,8 @@ by Caddy at https://node.tauhud.com/devpulse.json:
     tauhud.com/roadmap/ moves an item's badge by itself when IDNI fixes it (git only, never guessed)
   - digest: once a day, everything IDNI merged since the last one read together as ONE post for Telegram and X
     (idni_digest.py writes it, alerts.py posts it; quiet days get none)
+  - after each pass, Tau today (knowledge.py): the hand-checked facts, the live numbers and IDNI's latest work as
+    /public/tau-today.md and .json for AI assistants and tauhud.com/facts/
   - open issues and pull requests, from the public GitHub search API (no token;
     a few requests an hour, far below its limit; left out when it refuses)
 
@@ -44,6 +46,8 @@ import urllib.parse
 import urllib.request
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
+
+import ai_meter
 
 log = logging.getLogger("tau-devpulse")
 
@@ -447,6 +451,7 @@ def ask_ai(prompt: str) -> dict:
         "x-api-key": NEWS_AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
     with urllib.request.urlopen(req, timeout=180) as r:
         j = json.load(r)
+    ai_meter.meter("news", NEWS_AI_MODEL, j.get("usage"))
     text = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
     m = re.search(r"\{.*\}", text, re.S)
     if not m:
@@ -680,6 +685,11 @@ def main():
             data = build(int(started), trackers, digest=True)
             if data["repos"]:
                 write_atomic(PUBLIC_PATH, json.dumps(data, separators=(",", ":")))
+                try:   # Tau today for AI assistants and tauhud.com/facts/ (knowledge.py): facts, live numbers, IDNI's work
+                    import knowledge
+                    knowledge.write(data, {r: os.path.join(CLONES, r.replace("/", "__") + ".git") for r in REPOS})
+                except Exception as e:  # noqa: BLE001 - never stops the pulse
+                    log.warning("knowledge: %s", e)
                 sy = data.get("sync") or {}
                 log.info("devpulse.json: %s; sync %s", ", ".join(f"{r['repo']} {r['head']['sha'][:7]}" for r in data["repos"]),
                          "ok" if sy.get("ok") else json.dumps(sy)[:300])

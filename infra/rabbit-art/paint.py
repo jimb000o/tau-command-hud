@@ -19,6 +19,8 @@ One key in infra/.env (never in the repository), whichever you have:
       these moves the places, streets and lights in the game to match it
   infra/rabbit-art/paint.sh keep island=14 --layout island-14   with places set by hand on that painting
   infra/rabbit-art/paint.sh drop hall            back to the drawn picture for that place
+  infra/rabbit-art/paint.sh isle isle-36         takes over a set painted elsewhere (imports/codex/isle-36: the island,
+      the places by day and their painted nights); nothing painted, nothing paid, the game shows them at once
 paint.sh runs this file with the server's python3; with Pillow (apt-get install -y python3-pil) the pictures are small WebP files.
 """
 import argparse
@@ -43,10 +45,10 @@ OUT = "/opt/sites/rico/art"
 # style references for each look, kept on the server only (never in the repository, never published): /opt/rabbit-refs/1, 2, 3
 REFS = "/opt/rabbit-refs"
 PLACES = ["island", "hall", "market", "radio", "north", "south", "bar", "book", "pier",
-          "school", "dive", "works", "camp", "ship", "ama", "canoe", "stone", "drums", "circle", "grotto"]
+          "school", "dive", "works", "camp", "ship", "ama", "canoe", "stone", "drums", "circle", "grotto", "cafe"]
 # places whose drawn picture no longer fits what they are now (the Council Tree, the Kettle, the radio on its cliff,
 # the embassies in the fort and the villa, the bar on the pier): painted from the island like the new ones
-RETHOUGHT = {"hall", "market", "radio", "north", "south", "bar"}
+RETHOUGHT = {"hall", "market", "radio", "north", "south", "bar", "book"}
 # the places that have no drawn picture to repaint (plates/<id>.jpg): they are painted from the island itself
 FROM_ISLAND = ("The first picture is the whole island of this game. Paint, in exactly its style, ink line, colours and light, "
                "a close view of one place on it, as a background for the scene where the player stands there, wide, "
@@ -194,9 +196,15 @@ SCENE = {
     "hall": "The Council Tree: a huge red flamboyant tree in full bloom on the town's rise, its roots like benches, a ring of "
             "old wooden benches and stools in its shade, a slate board with chalked laws hung on the trunk, a small bell on "
             "a branch, red petals on the ground, the harbour and the sea glittering below, dignified and warm.",
-    "market": "The Parasol Café: a small open-air café on a wooden terrace by a little turquoise pool, red and white "
-              "parasols, mismatched chairs, a battered tin kettle, a long table where everybody talks, a noticeboard "
-              "covered in notes, the harbour and the red tree below, cosy, noisy and friendly.",
+    "market": "The Market Square on the front beach: a small open square of packed sand and flat stones between the old "
+              "ship and the Parasol Café, a handful of wooden market stalls under colourful awnings, crates of coconuts, "
+              "fruit and fish, baskets, a fish fry smoking on a grill, a chalked price board, the old ship's masts and "
+              "the turquoise bay behind, busy, loud and friendly.",
+    "cafe": "The Parasol Café on the front beach: a small wooden beach café with a striped awning over its counter, round "
+            "tables under red and white parasols on a wooden deck by the sand, mismatched chairs, a battered tin kettle, "
+            "a long table where everybody talks, a noticeboard covered in notes, hanging lanterns, a bowl for the cat by "
+            "the counter, the Council Tree's red crown above it, the market stalls on one side and Bar La Ola on the other, "
+            "the bay in front, cosy, noisy and friendly.",
     "radio": "Inside Radio Coco, the small wooden radio hut on stilts beside the lattice radio mast on the cliff top, "
              "wooden all through, no concrete, no metal studio: rough plank walls, plank floor, a thatched roof on beams, the painted Radio Coco sign seen backwards through the open front, a microphone on an arm, a mixing desk, a turntable, "
              "shelves of records, a window showing the waterfall and the sea far below, cables, a fan, a coffee mug, "
@@ -213,15 +221,16 @@ SCENE = {
     "bar": "Inside Bar La Ola, a wooden bar on stilts at the pier: long shelves of colourful bottles, a counter with stools, "
            "a ceiling fan, a string of warm light bulbs, an open side onto the water and the boats, driftwood and shells, "
            "a ledger and a pencil on the counter, cosy and lively.",
-    "book": "Inside the lighthouse: rough stone walls, a stone stair winding up, a small arched window, a lamp hanging "
-            "from above throwing a cone of green-tinted light onto a big open book on a wooden lectern, ropes, a "
-            "brass telescope, sea charts, an old keeper's chair, quiet and solemn.",
+    "book": "Inside the lighthouse on its green hill at the back of the island: rough stone walls, a stone stair winding "
+            "up, a small arched window onto the open sea and, below, the village hills, the hut of the three drums and "
+            "the old standing stone, a lamp hanging from above throwing a cone of green-tinted light onto a big open "
+            "book on a wooden lectern, ropes, a brass telescope, sea charts, an old keeper's chair, quiet and solemn.",
     "pier": "A wooden pier running out into the sea, seen from its start on the beach: planks, rope railings on posts, "
             "a lamp post with a square lantern, a small sailing boat on the water, bright sky with clouds, gulls far "
             "away, sand in the foreground, barrels and coiled ropes.",
     "school": "Inside the island's school, a blue wooden house on stilts: a blackboard with chalk drawings of blocks and "
               "arrows, small desks, exercise books, a globe, children's paintings of the island on the walls, open "
-              "shutters onto the red tree and the sea, cheerful and a little chaotic.",
+              "shutters onto the beach, the swing in the yard, the palm trees and the sea, cheerful and a little chaotic.",
     "dive": "Inside the Reef Proof dive centre, a stilt house over the water: wetsuits and fins on hooks, tanks, a trapdoor "
             "straight into the turquoise water, and odd futuristic diving gear: glowing sensor buoys, a sleek underwater "
             "drone, a screen showing reef readings as a chain of small linked blocks, all hand-made and a bit improvised.",
@@ -230,16 +239,19 @@ SCENE = {
              "rope and soap at the sides, through a big window the small pond by the stream with the big wooden water wheel "
              "turning in it, exactly as the island shows it beside the works; a wide open plank floor in front, "
              "light through the roof, cheerful but not crowded.",
-    "camp": "The surveyors' camp in a clearing: a few white canvas tents, tripods and measuring poles, a folding table with "
-            "big plans and maps held down by stones, crates with embassy stamps, a campfire, the jungle all around.",
+    "camp": "The surveyors' camp on a small green ledge high on the mountain slope: a few white canvas tents, tripods and "
+            "measuring poles, a folding table with big plans and maps held down by stones, crates with embassy stamps, "
+            "a small campfire, the rocky peak above and, far below, the island: the resort's pool, the waterfall, the "
+            "palace and the sea.",
     "ship": "The deck and cabin of an old wooden ship at anchor, now a museum of things the sea gave back: shelves of "
             "labelled finds (odd shoes, bottles, a piano key, ship's bells), glass cases, an old chart pinned to a table, "
             "brass instruments, portholes onto the cove, warm and curious.",
     "ama": "Inside Ama's house in the first people's village: a round house of wood and palm thatch, woven mats, carved "
            "posts, baskets, a hearth, family photographs next to carved wooden figures, a window onto the stone circle "
            "and the hills, calm and dignified, a living home, nothing exotic or stereotyped.",
-    "canoe": "The canoe house by the river: a long open shed of wood and thatch, a dug-out canoe being carved, tools on the "
-             "wall, wood shavings, paddles, the river glittering outside.",
+    "canoe": "The canoe house on the west beach: a long open boathouse of wood and thatch at the water's edge, a dug-out "
+             "canoe being carved, tools on the wall, wood shavings, paddles, two canoes pulled up on the sand outside and "
+             "the turquoise bay glittering beyond.",
     "stone": "The Tide Stone: a tall ancient standing stone on a green hill top above the sea, covered in carved marks in "
              "rows, a few stones around it, wind in the grass, a sweeping view over the island, solemn and mysterious.",
     "drums": "On the summit of a green hill: a small round open hut with a palm-thatch roof sheltering a large carved "
@@ -297,6 +309,79 @@ def post(url, data, headers, timeout=150):
             sys.exit(f"The painter could not be reached: {e}")
 
 
+# What every call to Google's Gemini API costs, measured: the tokens Google counts in each answer (usageMetadata) times
+# Google's list price per million tokens (https://ai.google.dev/gemini-api/docs/pricing, 7 November 2026; change it
+# here when Google does). A picture is billed as output tokens: about 1,290 for gemini-2.5-flash-image (about 4 cents),
+# 1,120 at 1K/2K and 2,000 at 4K for gemini-3-pro-image-preview (about 13 and 24 cents). The month's totals land in
+# /opt/sites/rico/art/gemini-usage.json (numbers only, no prompts): read by `up` (gemini: line) and by the monthly costs
+# post on Telegram (alerts.py). The real bill stays at https://aistudio.google.com/usage; this is the estimate next to it.
+# GEMINI_MONTH_CAP in infra/.env (US dollars, default 10, 0 = no painting at all): no call is made once the month's
+# measured costs reach it.
+USAGE = os.path.join(OUT, "gemini-usage.json")
+PRICES = {   # model: (input, output) in US dollars per million tokens
+    "gemini-2.5-flash-image": (0.30, 30.0),
+    "gemini-3-pro-image-preview": (2.00, 120.0),
+    "gemini-2.5-flash": (0.30, 2.50),
+}
+PRICE_TEXT = (0.50, 3.00)      # a text model not in the list (gemini-3.8-flash, gemini-3-flash-preview): flash prices, rounded up
+PRICE_PICTURE = (2.00, 120.0)  # an image model not in the list: the dearest one's prices
+FLAT_PICTURE = 0.134           # an answer without token counts: one picture at the dearer model's 2K price
+
+
+def month_cap():
+    try:
+        return float(api_key("GEMINI_MONTH_CAP") or 10)
+    except ValueError:
+        return 10.0
+
+
+def this_month():
+    return time.strftime("%Y-%m", time.gmtime())
+
+
+def budget_check():
+    """Stops before a call once this month's measured Gemini costs reach GEMINI_MONTH_CAP (nothing is spent then)."""
+    cap, spent = month_cap(), load(USAGE).get("months", {}).get(this_month(), {}).get("usd", 0)
+    if spent >= cap:
+        sys.exit(f"Gemini: ${spent:.2f} spent this month, the cap is ${cap:g} (GEMINI_MONTH_CAP). Nothing painted. "
+                 "To allow more this month: echo 'GEMINI_MONTH_CAP=20' >> /opt/tau-command-hud/infra/.env")
+
+
+def meter(model, r, picture):
+    """Adds one answer of the Gemini API to this month's totals in gemini-usage.json; returns its cost in US dollars."""
+    u = (r or {}).get("usageMetadata") or {}
+    tin = int(u.get("promptTokenCount") or 0)
+    tout = int(u.get("candidatesTokenCount") or 0) + int(u.get("thoughtsTokenCount") or 0)
+    pin, pout = PRICES.get(model) or (PRICE_PICTURE if picture or "image" in model else PRICE_TEXT)
+    usd = (tin * pin + tout * pout) / 1e6 if (tin or tout) else (FLAT_PICTURE if picture else 0.001)
+    try:
+        j = load(USAGE)
+        j["about"] = ("Gemini API calls made by infra/rabbit-art/paint.py, per month (UTC), with their cost in US dollars "
+                      "estimated from the tokens Google counted and its list prices; the bill itself is in Google AI Studio.")
+        j.setdefault("since", time.strftime("%Y-%m-%d", time.gmtime()))
+        m = j.setdefault("months", {}).setdefault(this_month(), {"pictures": 0, "looks": 0, "usd": 0, "models": {}})
+        m["pictures" if picture else "looks"] += 1
+        m["usd"] = round(m["usd"] + usd, 4)
+        mm = m["models"].setdefault(model, {"calls": 0, "usd": 0})
+        mm["calls"] += 1
+        mm["usd"] = round(mm["usd"] + usd, 4)
+        write(USAGE, json.dumps(j, indent=1).encode())
+    except OSError:
+        pass   # a test or a machine without the art folder: nothing to keep
+    return usd
+
+
+def usage_line():
+    """One line for the block `up` prints: this month's measured Gemini costs."""
+    j = load(USAGE)
+    m = j.get("months", {}).get(this_month())
+    cap = f"cap ${month_cap():g} a month, GEMINI_MONTH_CAP"
+    if not m:
+        return (f"gemini:  nothing painted this month, $0 ({cap})" + ("" if j else "; measured from the first painting on"))
+    return (f"gemini:  this month {m['pictures']} pictures, {m['looks']} looks at rooms, about ${m['usd']:.2f} "
+            f"(measured since {j.get('since', '?')}, {cap}); the bill: https://aistudio.google.com/usage")
+
+
 def mime(raw):
     return "image/png" if raw[:4] == b"\x89PNG" else "image/jpeg" if raw[:2] == b"\xff\xd8" else "image/webp"
 
@@ -308,8 +393,10 @@ def paint_gemini(plate, prompt, n, model, refs=(), size=None, aspect="16:9"):
         print(f"    painting {i + 1} of {n} ...", flush=True)
         body = {"contents": [{"parts": [{"text": prompt}, *pics]}],
                 "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": aspect, **({"imageSize": size} if size else {})}}}
+        budget_check()
         r = post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                  json.dumps(body).encode(), {"Content-Type": "application/json", "x-goog-api-key": api_key("GEMINI_API_KEY")})
+        meter(model, r, True)
         parts = ((r.get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
         img = [p for p in parts if (p.get("inlineData") or p.get("inline_data"))]
         if not img:
@@ -1193,7 +1280,7 @@ def cmd_hires(a):
         buf = io.BytesIO(); out.save(buf, "WEBP", quality=84, method=5); data = buf.getvalue()
         name = f"{id}-hd-{hashlib.sha1(data).hexdigest()[:8]}.webp"
         write(os.path.join(a.out, name), data)
-        orig[id] = src; sc[id] = name
+        orig[id] = src; sc[id] = name; sc.pop(id + "-night", None)   # painted anew: a painted night no longer lines up
         write(path, json.dumps(idx, indent=1).encode())   # after each picture, so a stop half way keeps what is done
         print(f"  {name}: {out.size[0]} x {out.size[1]} pixels", flush=True)
     print("Done. Live: https://tauhud.com/rabbit/ (Ctrl+F5)")
@@ -1281,6 +1368,56 @@ TOUCH_SETS = {
         "else stays exactly where and how it is, above all the canoe house, the old ship, the school, the bar, the pier, "
         "the waterfall, the palace, the resort, the radio mast, the Coconut Works, the red tree and every other building, "
         "path and stretch of coast."),
+    # from island 30 (paint.sh touch cafe-in-school --from island=30): the beach touch turned the school itself into the
+    # café; school, Parasol Café and Market Square each their own place on the front beach. Two ways: the café as a wing
+    # of the schoolhouse, clearly set apart (cafe-in-school), or its own small building between school and market (cafe-apart)
+    "cafe-in-school": (
+        "the front beach between the old ship on the left and Bar La Ola on its stilts on the right holds three "
+        "places, each clearly its own, with open sand, a path and a few palms between them so nothing is crowded. The "
+        "wooden house by the beach just left of Bar La Ola and below the big red tree, which this picture paints as a "
+        "café, is the island's school again: a cheerful blue wooden schoolhouse on stilts with a small bell under a "
+        "little roof turret, open shutters, a blank slate board by the door and a small sandy schoolyard with a swing "
+        "hanging from a palm. The Parasol Café shares that building but is clearly a place of its own: a lower wing "
+        "built onto the side of the schoolhouse that faces the sea, its walls painted warm coral and cream instead of "
+        "blue, a red-and-white striped awning instead of the school's grey shingle roof, opening onto a wooden deck "
+        "on the sand with round café tables under red-and-white parasols, a counter with cups and a string of "
+        "lanterns; a low fence with flower boxes divides the schoolyard from the café deck, so the school and the "
+        "café read as two places at one glance. The Market Square stays on the left of the front beach near the old "
+        "ship: a small open square of packed sand and flat stones with a handful of wooden stalls under colourful "
+        "awnings, crates of coconuts, fruit and fish, baskets and a few people trading, with open sand between it and "
+        "the school. Everything else stays exactly where and how it is, above all the canoe house, the lighthouse on "
+        "its islet at the back, the surveyors' camp in the mountains, the rock arch, the sea cave, the old ship, the "
+        "bar, the pier, the dive centre, the red tree, the Coconut Works, the waterfall, the palace, the resort and "
+        "every other building, path and stretch of coast."),
+    "cafe-apart": (
+        "the front beach between the old ship on the left and Bar La Ola on its stilts on the right holds three "
+        "separate places side by side, each with room around it: open sand, a path and a few palms between them, "
+        "never crowded. On the right, just left of Bar La Ola and below the big red tree, where this picture paints a "
+        "café, the island's school stands again: a cheerful blue wooden schoolhouse on stilts with a small bell under "
+        "a little roof turret, open shutters, a blank slate board by the door and a small sandy schoolyard with a "
+        "swing hanging from a palm; no parasols and no café tables at the school. In the middle of the front beach, "
+        "on open sand halfway between the school and the market, the Parasol Café as its own small building, clearly "
+        "smaller than the school: a low beach café of pale wood with warm coral walls, a red-and-white striped awning "
+        "over its counter, a wooden deck on the sand with round tables under red-and-white parasols and a few hanging "
+        "lanterns. On the left, near the old ship, the Market Square: a small open square of packed sand and flat "
+        "stones with a handful of wooden stalls under colourful awnings, crates of coconuts, fruit and fish, baskets "
+        "and a few people trading. Everything else stays exactly where and how it is, above all the canoe house, the "
+        "lighthouse on its islet at the back, the surveyors' camp in the mountains, the rock arch, the sea cave, the "
+        "old ship, the bar, the pier, the dive centre, the red tree, the Coconut Works, the waterfall, the palace, "
+        "the resort and every other building, path and stretch of coast."),
+    # from island 34 (paint.sh touch dive-reef --from island=34): the dive centre out on the reef by the small sandbank
+    # in the lower left sea, in front of the old ship, where the front beach has no room for it any more
+    "dive-reef": (
+        "the Reef Proof Dive Centre moves out onto the reef: on the shallow turquoise reef in the sea at the lower "
+        "left of the picture, in front of and to the left of the old ship, right beside the small sandbank, a small "
+        "dive station of weathered wood on stilts standing in the shallow water, clearly visible: a little hut with a "
+        "palm-thatch roof and a wide open front, a wooden deck around it with a ladder down into the water, a short "
+        "jetty with a small dive boat tied to it, a rack of yellow air tanks, fins and masks drying on a rail, and a "
+        "red flag with a white diagonal stripe on a pole; a line of small white buoys leads from it across the reef. "
+        "Everything else stays exactly where and how it is, above all the school, the Parasol Café, the Market "
+        "Square, the old ship, the bar, the pier, the canoe house, the lighthouse on its islet at the back, the "
+        "surveyors' camp in the mountains, the rock arch, the sea cave, the red tree, the Coconut Works, the "
+        "waterfall, the palace, the resort and every other building, path and stretch of coast."),
 }
 
 
@@ -1346,6 +1483,7 @@ def cmd_keep(a):
         shutil.copyfile(os.path.join(a.out, "drafts", f), os.path.join(a.out, f))
         idx["scenes"][id] = f
         idx.get("orig", {}).pop(id, None)   # a new pick: its sharp wide copy is made again by hires
+        idx["scenes"].pop(id + "-night", None)   # its painted night was made from the picture before
         if id == "island":   # a painting of a new sketch brings where everything stands on it
             sk = drafts.get("sketch", {}).get(f)
             if getattr(a, "layout", None):   # a layout drawn by hand over this very painting (plates/<name>.json)
@@ -1359,16 +1497,275 @@ def cmd_keep(a):
     print("Done. The island shows them now: https://tauhud.com/rabbit/ (reload)")
 
 
+# ---------- each place's own light at night ----------
+# The rooms are painted by day. At night the game (rabbit/scene.js roomLight) lights each one by its own lamps, so it has
+# to know where they hang in that very painting: the image model looks at the kept painting once and names every light
+# in it with a box, and index.json keeps that list under "lights", tied to the painting's file (a new painting is looked
+# at again). Looking costs one short text answer per room, no picture.
+LIGHT_MODELS = ["gemini-3.8-flash", "gemini-3-flash-preview", "gemini-2.5-flash"]   # newest first; GEMINI_TEXT_MODEL in infra/.env goes before them
+LIGHT_KINDS = ["lamp", "bulbs", "candle", "lantern", "chandelier", "fire", "torch", "screen", "glow", "window"]
+LIGHT_COLOURS = ["warm", "fire", "cream", "gold", "green", "teal", "cyan", "pink", "red", "moon"]
+LIGHTS_PROMPT = (
+    "This is a hand-painted background of one place in an adventure game, painted by daylight. The game also shows it "
+    "at night, lit only by the light sources that are painted in it. List every light source that is really painted in "
+    "this picture and would glow at night: lamps, lamp posts, string lights (one entry for the whole string, kind "
+    "bulbs, the box around the string), candles, lanterns, chandeliers, fires, hearths, torches, stoves, glowing screens "
+    "or dials, glowing buoys or crystals (kind glow), and the windows and openings the moon shines in through (kind "
+    "window). Never invent a light that is not painted, never list the sun or the sky. For each: kind (one of "
+    + ", ".join(LIGHT_KINDS) + "), colour of its light at night (one of " + ", ".join(LIGHT_COLOURS) + "; moon for windows) "
+    "and box_2d as [ymin, xmin, ymax, xmax] on a 0 to 1000 scale around the glowing part only (the bulb, flame, shade or "
+    "glass). At most 16, the most important first. Also say whether the place is outside in the open air (outside).")
+LIGHTS_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "outside": {"type": "BOOLEAN"},
+        "lights": {"type": "ARRAY", "items": {"type": "OBJECT", "properties": {
+            "kind": {"type": "STRING", "enum": LIGHT_KINDS},
+            "colour": {"type": "STRING", "enum": LIGHT_COLOURS},
+            "box_2d": {"type": "ARRAY", "items": {"type": "INTEGER"}}},
+            "required": ["kind", "colour", "box_2d"]}}},
+    "required": ["outside", "lights"]}
+
+
+def look_at_lights(raw, model):
+    """The image model's list of the lights painted in one picture: {"outside": bool, "l": [{k, c, x, y, w, h}]}, x/y the
+    middle of the light and w/h its size, all as parts (0 to 1) of the picture."""
+    try:
+        from PIL import Image
+        im = Image.open(io.BytesIO(raw)).convert("RGB")
+        if im.width > 1280:
+            im = im.resize((1280, round(1280 * im.height / im.width)), Image.LANCZOS)
+        buf = io.BytesIO(); im.save(buf, "JPEG", quality=85); raw = buf.getvalue()
+    except ImportError:
+        pass
+    body = {"contents": [{"parts": [{"text": LIGHTS_PROMPT}, {"inline_data": {"mime_type": mime(raw), "data": base64.b64encode(raw).decode()}}]}],
+            "generationConfig": {"responseMimeType": "application/json", "responseSchema": LIGHTS_SCHEMA, "temperature": 0.2}}
+    for i, m in enumerate(model):   # an older model Google has retired answers 404: the next one is asked
+        budget_check()
+        try:
+            r = post(f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent",
+                     json.dumps(body).encode(), {"Content-Type": "application/json", "x-goog-api-key": api_key("GEMINI_API_KEY")})
+            meter(m, r, False)
+            break
+        except SystemExit as e:
+            if " 404" not in str(e) or i == len(model) - 1:
+                raise
+    parts = ((r.get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
+    text = "".join(p.get("text", "") for p in parts)
+    try:
+        j = json.loads(text)
+    except ValueError:
+        sys.exit("The painter's eye sent no list back: " + text[:200])
+    return clean_lights(j)
+
+
+def clean_lights(j):
+    out = []
+    for L in (j.get("lights") or [])[:16]:
+        b = L.get("box_2d") or []
+        if len(b) != 4 or L.get("kind") not in LIGHT_KINDS:
+            continue
+        y0, x0, y1, x1 = [max(0, min(1000, int(v))) for v in b]
+        y0, y1, x0, x1 = min(y0, y1), max(y0, y1), min(x0, x1), max(x0, x1)
+        if x1 - x0 < 2 or y1 - y0 < 2 or (x1 - x0) * (y1 - y0) > 400000:   # a dot or half the picture: not a lamp
+            continue
+        c = L.get("colour") if L.get("colour") in LIGHT_COLOURS else ("moon" if L["kind"] == "window" else "warm")
+        out.append({"k": L["kind"], "c": c, "x": round((x0 + x1) / 2000, 4), "y": round((y0 + y1) / 2000, 4),
+                    "w": round((x1 - x0) / 1000, 4), "h": round((y1 - y0) / 1000, 4)})
+    return {"outside": bool(j.get("outside")), "l": out}
+
+
+def cmd_lights(a):
+    path = os.path.join(a.out, "index.json")
+    idx = load(path)
+    scenes = idx.get("scenes", {})
+    rooms = [id for id in PLACES[1:] if id in scenes]
+    who = rooms if "all" in a.places else [id for id in a.places if id in rooms]
+    if not who:
+        print("lights: no painted room to look at" + ("" if "all" in a.places else f" ({' '.join(a.places)})"))
+        return
+    if not api_key("GEMINI_API_KEY"):
+        sys.exit("lights: no GEMINI_API_KEY in infra/.env")
+    have = idx.setdefault("lights", {})
+    done = []
+    for id in who:
+        f = scenes[id]
+        of = (have.get(id) or {}).get("of")
+        if a.missing and of and of in (f, idx.get("orig", {}).get(id)):   # a sharper copy keeps its lights
+            continue
+        try:
+            raw = open(os.path.join(a.out, f), "rb").read()
+        except OSError:
+            print(f"  {id}: painting {f} not found")
+            continue
+        got = look_at_lights(raw, [a.model] if a.model else [m for m in [api_key("GEMINI_TEXT_MODEL")] if m] + LIGHT_MODELS)
+        have[id] = {"of": f, **got}
+        done.append(f"{id} {len(got['l'])}")
+        print(f"  {id}: {len(got['l'])} lights" + (" (outside)" if got["outside"] else ""), flush=True)
+        write(path, json.dumps(idx, indent=1).encode())   # after each room: a stop half way keeps what was found
+    print("lights: " + (", ".join(done) if done else "every room already has its lights") + " (Ctrl+F5)")
+
+
 def cmd_drop(a):
     path = os.path.join(a.out, "index.json")
     idx = load(path)
     for id in a.places:
         idx.get("scenes", {}).pop(id, None)
+        idx.get("scenes", {}).pop(id + "-night", None)
         if id == "island":
             idx.pop("layout", None)
         idx.get("orig", {}).pop(id, None)
     write(path, json.dumps(idx, indent=1).encode())
     print("Back to the drawn pictures for: " + ", ".join(a.places))
+
+
+# ---------- a set painted elsewhere: the island and its places, by day and at night ----------
+# A set painted outside the server (infra/rabbit-art/imports/codex/<set>/, e.g. isle-36) is taken over as it is: nothing
+# is painted, nothing is paid, the node is left alone (up art). island.webp is the live island with only a few spots
+# changed (the people taken out of the square): it keeps the live island's name with -clean-<hash>, so its layout and the
+# living island's clip (rabbit/art/live, matched by that name) stay with it. rooms/<id>.webp is a place by day (21:9, at
+# least 2560 wide) and rooms/<id>-night.webp the very same picture at night, its lamps lit: the game fades it in from the
+# evening (rabbit/scene.js paintedNight) instead of darkening the day picture. A night that does not line up with its
+# day picture, or a picture of the wrong size, is refused with the reason; the rest is taken over.
+IMPORTS = os.path.join(HERE, "imports", "codex")
+ISLAND_CHANGE_MAX = 0.03   # the island may differ from the live one in at most 3 % of its pixels (a few spots, not a repaint)
+
+
+def isle_dir(name):
+    if name:
+        d = name if os.path.isabs(name) or os.sep in name else os.path.join(IMPORTS, name)
+        if not os.path.isdir(d):
+            sys.exit(f"isle: no folder {d}")
+        return d
+    sets = sorted((x for x in (os.listdir(IMPORTS) if os.path.isdir(IMPORTS) else []) if x.startswith("isle-") and os.path.isdir(os.path.join(IMPORTS, x))),
+                  key=lambda x: [int(n) if n.isdigit() else n for n in re.split(r"(\d+)", x)])
+    if not sets:
+        sys.exit(f"isle: no set to take over in {IMPORTS} (a folder isle-<island>)")
+    return os.path.join(IMPORTS, sets[-1])
+
+
+def picture(d, stem):
+    for ext in (".webp", ".png", ".jpg", ".jpeg"):
+        if os.path.isfile(os.path.join(d, stem + ext)):
+            return os.path.join(d, stem + ext)
+    return None
+
+
+def lines_up(day, night):
+    """How well a night picture lines up with its day picture: its outlines (small, grey, softened a little) compared with
+    the day picture's, 1 the very same outlines, about 0 another picture. A night made from the day picture scores above
+    0.9, one a few pixels off still above 0.85."""
+    from PIL import Image, ImageFilter, ImageOps
+    def outline(im):
+        g = ImageOps.autocontrast(im.convert("L").resize((480, max(1, round(480 * im.height / im.width))), Image.LANCZOS), cutoff=1)
+        return list(g.filter(ImageFilter.FIND_EDGES).filter(ImageFilter.GaussianBlur(2)).tobytes())
+    a, b = outline(day), outline(night)
+    n = len(a); ma, mb = sum(a) / n, sum(b) / n
+    cov = sum((x - ma) * (y - mb) for x, y in zip(a, b))
+    va, vb = sum((x - ma) ** 2 for x in a), sum((y - mb) ** 2 for y in b)
+    return cov / (va * vb) ** 0.5 if va and vb else 0.0
+
+
+def brightness(im):
+    """The mean brightness (0 to 255) of a picture and the share of it that is near black."""
+    g = im.convert("L").resize((480, max(1, round(480 * im.height / im.width))))
+    h = g.histogram(); n = sum(h)
+    return sum(i * c for i, c in enumerate(h)) / n, sum(h[:16]) / n
+
+
+def webp_bytes(path, im, quality=88):
+    """A WebP as it came stays byte for byte (no second loss); any other picture is made a WebP."""
+    raw = open(path, "rb").read()
+    if raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
+        return raw
+    buf = io.BytesIO(); im.save(buf, "WEBP", quality=quality, method=5)
+    return buf.getvalue()
+
+
+def cmd_isle(a):
+    from PIL import Image, ImageChops
+    d = isle_dir(a.src)
+    path = os.path.join(a.out, "index.json")
+    idx = load(path)
+    sc = idx.setdefault("scenes", {})
+    did, refused = [], []
+    print(f"isle: {os.path.relpath(d, REPO) if d.startswith(REPO) else d}", flush=True)
+    # the island: the live painting with a few spots changed
+    f = picture(d, "island")
+    if f and "island" in (a.only or ["island"]):
+        live = idx.get("orig", {}).get("island") or sc.get("island")   # the picture that was kept (not a wider copy of it)
+        stem = re.sub(r"-clean-[0-9a-f]{8}$", "", os.path.splitext(live or "")[0])
+        base = next((p for p in (os.path.join(a.out, stem + ".webp"), os.path.join(a.out, live or "")) if live and os.path.isfile(p)), None)
+        new = Image.open(f).convert("RGB")
+        if not base:
+            refused.append("island: there is no live island to compare it with (keep one first: up keep <n>)")
+        else:
+            old = Image.open(base).convert("RGB")
+            if new.size != old.size:
+                refused.append(f"island: {new.size[0]} x {new.size[1]}, the live island is {old.size[0]} x {old.size[1]}; it must be the live island with only some spots changed")
+            else:
+                r, g, b = ImageChops.difference(new, old).split()
+                changed = ImageChops.lighter(ImageChops.lighter(r, g), b).point(lambda v: 255 if v > 40 else 0)
+                share = changed.histogram()[255] / (new.width * new.height)
+                if share > ISLAND_CHANGE_MAX:
+                    refused.append(f"island: {share:.1%} of it differs from the live island, more than a few spots; a repainted island is a new island (up keep)")
+                else:
+                    buf = io.BytesIO(); new.save(buf, "WEBP", quality=86, method=5); data = buf.getvalue()
+                    name = f"{stem}-clean-{hashlib.sha1(data).hexdigest()[:8]}.webp"
+                    box = changed.getbbox()
+                    if not a.dry:
+                        write(os.path.join(a.out, name), data)
+                        sc["island"] = name; idx.get("orig", {}).pop("island", None)
+                    did.append(f"island {name} ({share:.2%} changed" + (f", within x {box[0]}-{box[2]}, y {box[1]}-{box[3]}" if box else ", nothing") + ")")
+    # the places: each by day and, where it is there, at night
+    rd = os.path.join(d, "rooms")
+    for id in PLACES[1:]:
+        if a.only and id not in a.only:
+            continue
+        f = picture(rd, id)
+        if not f:
+            continue
+        day = Image.open(f).convert("RGB")
+        w, h = day.size
+        if w < 2560 or not 1.7 <= w / h <= 2.5:
+            refused.append(f"{id}: {w} x {h}; a place is 21:9 (3360 x 1440), at least 2560 wide")
+            continue
+        fn = picture(rd, id + "-night")
+        night = Image.open(fn).convert("RGB") if fn else None
+        note = ""
+        if night is not None:
+            fit = lines_up(day, night)
+            (b0, _), (b1, black) = brightness(day), brightness(night)
+            if night.size != day.size:
+                refused.append(f"{id} at night: {night.size[0]} x {night.size[1]}, its day picture {w} x {h}; it must be the day picture at night, the same size")
+                night = None
+            elif fit < 0.5:
+                refused.append(f"{id} at night: does not line up with its day picture ({fit:.2f}); it must be the day picture with the night painted over it")
+                night = None
+            else:
+                note = f", night {b1 / max(1, b0):.0%} of the day's light" + (f", {black:.0%} near black" if black > 0.05 else "") + ("" if fit >= 0.85 else f", lines up only roughly ({fit:.2f})")
+        dd = webp_bytes(f, day)
+        dn = f"{id}-codex-{hashlib.sha1(dd).hexdigest()[:8]}.webp"
+        if not a.dry:
+            write(os.path.join(a.out, dn), dd)
+            sc[id] = dn; idx.get("orig", {}).pop(id, None)
+        if night is not None:
+            nd = webp_bytes(fn, night)
+            nn = f"{id}-night-codex-{hashlib.sha1(nd).hexdigest()[:8]}.webp"
+            if not a.dry:
+                write(os.path.join(a.out, nn), nd)
+                sc[id + "-night"] = nn
+        elif not a.dry:
+            sc.pop(id + "-night", None)   # an older night was made from the picture before
+        did.append(f"{id}{' + night' if night is not None else ''} ({w} x {h}{note})")
+    if not a.dry and did:
+        write(path, json.dumps(idx, indent=1).encode())
+    for x in did:
+        print("  took over: " + x)
+    for x in refused:
+        print("  REFUSED: " + x)
+    print("isle: " + (f"{len(did)} taken over" if did else "nothing taken over") + (f", {len(refused)} refused" if refused else "")
+          + (" (dry run, nothing written)" if a.dry else " (Ctrl+F5)" if did else ""))
 
 
 def main():
@@ -1433,10 +1830,21 @@ def main():
     fo.add_argument("--no-cast", dest="cast", action="store_false", help="only the townspeople, not the named cast")
     fo.add_argument("--model", default=None)
     sub.add_parser("page")
+    sub.add_parser("usage")
+    li = sub.add_parser("lights")
+    li.add_argument("places", nargs="*", default=["all"], help="all (default), or some of: " + " ".join(PLACES[1:]))
+    li.add_argument("--missing", action="store_true", help="only rooms whose painting has not been looked at yet")
+    li.add_argument("--model", default=None, help="default: " + ", ".join(LIGHT_MODELS) + " (the next when one is retired)")
     r = sub.add_parser("drop")
     r.add_argument("places", nargs="+")
+    il = sub.add_parser("isle")
+    il.add_argument("src", nargs="?", default=None, help="the set in imports/codex (default: the newest isle-*), or a folder")
+    il.add_argument("--only", nargs="+", default=None, help="only these: island and/or places")
+    il.add_argument("--dry", action="store_true", help="check and tell, write nothing")
     a = p.parse_args()
-    {"page": page, "draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "touch": cmd_touch, "narrow": cmd_narrow, "busts": cmd_busts, "creatures": cmd_creatures}[a.cmd](a)
+    global USAGE
+    USAGE = os.path.join(a.out, "gemini-usage.json")
+    {"page": page, "draft": cmd_draft, "keep": cmd_keep, "drop": cmd_drop, "looks": cmd_looks, "ideas": cmd_ideas, "folk": cmd_folk, "rework": cmd_rework, "sharp": cmd_sharp, "hires": cmd_hires, "panorama": cmd_panorama, "touch": cmd_touch, "narrow": cmd_narrow, "busts": cmd_busts, "creatures": cmd_creatures, "lights": cmd_lights, "isle": cmd_isle, "usage": lambda a: print(usage_line())}[a.cmd](a)
 
 
 if __name__ == "__main__":

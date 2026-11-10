@@ -172,6 +172,7 @@ TauI18n.add({ strings: {
   "the offline seat stops missing turns": "离线席位不再错过轮次",
   "Blocks are never valid": "区块永远无效",
   "a change that breaks the chain": "一项会破坏链的变更",
+  "{who} is still online: wait for a missed turn": "{who} 仍在线：等它错过一次出块",
   "already in force": "已经生效",
   "Proposed": "已提议", "Checked": "已检查", "Check failed": "检查失败", "Refused": "被拒绝", "Voting": "投票中", "Dropped": "已放弃", "Agreed": "已达成共识", "In force": "已生效",
   "Vote yes": "投赞成票",

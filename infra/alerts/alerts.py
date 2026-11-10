@@ -110,6 +110,7 @@ import explain
 import findings
 import firsts
 import gazette
+import ai_meter
 import idni_digest
 import recap
 import tickerwatch
@@ -234,18 +235,27 @@ DEEPDIVE_DAYS = tuple(sorted({int(x) for x in os.environ.get("DEEPDIVE_DAYS", "0
 DEEPDIVE_LINE = "🔎 TAU HUD · a closer look"
 DEEPDIVE_FOOT = "🔎 A closer look at Tau HUD"
 # The Key Crier: White Rabbit Key's shared island (relay /isle) summed up every morning for the day before, at
-# ISLAND_HOUR UTC; the X copy at most every ISLAND_X_EVERY_DAYS days, and only for a day real players moved.
+# ISLAND_HOUR UTC; the X copy only for a day with a story (an election won or a law passed by real players), told as
+# that story, at most every ISLAND_X_EVERY_DAYS days (since 7 November 2026: "1 campaign, 3 moves" read like spam; a
+# day of moves alone stays on Telegram).
 # On Monday the report opens with the governor's count: who governs the island this week and which laws hold (the
 # relay's `last`, decided at Monday 00:00 German time), on X too.
 ISLAND_ON = os.environ.get("ISLAND_CRIER", "true").lower() in ("1", "true", "yes")
 ISLAND_HOUR = int(os.environ.get("ISLAND_HOUR", 7))         # UTC (08:00 German winter time: the morning paper)
 ISLAND_EVERY = float(os.environ.get("ISLAND_POLL_SECONDS", 600))
-ISLAND_X_EVERY_DAYS = max(1, int(os.environ.get("ISLAND_X_EVERY_DAYS", 2)))
+ISLAND_X_EVERY_DAYS = max(1, int(os.environ.get("ISLAND_X_EVERY_DAYS", 1)))
 ISLAND_DAYS = int(os.environ.get("ISLAND_DAYS", 7))         # a campaign's length; rabbit/game.js DAYS is read when reachable
 ISLAND_GAME_JS = f"{SITE}/rabbit/game.js"
 ISLAND_LINK = f"{SITE}/rabbit/"
 ISLAND_LINE = "🐇 WHITE RABBIT KEY · the Key Crier"
 ISLAND_FOOT = "🐇 White Rabbit Key, a game on Tau HUD"
+# the picture under the Key Crier's X post: the island painting the game shows now (island_pic.py, from the art folder the
+# painting pipeline writes, /opt/sites/rico/art), never a repo screenshot. Until 7 November 2026 the post carried
+# assets/shots/rabbit.png, the drawn island of October. The same painting without a card is kept public at
+# node.tauhud.com/island/today.jpg for the closer look at the game (assets/deepdives.json); none at all when there is no painting.
+ISLAND_ART = os.environ.get("ISLAND_ART", "/art")
+ISLAND_PIC_DIR = os.path.join(PUBLIC_DIR, "island")
+ISLAND_PIC_EVERY = 6 * 3600   # a new painting (up keep) is in the public picture within hours
 # Visitors may propose a rule change to the simulation from the Playground and vote on it (relay/simprops.py, relay/simvotes.py).
 # The channel hears only about the ones visitors voted in, with at least VISITOR_MIN_VOTES votes, at most VISITOR_DAILY_CAP a day.
 VISITOR_MIN_VOTES = int(os.environ.get("SIM_VISITOR_MIN_VOTES", 3))
@@ -1558,6 +1568,42 @@ def island_buttons() -> dict:
     return {"inline_keyboard": [[{"text": "🐇 Play today's island", "url": ISLAND_LINK}]]}
 
 
+def island_story(r: dict) -> str | None:
+    """The day's story for X, or None: an election won by real players (who won), else a law they passed. A day of
+    moves alone is no story; it stays on Telegram."""
+    if r.get("wins"):
+        won = sum(c for _, c in r["wins"])
+        if won == 1:
+            return f"{r['wins'][0][0]} won an island election"
+        return f"{won} island elections won: " + ", ".join(f"{n} {c}" for n, c in r["wins"][:3])
+    if r.get("law"):
+        return f"New law of the island: {r['law']}"
+    return None
+
+
+def island_card(r: dict) -> list[str]:
+    """The card on the Key Crier's picture: the same facts as the post, so the picture alone says why it matters."""
+    w = r.get("week")
+    if w:
+        return [f"The governor's count, {w['span']}", f"{w['governor']} governs the island this week",
+                f"{plural(w['won'], 'campaign')} won of {w['finished']}, every move a real transaction",
+                "White Rabbit Key on Tau Testnet Alpha"]
+    return [island_story(r) or f"Yesterday on the island, {r['date']}", f"{r['date']}: {plural(r['moves'], 'move')} by real players,",
+            "each one a signed transaction on Tau Testnet Alpha", "White Rabbit Key · tauhud.com/rabbit"]
+
+
+def island_picture(card: list[str] | None = None, name: str = "today.jpg") -> str | None:
+    """The live island painting as a 1600x900 JPEG in ISLAND_PIC_DIR (with `card` when given), or None when there is no
+    painting to make it from: then the post goes out without a picture rather than with an old one."""
+    try:
+        import island_pic
+        os.makedirs(ISLAND_PIC_DIR, exist_ok=True)
+        return island_pic.make(ISLAND_ART, os.path.join(ISLAND_PIC_DIR, name), card)
+    except Exception as exc:  # noqa: BLE001 - no painting, a broken file: no picture, never a stale one
+        log.warning("island picture: none made (%r)", exc)
+        return None
+
+
 def island_x(r: dict) -> str:
     w = r.get("week")
     if w:
@@ -1567,13 +1613,16 @@ def island_x(r: dict) -> str:
             lines.append("Laws of the island: " + "; ".join(w["laws"]) + ".")
         lines.append(f"Every campaign won is a ballot; every move a real transaction on Tau Testnet Alpha.")
         return x_post(lines, foot=ISLAND_FOOT)
-    head = f"🐇 The Key Crier: yesterday on the island, {r['date']}"
-    body = f"{plural(r['campaigns'], 'campaign')}"
-    if r["finished"]:
-        body += f", {plural(r['finished'], 'election')}" + (": " + ", ".join(f"{n} {c}" for n, c in r["wins"][:3]) if r["wins"] else "")
-    body += f". {plural(r['moves'], 'move')}, each a real transaction on Tau Testnet Alpha."
-    lines = [head, body] + ([f"Law of the day: {r['law']}."] if r["law"] else [])
-    return x_post(lines, foot=ISLAND_FOOT)
+    story = island_story(r)
+    if story:   # what happened, then why it matters: the island's politics are real transactions anyone can check
+        lines = [f"🐇 The Key Crier, {r['date']}: {story}.",
+                 f"Every move behind it was a signed transaction on Tau Testnet Alpha ({plural(r['moves'], 'move')} by real players that day)."]
+        if r.get("wins") and r.get("law"):   # the first to go when the post is too long
+            lines.append(f"New law: {r['law']}.")
+        return x_post(lines, keep=2, foot=ISLAND_FOOT)
+    head = f"🐇 The Key Crier: yesterday on the island, {r['date']}"   # not posted on X (no story); --island-preview
+    body = f"{plural(r['campaigns'], 'campaign')}. {plural(r['moves'], 'move')}, each a real transaction on Tau Testnet Alpha."
+    return x_post([head, body], foot=ISLAND_FOOT)
 
 
 # ---------------- outlets ----------------
@@ -1657,6 +1706,8 @@ POLL_OPEN = float(os.environ.get("TG_POLL_OPEN_SECONDS", 36 * 3600))        # cl
 COSTS_ON = os.environ.get("COSTS_POST", "true").lower() in ("1", "true", "yes")
 COSTS_HOUR = int(os.environ.get("COSTS_HOUR", 9))                           # the 1st of each month, 09:00 UTC
 COSTS_URL = os.environ.get("COSTS_URL", f"{SITE}/assets/costs.json")
+# the pictures painted with Google's Gemini API, measured by infra/rabbit-art/paint.py per month (tokens x list price)
+GEMINI_USAGE_URL = os.environ.get("GEMINI_USAGE_URL", f"{NODE_PUBLIC}/rico/art/gemini-usage.json")
 CUR = {"EUR": "€", "USD": "$"}
 
 
@@ -1677,6 +1728,9 @@ def note_kind(kind: str, now: float | None = None):
         pass
 
 
+SHARED_KINDS = {"friend"}   # the wallet's "Pass it on" line (ref=friend) and its rule links (ref=preset-<id>): opens without a post of ours
+
+
 def clicks_table(opens: dict, posts: dict, start: str) -> dict:
     """{kind: [posts, opens]} summed over the days from `start` (YYYY-MM-DD) on."""
     out: dict[str, list[int]] = {}
@@ -1692,7 +1746,8 @@ def clicks_text(week: dict, quiet: list[str], changes: list[str]) -> str:
     e = html.escape
     rows = sorted(week.items(), key=lambda kv: (-kv[1][1], kv[0]))
     out = ["📈 <b>Channel this week</b> (only you get this)", "Opens of tauhud.com from each kind of post, last 7 days:"]
-    out += [f"• {e(k)}: {plural(p, 'post')}, {plural(o, 'open')}" for k, (p, o) in rows] or ["• no posts counted yet"]
+    out += [f"• {e(k)}: {plural(o, 'open')} from a link people passed on, no post" if p == 0 and (k in SHARED_KINDS or k.startswith("preset-"))
+            else f"• {e(k)}: {plural(p, 'post')}, {plural(o, 'open')}" for k, (p, o) in rows] or ["• no posts counted yet"]
     if changes:
         out += ["", "Changed by itself:"] + [f"• {e(c)}" for c in changes]
     if quiet:
@@ -1700,8 +1755,40 @@ def clicks_text(week: dict, quiet: list[str], changes: list[str]) -> str:
     return "\n".join(out)
 
 
-def costs_text(costs: dict | None, don: dict | None) -> str | None:
-    """The month's running costs as billed (assets/costs.json) and what came in (donations.json); None without costs."""
+def gemini_line(usage: dict | None, month: str) -> tuple[str, float] | None:
+    """Last month's pictures from Google's Gemini API as measured by paint.py (gemini-usage.json): (line, US dollars),
+    or None while nothing was measured yet (no file, or measuring began after that month)."""
+    if not isinstance(usage, dict) or not usage.get("since") or usage["since"][:7] > month:
+        return None
+    m = (usage.get("months") or {}).get(month) or {}
+    usd = round(float(m.get("usd") or 0), 2)
+    name = datetime.strptime(month + "-01", "%Y-%m-%d").strftime("%B")
+    since = f", measured since {int(usage['since'][8:10])} {name}" if usage["since"][:7] == month else ", measured"
+    if not usd:
+        return f"• Pictures (Google Gemini) in {name}: $0, nothing painted", 0.0
+    n = int(m.get("pictures") or 0)
+    return f"• Pictures (Google Gemini) in {name}: about ${usd:.2f} for {plural(n, 'picture')}{since}", usd
+
+
+def anthropic_line(t: dict | None, month: str) -> tuple[str, float] | None:
+    """Last month's answers from the Anthropic API (blog drafts, IDNI news and daily post, troll box check) as measured
+    by ai_meter.py: (line, US dollars), or None while nothing was measured for that month."""
+    if not t:
+        return None
+    name = datetime.strptime(month + "-01", "%Y-%m-%d").strftime("%B")
+    since = f", measured since {int(t['since'][8:10])} {name}" if t["since"][:7] == month else ", measured"
+    usd = round(float(t.get("usd") or 0), 2)
+    if not t.get("answers"):
+        return f"• AI writing (Anthropic API) in {name}: $0", 0.0
+    return (f"• AI writing (Anthropic API: blog, IDNI news, chat check) in {name}: about ${usd:.2f} for "
+            f"{plural(int(t['answers']), 'answer')}{since}"), usd
+
+
+def costs_text(costs: dict | None, don: dict | None, gemini: dict | None = None, month: str = "",
+               anthropic: dict | None = None) -> str | None:
+    """The month's running costs as billed (assets/costs.json), last month's measured Gemini pictures (gemini-usage.json)
+    and Anthropic API answers (ai_meter.totals), both for `month` (YYYY-MM), and what came in (donations.json); None
+    without costs."""
     e = html.escape
     items = (costs or {}).get("items") or []
     billed = [i for i in items if isinstance(i.get("amount"), (int, float))]
@@ -1710,9 +1797,14 @@ def costs_text(costs: dict | None, don: dict | None) -> str | None:
     by_cur: dict[str, float] = {}
     for i in billed:
         by_cur[i["cur"]] = by_cur.get(i["cur"], 0) + i["amount"]
+    measured = [x for x in ((gemini_line(gemini, month), anthropic_line(anthropic, month)) if month else ()) if x]
+    for _, usd in measured:
+        if usd:
+            by_cur["USD"] = round(by_cur.get("USD", 0) + usd, 2)
     total = " + ".join(f"{CUR.get(c, c + ' ')}{n:g}" for c, n in by_cur.items())
     out = ["💚 <b>TAU HUD · what it costs to run</b>", f"<b>About {e(total)} a month, not counting time</b>", ""]
     out += [f"• {e(i['t'])}: {CUR.get(i['cur'], i['cur'] + ' ')}{i['amount']:g}" for i in billed]
+    out += [e(line) for line, _ in measured]
     open_bills = [i["t"] for i in items if i.get("amount") is None]
     if open_bills:
         out.append(f"• not in yet: {e(', '.join(open_bills))}")
@@ -1903,8 +1995,9 @@ class X(Outlet):
         return self.send_text(recap_x(r), media_id)
 
     def send_with_picture(self, text: str, picture: str | None) -> tuple[bool, float | None, str]:
-        """The text with the picture at `picture` (a URL) when it can be fetched and uploaded, else the text alone."""
-        png = fetch_picture(picture) if picture and X_PICTURES else None
+        """The text with the picture at `picture` (a URL, or a file made here) when it can be read and uploaded, else the
+        text alone."""
+        png = (local_picture(picture) if picture.startswith("/") else fetch_picture(picture)) if picture and X_PICTURES else None
         media_id = self.upload(png)[0] if png else None
         if png and not media_id:
             log.info("x: picture %s not uploaded, posting the text alone", picture)
@@ -1962,6 +2055,18 @@ def fetch_picture(url: str) -> bytes | None:
             data = r.read(5 * 2**20 + 1)
     except (urllib.error.URLError, OSError, ValueError) as exc:
         log.info("x: no picture from %s (%r)", url, exc)
+        return None
+    ok = data[:8] == b"\x89PNG\r\n\x1a\n" or data[:3] == b"\xff\xd8\xff"
+    return data if ok and len(data) <= 5 * 2**20 else None
+
+
+def local_picture(path: str) -> bytes | None:
+    """A PNG or JPEG made on this server (island_pic.py), at most 5 MB, or None."""
+    try:
+        with open(path, "rb") as f:
+            data = f.read(5 * 2**20 + 1)
+    except OSError as exc:
+        log.info("x: no picture at %s (%r)", path, exc)
         return None
     ok = data[:8] == b"\x89PNG\r\n\x1a\n" or data[:3] == b"\xff\xd8\xff"
     return data if ok and len(data) <= 5 * 2**20 else None
@@ -2459,7 +2564,8 @@ class Watcher:
             return
         got = await asyncio.to_thread(self.relay_json, "/wallets/tags")
         tags = got.get("tags") if isinstance(got, dict) and isinstance(got.get("tags"), dict) else None   # unknown: claim nothing
-        text = firsts.telegram_text(due, REAL_LINE, tags)
+        via = got.get("via") if isinstance(got, dict) and isinstance(got.get("via"), dict) else {}
+        text = firsts.telegram_text(due, REAL_LINE, tags, via)
         first_tx = next((f["tx"] for f in due if f.get("tx")), None)
         buttons = link_buttons(("🔎 See it in the explorer", f"{SITE}/explorer/?tx={first_tx}" if first_tx else f"{SITE}/explorer/"),
                                ("📜 Rules wall", f"{SITE}/rules/"))
@@ -2837,12 +2943,15 @@ class Watcher:
     # ---------- the Key Crier: White Rabbit Key's shared island, the day before (relay /isle) ----------
     async def maybe_island(self, now: float | None = None, snap: dict | None = None):
         """Keep the island's day as the relay sums it up (the last reading before midnight UTC is the day), and every
-        morning at ISLAND_HOUR UTC report the day before: Telegram when a real player moved, the X copy only for a day real
-        players moved and at most every ISLAND_X_EVERY_DAYS days; X never waits for Telegram. On Monday the report
+        morning at ISLAND_HOUR UTC report the day before: Telegram when a real player moved, the X copy only for a day with
+        a story (island_story: an election won, a law passed) and at most every ISLAND_X_EVERY_DAYS days; X never waits for Telegram. On Monday the report
         opens with the governor's count of the week just ended (relay `last`), then goes out on X as well."""
         if not ISLAND_ON:
             return
         now = now if now is not None else time.time()
+        if now - getattr(self, "island_pic_at", 0) >= ISLAND_PIC_EVERY or now < getattr(self, "island_pic_at", 0):
+            self.island_pic_at = now   # the public copy (node.tauhud.com/island/today.jpg), made anew after each start
+            await asyncio.to_thread(island_picture)
         st = self.state.setdefault("island", {"days": {}, "posted": {}, "x_posted": {}})
         if snap is not None or now - st.get("checked", 0) >= ISLAND_EVERY:
             st["checked"] = now
@@ -2888,10 +2997,11 @@ class Watcher:
             last_x = max([t for t in st["x_posted"].values() if t], default=0)
             st["x_posted"][day] = round(now)
             self.save_state()
-            if r["week"] or r["players"] and (not last_x or (now - last_x) >= (ISLAND_X_EVERY_DAYS - 0.5) * 86400):
-                await self.post_x(island_x(r), "island " + day, now, f"{SITE}/assets/shots/rabbit.png", spare=True)
+            if r["week"] or island_story(r) and (not last_x or (now - last_x) >= (ISLAND_X_EVERY_DAYS - 0.5) * 86400):
+                pic = await asyncio.to_thread(island_picture, island_card(r), "crier.jpg")
+                await self.post_x(island_x(r), "island " + day, now, pic, spare=True)
             else:
-                st["x_posted"][day] = 0   # Telegram only: nobody played, or X had the island lately
+                st["x_posted"][day] = 0   # Telegram only: no election won and no law passed, or X had the island lately
                 log.info("island %s: Telegram only", day)
         for k in ("posted", "x_posted"):
             for old in sorted(st[k])[:-14]:
@@ -3460,7 +3570,9 @@ class Watcher:
                     don = json.load(f)
             except (OSError, ValueError):
                 don = None
-        text = costs_text(costs, don)
+        last = (d.replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+        gemini = await asyncio.to_thread(self.fetch_json_url, GEMINI_USAGE_URL)
+        text = costs_text(costs, don, gemini, last, await asyncio.to_thread(ai_meter.totals, last))
         st["month"] = month
         if text:
             ok, _, err = await asyncio.to_thread(tg[0].send_text, text, link_buttons(("💚 Support Tau HUD", f"{SITE}/donate/")))

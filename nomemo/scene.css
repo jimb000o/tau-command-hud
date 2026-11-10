@@ -1,0 +1,84 @@
+/* The cabin of the Black Sequence around No Memo: you sit at the terminal desk, the game is what its screen shows.
+   scene.js loads nomemo/art/cabin/cabin.json, picks the painting that fits the window (16:9 or 21:9), sizes it so the
+   screen is large enough to read (on a laptop the camera comes close, on a big monitor the whole cabin shows) and sets
+   --gx/--gy/--gw/--gh (the glass) on <html class="scene">. Without the painting, on a narrow or tall window, or after
+   `scene off`, nothing here applies and the page is the plain terminal. */
+
+.cabin { display: none; }
+html.scene .cabin { display: block; position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #050403; pointer-events: none; }
+html.scene, html.scene body { background: #050403; }
+html.scene body { background-image: none; }
+/* .wrap makes no stacking layer of its own: its children stack against the cabin, the glass edge and the windows
+   directly, so the site header and its menus (Explore, Learn, Playground, About, Start here) open above the screen */
+html.scene .wrap { position: relative; z-index: auto; }
+html.scene .wrap > header, html.scene .tnav { position: relative; z-index: 9; }
+html.scene footer { display: none; }
+
+/* the room: the painting and the light that lives in it, scaled together */
+.cab-room { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.cab-sway { position: absolute; inset: 0; transform-origin: 50% 40%; animation: cab-sway 11s ease-in-out infinite; }
+.cab-sway > img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; }
+@keyframes cab-sway { 0%, 100% { transform: translateY(0) rotate(-.09deg); } 50% { transform: translateY(2px) rotate(.09deg); } }
+.cab-sway > i { position: absolute; display: block; pointer-events: none; }
+
+/* the lantern: a warm glow that never burns quite steady */
+.cab-lamp { width: 36%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255,176,80,.42), rgba(255,140,40,.16) 45%, transparent 100%); mix-blend-mode: screen;
+  animation: cab-flicker 3.7s steps(1) infinite; transition: filter .6s; }
+@keyframes cab-flicker { 0% { opacity: .9; } 6% { opacity: .78; } 9% { opacity: .95; } 21% { opacity: .84; } 33% { opacity: 1; } 41% { opacity: .8; }
+  44% { opacity: .92; } 58% { opacity: .86; } 71% { opacity: .97; } 77% { opacity: .82; } 88% { opacity: .93; } }
+html.cab-ok .cab-lamp { filter: brightness(1.5) saturate(1.2); }
+html.cab-gold .cab-lamp { filter: brightness(1.9) saturate(1.3); }
+
+/* moonlight moving on the water in the windows */
+.cab-port { overflow: hidden; mix-blend-mode: screen; opacity: .55; }
+.cab-port::before { content: ""; position: absolute; left: -60%; top: 45%; width: 220%; height: 55%;
+  background: repeating-linear-gradient(100deg, transparent 0 14px, rgba(190,215,255,.10) 14px 16px, transparent 16px 34px);
+  animation: cab-water 7s linear infinite; }
+@keyframes cab-water { from { transform: translateX(0); } to { transform: translateX(34px); } }
+
+/* the screen's light on the bezel, the keyboard and the desk below it */
+.cab-spill { left: 0; right: 0; bottom: 0; top: 55%; background: radial-gradient(ellipse 42% 60% at 50% 0%, rgba(57,255,138,.20), transparent 75%);
+  mix-blend-mode: screen; opacity: .8; transition: opacity .25s; }
+html.cab-busy .cab-spill { opacity: 1; }
+
+/* Tuesday 18:00–20:00 (German time), the pirate op: a red alarm lamp turns in the cabin */
+.cab-alarm { inset: 0; opacity: 0; transition: opacity 1s; background: radial-gradient(ellipse 30% 45% at 50% -5%, rgba(255,60,60,.5), transparent 70%);
+  mix-blend-mode: screen; }
+html.cab-op .cab-alarm { opacity: 1; animation: cab-alarm 2.4s linear infinite; }
+@keyframes cab-alarm { 0% { background-position: -40vw 0; } 50% { background-position: 40vw 0; } 100% { background-position: -40vw 0; } }
+
+/* over the whole view: the dark edges, the header's shadow, a red flash when the chain says no */
+.cab-shade { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(rgba(5,4,3,.85), rgba(5,4,3,0) var(--hdr, 80px)), radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0,0,0,.55)); }
+.cab-shade::after { content: ""; position: absolute; inset: 0; background: rgba(255,40,60,.22); opacity: 0; }
+html.cab-bad .cab-shade::after { animation: cab-bad .7s ease-out; }
+@keyframes cab-bad { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+/* the glass: the game sits on it, a little inside the painted edge */
+.cab-glass { position: fixed; z-index: 1; left: var(--gx); top: var(--gy); width: var(--gw); height: var(--gh); background: #030504; border-radius: 6px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.9), 0 0 70px rgba(57,255,138,.13), inset 0 0 50px rgba(57,255,138,.06); pointer-events: none; }
+.cab-glass::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 6;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px), radial-gradient(ellipse at 50% 50%, transparent 62%, rgba(0,0,0,.35)); }
+html.scene .cab-glass { display: block; }
+html.scene .top { position: fixed; z-index: 5; left: calc(var(--gx) + var(--gp)); top: calc(var(--gy) + var(--gp)); width: calc(var(--gw) - 2 * var(--gp)); background: rgba(10,14,12,.9); }
+html.scene .deck { position: fixed; z-index: 5; left: calc(var(--gx) + var(--gp)); top: calc(var(--gy) + var(--gp) + var(--toph) + 6px);
+  width: calc(var(--gw) - 2 * var(--gp)); height: calc(var(--gh) - 2 * var(--gp) - var(--toph) - 6px); }
+html.scene .pane { background: rgba(8,11,10,.92); }
+html.scene .term { background: #030504; }
+html.scene .edge { position: fixed; inset: auto; left: var(--gx); top: var(--gy); width: var(--gw); height: var(--gh); border-radius: 6px; z-index: 7; }
+html.scene .over { inset: auto; left: var(--gx); top: var(--gy); width: var(--gw); height: var(--gh); border-radius: 6px; background: rgba(3,5,4,.94); z-index: 8; }
+
+/* sitting down: the cabin from the door, then the camera comes to the screen and the screen lights up */
+html.scene .cab-glass, html.scene .top, html.scene .deck, html.scene .over.show { transition: opacity .5s; }
+html.cab-intro .cab-glass, html.cab-intro .top, html.cab-intro .deck, html.cab-intro .over.show, html.cab-intro .edge { opacity: 0; }
+html.cab-move .cab-room { transition: transform 1.5s cubic-bezier(.45, .05, .2, 1); }
+html.cab-intro .cab-shade { background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0,0,0,.55)); }
+
+/* the button in the top bar */
+#sceneBtn[hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cab-sway, .cab-lamp, .cab-port::before, html.cab-op .cab-alarm { animation: none !important; }
+  html.cab-move .cab-room { transition: none; }
+}

@@ -13,6 +13,8 @@
 #              up bust salado  the same, then that portrait (or several) painted anew, talking and blinking too (1 min each);
 #                            up bust --recut salado  cuts the kept painting out again, paints nothing;
 #                            up bust --from infra/rabbit-art/imports/codex hana  takes pictures painted elsewhere
+#              up follow     the node following IDNI tau-testnet main by itself: its state; up follow now  one check at once,
+#                            up follow off / on  stops / starts it (nothing rebuilt, the node left alone)
 #              up idni       what the next daily IDNI progress post would say now (nothing rebuilt, nothing posted);
 #                            up idni send  posts it now, up idni hold  keeps the next one back, up idni release  undoes that
 #              up cruise     a cruise ship's last visit in numbers and the node's timeouts per hour (nothing rebuilt)
@@ -20,9 +22,21 @@
 #                            announcements and reports run by themselves every week (alerts/cruise_crier.py);
 #                            up cruise release 2026-11-10-pirates  shows a held-back finding (a pirate trick that got
 #                            through) in the public logbook and lets the blog write that visit (after IDNI knows)
+#              up clip       the pirates' clip of their newest visit to look at (posts nothing; a marked SAMPLE before
+#                            the first); it goes to Telegram and X by itself after each Tuesday call; up clip send <visit>
+#              up kling      Kling's clips (alerts/kling.py): the posting services rebuilt with the code just pulled (the
+#                            node left alone, safe any time), then this month's clips; up kling test  one 5 s clip of the
+#                            live island to look at (proves the key), up kling list  every clip, up kling send <key>  posts
+#                            a draft, up kling off island  the island still again (until the next painting)
 #              up escrow     the relay alone restarted with the code just pulled (not while a ship is due), then the
 #                            cruise bookings ahead in escrow, each with its state; up escrow status  only those
-#              up report     the weekly report for IDNI as it stands (nothing rebuilt, nothing filed): its text, a page
+#              up nomemo     No Memo's crew purse (relay/nomemo.py): the drop, the players' board, what waits to be paid (nothing rebuilt)
+#                            up nomemo feedback  what players wrote with `feedback <text>` since the last look (relay/nomemo_feedback.py),
+#                            up nomemo feedback all  every remark kept
+#              up hack       the hack of the week (relay/hackweek.py, Thursdays 11:00): next replay, last runs step by step
+#                            (nothing rebuilt, nothing sent); up hack preview  the last replay's post texts and picture;
+#                            up hack release 2026-11-12-poisoning  shows a held-back finding in public (after IDNI knows)
+#              up report     the weekly report for IDNI as it stands (nothing filed; blog + nodelog rebuilt, node left alone): its text, a page
 #                            and a pre-filled GitHub issue link; up report last  last week's; up report send  also to
 #                            your Telegram (it comes there by itself every Sunday 18:00)
 #              up guardian   the Guardian (tauhud.com/guardian/) started or restarted with the code just pulled, and Caddy
@@ -30,6 +44,21 @@
 #              up services   the relay rebuilt with the code just pulled (tauhud.com/services/ reads it), the node left alone;
 #                            refuses while a cruise ship is due (Wed 15-18, Sat 13-17 German time; up services --now overrides);
 #                            up services status  only what the directory finds now
+#              up knowledge  Tau today for AI assistants (tauhud.com/facts/, llms.txt): the build pulse rebuilt with the code
+#                            just pulled, Caddy given its two files, then both written at once and what they hold; the
+#                            node left alone, safe any time; up knowledge status  only what they hold now
+#              up lights     each painted room's lamps found for the night (nothing rebuilt, the node left alone);
+#                            up lights all  every room looked at again; a full up does the new rooms by itself
+#              up art        a set painted elsewhere taken over (infra/rabbit-art/imports/codex/isle-36: the island without
+#                            people, every place by day and its painted night), nothing rebuilt, nothing painted, the node
+#                            left alone, safe any time; up art isle-36  that set, up art check  only checks it
+#              up crier      the posting service (alerts) rebuilt with the code just pulled and Caddy given /island/*, the
+#                            node left alone, safe any time; then the island picture the posts carry, made from the live
+#                            painting, to look at; up crier status  only the picture made anew
+#              up cost       what the site's tools were paid, read from their receipts by mail (nothing rebuilt but that
+#                            service, the node left alone); up cost gemini 10  a payment by hand; up cost mail  the mailbox
+#              up tau        Tau Language on tauhud.com/learn: the checker recreated with the code just pulled (nothing built,
+#                            the node left alone, safe any time), then every lesson example asked of the engine; up tau status  only that
 #              up owner      the same, then a one-time link: open it in your Telegram, and the news line's watchtower
 #                            warns you there privately (never on the channel); up owner test  sends you one test message
 set -e
@@ -56,6 +85,31 @@ if [ "${1:-}" = "post" ] && [ -n "${2:-}" ]; then
     docker compose run --rm -v /opt/tau-command-hud:/repo:ro -v /tmp:/out alerts python /repo/infra/alerts/post_image.py "/out/$2.jpg" "/repo/$J" --dry
     echo "look: https://node.tauhud.com/rico/art/drafts/$2.jpg   then post it: up post $2 send"
   fi
+  exit 0
+fi
+# a set painted elsewhere (paint.py isle), nothing rebuilt, nothing painted, the node left alone: up art  the newest set in
+# infra/rabbit-art/imports/codex, up art isle-36  that one, up art check [isle-36]  only checks it and writes nothing;
+# then the lamps of the places taken over found for the night (one short look each, as a full up does). The blog service
+# is rebuilt first (safe any time, as up kling does), so it knows a cleaned island is the same island (no new trailer)
+if [ "${1:-}" = "art" ]; then
+  if [ "${2:-}" = "check" ]; then sh rabbit-art/paint.sh isle ${3:-} --dry; exit 0; fi
+  docker compose up -d --no-deps --build blog >/dev/null 2>&1 || docker compose up -d --no-deps --build blog || true
+  A=$(mktemp)
+  sh rabbit-art/paint.sh isle ${2:-} 2>&1 | tee "$A" || true
+  sh rabbit-art/paint.sh lights --missing 2>&1 | grep -E '^lights:|Error|error|GEMINI|painter' | tail -2 || true
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  grep -E '^isle:|took over|REFUSED|Traceback|Error' "$A" | grep -v '^isle: /' || true
+  echo "look: https://tauhud.com/rabbit/?hour=22:00 (Ctrl+F5), then walk into a place; by day ?hour=12:00"
+  echo "---------------- to here --------------------------------------"
+  rm -f "$A"
+  exit 0
+fi
+# each painted room's own lamps for the night, nothing rebuilt, the node left alone: up lights  the rooms not looked at
+# yet, up lights all  every room again, up lights grotto  that one (paint.py lights)
+if [ "${1:-}" = "lights" ]; then
+  if [ -n "${2:-}" ] && [ "${2:-}" != "all" ]; then shift; sh rabbit-art/paint.sh lights "$@"; elif [ "${2:-}" = "all" ]; then sh rabbit-art/paint.sh lights all; else sh rabbit-art/paint.sh lights --missing; fi
+  echo "look: https://tauhud.com/rabbit/?hour=22:00 (Ctrl+F5), then walk into a place"
   exit 0
 fi
 # a cruise ship's visit in numbers, nothing rebuilt, nothing sent (cruise-report.py): up cruise  the last visit,
@@ -95,6 +149,119 @@ print('released:', ', '.join(r))
   docker compose logs -t --since 72h relay 2>&1 | grep -E "(upstream|sender) sendtx failed" | awk '{print substr($3,1,13)}' | sort | uniq -c | sed 's/^/  /'
   exit 0
 fi
+# the pirates' clip after each Tuesday call (alerts/trick_clip.py, posted by itself), nothing rebuilt: up clip  the newest
+# pirate visit's clip to look at (a SAMPLE, marked on every frame, before the first one), posts nothing;
+# up clip send 2026-11-10-pirates  posts that visit's clip now, once (never one where a trick got through)
+if [ "${1:-}" = "clip" ]; then
+  mkdir -p /opt/sites/rico/art/drafts
+  docker compose up -d blog >/dev/null 2>&1 || true
+  if [ "${2:-}" = "send" ] && [ -n "${3:-}" ]; then
+    docker compose exec -T blog python trick_clip.py send "$3"
+  else
+    docker compose exec -T blog python trick_clip.py preview ${2:-} /tmp/trick-clip.mp4
+    docker compose cp blog:/tmp/trick-clip.mp4 /opt/sites/rico/art/drafts/trick-clip.mp4
+    echo "look: https://node.tauhud.com/rico/art/drafts/trick-clip.mp4"
+  fi
+  exit 0
+fi
+# Kling's clips (alerts/kling.py, kling_island.py), the node left alone: the blog and agorzilla services rebuilt with the
+# code just pulled, Caddy given /kling/*, then: up kling  this month's clips, up kling test  a 5 s test clip (waits up to
+# 10 min), up kling list, up kling send <key>  a draft posted, up kling off island
+if [ "${1:-}" = "kling" ]; then
+  docker compose up -d --no-deps --build blog agorzilla >/dev/null 2>&1 || docker compose up -d --no-deps --build blog agorzilla
+  docker compose up -d --no-deps --force-recreate caddy >/dev/null 2>&1 || true
+  case "${2:-}" in
+    test) docker compose exec -T blog python kling.py test || true ;;
+    list) docker compose exec -T blog python kling.py list ;;
+    send) docker compose exec -T blog python kling.py send "${3:-}" || true ;;
+    off) docker compose exec -T blog python kling.py off "${3:-island}" ;;
+  esac
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T blog python kling.py line
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# the hack of the week (relay/hackweek.py, posts by alerts/hack_crier.py), nothing rebuilt: up hack  the next replay and the
+# last runs step by step, up hack preview  the last replay's post texts and picture (posts nothing),
+# up hack release <run>  a held-back finding (the chain did what it must not) shown in public, after IDNI knows
+if [ "${1:-}" = "hack" ]; then
+  if [ "${2:-}" = "release" ]; then
+    case "${3:-}" in [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[a-z]*) ;; *) echo "usage: up hack release 2026-11-12-poisoning"; exit 2;; esac
+    docker compose exec -T relay python -c "
+import json, os, sys
+p = os.path.join(os.path.dirname(os.environ.get('HACK_STATE_PATH', '/data/hack-state.json')), 'hack-released.json')
+try:
+    r = json.load(open(p))
+except Exception:
+    r = []
+r = sorted(set(r) | {sys.argv[1]})
+json.dump(r, open(p, 'w'))
+print('released:', ', '.join(r))
+" "$3"
+    echo "copy into the chat: hack release $3 done"
+    exit 0
+  fi
+  if [ "${2:-}" = "preview" ]; then
+    docker compose up -d blog >/dev/null 2>&1 || true
+    docker compose exec -T blog python hack_crier.py preview ${3:-}
+    mkdir -p /opt/sites/rico/art/drafts
+    docker compose cp blog:/tmp/hack.jpg /opt/sites/rico/art/drafts/ >/dev/null 2>&1 && echo "look: https://node.tauhud.com/rico/art/drafts/hack.jpg"
+    exit 0
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T blog python hack_crier.py status 2>&1 || true
+  docker compose exec -T relay python -c 'import json,time,urllib.request
+d=json.load(urllib.request.urlopen("http://127.0.0.1:8080/hack/held", timeout=20)); s=json.load(urllib.request.urlopen("http://127.0.0.1:8080/hack", timeout=20))
+w=s.get("wallets") or {}
+print("hack:    wallets " + (", ".join("%s %s" % (k, v["short"]) for k, v in w.items()) or "not made yet"))
+held={r["id"] for r in d.get("runs") or []}
+for r in json.load(open("/data/hack-state.json")).get("runs", [])[::-1][:3]:
+    print("  %s %s: %s%s" % (r["id"], r.get("status"), r.get("result"), " (FINDING, held back)" if r["id"] in held else ""))
+    for k, x in (r.get("steps") or {}).items():
+        print("    %-12s ok=%s %s %s" % (k, x.get("ok"), x.get("code") or x.get("status") or "", (x.get("note") or "")[:70]))
+    for n in (r.get("log") or [])[-3:]: print("    · " + n["note"][:110])' 2>&1 || echo "relay /hack not answering yet"
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# What No Memo's players wrote with `feedback <text>` (relay/nomemo_feedback.py), nothing rebuilt: the remarks not read yet
+# (or all), then marked read. /data/nomemo-feedback.seen keeps how many lines were shown.
+if [ "${1:-}" = "nomemo" ] && [ "${2:-}" = "feedback" ]; then
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T relay python -c 'import json,os,sys
+p="/data/nomemo-feedback.jsonl"; m="/data/nomemo-feedback.seen"; allr=sys.argv[1:2]==["all"]
+rows=[json.loads(x) for x in open(p,encoding="utf-8") if x.strip()] if os.path.exists(p) else []
+try: seen=int(open(m).read().strip() or 0)
+except Exception: seen=0
+if seen>len(rows): seen=0
+show=rows if allr else rows[seen:]
+print("nomemo feedback: %d new, %d kept in all%s" % (len(rows)-seen, len(rows), " (all shown)" if allr else ""))
+for r in show:
+  w=(r.get("wallet") or "")
+  print("- %s  %s  %s  %s" % (r.get("at"), (w[:6]+"…"+w[-4:]) if w else "no wallet", "%s settled, %s claimed, %s" % (r.get("d"), r.get("c"), r.get("l")), r.get("text")))
+open(m,"w").write(str(len(rows)))
+if not show: print("  nothing new; players write it in the terminal: feedback <text>")' "${3:-}" 2>&1 || echo "relay not answering yet"
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# No Memo's crew purse (relay/nomemo.py), nothing rebuilt: the drop's address, the board, what waits, the Tracer
+if [ "${1:-}" = "nomemo" ]; then
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T relay python -c 'import json,urllib.request
+s=json.load(urllib.request.urlopen("http://127.0.0.1:8080/nomemo", timeout=20)); b=s.get("board") or {}
+print("nomemo:  purse %s, tracer %s, drop %s%s%s" % ("on" if s.get("enabled") else "OFF", "on" if s.get("tracer") else "off", s.get("drop_short") or "not made yet", " (making the keys now)" if s.get("making_wallets") else "", " (the bank is filling the drop)" if s.get("filling") else ""))
+print("         board: %d wallets, %s; chapters claimed %s; %d payouts today, %d waiting" % (b.get("wallets",0), ", ".join("%s %d" % kv for kv in (b.get("ranks") or {}).items()), b.get("claims"), s.get("today",0), s.get("waiting",0)))
+print("         test it: https://tauhud.com/nomemo/  (take 1, run; the drop above must match status)")
+import os
+p="/data/nomemo-feedback.jsonl"; n=sum(1 for x in open(p,encoding="utf-8") if x.strip()) if os.path.exists(p) else 0
+try: seen=int(open("/data/nomemo-feedback.seen").read().strip() or 0)
+except Exception: seen=0
+print("         feedback: %d new of %d (read them: up nomemo feedback)" % (max(n-seen,0) if seen<=n else n, n))' 2>&1 || echo "relay /nomemo not answering yet"
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 # IDNI's progress of the day as ONE post, nothing rebuilt (alerts/idni_digest.py): up idni  the last ones and what the
 # next would say now (one model call, posts nothing), up idni send  writes it now and the alerts service posts it within a
 # minute (up idni send --force: also when the check marked numbers or wording), up idni hold / up idni release
@@ -104,9 +271,9 @@ fi
 if [ "${1:-}" = "escrow" ]; then
   if [ "${2:-}" != "status" ]; then
     when=$(TZ=Europe/Berlin date +%u%H)
-    case "$when" in 315|316|317|613|614|615|616)
+    case "$when" in 315|316|317|410|411|613|614|615|616)
       if [ "${2:-}" != "--now" ]; then
-        echo "a cruise ship is due or at the island now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
+        echo "a cruise ship or the hack replay is due or under way now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
         echo "try again after the visit, or: up escrow --now"; exit 1
       fi ;;
     esac
@@ -132,11 +299,13 @@ if [ "${1:-}" = "idni" ]; then
   docker compose exec -T devpulse python devpulse.py --digest "$@"
   exit $?
 fi
-# the weekly report for IDNI, nothing rebuilt, nothing filed (alerts/idni_report.py): up report  this week so far,
-# up report last  last week, up report send  the page link to the owner's Telegram as well
+# the weekly report for IDNI, nothing filed (alerts/idni_report.py): the blog service and the node-log reader
+# (nodelog, alerts/node_logs.py) rebuilt with the code just pulled, the node left alone, safe any time; then
+# up report  this week so far, up report last  last week, up report send  the page link to the owner's Telegram as well
 if [ "${1:-}" = "report" ]; then
   shift
-  docker compose up -d blog >/dev/null 2>&1 || true
+  docker compose up -d --build --no-deps blog nodelog >/dev/null 2>&1 || docker compose up -d --build --no-deps blog nodelog || true
+  docker compose exec -T nodelog python -c 'import node_logs; print("node log:", node_logs.keep(), "sync/peering lines kept from the last days")' 2>&1 || echo "node log: not readable yet"
   docker compose exec -T blog python idni_report.py "$@"
   exit $?
 fi
@@ -157,14 +326,29 @@ if [ "${1:-}" = "guardian" ]; then
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
+# Tau Language on tauhud.com/learn (checker/tau_sandbox.py, POST /tau): the checker recreated with the code just pulled,
+# nothing built, Caddy given /tau, the node left alone (safe any time); then every lesson example asked of the real engine
+if [ "${1:-}" = "tau" ]; then
+  if [ "${2:-}" != "status" ]; then
+    docker compose up -d --no-deps --force-recreate checker >/dev/null
+    docker compose up -d --no-deps --force-recreate caddy >/dev/null
+    echo "waiting 8 s…"; sleep 8
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T checker python -I /checker/tau_selftest.py 2>&1 || docker compose logs --tail 15 checker 2>&1
+  curl -s -o /dev/null -w "          door https://node.tauhud.com/tau/health answers %{http_code}\n" https://node.tauhud.com/tau/health || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 # the relay alone, the node left alone (relay/services.py feeds tauhud.com/services/): rebuilt and restarted with the code
 # just pulled. Pages reconnect by themselves within seconds; a cruise ship sends through the relay, so not while one is due.
 if [ "${1:-}" = "services" ]; then
   if [ "${2:-}" != "status" ]; then
     when=$(TZ=Europe/Berlin date +%u%H)
-    case "$when" in 315|316|317|613|614|615|616)
+    case "$when" in 315|316|317|410|411|613|614|615|616)
       if [ "${2:-}" != "--now" ]; then
-        echo "a cruise ship is due or at the island now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
+        echo "a cruise ship or the hack replay is due or under way now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
         echo "try again after the visit, or: up services --now"; exit 1
       fi ;;
     esac
@@ -181,6 +365,101 @@ for r in d["services"][:12]: print("  %-10s %s… %s, %s wallets" % (r["app"] or
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
+# Tau today for AI assistants (alerts/knowledge.py, run by devpulse every 30 minutes): node.tauhud.com/tau-today.md and
+# .json, read by tauhud.com/facts/ and llms.txt. The node is left alone; Caddy is recreated for the two files (a few
+# seconds without HTTPS). A fact whose IDNI source changed since it was checked shows here as "to check again".
+if [ "${1:-}" = "knowledge" ]; then
+  if [ "${2:-}" != "status" ]; then
+    docker compose up -d --build --no-deps devpulse
+    docker compose up -d --no-deps --force-recreate caddy >/dev/null
+    echo "waiting 8 s…"; sleep 8
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T devpulse python knowledge.py 2>&1 | grep -v ' INFO ' | tail -3
+  curl -s -o /dev/null -w "          https://node.tauhud.com/tau-today.md answers %{http_code}\n" https://node.tauhud.com/tau-today.md || true
+  curl -s -o /dev/null -w "          https://tauhud.com/llms.txt answers %{http_code}\n" https://tauhud.com/llms.txt || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# the posts' island picture (alerts/island_pic.py): the Key Crier's X post and the closer look at the game carry the
+# painting the game shows now, never a repo screenshot. The posting service is rebuilt alone (it gets the art folder),
+# Caddy is recreated for node.tauhud.com/island/* (a few seconds without HTTPS); the node and the relay are left alone.
+# Agorzilla's evening posts (alerts/agorzilla.py) with the code just pulled: only that service is rebuilt, the node and
+# the relay are left alone (rules v5 on agorzilla.com: a kept look is posted as "stays", never "became")
+if [ "${1:-}" = "agorzilla" ]; then
+  docker compose up -d --build --no-deps agorzilla
+  echo "waiting 8 s…"; sleep 8
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose ps agorzilla --format '          agorzilla: {{.Status}}' 2>/dev/null || docker compose ps agorzilla
+  docker compose exec -T agorzilla python -c 'import agorzilla as A; print("          kept looks posted as stays:", "stays" in A.text({"n": 0, "category": "Sky", "options": ["A", "B", "C"], "tally": [1, 0, 0], "winner": "A", "kept": True}, {}))' 2>&1 | tail -1
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+if [ "${1:-}" = "crier" ]; then
+  if [ "${2:-}" != "status" ]; then
+    docker compose up -d --build --no-deps alerts
+    docker compose up -d --no-deps --force-recreate caddy >/dev/null
+    echo "waiting 8 s…"; sleep 8
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T alerts python -c 'import alerts
+print("today:   " + str(alerts.island_picture()))
+r = {"date": "6 November", "campaigns": 4, "moves": 23, "wins": [("Hana", 1)], "law": None}
+print("preview: " + str(alerts.island_picture(alerts.island_card(r), "preview.jpg")))' 2>&1 | grep -v " INFO " || true
+  curl -s -o /dev/null -w "          https://node.tauhud.com/island/today.jpg answers %{http_code}\n" https://node.tauhud.com/island/today.jpg || true
+  echo "look: https://node.tauhud.com/island/preview.jpg (a sample story day, made-up numbers, never posted)"
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# what the site's tools were paid (alerts/receipts.py, the costs service; tauhud.com/donate/ shows it), the node left
+# alone, safe any time: up cost  the service started with the code just pulled and Caddy given costs-paid.json, then one
+# read of the receipts; up cost mail  asks for the mailbox and its app password once (ssh -t), writes them to .env;
+# up cost gemini 10 [EUR] [2026-11-08]  a payment by hand (its receipt replaces it later); up cost drop <id>  one taken off
+if [ "${1:-}" = "cost" ] || [ "${1:-}" = "costs" ]; then
+  if [ "${2:-}" = "mail" ]; then
+    [ -t 0 ] || { echo "needs a terminal: ssh -t root@node.tauhud.com \"cd /opt/tau-command-hud && sh infra/up.sh cost mail\""; exit 2; }
+    printf "Gmail address the receipts go to: "; read -r U
+    printf "App password (16 letters, https://myaccount.google.com/apppasswords; nothing shows while typing): "
+    stty -echo; read -r P; stty echo; echo
+    P=$(printf %s "$P" | tr -d ' ')
+    [ -n "$U" ] && [ -n "$P" ] || { echo "nothing written"; exit 2; }
+    touch .env; sed -i '/^COSTS_IMAP_USER=/d; /^COSTS_IMAP_PASSWORD=/d' .env
+    printf 'COSTS_IMAP_USER=%s\nCOSTS_IMAP_PASSWORD=%s\n' "$U" "$P" >> .env; chmod 600 .env
+    echo "written to infra/.env"
+  fi
+  docker compose up -d --build --no-deps costs >/dev/null 2>&1 || docker compose up -d --build --no-deps costs
+  if [ -z "${2:-}" ] || [ "${2:-}" = "mail" ]; then
+    docker compose up -d --no-deps --force-recreate caddy >/dev/null 2>&1 || true
+  fi
+  case "${2:-}" in
+    drop) shift 2; docker compose exec -T costs python receipts.py drop "$@" ;;
+    ""|mail|check) docker compose exec -T costs python receipts.py check 2>&1 | grep -v " INFO " | grep -v "^costs:\|^         " || true ;;
+    *) shift; docker compose exec -T costs python receipts.py add "$@" ;;
+  esac
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T costs python receipts.py line
+  curl -s -o /dev/null -w "         https://node.tauhud.com/costs-paid.json answers %{http_code}\n" https://node.tauhud.com/costs-paid.json || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# the node following IDNI tau-testnet main by itself (follow/idni_follow.py, a systemd timer every 30 min that every up
+# installs): up follow  its state and last log lines, up follow now  one check at once (in the background),
+# up follow off  stops following (the node stays on the commit it runs), up follow on  starts again; nothing rebuilt
+if [ "${1:-}" = "follow" ]; then
+  case "${2:-}" in
+    now|on|off) python3 follow/idni_follow.py "$2" ;;
+    *) python3 follow/idni_follow.py install >/dev/null 2>&1 || true ;;
+  esac
+  echo "---------------- copy from here into the chat ----------------"
+  echo "idni:    node follow"
+  python3 follow/idni_follow.py status
+  python3 follow/idni_follow.py log | sed 's/^/         /'
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 # the blog by hand, nothing rebuilt (alerts/blog.py): up blog  lists the drafts waiting and where to read them,
 # up blog publish <id>  puts one on the blog and posts it once, up blog draft <visit-id>  writes one anew,
 # up blog unpublish <id>  takes one off again, up blog pictures  makes every article's hero picture and link preview anew
@@ -194,7 +473,10 @@ fi
 cp sites/agorzilla.caddy /opt/sites/ 2>/dev/null || true
 # The pinned tau-testnet commit follows the repo, not the server's old .env (as in setup.sh); a new pin
 # rebuilds and restarts the node (a few minutes, tau-lang itself stays cached).
-REF=$(grep '^TAU_TESTNET_REF=' .env.example | cut -d= -f2)
+# Auto-follow (follow/idni_follow.py) may have moved the node to a newer IDNI main since: that commit stays while the
+# repo pin is the one it followed from; a repin merged here wins over it.
+REF=$(python3 follow/idni_follow.py ref 2>/dev/null || true)
+[ -n "$REF" ] || REF=$(grep '^TAU_TESTNET_REF=' .env.example | cut -d= -f2)
 [ -n "$REF" ] && [ -f .env ] && sed -i "s/^TAU_TESTNET_REF=.*/TAU_TESTNET_REF=${REF}/" .env
 docker compose up -d --build
 # Node images of older pins are several GB each and are never used again (the disk filled up on 2026-10-27).
@@ -287,6 +569,19 @@ if s is not None:
         elif t.get("ahead"):
             print(f"         all {len(p.get('results') or [])} node patches apply to main {short(p.get('sha'))}: a pin bump can be built (then test it)")
 PY
+# the node following IDNI main by itself (follow/idni_follow.py): its timer (made anew by every up), what it follows, held back
+python3 follow/idni_follow.py install >/dev/null 2>&1 || true
+python3 follow/idni_follow.py status 2>/dev/null | tee -a "$NOTE" || true
+# Tau today for AI assistants (alerts/knowledge.py): how many facts, which to check again because IDNI changed their source
+python3 - <<'PY' | tee -a "$NOTE"
+import json, time, urllib.request
+try:
+    d = json.load(urllib.request.urlopen("https://node.tauhud.com/tau-today.json", timeout=20)); f = d["facts"]; st = f.get("stale") or {}
+    print(f"facts:   {len(f.get('items') or [])} for AI assistants (checked {f.get('checked')}), "
+          + (f"{len(st)} to check again: {', '.join(sorted(st))}" if st else "none to check again") + ", written " + time.strftime("%d.%m. %H:%M UTC", time.gmtime(d.get("generated_at") or 0)))
+except Exception as e:
+    print(f"facts:   tau-today not written yet ({str(e)[:60]}); the build pulse writes it within a few minutes, up knowledge status shows it")
+PY
 # the channels: may the service post at all? (asks Telegram and X, posts nothing; a refused key or a bot without the
 # right to post is named here, so the channel can never go quiet unnoticed), then what the running containers logged
 # the blog: drafts written after a cruise visit wait here for a read and an up blog publish <id>
@@ -336,6 +631,13 @@ if [ "${1:-}" = "keep" ] && [ -n "${2:-}" ]; then
   N="$2"; shift 2
   case "$N" in *[!0-9]*) echo "Usage: up keep <island number> [rooms]"; exit 1;; esac
   ROOMS="$*"; KEEP=""; for r in $ROOMS; do KEEP="$KEEP $r=last"; done
+  # a new island can bring a new place: let GitHub Pages serve the merged game first (at most 15 minutes), so nobody
+  # meets the new layout with the old game
+  W=0; while [ "$W" -lt 45 ]; do
+    [ "$(curl -s "https://tauhud.com/rabbit/game.js?up=$(date +%s)" | sha256sum | cut -c1-64)" = "$(sha256sum ../rabbit/game.js | cut -c1-64)" ] && break
+    [ "$W" -eq 0 ] && echo "waiting for tauhud.com to serve the merged game (GitHub Pages, up to 15 minutes) ..."
+    W=$((W + 1)); sleep 20
+  done
   { sh rabbit-art/paint.sh keep island="$N" --layout island-22 && if [ -n "$ROOMS" ]; then sh rabbit-art/paint.sh draft $ROOMS --wide --n 1 --look 2 && sh rabbit-art/paint.sh keep $KEEP; fi; } 2>&1 | tee "$V" || true
   { echo "island art:"; if grep -qE 'Traceback|Error|error|No painting' "$V"; then grep -E 'Traceback|Error|error|No painting' "$V" | tail -3 | sed 's/^/         /'; else echo "         Island $N live${ROOMS:+, rooms painted anew: $ROOMS} (Ctrl+F5)"; fi; } | tee -a "$NOTE"
 fi
@@ -357,6 +659,19 @@ if [ "${1:-}" = "owner" ]; then
     docker compose exec -T alerts python tickerwatch.py pair 2>&1 | tee -a "$NOTE" || true
   fi
 fi
+# every painted room's own lamps for the night: a room painted anew (up room, up keep, up island) is looked at once
+# (paint.py lights --missing, one short text answer per new room, nothing when all are known)
+{ echo "room lights:"; sh rabbit-art/paint.sh lights --missing 2>&1 | grep -E '^lights:|Error|error|GEMINI|painter' | tail -2 | sed 's/^/         /'; } | tee -a "$NOTE" || true
+# what the Gemini API cost this month, measured by paint.py at every call (tokens x Google's list price; the bill itself:
+# https://aistudio.google.com/usage); GEMINI_MONTH_CAP in .env stops painting at that many dollars a month (default 10)
+python3 rabbit-art/paint.py usage 2>/dev/null | tee -a "$NOTE" || true
+# what the Anthropic API cost this month (blog drafts, IDNI news and daily post, troll box check), measured at every
+# answer by alerts/ai_meter.py (tokens x Anthropic's list price; the bill itself: platform.claude.com/settings/billing)
+docker compose exec -T alerts python ai_meter.py line 2>/dev/null | tee -a "$NOTE" || true
+# what the site's tools were paid, read from their receipts (alerts/receipts.py; up cost for more)
+docker compose exec -T costs python receipts.py line 2>/dev/null | tee -a "$NOTE" || true
+# Kling's clips this month (alerts/kling.py; KLING_MONTH_CAP in .env, default 30 clips)
+docker compose exec -T blog python kling.py line 2>/dev/null | tee -a "$NOTE" || true
 # a new painted island, only when asked for: up island
 if [ "${1:-}" = "island" ]; then
   sh island.sh auto 2>&1 | tee "$V"
@@ -367,4 +682,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up idni, up report, up blog, up guardian, up services, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up cost, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"

@@ -3,6 +3,7 @@
 Run: python test_cruise.py
 """
 import asyncio
+import collections
 import datetime as dt
 import hashlib
 import json
@@ -333,6 +334,8 @@ check(all(b["t"] - a["t"] >= cruise.TRICK_GAP for a, b in zip(tr, tr[1:])), f"at
 check(min(a["t"] for a in tr) >= TUE + (cruise.landing("pirates") + 1) * 60, "the first trick only after every pirate has paid the pier")
 check(cruise.where(PP, TUE + 40 * 60, TUE + 80 * 60, "pirates") == {}, "the pirates stay aboard: no group stands on the island")
 check(len(cruise.plan("pirates", TUE, set(), {"trick"}, {k: 1 for k in cruise.TRICKS})) < len(PP), "fewer tricks when it learned so")
+check(C.next_call(TUE - 3600)[1] == "pirates" and C.next_call(TUE - 3600, surprise=False)[1] == "dryrun",
+      "the pirates come unannounced: the next call named to pages and posts is the one after them")
 
 CH = {"seq": {}, "hole": False, "sent": []}
 
@@ -388,7 +391,41 @@ check({e["code"] for e in tricks} == {"INSUFFICIENT_FUNDS", "INVALID_SEQUENCE", 
       and {e["trick"] for e in tricks} == set(cruise.TRICKS), "eight tricks, every one refused, six different answers")
 check(all(x is True for x in LOADS) and sum(s1["refused"].values()) == 0, "tricks are no refusals: not for the brakes, not on the load page")
 check(all(c["right"] == c["tried"] > 0 for c in s1["tricks"].values()), "the summary counts each trick: tried, stopped, stopped for the right reason")
-check(s1["per_min"] == cruise.RATE and s1["changed"] == [], "a clean first visit at full pace changes nothing")
+check(s1["per_min"] == cruise.RATE and [c for c in s1["changed"] if c["what"] != "stops planned a minute"] == [],
+      "a clean first visit at full pace changes nothing but the plan's measure of our node")
+
+# ---------- the plan follows our node's answer time (Queen Mempool, 7 November 2026: median 6.8 s, 162 of 581 skipped) ----------
+tq = cruise.calls_near(NEXT[0])[0][0]
+full_q = cruise.plan("queen", tq, set(), {"bill", "book"})
+thin_q = cruise.plan("queen", tq, set(), {"bill", "book"}, None, 7.5)
+per_w = collections.Counter((a["t"] - tq) // (cruise.PLAN_WINDOW * 60) for a in thin_q)
+check(len(thin_q) < len(full_q) and max(per_w.values()) <= 75, f"a slow node thins the plan window by window ({len(full_q)} -> {len(thin_q)}, at most {max(per_w.values())} in 10 min)")
+kept = lambda xs, k: sum(1 for a in xs if a["kind"] == k)  # noqa: E731
+check(all(kept(thin_q, k) == kept(full_q, k) for k in ("book", "bill", "cancel")), "bookings, bills and withdrawals all stay")
+check([a["i"] for a in thin_q] == list(range(len(thin_q))) and thin_q == cruise.plan("queen", tq, set(), {"bill", "book"}, None, 7.5),
+      "the thinned plan is numbered anew and the same after a restart")
+M = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s9"), "log_path": os.path.join(d, "l9"), "incidents_path": os.path.join(d, "i9")}, clock=clock,
+                  enabled=True, verdict=lambda: "calm", background=False)
+check(M.plan_pace("queen") is None, "no measure yet: the plan stays as the timetable makes it")
+vq = {"id": "2026-11-07-queen", "ship": "queen"}
+for n in range(40):
+    M.logbook.append({"visit": vq["id"], "kind": "pay", "ok": True, "ms": 6000 + n * 40})
+ch = M.measure(vq)
+check(ch and ch["what"] == "stops planned a minute" and ch["to"] == round(cruise.PLAN_MARGIN * 60000 / M.node["answer_ms"], 1)
+      and "6.8 s" in ch["because"], f"after a slow visit: {ch and ch['to']} stops a minute planned, and the logbook says why")
+check(M.measure(vq) is None, "the same answer time again changes nothing")
+M.save_state()
+M2 = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s9"), "log_path": os.path.join(d, "l9b"), "incidents_path": os.path.join(d, "i9")}, clock=clock,
+                   enabled=True, verdict=lambda: "calm", background=False)
+check(M2.plan_pace("dryrun") == M.plan_pace("dryrun"), "the measure is the node's: it is kept across restarts and holds for every ship")
+lq = os.path.join(d, "l10")
+with open(lq, "w") as f:
+    for n in range(40):
+        f.write(json.dumps({"t": int(T[0]), "visit": "2026-11-07-queen", "kind": "pay", "ok": True, "ms": 6000 + n * 40}) + "\n")
+M3 = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s10"), "log_path": lq, "incidents_path": os.path.join(d, "i10")}, clock=clock,
+                   enabled=True, verdict=lambda: "calm", background=False)
+check(M3.node.get("answer_ms") == 6800 and M3.node.get("visit") == "2026-11-07-queen",
+      "first start with this rule: the Queen's timed sends already in the logbook measure the node")
 rp = [e for e in tricks if e["trick"] == "replay"]
 check(rp and all(e["tx"] in CH["sent"] for e in rp), "the replay sends a payment the chain already took, byte for byte")
 
@@ -422,6 +459,10 @@ check(all(not i.get("tx") for i in P.route("/cruise/incidents")["incidents"] if 
 over = next(e for e in pub if e.get("kind") == "visit over" and e["visit"] == s3["id"])
 check(over["summary"]["tricks"]["overspend"] == {"held": True} and all(c.get("held") or "overspend" not in json.dumps(c) for c in over["summary"]["changed"]),
       "and the summary hides its count")
+check(P.snapshot()["last_of"]["pirates"]["id"] == s3["id"] and P.snapshot()["last_of"]["pirates"]["tricks"]["overspend"] == {"held": True},
+      "each ship's newest visit for the island's talk, as the public sees it")
+check(P.tricks_seen({"id": "x-pirates", "tricks": {"overspend": {"tried": 2, "stopped": 1, "through": 1}, "replay": {"tried": 3, "stopped": 3}}})
+      == {"tried": 4, "stopped": 4, "by": {"overspend": 1, "replay": 3}}, "live, the game sees only refused tricks: one that got through is not counted")
 check(P.route("/cruise/held").get("error") and P.route("/cruise/held", "", True)["entries"][0]["tx"]["sender_pubkey"],
       "/cruise/held answers only inside the server, with the signed transaction")
 check(P.tune["pirates"]["tricks"]["overspend"] == 1, "a trick that got through is tried once a visit from now on")

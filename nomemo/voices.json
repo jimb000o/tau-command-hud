@@ -1,0 +1,286 @@
+[
+ {
+  "who": "qm",
+  "text": "New hand. Before you touch anything, pay the drop 1 test AGRS. Then I know your wallet, and the chain knows it too."
+ },
+ {
+  "who": "qm",
+  "text": "Your mark is in the ledger. One coin, one block, one wallet I did not know before. Keep that key: to the chain, the key is you."
+ },
+ {
+  "who": "look",
+  "text": "Rule one on this ship: no memo. There is no field for words in a Tau transaction. The number I give you is the message; pay exactly that to the drop."
+ },
+ {
+  "who": "look",
+  "text": "Got your number. Anyone with an explorer got it too, mind: the amount is the only word on this chain, and it is said out loud."
+ },
+ {
+  "who": "qm",
+  "text": "Pay the drop once, wait for the block, then send the very same signed payment again. The chain must throw the second one back. If it does not, we have a problem worth more than the coins."
+ },
+ {
+  "who": "qm",
+  "text": "The ghost bounced. That is the sequence number doing its one job. The pirates try the same every Tuesday with a payment they already made; the logbook keeps the score."
+ },
+ {
+  "who": "look",
+  "text": "Sign a payment whose time ran out two minutes ago and send it anyway. The chain reads the clock in the signature, not the one on the wall."
+ },
+ {
+  "who": "look",
+  "text": "Dead on arrival, as it should be. A signed payment is not a cheque you can post next week; its time is inside the signature."
+ },
+ {
+  "who": "look",
+  "text": "Same again, by blocks this time: a payment whose block-height deadline is already behind the tip."
+ },
+ {
+  "who": "look",
+  "text": "Blocks, not minutes. When the testnet slows, a deadline in minutes lies and a deadline in blocks does not. That is why the trace on this terminal counts blocks."
+ },
+ {
+  "who": "qm",
+  "text": "Try to pay the drop while allowing no fee at all. Nobody rides for free, not even on this ship."
+ },
+ {
+  "who": "qm",
+  "text": "No free ride. Note what the chain did not do: it did not take a fee and refuse you anyway. The limit you sign is the most it may ever take."
+ },
+ {
+  "who": "qm",
+  "text": "Pay the drop more than you have. A thousand over your balance will do."
+ },
+ {
+  "who": "qm",
+  "text": "Overspend refused, and your balance untouched. The pirates send one of these every Tuesday; the day the chain takes one, the Bosun opens a file."
+ },
+ {
+  "who": "look",
+  "text": "Pay the drop one more than a transfer can carry: two to the twenty-fourth. You do not have it; that is not the point. The point is the size of the number."
+ },
+ {
+  "who": "look",
+  "text": "Too big for the hold. 24 bits is the width of an amount here; a giant is not refused, it is not even read."
+ },
+ {
+  "who": "qm",
+  "text": "Sign a payment from your wallet with a key that is not yours. Any key: the terminal makes a throwaway one. Send it and watch."
+ },
+ {
+  "who": "qm",
+  "text": "The forgery fell at the first check. It never reached the balance, the sequence, the fee: a wrong signature is the end of the line."
+ },
+ {
+  "who": "qm",
+  "text": "Now the other way round: a payment that names the drop as the payer, signed with your key. Spend somebody else’s coins, if the chain lets you."
+ },
+ {
+  "who": "qm",
+  "text": "You could not spend my coins with your key. Good. Remember it the other way round too: nobody spends yours without yours."
+ },
+ {
+  "who": "bosun",
+  "text": "Pay the drop 50 with the way back on: the money waits in escrow for five minutes. Before that time is up, take it back. Miss it and the drop keeps your coins."
+ },
+ {
+  "who": "bosun",
+  "text": "Your fifty came home. On Thursday the hack of the week plays that window for real: a wallet pays a lookalike, notices, and takes it back. The case file will have it."
+ },
+ {
+  "who": "look",
+  "text": "Last one. A payment that may land in the next six blocks and not one later. The terminal sets the deadline the moment you take it. Go."
+ },
+ {
+  "who": "look",
+  "text": "Made the block. Twelve of twelve: the story is told. Claim the crew’s share; the inbox keeps bringing work, harder as your rank grows, and on a Tuesday evening the ship is in for the live ops."
+ },
+ {
+  "who": "bosun",
+  "text": "The Black Sequence lies off White Rabbit Key tonight. While she is in, op opens live contracts: the same tricks the pirates try on the chain, for you to play with them. About two hours, then she sails."
+ },
+ {
+  "who": "look",
+  "text": "Thursday is case day. The case file collects what the pirates tried at the island on Tuesday and the hack of the week, with riddles only the chain can answer."
+ },
+ {
+  "who": "qm",
+  "text": "The share is paid and the ledger balanced. Spend it on nothing: it is worth nothing, like all test AGRS, and that is the point of a testnet."
+ },
+ {
+  "who": "look",
+  "text": "Ship in! The Black Sequence lies off the island right now and the crew is trying its tricks on the chain. Live ops are open: type op."
+ },
+ {
+  "who": "bosun",
+  "text": "That is the real thing: the same answers the chain gives the pirates, from your wallet, the same hour. The logbook has theirs; your terminal has yours."
+ },
+ {
+  "who": "bosun",
+  "text": "Three things in the file: what the pirates tried at the island on Tuesday, the hack of the week from Thursday, and two riddles only the chain can answer."
+ },
+ {
+  "who": "look",
+  "text": "Dust! A payment of 1 test AGRS came into your wallet from an address I would swear is the drop’s, if I only read the ends. I do not trust it. Type hunt."
+ },
+ {
+  "who": "qm",
+  "text": "Chapter one is behind you, so the crew trusts you with its own work. The inbox fills by itself, a contract every few blocks. Each is a puzzle about the chain, answered with a real transaction you build yourself. Clear what you can, decline what you do not want; harder work comes as your rank grows."
+ },
+ {
+  "who": "look",
+  "text": "The Tracer is sniffing around our wallet. Fewer wild shots: think, then send."
+ },
+ {
+  "who": "look",
+  "text": "Three blocks or fewer. Brave. The chain will not wait for your fingers."
+ },
+ {
+  "who": "bosun",
+  "text": "Nice try. On this ship root is a signature, and only your key makes yours. If you want to break something, break the chain’s rules: every contract here is that attempt, and a trick the chain takes is a finding."
+ },
+ {
+  "who": "qm",
+  "text": "Rule one on this ship: no memo. A payment is from, to, amount, signed; if you have something to say, say it in the amount. Take the first contract."
+ },
+ {
+  "who": "qm",
+  "text": "Back aboard. The board remembers you; so does the chain."
+ },
+ {
+  "who": "qm",
+  "text": "Signed on. The share comes from the drop, and with it the crew’s mark: one test AGRS, the hash of which is your badge on this chain."
+ },
+ {
+  "who": "qm",
+  "text": "Second chapter closed. You now know four ways a payment dies before it is one; most wallets never learn the fourth."
+ },
+ {
+  "who": "qm",
+  "text": "Third chapter closed and the board is clear. The drop pays the last share. From here the real work is on Tuesdays, when the ship is in."
+ },
+ {
+  "who": "qm",
+  "text": "A small job. Send the drop a payment that offers the chain too little fee, and let it throw the thing back. The fee limit is yours to set. Show me the chain will not work for free."
+ },
+ {
+  "who": "qm",
+  "text": "I want a payment refused for its signature. Your wallet, your payment, but signed by a hand that is not yours. The chain checks the hand before it reads the amount. Prove it."
+ },
+ {
+  "who": "look",
+  "text": "Quick one. Get a payment refused as expired, by the block height alone. The block deadline must be behind the tip, but the clock deadline still good. One fault, not two. Over."
+ },
+ {
+  "who": "qm",
+  "text": "Pay the drop more than your wallet holds. Not some absurd number, a real amount, just more than you have. The chain counts your coins before it moves any. Let me hear it say no."
+ },
+ {
+  "who": "qm",
+  "text": "Every wallet counts its own steps: the sequence number. Ask the chain for your next one, multiply it by the number on your screen, and pay the drop exactly that. The ledger will know if you guessed."
+ },
+ {
+  "who": "look",
+  "text": "Tight window on this one. Land a payment on the drop whose own deadline sits only a few blocks past the tip. How few is on your screen. Too slow, and it dies waiting. Go."
+ },
+ {
+  "who": "look",
+  "text": "This time, the clock. Get a payment refused as expired by its time alone, while the block deadline still lies ahead. The chain reads the clock inside the signature. Over."
+ },
+ {
+  "who": "qm",
+  "text": "A test of manners. Name the drop as the one who pays, sign it with your own key, and send it. The chain should see the borrowed name for what it is."
+ },
+ {
+  "who": "bosun",
+  "text": "Old trick, this. A fresh payment, signed right, but wearing a sequence number your wallet has already used. The chain remembers every step you took. Let's hear it remember."
+ },
+ {
+  "who": "look",
+  "text": "A riddle for you. A transfer can only carry so much. Find the smallest amount that is too wide for it. Not one more, mind. Exactly the first that does not fit."
+ },
+ {
+  "who": "look",
+  "text": "Something is hidden in the drop's own address. A few of its characters are a number, written in hex. Which ones is on your screen. Read them, turn them into a number, and pay the drop that. Over."
+ },
+ {
+  "who": "qm",
+  "text": "Read the rules before you break them. Ask the chain for its governance, find the base fee, multiply it by the number on your screen, and pay the drop that sum."
+ },
+ {
+  "who": "look",
+  "text": "Three addresses on your screen, three doors. Only one of them is the drop, and they all look alike at the ends. Read the middle. Pay one coin to the right door. The wrong one keeps it."
+ },
+ {
+  "who": "qm",
+  "text": "A mirror job. Pay your own wallet, everything else in order, and send it. Since the tenth of November the chain refuses a payment that goes back to the one who sends it. Make it say so."
+ },
+ {
+  "who": "look",
+  "text": "Three addresses on your screen. Two are real wallets. One only looks like a wallet and is no key at all. Send one coin to that one. The chain must throw it back. Pick a real one and the coin is gone."
+ },
+ {
+  "who": "qm",
+  "text": "The chain keeps its rules in the open, written in Tau. The base fee there has a type, a bitvector of a certain width. Read the width off the rule, and pay the drop the sum I put on your screen."
+ },
+ {
+  "who": "look",
+  "text": "In the chain's rule, the base fee is a stream with a number on it, an o and a digit. Find that number, add the base fee to it, and pay the drop the total. The rule tells you both. Over."
+ },
+ {
+  "who": "bosun",
+  "text": "Tau can write a number in ones and zeros. Write the base fee that way, count the ones, and multiply by what is on your screen. Pay the drop that. Bits do not lie, so neither should you."
+ },
+ {
+  "who": "qm",
+  "text": "A trap every new hand falls into. In Tau, a bare one in a bitvector is not the number one, it is the top, every bit set. Work out what that top is worth for the width on your screen, and pay the drop exactly that."
+ },
+ {
+  "who": "bosun",
+  "text": "No payment this time. I describe a rule in plain words, and you write it in Tau, one line. Our checker runs your line over a few steps and compares what comes out. Type tau, then your line."
+ },
+ {
+  "who": "look",
+  "text": "A little logic. I put a table on your screen, x and y on the left, the answer on the right. Write me the Tau term that gives that table, with and, or, not and exclusive or. Your terminal checks every row. Over."
+ },
+ {
+  "who": "bosun",
+  "text": "Three wires this time, x, y and z, and a table of what comes out. Find the Tau term that matches every row. Short is good, right is better."
+ },
+ {
+  "who": "qm",
+  "text": "A real job tonight, three parts and one trace. Count the vault's steps, try yesterday's number on the door, then knock with too little fee. Every part is a real payment, and the pay waits at the end. Do not dawdle."
+ },
+ {
+  "who": "look",
+  "text": "Three deadlines in a row, and one trace over all of them. A tight window first, then the block height, then the clock. Watch the tip and keep moving."
+ },
+ {
+  "who": "bosun",
+  "text": "Three disguises: a stranger's hand, a borrowed name, a used number. The chain sees through every one, and you make it prove it. One trace for the lot."
+ },
+ {
+  "who": "bosun",
+  "text": "The rule room. Read the width in the chain's own rule, fill a truth table, then write a rule in Tau yourself. Three doors, one trace. Brains, not luck."
+ },
+ {
+  "who": "qm",
+  "text": "Finer work now. A payment refused for its fee, but not with a fee of nothing: exactly one under the base fee. The chain's own rules tell you what that is. Precision, please."
+ },
+ {
+  "who": "qm",
+  "text": "Land a payment on the drop with a thin margin: a fee limit of no more than twice the base fee. Ask the chain for its rules first. A coin you offer and do not need is a coin wasted."
+ },
+ {
+  "who": "look",
+  "text": "Memory test. Find the block your last sealed payment from this terminal landed in. Take its last three digits, add one, and pay the drop that. Your history knows. Do you?"
+ },
+ {
+  "who": "bosun",
+  "text": "Your draft is broken two ways already, I've seen to that. Before you send it, tell me which answer the node will give. The node stops at the first check it fails. So which one comes first, eh?"
+ },
+ {
+  "who": "bosun",
+  "text": "Blind order. Make the chain give the answer on your screen. No hint from me this time. You know enough by now. Off you go."
+ }
+]

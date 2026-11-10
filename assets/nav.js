@@ -62,6 +62,9 @@
     vote:       { t: "Vote for real", d: "Vote on the real testnet yourself: node, key, ready commands, practised first", i: "✔", h: "vote/" },
     card:       { t: "My Tau card", d: "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post", i: "▣", h: "card/" },
     rabbit:     { t: "White Rabbit Key", d: "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet", i: `<img src="${ROOT}assets/rabbit-key.webp" alt="">`, h: "rabbit/", live: true, play: "rabbit" },
+    nomemo:     { t: "No Memo", d: "A terminal game: twelve contracts from the crew of the Black Sequence, each a real transaction from your test wallet; make the chain say no for the right reason", i: "▮", h: "nomemo/", live: true },
+    taulang:    { t: "Learn Tau Language", d: "Type a formula and a real Tau engine answers, five short lessons, then install tau yourself", i: "⌨", h: "learn/" },
+    facts:      { t: "Tau facts for your AI", d: "What is true about Tau today, each fact with its source in IDNI's code, plus live numbers; point your AI assistant here", i: "¶", h: "facts/" },
     services:   { t: "Services on the testnet", d: "A directory of what runs on the testnet: co-signers, rule givers, apps people pay; found on the chain by itself, live numbers", i: "▦", h: "services/" },
     guardian:   { t: "Guardian", d: "Payments above your own limit wait for a code from your Authenticator app; our Guardian co-signs, never sends", i: "⛨", h: "guardian/" },
     challenge:  { t: "Rule challenge", d: "A small task every Monday, answered with a real rule in your wallet; good answers are shown, no prizes", i: "✎", h: "challenge/" },
@@ -74,8 +77,8 @@
        Tau in 60 seconds and the tour of this page live on Start here, the one way in; anchors (chain state, validator seat)
        and Déjà stay reachable from their pages and from search */
     { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "account", "rules", "history"]], ["Testnet health", ["stats", "load", "status"]], ["Road to mainnet", ["nodes", "findings", "roadmap", "devpulse"]]], tab: "≋" },
-    { k: "learn", t: "Learn", groups: [["First steps", ["start"]], ["Read and watch", ["gazette", "blog", "chronicle", "tau"]]], tab: "▸" },
-    { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "whatif"]], ["On the real testnet", ["services", "wallet", "guardian", "vote", "challenge", "card"]], ["Games on the live testnet", ["rabbit", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
+    { k: "learn", t: "Learn", groups: [["First steps", ["start", "taulang", "facts"]], ["Read and watch", ["gazette", "blog", "chronicle", "tau"]]], tab: "▸" },
+    { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "whatif"]], ["On the real testnet", ["services", "wallet", "guardian", "vote", "challenge", "card"]], ["Games on the live testnet", ["rabbit", "nomemo", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
     { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "meta", "legal"]], ["Use our work", ["developers", "press"]]], tab: "i" },
   ];
   SECTIONS.forEach(s => { if (s.groups) s.items = s.groups.flatMap(g => g[1]); });
@@ -665,10 +668,15 @@
     }
   }
 
+  const QUIET = new Set(["taulang", "blog", "legal", "press", "story", "facts", "chronicle", "gazette", "donate", "roadmap", "findings", "devpulse", "about"]);
   function mount(nav) {
     if (nav.dataset.mounted) return;
     nav.dataset.mounted = "1";
     const page = nav.dataset.page || "hud", isHud = page === "hud", here = SECTION_OF[page];
+    /* phone header (9.11 sim: ~250 px before the title): the icon row moves up beside the brand, and a page that reads
+       nothing from the chain drops the Live/Simulation chips (the games keep their own slim header) */
+    if (!isHud && !["rabbit", "nomemo"].includes(page)) document.documentElement.classList.add("tn-lift");
+    if (QUIET.has(page)) document.documentElement.classList.add("tn-quiet");
     if (!isHud && location.hash === "#updates") setTimeout(() => openUpdates(page), 50);   // the deep link lands in the overlay, not on the HUD
     const tip = (e, txt) => { if (!txt) return; if (isHud) e.dataset.full = txt; else e.dataset.tnt = txt; };
     const slots = {}; nav.querySelectorAll("[data-slot]").forEach(e => { slots[e.dataset.slot] = e; });
@@ -884,20 +892,24 @@
     nav.after(t);
   }
   /* "what is real": today's transactions by sender, one line on the HUD, Stats and In numbers (relay /api/v1/sources). The
-     groups are the relay's: IDNI's genesis accounts, White Rabbit Key (players, the island bot and the cruise ships' simulated
-     passengers, all real transactions), Agorzilla, the Tau HUD pages, every other wallet. Live mode only: the simulation says
+     groups are the relay's: IDNI's genesis accounts, White Rabbit Key's players, our cruise ships' simulated passengers and the
+     island bot (our server's, real transactions but no users), Agorzilla, the Tau HUD pages, every other wallet. Live mode only: the simulation says
      what it is in its own bar. */
   const REAL_HOST = { hud: "#simbar", stats: "#sourceLine", meta: "#sourceLine" };
   function realLine(page) {
     const sel = REAL_HOST[page]; if (!sel || SIM) return;
     const host = document.querySelector(sel); if (!host) return;
     const line = el(page === "hud" ? "p" : "span", "tn-real"); line.id = "realLine"; line.hidden = true;
-    line.dataset.tnt = "Counted by our relay from the blocks it keeps, UTC day; wallets, not people. White Rabbit Key counts the players, the island bot and the cruise ships: simulated passengers, real transactions. Everything else on this page comes from the chain as it is.";
+    line.dataset.tnt = "Counted by our relay from the blocks it keeps, UTC day; wallets, not people. White Rabbit Key counts its players; our cruise ships (simulated passengers) and the island bot are our server's own transactions, real but no users, and counted apart. Everything else on this page comes from the chain as it is.";
     if (page === "hud") host.after(line); else host.append(" ", line);
-    const NAMES = [["idni", "IDNI genesis accounts"], ["rabbit", "White Rabbit Key"], ["agorzilla", "Agorzilla"], ["tauhud", "Tau HUD pages"], ["other", "other wallets"]];
+    const NAMES = [["idni", "IDNI genesis accounts"], ["rabbit", "White Rabbit Key players"], ["agorzilla", "Agorzilla"], ["tauhud", "Tau HUD pages"], ["nomemo", "No Memo"], ["cruise", "our cruise ships"], ["bot", "island bot"], ["nmsrv", "No Memo's own payments"], ["hack", "hack of the week"], ["other", "other wallets"]];
     const fill = j => {
       const k = new Date().toISOString().slice(0, 10), d = j && j.days && j.days[k];
       if (!d) { line.hidden = true; return; }
+      if (!d.cruise && d.rabbit) {   // a relay from before it kept the cruise ships and the island bot apart from the players
+        const z = (j.rabbit || {})[k] || {}, c = z.cruise || 0, p = z.paid || 0;
+        d.rabbit = [Math.max(0, (d.rabbit[0] || 0) - c - p)]; d.cruise = [c]; d.bot = [p];
+      }
       const n = Object.values(d).reduce((a, v) => a + (v && v[0] || 0), 0);
       line.textContent = `What is real · today on the testnet: ${fmt(n)} transactions` + (n ? " · " + NAMES.filter(([g]) => (d[g] || [0])[0]).map(([g, name]) => `${name} ${fmt(d[g][0])}`).join(" · ") : "");
       line.hidden = false;
@@ -905,6 +917,16 @@
     const load = () => fetch(`https://${RELAY}/api/v1/sources`, { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(fill, () => { line.hidden = true; });
     load(); setInterval(() => { if (!document.hidden) load(); }, 300000);
   }
+  /* phones: rows of thin marks (status days, proposal timelines, explorer blocks) are too narrow for a finger. A tap anywhere
+     in such a row, between the marks too, takes the nearest one (9.11 sim: 133 of 157 status targets under 44 px) */
+  const ROWS = ".bars, .pbar, .tl .tr, #chain .blocks, .chainrow";
+  if (window.matchMedia && matchMedia("(pointer: coarse)").matches) document.addEventListener("click", e => {
+    if (e.target.closest("button, a, input, summary")) return;
+    const row = e.target.closest(ROWS); if (!row) return;
+    let best = null, d = 1e9;
+    row.querySelectorAll("button:not([disabled]), [role=button], .seg").forEach(b => { const r = b.getBoundingClientRect(); if (!r.width) return; const x = Math.abs(e.clientX - (r.left + r.width / 2)); if (x < d) { d = x; best = b; } });
+    if (best && d < 40) best.click();
+  });
   const init = () => { document.querySelectorAll("nav.tnav").forEach(nav => { mount(nav); const pg = nav.dataset.page || "hud"; healthTabs(nav, pg); realLine(pg); }); mountFootLinks(); countVisit(); if (location.hash === "#share") setTimeout(openShare, 60); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
   window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM };

@@ -1,6 +1,6 @@
 FROM python:3.13-slim
-# git: devpulse.py reads the history of IDNI's public repositories
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
+# git: devpulse.py reads the history of IDNI's public repositories; ffmpeg: the pirates' clip (trick_clip.py)
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates ffmpeg && rm -rf /var/lib/apt/lists/*
 RUN useradd --system --uid 10002 alerts && mkdir /state /public && chown alerts /state /public
 WORKDIR /app
 COPY requirements.txt .

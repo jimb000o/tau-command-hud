@@ -1,0 +1,41 @@
+{
+ "about": "What the crew says aloud when an inbox contract comes in as a transmission (nomemo/transmission.js). One message per kind of contract (KINDS in game.js, by k); the numbers stay on the screen, the voice never says them. The server speaks them with the crew's voices (infra/rico/make.py, through nomemo/voices.json: node tests/nomemo-voices.mjs --write).",
+ "mouth": {
+  "qm": [0.516, 0.385, 0.10, 0.05],
+  "look": [0.473, 0.372, 0.09, 0.05],
+  "bosun": [0.5, 0.455, 0.12, 0.05]
+ },
+ "kinds": {
+  "r-fee": { "who": "qm", "say": "A small job. Send the drop a payment that offers the chain too little fee, and let it throw the thing back. The fee limit is yours to set. Show me the chain will not work for free." },
+  "r-sig": { "who": "qm", "say": "I want a payment refused for its signature. Your wallet, your payment, but signed by a hand that is not yours. The chain checks the hand before it reads the amount. Prove it." },
+  "r-height": { "who": "look", "say": "Quick one. Get a payment refused as expired, by the block height alone. The block deadline must be behind the tip, but the clock deadline still good. One fault, not two. Over." },
+  "r-funds": { "who": "qm", "say": "Pay the drop more than your wallet holds. Not some absurd number, a real amount, just more than you have. The chain counts your coins before it moves any. Let me hear it say no." },
+  "p-seq": { "who": "qm", "say": "Every wallet counts its own steps: the sequence number. Ask the chain for your next one, multiply it by the number on your screen, and pay the drop exactly that. The ledger will know if you guessed." },
+  "p-race": { "who": "look", "say": "Tight window on this one. Land a payment on the drop whose own deadline sits only a few blocks past the tip. How few is on your screen. Too slow, and it dies waiting. Go." },
+  "r-clock": { "who": "look", "say": "This time, the clock. Get a payment refused as expired by its time alone, while the block deadline still lies ahead. The chain reads the clock inside the signature. Over." },
+  "r-payer": { "who": "qm", "say": "A test of manners. Name the drop as the one who pays, sign it with your own key, and send it. The chain should see the borrowed name for what it is." },
+  "r-seq": { "who": "bosun", "say": "Old trick, this. A fresh payment, signed right, but wearing a sequence number your wallet has already used. The chain remembers every step you took. Let's hear it remember." },
+  "r-width": { "who": "look", "say": "A riddle for you. A transfer can only carry so much. Find the smallest amount that is too wide for it. Not one more, mind. Exactly the first that does not fit." },
+  "p-hex": { "who": "look", "say": "Something is hidden in the drop's own address. A few of its characters are a number, written in hex. Which ones is on your screen. Read them, turn them into a number, and pay the drop that. Over." },
+  "p-fee": { "who": "qm", "say": "Read the rules before you break them. Ask the chain for its governance, find the base fee, multiply it by the number on your screen, and pay the drop that sum." },
+  "p-doors": { "who": "look", "say": "Three addresses on your screen, three doors. Only one of them is the drop, and they all look alike at the ends. Read the middle. Pay one coin to the right door. The wrong one keeps it." },
+  "r-self": { "who": "qm", "say": "A mirror job. Pay your own wallet, everything else in order, and send it. Since the tenth of November the chain refuses a payment that goes back to the one who sends it. Make it say so." },
+  "p-nokey": { "who": "look", "say": "Three addresses on your screen. Two are real wallets. One only looks like a wallet and is no key at all. Send one coin to that one. The chain must throw it back. Pick a real one and the coin is gone." },
+  "r-fee9": { "who": "qm", "say": "Finer work now. A payment refused for its fee, but not with a fee of nothing: exactly one under the base fee. The chain's own rules tell you what that is. Precision, please." },
+  "p-tight": { "who": "qm", "say": "Land a payment on the drop with a thin margin: a fee limit of no more than twice the base fee. Ask the chain for its rules first. A coin you offer and do not need is a coin wasted." },
+  "p-last": { "who": "look", "say": "Memory test. Find the block your last sealed payment from this terminal landed in. Take its last three digits, add one, and pay the drop that. Your history knows. Do you?" },
+  "predict": { "who": "bosun", "say": "Your draft is broken two ways already, I've seen to that. Before you send it, tell me which answer the node will give. The node stops at the first check it fails. So which one comes first, eh?" },
+  "r-blind": { "who": "bosun", "say": "Blind order. Make the chain give the answer on your screen. No hint from me this time. You know enough by now. Off you go." },
+  "p-bits": { "who": "qm", "say": "The chain keeps its rules in the open, written in Tau. The base fee there has a type, a bitvector of a certain width. Read the width off the rule, and pay the drop the sum I put on your screen." },
+  "p-stream": { "who": "look", "say": "In the chain's rule, the base fee is a stream with a number on it, an o and a digit. Find that number, add the base fee to it, and pay the drop the total. The rule tells you both. Over." },
+  "p-ones": { "who": "bosun", "say": "Tau can write a number in ones and zeros. Write the base fee that way, count the ones, and multiply by what is on your screen. Pay the drop that. Bits do not lie, so neither should you." },
+  "p-top": { "who": "qm", "say": "A trap every new hand falls into. In Tau, a bare one in a bitvector is not the number one, it is the top, every bit set. Work out what that top is worth for the width on your screen, and pay the drop exactly that." },
+  "p-spec": { "who": "bosun", "say": "No payment this time. I describe a rule in plain words, and you write it in Tau, one line. Our checker runs your line over a few steps and compares what comes out. Type tau, then your line." },
+  "p-table": { "who": "look", "say": "A little logic. I put a table on your screen, x and y on the left, the answer on the right. Write me the Tau term that gives that table, with and, or, not and exclusive or. Your terminal checks every row. Over." },
+  "p-table3": { "who": "bosun", "say": "Three wires this time, x, y and z, and a table of what comes out. Find the Tau term that matches every row. Short is good, right is better." },
+  "h-vault": {"who": "qm", "say": "A real job tonight, three parts and one trace. Count the vault's steps, try yesterday's number on the door, then knock with too little fee. Every part is a real payment, and the pay waits at the end. Do not dawdle."},
+  "h-tide": {"who": "look", "say": "Three deadlines in a row, and one trace over all of them. A tight window first, then the block height, then the clock. Watch the tip and keep moving."},
+  "h-ghost": {"who": "bosun", "say": "Three disguises: a stranger's hand, a borrowed name, a used number. The chain sees through every one, and you make it prove it. One trace for the lot."},
+  "h-rule": {"who": "bosun", "say": "The rule room. Read the width in the chain's own rule, fill a truth table, then write a rule in Tau yourself. Three doors, one trace. Brains, not luck."}
+ }
+}

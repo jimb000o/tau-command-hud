@@ -1,0 +1,33 @@
+// The lines the crew of the Black Sequence speak aloud in No Memo, as the server reads them (nomemo/voices.json), made
+// from nomemo/game.js: every fixed crew line (the briefs, the post, the greetings), without the ones filled with numbers;
+// and the transmissions, one spoken message per kind of inbox contract (nomemo/transmissions.json).
+//   node tests/nomemo-voices.mjs           checks that nomemo/voices.json matches game.js
+//   node tests/nomemo-voices.mjs --write   writes it again after a line changed
+import { readFileSync, writeFileSync } from "node:fs";
+const root = new URL("..", import.meta.url);
+const src = readFileSync(new URL("nomemo/game.js", root), "utf8");
+const who = /^(qm|look|bosun)$/;
+const list = [], seen = new Set();
+const add = (w, t) => { if (!who.test(w) || t.includes("{") || seen.has(w + "|" + t)) return; seen.add(w + "|" + t); list.push({ who: w, text: t }); };
+/* the contracts: who, brief, after */
+for (const m of src.matchAll(/\{ id: "(\w+)", name: "[^"]*", who: "(\w+)",[\s\S]*?brief: "((?:[^"\\]|\\.)*)",[\s\S]*?after: "((?:[^"\\]|\\.)*)" \}/g)) { add(m[2], m[3]); add(m[2], m[4]); }
+/* crew(who, "line") and post(who, "line") with a fixed English line */
+for (const m of src.matchAll(/\b(?:crew|post)\("(qm|look|bosun)", "((?:[^"\\]|\\.)*)"/g)) add(m[1], m[2]);
+for (const m of src.matchAll(/\bcrew\("(qm|look|bosun)", [^"\n]*?\? "((?:[^"\\]|\\.)*)" : [^"\n]*?\? "((?:[^"\\]|\\.)*)" : "((?:[^"\\]|\\.)*)"/g)) { add(m[1], m[2]); add(m[1], m[3]); add(m[1], m[4]); }
+/* the transmissions: one spoken message per kind of inbox contract (nomemo/transmissions.json), from the kind's own sender */
+const tx = JSON.parse(readFileSync(new URL("nomemo/transmissions.json", root), "utf8"));
+for (const m of src.matchAll(/\{ k: "([\w-]+)", t: \d, who: "(\w+)"/g)) {
+  const x = tx.kinds[m[1]];
+  if (!x) { console.error(`nomemo/transmissions.json has no message for the inbox kind ${m[1]}`); process.exit(1); }
+  if (x.who !== m[2]) { console.error(`nomemo/transmissions.json: ${m[1]} is sent by ${m[2]} in game.js, not ${x.who}`); process.exit(1); }
+  /* the face and the name are on the screen already: the voice reads the contract, it does not say who is speaking */
+  if (/^(Quartermaster|Lookout|Bosun)\b/.test(x.say)) { console.error(`nomemo/transmissions.json: ${m[1]} starts with the sender's role; the voice reads only the contract`); process.exit(1); }
+  add(x.who, x.say);
+}
+const json = JSON.stringify(list, null, 1) + "\n", file = new URL("nomemo/voices.json", root);
+if (process.argv.includes("--write")) { writeFileSync(file, json); console.log(`nomemo/voices.json: ${list.length} lines, ${list.reduce((a, l) => a + l.text.length, 0)} characters`); }
+else {
+  let now = ""; try { now = readFileSync(file, "utf8"); } catch (e) {}
+  if (now !== json) { console.error("nomemo/voices.json is out of date: run node tests/nomemo-voices.mjs --write"); process.exit(1); }
+  console.log(`nomemo/voices.json ok: ${list.length} lines`);
+}

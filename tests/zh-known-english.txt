@@ -44,6 +44,7 @@ SVG
 Smick
 Tau
 Tau HUD
+Tau Testnet Alpha
 admission.py
 admission.py:{n} ↗
 alice-node
@@ -93,3 +94,47 @@ Queen Mempool
 GitHub
 Tauhud.com/cruise
 Guardian
+
+# No Memo: the game's name, the terminal's command words and the pirates' trick names are code
+No Memo
+nomemo>
+help
+jobs
+status
+case
+run
+back
+drop
+findings
+crew
+clear
+take <n>
+pick a|b
+peek <cmd> <hex>
+pick a
+pick b
+replay
+forged
+overspend
+expired
+stale
+freeride
+giant
+impostor
+claim
+chapter <n>
+mail
+op
+pick a|b · answer <n>
+hunt · mark a|b
+trace <blocks>
+board
+sound on|off · fx on|off · voice on|off · full · boot · clear
+hunt
+mark a
+mark b
+BLACK SEQUENCE · crew terminal
+NO MEMO
+peek
+trace
+claim [n]

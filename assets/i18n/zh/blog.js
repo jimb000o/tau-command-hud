@@ -25,5 +25,6 @@ TauI18n.add({ strings: {
   "Copy the link to share": "复制分享链接",
   "Link copied": "链接已复制",
   "{n} min read": "约 {n} 分钟读完",
-  "See it live": "查看实时数据"
+  "See it live": "查看实时数据",
+  "Sources:": "来源："
 } });
