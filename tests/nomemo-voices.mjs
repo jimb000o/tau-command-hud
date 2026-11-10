@@ -20,6 +20,8 @@ for (const m of src.matchAll(/\{ k: "([\w-]+)", t: \d, who: "(\w+)"/g)) {
   const x = tx.kinds[m[1]];
   if (!x) { console.error(`nomemo/transmissions.json has no message for the inbox kind ${m[1]}`); process.exit(1); }
   if (x.who !== m[2]) { console.error(`nomemo/transmissions.json: ${m[1]} is sent by ${m[2]} in game.js, not ${x.who}`); process.exit(1); }
+  /* the face and the name are on the screen already: the voice reads the contract, it does not say who is speaking */
+  if (/^(Quartermaster|Lookout|Bosun)\b/.test(x.say)) { console.error(`nomemo/transmissions.json: ${m[1]} starts with the sender's role; the voice reads only the contract`); process.exit(1); }
   add(x.who, x.say);
 }
 const json = JSON.stringify(list, null, 1) + "\n", file = new URL("nomemo/voices.json", root);

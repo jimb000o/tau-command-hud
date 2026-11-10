@@ -161,126 +161,126 @@
  },
  {
   "who": "qm",
-  "text": "Quartermaster to the terminal. A small job. Send the drop a payment that offers the chain too little fee, and let it throw the thing back. The fee limit is yours to set. Show me the chain will not work for free."
+  "text": "A small job. Send the drop a payment that offers the chain too little fee, and let it throw the thing back. The fee limit is yours to set. Show me the chain will not work for free."
  },
  {
   "who": "qm",
-  "text": "Quartermaster. I want a payment refused for its signature. Your wallet, your payment, but signed by a hand that is not yours. The chain checks the hand before it reads the amount. Prove it."
+  "text": "I want a payment refused for its signature. Your wallet, your payment, but signed by a hand that is not yours. The chain checks the hand before it reads the amount. Prove it."
  },
  {
   "who": "look",
-  "text": "Lookout here, quick one. Get a payment refused as expired, by the block height alone. The block deadline must be behind the tip, but the clock deadline still good. One fault, not two. Over."
+  "text": "Quick one. Get a payment refused as expired, by the block height alone. The block deadline must be behind the tip, but the clock deadline still good. One fault, not two. Over."
  },
  {
   "who": "qm",
-  "text": "Quartermaster. Pay the drop more than your wallet holds. Not some absurd number, a real amount, just more than you have. The chain counts your coins before it moves any. Let me hear it say no."
+  "text": "Pay the drop more than your wallet holds. Not some absurd number, a real amount, just more than you have. The chain counts your coins before it moves any. Let me hear it say no."
  },
  {
   "who": "qm",
-  "text": "Quartermaster. Every wallet counts its own steps: the sequence number. Ask the chain for your next one, multiply it by the number on your screen, and pay the drop exactly that. The ledger will know if you guessed."
+  "text": "Every wallet counts its own steps: the sequence number. Ask the chain for your next one, multiply it by the number on your screen, and pay the drop exactly that. The ledger will know if you guessed."
  },
  {
   "who": "look",
-  "text": "Lookout. Tight window on this one. Land a payment on the drop whose own deadline sits only a few blocks past the tip. How few is on your screen. Too slow, and it dies waiting. Go."
+  "text": "Tight window on this one. Land a payment on the drop whose own deadline sits only a few blocks past the tip. How few is on your screen. Too slow, and it dies waiting. Go."
  },
  {
   "who": "look",
-  "text": "Lookout again. This time, the clock. Get a payment refused as expired by its time alone, while the block deadline still lies ahead. The chain reads the clock inside the signature. Over."
+  "text": "This time, the clock. Get a payment refused as expired by its time alone, while the block deadline still lies ahead. The chain reads the clock inside the signature. Over."
  },
  {
   "who": "qm",
-  "text": "Quartermaster. A test of manners. Name the drop as the one who pays, sign it with your own key, and send it. The chain should see the borrowed name for what it is."
+  "text": "A test of manners. Name the drop as the one who pays, sign it with your own key, and send it. The chain should see the borrowed name for what it is."
  },
  {
   "who": "bosun",
-  "text": "Bosun here. Old trick, this. A fresh payment, signed right, but wearing a sequence number your wallet has already used. The chain remembers every step you took. Let's hear it remember."
+  "text": "Old trick, this. A fresh payment, signed right, but wearing a sequence number your wallet has already used. The chain remembers every step you took. Let's hear it remember."
  },
  {
   "who": "look",
-  "text": "Lookout. A riddle for you. A transfer can only carry so much. Find the smallest amount that is too wide for it. Not one more, mind. Exactly the first that does not fit."
+  "text": "A riddle for you. A transfer can only carry so much. Find the smallest amount that is too wide for it. Not one more, mind. Exactly the first that does not fit."
  },
  {
   "who": "look",
-  "text": "Lookout. Something is hidden in the drop's own address. A few of its characters are a number, written in hex. Which ones is on your screen. Read them, turn them into a number, and pay the drop that. Over."
+  "text": "Something is hidden in the drop's own address. A few of its characters are a number, written in hex. Which ones is on your screen. Read them, turn them into a number, and pay the drop that. Over."
  },
  {
   "who": "qm",
-  "text": "Quartermaster. Read the rules before you break them. Ask the chain for its governance, find the base fee, multiply it by the number on your screen, and pay the drop that sum."
+  "text": "Read the rules before you break them. Ask the chain for its governance, find the base fee, multiply it by the number on your screen, and pay the drop that sum."
  },
  {
   "who": "look",
-  "text": "Lookout. Three addresses on your screen, three doors. Only one of them is the drop, and they all look alike at the ends. Read the middle. Pay one coin to the right door. The wrong one keeps it."
+  "text": "Three addresses on your screen, three doors. Only one of them is the drop, and they all look alike at the ends. Read the middle. Pay one coin to the right door. The wrong one keeps it."
  },
  {
   "who": "qm",
-  "text": "Quartermaster. A mirror job. Pay your own wallet, everything else in order, and send it. Since the tenth of November the chain refuses a payment that goes back to the one who sends it. Make it say so."
+  "text": "A mirror job. Pay your own wallet, everything else in order, and send it. Since the tenth of November the chain refuses a payment that goes back to the one who sends it. Make it say so."
  },
  {
   "who": "look",
-  "text": "Lookout. Three addresses on your screen. Two are real wallets. One only looks like a wallet and is no key at all. Send one coin to that one. The chain must throw it back. Pick a real one and the coin is gone."
+  "text": "Three addresses on your screen. Two are real wallets. One only looks like a wallet and is no key at all. Send one coin to that one. The chain must throw it back. Pick a real one and the coin is gone."
  },
  {
   "who": "qm",
-  "text": "Quartermaster. The chain keeps its rules in the open, written in Tau. The base fee there has a type, a bitvector of a certain width. Read the width off the rule, and pay the drop the sum I put on your screen."
+  "text": "The chain keeps its rules in the open, written in Tau. The base fee there has a type, a bitvector of a certain width. Read the width off the rule, and pay the drop the sum I put on your screen."
  },
  {
   "who": "look",
-  "text": "Lookout here. In the chain's rule, the base fee is a stream with a number on it, an o and a digit. Find that number, add the base fee to it, and pay the drop the total. The rule tells you both. Over."
+  "text": "In the chain's rule, the base fee is a stream with a number on it, an o and a digit. Find that number, add the base fee to it, and pay the drop the total. The rule tells you both. Over."
  },
  {
   "who": "bosun",
-  "text": "Bosun. Tau can write a number in ones and zeros. Write the base fee that way, count the ones, and multiply by what is on your screen. Pay the drop that. Bits do not lie, so neither should you."
+  "text": "Tau can write a number in ones and zeros. Write the base fee that way, count the ones, and multiply by what is on your screen. Pay the drop that. Bits do not lie, so neither should you."
  },
  {
   "who": "qm",
-  "text": "Quartermaster. A trap every new hand falls into. In Tau, a bare one in a bitvector is not the number one, it is the top, every bit set. Work out what that top is worth for the width on your screen, and pay the drop exactly that."
+  "text": "A trap every new hand falls into. In Tau, a bare one in a bitvector is not the number one, it is the top, every bit set. Work out what that top is worth for the width on your screen, and pay the drop exactly that."
  },
  {
   "who": "bosun",
-  "text": "Bosun. No payment this time. I describe a rule in plain words, and you write it in Tau, one line. Our checker runs your line over a few steps and compares what comes out. Type tau, then your line."
+  "text": "No payment this time. I describe a rule in plain words, and you write it in Tau, one line. Our checker runs your line over a few steps and compares what comes out. Type tau, then your line."
  },
  {
   "who": "look",
-  "text": "Lookout. A little logic. I put a table on your screen, x and y on the left, the answer on the right. Write me the Tau term that gives that table, with and, or, not and exclusive or. Your terminal checks every row. Over."
+  "text": "A little logic. I put a table on your screen, x and y on the left, the answer on the right. Write me the Tau term that gives that table, with and, or, not and exclusive or. Your terminal checks every row. Over."
  },
  {
   "who": "bosun",
-  "text": "Bosun. Three wires this time, x, y and z, and a table of what comes out. Find the Tau term that matches every row. Short is good, right is better."
+  "text": "Three wires this time, x, y and z, and a table of what comes out. Find the Tau term that matches every row. Short is good, right is better."
  },
  {
   "who": "qm",
-  "text": "Quartermaster. A real job tonight, three parts and one trace. Count the vault's steps, try yesterday's number on the door, then knock with too little fee. Every part is a real payment, and the pay waits at the end. Do not dawdle."
+  "text": "A real job tonight, three parts and one trace. Count the vault's steps, try yesterday's number on the door, then knock with too little fee. Every part is a real payment, and the pay waits at the end. Do not dawdle."
  },
  {
   "who": "look",
-  "text": "Lookout. Three deadlines in a row, and one trace over all of them. A tight window first, then the block height, then the clock. Watch the tip and keep moving."
+  "text": "Three deadlines in a row, and one trace over all of them. A tight window first, then the block height, then the clock. Watch the tip and keep moving."
  },
  {
   "who": "bosun",
-  "text": "Bosun. Three disguises: a stranger's hand, a borrowed name, a used number. The chain sees through every one, and you make it prove it. One trace for the lot."
+  "text": "Three disguises: a stranger's hand, a borrowed name, a used number. The chain sees through every one, and you make it prove it. One trace for the lot."
  },
  {
   "who": "bosun",
-  "text": "Bosun. The rule room. Read the width in the chain's own rule, fill a truth table, then write a rule in Tau yourself. Three doors, one trace. Brains, not luck."
+  "text": "The rule room. Read the width in the chain's own rule, fill a truth table, then write a rule in Tau yourself. Three doors, one trace. Brains, not luck."
  },
  {
   "who": "qm",
-  "text": "Quartermaster. Finer work now. A payment refused for its fee, but not with a fee of nothing: exactly one under the base fee. The chain's own rules tell you what that is. Precision, please."
+  "text": "Finer work now. A payment refused for its fee, but not with a fee of nothing: exactly one under the base fee. The chain's own rules tell you what that is. Precision, please."
  },
  {
   "who": "qm",
-  "text": "Quartermaster. Land a payment on the drop with a thin margin: a fee limit of no more than twice the base fee. Ask the chain for its rules first. A coin you offer and do not need is a coin wasted."
+  "text": "Land a payment on the drop with a thin margin: a fee limit of no more than twice the base fee. Ask the chain for its rules first. A coin you offer and do not need is a coin wasted."
  },
  {
   "who": "look",
-  "text": "Lookout. Memory test. Find the block your last sealed payment from this terminal landed in. Take its last three digits, add one, and pay the drop that. Your history knows. Do you?"
+  "text": "Memory test. Find the block your last sealed payment from this terminal landed in. Take its last three digits, add one, and pay the drop that. Your history knows. Do you?"
  },
  {
   "who": "bosun",
-  "text": "Bosun. Your draft is broken two ways already, I've seen to that. Before you send it, tell me which answer the node will give. The node stops at the first check it fails. So which one comes first, eh?"
+  "text": "Your draft is broken two ways already, I've seen to that. Before you send it, tell me which answer the node will give. The node stops at the first check it fails. So which one comes first, eh?"
  },
  {
   "who": "bosun",
-  "text": "Bosun. Blind order. Make the chain give the answer on your screen. No hint from me this time. You know enough by now. Off you go."
+  "text": "Blind order. Make the chain give the answer on your screen. No hint from me this time. You know enough by now. Off you go."
  }
 ]
