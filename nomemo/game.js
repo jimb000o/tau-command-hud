@@ -332,7 +332,7 @@
         try {
           if (c === "getsequence") return ok(c, { address: args[0], sequence_number: a(args[0]).seq, tip_height: head() });
           if (c === "getbalance") return ok(c, { address: args[0], balance: a(args[0]).bal });
-          if (c === "getgovernance") return ok(c, { consensus_rules: "(o9[t]:bv[24] = {#x00000a}:bv[24])" });
+          if (c === "getgovernance") return ok(c, { consensus_rules: "(o9[t]:bv[24] = {#x00000a}:bv[24])", active_validators: ["ab".repeat(48)], vote_quorum: "supermajority", approval_threshold: 1 });
           if (c === "getmempool") { const list = Object.entries(txs).filter(([, t]) => head() <= t.tip).map(([h, t]) => ({ tx_hash: h, sender: t.tx.sender_pubkey, sequence_number: t.tx.sequence_number, fee_limit: t.tx.fee_limit, status: "pending", tx_type: t.tx.tx_type })); return ok(c, { transactions: list, count: list.length }); }
           if (c === "getblocks") { const n = Math.max(1, Math.min(12, +args[0] || 5)), h = head(), blocks = []; for (let b = Math.max(0, h - n + 1); b <= h; b++) blocks.push({ header: { block_number: b }, tx_ids: Object.entries(txs).filter(([, t]) => t.tip + 1 === b).map(([x]) => x), block_hash: B.bytesToHex(B.sha256(new TextEncoder().encode("sim-block-" + b))) }); return ok(c, { blocks, total: h + 1 }); }
           if (c === "gettxstatus") { const t = txs[args[0]]; if (!t) return err(c, "unknown transaction", "NOT_FOUND"); return ok(c, head() > t.tip ? { status: "confirmed", block_number: t.tip + 1 } : { status: "pending" }); }
@@ -1282,12 +1282,29 @@
     }
     say("learn", T("A wallet setting helps once the slip is made: payments to an address you never paid wait in escrow and can be taken back (contract 11). It is the wallet’s setting, not a chain rule: whoever holds the key can pay without it."));
   }
-  /* two riddles with answers only the chain has: the lowest fee the chain takes, and your wallet's next sequence number */
+  /* riddles with answers only the chain has: the lowest fee the chain takes, your wallet's next sequence number, and
+     the two levels of rules (IDNI's Q&A, November 2026): a rule for everyone needs the validators' agreement, read from
+     getgovernance; a rule on your own wallet needs nobody's vote */
+  async function governance() {
+    try {
+      const g = await ask("getgovernance"), d = g && g.data;
+      if (!d || !Array.isArray(d.active_validators) || !d.active_validators.length) return null;
+      const n = d.active_validators.length, q = String(d.vote_quorum || "supermajority"), c = /^count:(\d+)$/.exec(q);
+      const thr = Number.isInteger(d.approval_threshold) && d.approval_threshold > 0 ? d.approval_threshold
+        : q === "majority" ? Math.floor(n / 2) + 1 : c ? Math.max(1, Math.min(+c[1], n)) : Math.max(1, Math.floor((2 * n + 2) / 3));
+      return { n, thr, words: q === "majority" ? T("more than half") : c ? F("a fixed count of {n}", { n: c[1] }) : T("two thirds (supermajority)") };
+    } catch (e) { return null; }
+  }
   async function riddle() {
     const pk = myPk(), f = await fee(), week = new Date().toISOString().slice(0, 10), id = "r-" + week;
     let seq = null; if (pk) { try { seq = (await envelope(pk)).seq; } catch (e) { seq = null; } }
     const list = [["fee", F("Riddle 1: the base fee on this chain is {n} (getgovernance, o9). A payment is signed with fee_limit 5 times that. What is the MOST the chain may take from it, in test AGRS?", { n: f }), f * 5]];
     if (seq != null) list.push(["seq", F("Riddle 2: your wallet is at sequence {n} (getsequence). Which sequence number must your next payment carry to be taken?", { n: seq }), seq]);
+    const gv = await governance();
+    if (gv) {
+      list.push(["gov", F("Riddle on rules for everyone: the chain has {n} validators, and a change needs {w} of them (getgovernance: active_validators, vote_quorum). How many validators must say yes before the fee changes for everybody?", { n: gv.n, w: gv.words }), gv.thr]);
+      list.push(["own", T("Riddle on your own rule: you give your wallet a rule, no payment over 500. How many validators must vote for it?"), 0]);
+    }
     CASE.riddle = { id, list, i: 0 };
     say("sys", T("The riddles. Answer with answer <number>."));
     say("sys", list[0][1]);
@@ -1298,12 +1315,24 @@
     const [key, , want] = r.list[r.i], n = parseInt(x, 10);
     if (!(n >= 0)) { say("sys", T("answer <number>")); return; }
     if (n === want) {
-      snd.ok(); say("ok", key === "fee" ? T("Right: the fee limit is the most, never a promise to pay it; what the chain takes is the base fee, and the rest stays.") : T("Right: the next number, exactly once. A number used twice is the ghost from contract 3; a number skipped waits for the one before it."));
+      snd.ok(); say("ok", T(RIGHT[key]));
       r.i += 1;
       if (r.i < r.list.length) say("sys", r.list[r.i][1]);
       else { if (!S.riddles[r.id]) { S.riddles[r.id] = { at: Date.now() }; save(); instruments(); say("ok", F("Riddles of {x} settled. Standing: {r}.", { x: r.id.slice(2), r: rank() })); mood("bosun", "glad"); } CASE.riddle = null; }
-    } else { snd.no(); say("no", key === "fee" ? T("No. Read the riddle again: the limit is a ceiling, and the ceiling is what you signed.") : T("No. The chain takes each number once and in order; getsequence names the next one.")); }
+    } else { snd.no(); say("no", T(WRONG[key])); }
   }
+  const RIGHT = {
+    fee: "Right: the fee limit is the most, never a promise to pay it; what the chain takes is the base fee, and the rest stays.",
+    seq: "Right: the next number, exactly once. A number used twice is the ghost from contract 3; a number skipped waits for the one before it.",
+    gov: "Right. A rule for everyone is the protocol level: a validator proposes it, enough of them must agree, and it applies only some blocks later, so nobody is surprised.",
+    own: "Right: none. A rule on your own wallet is the user level: you sign it, the chain checks every payment you make against it, and nobody votes.",
+  };
+  const WRONG = {
+    fee: "No. Read the riddle again: the limit is a ceiling, and the ceiling is what you signed.",
+    seq: "No. The chain takes each number once and in order; getsequence names the next one.",
+    gov: "No. peek getgovernance: approval_threshold is the number of yes votes a change for everyone needs right now.",
+    own: "No. Your own rule binds only your wallet, so it is yours alone to set. Type what levels.",
+  };
   function sampleCase() {
     const hex = s => s.padEnd(96, "0").slice(0, 96);
     const friend = "5a7c21" + "e3".repeat(43) + "9f0b", poison = "5a7c21" + "4d".repeat(43) + "9f0b";
@@ -1878,6 +1907,7 @@
     [["wallet", "my wallet"], "Your wallet", "Your test wallet: a key made in this browser, the same one /wallet/ and White Rabbit Key use. The key never leaves the browser; to the chain, whoever holds it is the wallet."],
     [["key", "signature", "sign", "signed", "bls"], "Key and signature", "Every payment is signed with the wallet’s private key; the chain checks the signature against the sender’s public key. A wrong key: INVALID_SIGNATURE."],
     [["curve", "point", "no key", "flags", "first character"], "Not every address is a key", "A wallet’s address is a point on the BLS12-381 curve, written in 48 bytes. Its first bits are flags, so every real address starts with 8, 9, a or b. Anything else is no key at all. Since 10 November 2026 the node refuses a payment to it: TX_INVALID. Before that, such a payment waited in the node’s queue."],
+    [["levels", "vote", "validators", "rule for everyone", "my rule", "own rule"], "Two levels of rules", "Tau has rules for everyone and rules for one wallet. Rules for everyone (the fee, who seals blocks, how many must agree) change only when the validators agree: a proposal, enough yes votes, then a wait of some blocks before it applies. A rule on your own wallet (a cap, a list of who you pay, a second signature above an amount) needs no vote: you sign it, and the chain checks every payment of yours against it. IDNI explained the two levels in its Q&A of November 2026."],
     [["me", "self", "myself", "mirror", "pay myself"], "Paying yourself", "A payment to the wallet that sends it is refused: TX_INVALID. The node checks it since 10 November 2026, when a payment arrives and again when a block is applied."],
     [["address", "pubkey", "hex"], "Address", "An address is a public key written as 96 hex characters (0–9, a–f), each one worth 0 to 15. Lookalikes copy the ends; only the whole address is the wallet."],
     [["payment", "tx", "transaction", "transfer"], "A transaction", "A Tau payment: from, to, amount, signed, with a sequence number, an expiry time, a block-height deadline and a fee limit. Nothing else, no memo."],

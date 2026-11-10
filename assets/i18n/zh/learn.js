@@ -337,4 +337,14 @@ TauI18n.add({ strings: {
   "x cannot be 0 and 1 at once: a box holds one value at a time, so the two halves are never true together.": "x 不能同时是 0 和 1：一个盒子一次只能装一个值，所以这两半永远不会同时为真。",
   "Community": "社区",
   "Lessons made by people in the community, facts checked by Tau HUD.": "由社区成员制作的课程，事实经 Tau HUD 核对。",
+  "When will Tau Language be released, and what is still missing?": "Tau 语言什么时候发布，还缺什么？",
+  "IDNI named three things in November 2026: finishing the anti-prenexing algorithm, part of how the engine handles formulas, then two features called functions and tables, and speed work so that the chain keeps up with Tau. No date was given.": "IDNI 在 2026 年 11 月提到三件事：完成 anti-prenexing 算法（引擎处理公式的一部分），然后是名为函数（functions）和表（tables）的两项功能，以及提速工作，让链跟得上 Tau。没有给出日期。",
+  "What is the difference between a rule for everyone and a rule for my wallet?": "面向所有人的规则和我钱包上的规则有什么不同？",
+  "A rule for everyone, such as the fee or who may seal blocks, changes only when the validators agree: a proposal, a two-thirds majority, then a wait of some blocks. A rule on your own wallet, such as a spending cap, needs no vote: you sign it, and the chain checks your payments against it.": "面向所有人的规则，比如手续费或谁可以封块，只有在验证者同意时才会改变：先提案，三分之二多数通过，再等若干个区块。你自己钱包上的规则，比如支出上限，不需要投票：你签名，链就会用它检查你的付款。",
+  "Will personal rules work for many accounts?": "个人规则能用在很多账户上吗？",
+  "That is IDNI's main work now. Tau Language became about 1.5 times faster, and the plan is to limit each account's rule to its own inputs and outputs, so that one big formula for everyone becomes many small ones.": "这正是 IDNI 现在的主要工作。Tau 语言快了大约 1.5 倍；计划是把每个账户的规则限制在它自己的输入和输出上，让一个面向所有人的大公式变成许多小公式。",
+  "Why is the node written in Python and not in Rust?": "节点为什么用 Python 而不是 Rust 来写？",
+  "The slow part is the Tau engine, written in C++ and run in separate worker processes; Python only does networking, storage and the interface. What limits speed is how long the engine takes for a formula, and another language around it would not change that.": "慢的部分是 Tau 引擎，它用 C++ 写成，在独立的工作进程里运行；Python 只负责网络、存储和接口。限制速度的是引擎算一个公式要多久，外层换一种语言也改变不了这一点。",
+  "Will AI make logic tools like Tau unnecessary?": "AI 会让 Tau 这样的逻辑工具变得多余吗？",
+  "IDNI thinks not: a logic solver is fully reliable and far cheaper for the tasks it is built for, so AI agents are more likely to use such tools than to replace them, the way AI-written proofs are checked by a logic engine today.": "IDNI 认为不会：逻辑求解器完全可靠，对它擅长的任务也便宜得多，所以 AI 智能体更可能去使用这类工具，而不是取代它们，就像今天 AI 写出的证明要由逻辑引擎来检查一样。"
 } });

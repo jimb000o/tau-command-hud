@@ -1079,5 +1079,16 @@ TauI18n.add({ strings: {
   "handshake · block #{n}": "ハンドシェイク · ブロック #{n}",
   "no handshake · the node is silent": "ハンドシェイクなし · ノードが応答しない",
   "Not now: a payment is on its way. Reboot once it has landed.": "今は無理：支払いが送信中。届いてから再起動を。",
-  "When it is back, reboot dials it again:": "戻ったら reboot でつなぎ直せる："
+  "When it is back, reboot dials it again:": "戻ったら reboot でつなぎ直せる：",
+  "more than half": "過半数",
+  "a fixed count of {n}": "決まった {n} 人",
+  "two thirds (supermajority)": "3 分の 2（特別多数）",
+  "Riddle on rules for everyone: the chain has {n} validators, and a change needs {w} of them (getgovernance: active_validators, vote_quorum). How many validators must say yes before the fee changes for everybody?": "全員のルールの謎：このチェーンにはバリデーターが {n} 人いて、変更にはその {w} の賛成が要る（getgovernance：active_validators、vote_quorum）。全員の手数料が変わるには、何人のバリデーターが賛成しなければならない？",
+  "Riddle on your own rule: you give your wallet a rule, no payment over 500. How many validators must vote for it?": "自分のルールの謎：ウォレットに「500 を超える支払いはしない」というルールを付ける。何人のバリデーターが投票しなければならない？",
+  "Right. A rule for everyone is the protocol level: a validator proposes it, enough of them must agree, and it applies only some blocks later, so nobody is surprised.": "正解。全員のルールはプロトコルの層：バリデーターが提案し、十分な数が賛成し、しかも何ブロックか後にやっと効く。だから誰も不意を突かれない。",
+  "Right: none. A rule on your own wallet is the user level: you sign it, the chain checks every payment you make against it, and nobody votes.": "正解：ゼロ。自分のウォレットのルールはユーザーの層：自分で署名すれば、チェーンが君の支払いすべてをそれで確かめる。投票は誰もしない。",
+  "No. peek getgovernance: approval_threshold is the number of yes votes a change for everyone needs right now.": "違う。peek getgovernance：approval_threshold が、いま全員の変更に必要な賛成票の数だ。",
+  "No. Your own rule binds only your wallet, so it is yours alone to set. Type what levels.": "違う。自分のルールが縛るのは自分のウォレットだけ、だから決めるのは君ひとり。what levels と打て。",
+  "Two levels of rules": "ルールの 2 つの層",
+  "Tau has rules for everyone and rules for one wallet. Rules for everyone (the fee, who seals blocks, how many must agree) change only when the validators agree: a proposal, enough yes votes, then a wait of some blocks before it applies. A rule on your own wallet (a cap, a list of who you pay, a second signature above an amount) needs no vote: you sign it, and the chain checks every payment of yours against it. IDNI explained the two levels in its Q&A of November 2026.": "Tau には全員のためのルールと、ひとつのウォレットのためのルールがある。全員のルール（手数料、誰がブロックを封じるか、何人の賛成が要るか）は、バリデーターが合意したときだけ変わる：提案、十分な賛成票、そして効くまで何ブロックか待つ。自分のウォレットのルール（上限、支払先のリスト、ある額を超えたら 2 つ目の署名）に投票は要らない：自分で署名すれば、チェーンが君の支払いすべてをそれで確かめる。IDNI は 2026 年 11 月の Q&A でこの 2 つの層を説明した。"
 } });

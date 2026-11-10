@@ -36,7 +36,7 @@
 #              up hack       the hack of the week (relay/hackweek.py, Thursdays 11:00): next replay, last runs step by step
 #                            (nothing rebuilt, nothing sent); up hack preview  the last replay's post texts and picture;
 #                            up hack release 2026-11-12-poisoning  shows a held-back finding in public (after IDNI knows)
-#              up report     the weekly report for IDNI as it stands (nothing rebuilt, nothing filed): its text, a page
+#              up report     the weekly report for IDNI as it stands (nothing filed; blog + nodelog rebuilt, node left alone): its text, a page
 #                            and a pre-filled GitHub issue link; up report last  last week's; up report send  also to
 #                            your Telegram (it comes there by itself every Sunday 18:00)
 #              up guardian   the Guardian (tauhud.com/guardian/) started or restarted with the code just pulled, and Caddy
@@ -299,11 +299,13 @@ if [ "${1:-}" = "idni" ]; then
   docker compose exec -T devpulse python devpulse.py --digest "$@"
   exit $?
 fi
-# the weekly report for IDNI, nothing rebuilt, nothing filed (alerts/idni_report.py): up report  this week so far,
-# up report last  last week, up report send  the page link to the owner's Telegram as well
+# the weekly report for IDNI, nothing filed (alerts/idni_report.py): the blog service and the node-log reader
+# (nodelog, alerts/node_logs.py) rebuilt with the code just pulled, the node left alone, safe any time; then
+# up report  this week so far, up report last  last week, up report send  the page link to the owner's Telegram as well
 if [ "${1:-}" = "report" ]; then
   shift
-  docker compose up -d blog >/dev/null 2>&1 || true
+  docker compose up -d --build --no-deps blog nodelog >/dev/null 2>&1 || docker compose up -d --build --no-deps blog nodelog || true
+  docker compose exec -T nodelog python -c 'import node_logs; print("node log:", node_logs.keep(), "sync/peering lines kept from the last days")' 2>&1 || echo "node log: not readable yet"
   docker compose exec -T blog python idni_report.py "$@"
   exit $?
 fi

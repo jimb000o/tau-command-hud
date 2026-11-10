@@ -337,4 +337,14 @@ TauI18n.add({ strings: {
   "x cannot be 0 and 1 at once: a box holds one value at a time, so the two halves are never true together.": "x は 0 と 1 に同時にはなれません。箱には一度に一つの値しか入らないので、二つの半分が同時に正しくなることはありません。",
   "Community": "コミュニティ",
   "Lessons made by people in the community, facts checked by Tau HUD.": "コミュニティの人たちが作ったレッスンです。事実は Tau HUD が確認しています。",
+  "When will Tau Language be released, and what is still missing?": "Tau 言語はいつリリースされ、何がまだ足りない？",
+  "IDNI named three things in November 2026: finishing the anti-prenexing algorithm, part of how the engine handles formulas, then two features called functions and tables, and speed work so that the chain keeps up with Tau. No date was given.": "IDNI は 2026 年 11 月に 3 つを挙げました：エンジンが式を扱う仕組みの一部である anti-prenexing アルゴリズムの完成、関数（functions）と表（tables）という 2 つの機能、そしてチェーンが Tau に追いつくための高速化です。日付は示されませんでした。",
+  "What is the difference between a rule for everyone and a rule for my wallet?": "全員のためのルールと、自分のウォレットのルールは何が違う？",
+  "A rule for everyone, such as the fee or who may seal blocks, changes only when the validators agree: a proposal, a two-thirds majority, then a wait of some blocks. A rule on your own wallet, such as a spending cap, needs no vote: you sign it, and the chain checks your payments against it.": "手数料や誰がブロックを封じるかのような全員のルールは、バリデーターが合意したときだけ変わります：提案、3 分の 2 の賛成、そして何ブロックかの待ち時間。支出の上限のような自分のウォレットのルールに投票は要りません：自分で署名すれば、チェーンが支払いをそれで確かめます。",
+  "Will personal rules work for many accounts?": "パーソナルルールは多くのアカウントで使えるようになる？",
+  "That is IDNI's main work now. Tau Language became about 1.5 times faster, and the plan is to limit each account's rule to its own inputs and outputs, so that one big formula for everyone becomes many small ones.": "それがいま IDNI の主な仕事です。Tau 言語は約 1.5 倍速くなり、各アカウントのルールをそのアカウント自身の入力と出力に限ることで、全員分の大きな式をたくさんの小さな式に分ける計画です。",
+  "Why is the node written in Python and not in Rust?": "ノードはなぜ Rust ではなく Python で書かれている？",
+  "The slow part is the Tau engine, written in C++ and run in separate worker processes; Python only does networking, storage and the interface. What limits speed is how long the engine takes for a formula, and another language around it would not change that.": "遅い部分は Tau エンジンで、C++ で書かれ別のワーカープロセスで動きます。Python が担うのはネットワーク、保存、インターフェースだけです。速さを決めるのはエンジンが 1 つの式にかかる時間で、外側の言語を変えてもそれは変わりません。",
+  "Will AI make logic tools like Tau unnecessary?": "AI によって Tau のような論理ツールは不要になる？",
+  "IDNI thinks not: a logic solver is fully reliable and far cheaper for the tasks it is built for, so AI agents are more likely to use such tools than to replace them, the way AI-written proofs are checked by a logic engine today.": "IDNI はそう考えていません：論理ソルバーは完全に信頼でき、得意な仕事でははるかに安いので、AI エージェントはこうしたツールを置き換えるより使う側になるはずです。いま AI が書いた証明を論理エンジンが確かめているように。"
 } });

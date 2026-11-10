@@ -286,6 +286,27 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  # Our node's own log for the weekly IDNI report (alerts/node_logs.py): IDNI asked for sync and peering failures with
+  # their logs (Q&A, November 2026). Docker keeps container logs readable by root only, so this one small service runs
+  # as root, with that folder read-only and no network, and once an hour writes the node's sync and peering warnings of
+  # the last days, addresses masked, to /state/node-log.json; the blog service (not root) reads only that file.
+  nodelog:
+    build: ./alerts
+    command: ["python", "node_logs.py", "loop"]
+    init: true
+    user: root
+    network_mode: none
+    environment:
+      NODE_LOG_DIR: /dockerlogs
+      NODE_LOG_SERVICE: tau-node
+      NODE_LOG_STATE: /state/node-log.json
+    volumes:
+      - /var/lib/docker/containers:/dockerlogs:ro
+      - alerts_state:/state
+    mem_limit: 128m
+    restart: unless-stopped
+    logging: *logging
+
   # Build pulse (alerts/devpulse.py): keeps blob-less clones of IDNI's public
   # repositories and writes devpulse.json for tauhud.com/devpulse/ every 30
   # minutes: newest commits, weekly rhythm, code areas, tags, how far upstream

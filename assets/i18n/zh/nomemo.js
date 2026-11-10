@@ -1079,5 +1079,16 @@ TauI18n.add({ strings: {
   "handshake · block #{n}": "握手 · 区块 #{n}",
   "no handshake · the node is silent": "没有握手 · 节点没有回应",
   "Not now: a payment is on its way. Reboot once it has landed.": "现在不行：有一笔付款正在途中。等它落定后再重启。",
-  "When it is back, reboot dials it again:": "节点恢复后，reboot 会重新拨号："
+  "When it is back, reboot dials it again:": "节点恢复后，reboot 会重新拨号：",
+  "more than half": "过半数",
+  "a fixed count of {n}": "固定的 {n} 个",
+  "two thirds (supermajority)": "三分之二（绝对多数）",
+  "Riddle on rules for everyone: the chain has {n} validators, and a change needs {w} of them (getgovernance: active_validators, vote_quorum). How many validators must say yes before the fee changes for everybody?": "关于全体规则的谜题：这条链有 {n} 个验证者，一项更改需要其中 {w} 同意（getgovernance：active_validators、vote_quorum）。要让所有人的手续费发生变化，必须有多少个验证者投赞成票？",
+  "Riddle on your own rule: you give your wallet a rule, no payment over 500. How many validators must vote for it?": "关于你自己规则的谜题：你给自己的钱包定一条规则，任何付款不超过 500。需要多少个验证者为它投票？",
+  "Right. A rule for everyone is the protocol level: a validator proposes it, enough of them must agree, and it applies only some blocks later, so nobody is surprised.": "对。全体规则属于协议层：由验证者提出，足够多的验证者同意，并且要在若干个区块之后才生效，这样谁都不会措手不及。",
+  "Right: none. A rule on your own wallet is the user level: you sign it, the chain checks every payment you make against it, and nobody votes.": "对：一个都不需要。你自己钱包上的规则属于用户层：你签名，链就会用它检查你的每一笔付款，没有人投票。",
+  "No. peek getgovernance: approval_threshold is the number of yes votes a change for everyone needs right now.": "不对。peek getgovernance：approval_threshold 就是眼下一项全体更改需要的赞成票数。",
+  "No. Your own rule binds only your wallet, so it is yours alone to set. Type what levels.": "不对。你自己的规则只约束你的钱包，所以只由你来定。输入 what levels。",
+  "Two levels of rules": "两层规则",
+  "Tau has rules for everyone and rules for one wallet. Rules for everyone (the fee, who seals blocks, how many must agree) change only when the validators agree: a proposal, enough yes votes, then a wait of some blocks before it applies. A rule on your own wallet (a cap, a list of who you pay, a second signature above an amount) needs no vote: you sign it, and the chain checks every payment of yours against it. IDNI explained the two levels in its Q&A of November 2026.": "Tau 有面向所有人的规则，也有只管一个钱包的规则。面向所有人的规则（手续费、谁来封块、需要多少人同意）只有在验证者达成一致时才会改变：先提案，赞成票足够，再等若干个区块后生效。你自己钱包上的规则（上限、收款名单、超过某个金额需要第二个签名）不需要投票：你签名，链就会用它检查你的每一笔付款。IDNI 在 2026 年 11 月的问答视频里讲解了这两层。"
 } });

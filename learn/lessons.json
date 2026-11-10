@@ -733,6 +733,41 @@
   ],
   "asked": [
     {
+      "q": "When will Tau Language be released, and what is still missing?",
+      "a": "IDNI named three things in November 2026: finishing the anti-prenexing algorithm, part of how the engine handles formulas, then two features called functions and tables, and speed work so that the chain keeps up with Tau. No date was given.",
+      "video": "_4DnQImw4tQ",
+      "t": 98,
+      "when": "2026-11"
+    },
+    {
+      "q": "What is the difference between a rule for everyone and a rule for my wallet?",
+      "a": "A rule for everyone, such as the fee or who may seal blocks, changes only when the validators agree: a proposal, a two-thirds majority, then a wait of some blocks. A rule on your own wallet, such as a spending cap, needs no vote: you sign it, and the chain checks your payments against it.",
+      "video": "_4DnQImw4tQ",
+      "t": 320,
+      "when": "2026-11"
+    },
+    {
+      "q": "Will personal rules work for many accounts?",
+      "a": "That is IDNI's main work now. Tau Language became about 1.5 times faster, and the plan is to limit each account's rule to its own inputs and outputs, so that one big formula for everyone becomes many small ones.",
+      "video": "_4DnQImw4tQ",
+      "t": 903,
+      "when": "2026-11"
+    },
+    {
+      "q": "Why is the node written in Python and not in Rust?",
+      "a": "The slow part is the Tau engine, written in C++ and run in separate worker processes; Python only does networking, storage and the interface. What limits speed is how long the engine takes for a formula, and another language around it would not change that.",
+      "video": "_4DnQImw4tQ",
+      "t": 381,
+      "when": "2026-11"
+    },
+    {
+      "q": "Will AI make logic tools like Tau unnecessary?",
+      "a": "IDNI thinks not: a logic solver is fully reliable and far cheaper for the tasks it is built for, so AI agents are more likely to use such tools than to replace them, the way AI-written proofs are checked by a logic engine today.",
+      "video": "_4DnQImw4tQ",
+      "t": 501,
+      "when": "2026-11"
+    },
+    {
       "q": "Do I have to learn Boolean algebra to use Tau?",
       "a": "No. The guide on this page uses none: you compare things with = and join them with and (&&) and or (||). Boolean algebra is what Tau does underneath; it helps later, when you want to know why an answer is what it is.",
       "video": "1RoPTERgnkU",

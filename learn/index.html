@@ -865,7 +865,7 @@ function renderAsked(list) {
         });
         row.append(b);
       }
-      const l = document.createElement("a"); l.href = "https://www.youtube.com/watch?v=" + encodeURIComponent(a.video); l.target = "_blank"; l.rel = "noopener";
+      const l = document.createElement("a"); l.href = "https://www.youtube.com/watch?v=" + encodeURIComponent(a.video) + (a.t > 0 ? "&t=" + Math.floor(a.t) + "s" : ""); l.target = "_blank"; l.rel = "noopener";
       l.textContent = T("IDNI's Q&A video") + " " + a.when + " ↗"; row.append(l);
       box.append(d);
     });
