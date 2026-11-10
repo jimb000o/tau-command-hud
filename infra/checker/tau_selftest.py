@@ -59,7 +59,9 @@ def main():
                 print("       log: " + got["log"][-300:].replace("\n", " / "))
     # No Memo's `tau <line>` contract (nomemo/game.js) sends this shape: G(...) with inline types and {1} constants
     for label, item in [("No Memo contract", {"op": "run", "spec": "G(o1[t]:bv[8] = i1[t]:bv[8] + {1}:bv[8])",
-                                               "steps": [{"i1": "5"}], "expect": {"out": {"o1": ["6"]}}})]:
+                                               "steps": [{"i1": "5"}], "expect": {"out": {"o1": ["6"]}}}),
+                        ("No Memo 1 % cut", {"op": "run", "spec": "G(o1[t]:bv[24] = i1[t]:bv[24] / {100}:bv[24])",
+                                             "steps": [{"i1": "1000"}, {"i1": "250"}, {"i1": "99"}], "expect": {"out": {"o1": ["10", "2", "0"]}}})]:
         got = tau_sandbox.ask(tau_sandbox.parse(item))
         good = matches(item["expect"], got)
         total += 1

@@ -173,6 +173,9 @@ pre.code { margin: 4px 0 8px; padding: 6px 10px; background: #0c0c0d; border: 1p
 .real b { display: block; color: #fff; font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; margin-bottom: 4px; }
 .real p { margin: 0 0 8px; max-width: 76ch; }
 .real .links { display: flex; flex-wrap: wrap; gap: 6px; }
+.real.next { border-style: solid; border-color: rgba(57,255,138,.45); margin: 0 0 12px; }
+.real.next ul { margin: 0 0 6px; padding-left: 18px; } .real.next li { margin: 1px 0; } .real.next p { margin-bottom: 6px; }
+.quote { margin: 6px 0 0; color: var(--dim); font: italic 12px/1.4 var(--display); }
 .real.comm { border-color: rgba(57,255,138,.35); margin-bottom: 8px; }
 .real.comm a { color: var(--ok); display: inline-block; min-height: 32px; padding: 6px 0; }
 .real.comm span, .real.comm .fine { color: var(--dim); font-size: 12px; }
@@ -216,6 +219,7 @@ p.sub, .sub, .story, .hint, .real p, .src, .goals li p { max-width: 76ch; }
       <p class="lead">Six missions. Change the rules of a chain by agreement.</p>
       <p class="sub tauwhy">Tau Testnet Alpha is live: a public test chain whose rules are written in logic, checked before they apply, and changed only by agreement.</p>
       <p class="sub">A practice chain of your own, in your browser, one block every two seconds. You hold one validator seat. Each mission ends with where to see the same thing on the real Tau testnet.</p>
+      <p class="quote"><span>“I tried the 6 missions and it was really an eye opener!”</span> <span>A visitor in the tauhud chat, November 2026</span></p>
     </div>
     <div class="progress">
       <div class="pips" id="pips" aria-hidden="true"></div>
@@ -573,6 +577,12 @@ function renderProp() {
 function renderLog() {
   $("log").innerHTML = S.log.slice(0, 12).map(e => `<li class="${e.cls}"><em>#${e.h}</em>${esc(e.t)}</li>`).join("");
 }
+/* after all six: what a rule on the real testnet can do today, and what it cannot do yet (asked in our chat, November 2026) */
+const NEXT_HTML = `<div class="real next"><b>What now?</b>
+  <p>You changed the rules of a chain by agreement. A rule on your own wallet on the real testnet can do this today:</p>
+  <ul><li>let your payments through or stop them, by amount, recipient or time</li><li>add a fee worked out from the amount, such as 1 %</li><li>send a payment that pays itself out at a set block or time, and that you can take back until then</li></ul>
+  <p>Not yet: a rule cannot start a payment, so there are no standing orders, and it cannot take a cut of other people’s payments.</p>
+  <div class="links"><a class="btn small" href="../learn/#ask-fees">Try a 1 % fee in Tau</a><a class="btn small" href="../playground/#rule">Test a rule against the testnet’s checks</a><a class="btn small" href="../nomemo/">Play the testnet in No Memo</a></div></div>`;
 let lastBriefKey = "";
 function renderBrief(tickGoal) {
   const m = S.m, idx = S.met.findIndex(x => !x), nxt = MISSIONS.find(x => !DONE[x.id] && x !== m) || MISSIONS[(m.n) % MISSIONS.length];
@@ -580,13 +590,14 @@ function renderBrief(tickGoal) {
   if (key === lastBriefKey && tickGoal < 0) return;
   lastBriefKey = key;
   const goals = m.goals.map((g, i) => `<li class="${S.met[i] ? "met" : i === idx ? "now" : ""}${i === tickGoal ? " tick" : ""}"><span class="ic">${S.met[i] ? "✓" : i === idx ? "▸" : i + 1}</span><div><b>${esc(g.t)}</b><p>${esc(g.d)}</p></div></li>`).join("");
+  const allWon = S.won && MISSIONS.every(x => DONE[x.id]);   // all six done: the "What now?" card takes the place of the ticked goals
   const real = `<div class="real"><b>On the real testnet</b><p>${esc(m.real.text)}</p><div class="links">${m.real.links.map(([t, h]) => `<a class="btn small" href="${h}"${/^http/.test(h) ? ' target="_blank" rel="noopener"' : ""}>${esc(t)}</a>`).join("")}</div></div>`;
   const done = S.won ? `<div class="won${Date.now() - S.wonAt < 1500 ? " pop" : ""}"><b>Mission complete</b><p>${esc(m.win)}</p>
     <div class="row"><button class="btn primary" type="button" data-go="${nxt.id}">${DONE[nxt.id] ? "Play" : "Next"}: ${esc(nxt.title)}</button><button class="btn" type="button" id="btnShare">Share this mission</button><span class="copied" id="copied" aria-live="polite"></span></div></div>` : "";
   $("brief").innerHTML = `<h2>Mission ${m.n} of ${MISSIONS.length} <small>${DONE[m.id] && !S.won ? "done before · play it again" : ""}</small></h2>
     <p class="mtitle">${esc(m.title)}</p><p class="story">${esc(m.story)}</p>
-    ${done}<ol class="goals">${goals}</ol>
-    ${S.won ? "" : `<p class="hint"><b>Hint:</b> ${esc(m.hint)}</p>`}${commHtml(m)}${real}
+    ${done}${allWon ? NEXT_HTML : `<ol class="goals">${goals}</ol>`}
+    ${S.won ? "" : `<p class="hint"><b>Hint:</b> ${esc(m.hint)}</p>`}${commHtml(m)}${allWon ? "" : real}
     <div class="row"><button class="btn small" type="button" id="btnRestart">Start this mission over</button></div>`;
 }
 
