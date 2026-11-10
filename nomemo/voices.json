@@ -213,6 +213,14 @@
  },
  {
   "who": "qm",
+  "text": "A mirror job. Pay your own wallet, everything else in order, and send it. Since the tenth of November the chain refuses a payment that goes back to the one who sends it. Make it say so."
+ },
+ {
+  "who": "look",
+  "text": "Three addresses on your screen. Two are real wallets. One only looks like a wallet and is no key at all. Send one coin to that one. The chain must throw it back. Pick a real one and the coin is gone."
+ },
+ {
+  "who": "qm",
   "text": "The chain keeps its rules in the open, written in Tau. The base fee there has a type, a bitvector of a certain width. Read the width off the rule, and pay the drop the sum I put on your screen."
  },
  {
