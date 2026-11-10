@@ -206,8 +206,8 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
     ms = sorted(e["ms"] for e in sends if isinstance(e.get("ms"), int))
     if ms:   # how long our node took to answer a sendtx (logged since 6 November 2026), in seconds
         sec = lambda m: round(m / 1000, 1)  # noqa: E731
-        f["our node's answer time to a send, seconds"] = {"median": sec(ms[len(ms) // 2]), "slowest tenth from": sec(ms[len(ms) * 9 // 10]),
-                                                           "slowest": sec(ms[-1]), "sends timed": len(ms)}
+        f["our node's answer time to a send, seconds"] = {"median": sec(ms[len(ms) // 2]), "8 of 10 within": sec(ms[min(len(ms) - 1, len(ms) * 8 // 10)]),
+                                                           "slowest tenth from": sec(ms[len(ms) * 9 // 10]), "slowest": sec(ms[-1]), "sends timed": len(ms)}
         a0 = min(e["t"] for e in sends)
         per: dict = {}
         for e in sends:
@@ -306,6 +306,8 @@ def meaning_of(f: dict) -> dict:
         m["sends a minute the node's answer time allows, one at a time"] = round(60 / t["median"], 1)
         m["what that means"] = ("the ship sends one transaction and waits for the answer before the next; a slow answer, not "
                                 "the ship's brakes, is what sets the pace once the median goes above 5 seconds")
+    if t.get("8 of 10 within"):   # the next plan follows the slow answers, not the median (cruise.py PLAN_QUANTILE)
+        m["stops a minute the next plan allows for, from the time 8 of 10 sends were answered within"] = round(0.85 * min(12, 60 / t["8 of 10 within"]), 1)
     hs = f.get("block heights")
     if hs and len(hs) == 2 and hs[1] > hs[0]:
         m["blocks sealed while the ship was in port"] = hs[1] - hs[0]
