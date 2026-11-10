@@ -1698,7 +1698,7 @@
     /* a trick the chain just refused: named by the pirate's prop */
     while (ev.length) {
       const e = ev.shift(); SHIPLIVE.ev = SHIPLIVE.ev.filter(x => x !== e);
-      const k = e.k.slice(6), l = line(["pp_t_" + k + "1", "pp_t_" + k + "2"], Q("({n} tricks refused by the chain so far)", { n: stopped }));
+      const k = e.k.slice(6), l = line(["pp_t_" + k + "1", "pp_t_" + k + "2", "pp_t_" + k + "3"], Q("({n} tricks refused by the chain so far)", { n: stopped }));
       if (l) return done(l);
     }
     const r = Math.random(), S = RICO.SETS, id = v.visit || v.id || v.t0;
