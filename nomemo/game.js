@@ -1496,9 +1496,9 @@
       mk: j => { j.door = rnd(3); j.mids = [0, 1, 2].map(() => Array.from({ length: 86 }, () => "0123456789abcdef"[rnd(16)]).join("")); },
       check: d => d.to !== "drop" && d.to !== "a" && d.to !== "b" && d.to !== "c" ? "set to a, b or c" : d.amount !== 1 ? "1 test AGRS, no more" : null },
     /* the node's transfer checks of 10 November 2026: a recipient that is no key, and a payment to the sender itself, are refused (TX_INVALID) */
-    { k: "r-self", t: 1, who: "qm", topic: "addr", want: ["TX_INVALID"], name: "Mirror", brief: "Make the chain refuse a payment for where it goes, and for nothing else: pay your own wallet.", hint: "set to me",
+    { k: "r-self", t: 1, who: "qm", topic: "addr", want: ["TX_INVALID"], ok: () => newChecks(), name: "Mirror", brief: "Make the chain refuse a payment for where it goes, and for nothing else: pay your own wallet.", hint: "set to me",
       check: d => d.to !== "me" ? "the payment does not go to your own wallet" : d.payer !== "you" ? "pay it from your own wallet" : null },
-    { k: "p-nokey", t: 2, who: "look", topic: "addr", want: ["TX_INVALID"], ok: () => !!B, name: "No such wallet", brief: "Three addresses. Two are real wallets; one only looks like one and is no key at all. Send 1 test AGRS to that one: set to a, b or c. The chain must throw it back. Pick a real wallet and your coin is gone.", hint: "what curve",
+    { k: "p-nokey", t: 2, who: "look", topic: "addr", want: ["TX_INVALID"], ok: () => !!B && newChecks(), name: "No such wallet", brief: "Three addresses. Two are real wallets; one only looks like one and is no key at all. Send 1 test AGRS to that one: set to a, b or c. The chain must throw it back. Pick a real wallet and your coin is gone.", hint: "what curve",
       mk: j => { const real = () => B.bytesToHex(B.pubOf(B.keygen())); j.door = rnd(3); j.addrs = [0, 1, 2].map(i => i === j.door ? "01234567"[rnd(8)] + real().slice(1) : real()); },
       check: d => d.to !== "a" && d.to !== "b" && d.to !== "c" ? "set to a, b or c" : d.amount !== 1 ? "1 test AGRS, no more" : null },
     { k: "p-bits", t: 2, who: "qm", topic: "rule", want: "in", name: "How wide", brief: "The chain’s rule gives the base fee a type: bv[n], a bitvector n bits wide. Pay the drop n times {m}.", hint: "rule takes the rule apart", mk: j => { j.m = 2 + rnd(9); },
@@ -1572,6 +1572,26 @@
     if (th.topics.includes(kd.topic)) { j.special = (j.special || 0) + PAYS[j.t]; j.themed = th.k; }
     if (kd.heist) { heistStage(j, 0); j.special = 2 * kd.heist.length; j.trace = 26 * kd.heist.length; j.until += 60; }
     return j;
+  }
+  /* the two contracts above need a node that has the transfer checks of 10 November 2026: before them, a node took a
+     payment to the sender or to no key. Asked once a visit with a dry run (checktx) of a payment to itself from a throwaway
+     key: TX_INVALID means the node has them; anything else keeps the two contracts off the board */
+  let NEWCHK = null;
+  function newChecks() {
+    if (SIM) return true;
+    if (NEWCHK === null && B) {
+      NEWCHK = "asking";
+      (async () => {
+        try {
+          const sk = B.keygen(), pk = B.bytesToHex(B.pubOf(sk)), st = await ask("getsequence " + pk), tip = Number(st && st.data && st.data.tip_height) || 0, base = await fee();
+          const tx = sign({ tx_type: "user_tx", sender_pubkey: pk, sequence_number: 0, expiration_time: now() + 600, expire_at_height: tip + 1000, fee_limit: String(base * 5),
+            operations: { "1": [[pk, pk, "1"]] } }, sk);
+          const r = await ask("checktx " + JSON.stringify(tx));
+          NEWCHK = !!r && !isOk(r) && codeOf(r) === "TX_INVALID";
+        } catch (e) { NEWCHK = false; }
+      })();
+    }
+    return NEWCHK === true;
   }
   function jobTick(tip) {
     if (!inboxOpen() || tip == null) return;
