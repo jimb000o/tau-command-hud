@@ -1,5 +1,5 @@
 {
-  "about": "Five short lessons for tauhud.com/learn. The page loads them; `up tau` on the server asks the engine every try and every solution and prints ok or FAIL, so the expected answers here are checked against the real engine. A task's `fill` is the fill-in shown to people who picked 'never written a formula': the pattern with ▢ and the choices for it. `guide` is the step-by-step tour shown to people who picked 'never written a formula': one idea per card, every question is a try or solution of the lessons above, so the self-test already checks it; for a guess, the engine's answer decides which choice was right. A lesson with \"level\": \"pro\" is shown only to people who picked 'I know logic or Tau'. `asked` holds questions from the community in IDNI's monthly Q&A videos, answered in our own words; a `try` is always a lesson try, so the self-test covers it.",
+  "about": "Five short lessons for tauhud.com/learn. The page loads them; `up tau` on the server asks the engine every try and every solution and prints ok or FAIL, so the expected answers here are checked against the real engine. A task's `fill` is the fill-in shown to people who picked 'never written a formula': the pattern with ▢ and the choices for it. `guide` is the step-by-step tour shown to people who picked 'never written a formula': one idea per card, every question is a try or solution of the lessons above, so the self-test already checks it; for a guess, the engine's answer decides which choice was right. A lesson with \"level\": \"pro\" is shown only to people who picked 'I know logic or Tau'. `asked` holds questions from the community in IDNI's monthly Q&A videos, answered in our own words; a `try` is always a lesson try, so the self-test covers it. `brief` feeds tauhud.com/learn/brief/: a short software brief, each requirement in plain English with the Tau line written for it by hand; `checks` lists which requirements are switched on and the verdict the engine must give, and the self-test asks each of them.",
   "lessons": [
     {
       "id": "yesno",
@@ -833,5 +833,97 @@
       "video": "6Em0cJU8cx4",
       "when": "2025-11"
     }
+  ],
+ "brief": {
+  "title": "Save system for a small game",
+  "reqs": [
+   {
+    "id": "r1",
+    "text": "Players can play without an account.",
+    "tau": "a = 0",
+    "note": "a = 1 would mean: an account is required"
+   },
+   {
+    "id": "r2",
+    "text": "Progress syncs between a player's devices.",
+    "tau": "s = 1",
+    "note": "s = 1 means: sync is on"
+   },
+   {
+    "id": "r3",
+    "text": "Sync only works with an account.",
+    "tau": "(s = 1 -> a = 1)",
+    "note": "if sync is on, an account is required"
+   },
+   {
+    "id": "r4",
+    "text": "Saves are also kept on the device.",
+    "tau": "l = 1",
+    "note": "l = 1 means: there is a local save"
+   },
+   {
+    "id": "r5",
+    "text": "Local co-op works offline.",
+    "tau": "c = 1",
+    "note": "c = 1 means: co-op needs no connection"
+   }
+  ],
+  "checks": [
+   {
+    "on": [
+     "r1",
+     "r2",
+     "r3",
+     "r4",
+     "r5"
+    ],
+    "expect": {
+     "verdict": false
+    }
+   },
+   {
+    "on": [
+     "r1",
+     "r2",
+     "r3"
+    ],
+    "expect": {
+     "verdict": false
+    }
+   },
+   {
+    "on": [
+     "r2",
+     "r3",
+     "r4",
+     "r5"
+    ],
+    "expect": {
+     "verdict": true
+    }
+   },
+   {
+    "on": [
+     "r1",
+     "r3",
+     "r4",
+     "r5"
+    ],
+    "expect": {
+     "verdict": true
+    }
+   },
+   {
+    "on": [
+     "r1",
+     "r2",
+     "r4",
+     "r5"
+    ],
+    "expect": {
+     "verdict": true
+    }
+   }
   ]
+ }
 }
