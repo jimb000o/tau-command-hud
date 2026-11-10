@@ -51,6 +51,8 @@ container("bbb", "tau-node", [
     "2026-11-10 10:06:00 WARNING [network.host] Failed to sync headers from " + PEER_B,
     "2026-11-10 10:07:00 WARNING [network.host] Handshake failed with " + PEER_B + " after 3 attempts",
     "2026-11-10 10:08:00 WARNING [commands.sendtx] fee limit too low for tx 42",                # not sync or peers
+    "2026-11-10 10:08:30 ERROR [tau.server] WS connection task crashed; dropping client",       # a WebSocket client, not a peer
+    "  + Exception Group Traceback (most recent call last):",
     "2026-11-10 10:09:00 ERROR [network.host] libp2p could not dial /ip4/9.9.9.9/tcp/4001 and /ip4/34.251.82.246/tcp/4001",
 ])
 
@@ -69,6 +71,7 @@ check("5.6.7.8" not in text and "9.9.9.9" not in text and "x.x.x.x" in text, "ot
 check("34.251.82.246" in text, "IDNI's bootnode address stays")
 check(PEER_A not in text and PEER_A[:12] + "…" in text, "peer ids are shortened")
 check("fee limit" not in text, "a line about something else is left out")
+check("WS connection" not in text, "a WebSocket client hanging up is not a peering failure")
 check(nl.section(None) == [], "no node log readable: no section at all")
 check(any("No warning or error" in x for x in nl.section({"lines": 0, "groups": []})), "a quiet week says so")
 short = "\n".join(nl.section(s, 3))
