@@ -2776,5 +2776,10 @@
     "link": "/blog/?p=2026-11-10-idni-qa-november",
     "image": "/assets/shots/blog-idni-qa-november.png"
    }
+  },
+  {
+    "tag": "Learn",
+    "on": "2026-11-10",
+    "html": "Learn Tau Language: your level can be changed at any time. The Level button above the lessons and above the step-by-step guide now says change; it brings back the level choice with your current level marked, and Keep my level closes it again. Your progress stays."
   }
 ]
