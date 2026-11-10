@@ -300,6 +300,8 @@
           if (!/^[0-9a-f]{96}$/.test(to || "")) return err("sendtx", "recipient is not a key", "INVALID_PARAMS");
           if (!(n > 0) || n >= GIANT || String(amt) !== String(Math.floor(n))) return err("sendtx", `amount ${amt} does not fit a 24-bit transfer`, "INVALID_PARAMS");
           if (from !== tx.sender_pubkey) return err("sendtx", "the transfer’s payer is not the signer", "TX_INVALID");
+          if (!/^[89ab]/.test(to)) return err("sendtx", "'to' address is not a key: no point on the curve", "TX_INVALID");
+          if (to === from) return err("sendtx", "'to' address is the sender", "TX_INVALID");
           if (!(fee >= 10)) return err("sendtx", "fee_limit below the base fee of 10", "FEE_LIMIT_TOO_LOW");
           if (n + 10 > bal) return err("sendtx", `balance ${bal} is below ${n} plus the fee`, "INSUFFICIENT_FUNDS");
           A.bal = bal - n - 10; a(to).bal += n;
@@ -1493,6 +1495,12 @@
     { k: "p-doors", t: 2, who: "look", topic: "addr", want: "in", name: "Three doors", brief: "Three addresses, one of them the drop. Pay 1 test AGRS to the right one: set to a, b or c. The wrong one keeps your coin.", hint: "status shows the drop; read the middle, not the ends",
       mk: j => { j.door = rnd(3); j.mids = [0, 1, 2].map(() => Array.from({ length: 86 }, () => "0123456789abcdef"[rnd(16)]).join("")); },
       check: d => d.to !== "drop" && d.to !== "a" && d.to !== "b" && d.to !== "c" ? "set to a, b or c" : d.amount !== 1 ? "1 test AGRS, no more" : null },
+    /* the node's transfer checks of 10 November 2026: a recipient that is no key, and a payment to the sender itself, are refused (TX_INVALID) */
+    { k: "r-self", t: 1, who: "qm", topic: "addr", want: ["TX_INVALID"], name: "Mirror", brief: "Make the chain refuse a payment for where it goes, and for nothing else: pay your own wallet.", hint: "set to me",
+      check: d => d.to !== "me" ? "the payment does not go to your own wallet" : d.payer !== "you" ? "pay it from your own wallet" : null },
+    { k: "p-nokey", t: 2, who: "look", topic: "addr", want: ["TX_INVALID"], ok: () => !!B, name: "No such wallet", brief: "Three addresses. Two are real wallets; one only looks like one and is no key at all. Send 1 test AGRS to that one: set to a, b or c. The chain must throw it back. Pick a real wallet and your coin is gone.", hint: "what curve",
+      mk: j => { const real = () => B.bytesToHex(B.pubOf(B.keygen())); j.door = rnd(3); j.addrs = [0, 1, 2].map(i => i === j.door ? "01234567"[rnd(8)] + real().slice(1) : real()); },
+      check: d => d.to !== "a" && d.to !== "b" && d.to !== "c" ? "set to a, b or c" : d.amount !== 1 ? "1 test AGRS, no more" : null },
     { k: "p-bits", t: 2, who: "qm", topic: "rule", want: "in", name: "How wide", brief: "The chain’s rule gives the base fee a type: bv[n], a bitvector n bits wide. Pay the drop n times {m}.", hint: "rule takes the rule apart", mk: j => { j.m = 2 + rnd(9); },
       check: (d, x, j) => !x.rule || d.amount !== x.rule.bits * j.m ? F("{a} is not the width times {m}", { a: d.amount, m: j.m }) : null },
     { k: "p-stream", t: 2, who: "look", topic: "rule", want: "in", name: "Which stream", brief: "In the chain’s rule the base fee is a stream with a number, written like o1[t]. Pay the drop that stream’s number plus the base fee.", hint: "rule takes the rule apart",
@@ -1538,7 +1546,7 @@
   }
   /* the hint's first step as a command, one click away: the answer itself for the plain refusals, the place to look it up for the puzzles */
   const TRY = { "r-fee": "set fee 0", "r-sig": "set signer other", "r-height": "set height past", "r-funds": "status", "p-seq": "peek getsequence me", "p-race": "set height +{m}",
-    "r-clock": "set expiry past", "r-payer": "set payer drop", "r-seq": "set seq old", "r-width": "what width", "p-hex": "status", "p-fee": "peek getgovernance", "p-doors": "status",
+    "r-clock": "set expiry past", "r-payer": "set payer drop", "r-seq": "set seq old", "r-width": "what width", "p-hex": "status", "p-fee": "peek getgovernance", "p-doors": "status", "r-self": "set to me", "p-nokey": "what curve",
     "r-fee9": "peek getgovernance", "p-tight": "peek getgovernance", "p-last": "history", "predict": "what order",
     "p-bits": "rule", "p-stream": "rule", "p-ones": "what #b", "p-top": "what top", "p-spec": "what stream", "p-table": "what and", "p-table3": "what and" };
   const tryCmd = j => { const k = j && kindOf(j).k; return k && TRY[k] ? fill0(TRY[k], { m: j.m }) : null; };
@@ -1608,7 +1616,7 @@
     say("sys", F("{x} · {t} · tier {n} · from the {w}", { x: jname(j), t: h ? h.name : kd.name, n: j.t, w: CREW[j.who] }));
     transmit(j.who, fill((h || kd).brief, j), { k: j.k, n: j.n, name: (h || kd).name, tier: j.t });
     if (h) heistShow(j);
-    if (j.k === "p-doors") cols(["a", "b", "c"].map((x, i) => [x, doorAddr(j, i)]));
+    if (doors(j)) cols(["a", "b", "c"].map((x, i) => [x, doorAddr(j, i)]));
     if (j.tab) tableShow(j);
     if (j.t <= 2 && kd.hint) hintLine(j);
     if (S.job !== j.n) { S.lastRead = j.n; save(); chips(); }
@@ -1623,7 +1631,9 @@
     if (S.inbox.length) say("sys", T("Open now:"), ...S.inbox.map(j => btn(F("read {x}", { x: jname(j) }), "read " + jname(j))));
     else say("sys", T("The inbox is empty for the moment; a new contract comes within a few blocks."));
   }
-  const doorAddr = (j, i) => (i === j.door ? DROP : DROP.slice(0, 6) + j.mids[i] + DROP.slice(-4));
+  const doors = j => !!j && (j.k === "p-doors" || j.k === "p-nokey");
+  const doorAddr = (j, i) => (j.k === "p-nokey" ? j.addrs[i] : i === j.door ? DROP : DROP.slice(0, 6) + j.mids[i] + DROP.slice(-4));
+  const draftTo = (j, d, pk) => (d.to === "me" ? pk : d.to === "drop" ? DROP : doorAddr(j, "abc".indexOf(d.to)));
   function accept(a) {
     const j = parseJ(a) || (a ? null : S.inbox[0]); if (!j) { say("sys", T("No such contract in the inbox. Type inbox.")); return; }
     if (S.job === j.n) { say("sys", F("{x} is yours already. Build it: tx, set, send.", { x: jname(j) }), btn("tx", "tx")); return; }
@@ -1662,7 +1672,7 @@
     const j = curJob(), locked = new Set(((j && j.lock) || []).map(x => x[0]));
     const L = k => (locked.has(k) ? " 🔒" : "");
     cols([
-      ["to", (d.to === "drop" ? T("the drop") + " " + short(DROP) : d.to + " " + short(doorAddr(j, "abc".indexOf(d.to)))) + L("to")],
+      ["to", (d.to === "drop" ? T("the drop") + " " + short(DROP) : d.to === "me" ? T("your own wallet") + (myPk() ? " " + short(myPk()) : "") : d.to + " " + short(doorAddr(j, "abc".indexOf(d.to)))) + L("to")],
       ["amount", fmt(d.amount) + " " + T("test AGRS") + L("amount")],
       ["fee", (d.fee == null ? T("auto: 5 × the base fee") : String(d.fee)) + L("fee")],
       ["expiry", (d.expiry === "past" ? T("two minutes ago") : T("in ten minutes")) + L("expiry")],
@@ -1686,10 +1696,10 @@
       if (f === "signer" && (v === "you" || v === "other")) return d.signer = v, true;
       if (f === "payer" && (v === "you" || v === "drop")) return d.payer = v, true;
       if (f === "seq" && (v === "next" || v === "old")) return d.seq = v, true;
-      if (f === "to" && (v === "drop" || (j.k === "p-doors" && ["a", "b", "c"].includes(v)))) return d.to = v, true;
+      if (f === "to" && (v === "drop" || v === "me" || (doors(j) && ["a", "b", "c"].includes(v)))) return d.to = v, true;
       return false;
     })();
-    if (!ok) { cols([["set amount <n>", T("whole test AGRS")], ["set fee <n>|auto", T("the fee limit you sign")], ["set expiry past|ok", T("the expiry time")], ["set height past|+<n>|auto", T("the last block it may land in")], ["set signer you|other", T("whose key signs")], ["set payer you|drop", T("who pays, inside the transfer")], ["set seq next|old", T("the sequence number")], ["set to drop" + (j.k === "p-doors" ? "|a|b|c" : ""), T("who receives")]]); return; }
+    if (!ok) { cols([["set amount <n>", T("whole test AGRS")], ["set fee <n>|auto", T("the fee limit you sign")], ["set expiry past|ok", T("the expiry time")], ["set height past|+<n>|auto", T("the last block it may land in")], ["set signer you|other", T("whose key signs")], ["set payer you|drop", T("who pays, inside the transfer")], ["set seq next|old", T("the sequence number")], ["set to drop|me" + (doors(j) ? "|a|b|c" : ""), T("who receives")]]); return; }
     save(); say("ok", F("{f} set.", { f }), btn("tx", "tx"), btn("send", "send"));
   }
   function predict(a) {
@@ -1706,18 +1716,19 @@
     if (!B) { say("no", T("This browser cannot sign (no BLS library loaded).")); return; }
     if (!SIM && CHAIN.ok === false) { say("no", T("The node is out of reach; nothing was sent. Try again in a minute, or switch to the simulation in the header."), btn("reboot", "reboot")); return; }
     if (j.k === "predict" && !S.pred) { say("sys", T("Predict first: predict <CODE>. Then send."), btn("predict TX_INVALID", "predict TX_INVALID")); return; }
-    if (j.k === "p-doors" && d.to === "drop") { say("sys", T("Choose a door first: set to a, b or c.")); return; }
+    if (doors(j) && (d.to === "drop" || d.to === "me")) { say("sys", T("Choose a door first: set to a, b or c.")); return; }
     const kd = kindOf(j), want = j.want || kd.want;
     RUN.busy = true; chips(); slot(jname(j));
     const k = myKey(true), last = S.hist[0] && S.hist[0].block != null ? Number(S.hist[0].block) : null;   // the last sealed payment before this one (Where it landed)
     try {
       const { seq, tip } = await envelope(k.pk), base = await fee(), t = now();
       if (d.seq === "old" && seq === 0) fail(T("This wallet has no used sequence number yet."));
-      const to = d.to === "drop" ? DROP : doorAddr(j, "abc".indexOf(d.to));
+      const to = draftTo(j, d, k.pk);
       const tx = sign({ tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: d.seq === "old" ? seq - 1 : seq, expiration_time: d.expiry === "past" ? t - 120 : t + 600,
         expire_at_height: d.height === "past" ? Math.max(1, tip - 5) : d.height === "auto" ? tip + 1000 : tip + d.height, fee_limit: String(d.fee == null ? base * 5 : d.fee),
         operations: { "1": [[d.payer === "drop" ? DROP : k.pk, to, String(d.amount)]] } }, d.signer === "other" ? B.keygen() : k.sk);
       const x = { tx, base, tip, last, rule: ruleNow() }, bad = faults(d, x);
+      if (to === k.pk || !/^[89ab]/.test(to)) bad.push("to");   // to the sender itself, or to no key: refused since 10 November 2026
       say("step", F("signing the draft: {a} test AGRS, fee limit {b}, sequence {c}, deadline block {n}", { a: fmt(d.amount), b: tx.fee_limit, c: tx.sequence_number, n: fmt(tx.expire_at_height) }));
       if (RUN.dry) {
         const r = await ask("checktx " + JSON.stringify(tx)); if (!r) fail(T("No answer from the node; nothing was sent."));
@@ -1741,6 +1752,7 @@
         if (!w.in) { say("no", F("Not sealed: {x}", { x: w.why })); if (/EXPIRED/.test(w.why) && S.deadline != null && CHAIN.tip > S.deadline) jobTraced(); return; }
         say("ok", F("Sealed in block {n}.", { n: fmt(w.block) }), explorer(s.hash));
         S.hist.unshift({ id: j.k, hash: s.hash, block: w.block, amount: d.amount }); S.hist = S.hist.slice(0, 20); save();
+        if (j.k === "p-nokey") { snd.no(); flash("bad"); say("no", T("That was a real wallet: your coin went to a stranger, and it stays there. The address that is no key gives itself away in its first character.")); jobMiss(j, x); return; }
         if (want !== "in") { say("warn", T("The payment was good, so the chain took it; this contract wanted a refusal. Look at the draft again.")); learnTopic(j.topic); heatAdd(8); return; }
         if (j.k === "p-doors" && to !== DROP) { snd.no(); flash("bad"); say("no", T("That door was a lookalike: your coin went to a wallet that is not the drop, and it stays there. The middle of an address is where it differs.")); jobMiss(j, x); return; }
         const why = kd.check && kd.check(d, x, j);
@@ -1845,6 +1857,8 @@
     [["drop", "dead drop"], "The drop", "The crew’s own wallet, the dead drop. Most contracts pay it; a claim pays it 100 + the chapter; it pays your share back. status shows its whole address."],
     [["wallet", "my wallet"], "Your wallet", "Your test wallet: a key made in this browser, the same one /wallet/ and White Rabbit Key use. The key never leaves the browser; to the chain, whoever holds it is the wallet."],
     [["key", "signature", "sign", "signed", "bls"], "Key and signature", "Every payment is signed with the wallet’s private key; the chain checks the signature against the sender’s public key. A wrong key: INVALID_SIGNATURE."],
+    [["curve", "point", "no key", "flags", "first character"], "Not every address is a key", "A wallet’s address is a point on the BLS12-381 curve, written in 48 bytes. Its first bits are flags, so every real address starts with 8, 9, a or b. Anything else is no key at all. Since 10 November 2026 the node refuses a payment to it: TX_INVALID. Before that, such a payment waited in the node’s queue."],
+    [["me", "self", "myself", "mirror", "pay myself"], "Paying yourself", "A payment to the wallet that sends it is refused: TX_INVALID. The node checks it since 10 November 2026, when a payment arrives and again when a block is applied."],
     [["address", "pubkey", "hex"], "Address", "An address is a public key written as 96 hex characters (0–9, a–f), each one worth 0 to 15. Lookalikes copy the ends; only the whole address is the wallet."],
     [["payment", "tx", "transaction", "transfer"], "A transaction", "A Tau payment: from, to, amount, signed, with a sequence number, an expiry time, a block-height deadline and a fee limit. Nothing else, no memo."],
     [["memo", "no memo"], "No memo", "There is none: a Tau payment has no field for words. The amount is the only thing it says, and anyone can read it. Hence the game’s name."],
