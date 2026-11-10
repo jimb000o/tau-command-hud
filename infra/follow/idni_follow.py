@@ -50,7 +50,10 @@ SYSTEMD = os.environ.get("IDNI_FOLLOW_SYSTEMD", "/etc/systemd/system")
 # the ship windows of the deploy rules (a node restart is not allowed then), plus the hack of the week (Thu 11:00)
 QUIET_DEFAULT = "sat 12-17,tue 16-20,wed 14-18,thu 10-12"
 DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-MIN_FREE_GB = 8
+# Free disk a pass needs before it builds. The build reuses the cached tau-lang stage and the node image's big layers
+# (a tau-lang change is never built here, see run()), so a new image adds only the node sources and the patches, well
+# under 1 GB, plus a trial node that syncs the young chain. 8 GB held every pass back on 10.11.2026 with 4.5 GB free.
+MIN_FREE_GB = float(os.environ.get("IDNI_FOLLOW_MIN_FREE_GB", 3))
 LAG_OK = 3   # blocks behind the network tip that still count as in sync (relay /status)
 
 # the probe: run inside a node container, asks the node's own RPC for its newest blocks
