@@ -19,6 +19,7 @@
         ["pirateSight", "Black sails off the reef. Nobody told the council. Nobody tells the council anything, but usually they at least send a letter."],
         ["pirateHere", "Pirates. They stay on their boat, which is the first polite thing pirates have ever done. The tree stays where it is."],
         ["pirateAfter", "The pirates came and went. They tried their tricks on the chain, not on the island, and the chain answered. That is what a good elder does too."],
+        ["pirateHere+tGovernance", "A pirate hid a change to the rules inside a payment for rum. Rules are not changed in a bottle. Here they change when the island agrees, and on the chain the same. Refused."],
         ["pirateClean", "Every trick the pirates tried, the chain refused, and each time it said why. When I was young, a no came without a reason. This chain explains itself. I approve."],
         ["pirateNext", "The children played pirates all morning. One was the pirate, the others were the chain. The chain won every round. Nobody wanted to be the pirate twice."],
         ["shipNear", "A ship is on its way, I hear. Visitors are welcome under this tree. Groups are a different animal. A visitor sits down. A group takes pictures of people sitting down."],
@@ -136,6 +137,7 @@
       back: [
         ["pirateSight", "A ship I can’t name. The lighthouse saw her first. The Book will see her last: whatever they try, it writes down what the chain said."],
         ["pirateAfter", "The pirates are in the Book now, between a fisherman and the school. The Book does not care who they are. Only who signed, and what the chain took."],
+        ["pirateHere+tDouble", "Two pirate payments with the same number, sent together. The Book has one line for every number. The first payment got the line. The second found it taken. Refused."],
         ["pirateHere+tStale", "A pirate payment with a block deadline that had already passed. The chain counts blocks the way I count pages. Past the page, past the deadline. Refused."],
         ["pirateClean", "The pirates’ tricks are not in the Book. The Book keeps only what the chain took. Their rum is in there, though, and the landing fee. Even pirates leave a paper trail when they pay properly."],
         ["shipGone+shipClean", "Not one refusal today. Every payment the passengers made, the chain took, and the Book has them all. Dull for the radio. Beautiful for the Book."],
@@ -221,7 +223,7 @@
       ],
       ask: [
         { when: "pirates", q: "What are the pirates trying?", a: [["", "Paying more than they hold, sending the same payment twice, a payment whose time ran out, a signature from somebody else’s key. Each is a rule the chain checks on every payment, yours too. The pirates only check that it checks."]] },
-        { when: "pirateAfter", q: "What did the chain answer the pirates?", a: [["", "Each refusal has a name in the logbook. Insufficient funds, when the wallet is too poor. Invalid sequence, for a payment already taken. Tx expired, when its time or its block deadline ran out. Invalid signature, for the wrong key. Fee limit too low, for no fee. The class has them all on the wall."]],
+        { when: "pirateAfter", q: "What did the chain answer the pirates?", a: [["", "Each refusal has a name in the logbook. Insufficient funds, when the wallet is too poor. Invalid sequence, for a number already taken. Tx expired, when its time or its block deadline ran out. Invalid signature, for the wrong key. Fee limit too low, for no fee. Tx invalid or tx rejected, when the payment itself breaks the rules: the wrong payer, too big, too many transfers. The class has them all on the wall."]],
           more: { q: "Why does the chain give a reason at all?", a: [["", "So that anyone can see why. A plain no teaches nothing. A no with a reason is a lesson, and the chain gives one with every payment it turns down. Yours too."]] } },
         { when: "ship", q: "What do you think of the cruise ships?", a: [["", "Curious visitors are a gift. Crowds are weather. The Wednesday ship brings questions, the Saturday ship brings hats. I like both, but only one fits in a classroom."]],
           more: { q: "Would you stop the big ships if you won?", a: [["", "No. I would write down what they cost the reef and what they bring the island, side by side, where everyone can read it. Then the island decides. That is the whole lesson, really."]] } },
@@ -260,6 +262,7 @@
       back: [
         ["pirateHere+tFreeride", "The pirates ordered coconuts from the boat. One of them sent a payment that allowed no fee at all. The chain didn’t take it. Even pirates pay the ferryman."],
         ["pirateHere", "Pirates ordering coconuts from the boat, one basket at a time. One price on the board, the same for pirates. Noor wanted a pirate price. I said no."],
+        ["pirateHere+tPoison", "A pirate sent one payment for a whole row of baskets, Noor, and the last basket cost more than he has. The chain didn’t send the others and keep the last. It sent none. Whole order or no order."],
         ["pirateNext", "The baskets came back, Noor. Empty, and rinsed. Pirates rinse baskets. Nobody believes me."],
         ["shipNear+queen", "The Queen is coming! The co-op has picked extra coconuts. One price on the board, the same for islanders and passengers. Noor wanted a passenger price. I said no. She said fine. She did not say it nicely."],
         ["shipHere+queen", "Coconut snacks on the bar bills! One transaction, and a share comes straight to the Works. The co-op’s book adds it up by itself. I love a sum that does itself."],
@@ -330,6 +333,7 @@
         ["pirateSight", "Look at that flag, dear. Three chain links. I told everyone there were no pirates. I may have to relabel something."],
         ["pirateHere", "Pirates, dear. Made up by the relay, like the passengers, but their tricks go to the real chain. I’m cataloguing them from the Old Ship. From a safe distance."],
         ["pirateAfter", "Item four hundred and sixteen, dear: one pirate ship, one evening, and the chain’s answer to their tricks in the logbook. I’ve filed it under maritime history."],
+        ["pirateHere+tCram", "A pirate packed more transfers into one payment than one may carry, dear. I tried to count them from the Old Ship. The chain counted faster. Refused. Catalogued under overpacking."],
         ["pirateClean", "Item four hundred and seventeen, dear: every lock the pirates tried, and the chain’s answer to each. Not one opened. Filed under good locks, and slightly disappointed pirates."],
         ["pirateNext", "The black ship has gone, dear, and she never says when she’ll be back. I’ve left a space in the catalogue. Pirates are the only exhibit that books itself."],
         ["shipNear+dryrun", "The expedition ship is coming, dear. They always visit my Old Ship. I’ve labelled the gangway, the rail and the bucket. The bucket was nervous."],
@@ -459,7 +463,7 @@
        pirateSight     in sight or waiting off the reef     pirateHere   at anchor (her crew stays aboard)
        pirateGone      left, that evening    pirateNext   the day after    pirateAfter   either    pirateCut   left early
        pirateClean     every trick she tried was refused (never while a trick that got through is held back)
-       tOverspend tReplay tExpired tStale tForged tImpostor tFreeride tGiant   that trick was refused at least once (live, or
+       tOverspend tReplay tExpired tStale tForged tImpostor tFreeride tGiant tDouble tPoison tCram tGovernance   that trick was refused at least once (live, or
                        after the visit); a trick that got through is never a fact, so no line names it
      The visit under way counts first, then one that ended today, then the next call. Nothing while the ships are
      switched off (the relay announces no call then) or the relay cannot be reached: nobody talks about a ship that will not come. */
@@ -470,7 +474,8 @@
     return Date.UTC(p.year, p.month - 1, p.day) / 864e5;
   };
   /* the pirates' eight tricks (relay cruise.py TRICKS), as facts once the chain refused one: what a line may name */
-  const TRICKF = { overspend: "tOverspend", replay: "tReplay", expired: "tExpired", stale: "tStale", forged: "tForged", impostor: "tImpostor", freeride: "tFreeride", giant: "tGiant" };
+  const TRICKF = { overspend: "tOverspend", replay: "tReplay", expired: "tExpired", stale: "tStale", forged: "tForged", impostor: "tImpostor", freeride: "tFreeride", giant: "tGiant",
+    double: "tDouble", poison: "tPoison", cram: "tCram", governance: "tGovernance" };
   const WHEN = ["ship", "queen", "dryrun", "shipSoon", "shipTomorrow", "shipToday", "shipNear", "shipHere", "shipGone", "shipCut", "shipAfter",
     "shipSkipped", "shipQuiet", "shipClean", "shipTuned",
     "pirates", "pirateSight", "pirateHere", "pirateGone", "pirateNext", "pirateAfter", "pirateCut", "pirateClean", ...Object.values(TRICKF)];
