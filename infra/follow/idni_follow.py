@@ -10,7 +10,8 @@ One pass (`run`):
   4. builds the node image of the new commit next to the running one (our node patches must still apply, else the build
      stops and says which one), the running node is not touched
   5. starts a trial node from that image with an empty chain, on the live testnet, no ports published: it must sync from
-     genesis to the live tip and agree with our running node block for block (IDNI_FOLLOW_TRIAL_MINUTES)
+     genesis to the live tip and agree with our running node block for block (IDNI_FOLLOW_TRIAL_MINUTES, longer while
+     it still climbs, up to IDNI_FOLLOW_TRIAL_MAX_MINUTES)
   6. switches: stops the node, keeps a copy of its chain data, starts the new image on the same data, and checks that it
      answers and is in sync with the network tip twice, 3 minutes apart
   7. any failure in 6 puts the old image and the copied chain data back
@@ -18,7 +19,7 @@ The owner's private Telegram chat (`up owner`, the watchtower's chat) hears abou
 back for good (once per commit). A commit that failed is not tried again; the next IDNI commit is.
 
 Off: IDNI_FOLLOW=0 in infra/.env, or `up follow off` (the node stays on the commit it runs).
-Commands: run | ref | status | install | now | on | off | log
+Commands: run | ref | status | install | now | retry | on | off | log
 """
 from __future__ import annotations
 
@@ -355,8 +356,11 @@ def compare(trial: dict, live: dict) -> tuple[int, int | None]:
 
 
 def trial(sha: str, cfg: dict) -> tuple[bool, str]:
+    # a fresh node syncs about 50 blocks a minute on this server, so a long chain takes longer than the base window: past
+    # it the trial goes on while the trial node still climbs (a higher block within the last 10 minutes), up to the cap
     minutes = int(cfg.get("IDNI_FOLLOW_TRIAL_MINUTES") or 45)
-    log(f"trial node of {short(sha)}: syncing from genesis on the live testnet (up to {minutes} min)")
+    cap = max(minutes, int(cfg.get("IDNI_FOLLOW_TRIAL_MAX_MINUTES") or 360))
+    log(f"trial node of {short(sha)}: syncing from genesis on the live testnet ({minutes} min, longer while it climbs, at most {cap})")
     sh(["docker", "rm", "-f", TRIAL])
     sh(["docker", "volume", "rm", "-f", TRIAL])
     args = ["docker", "run", "-d", "--name", TRIAL, "--memory", cfg.get("IDNI_FOLLOW_TRIAL_MEMORY") or "1500m",
@@ -368,8 +372,9 @@ def trial(sha: str, cfg: dict) -> tuple[bool, str]:
         return False, f"the trial node did not start: {out.strip()[-120:]}"
     ok, why, best = False, "", None
     try:
-        deadline = now() + minutes * 60
-        while now() < deadline:
+        start = now()
+        deadline, last_up = start + minutes * 60, start
+        while now() < deadline or (now() - last_up < 600 and now() < start + cap * 60):
             sleep(30)
             rc, state = sh(["docker", "inspect", "-f", "{{.State.Running}}", TRIAL])
             if state.strip() != "true":
@@ -379,16 +384,18 @@ def trial(sha: str, cfg: dict) -> tuple[bool, str]:
             t, live = probe(TRIAL), probe()
             if not t or not live:
                 continue
+            if best is None or max(t) > best:
+                last_up = now()
             best = max(t)
             same, bad = compare(t, live)
             if bad is not None:
                 why = f"the trial node disagrees with our node at block {bad}"
                 break
             if same and max(t) >= max(live) - 2:
-                ok, why = True, f"synced to block {max(t)} in {round((now() - (deadline - minutes * 60)) / 60)} min, same blocks as our node"
+                ok, why = True, f"synced to block {max(t)} in {round((now() - start) / 60)} min, same blocks as our node"
                 break
         else:
-            why = f"the trial node reached block {best if best is not None else 'none'} in {minutes} min, not the live tip"
+            why = f"the trial node reached block {best if best is not None else 'none'} in {round((now() - start) / 60)} min, not the live tip"
     finally:
         _, tail = sh(["docker", "logs", "--tail", "60", TRIAL])
         with open(os.path.join(DIR, "trial.log"), "w") as f:
@@ -636,6 +643,9 @@ def main(argv: list[str]) -> int:
         set_env("IDNI_FOLLOW", "1" if cmd == "on" else "0")
         print(install())
         return 0
+    if cmd == "retry":   # try a commit again that failed before (a trial that ran out of time, a build the disk stopped)
+        st = load(); st.pop("failed", None); save(st)
+        cmd = "now"
     if cmd == "now":
         rc, out = sh(["systemctl", "start", "--no-block", UNIT + ".service"])
         print("auto-follow: one check started in the background (up follow shows how it went)" if rc == 0 else out.strip())
