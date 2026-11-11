@@ -2899,5 +2899,10 @@
     "tag": "Donations",
     "on": "2026-11-11",
     "html": "Donations: the X account is on the list of monthly costs, about $3 a month, an estimate from the posts sent (X bills each post, more for one with a link)."
+  },
+  {
+    "tag": "Donations",
+    "on": "2026-11-11",
+    "html": "Donations: the page now leads with how much of the site's costs donations cover so far, as a share, a bar and the amount not covered, plus a bar for this month. The chart shows costs in their own colour with the gap between costs and donations shaded, and the monthly costs as one figure."
   }
 ]
