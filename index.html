@@ -2896,7 +2896,7 @@ async function pollNodes() {
         if (n.label || (n.community && kits.has(String(n.community.name)))) continue;
         const last = Number(n.last_seen) || 0; if ("online" in n ? !n.online : (!last || now - last > 86400)) continue;   // the relay's steady "online" flag when it has one, else seen in the last day
         const ph = Number(n.head) || 0, ref = j.reference ? Number(j.reference.tip) || Number(j.reference.height) || 0 : 0;   // a peer's "head" is its tip height, not a hash
-        list.push({ kind: "peer", id: String(n.id || ""), name: "", height: ph, head: "", agrees: ph && ref ? Math.abs(ph - ref) <= 2 : null, age: Math.max(0, now - last), first: Number(n.first_seen) || null, connected: !!n.connected });
+        list.push({ kind: "peer", id: String(n.id || ""), name: n.known ? String(n.known) : "", height: ph, head: "", agrees: ph && ref ? Math.abs(ph - ref) <= 2 : null, age: Math.max(0, now - last), first: Number(n.first_seen) || null, connected: !!n.connected });
       }
     } catch { if (NET.src === feed) list.push(...NET.nodes.filter(n => n.kind === "peer")); }   // one slow /peers answer must not empty the orbit: keep the last good peer list
     if (feed !== (S.simfeed ? "sim" : "live") || S.mode !== "live") return;   // the feed changed while we waited: this answer belongs to the old one

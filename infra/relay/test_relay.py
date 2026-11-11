@@ -23,6 +23,7 @@ CHAIN = os.path.join(os.path.dirname(EVENTS), "chain.jsonl")
 BOARD = os.path.join(os.path.dirname(EVENTS), "community.json")
 PEERS = os.path.join(os.path.dirname(EVENTS), "peers.json")
 os.environ.update(PEERS_PATH=PEERS, BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, SENT_PATH=EVENTS + ".sent", CHAT_PATH=EVENTS + ".chat", CHAT_KEY_PATH=EVENTS + ".chatkey", ROADMAP_PATH=EVENTS + ".roadmap", CHAINHIST_PATH=EVENTS + ".chainhist", DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
+os.environ["KNOWN_NODES_PROBE"] = "0"   # no TCP checks of real addresses from a test
 os.environ.update(UPSTREAM_URL="ws://127.0.0.1:18765", LISTEN_HOST="127.0.0.1", LISTEN_PORT="18766",
                   TRUST_PROXY="1", MAX_PER_IP="3", CLIENT_BURST="20", LOOKUP_CACHE_SECONDS="10", GOV_POLL_SECONDS="4", TAU_GOVERNANCE_OPEN_ADMISSION="true")
 sys.path.insert(0, os.path.dirname(__file__))
@@ -585,6 +586,31 @@ async def main():
             check(m["status"] == "ok", "silent node reports again")
         back = next(n for n in (await community())[1]["nodes"] if n["name"] == "alice-node")
         check(back["first_seen"] == alice_first, "first_seen kept across a silence")
+
+        # a named node (knownnodes.py): its name and peer ID only from its own address, shown under its display name
+        aoc = "12D3KooWEafLrs7GSJjuBbrRtGXeCzMZcJZowHvpCcFXLyetuzTc"
+        async with connect(url, additional_headers={"X-Forwarded-For": "198.51.100.9"}) as ws:
+            json.loads(await ws.recv())
+            for bad in (f"report key={'e5' * 16} name=Age-of-Chains height={h} head={head}",
+                        f"report key={'e5' * 16} name=ageofchains height={h} head={head}",
+                        f"report key={'e5' * 16} name=impostor height={h} head={head} peer={aoc}"):
+                m = await ask(ws, bad)
+                check(m["status"] == "error" and "reserved" in m["error"]["message"], f"named node refused from elsewhere: {bad[:70]}")
+        async with connect(url, additional_headers={"X-Forwarded-For": "2.29.161.201"}) as ws:
+            json.loads(await ws.recv())
+            lo = min(r.hash_at())   # our lowest block: the node reports it is still down there
+            m = await ask(ws, f"report key={'e5' * 16} name=Age-of-Chains height={lo} head={r.hash_at()[lo]} tip=none kit=3 ref=668fbf4 peer={aoc}")
+            check(m["status"] == "ok" and m["data"]["agrees"] == "same", f"named node reports from its own address {m}")
+        row = next(n for n in (await community())[1]["nodes"] if n.get("known"))
+        check(row["name"] == "Age of Chains" and row["peer"] == aoc, f"/community shows the display name {row}")
+        board = json.loads((await get("/community/board"))[1])["nodes"]
+        check(any(b["name"] == "Age of Chains" and b["known"] for b in board), "board shows the display name")
+        kn = json.loads((await get("/peers"))[1])["known"]
+        k = next(x for x in kn if x["peer"] == aoc)
+        check(k["name"] == "Age of Chains" and k["reach"] == "online" and k["report"]["live"]
+              and k["sync"]["state"] == "catching_up" and k["sync"]["source"] == "report" and k["sync"]["behind"] > relay.SYNC_LAG,
+              f"/peers known: online by report, catching up, not synced {k}")
+        check(k["port"]["open"] is None and k["p2p"]["online"] is False, "no probe, no peer contact: those stay unknown")
 
         # the kit's heartbeat end to end: reads the (mock) node, reports to the relay
         os.environ.update(NODE_URL="ws://127.0.0.1:18765", REPORT_URL=url, NODE_NAME="kit-test",
