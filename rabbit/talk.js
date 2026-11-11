@@ -45,6 +45,7 @@
     marisol: {
       back: [
         ["pirateSight", "Black sails! Every fisherman on the square is whispering. In ten minutes this is the rumour of the year. In twenty, there are three versions."],
+        ["pirateHere+tPhantom", "A pirate tried to cancel a booking that never existed. That’s a rumour with a wallet. The chain looked, found nothing, and said no. I wish I could do that with gossip."],
         ["pirateHere+tImpostor", "One of the pirates wore a false moustache and paid from another pirate’s wallet. The chain checked the signature, not the moustache. Refused. I’m telling everyone."],
         ["pirateHere", "The pirates buy from the market by rope and basket. Nobody goes near the boat. Everybody watches it. That’s the café’s whole evening."],
         ["pirateAfter", "Everyone at the café has a pirate story now. Half of them weren’t there. The logbook was, so I believe the logbook."],
@@ -168,6 +169,7 @@
         ["pirateSight", "A ship! Not on my timetable! No flag I know, no answer to my horn. I’m putting on the uniform. Both uniforms."],
         ["pirateHere+dark", "They anchored in the dark and stayed aboard. No tenders, no welcome, no speech. My speech is still in my pocket. It’s a very good speech."],
         ["pirateHere", "Pirates at anchor, and not one of them came to the pier. I rang the bell anyway. They waved. I think they waved."],
+        ["pirateHere+tTaxman", "A pirate tried to tax every wallet on the island with one rule of his own. A wallet’s rule covers that wallet and nothing more. The chain refused him. I may frame the refusal."],
         ["pirateAfter", "Gone, without a word. I’ve added a page to the harbour book: ships that do not announce themselves. It’s a short page. One name."],
         ["pirateHere", "The pirates paid the landing fee at the pier. For a landing! They never land! I have been paid for nothing. I don’t know what to do with my hands."],
         ["pirateClean", "The harbour book, pirate page: arrived unannounced, paid the landing fee, never landed, every trick refused, left on time. The best-documented pirates on any sea."],
@@ -223,7 +225,7 @@
       ],
       ask: [
         { when: "pirates", q: "What are the pirates trying?", a: [["", "Paying more than they hold, sending the same payment twice, a payment whose time ran out, a signature from somebody else’s key. Each is a rule the chain checks on every payment, yours too. The pirates only check that it checks."]] },
-        { when: "pirateAfter", q: "What did the chain answer the pirates?", a: [["", "Each refusal has a name in the logbook. Insufficient funds, when the wallet is too poor. Invalid sequence, for a number already taken. Tx expired, when its time or its block deadline ran out. Invalid signature, for the wrong key. Fee limit too low, for no fee. Tx invalid or tx rejected, when the payment itself breaks the rules: the wrong payer, too big, too many transfers. The class has them all on the wall."]],
+        { when: "pirateAfter", q: "What did the chain answer the pirates?", a: [["", "Each refusal has a name in the logbook. Insufficient funds, when the wallet is too poor. Invalid sequence, for a number already taken. Tx expired, when its time or its block deadline ran out. Invalid signature, for the wrong key. Fee limit too low, for no fee. Tx invalid or tx rejected, when the payment itself breaks the rules: the wrong payer, too big, too many transfers. And every time the pirates find a new door, the class adds a new name to the wall."]],
           more: { q: "Why does the chain give a reason at all?", a: [["", "So that anyone can see why. A plain no teaches nothing. A no with a reason is a lesson, and the chain gives one with every payment it turns down. Yours too."]] } },
         { when: "ship", q: "What do you think of the cruise ships?", a: [["", "Curious visitors are a gift. Crowds are weather. The Wednesday ship brings questions, the Saturday ship brings hats. I like both, but only one fits in a classroom."]],
           more: { q: "Would you stop the big ships if you won?", a: [["", "No. I would write down what they cost the reef and what they bring the island, side by side, where everyone can read it. Then the island decides. That is the whole lesson, really."]] } },
@@ -238,6 +240,7 @@
       back: [
         ["pirateSight", "Dark ship near the reef, and no mooring request. The sensors have started signing every reading twice. Nervous sensors. Or just thorough."],
         ["pirateHere", "The pirates stay off the reef, which I respect. The turtle has gone deeper anyway. She doesn’t trust a ship without a timetable."],
+        ["pirateHere+tLate", "A pirate tried to take back his booking after its time was up. Like trying to un-dive once you’re already in the water. The chain said too late. Refused."],
         ["pirateNext", "The turtle is back in the shallows. She watched the black ship leave and decided the reef is hers again. She is right about that."],
         ["shipGone+shipQuiet", "Some of today’s sends got no answer in time. Not a no, just a long silence. The ship waited, slowed down and carried on. I’d do the same on a dive."],
         ["shipNear+dryrun", "The expedition ship is coming! Divers who read the briefing. The reef will love them. The turtle is already doing her hair."],
@@ -406,6 +409,7 @@
     salado: {
       back: [
         ["pirateSight", "A ship without a booking! No escrow, no reservation, no towels! I don’t know whether to panic or send a brochure."],
+        ["pirateHere+tStranger", "A pirate tried to cancel another pirate’s booking! In my business that is called sabotage. The chain calls it the wrong sender. Refused. I love this chain. It respects a reservation."],
         ["pirateHere", "I sent the pirates a brochure. They didn’t come up. Nobody comes up to a spa from a pirate ship. My investors say that is a gap in the market. It is a gap in the sea."],
         ["pirateAfter", "They never came up to the spa. Pirates. My investors asked if they could be a new market. I said: only if they learn to pay from their own wallets."],
         ["pirateNext", "Still no pirates at the spa. Not one booking. So I made a pirate package: towel, eye patch, rum massage. My investors think it is a joke. It is a business model."],
@@ -463,7 +467,7 @@
        pirateSight     in sight or waiting off the reef     pirateHere   at anchor (her crew stays aboard)
        pirateGone      left, that evening    pirateNext   the day after    pirateAfter   either    pirateCut   left early
        pirateClean     every trick she tried was refused (never while a trick that got through is held back)
-       tOverspend tReplay tExpired tStale tForged tImpostor tFreeride tGiant tDouble tPoison tCram tGovernance   that trick was refused at least once (live, or
+       tOverspend tReplay tExpired tStale tForged tImpostor tFreeride tGiant tDouble tPoison tCram tGovernance tTaxman tStranger tPhantom tLate   that trick was refused at least once (live, or
                        after the visit); a trick that got through is never a fact, so no line names it
      The visit under way counts first, then one that ended today, then the next call. Nothing while the ships are
      switched off (the relay announces no call then) or the relay cannot be reached: nobody talks about a ship that will not come. */
@@ -475,7 +479,8 @@
   };
   /* the pirates' eight tricks (relay cruise.py TRICKS), as facts once the chain refused one: what a line may name */
   const TRICKF = { overspend: "tOverspend", replay: "tReplay", expired: "tExpired", stale: "tStale", forged: "tForged", impostor: "tImpostor", freeride: "tFreeride", giant: "tGiant",
-    double: "tDouble", poison: "tPoison", cram: "tCram", governance: "tGovernance" };
+    double: "tDouble", poison: "tPoison", cram: "tCram", governance: "tGovernance",
+    taxman: "tTaxman", stranger: "tStranger", phantom: "tPhantom", late: "tLate" };
   const WHEN = ["ship", "queen", "dryrun", "shipSoon", "shipTomorrow", "shipToday", "shipNear", "shipHere", "shipGone", "shipCut", "shipAfter",
     "shipSkipped", "shipQuiet", "shipClean", "shipTuned",
     "pirates", "pirateSight", "pirateHere", "pirateGone", "pirateNext", "pirateAfter", "pirateCut", "pirateClean", ...Object.values(TRICKF)];
