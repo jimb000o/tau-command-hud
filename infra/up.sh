@@ -8,7 +8,7 @@
 #              up touch canoe-camp  the same, then two versions of the island with those changes, to look at (not live)
 #              up touch beach 28    the same, from island 28 of the drafts instead of the live island
 #              up keep 27 canoe camp  the same, then island 27 live and those rooms painted anew to match it
-#              up blog       the blog drafts waiting (nothing rebuilt); up blog publish <id>  puts one on tauhud.com/blog/
+#              up blog       the blog drafts waiting (the blog service rebuilt, node untouched); up blog publish <id>  puts one on tauhud.com/blog/
 #                            and posts it once to Telegram and X; up blog draft <visit>  writes that visit's draft anew
 #              up bust salado  the same, then that portrait (or several) painted anew, talking and blinking too (1 min each);
 #                            up bust --recut salado  cuts the kept painting out again, paints nothing;
@@ -466,7 +466,8 @@ fi
 if [ "${1:-}" = "blog" ]; then
   shift
   [ -n "${1:-}" ] || set -- drafts
-  docker compose up -d blog >/dev/null 2>&1 || true
+  # rebuilt with the code just pulled (safe any time, the node left alone; nothing changes when the code did not)
+  docker compose up -d --no-deps --build blog >/dev/null 2>&1 || docker compose up -d blog >/dev/null 2>&1 || true
   docker compose exec -T blog python blog.py "$@"
   exit $?
 fi

@@ -374,7 +374,8 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
   live overview from the share service, a new page's screenshot (`"image": "/assets/shots/<id>.png"` in its
   `major`, required by CI for every new major), else its own preview picture, else the site's; the post stays
   $0.015, and without a picture the text goes alone.
-- No links in X posts (`X_LINKS=true` adds them); `X_DAILY_CAP` (8) and `X_MONTHLY_CAP` (240, about
+- No links in X posts (`X_LINKS=true` adds them), except the blog's one post per article, which carries the
+  share page's link ($0.20 instead of $0.015; its card shows the picture; `X_BLOG_LINK=false` leaves it out); `X_DAILY_CAP` (8) and `X_MONTHLY_CAP` (240, about
   $3.60) posts at most, the rest stays on Telegram. The simulation and the smaller changes leave the
   day's last `X_RESERVE` (2) posts for the real chain. An X failure never holds up Telegram; it is
   logged and that X post is left out.
