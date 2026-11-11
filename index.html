@@ -1653,6 +1653,13 @@ function nodeHealth(n) {
     if (d > 5) return verdict("watch", `Watch: ${fmt(d)} blocks behind the newest block; catching up.`);
     return verdict("ok", liveChain() ? `Normal: live and in step with the network at block #${fmt(S.height)}.` : "Normal: in step with the newest simulated block.");
   }
+  if (n.kind === "known") {   // a named node: reach and sync as the relay checked them, nothing guessed
+    if (!n.online) return verdict("watch", "Watch: not reachable right now (no open P2P port, no contact, no heartbeat).");
+    if (n.sync === "synced") return verdict("ok", "Normal: reachable and in sync; its block hash matches ours.");
+    if (n.sync === "catching_up") return verdict("watch", `Watch: reachable, catching up${n.behind != null ? `, ${fmt(n.behind)} blocks behind` : ""}.`);
+    if (n.sync === "other_chain") return verdict("watch", "Watch: reachable, but on a different chain than ours.");
+    return verdict("watch", "Watch: reachable; whether it is in sync is not known yet (its heartbeat does not report).");
+  }
   if (n.agrees === false && Math.abs(d) <= 5) return verdict("watch", "Watch: at the same height, but on a different head than ours.");
   if (Math.abs(d) > 5) return verdict("watch", d > 0 ? `Watch: ${fmt(d)} blocks behind the newest block.` : `Watch: ${fmt(-d)} blocks ahead of ours.`);
   return verdict("ok", "Normal: in step with the chain.");
@@ -2892,13 +2899,22 @@ async function pollNodes() {
     for (const n of Array.isArray(j.nodes) ? j.nodes : []) list.push({ kind: "kit", name: String(n.name || "node"), height: Number(n.height) || 0, head: n.head || "", agrees: n.agrees !== false, age: Number(n.age_seconds) || 0, you: !!n.you });
     try {   // peers our node met or heard of in the last day (GET /peers): the bootnode is the validator, already on its orbit; kit nodes are already listed above
       const pj = await (await get("/peers")).json(), now = Date.now() / 1000, kits = new Set(list.map(n => n.name));
+      // named nodes (relay knownnodes.py): always on the orbit, with what the relay checked; their kit and peer rows are left out
+      const known = Array.isArray(pj.known) ? pj.known : [], knownIds = new Set(known.map(k => String(k.peer)));
+      for (let i = list.length - 1; i >= 0; i--) if (list[i].kind === "kit" && known.some(k => k.name === list[i].name)) list.splice(i, 1);
+      for (const k of known) {
+        const sy = k.sync || {}, last = Math.max((k.p2p && k.p2p.talked) || 0, (k.report && k.report.last) || 0, (k.port && k.port.open ? k.port.checked : 0) || 0);
+        list.push({ kind: "known", id: String(k.peer || ""), name: String(k.name || "node"), height: Number(sy.height) || 0, head: "",
+                    online: k.reach === "online", sync: String(sy.state || "unknown"), behind: sy.behind ?? null,
+                    agrees: sy.state === "synced" ? true : sy.state === "other_chain" ? false : null, age: last ? Math.max(0, now - last) : 0 });
+      }
       for (const n of Array.isArray(pj.peers) ? pj.peers : []) {
-        if (n.label || (n.community && kits.has(String(n.community.name)))) continue;
+        if (n.label || knownIds.has(String(n.id)) || (n.community && kits.has(String(n.community.name)))) continue;
         const last = Number(n.last_seen) || 0; if ("online" in n ? !n.online : (!last || now - last > 86400)) continue;   // the relay's steady "online" flag when it has one, else seen in the last day
         const ph = Number(n.head) || 0, ref = j.reference ? Number(j.reference.tip) || Number(j.reference.height) || 0 : 0;   // a peer's "head" is its tip height, not a hash
         list.push({ kind: "peer", id: String(n.id || ""), name: n.known ? String(n.known) : "", height: ph, head: "", agrees: ph && ref ? Math.abs(ph - ref) <= 2 : null, age: Math.max(0, now - last), first: Number(n.first_seen) || null, connected: !!n.connected });
       }
-    } catch { if (NET.src === feed) list.push(...NET.nodes.filter(n => n.kind === "peer")); }   // one slow /peers answer must not empty the orbit: keep the last good peer list
+    } catch { if (NET.src === feed) list.push(...NET.nodes.filter(n => n.kind === "peer" || n.kind === "known")); }   // one slow /peers answer must not empty the orbit: keep the last good peer list
     if (feed !== (S.simfeed ? "sim" : "live") || S.mode !== "live") return;   // the feed changed while we waited: this answer belongs to the old one
     NET.nodes = list; NET.at = Date.now(); NET.src = feed;
   } catch {} finally { clearTimeout(t); }
@@ -3597,15 +3613,16 @@ function draw(tm) {
     // nodes sit in the gaps between validators (one per gap, then a second round), never on a validator's radial, so no two labels crowd
     const Vn = S.validators.length || 1, rounds = Math.ceil(nodes.length / Vn), gap = Math.PI * 2 / Vn;
     const a = -Math.PI / 2 + .35 + (i % Vn) * gap + (Math.floor(i / Vn) + 1) * gap / (rounds + 1) + t * .04, x = Math.cos(a) * NR, y = Math.sin(a) * NR;   // and the whole orbit turns slowly, one round in about two and a half minutes
-    const al = n.kind === "hud" ? .95 : n.kind === "kit" ? .75 : .45, got = S.pulse > 0 && S.pulse < .2 ? (.2 - S.pulse) / .2 : 0;   // got: the new block just arrived here
+    const big = n.kind === "hud" || (n.kind === "known" && n.online && n.sync === "synced");   // a named node online and in sync looks like ours
+    const al = big ? .95 : n.kind === "kit" || (n.kind === "known" && n.online) ? .75 : .45, got = S.pulse > 0 && S.pulse < .2 ? (.2 - S.pulse) / .2 : 0;   // got: the new block just arrived here
     if (S.pulse > 0) { const q = Math.min(1, (1 - S.pulse) * 1.25), k = .30 + (NR / C - .30) * q; cx.fillStyle = `rgba(57,255,138,${S.pulse})`; cx.beginPath(); cx.arc(x * k / (NR / C), y * k / (NR / C), 4.5, 0, Math.PI * 2); cx.fill(); }   // the sealed block travels out to every node
     // our own node breathes a soft green while it reads the real chain: alive, not alarmed (green stays the one accent; simulation stays grey)
-    const liveHud = n.kind === "hud" && S.mode === "live" && !S.simfeed && PRESENCE.up, br = liveHud ? .5 + .5 * Math.sin(t * 1.6) : 0;
-    dotShadow(x, y, n.kind === "hud" ? 10 : 8, C);
-    cx.beginPath(); cx.arc(x, y, n.kind === "hud" ? 10 : 8, 0, Math.PI * 2);
+    const liveHud = big && S.mode === "live" && !S.simfeed && PRESENCE.up, br = liveHud ? .5 + .5 * Math.sin(t * 1.6) : 0;
+    dotShadow(x, y, big ? 10 : 8, C);
+    cx.beginPath(); cx.arc(x, y, big ? 10 : 8, 0, Math.PI * 2);
     if (got) { cx.fillStyle = `rgba(57,255,138,${got * .55})`; cx.fill(); }
     else if (liveHud) { cx.fillStyle = `rgba(57,255,138,${.10 + .22 * br})`; cx.fill(); }
-    cx.lineWidth = 2.5; cx.strokeStyle = got ? `rgba(57,255,138,${.5 + got * .5})` : liveHud ? `rgba(57,255,138,${.55 + .35 * br})` : `rgba(${cyan},${al})`; cx.shadowColor = got || liveHud ? "rgb(57,255,138)" : `rgb(${cyan})`; cx.shadowBlur = got ? 12 : liveHud ? 8 + 12 * br : n.kind === "hud" ? 12 : 0; cx.stroke(); cx.shadowBlur = 0;
+    cx.lineWidth = 2.5; cx.strokeStyle = got ? `rgba(57,255,138,${.5 + got * .5})` : liveHud ? `rgba(57,255,138,${.55 + .35 * br})` : `rgba(${cyan},${al})`; cx.shadowColor = got || liveHud ? "rgb(57,255,138)" : `rgb(${cyan})`; cx.shadowBlur = got ? 12 : liveHud ? 8 + 12 * br : big ? 12 : 0; cx.stroke(); cx.shadowBlur = 0;
     if (n.you) { cx.save(); cx.setLineDash([4, 5]); cx.lineWidth = 2; cx.strokeStyle = "rgba(57,255,138,.8)"; cx.beginPath(); cx.arc(x, y, 15, 0, Math.PI * 2); cx.stroke(); cx.restore(); }   // your own node: a green halo
     // every name stays whole and on one line inside the canvas: beside the dot where it fits, else centred above or below it
     const inside = (lw, lx) => { const lim = C - (lw + 24) / 2 - 6; return Math.max(-lim, Math.min(lim, lx)); };
@@ -3622,6 +3639,9 @@ function draw(tm) {
     hit(x, y, 24, () => nodeHealth(n) + (n.kind === "hud"
       ? vt(`Tau HUD’s node: serves this page and checks every block, at #${fmt(n.height)}.\nClick to open the Nodes page.`,
            `tauhud.com: the relay’s upstream node at #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}; verifies every block, seals none.\nClick to open the Nodes page.`)
+      : n.kind === "known"
+      ? vt(`${n.name}: ${n.online ? "reachable" : "not reachable right now"}, ${({ synced: "in sync with the chain", at_height: "at our height (not hash-checked yet)", catching_up: `catching up${n.behind != null ? ", " + fmt(n.behind) + " blocks behind" : ""}`, other_chain: "on another chain", ahead: "ahead of ours" })[n.sync] || "sync not known yet"}.\nClick to open the Nodes page.`,
+           `${n.name} (named node, ${n.id.slice(0, 8)}…${n.id.slice(-4)}): reach ${n.online ? "online" : "not online"}, sync ${n.sync}${n.height ? " at #" + fmt(n.height) : ""}; in sync only when its heartbeat's block hash matches ours.\nClick to open the Nodes page.`)
       : n.kind === "kit"
       ? vt(`${n.name}: a community node (node kit) at #${fmt(n.height)}, last report ${age}.\nClick to open the Nodes page.`,
            `${n.name} (node kit): #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}, reported ${age}.\nClick to open the Nodes page.`)
