@@ -339,20 +339,26 @@ check(len(cruise.plan("pirates", TUE, set(), {"trick"}, {k: 1 for k in cruise.TR
 check(C.next_call(TUE - 3600)[1] == "pirates" and C.next_call(TUE - 3600, surprise=False)[1] == "dryrun",
       "the pirates come unannounced: the next call named to pages and posts is the one after them")
 
-CH = {"seq": {}, "hole": False, "sent": []}
+CH = {"seq": {}, "hole": False, "sent": [], "ret": {}}
 
 
 async def chain(cmd: str):
-    """A fake node that checks what the real one checks for these tricks (tau-testnet commands/sendtx.py)."""
+    """A fake node that checks what the real one checks for these tricks (tau-testnet commands/sendtx.py, consensus/admission.py)."""
     name, _, rest = cmd.partition(" ")
     if name == "getsequence":
         return {"status": "ok", "data": {"sequence_number": CH["seq"].get(rest, 0), "tip_height": 900}}
     if name == "getbalance":
         return {"status": "ok", "data": {"balance": 100000}}
+    if name == "getretractables":   # the bookings in a block (not the mempool) for that sender
+        owner = rest.split()[0]
+        out = [{"retractable_id": rid, "recipient_pubkey": r["recipient"], "release_at_time": r["release"]}
+               for rid, r in CH["ret"].items() if r["owner"] == owner and not r.get("gone")]
+        return {"status": "ok", "data": {"retractables": out}}
     if name != "sendtx":
         return {"status": "ok", "data": {"retractables": []}}
     tx = json.loads(rest)
-    pk = tx["sender_pubkey"]
+    pk, t = tx["sender_pubkey"], tx["tx_type"]
+    rid = hashlib.sha256(rest.encode()).hexdigest()
     err = lambda c: {"status": "error", "error": {"code": c, "message": c.lower()}}  # noqa: E731
     if tx["expiration_time"] < T[0] or tx["expire_at_height"] <= 901:
         return err("TX_EXPIRED")
@@ -360,23 +366,37 @@ async def chain(cmd: str):
         return err("INVALID_SEQUENCE")
     if not G2Basic.Verify(bytes.fromhex(pk), hashlib.sha256(cruise.signing_bytes(tx)).digest(), bytes.fromhex(tx["signature"])):
         return err("INVALID_SIGNATURE")
-    ops = tx.get("operations", {}).get("1", []) if tx["tx_type"] == "user_tx" else []
-    if tx["tx_type"] == "user_tx" and "rule_revisions" in tx:
-        return err("TX_REJECTED")
-    if len(ops) > 64:
-        return err("TX_INVALID")
-    if any(x[0] != pk for x in ops):
-        return err("TX_INVALID")
-    if any(int(x[2]) > (1 << 24) - 1 for x in ops):
-        return err("TX_INVALID")
-    if tx["tx_type"] == "user_tx" and int(tx["fee_limit"]) < 1:
-        return err("FEE_LIMIT_TOO_LOW")
-    amount = sum(int(x[2]) for x in ops) if tx["tx_type"] == "user_tx" else int(tx.get("amount") or 0)
-    if amount > 100000 and not (CH["hole"] and len(ops) <= 1):   # the modelled hole only lets a single-transfer overspend slip
-        return err("INSUFFICIENT_FUNDS")
+    ops = tx.get("operations", {}).get("1", []) if t == "user_tx" else []
+    if t == "user_tx":
+        rule = (tx.get("operations") or {}).get("0")
+        if isinstance(rule, str) and any(s in rule for s in ("o5", "o8")) and not any(s in rule for s in ("i12", "i3")):   # admission.py ~391
+            return err("UNSCOPED_USER_RULE")
+        if "rule_revisions" in tx:
+            return err("TX_REJECTED")
+        if len(ops) > 64:
+            return err("TX_INVALID")
+        if any(x[0] != pk for x in ops):
+            return err("TX_INVALID")
+        if any(int(x[2]) > (1 << 24) - 1 for x in ops):
+            return err("TX_INVALID")
+        if int(tx["fee_limit"]) < 1:
+            return err("FEE_LIMIT_TOO_LOW")
+        if sum(int(x[2]) for x in ops) > 100000 and not (CH["hole"] and len(ops) <= 1):   # the modelled hole only lets a single-transfer overspend slip
+            return err("INSUFFICIENT_FUNDS")
+    elif t == "retractable_transfer":   # a booking: kept, in a block at once for the test, listed by getretractables
+        CH["ret"][rid] = {"owner": pk, "release": int(tx.get("release_at_time") or 0), "recipient": tx.get("recipient_pubkey")}
+    elif t == "retract_transfer":   # the retract screens, in order (admission.py validate_retract_transfer_payload ~1409)
+        row = CH["ret"].get(tx.get("retractable_id"))
+        if row is None:
+            return err("UNKNOWN_RETRACTABLE")
+        if row["owner"] != pk:
+            return err("NOT_RETRACTABLE_SENDER")
+        if T[0] >= row["release"]:
+            return err("RETRACT_TOO_LATE")
+        row["gone"] = True   # a retract in time resolves the booking
     CH["seq"][pk] = CH["seq"].get(pk, 0) + 1
     CH["sent"].append(tx)
-    return {"status": "ok", "data": {"ok": True, "tx_hash": hashlib.sha256(rest.encode()).hexdigest()}}
+    return {"status": "ok", "data": {"ok": True, "tx_hash": rid, "retractable_id": rid if t == "retractable_transfer" else None}}
 
 
 pd = tempfile.mkdtemp()
@@ -393,8 +413,9 @@ tricks = [e for e in P.logbook if e.get("kind") == "trick" and e.get("ok") is no
 check(s1["ship"] == "pirates" and not P.visits[-1]["note"], "the pirate ship stays the whole visit: refused tricks never send it away")
 check(len(tricks) >= 28 and all(e["ok"] is False and e["right"] for e in tricks),
       f"every trick is refused by the chain, each with the answer it should get ({len(tricks)} tricks)")
-check({e["code"] for e in tricks} == {"INSUFFICIENT_FUNDS", "INVALID_SEQUENCE", "TX_EXPIRED", "INVALID_SIGNATURE", "TX_INVALID", "FEE_LIMIT_TOO_LOW", "TX_REJECTED"}
-      and {e["trick"] for e in tricks} == set(cruise.TRICKS), f"{len(cruise.TRICKS)} tricks, every one refused, seven different answers")
+check({e["code"] for e in tricks} == {"INSUFFICIENT_FUNDS", "INVALID_SEQUENCE", "TX_EXPIRED", "INVALID_SIGNATURE", "TX_INVALID", "FEE_LIMIT_TOO_LOW", "TX_REJECTED",
+                                      "UNSCOPED_USER_RULE", "NOT_RETRACTABLE_SENDER", "UNKNOWN_RETRACTABLE", "RETRACT_TOO_LATE"}
+      and {e["trick"] for e in tricks} == set(cruise.TRICKS), f"{len(cruise.TRICKS)} tricks, every one refused, eleven different answers")
 check(all(x is True for x in LOADS) and sum(s1["refused"].values()) == 0, "tricks are no refusals: not for the brakes, not on the load page")
 check(all(c["right"] == c["tried"] > 0 for c in s1["tricks"].values()), "the summary counts each trick: tried, stopped, stopped for the right reason")
 check(s1["per_min"] == cruise.RATE and [c for c in s1["changed"] if c["what"] != "stops planned a minute"] == [],
