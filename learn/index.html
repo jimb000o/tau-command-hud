@@ -276,6 +276,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
 .asked button:hover { background: rgba(57,255,138,.08); }
 .asked a { color: var(--dim); font: 12px var(--mono); }
 .asked a:hover { color: #fff; }
+.asked .from { color: var(--dim); font: 12px var(--mono); }
 .asked .res { font: 13px/1.5 var(--mono); color: var(--text); margin: 0 0 8px; font-variant-ligatures: none; }
 .asked .res b { color: var(--ok); } .asked .res b.f { color: #ff9aa9; }
 .gside h2.gh2 { margin-top: 16px; }
@@ -865,11 +866,24 @@ function renderAsked(list) {
         });
         row.append(b);
       }
-      const l = document.createElement("a"); l.href = "https://www.youtube.com/watch?v=" + encodeURIComponent(a.video) + (a.t > 0 ? "&t=" + Math.floor(a.t) + "s" : ""); l.target = "_blank"; l.rel = "noopener";
-      l.textContent = T("IDNI's Q&A video") + " " + a.when + " ↗"; row.append(l);
+      if (a.video) {
+        const l = document.createElement("a"); l.href = "https://www.youtube.com/watch?v=" + encodeURIComponent(a.video) + (a.t > 0 ? "&t=" + Math.floor(a.t) + "s" : ""); l.target = "_blank"; l.rel = "noopener";
+        l.textContent = T("IDNI's Q&A video") + " " + a.when + " ↗"; row.append(l);
+      } else if (a.from === "chat") {
+        const s = document.createElement("span"); s.className = "from"; s.textContent = T("Asked in our chat") + " " + a.when; row.append(s);
+      }
+      if (a.id) d.dataset.ask = a.id;
       box.append(d);
     });
   });
+  /* #ask opens the People ask tab, #ask-<id> also opens that question (the Missions page links here) */
+  const am = /^#ask(?:-([a-z0-9-]+))?$/.exec(location.hash);
+  if (am) {
+    const tb = document.querySelector('.tabs button[data-tab="ask"]'); if (tb) tb.click();
+    if (am[1]) document.querySelectorAll('[data-ask="' + am[1] + '"]').forEach(d => { d.open = true; });
+    const vis = [...document.querySelectorAll('[data-ask="' + (am[1] || "") + '"]')].find(d => d.offsetParent);
+    if (vis) setTimeout(() => vis.scrollIntoView({ block: "nearest" }), 60);
+  }
 }
 
 /* ---- community lessons (assets/community-lessons.json); the tab appears once a checked video exists ---- */
@@ -891,7 +905,7 @@ document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click
 setOp("sat");
 const h = location.hash;
 full = h.startsWith("#q=");
-if (store.get().level !== undefined || h.startsWith("#q=")) applyLevel(store.get().level || "");   // came back, or follows a shared link: no door
+if (store.get().level !== undefined || h.startsWith("#q=") || h.startsWith("#ask")) applyLevel(store.get().level || "");   // came back, or follows a shared link: no door
 else openDoor();
 fetch("lessons.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
   allLessons = d.lessons || []; pickLessons(); guide = d.guide || []; renderAsked(d.asked || []); gAt = Math.min(store.get().g || 0, guide.length);

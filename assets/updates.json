@@ -2874,5 +2874,10 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-10",
     "html": "White Rabbit Key: the islanders and Radio Coco now talk about the pirates' evening. New voiced lines for each trick the chain refused, for the evening when every trick was turned away and for the day after, a new question for Hana about the chain's answers, why the tricks never reach a block, and two new phone-in calls."
+  },
+  {
+    "tag": "Learn",
+    "on": "2026-11-11",
+    "html": "Learn: a visitor asked in our chat whether Tau can do percentage fees or recurring payments. The answer is now on /learn/ under People ask, with a button that runs a 1 % fee on the real Tau engine: a rule on your own wallet can add a fee worked out from the amount, but no rule can start a payment yet, so the nearest thing to a standing order is a timed payment that pays itself out. Whoever finishes all six Missions now sees what a rule can and cannot do today, and No Memo can ask for a 1 % cut in Write the rule."
   }
 ]

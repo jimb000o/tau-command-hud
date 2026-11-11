@@ -1953,6 +1953,7 @@
     [["width", "amount width", "24 bits", "2^24"], "Amount width", "An amount is 24 bits wide here: 16,777,215 at most. 2^24 = 16,777,216 is not even read: TX_INVALID or INVALID_PARAMS."],
     [["order", "order of checks", "first check"], "Order of checks", "A payment wrong in two ways is refused for one of them: the node answers with the first check it fails. Which check comes first is the node’s own order; its answer shows it."],
     [["testnet", "tau", "chain"], "Tau Testnet Alpha", "IDNI’s public test chain. Its coins have no value; it is there to be tested. This game is one way to test it, together with every other player."],
+    [["recurring", "standing order", "subscription", "percent", "percentage"], "Standing orders and percent", "Tau Testnet Alpha has no standing orders yet: a rule can let a payment through or stop it, never start one. The nearest thing is the way back turned around: timed payments that pay themselves out at a set block or time, up to 16 open per wallet and 90 days ahead, each yours to take back until then. A percentage works only as a fee on your own payments, worked out from the amount; it goes to whoever seals the block."],
   ];
   /* rule: the chain's rules, taken apart token by token */
   async function ruleCmd() {
@@ -2024,6 +2025,8 @@
       steps: [{}, {}, {}], out: () => 0, shapes: ["o1[t]={0}", "o1[t]=0"] },
     max: { brief: "Write a spec where output o1 is always the bigger of inputs i1 and i2, 8-bit bitvectors.", hint: "max(x, y) is built in for bitvectors",
       steps: [{ i1: "5", i2: "9" }, { i1: "200", i2: "7" }, { i1: "3", i2: "3" }], out: i => Math.max(i.i1, i.i2), shapes: ["o1[t]=max(i1[t],i2[t])", "o1[t]=max(i2[t],i1[t])"] },
+    cut: { brief: "Write a spec where output o1 is always one percent of input i1, rounded down, both 24-bit bitvectors: the cut a fee rule takes from an amount.", hint: "/ divides bitvectors and rounds down; a hundred is {100}:bv[24]",
+      steps: [{ i1: "1000" }, { i1: "250" }, { i1: "99" }], out: i => Math.floor(i.i1 / 100), shapes: ["o1[t]=i1[t]/{100}"] },
   };
   /* the shape of a line, for the offline check: no spaces, no types, no G( ), no final dot */
   const shapeOf = line => { let x = line.replace(/\s+/g, "").replace(/\.$/, "").replace(/:bv\[\d+\]/g, ""); if (/^G\(.*\)$/.test(x)) x = x.slice(2, -1); else if (/^G/.test(x)) x = x.slice(1); if (/^\(.*\)$/.test(x)) x = x.slice(1, -1); return x; };

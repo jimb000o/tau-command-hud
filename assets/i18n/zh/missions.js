@@ -212,4 +212,15 @@ TauI18n.add({ strings: {
   "You sealed block #{n}: your stake earned the turn.": "你封装了区块 #{n}：你的质押为你赢得了这个轮次。",
 
   "✓ {x}": "✓ {x}",
+  "What now?": "接下来做什么？",
+  "You changed the rules of a chain by agreement. A rule on your own wallet on the real testnet can do this today:": "你已经通过共识改变了一条链的规则。在真实测试网上，你自己钱包上的规则今天可以做到：",
+  "let your payments through or stop them, by amount, recipient or time": "按金额、收款人或时间放行或拦下你的付款",
+  "add a fee worked out from the amount, such as 1 %": "加一笔按金额算出的费用，比如 1 %",
+  "send a payment that pays itself out at a set block or time, and that you can take back until then": "发出一笔在设定区块或时间自动付出的付款，在那之前你都可以收回",
+  "Not yet: a rule cannot start a payment, so there are no standing orders, and it cannot take a cut of other people’s payments.": "还不行：规则不能发起付款，所以没有定期付款；它也不能从别人的付款里抽成。",
+  "Try a 1 % fee in Tau": "用 Tau 试试 1 % 的费用",
+  "Test a rule against the testnet’s checks": "用测试网自己的检查来测试规则",
+  "Play the testnet in No Memo": "在 No Memo 里玩测试网",
+  "“I tried the 6 missions and it was really an eye opener!”": "“我试了这 6 个任务，真的让我大开眼界！”",
+  "A visitor in the tauhud chat, November 2026": "tauhud 聊天室里的一位访客，2026 年 11 月"
 } });
