@@ -36,6 +36,7 @@ KNOWN: dict[str, dict] = {
 PROBE_SECONDS = 300      # one TCP connect per known node every 5 minutes
 PROBE_TIMEOUT = 5.0
 PROBE_FRESH = 3 * PROBE_SECONDS   # a probe result older than this says nothing any more
+SAME_FRESH = 600         # a node whose head matched ours this recently and is at most `lag` blocks ahead is in sync
 
 
 def _fold(name: str) -> str:
@@ -131,6 +132,8 @@ def state(pid: str, peer_row: dict | None, report: dict | None, board_row: dict 
             sync["behind"] = max(0, ours - h)
         if agrees == "different":
             sync["state"] = "other_chain"
+        elif agrees == "ahead" and ours is not None and h - ours <= lag and report.get("same_at") and now - report["same_at"] <= SAME_FRESH:
+            sync["state"] = "synced"   # a block or two past our relay, which has not polled that block yet; its head matched ours lately
         elif agrees == "ahead":
             sync["state"] = "ahead"
         elif agrees == "same" and ours is not None and ours - h <= lag:
