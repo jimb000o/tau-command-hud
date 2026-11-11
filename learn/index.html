@@ -7,13 +7,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Learn Tau Language</title>
-<meta name="description" content="Try Tau Language in your browser: type a formula and a real Tau engine answers. Five short lessons from yes or no to a real testnet rule, then install tau yourself. Unofficial, not affiliated with IDNI.">
+<meta name="description" content="Try Tau Language in your browser: type a formula and a real Tau engine answers. Eight short lessons from yes or no to real testnet rules and their traps, then install tau yourself. Unofficial, not affiliated with IDNI.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#09090a">
 <meta property="og:title" content="Tau HUD · Learn Tau Language">
-<meta property="og:description" content="Type a formula, a real Tau engine answers. Five short lessons, then a real testnet rule.">
+<meta property="og:description" content="Type a formula, a real Tau engine answers. Eight short lessons, up to real testnet rules and their traps.">
 <meta property="og:image" content="https://tauhud.com/assets/og/hud.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -298,7 +298,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
   <nav class="tnav" data-page="taulang" aria-label="Pages and tools"></nav>
   <div>
     <p class="lead">Learn Tau Language. Try it right here.</p>
-    <p class="sub">Every rule on the Tau testnet is a <b>Tau specification</b>. Type a formula and the Tau engine on our server answers in a few seconds. Five short lessons take you from yes or no to a real testnet rule. No install, no wallet, no node.</p>
+    <p class="sub">Every rule on the Tau testnet is a <b>Tau specification</b>. Type a formula and the Tau engine on our server answers in a few seconds. Eight short lessons take you from yes or no to real testnet rules and their traps. No install, no wallet, no node.</p>
   </div>
   <main class="main">
     <div class="col trycol">
@@ -350,7 +350,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
     </div>
     <div class="col">
       <section class="panel lesson" aria-labelledby="hLes">
-        <h2 id="hLes">Five short lessons</h2>
+        <h2 id="hLes">8 short lessons</h2>
         <p class="pro-note" id="newNote" hidden><button type="button" class="backg" id="gReturn">‹ Back to the step-by-step guide</button></p>
         <p class="pro-note" id="proNote" hidden>Lessons 1 to 4 are the basics, lesson 5 is a real testnet rule, and 6 to 8 are for logic people: terms, quantifiers and how sat treats inputs. Then the <a href="/playground/">Rule Playground ›</a>.</p>
         <div class="chips"><span id="chips" role="tablist" aria-label="Lessons"></span><button type="button" id="lNext">Next ›</button></div>
@@ -728,7 +728,7 @@ function openLesson(i) {
   $("lTask").textContent = " " + T(l.task.text);
   $("tVerdict").textContent = ""; $("tVerdict").className = "verdict";
   $("lNext").hidden = cur === lessons.length - 1;
-  $("lPlay").hidden = cur !== lessons.length - 1 && l.id !== "rule";
+  $("lPlay").hidden = cur !== lessons.length - 1 && !["rule", "open", "cases", "reads"].includes(l.id);   // the rule lessons: the Playground's X-ray shows the same for any rule
   chips();
   try { const u = new URL(location.href); if (!u.hash.startsWith("#q=")) { u.hash = "l" + (cur + 1); history.replaceState(null, "", u.href); } } catch (e) {}
 }
@@ -763,7 +763,8 @@ let guide = [], gAt = 0, gBusy = false, allLessons = [];
 function pickLessons() {
   lessons = allLessons.filter(l => !l.level || l.level === level);
   cur = Math.min(cur, Math.max(0, lessons.length - 1));
-  $("hLes").textContent = lessons.length > 5 ? T("Five lessons, then three for logic people") : T("Five short lessons");
+  const pro = lessons.filter(l => l.level === "pro").length, base = lessons.length - pro;
+  $("hLes").textContent = pro ? T(`${base} lessons, then ${pro} for logic people`) : T(`${base} short lessons`);
 }
 const LEAD = { lead: "", sub: "" };
 function setView() {
