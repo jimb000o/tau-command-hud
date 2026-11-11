@@ -2904,5 +2904,10 @@
     "tag": "Donations",
     "on": "2026-11-11",
     "html": "Donations: the page now leads with how much of the site's costs donations cover so far, as a share, a bar and the amount not covered, plus a bar for this month. The chart shows costs in their own colour with the gap between costs and donations shaded, and the monthly costs as one figure."
+  },
+  {
+    "tag": "Donations",
+    "on": "2026-11-11",
+    "html": "Donations: the chart names each line at its end with its value instead of a legend, and one sentence says what the donations so far have paid for, in days of running the site."
   }
 ]

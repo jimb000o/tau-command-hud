@@ -126,4 +126,8 @@ TauI18n.add({ strings: {
   ", worth {v} when they came in": "、受け取った時点で {v} 相当",
   "≈ {v} a month": "月約 {v}",
   "As billed: {v}, each in the currency of its bill": "請求どおり：{v}、それぞれ請求の通貨",
+  "spent": "費用",
+  "Donations so far have paid for about {n} day of running the site.": "これまでの寄付で、サイトの運営費およそ {n} 日分をまかなえました。",
+  "Donations so far have paid for about {n} days of running the site.": "これまでの寄付で、サイトの運営費およそ {n} 日分をまかなえました。",
+  "Donations so far have paid for less than one day of running the site.": "これまでの寄付でまかなえたのは、サイトの運営費の 1 日分に足りません。",
 } });
