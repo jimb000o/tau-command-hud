@@ -206,4 +206,15 @@ TauI18n.add({ strings: {
   "You stake 5,000 AGRS. Your stake: {n} AGRS.": "あなたは 5,000 AGRS をステークしました。あなたのステーク：{n} AGRS。",
   "You sealed block #{n}: your stake earned the turn.": "あなたはブロック #{n} を生成しました：ステークが順番を勝ち取りました。",
   "✓ {x}": "✓ {x}",
+  "What now?": "次は？",
+  "You changed the rules of a chain by agreement. A rule on your own wallet on the real testnet can do this today:": "合意でチェーンのルールを変えた。本物のテストネットで、自分のウォレットのルールが今日できること：",
+  "let your payments through or stop them, by amount, recipient or time": "金額・受取人・時刻で自分の支払いを通す、または止める",
+  "add a fee worked out from the amount, such as 1 %": "金額から計算した手数料を付ける（例えば 1 %）",
+  "send a payment that pays itself out at a set block or time, and that you can take back until then": "決めたブロックか時刻に自動で支払われ、それまでは取り戻せる支払いを送る",
+  "Not yet: a rule cannot start a payment, so there are no standing orders, and it cannot take a cut of other people’s payments.": "まだできないこと：ルールは支払いを始められないので定期払いはなく、他人の支払いから取り分を取ることもできない。",
+  "Try a 1 % fee in Tau": "Tau で 1 % の手数料を試す",
+  "Test a rule against the testnet’s checks": "テストネットのチェックでルールを試す",
+  "Play the testnet in No Memo": "No Memo でテストネットを遊ぶ",
+  "“I tried the 6 missions and it was really an eye opener!”": "「6 つのミッションをやってみて、本当に目からうろこだった！」",
+  "A visitor in the tauhud chat, November 2026": "tauhud チャットの訪問者、2026 年 11 月"
 } });

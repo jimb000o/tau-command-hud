@@ -147,4 +147,12 @@ TauI18n.add({ strings: {
   "allows no fee at all for a payment": "支払いに手数料をまったく認めない",
   "sends a payment whose block height deadline has passed": "ブロック高の期限が過ぎた支払いを送る",
   "pays more than a transfer can carry": "1 回の送金で運べる上限を超えて支払う",
+  "sends two different payments for the same sequence number at once": "同じシーケンス番号で異なる 2 つの支払いを同時に送る",
+  "pays several places in one payment, the last more than the wallet holds": "1 回の支払いで複数の場所に支払い、最後の 1 件がウォレットの残高を超える",
+  "packs more transfers into one payment than it may carry (over 64)": "1 回の支払いに運べる上限を超える送金を詰め込む（64 件超）",
+  "sends a payment carrying a field only the chain’s own transactions may set": "チェーン自身の取引だけが設定できるフィールドを付けた支払いを送る",
+  "submits a fee rule that would tax every wallet’s transfers, not only its own": "自分のものだけでなく、すべてのウォレットの送金に課税する手数料ルールを提出する",
+  "tries to take back another pirate’s booking": "別の海賊の予約を取り消そうとする",
+  "tries to take back a booking the chain never had": "チェーンに存在しない予約を取り消そうとする",
+  "tries to take back a booking after its release time": "予約の解放時刻を過ぎてから取り消そうとする",
 } });

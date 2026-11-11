@@ -2736,50 +2736,158 @@
     "on": "2026-11-08",
     "html": "No Memo: a real mailbox. Letters have a sender and a subject; the post window lists them and opens one with a click; mail 3 reads letter 3 in the terminal. The crew writes when something happens to you (your first payment on the chain, where your first coins came from, a refused payment, a lost trace), when your rank grows, on Tuesdays while the ship is in and on Thursdays for the case file. Some letters bring a special order: accept it and it lands in your inbox, paying two points more."
   },
-  {"tag": "Learn", "on": "2026-11-08", "html": "Learn Tau Language without a node: the new page Learn (in the Learn menu) shows how to install tau and start its REPL, with IDNI's guides, demos and papers, then the Rule Playground. On Nodes, a new question says what a node needs before you start: the first build takes about 1.5 hours with 4 GB RAM and 8 GB swap, and our synced node uses about 850 MB."},
-  {"tag": "Learn", "on": "2026-11-09", "html": "Learn Tau Language now matches the tau you can download: IDNI's packaged release is v0.7-alpha from November 2024, so the guide, the REPL commands, the specs and the ten demos link to that version, and the first line to type is sat x = 0. (Tau answers T)."},
-{"tag": "Learn", "on": "2026-11-09", "html": "Learn Tau Language: try Tau right on the page. Type a formula and the Tau engine on our server answers in a few seconds (sat, valid, why, run). Five short lessons go from yes or no to a real testnet rule, each with a task of your own; a question can be shared as a link."},
-  {"tag": "No Memo", "on": "2026-11-09", "html": "No Memo: the crew sounds like the ship's computer now. The Quartermaster, the Lookout and the Bosun come through the screen with the same digital filter as the ship's voice, without the harsh crackle and the buzz, so they are pleasant to listen to. A crew member's face comes up only when you hear the first word, so lips and voice start together."},
-  {"tag": "No Memo", "on": "2026-11-09", "html": "No Memo: learn the Tau Language the chain’s rules are written in. rule takes the live rule apart word by word (o9[t], bv[24], {#x0a}); four new inbox puzzles are answered from it (how wide, which stream, count the ones, the top); what explains Tau words (what tau, what stream, what bv, what top, what sat); two letters lead to the Learn Tau Language page and your own REPL."},
-  {"tag": "No Memo", "on": "2026-11-09", "html": "No Memo: write the rule yourself. A new inbox contract describes a rule in words (copy the input, add one, always zero, the bigger of two) and you answer with one line of Tau: tau G(o1[t]:bv[8] = i1[t]:bv[8]). The Tau checker on our server runs your line over three steps and the game compares what comes out; without a contract, tau and a line asks the checker whether a line can hold (sat)."},
-  {"tag": "No Memo", "on": "2026-11-09", "html": "No Memo: Boolean functions in Tau. Two new inbox puzzles show a truth table in x and y, or x, y and z, and you answer with a Tau term after tau, such as tau x & y' or tau (x & y)'. The terminal checks every row with Tau’s own operators and their order (' first, then &, then ^, then |); what and explains them."},
-  {"tag": "No Memo", "on": "2026-11-09", "html": "No Memo: heists. From tier 3 a heist can come to the inbox: three contracts in a row under one trace, such as three deadlines (Clock and tide), three disguises the chain sees through (The ghost key) or the rule room, where you read the chain’s rule, fill a truth table and write a rule in Tau. The pay comes at the end; a heist blown by the trace costs 2 points."},
-  {"tag": "No Memo", "on": "2026-11-09", "html": "No Memo: Tracer heat. Wrong answers raise it (a refusal you did not want, a payment that misses the ask, a wrong Tau answer: +8; a trace run out: +25); it falls 1 a block and 10 for each contract settled. From 50 the next trace is shorter, from 80 the crew hands out no work until you lie low. Type heat. The heat is a game rule: the testnet itself refuses a bad payment for free and says why."},
- {"tag": "Playground", "on": "2026-11-09", "html": "Playground: Missions can always be finished now (in mission 5, Cyr can only be removed once it is offline; in mission 6 you can stake from the start). Once a rule passes in the Playground, one button carries it to your wallet and another leads on to Missions. The wallet shows the week’s rule challenge and ticks when your rule fits it, and the challenge page warns when you are in the simulation, where answers do not count. The validator seat and Vote for real now say plainly that only validators’ votes count right now."},
-  {"tag": "No Memo", "on": "2026-11-09", "html": "No Memo: a theme every week, the same for every player. Monday a letter names it, such as fee week, deadline week or Tau week; contracts on its topics come more often and pay double, and the inbox shows it. Type week."},
-  {"tag": "Learn", "on": "2026-11-09", "html": "Learn Tau Language: a door asks what you bring (never written a formula, I write code, I know logic or Tau) and one tap gets your first answer from Tau. Beginners fill in the first two tasks with && and || buttons; coders get a cheat sheet under the box; Tau people start at the real rule with unsat and realizable. A line Tau cannot read now comes back as one sentence with the line to try instead (= not ==, || not or, solve belongs in the REPL). On the phone the answer repeats under the lesson, and lesson 5 no longer zooms the page out."},
-  {"tag": "No Memo", "on": "2026-11-09", "html": "No Memo: a weekly board. board now lists the wallets that paid the crew’s drop most often since Monday, shown short, with your own place. It is read from what the node took, counts a payment at most once every 30 seconds and starts from zero every Monday. Wallets, not people."},
-  {"tag": "No Memo", "on": "2026-11-09", "html": "No Memo: gear for standing, and each piece is a real tool on the real chain. Sailing masters get scan, the mempool scanner: what the node took and waits for a block. First mates get blocks: the last five blocks and which of their payments they sealed. Ghosts of the ledger get dry: the node’s own dry run of a draft, which costs 1 point of the contract’s pay."},
-{"tag": "Learn", "on": "2026-11-09", "html": "Learn Tau Language: a step-by-step guide for people who have never written a formula. Pick “I have never written a formula” and the page shows one idea at a time in plain words, the formula split into signs with their meaning, and one question to tap. The real Tau engine answers. Seven steps go from x = 0 to reading a real testnet rule."},
-{"tag": "Learn", "on": "2026-11-09", "html": "Learn Tau Language for people who write code or know logic: the cheat sheet now covers if-then-else, the operators on values, why 1:bv[8] is 255, and all and ex. People who know logic or Tau get three more lessons: terms and formulas, all and ex, and how sat reads a spec (inputs for all, outputs exist)."},
-{"tag": "Learn", "on": "2026-11-09", "html": "Learn Tau Language: People ask. Nine questions the community asked in IDNI's monthly Q&A videos, such as whether you need Boolean algebra, how Tau tells inputs from outputs and what always really means, answered in plain words, with a button that asks the real Tau engine and a link to IDNI's own answer in the video. In the beginner guide's side panel and under More."},
-  {"tag": "HUD", "on": "2026-11-09", "html": "Tau HUD, after a run of 100 simulated visitors across every page and game: the first screen has four doors, and Learn Tau Language and No Memo are on it beside White Rabbit Key. On a phone the header is about 150 px shorter, and a tap on a row of thin marks (status days, timelines, blocks) takes the nearest one. No Memo leads from every letter to the next step and starts contract 1 as soon as you take it. In White Rabbit Key a tall paper on a phone no longer hides its close button. Donations fit a laptop screen, no text is under 11 px any more, and Japanese and Chinese now translate “… ago” in the history."},
- {
-  "tag": "Learn",
-  "on": "2026-11-10",
-  "html": "Learn Tau Language: Check a brief with Tau. A new small page shows five plain requirements for a game's save system, each with its Tau line. Ask Tau and the real engine marks the three that cannot all hold; switch one off and ask again. For people who build software from written requirements, by hand or with an AI. At tauhud.com/learn/brief/."
- },
- {
-  "tag": "No Memo",
-  "on": "2026-11-10",
-  "html": "No Memo: reboot. Type reboot, or press ⟳ in the terminal's header, and the terminal starts again: the boot screen plays, it dials the node afresh and shows the real block it got back, then your balance, the board and your mail. Your wallet, standing, open contract and trace stay as they are. When the node is out of reach, a reboot button comes with the message, so you can try again once it is back."
- },
-  {"tag": "No Memo", "on": "2026-11-10", "html": "No Memo: two new contracts from the testnet’s newest rules. Since 10 November 2026 the node refuses a payment to an address that is no key at all, and a payment to the wallet that sends it. Before, it took the first kind into its queue. Mirror asks you to pay yourself and make the chain say no. No such wallet shows three addresses, two of them real: find the one that only looks like a wallet. Both answer TX_INVALID on the real testnet, and the glossary explains why (what curve, what self).", "major": {"id": "nomemo-tx-checks", "title": "No Memo: two contracts from the testnet’s newest rules", "text": "The testnet now refuses a payment to an address that is no key, and a payment to yourself. Two new No Memo contracts let you make it say no, from your own test wallet.", "link": "/nomemo/", "image": "/assets/shots/nomemo-tx-checks.png"}},
   {
-   "tag": "Blog",
-   "on": "2026-11-10",
-   "html": "Blog: IDNI answered our questions in its November Q&A. Five questions from Tau HUD were in IDNI's monthly video: rewards for nodes (none planned yet), validator seats (limited for now), the help the testnet needs most (sync and peering failures reported with logs), personal rules that scale, and a consensus switch. The answers in short, with the minute in the video, and what changed here: the node page, five new questions on the Learn page, two No Memo riddles on rules for everyone and rules for one wallet, an engineering-stage line on the start page, and our node's log in the weekly report to IDNI.",
-   "major": {
-    "id": "blog-idni-qa-november",
-    "title": "IDNI answered our questions in its November Q&A",
-    "text": "Node rewards, validator seats, the help the testnet needs most and how personal rules will scale: IDNI's answers in short, and what we changed on tauhud.com because of them.",
-    "link": "/blog/?p=2026-11-10-idni-qa-november",
-    "image": "/assets/shots/blog-idni-qa-november.png"
-   }
+    "tag": "Learn",
+    "on": "2026-11-08",
+    "html": "Learn Tau Language without a node: the new page Learn (in the Learn menu) shows how to install tau and start its REPL, with IDNI's guides, demos and papers, then the Rule Playground. On Nodes, a new question says what a node needs before you start: the first build takes about 1.5 hours with 4 GB RAM and 8 GB swap, and our synced node uses about 850 MB."
+  },
+  {
+    "tag": "Learn",
+    "on": "2026-11-09",
+    "html": "Learn Tau Language now matches the tau you can download: IDNI's packaged release is v0.7-alpha from November 2024, so the guide, the REPL commands, the specs and the ten demos link to that version, and the first line to type is sat x = 0. (Tau answers T)."
+  },
+  {
+    "tag": "Learn",
+    "on": "2026-11-09",
+    "html": "Learn Tau Language: try Tau right on the page. Type a formula and the Tau engine on our server answers in a few seconds (sat, valid, why, run). Five short lessons go from yes or no to a real testnet rule, each with a task of your own; a question can be shared as a link."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-09",
+    "html": "No Memo: the crew sounds like the ship's computer now. The Quartermaster, the Lookout and the Bosun come through the screen with the same digital filter as the ship's voice, without the harsh crackle and the buzz, so they are pleasant to listen to. A crew member's face comes up only when you hear the first word, so lips and voice start together."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-09",
+    "html": "No Memo: learn the Tau Language the chain’s rules are written in. rule takes the live rule apart word by word (o9[t], bv[24], {#x0a}); four new inbox puzzles are answered from it (how wide, which stream, count the ones, the top); what explains Tau words (what tau, what stream, what bv, what top, what sat); two letters lead to the Learn Tau Language page and your own REPL."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-09",
+    "html": "No Memo: write the rule yourself. A new inbox contract describes a rule in words (copy the input, add one, always zero, the bigger of two) and you answer with one line of Tau: tau G(o1[t]:bv[8] = i1[t]:bv[8]). The Tau checker on our server runs your line over three steps and the game compares what comes out; without a contract, tau and a line asks the checker whether a line can hold (sat)."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-09",
+    "html": "No Memo: Boolean functions in Tau. Two new inbox puzzles show a truth table in x and y, or x, y and z, and you answer with a Tau term after tau, such as tau x & y' or tau (x & y)'. The terminal checks every row with Tau’s own operators and their order (' first, then &, then ^, then |); what and explains them."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-09",
+    "html": "No Memo: heists. From tier 3 a heist can come to the inbox: three contracts in a row under one trace, such as three deadlines (Clock and tide), three disguises the chain sees through (The ghost key) or the rule room, where you read the chain’s rule, fill a truth table and write a rule in Tau. The pay comes at the end; a heist blown by the trace costs 2 points."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-09",
+    "html": "No Memo: Tracer heat. Wrong answers raise it (a refusal you did not want, a payment that misses the ask, a wrong Tau answer: +8; a trace run out: +25); it falls 1 a block and 10 for each contract settled. From 50 the next trace is shorter, from 80 the crew hands out no work until you lie low. Type heat. The heat is a game rule: the testnet itself refuses a bad payment for free and says why."
+  },
+  {
+    "tag": "Playground",
+    "on": "2026-11-09",
+    "html": "Playground: Missions can always be finished now (in mission 5, Cyr can only be removed once it is offline; in mission 6 you can stake from the start). Once a rule passes in the Playground, one button carries it to your wallet and another leads on to Missions. The wallet shows the week’s rule challenge and ticks when your rule fits it, and the challenge page warns when you are in the simulation, where answers do not count. The validator seat and Vote for real now say plainly that only validators’ votes count right now."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-09",
+    "html": "No Memo: a theme every week, the same for every player. Monday a letter names it, such as fee week, deadline week or Tau week; contracts on its topics come more often and pay double, and the inbox shows it. Type week."
+  },
+  {
+    "tag": "Learn",
+    "on": "2026-11-09",
+    "html": "Learn Tau Language: a door asks what you bring (never written a formula, I write code, I know logic or Tau) and one tap gets your first answer from Tau. Beginners fill in the first two tasks with && and || buttons; coders get a cheat sheet under the box; Tau people start at the real rule with unsat and realizable. A line Tau cannot read now comes back as one sentence with the line to try instead (= not ==, || not or, solve belongs in the REPL). On the phone the answer repeats under the lesson, and lesson 5 no longer zooms the page out."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-09",
+    "html": "No Memo: a weekly board. board now lists the wallets that paid the crew’s drop most often since Monday, shown short, with your own place. It is read from what the node took, counts a payment at most once every 30 seconds and starts from zero every Monday. Wallets, not people."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-09",
+    "html": "No Memo: gear for standing, and each piece is a real tool on the real chain. Sailing masters get scan, the mempool scanner: what the node took and waits for a block. First mates get blocks: the last five blocks and which of their payments they sealed. Ghosts of the ledger get dry: the node’s own dry run of a draft, which costs 1 point of the contract’s pay."
+  },
+  {
+    "tag": "Learn",
+    "on": "2026-11-09",
+    "html": "Learn Tau Language: a step-by-step guide for people who have never written a formula. Pick “I have never written a formula” and the page shows one idea at a time in plain words, the formula split into signs with their meaning, and one question to tap. The real Tau engine answers. Seven steps go from x = 0 to reading a real testnet rule."
+  },
+  {
+    "tag": "Learn",
+    "on": "2026-11-09",
+    "html": "Learn Tau Language for people who write code or know logic: the cheat sheet now covers if-then-else, the operators on values, why 1:bv[8] is 255, and all and ex. People who know logic or Tau get three more lessons: terms and formulas, all and ex, and how sat reads a spec (inputs for all, outputs exist)."
+  },
+  {
+    "tag": "Learn",
+    "on": "2026-11-09",
+    "html": "Learn Tau Language: People ask. Nine questions the community asked in IDNI's monthly Q&A videos, such as whether you need Boolean algebra, how Tau tells inputs from outputs and what always really means, answered in plain words, with a button that asks the real Tau engine and a link to IDNI's own answer in the video. In the beginner guide's side panel and under More."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-09",
+    "html": "Tau HUD, after a run of 100 simulated visitors across every page and game: the first screen has four doors, and Learn Tau Language and No Memo are on it beside White Rabbit Key. On a phone the header is about 150 px shorter, and a tap on a row of thin marks (status days, timelines, blocks) takes the nearest one. No Memo leads from every letter to the next step and starts contract 1 as soon as you take it. In White Rabbit Key a tall paper on a phone no longer hides its close button. Donations fit a laptop screen, no text is under 11 px any more, and Japanese and Chinese now translate “… ago” in the history."
   },
   {
     "tag": "Learn",
     "on": "2026-11-10",
+    "html": "Learn Tau Language: Check a brief with Tau. A new small page shows five plain requirements for a game's save system, each with its Tau line. Ask Tau and the real engine marks the three that cannot all hold; switch one off and ask again. For people who build software from written requirements, by hand or with an AI. At tauhud.com/learn/brief/."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-10",
+    "html": "No Memo: reboot. Type reboot, or press ⟳ in the terminal's header, and the terminal starts again: the boot screen plays, it dials the node afresh and shows the real block it got back, then your balance, the board and your mail. Your wallet, standing, open contract and trace stay as they are. When the node is out of reach, a reboot button comes with the message, so you can try again once it is back."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-10",
+    "html": "No Memo: two new contracts from the testnet’s newest rules. Since 10 November 2026 the node refuses a payment to an address that is no key at all, and a payment to the wallet that sends it. Before, it took the first kind into its queue. Mirror asks you to pay yourself and make the chain say no. No such wallet shows three addresses, two of them real: find the one that only looks like a wallet. Both answer TX_INVALID on the real testnet, and the glossary explains why (what curve, what self).",
+    "major": {
+      "id": "nomemo-tx-checks",
+      "title": "No Memo: two contracts from the testnet’s newest rules",
+      "text": "The testnet now refuses a payment to an address that is no key, and a payment to yourself. Two new No Memo contracts let you make it say no, from your own test wallet.",
+      "link": "/nomemo/",
+      "image": "/assets/shots/nomemo-tx-checks.png"
+    }
+  },
+  {
+    "tag": "Blog",
+    "on": "2026-11-10",
+    "html": "Blog: IDNI answered our questions in its November Q&A. Five questions from Tau HUD were in IDNI's monthly video: rewards for nodes (none planned yet), validator seats (limited for now), the help the testnet needs most (sync and peering failures reported with logs), personal rules that scale, and a consensus switch. The answers in short, with the minute in the video, and what changed here: the node page, five new questions on the Learn page, two No Memo riddles on rules for everyone and rules for one wallet, an engineering-stage line on the start page, and our node's log in the weekly report to IDNI.",
+    "major": {
+      "id": "blog-idni-qa-november",
+      "title": "IDNI answered our questions in its November Q&A",
+      "text": "Node rewards, validator seats, the help the testnet needs most and how personal rules will scale: IDNI's answers in short, and what we changed on tauhud.com because of them.",
+      "link": "/blog/?p=2026-11-10-idni-qa-november",
+      "image": "/assets/shots/blog-idni-qa-november.png"
+    }
+  },
+  {
+    "tag": "Cruise",
+    "on": "2026-11-10",
+    "html": "Cruise ships plan their next call from our node's slow answers, not the median: the time 8 of 10 sends were answered within. On 10 November the node answered half of Black Sequence's sends in 0.4 seconds and the other half in 5 to 8, and a plan made from the median would have run into the slow half, as Queen Mempool did on 7 November. The logbook's \"tuned\" line, the private report and the blog facts show both numbers."
+  },
+  {
+    "tag": "Cruise",
+    "on": "2026-11-10",
+    "html": "Cruise: the Black Sequence now tries four stronger tricks the chain must refuse. Two payments for one sequence number (the chain seals the first and refuses the second), a payment to several places whose last transfer is more than the wallet holds (the chain applies none of it), a payment with more transfers than one may carry, and a payment carrying a field only the chain's own transactions may set. Each goes out like any payment; the logbook shows the chain's own refusal, and a trick that ever gets through is held back from the public and reported privately first."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-10",
+    "html": "White Rabbit Key: the islanders and Radio Coco now talk about the pirates' evening. New voiced lines for each trick the chain refused, for the evening when every trick was turned away and for the day after, a new question for Hana about the chain's answers, why the tricks never reach a block, and two new phone-in calls."
+  },
+  {
+    "tag": "Cruise",
+    "on": "2026-11-11",
+    "html": "Cruise: the Black Sequence tries four more tricks the chain must refuse. A fee rule that would tax every wallet's transfers, not only its own; a retract of another pirate's booking; a retract of a booking the chain never had; and a retract of a booking after its release time. Each is sent like any payment, and the logbook shows the chain's own refusal. The two retract tricks first make a real booking that reaches a block, then try to take it back the wrong way. A trick that ever gets through is held back from the public and reported privately first."
+  },
+  {
+    "tag": "Learn",
+    "on": "2026-11-11",
+    "html": "Learn: a visitor asked in our chat whether Tau can do percentage fees or recurring payments. The answer is now on /learn/ under People ask, with a button that runs a 1 % fee on the real Tau engine: a rule on your own wallet can add a fee worked out from the amount, but no rule can start a payment yet, so the nearest thing to a standing order is a timed payment that pays itself out. Whoever finishes all six Missions now sees what a rule can and cannot do today, and No Memo can ask for a 1 % cut in Write the rule."
+  },
+  {
+    "tag": "Learn",
+    "on": "2026-11-11",
     "html": "Learn Tau Language: your level can be changed at any time. The Level button above the lessons and above the step-by-step guide now says change; it brings back the level choice with your current level marked, and Keep my level closes it again. Your progress stays."
   }
 ]

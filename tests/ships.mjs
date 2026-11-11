@@ -205,7 +205,7 @@ for (const k of ["se_full", "se_ref1", "se_ref3", "ss_strain", "sl_recap", "sw5"
 /* the pirates on air: a line for every trick the relay can refuse, both kinds of evening, the numbers as a band */
 for (const n of ["pirSight", "pirSightN", "pirHere", "pirHereN", "pirBoard", "pirGone", "pirClean", "pirCut", "pirNext", "shipSkip"]) assert.ok(R.SETS[n]?.length, n);
 const tricks = [...cruise.matchAll(/^    "(\w+)": \(\("[A-Z_]+"/gm)].map(m => m[1]);
-assert.ok(tricks.length === 8, "the relay's eight tricks: " + tricks);
+assert.ok(tricks.length >= 8, "the relay's tricks: " + tricks);
 for (const t of tricks) for (const i of [1, 2]) assert.ok(R.L[`pp_t_${t}${i}`], `no line for the pirates' ${t} trick (pp_t_${t}${i})`);
 for (const t of tricks) assert.ok(talk.window.RABBIT_SHIP_WHEN.TRICKF[t], "a fact for the trick " + t);
 for (const k of ["pp_recap", "sk_skip1", "sk_skip2", "sk_quiet"]) assert.ok(R.NUMERIC[k] === "count" && R.L[k].includes("{n}"), k + ": a number spoken as a band");

@@ -329,7 +329,9 @@ TUE = next(t for t, k in cruise.calls_near(WED + 7 * 86400) if k == "pirates")
 check(cruise.berlin_day(TUE).weekday() == 1 and (TUE - cruise.berlin_t(cruise.berlin_day(TUE), 0)) == 18 * 3600, "the pirates call on Tuesday at 18:00")
 PP = cruise.plan("pirates", TUE, set(), {"trick"})
 tr = [a for a in PP if a["kind"] == "trick"]
-check(len(tr) == len(cruise.TRICKS) * cruise.TRICK_START and {a["trick"] for a in tr} == set(cruise.TRICKS), f"each of the {len(cruise.TRICKS)} tricks {cruise.TRICK_START} times a visit at first")
+counts = [sum(x["trick"] == k for x in tr) for k in cruise.TRICKS]
+check({a["trick"] for a in tr} == set(cruise.TRICKS) and 1 <= min(counts) and max(counts) <= cruise.TRICK_START and max(counts) - min(counts) <= 1,
+      f"every one of the {len(cruise.TRICKS)} tricks is tried, the keenest up to {cruise.TRICK_START} times, as many as fit between landing and leaving")
 check(all(b["t"] - a["t"] >= cruise.TRICK_GAP for a, b in zip(tr, tr[1:])), f"at most one trick every {cruise.TRICK_GAP} s")
 check(min(a["t"] for a in tr) >= TUE + (cruise.landing("pirates") + 1) * 60, "the first trick only after every pirate has paid the pier")
 check(cruise.where(PP, TUE + 40 * 60, TUE + 80 * 60, "pirates") == {}, "the pirates stay aboard: no group stands on the island")
@@ -337,20 +339,26 @@ check(len(cruise.plan("pirates", TUE, set(), {"trick"}, {k: 1 for k in cruise.TR
 check(C.next_call(TUE - 3600)[1] == "pirates" and C.next_call(TUE - 3600, surprise=False)[1] == "dryrun",
       "the pirates come unannounced: the next call named to pages and posts is the one after them")
 
-CH = {"seq": {}, "hole": False, "sent": []}
+CH = {"seq": {}, "hole": False, "sent": [], "ret": {}}
 
 
 async def chain(cmd: str):
-    """A fake node that checks what the real one checks for these tricks (tau-testnet commands/sendtx.py)."""
+    """A fake node that checks what the real one checks for these tricks (tau-testnet commands/sendtx.py, consensus/admission.py)."""
     name, _, rest = cmd.partition(" ")
     if name == "getsequence":
         return {"status": "ok", "data": {"sequence_number": CH["seq"].get(rest, 0), "tip_height": 900}}
     if name == "getbalance":
         return {"status": "ok", "data": {"balance": 100000}}
+    if name == "getretractables":   # the bookings in a block (not the mempool) for that sender
+        owner = rest.split()[0]
+        out = [{"retractable_id": rid, "recipient_pubkey": r["recipient"], "release_at_time": r["release"]}
+               for rid, r in CH["ret"].items() if r["owner"] == owner and not r.get("gone")]
+        return {"status": "ok", "data": {"retractables": out}}
     if name != "sendtx":
         return {"status": "ok", "data": {"retractables": []}}
     tx = json.loads(rest)
-    pk = tx["sender_pubkey"]
+    pk, t = tx["sender_pubkey"], tx["tx_type"]
+    rid = hashlib.sha256(rest.encode()).hexdigest()
     err = lambda c: {"status": "error", "error": {"code": c, "message": c.lower()}}  # noqa: E731
     if tx["expiration_time"] < T[0] or tx["expire_at_height"] <= 901:
         return err("TX_EXPIRED")
@@ -358,19 +366,37 @@ async def chain(cmd: str):
         return err("INVALID_SEQUENCE")
     if not G2Basic.Verify(bytes.fromhex(pk), hashlib.sha256(cruise.signing_bytes(tx)).digest(), bytes.fromhex(tx["signature"])):
         return err("INVALID_SIGNATURE")
-    ops = tx.get("operations", {}).get("1", []) if tx["tx_type"] == "user_tx" else []
-    if any(x[0] != pk for x in ops):
-        return err("TX_INVALID")
-    if any(int(x[2]) > (1 << 24) - 1 for x in ops):
-        return err("TX_INVALID")
-    if tx["tx_type"] == "user_tx" and int(tx["fee_limit"]) < 1:
-        return err("FEE_LIMIT_TOO_LOW")
-    amount = sum(int(x[2]) for x in ops) if tx["tx_type"] == "user_tx" else int(tx.get("amount") or 0)
-    if amount > 100000 and not CH["hole"]:
-        return err("INSUFFICIENT_FUNDS")
+    ops = tx.get("operations", {}).get("1", []) if t == "user_tx" else []
+    if t == "user_tx":
+        rule = (tx.get("operations") or {}).get("0")
+        if isinstance(rule, str) and any(s in rule for s in ("o5", "o8")) and not any(s in rule for s in ("i12", "i3")):   # admission.py ~391
+            return err("UNSCOPED_USER_RULE")
+        if "rule_revisions" in tx:
+            return err("TX_REJECTED")
+        if len(ops) > 64:
+            return err("TX_INVALID")
+        if any(x[0] != pk for x in ops):
+            return err("TX_INVALID")
+        if any(int(x[2]) > (1 << 24) - 1 for x in ops):
+            return err("TX_INVALID")
+        if int(tx["fee_limit"]) < 1:
+            return err("FEE_LIMIT_TOO_LOW")
+        if sum(int(x[2]) for x in ops) > 100000 and not (CH["hole"] and len(ops) <= 1):   # the modelled hole only lets a single-transfer overspend slip
+            return err("INSUFFICIENT_FUNDS")
+    elif t == "retractable_transfer":   # a booking: kept, in a block at once for the test, listed by getretractables
+        CH["ret"][rid] = {"owner": pk, "release": int(tx.get("release_at_time") or 0), "recipient": tx.get("recipient_pubkey")}
+    elif t == "retract_transfer":   # the retract screens, in order (admission.py validate_retract_transfer_payload ~1409)
+        row = CH["ret"].get(tx.get("retractable_id"))
+        if row is None:
+            return err("UNKNOWN_RETRACTABLE")
+        if row["owner"] != pk:
+            return err("NOT_RETRACTABLE_SENDER")
+        if T[0] >= row["release"]:
+            return err("RETRACT_TOO_LATE")
+        row["gone"] = True   # a retract in time resolves the booking
     CH["seq"][pk] = CH["seq"].get(pk, 0) + 1
     CH["sent"].append(tx)
-    return {"status": "ok", "data": {"ok": True, "tx_hash": hashlib.sha256(rest.encode()).hexdigest()}}
+    return {"status": "ok", "data": {"ok": True, "tx_hash": rid, "retractable_id": rid if t == "retractable_transfer" else None}}
 
 
 pd = tempfile.mkdtemp()
@@ -387,8 +413,9 @@ tricks = [e for e in P.logbook if e.get("kind") == "trick" and e.get("ok") is no
 check(s1["ship"] == "pirates" and not P.visits[-1]["note"], "the pirate ship stays the whole visit: refused tricks never send it away")
 check(len(tricks) >= 28 and all(e["ok"] is False and e["right"] for e in tricks),
       f"every trick is refused by the chain, each with the answer it should get ({len(tricks)} tricks)")
-check({e["code"] for e in tricks} == {"INSUFFICIENT_FUNDS", "INVALID_SEQUENCE", "TX_EXPIRED", "INVALID_SIGNATURE", "TX_INVALID", "FEE_LIMIT_TOO_LOW"}
-      and {e["trick"] for e in tricks} == set(cruise.TRICKS), "eight tricks, every one refused, six different answers")
+check({e["code"] for e in tricks} == {"INSUFFICIENT_FUNDS", "INVALID_SEQUENCE", "TX_EXPIRED", "INVALID_SIGNATURE", "TX_INVALID", "FEE_LIMIT_TOO_LOW", "TX_REJECTED",
+                                      "UNSCOPED_USER_RULE", "NOT_RETRACTABLE_SENDER", "UNKNOWN_RETRACTABLE", "RETRACT_TOO_LATE"}
+      and {e["trick"] for e in tricks} == set(cruise.TRICKS), f"{len(cruise.TRICKS)} tricks, every one refused, eleven different answers")
 check(all(x is True for x in LOADS) and sum(s1["refused"].values()) == 0, "tricks are no refusals: not for the brakes, not on the load page")
 check(all(c["right"] == c["tried"] > 0 for c in s1["tricks"].values()), "the summary counts each trick: tried, stopped, stopped for the right reason")
 check(s1["per_min"] == cruise.RATE and [c for c in s1["changed"] if c["what"] != "stops planned a minute"] == [],
@@ -412,7 +439,16 @@ for n in range(40):
     M.logbook.append({"visit": vq["id"], "kind": "pay", "ok": True, "ms": 6000 + n * 40})
 ch = M.measure(vq)
 check(ch and ch["what"] == "stops planned a minute" and ch["to"] == round(cruise.PLAN_MARGIN * 60000 / M.node["answer_ms"], 1)
-      and "6.8 s" in ch["because"], f"after a slow visit: {ch and ch['to']} stops a minute planned, and the logbook says why")
+      and M.node["answer_ms"] == 7280 and "8 of 10 sends within 7.3 s" in ch["because"] and "median 6.8 s" in ch["because"],
+      f"after a slow visit: {ch and ch['to']} stops a minute planned from the slow answers, and the logbook says why")
+# the node of 10 November: half the sends answered in 0.4 s, half in 5 to 8 s; the median would plan for the fast half
+vp = {"id": "2026-11-10-pirates", "ship": "pirates"}
+for n in range(34):
+    M.logbook.append({"visit": vp["id"], "kind": "pay", "ok": True, "ms": 400 if n % 2 else 5000 + n * 90})
+ch = M.measure(vp)
+check(ch and M.node["answer_ms"] >= 5000 and ch["to"] <= round(cruise.PLAN_MARGIN * 60000 / 5000, 1),
+      f"a node that answers half the sends slowly plans for the slow half: {ch and ch['to']} stops a minute, not {round(cruise.PLAN_MARGIN * 12, 1)}")
+M.node = {"answer_ms": 7280, "sends": 40, "visit": vq["id"], "median_ms": 6800}
 check(M.measure(vq) is None, "the same answer time again changes nothing")
 M.save_state()
 M2 = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s9"), "log_path": os.path.join(d, "l9b"), "incidents_path": os.path.join(d, "i9")}, clock=clock,
@@ -424,7 +460,7 @@ with open(lq, "w") as f:
         f.write(json.dumps({"t": int(T[0]), "visit": "2026-11-07-queen", "kind": "pay", "ok": True, "ms": 6000 + n * 40}) + "\n")
 M3 = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s10"), "log_path": lq, "incidents_path": os.path.join(d, "i10")}, clock=clock,
                    enabled=True, verdict=lambda: "calm", background=False)
-check(M3.node.get("answer_ms") == 6800 and M3.node.get("visit") == "2026-11-07-queen",
+check(M3.node.get("answer_ms") == 7280 and M3.node.get("visit") == "2026-11-07-queen",
       "first start with this rule: the Queen's timed sends already in the logbook measure the node")
 rp = [e for e in tricks if e["trick"] == "replay"]
 check(rp and all(e["tx"] in CH["sent"] for e in rp), "the replay sends a payment the chain already took, byte for byte")

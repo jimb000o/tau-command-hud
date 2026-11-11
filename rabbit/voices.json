@@ -1565,6 +1565,70 @@
  },
  {
   "who": "rico",
+  "text": "Two payments, one sequence number, sent at the same moment! The chain took the first and refused the second. Every wallet's payments go one number at a time. No twins on this lagoon."
+ },
+ {
+  "who": "rico",
+  "text": "Another pirate tried to use the same turn twice. The first payment went through, the second found its number already taken. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "Clever one! A pirate paid several places in one payment, and the last transfer was more than his wallet holds. The chain didn't take the cheap ones and drop the rest. It took none of it. All or nothing, folks."
+ },
+ {
+  "who": "rico",
+  "text": "A poisoned basket from the black ship: good coins on top, an empty promise at the bottom. The chain checks the whole basket. Refused, every coin of it."
+ },
+ {
+  "who": "rico",
+  "text": "A pirate just stuffed more transfers into one payment than a payment may carry. Over sixty-four! The chain counted. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "Another overstuffed payment from the black ship. Rico has packed suitcases like that. The chain doesn't sit on them to close them. It just says no."
+ },
+ {
+  "who": "rico",
+  "text": "Now that's bold. A pirate slipped a field into his payment that only the chain's own transactions may set. Like writing a new law on a bar receipt. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "Another pirate tried to smuggle a rule change inside a rum payment. Rules on this chain change by agreement, not in a bottle. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "A pirate just handed in a fee rule that would tax every wallet on the lagoon, not only his own. A rule you write may steer your own payments, nobody else's. The chain sent the taxman home. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "Another pirate taxman! A one percent cut on everybody's transfers. On this chain your rules cover your own wallet and nobody else's. Refused, and nobody pays a coin."
+ },
+ {
+  "who": "rico",
+  "text": "A pirate tried to take back another pirate's booking. Only the one who paid can take a booking back before its time. The chain checked whose it was. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "Hands off, matey! A pirate reached for a booking that isn't his. The chain knows who made every booking. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "A pirate tried to take back a booking that never existed. The chain looked for it, found nothing, and said so. You can't cancel a ghost."
+ },
+ {
+  "who": "rico",
+  "text": "Another phantom booking from the black ship. Taking back what you never booked: bold, imaginative, refused."
+ },
+ {
+  "who": "rico",
+  "text": "Too late, captain! A pirate tried to take back his own booking after its release time. Once that hour has passed, a booking can't be taken back. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "A pirate missed the window on his own booking. A booking can be taken back only before its release time, and his had gone. Refused. Set an alarm, matey."
+ },
+ {
+  "who": "rico",
   "text": "The black ship is weighing anchor. The lanterns go in one by one. They leave as they came: without a word to Tobias."
  },
  {
@@ -1618,6 +1682,74 @@
  {
   "who": "rico",
   "text": "About last night's pirate ship: when is she back? She doesn't tell the island. You'll know when Tobias starts shouting. Again."
+ },
+ {
+  "who": "rico",
+  "text": "Overspend! A pirate offered more coins than he owns. Rico tried that at the market once. The market gave the same answer as the chain."
+ },
+ {
+  "who": "rico",
+  "text": "Same payment, second time, same pirate. The chain keeps count of every wallet's payments, and that count had already moved on. Nice try, matey."
+ },
+ {
+  "who": "rico",
+  "text": "A pirate payment, stamped too late. Every payment carries its own deadline, and this one had passed before it reached the chain. Refused, and right on time."
+ },
+ {
+  "who": "rico",
+  "text": "Another pirate payment past its block deadline. The blocks moved on, the payment didn't. The chain doesn't go back for stragglers. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "A forged seal from the black ship. On this lagoon the key signs, not the hand. Wrong key, no payment."
+ },
+ {
+  "who": "rico",
+  "text": "A pirate in another pirate's coat, paying from his wallet. The chain doesn't check coats. It checks that the signature belongs to the wallet that pays. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "A pirate tried to sail for free: no fee allowed, not even a small one. The chain's fee rule bends for nobody. Not even for a very nice hat."
+ },
+ {
+  "who": "rico",
+  "text": "A pirate just tried to send more than a payment can even hold. Rico has seen big tips. That was not a tip, that was a typo with ambition. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "Wondering why the pirates' tricks never show up in the blocks? The chain turns them away at the door, before any block. Only their honest payments get written down, like the landing fee and the rum."
+ },
+ {
+  "who": "rico",
+  "text": "Not one song request from the black ship, folks. Rum, yes. Soap, yes. Coconuts, yes. Music, no. Rico is not hurt. Rico is a little hurt."
+ },
+ {
+  "who": "rico",
+  "text": "Night watch on Radio Coco. Lanterns on the black ship, torches at the bar, and the chain wide awake. Rico's coffee is wide awake too."
+ },
+ {
+  "who": "rico",
+  "text": "Pirate report: every trick tried, every trick refused, every refusal with its reason. If the pirates are listening: thank you for testing. Please never come to my studio."
+ },
+ {
+  "who": "rico",
+  "text": "Good news for every wallet on this lagoon: the chain checked balance, order, time, deadline, signature, sender, fee, size, how many transfers, and who may set what, and every pirate trick failed one of those checks. Your payments get the very same checks."
+ },
+ {
+  "who": "rico",
+  "text": "The black ship is a dot on the horizon now. The island counts what came in: the landing fees, the rum, the soap, the coconuts. Paid the way anyone pays."
+ },
+ {
+  "who": "rico",
+  "text": "The pirates sailed at the hour they planned. Pirates, on time. Rico has now seen everything."
+ },
+ {
+  "who": "rico",
+  "text": "Morning, lagoon. Yesterday's pirates are in the logbook now, every trick next to the chain's answer. Hana's class is grading them. The pirates are failing."
+ },
+ {
+  "who": "rico",
+  "text": "No black sails this morning, folks. Tobias checked. Twice. Then once more. She comes back when she comes back, and she tells nobody. Rico respects the marketing."
  },
  {
   "who": "rico",
@@ -4376,6 +4508,46 @@
   "text": "I knew it! Bye Rico!"
  },
  {
+  "who": "bert",
+  "text": "Rico, it's old Bertie from the pier. I don't get it. The pirates' rum payments went through, but their tricks didn't. Same pirates, same chain. Why?"
+ },
+ {
+  "who": "rico",
+  "text": "Because the rum payments kept every rule, Bertie. Their own wallet, their own key, enough coins, a fee allowed, on time. Each trick broke one of those, and the chain checks all of them on every payment."
+ },
+ {
+  "who": "bert",
+  "text": "So a pirate who pays properly is just a customer?"
+ },
+ {
+  "who": "rico",
+  "text": "On the chain, yes. The chain never checks the eye patch."
+ },
+ {
+  "who": "bert",
+  "text": "Huh. Lola won't like that. Bye, Rico."
+ },
+ {
+  "who": "mae",
+  "text": "Rico dear, it's Auntie Mae from the bakery. My grandson says the pirates weren't even real. Is that true?"
+ },
+ {
+  "who": "rico",
+  "text": "Half true, Auntie Mae. The pirates are made up by our relay, like the cruise passengers. But their payments are real test payments, and the chain's answers are real too."
+ },
+ {
+  "who": "mae",
+  "text": "So the chain was fighting pretend pirates for real?"
+ },
+ {
+  "who": "rico",
+  "text": "Exactly. Better to try every lock while the coins are test coins than to find out later."
+ },
+ {
+  "who": "mae",
+  "text": "Well, I'm still locking my door. Bye, Rico."
+ },
+ {
   "who": "vik",
   "text": "Hi Rico. It's Vik. I wrote my wallet key on a napkin at Bar La Ola. Lola washed the napkin.",
   "how": "night"
@@ -5274,6 +5446,18 @@
  },
  {
   "who": "ama",
+  "text": "A pirate hid a change to the rules inside a payment for rum. Rules are not changed in a bottle. Here they change when the island agrees, and on the chain the same. Refused."
+ },
+ {
+  "who": "ama",
+  "text": "Every trick the pirates tried, the chain refused, and each time it said why. When I was young, a no came without a reason. This chain explains itself. I approve."
+ },
+ {
+  "who": "ama",
+  "text": "The children played pirates all morning. One was the pirate, the others were the chain. The chain won every round. Nobody wanted to be the pirate twice."
+ },
+ {
+  "who": "ama",
   "text": "A ship is on its way, I hear. Visitors are welcome under this tree. Groups are a different animal. A visitor sits down. A group takes pictures of people sitting down."
  },
  {
@@ -5350,6 +5534,10 @@
  },
  {
   "who": "marisol",
+  "text": "A pirate tried to cancel a booking that never existed. That’s a rumour with a wallet. The chain looked, found nothing, and said no. I wish I could do that with gossip."
+ },
+ {
+  "who": "marisol",
   "text": "One of the pirates wore a false moustache and paid from another pirate’s wallet. The chain checked the signature, not the moustache. Refused. I’m telling everyone."
  },
  {
@@ -5359,6 +5547,18 @@
  {
   "who": "marisol",
   "text": "Everyone at the café has a pirate story now. Half of them weren’t there. The logbook was, so I believe the logbook."
+ },
+ {
+  "who": "marisol",
+  "text": "A pirate just tried to pay more than his wallet holds. The chain looked at his balance and said no. At the café we call that the Tuesday tab. Nobody gets one here either."
+ },
+ {
+  "who": "marisol",
+  "text": "The logbook is out: every pirate trick refused, each one with the chain’s own reason next to it. Three versions of the story at the café, and for once they all end the same way."
+ },
+ {
+  "who": "marisol",
+  "text": "The day after the pirates and the café is still full. Half the island swears a pirate winked at them. The logbook doesn’t record winks. Only payments."
  },
  {
   "who": "marisol",
@@ -5466,6 +5666,18 @@
  },
  {
   "who": "lola",
+  "text": "A pirate sent me a payment whose time had already run out. Like paying with last week’s bar tab. The chain checked the clock and said no. I didn’t even have to look up."
+ },
+ {
+  "who": "lola",
+  "text": "Every trick they tried bounced off the chain. The rum they paid for properly went through the same door as yours. Best-behaved bad customers I’ve ever had."
+ },
+ {
+  "who": "lola",
+  "text": "Morning after the pirates. The good rum is back on the shelf, and the bar still smells of lantern oil. Lovely evening. Strict chain."
+ },
+ {
+  "who": "lola",
   "text": "The Queen is on her way. A hundred and twenty thirsty people and one bartender. I’ve hidden the good lemons. Pacts first, passengers second."
  },
  {
@@ -5535,6 +5747,18 @@
  {
   "who": "rico",
   "text": "The pirates are gone, baby. What the chain said to their tricks is in the logbook. Rico read it on air. Twice. Best ratings since the storm."
+ },
+ {
+  "who": "rico",
+  "text": "You can see the black ship from my window, baby. Rico waved. The pirates did not wave back. They waved at Lola. Everybody waves at Lola."
+ },
+ {
+  "who": "rico",
+  "text": "Every pirate trick refused, baby, and Rico read every refusal on air. The chain’s answers even have names: insufficient funds, invalid signature, fee limit too low. Poetry."
+ },
+ {
+  "who": "rico",
+  "text": "Rico still has no pirate jingle, baby. A dozen drafts, and they all rhyme refused with amused. The chain is amused. The pirates, less so."
  },
  {
   "who": "rico",
@@ -5611,6 +5835,18 @@
  {
   "who": "sam",
   "text": "The pirates are in the Book now, between a fisherman and the school. The Book does not care who they are. Only who signed, and what the chain took."
+ },
+ {
+  "who": "sam",
+  "text": "Two pirate payments with the same number, sent together. The Book has one line for every number. The first payment got the line. The second found it taken. Refused."
+ },
+ {
+  "who": "sam",
+  "text": "A pirate payment with a block deadline that had already passed. The chain counts blocks the way I count pages. Past the page, past the deadline. Refused."
+ },
+ {
+  "who": "sam",
+  "text": "The pirates’ tricks are not in the Book. The Book keeps only what the chain took. Their rum is in there, though, and the landing fee. Even pirates leave a paper trail when they pay properly."
  },
  {
   "who": "sam",
@@ -5702,7 +5938,23 @@
  },
  {
   "who": "tobias",
+  "text": "A pirate tried to tax every wallet on the island with one rule of his own. A wallet’s rule covers that wallet and nothing more. The chain refused him. I may frame the refusal."
+ },
+ {
+  "who": "tobias",
   "text": "Gone, without a word. I’ve added a page to the harbour book: ships that do not announce themselves. It’s a short page. One name."
+ },
+ {
+  "who": "tobias",
+  "text": "The pirates paid the landing fee at the pier. For a landing! They never land! I have been paid for nothing. I don’t know what to do with my hands."
+ },
+ {
+  "who": "tobias",
+  "text": "The harbour book, pirate page: arrived unannounced, paid the landing fee, never landed, every trick refused, left on time. The best-documented pirates on any sea."
+ },
+ {
+  "who": "tobias",
+  "text": "I sat on the pier all morning with the telescope. No black sails. She won’t write ahead, so I will watch every evening. Every evening. The uniform stays ready."
  },
  {
   "who": "tobias",
@@ -5814,6 +6066,14 @@
  },
  {
   "who": "hana",
+  "text": "A pirate signed a payment with another pirate’s key. The class asked how the chain knew. A signature has to match the wallet that pays. This one didn’t. Lesson over, everyone back to the window."
+ },
+ {
+  "who": "hana",
+  "text": "Pirate bingo results: every trick on the card, refused by the chain, each with its own answer. The whole class got a full card. I have never given so many gold stars to a blockchain."
+ },
+ {
+  "who": "hana",
   "text": "The class found something in the logbook: the ship planned more stops than she made. Our node took its time answering, and she sends one at a time. A late stop is skipped, not forced. Good manners, for a ship."
  },
  {
@@ -5870,6 +6130,14 @@
  },
  {
   "who": "hana",
+  "text": "Each refusal has a name in the logbook. Insufficient funds, when the wallet is too poor. Invalid sequence, for a number already taken. Tx expired, when its time or its block deadline ran out. Invalid signature, for the wrong key. Fee limit too low, for no fee. Tx invalid or tx rejected, when the payment itself breaks the rules: the wrong payer, too big, too many transfers. And every time the pirates find a new door, the class adds a new name to the wall."
+ },
+ {
+  "who": "hana",
+  "text": "So that anyone can see why. A plain no teaches nothing. A no with a reason is a lesson, and the chain gives one with every payment it turns down. Yours too."
+ },
+ {
+  "who": "hana",
   "text": "Curious visitors are a gift. Crowds are weather. The Wednesday ship brings questions, the Saturday ship brings hats. I like both, but only one fits in a classroom."
  },
  {
@@ -5903,6 +6171,14 @@
  {
   "who": "kai",
   "text": "The pirates stay off the reef, which I respect. The turtle has gone deeper anyway. She doesn’t trust a ship without a timetable."
+ },
+ {
+  "who": "kai",
+  "text": "A pirate tried to take back his booking after its time was up. Like trying to un-dive once you’re already in the water. The chain said too late. Refused."
+ },
+ {
+  "who": "kai",
+  "text": "The turtle is back in the shallows. She watched the black ship leave and decided the reef is hers again. She is right about that."
  },
  {
   "who": "kai",
@@ -5974,6 +6250,14 @@
  },
  {
   "who": "baako",
+  "text": "A pirate sent one payment for a whole row of baskets, Noor, and the last basket cost more than he has. The chain didn’t send the others and keep the last. It sent none. Whole order or no order."
+ },
+ {
+  "who": "baako",
+  "text": "The baskets came back, Noor. Empty, and rinsed. Pirates rinse baskets. Nobody believes me."
+ },
+ {
+  "who": "baako",
   "text": "The Queen is coming! The co-op has picked extra coconuts. One price on the board, the same for islanders and passengers. Noor wanted a passenger price. I said no. She said fine. She did not say it nicely."
  },
  {
@@ -6035,6 +6319,10 @@
  {
   "who": "noor",
   "text": "Pirates, Baako. They want soap. Of course they want soap. Nobody goes near the boat. The soap goes in a basket."
+ },
+ {
+  "who": "noor",
+  "text": "The pirates bought their coconuts properly in the end. One price, their own wallets, a fee allowed. The free-ride trick got them nothing but a refusal. Business as usual."
  },
  {
   "who": "noor",
@@ -6106,6 +6394,10 @@
  },
  {
   "who": "pim",
+  "text": "I measured the horizon all morning. No black hull. I have added a column to my notebook: pirates, yes or no. Today: no. Tomorrow: probably no. Probably."
+ },
+ {
+  "who": "pim",
   "text": "The Queen is coming. The North Wind asked me to measure how deep she sits in the water. I did. Then they asked me to measure the bay again. It is still the same size."
  },
  {
@@ -6163,6 +6455,18 @@
  {
   "who": "wren",
   "text": "Item four hundred and sixteen, dear: one pirate ship, one evening, and the chain’s answer to their tricks in the logbook. I’ve filed it under maritime history."
+ },
+ {
+  "who": "wren",
+  "text": "A pirate packed more transfers into one payment than one may carry, dear. I tried to count them from the Old Ship. The chain counted faster. Refused. Catalogued under overpacking."
+ },
+ {
+  "who": "wren",
+  "text": "Item four hundred and seventeen, dear: every lock the pirates tried, and the chain’s answer to each. Not one opened. Filed under good locks, and slightly disappointed pirates."
+ },
+ {
+  "who": "wren",
+  "text": "The black ship has gone, dear, and she never says when she’ll be back. I’ve left a space in the catalogue. Pirates are the only exhibit that books itself."
  },
  {
   "who": "wren",
@@ -6226,6 +6530,10 @@
  },
  {
   "who": "kiko",
+  "text": "The canoe is back in the water. The pirates are gone, and the waves are the same small waves. Pirates never change the sea. Only the gossip."
+ },
+ {
+  "who": "kiko",
   "text": "Big ship out there. Big waves. I built the sides higher this morning. The passengers took pictures of my canoe. Nobody asked if it floats."
  },
  {
@@ -6271,6 +6579,10 @@
  {
   "who": "tano",
   "text": "The drums are quiet tonight. Not from fear. When a stranger comes, you listen first. They try their tricks, the chain answers, and we listen."
+ },
+ {
+  "who": "tano",
+  "text": "Tonight the drums play the chain’s song: no, and no, and no again. Every trick, and every no with its reason. A good rhythm. Hard to dance to, if you are a pirate."
  },
  {
   "who": "tano",
@@ -6346,11 +6658,19 @@
  },
  {
   "who": "salado",
+  "text": "A pirate tried to cancel another pirate’s booking! In my business that is called sabotage. The chain calls it the wrong sender. Refused. I love this chain. It respects a reservation."
+ },
+ {
+  "who": "salado",
   "text": "I sent the pirates a brochure. They didn’t come up. Nobody comes up to a spa from a pirate ship. My investors say that is a gap in the market. It is a gap in the sea."
  },
  {
   "who": "salado",
   "text": "They never came up to the spa. Pirates. My investors asked if they could be a new market. I said: only if they learn to pay from their own wallets."
+ },
+ {
+  "who": "salado",
+  "text": "Still no pirates at the spa. Not one booking. So I made a pirate package: towel, eye patch, rum massage. My investors think it is a joke. It is a business model."
  },
  {
   "who": "salado",

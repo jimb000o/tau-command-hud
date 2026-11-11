@@ -147,4 +147,12 @@ TauI18n.add({ strings: {
   "allows no fee at all for a payment": "付款时不允许任何手续费",
   "sends a payment whose block height deadline has passed": "发送区块高度期限已过的付款",
   "pays more than a transfer can carry": "支付超过一笔转账所能承载的金额",
+  "sends two different payments for the same sequence number at once": "同时为同一个序号发送两笔不同的付款",
+  "pays several places in one payment, the last more than the wallet holds": "在一笔付款里支付给多个地方，最后一笔超过钱包余额",
+  "packs more transfers into one payment than it may carry (over 64)": "在一笔付款里塞进超过上限的转账（超过 64 笔）",
+  "sends a payment carrying a field only the chain’s own transactions may set": "发送一笔只有链自身交易才能设置的字段的付款",
+  "submits a fee rule that would tax every wallet’s transfers, not only its own": "提交一条收费规则，要对每个钱包的转账都征税，而不只是自己的",
+  "tries to take back another pirate’s booking": "试图取回另一个海盗的预订",
+  "tries to take back a booking the chain never had": "试图取回一条链上从未有过的预订",
+  "tries to take back a booking after its release time": "在预订的释放时间之后试图取回它",
 } });

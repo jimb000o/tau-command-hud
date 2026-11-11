@@ -88,7 +88,7 @@ class Server:
         if cmd[:2] == ["docker", "inspect"] and "Mounts" in j:
             return 0, "infra_tau_data\n"
         if cmd[:3] == ["docker", "exec", "-i"]:   # the trial node
-            return 0, json.dumps({"ok": True, "hashes": self.trial_hashes})
+            return 0, json.dumps({"ok": True, "hashes": self.trial_hashes(self.t) if callable(self.trial_hashes) else self.trial_hashes})
         if "exec -T tau-node" in j:               # our node
             running = f.read_env().get("TAU_TESTNET_REF")
             if running == NEW and not self.after_switch_ok:
@@ -181,6 +181,19 @@ check(not any(e and e.get("TAU_TESTNET_REF") == NEW for c, e in s.calls if "up" 
 reset()
 s = Server(trial_hashes={str(n): f"h{n}" for n in range(1, 11)}).install()
 check(f.run_pass() == "trial" and "reached block 10" in f.load()["failed"]["reason"], "a trial node that never catches up fails in time")
+
+reset()
+t0 = utc("2026-11-09 11:00")   # climbs one block a minute from block 10: the tip (100) only after 90 minutes
+s = Server(trial_hashes=lambda t: {str(n): f"h{n}" for n in range(max(1, int(10 + (t - t0) / 60) - 9), min(100, int(10 + (t - t0) / 60)) + 1)}).install()
+check(f.run_pass() == "switched", "a trial node that still climbs after the base window gets more time and catches up")
+check("synced to block" in f.load()["last_switch"].get("why", "") or f.load()["live"]["sha"] == NEW, "... and the node switches")
+
+reset()
+s = Server(trial_hashes={str(n): f"h{n}" for n in range(1, 11)}).install()
+f.run_pass()
+check(f.load()["failed"]["sha"] == NEW, "a failed commit is remembered")
+f.main(["idni_follow.py", "retry"])
+check("failed" not in f.load(), "up follow retry forgets it")
 
 reset()
 s = Server().install()

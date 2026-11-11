@@ -629,14 +629,16 @@ def x_join(lines: list[str]) -> str:
     return out
 
 
-def x_post(lines: list[str], link: str | None = None, keep: int = 1, foot: str = X_REAL, tag: str = X_TAG) -> str:
+def x_post(lines: list[str], link: str | None = None, keep: int = 1, foot: str = X_REAL, tag: str = X_TAG,
+           with_link: bool | None = None) -> str:
     """Lines as one post of at most 280 (first line the headline): the last line loses sentences, then whole lines go
     (never the first `keep`), then it is cut. `foot` and the hashtag always close it; the link joins them only with
-    X_LINKS (it makes a post 13 times dearer)."""
+    X_LINKS (it makes a post 13 times dearer), or where the caller says so for this one post (`with_link`)."""
+    links = X_LINKS if with_link is None else with_link
     tag = " ".join([tag] + [t for t in X_MUST if t not in (tag or "").split()]).strip()
-    tail = "\n\n" + " · ".join(x for x in (foot, link if link and X_LINKS else None, tag) if x)
+    tail = "\n\n" + " · ".join(x for x in (foot, link if link and links else None, tag) if x)
     out = [" ".join(str(x).split()) for x in lines if x and str(x).strip()]
-    if not X_LINKS:
+    if not links:
         out = [re.sub(r"\s*https?://\S+", "", x) for x in out]
     while out and x_len(x_join(out) + tail) > 280:
         n = len(re.split(r"(?<=[.!?])\s+(?=[A-Z“\"(])", out[-1]))

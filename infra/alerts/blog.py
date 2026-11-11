@@ -49,10 +49,15 @@ IMG = os.path.join(PUBLIC, "img")               # hero pictures and charts, node
 SHARE = os.path.join(PUBLIC, "a")               # one small page per article for link previews, node.tauhud.com/blog/a/<id>.html
 EVERY = 600
 PICS_VERSION = 3   # raise when the hero picture changes: every article's picture is made anew once (2: numbers and Rico, 3: one story on refusals)
+DESK_VERSION = 1   # the same for the heroes without island art (blog_pics.desk_hero): IDNI news, Q&As, testnet learnings
 CHECK_WAIT = 3 * 3600      # a visit whose bookings were never checked is drafted this long after it ended
 RETRY_AFTER = 2 * 3600
 # a draft whose check is clean (every number in the facts, no hype or blame words) goes on the blog by itself this many
 # hours after it was written, with its one post; 0 (the default) keeps publishing by hand: up blog publish <id>
+# The article's X post carries its link (11 November 2026): the share page, whose card on X shows the hero picture,
+# title and summary. One post with a link costs $0.20 instead of $0.015 (a few articles a month); X refuses a post with
+# an uploaded picture AND a link (403, 3 November), so it goes without upload, and on a refusal once more the old way.
+X_BLOG_LINK = os.environ.get("X_BLOG_LINK", "true").lower() in ("1", "true", "yes")
 AUTO_PUBLISH_HOURS = float(os.environ.get("BLOG_AUTO_PUBLISH_HOURS", "0") or 0)
 KINDS = ("pay", "bill", "book", "cancel")
 LANGS = ("en", "zh", "ja")
@@ -206,8 +211,8 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
     ms = sorted(e["ms"] for e in sends if isinstance(e.get("ms"), int))
     if ms:   # how long our node took to answer a sendtx (logged since 6 November 2026), in seconds
         sec = lambda m: round(m / 1000, 1)  # noqa: E731
-        f["our node's answer time to a send, seconds"] = {"median": sec(ms[len(ms) // 2]), "slowest tenth from": sec(ms[len(ms) * 9 // 10]),
-                                                           "slowest": sec(ms[-1]), "sends timed": len(ms)}
+        f["our node's answer time to a send, seconds"] = {"median": sec(ms[len(ms) // 2]), "8 of 10 within": sec(ms[min(len(ms) - 1, len(ms) * 8 // 10)]),
+                                                           "slowest tenth from": sec(ms[len(ms) * 9 // 10]), "slowest": sec(ms[-1]), "sends timed": len(ms)}
         a0 = min(e["t"] for e in sends)
         per: dict = {}
         for e in sends:
@@ -306,6 +311,8 @@ def meaning_of(f: dict) -> dict:
         m["sends a minute the node's answer time allows, one at a time"] = round(60 / t["median"], 1)
         m["what that means"] = ("the ship sends one transaction and waits for the answer before the next; a slow answer, not "
                                 "the ship's brakes, is what sets the pace once the median goes above 5 seconds")
+    if t.get("8 of 10 within"):   # the next plan follows the slow answers, not the median (cruise.py PLAN_QUANTILE)
+        m["stops a minute the next plan allows for, from the time 8 of 10 sends were answered within"] = round(0.85 * min(12, 60 / t["8 of 10 within"]), 1)
     hs = f.get("block heights")
     if hs and len(hs) == 2 and hs[1] > hs[0]:
         m["blocks sealed while the ship was in port"] = hs[1] - hs[0]
@@ -503,16 +510,52 @@ def ship_of(a: dict) -> str:
     return "liner" if "queen" in name.lower() or a.get("ship") == "liner" else "expedition"
 
 
+def island_story(a: dict) -> bool:
+    """Only the island's and the ships' own articles get the island's painting (with the ship and Rico) as hero; an
+    article about IDNI news, a Q&A or what the testnet taught us gets the site's own look (blog_pics.desk_hero)."""
+    return a.get("kind") == "cruise" or bool(a.get("visit") or a.get("ship") or (a.get("facts") or {}).get("ship"))
+
+
+def pics_version(a: dict):
+    return PICS_VERSION if island_story(a) else f"desk-{DESK_VERSION}"
+
+
+def kicker(a: dict) -> str:
+    """The small line above the title on a desk hero: the article's kind and day, or its own `kicker`."""
+    if a.get("kicker"):
+        return str(a["kicker"])
+    label = {"learnings": "Learnings", "news": "News"}.get(a.get("kind") or "", "Tau HUD blog")
+    try:
+        day = dt.date.fromisoformat(str(a.get("on")))
+        return f"{label} · {day.day} {day.strftime('%B %Y')}"
+    except ValueError:
+        return label
+
+
+def make_hero(a: dict, stats: list | None) -> bool:
+    """The article's hero picture at IMG/<id>-hero.jpg: the island's painting for island and ship stories (only where
+    the paintings are), the site's own look for every other article. True when it was made."""
+    import blog_pics
+    os.makedirs(IMG, exist_ok=True)
+    out = os.path.join(IMG, a["id"] + "-hero.jpg")
+    if island_story(a):
+        if not os.path.exists(os.path.join(ART, "index.json")):
+            return False
+        blog_pics.hero(ART, SHIPS, a["card"], ship_of(a), out, stats=stats)
+    else:
+        blog_pics.desk_hero(a["card"], out, stats=stats, kicker=kicker(a))
+    return True
+
+
 def pictures(a: dict) -> dict:
     """The hero picture (the island's painting with the ship and the card, made only where the paintings are) and
     the charts of the visit's numbers; the article gets their addresses. Without paintings, no hero and no error."""
     import blog_pics
     os.makedirs(IMG, exist_ok=True)
-    if a.get("card") and os.path.exists(os.path.join(ART, "index.json")):
+    if a.get("card"):
         try:
-            blog_pics.hero(ART, SHIPS, a["card"], ship_of(a), os.path.join(IMG, a["id"] + "-hero.jpg"),
-                           stats=blog_pics.visit_stats(a.get("facts") or {}))
-            a["image"] = f"{NODE}/blog/img/{a['id']}-hero.jpg"
+            if make_hero(a, blog_pics.visit_stats(a.get("facts") or {})):
+                a["image"] = f"{NODE}/blog/img/{a['id']}-hero.jpg"
         except Exception as e:  # noqa: BLE001 - an article without its picture beats no article
             log.warning("hero for %s: %s", a["id"], e)
     if a.get("facts"):
@@ -557,20 +600,18 @@ def site_pictures(force: bool = False) -> int:
         if not a.get("id") or not ID_RE.match(a["id"]):
             continue
         st = state()
-        old = st.setdefault("pics", {}).get(a["id"]) != PICS_VERSION
+        old = st.setdefault("pics", {}).get(a["id"]) != pics_version(a)
         if force or old or not os.path.exists(os.path.join(SHARE, a["id"] + ".html")) or (a.get("card") and not os.path.exists(os.path.join(IMG, a["id"] + "-hero.jpg"))):
-            if a.get("card") and os.path.exists(os.path.join(ART, "index.json")):
+            if a.get("card"):
                 import blog_pics
                 try:
-                    os.makedirs(IMG, exist_ok=True)
-                    blog_pics.hero(ART, SHIPS, a["card"], ship_of(a), os.path.join(IMG, a["id"] + "-hero.jpg"),
-                                   stats=a.get("stats") or blog_pics.visit_stats(a.get("facts") or {}))
+                    make_hero(a, a.get("stats") or blog_pics.visit_stats(a.get("facts") or {}))
                 except Exception as e:  # noqa: BLE001
                     log.warning("hero for %s: %s", a["id"], e)
             share_page(a)
             if a.get("card") and os.path.exists(os.path.join(IMG, a["id"] + "-hero.jpg")):
                 st = state()
-                st.setdefault("pics", {})[a["id"]] = PICS_VERSION
+                st.setdefault("pics", {})[a["id"]] = pics_version(a)
                 write_json(STATE, st)
             n += 1
     return n
@@ -798,8 +839,9 @@ def numbers_of(f: dict) -> list[str]:
 
 
 def announce(a: dict, dry: bool) -> None:
-    """The one post per article, on Telegram with the link and on X without (a link makes an X post 13 times dearer):
-    the headline, the visit in numbers from the logbook, why it matters, the link."""
+    """The one post per article, on Telegram and X with the link (on X the share page, whose card shows the picture;
+    X_BLOG_LINK=false posts X the old way, picture without link): the headline, the visit in numbers from the logbook,
+    why it matters, the link."""
     import alerts
     link = f"{SITE}/blog/?p={a['id']}"
     nums = numbers_of(a.get("facts") or {})
@@ -809,16 +851,28 @@ def announce(a: dict, dry: bool) -> None:
     parts += ["<b>Why it matters</b>\n" + "\n".join("• " + alerts.html.escape(w["en"]) for w in a["why"]),
               f'<a href="{link}">Read it on the Tau HUD blog</a>']
     tg = "\n\n".join(parts)
-    x = alerts.x_post([a["title"]["en"], a.get("x") or a["dek"]["en"], "The whole story is on the Tau HUD blog."], foot="📝 Tau HUD blog", keep=2)
+    lines = [a["title"]["en"], a.get("x") or a["dek"]["en"], "The whole story is on the Tau HUD blog."]
+    plain = alerts.x_post(lines, foot="📝 Tau HUD blog", keep=2, with_link=False)
+    card = share_page(a) if X_BLOG_LINK and not dry else f"{NODE}/blog/a/{a['id']}.html"
+    x = alerts.x_post(lines, card, foot="📝 Tau HUD blog", keep=2, with_link=True) if X_BLOG_LINK else plain
     pic = a.get("image") and (SITE + a["image"] if a["image"].startswith("/") else a["image"])
     if dry:
-        print("--- telegram ---\n" + tg + "\n--- x ---\n" + x + f"\n--- picture: {pic or 'none'}")
+        print("--- telegram ---\n" + tg + "\n--- x ---\n" + x + f"\n--- picture: {pic or 'none'}"
+              + (" (on X as the link's card, $0.20)" if X_BLOG_LINK else " ($0.015)"))
         return
     for out, text in ((alerts.Telegram(), tg), (alerts.X(), x)):
         if not out.enabled():
             print(f"{out.name}: not set up, not posted")
             continue
-        ok, _, err = out.send_text(text, picture=pic) if out.name == "telegram" else out.send_with_picture(text, pic)
+        if out.name == "telegram":
+            ok, _, err = out.send_text(text, picture=pic)
+        elif X_BLOG_LINK:
+            ok, _, err = out.send_text(text)
+            if not ok:   # refused with the link: the picture and the text without it, as before
+                print(f"x: with the link not posted ({err}), now without it")
+                ok, _, err = out.send_with_picture(plain, pic)
+        else:
+            ok, _, err = out.send_with_picture(text, pic)
         print(f"{out.name}: {'posted' if ok else 'not posted: ' + err}")
 
 

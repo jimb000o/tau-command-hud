@@ -64,9 +64,11 @@ visits in a row comes less often (never below TRICK_MIN a visit); one that got t
 then on, to see when it is closed. At most one change of pace or kinds a visit; each change is written into the
 logbook ("tuned") and the visit's summary ("changed": what, from, to, because), and the blog tells it.
 The plan follows our node: one send waits for the answer to the last, so a node that answers in 6.8 s takes at most
-~9 a minute whatever the pace. After each visit with PLAN_MIN_SENDS answered sends, its median answer time is kept
-(for all ships: it is the node's); the next plan holds at most PLAN_MARGIN of what that allows, or of the pace if
-lower, in every PLAN_WINDOW minutes. Extra stops leave the plan before the visit, not by falling behind in it
+~9 a minute whatever the pace. After each visit with PLAN_MIN_SENDS answered sends, its slow answer time is kept
+(PLAN_QUANTILE: the time 8 of 10 sends were answered within; for all ships: it is the node's); the next plan holds at
+most PLAN_MARGIN of what that allows, or of the pace if lower, in every PLAN_WINDOW minutes. The median would not do:
+on 10 November the node answered half the sends in 0.4 s and the other half in 5 to 8 s, and a plan made from the
+median would have run into the slow half, as the Queen did on 7 November (10 sends unanswered at 12 a minute). Extra stops leave the plan before the visit, not by falling behind in it
 (MISS); bookings, bills, withdrawals and tricks stay. Written into the logbook too ("landed": thinned, because). What a test
 checks on the chain never changes by itself: that stays with a person.
 
@@ -126,11 +128,18 @@ QUIET_HOLD = 30            # seconds the ship waits after a send the node did no
 QUIET_SLOW = 10 * 60       # and for this long after it, half pace: the node is slow, the ship gives it room
 PLAN_MARGIN = 0.85         # stops planned per minute: this share of what our node can answer (one send waits for the last answer)
 PLAN_MIN_SENDS = 20        # answered sends a visit needs before its answer time counts
+PLAN_QUANTILE = 0.8        # the answer time kept: this share of the visit's sends were answered within it (not the median: half the sends can be slow)
 PLAN_WINDOW = 10           # minutes: the plan is thinned window by window, so the landing waves fit too
 RATE_MIN = 6               # the slowest a ship tunes itself down to, transactions a minute
 TUNE_UNANSWERED = 3        # sends our node left unanswered in one visit that make the next visit one a minute slower
 TRICK_GAP = 120            # seconds between two pirate tricks, at least
 TRICK_START, TRICK_MIN, TRICK_CALM = 4, 2, 3   # each trick a visit at first; at least; visits stopped rightly before fewer
+MAX_TRANSFERS = 64         # tau-testnet MAX_TRANSFERS_PER_TX: the transfers one payment may carry; a payment over it is refused whole
+POISON_TRANSFERS = 10      # the "poison" trick's transfers: the first ones the wallet can pay, the last it cannot, so the node applies none
+TAX_RULE = "always ( o8[t]:bv[24] = i1[t]:bv[24] / { 100 }:bv[24] )."   # the "taxman" rule: a 1% fee on o8 for every transfer, not scoped to the sender → UNSCOPED_USER_RULE
+RETRACT_HOLD = 3600        # the "stranger" booking's release is this far out, so it stays open all evening for another pirate to try to take it back
+RETRACT_SOON = 180         # the "late" booking's release is this near, so its own release time passes during the visit
+MAX_PREP = 4               # open bookings a visit keeps for its retract tricks, so it never nears MAX_OPEN_RETRACTABLE_PER_SENDER
 # the pirates' tricks: what the pirate does, and the node's answers that mean the chain said no for the right reason
 # (tau-testnet commands/sendtx.py; an overspend may also be refused by the transfer rule itself, TX_REJECTED)
 TRICKS = {
@@ -142,6 +151,14 @@ TRICKS = {
     "freeride": (("FEE_LIMIT_TOO_LOW",), "allows no fee at all for a payment"),
     "stale": (("TX_EXPIRED",), "sends a payment whose block height deadline has passed"),
     "giant": (("TX_INVALID", "INVALID_PARAMS"), "pays more than a transfer can carry (2^24 test AGRS)"),
+    "double": (("INVALID_SEQUENCE",), "sends two different payments for the same sequence number at once"),
+    "poison": (("INSUFFICIENT_FUNDS", "TX_INVALID", "TX_REJECTED"), "pays several places in one payment, the last more than the wallet holds"),
+    "cram": (("TX_INVALID", "TX_REJECTED"), "packs more transfers into one payment than it may carry (over 64)"),
+    "governance": (("TX_REJECTED",), "sends a payment carrying a field only the chain’s own transactions may set"),
+    "taxman": (("UNSCOPED_USER_RULE",), "submits a fee rule that would tax every wallet’s transfers, not only its own"),
+    "stranger": (("NOT_RETRACTABLE_SENDER",), "tries to take back another pirate’s booking"),
+    "phantom": (("UNKNOWN_RETRACTABLE",), "tries to take back a booking the chain never had"),
+    "late": (("RETRACT_TOO_LATE",), "tries to take back a booking after its release time"),
 }
 CODES = sorted({c for codes, _ in TRICKS.values() for c in codes} | {"TX_INVALID", "INVALID_PARAMS", "TX_REJECTED"})
 # MS Dry Run, 4 November 2026: eight sendtx went unanswered within 20 s (two a day on other days), were counted as
@@ -334,8 +351,12 @@ def plan(ship: str, t0: int, trial: set | None = None, allowed: set | None = Non
                 acts.append({"t": t, "p": p, "kind": "pay", "to": place, "amount": S["stops"][place][0]})
             t += R.uniform(*S["dwell"]) * 60
     if "trick" in allowed:   # a pirate's tricks, once the landing is over (every pirate has paid the pier by then), spaced out
-        bag = [k for k in TRICKS for _ in range(max(0, int((tricks or {}).get(k, TRICK_START))))]
-        R.shuffle(bag)
+        want = {k: max(0, int((tricks or {}).get(k, TRICK_START))) for k in TRICKS}   # how many of each this visit tries
+        bag = []   # round by round, so when more are planned than fit between landing and leaving, every trick is tried before any is tried again
+        for r in range(max(want.values(), default=0)):
+            row = [k for k in TRICKS if want[k] > r]
+            R.shuffle(row)
+            bag += row
         t, last = t0 + (landing(ship) + 1) * 60, end - 5 * 60
         step_ = max(TRICK_GAP, (last - t) / max(1, len(bag)))
         for k in bag:
@@ -668,19 +689,21 @@ class Cruise:
         return round(PLAN_MARGIN * min(self.rate_of(ship), 60000 / ms), 1)
 
     def measure(self, v: dict) -> dict | None:
-        """After a visit: our node's median answer time to a send, kept for every ship's next plan; the change, if any."""
+        """After a visit: our node's slow answer time to a send (PLAN_QUANTILE), kept for every ship's next plan; the
+        change, if any."""
         ms = sorted(e["ms"] for e in self.logbook if e.get("visit") == v["id"] and e.get("kind") in KINDS
                     and isinstance(e.get("ms"), int) and e.get("ok") is not None)
         if len(ms) < PLAN_MIN_SENDS:
             return None
-        med = ms[len(ms) // 2]
+        slow = ms[min(len(ms) - 1, int(len(ms) * PLAN_QUANTILE))]
         before = self.plan_pace(v["ship"])
-        self.node = {"answer_ms": med, "sends": len(ms), "visit": v["id"]}
+        self.node = {"answer_ms": slow, "sends": len(ms), "visit": v["id"], "median_ms": ms[len(ms) // 2]}
         after = self.plan_pace(v["ship"])
         if before is not None and abs(after - before) < 0.5:
             return None
         return {"what": "stops planned a minute", "from": before if before is not None else "as timetabled", "to": after,
-                "because": f"our node answered a send in {med / 1000:.1f} s (median of {len(ms)}), one send waits for the last answer"}
+                "because": f"our node answered {int(PLAN_QUANTILE * 10)} of 10 sends within {slow / 1000:.1f} s ({len(ms)} timed, median "
+                           f"{ms[len(ms) // 2] / 1000:.1f} s), one send waits for the last answer"}
 
     def tricks_of(self, ship: str) -> dict:
         n = (self.tune.get(ship) or {}).get("tricks") or {}
@@ -953,6 +976,20 @@ class Cruise:
             env["expiration_time"] = min(env["expiration_time"], act["rel"] - 1)
             env["expire_at_height"] = tip + 100
             tx = {"tx_type": "retract_transfer", **env, "fee_limit": "0", "retractable_id": rid}
+        elif k == "poison":   # several transfers in one payment, the last more than the wallet holds: the node must apply none of them
+            ops = [[pk, PLACES[act["to"]], str(fee)] for _ in range(act["n"] - 1)] + [[pk, PLACES[act["to"]], str(act["amount"])]]
+            tx = {"tx_type": "user_tx", **env, "fee_limit": str(fee * 5 * act["n"]), "operations": {"1": ops}}
+        elif k == "cram":   # more transfers in one payment than a payment may carry (over MAX_TRANSFERS)
+            ops = [[pk, PLACES[act["to"]], "1"] for _ in range(act["n"])]
+            tx = {"tx_type": "user_tx", **env, "fee_limit": str(fee * 5 * act["n"]), "operations": {"1": ops}}
+        elif k == "gov":   # a passenger's payment carrying a governance field only the chain's own transactions may set (not in the signed preimage)
+            tx = {"tx_type": "user_tx", **env, "fee_limit": str(fee * 5),
+                  "operations": {"1": [[pk, PLACES[act["to"]], str(act["amount"])]]}, act["field"]: act["value"]}
+        elif k == "taxrule":   # a user_tx whose rule (operations "0") writes a shared fee stream without a sender scope
+            tx = {"tx_type": "user_tx", **env, "fee_limit": str(fee * 5), "operations": {"0": act["rule"]}}
+        elif k == "retrick":   # a bare retract for the pirates' retract tricks: its own expiry is not capped to any release
+            env["expire_at_height"] = tip + 100
+            tx = {"tx_type": "retract_transfer", **env, "fee_limit": "0", "retractable_id": act["rid"]}
         else:
             raise ValueError(k)
         tx["signature"] = G2Basic.Sign(self.sk[signer or name], hashlib.sha256(signing_bytes(tx)).digest()).hex()
@@ -993,6 +1030,62 @@ class Cruise:
             _, name, tx = max(fresh, key=lambda x: x[0])
             entry.update(p=int(name.rsplit("-", 1)[1]), **{"from": tx["sender_pubkey"]})
             entry["amount"] = int(((tx.get("operations") or {}).get("1") or [[0, 0, 0]])[0][2])
+        elif trick == "double":   # a first valid payment takes the sequence number; the second at the same number must be refused
+            st = await ask(f"getsequence {pk}")
+            if not st or st.get("status") != "ok":
+                return skip("no answer from the node to getsequence")
+            d = st.get("data") or {}
+            seq, tip = int(d.get("sequence_number") or 0), int(d.get("tip_height") or 0)
+            entry.update(seq=seq, height=tip)
+            fee = base_fee(gov())
+            first = await asyncio.to_thread(self.build, ship, {**pay, "amount": act["amount"]}, seq, tip, fee)
+            r1 = await ask("sendtx " + json.dumps(first, separators=(",", ":")))
+            if not (r1 and r1.get("status") == "ok" and (r1.get("data") or {}).get("ok") is not False):
+                return skip("could not place the first payment, so the second has nothing to collide with")
+            self.spend()   # the first payment is a real transfer that takes the sequence number
+            pay["amount"] = entry["amount"] = act["amount"] + 1   # a different payment, sent for the same sequence number
+            tx = await asyncio.to_thread(self.build, ship, pay, seq, tip, fee)
+        elif trick in ("stranger", "late"):   # a retract the chain must refuse: of another pirate's booking, or of one past its release
+            retr = v.setdefault("retr", [])   # the bookings this visit made for its retract tricks, one per trick (reused all evening)
+            mine = [e for e in retr if e.get("for") == trick]
+            for e in mine:   # resolve the id and confirm it reached a block (getretractables lists only booked ones, not the mempool)
+                if e.get("rid") and e.get("born"):
+                    continue
+                r = await ask("getretractables " + self.pk[f"{ship}-{e['owner']}"] + " out")
+                if r and r.get("status") == "ok":
+                    for x in (r.get("data") or {}).get("retractables") or []:
+                        if int(x.get("release_at_time") or 0) == e["release"] and str(x.get("recipient_pubkey", "")).lower() == e["to"]:
+                            e["rid"], e["born"] = str(x.get("retractable_id") or ""), True
+                            break
+            now = int(self.clock())
+            ripe = next((e for e in mine if e.get("rid") and e.get("born")
+                         and (now < e["release"] - 30 if trick == "stranger" else now >= e["release"])), None)
+            if ripe is None:   # nothing ready: make this trick's booking, unless one is already on its way or we hold enough
+                if mine or len(retr) >= MAX_PREP:
+                    return skip("the booking this trick needs is not in a block yet" if trick == "stranger" else "the booking this trick needs is still before its release")
+                owner, rel = act["p"], now + (RETRACT_HOLD if trick == "stranger" else RETRACT_SOON)
+                st = await ask("getsequence " + self.pk[f"{ship}-{owner}"])
+                if not st or st.get("status") != "ok":
+                    return skip("no answer from the node to getsequence")
+                d = st.get("data") or {}
+                booktx = await asyncio.to_thread(self.build, ship, {"p": owner, "kind": "book", "to": "market", "amount": act["amount"], "rel": rel},
+                                                 int(d.get("sequence_number") or 0), int(d.get("tip_height") or 0), base_fee(gov()))
+                rb = await ask("sendtx " + json.dumps(booktx, separators=(",", ":")))
+                if not (rb and rb.get("status") == "ok" and (rb.get("data") or {}).get("ok") is not False):
+                    return skip("could not place the booking this trick needs")
+                self.spend()
+                retr.append({"owner": owner, "rid": None, "born": False, "release": rel, "to": PLACES["market"], "for": trick})
+                return skip("made a booking; another pirate takes it back once it is in a block" if trick == "stranger"
+                            else "made a booking with a near release; its owner takes it back once its time has passed")
+            rp = ripe["owner"] if trick == "late" else (ripe["owner"] + 1) % SHIPS[ship]["passengers"]   # late: the owner retracts; stranger: a different pirate
+            rpk = self.pk[f"{ship}-{rp}"]
+            st = await ask("getsequence " + rpk)
+            if not st or st.get("status") != "ok":
+                return skip("no answer from the node to getsequence")
+            d = st.get("data") or {}
+            seq, tip = int(d.get("sequence_number") or 0), int(d.get("tip_height") or 0)
+            entry.update(p=rp, seq=seq, height=tip, amount=0, rid=ripe["rid"], **{"from": rpk})
+            tx = await asyncio.to_thread(self.build, ship, {"p": rp, "kind": "retrick", "rid": ripe["rid"]}, seq, tip, base_fee(gov()))
         else:
             st = await ask(f"getsequence {pk}")
             if not st or st.get("status") != "ok":
@@ -1020,6 +1113,22 @@ class Cruise:
                 signer = f"{ship}-{(act['p'] + 1) % SHIPS[ship]['passengers']}"
             elif trick == "impostor":   # the transfer names another pirate's wallet as payer, signed by this pirate
                 pay["from"] = self.pk[f"{ship}-{(act['p'] + 1) % SHIPS[ship]['passengers']}"]
+            elif trick == "poison":   # nine transfers the wallet can pay, the last one it cannot: the whole payment must be refused
+                b = await ask(f"getbalance {pk}")
+                if not b or b.get("status") != "ok":
+                    return skip("no answer from the node to getbalance")
+                bal = int((b.get("data") or {}).get("balance") or 0)
+                pay["kind"], pay["n"], pay["amount"] = "poison", POISON_TRANSFERS, bal
+                entry["amount"], entry["balance"] = bal, bal
+            elif trick == "cram":   # one transfer more than a payment may carry
+                pay["kind"], pay["n"] = "cram", MAX_TRANSFERS + 1
+                entry["amount"] = pay["n"]
+            elif trick == "governance":   # a payment carrying a field only the chain's own transactions may set
+                pay["kind"], pay["field"], pay["value"] = "gov", "rule_revisions", []
+            elif trick == "taxman":   # a user rule that would tax every wallet's transfers, not only the sender's own
+                pay["kind"], pay["rule"], entry["amount"] = "taxrule", TAX_RULE, 0
+            elif trick == "phantom":   # a retract of a booking id the chain never had
+                pay["kind"], pay["rid"], entry["amount"] = "retrick", secrets.token_hex(32), 0
             tx = await asyncio.to_thread(self.build, ship, pay, seq, tip, base_fee(gov()), None, signer)
         t_ask = time.monotonic()
         res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))

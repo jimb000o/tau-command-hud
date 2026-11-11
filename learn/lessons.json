@@ -1,5 +1,5 @@
 {
-  "about": "Five short lessons for tauhud.com/learn. The page loads them; `up tau` on the server asks the engine every try and every solution and prints ok or FAIL, so the expected answers here are checked against the real engine. A task's `fill` is the fill-in shown to people who picked 'never written a formula': the pattern with ▢ and the choices for it. `guide` is the step-by-step tour shown to people who picked 'never written a formula': one idea per card, every question is a try or solution of the lessons above, so the self-test already checks it; for a guess, the engine's answer decides which choice was right. A lesson with \"level\": \"pro\" is shown only to people who picked 'I know logic or Tau'. `asked` holds questions from the community in IDNI's monthly Q&A videos, answered in our own words; a `try` is always a lesson try, so the self-test covers it. `brief` feeds tauhud.com/learn/brief/: a short software brief, each requirement in plain English with the Tau line written for it by hand; `checks` lists which requirements are switched on and the verdict the engine must give, and the self-test asks each of them.",
+  "about": "Five short lessons for tauhud.com/learn. The page loads them; `up tau` on the server asks the engine every try and every solution and prints ok or FAIL, so the expected answers here are checked against the real engine. A task's `fill` is the fill-in shown to people who picked 'never written a formula': the pattern with ▢ and the choices for it. `guide` is the step-by-step tour shown to people who picked 'never written a formula': one idea per card, every question is a try or solution of the lessons above, so the self-test already checks it; for a guess, the engine's answer decides which choice was right. A lesson with \"level\": \"pro\" is shown only to people who picked 'I know logic or Tau'. `asked` holds questions from the community in IDNI's monthly Q&A videos or in our chat (`from`: \"chat\", no video), answered in our own words; a `try` is always a lesson try, so the self-test covers it. `brief` feeds tauhud.com/learn/brief/: a short software brief, each requirement in plain English with the Tau line written for it by hand; `checks` lists which requirements are switched on and the verdict the engine must give, and the self-test asks each of them.",
   "lessons": [
     {
       "id": "yesno",
@@ -243,6 +243,32 @@
             }
           },
           "says": "500 goes through (1), 5,000 is stopped (0)."
+        },
+        {
+          "label": "A 1 % fee",
+          "op": "run",
+          "spec": "always ( o8[t]:bv[24] = i1[t]:bv[24] / { 100 }:bv[24] ).",
+          "steps": [
+            {
+              "i1": "1000"
+            },
+            {
+              "i1": "250"
+            },
+            {
+              "i1": "99"
+            }
+          ],
+          "expect": {
+            "out": {
+              "o8": [
+                "10",
+                "2",
+                "0"
+              ]
+            }
+          },
+          "says": "A rule can also add a fee on o8, worked out from the amount: 1,000 pays 10, 250 pays 2, 99 pays 0, because Tau rounds down. On the testnet the rule must name your own wallet too, so it only ever charges your payments."
         }
       ],
       "task": {
@@ -867,6 +893,29 @@
       "a": "Practice on small rules. Lesson 5 changes a real testnet limit, and the Rule Playground runs a rule against the testnet's own checks.",
       "video": "6Em0cJU8cx4",
       "when": "2025-11"
+    },
+    {
+      "id": "fees",
+      "q": "Can Tau do percentage fees or recurring payments?",
+      "a": "Percent, partly: a rule on your own wallet can add a fee worked out from the amount, such as 1 %, and Tau rounds down. That fee goes to whoever seals the block, not to a shop, and it only charges your own payments; a rule cannot take a cut of other people's. Recurring payments, not yet: a rule can let a payment through or stop it, but never start one. The nearest thing today is a timed payment that pays itself out at a set block or time, up to 16 open per wallet and up to 90 days ahead; the money is set aside at once, and you can take it back until then. This is the testnet in November 2026; IDNI may add more.",
+      "try": {
+        "op": "run",
+        "spec": "always ( o8[t]:bv[24] = i1[t]:bv[24] / { 100 }:bv[24] ).",
+        "steps": [
+          {
+            "i1": "1000"
+          },
+          {
+            "i1": "250"
+          },
+          {
+            "i1": "99"
+          }
+        ]
+      },
+      "says": "1,000 pays 10, 250 pays 2, 99 pays 0: a 1 % fee, rounded down.",
+      "from": "chat",
+      "when": "2026-11"
     }
   ],
  "brief": {
