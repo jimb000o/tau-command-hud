@@ -447,10 +447,10 @@ if [ "${1:-}" = "cost" ] || [ "${1:-}" = "costs" ]; then
 fi
 # the node following IDNI tau-testnet main by itself (follow/idni_follow.py, a systemd timer every 30 min that every up
 # installs): up follow  its state and last log lines, up follow now  one check at once (in the background),
-# up follow off  stops following (the node stays on the commit it runs), up follow on  starts again; nothing rebuilt
+# up follow retry  tries a failed commit again, up follow off  stops following (the node stays on the commit it runs), up follow on  starts again; nothing rebuilt
 if [ "${1:-}" = "follow" ]; then
   case "${2:-}" in
-    now|on|off) python3 follow/idni_follow.py "$2" ;;
+    now|on|off|retry) python3 follow/idni_follow.py "$2" ;;
     *) python3 follow/idni_follow.py install >/dev/null 2>&1 || true ;;
   esac
   echo "---------------- copy from here into the chat ----------------"
