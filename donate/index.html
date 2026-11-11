@@ -26,7 +26,7 @@
 /* Same tokens as the HUD: black and white, phosphor green as the one accent. */
 :root {
   --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
-  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee; --amber: #ffb13b;
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee; --amber: #ffb13b; --gap: #ff8a65;
   --display: "Sora", "Manrope", "Segoe UI", sans-serif;
   --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   color-scheme: dark;
@@ -89,7 +89,23 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .tot div { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; min-width: 0; }
 .tot b { display: block; font: 700 18px/1.25 var(--display); color: #fff; overflow-wrap: anywhere; }
 .tot span { color: var(--dim); font-size: 11.5px; }
-.thanks { border: 1px solid rgba(57,255,138,.28); border-radius: 6px; padding: 8px 10px; margin: 0 0 12px; color: var(--text); }
+.thanks { margin: 10px 0 6px; color: var(--dim); font-size: 12px; }
+.got1 { margin: 10px 0 0; color: var(--text); font-size: 12.5px; }
+.got1 b { color: #fff; font-weight: 600; }
+/* how much of the cost donations cover: the shortfall as the headline, said plainly */
+.cover { border: 1px solid rgba(255,138,101,.35); border-radius: 8px; padding: 9px 12px; margin: 0 0 10px; background: rgba(255,138,101,.05); }
+.covtop { display: flex; align-items: baseline; gap: 10px; }
+.covtop .pct { font: 700 34px/1 var(--display); color: #fff; }
+.covtop span { color: var(--text); font-size: 12px; line-height: 1.35; }
+.bar { height: 10px; border-radius: 5px; margin: 9px 0 6px; overflow: hidden; display: flex;
+  background: repeating-linear-gradient(135deg, rgba(255,138,101,.38) 0 6px, rgba(255,138,101,.18) 6px 12px); }
+.bar i { display: block; height: 100%; background: var(--ok); min-width: 2px; }
+.bar.thin { height: 6px; margin: 5px 0 0; }
+.covnums { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--dim); }
+.covnums em { font-style: normal; font: 600 14px var(--display); }
+.covnums .g { color: var(--ok); } .covnums .r { color: var(--gap); }
+.mon { margin: 9px 0 0; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; color: var(--dim); }
+.mon b { color: #fff; font-weight: 600; }
 .thanks b { color: var(--ok); font-weight: 600; }
 .gifts { list-style: none; margin: 0; padding: 0; display: grid; }
 .gifts li { display: grid; grid-template-columns: 5.2em minmax(0, 1fr) auto; gap: 2px 12px; align-items: baseline; padding: 7px 0; border-top: 1px solid var(--line); }
@@ -117,19 +133,19 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .flow svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
 .flow text { fill: var(--dim); font: 11px var(--mono); }
 .flow .grid { stroke: var(--line); }
-.flow .paid { fill: none; stroke: rgba(255,255,255,.75); stroke-width: 1.6; stroke-dasharray: 4 3; }
+.flow .paid { fill: none; stroke: var(--gap); stroke-width: 2; stroke-linejoin: round; }
 .flow .gift { fill: none; stroke: var(--ok); stroke-width: 2; stroke-linejoin: round; }
-.flow .gap { fill: rgba(255,255,255,.035); }
+.flow .gap { fill: rgba(255,138,101,.13); }
 .flow .pt { fill: var(--ok); stroke: var(--void); stroke-width: 2; }
-.flow .pt.w { fill: #fff; }
+.flow .pt.w { fill: var(--gap); }
 .flow .xh { stroke: rgba(255,255,255,.35); stroke-width: 1; }
 .flow .ov { fill: transparent; cursor: crosshair; }
 .ctip { position: absolute; top: 4px; pointer-events: none; background: rgba(9,9,10,.94); border: 1px solid var(--hair); border-radius: 6px; padding: 6px 9px; font-size: 11.5px; white-space: nowrap; z-index: 2; }
 .ctip b { color: #fff; font-weight: 600; }
 .legend { display: flex; gap: 6px 16px; flex-wrap: wrap; color: var(--dim); font-size: 11.5px; margin: 6px 0 0; }
 .legend i { display: inline-block; width: 16px; height: 0; border-top: 2px solid var(--ok); vertical-align: middle; margin-right: 6px; }
-.legend i.w { border-top: 2px dashed rgba(255,255,255,.75); }
-.even { margin: 8px 0 0; color: var(--text); }
+.legend i.w { border-top: 2px solid var(--gap); } .legend i.z { border: 0; width: 12px; height: 10px; background: rgba(255,138,101,.25); }
+.even { margin: 6px 0 0; color: var(--dim); font-size: 12px; }
 .even b { color: #fff; font-weight: 600; }
 [hidden] { display: none !important; }
 @media (min-width: 2200px) and (min-height: 1200px) { body { zoom: 1.3; } }
@@ -137,7 +153,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 @media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 520px) { .addrbox { grid-template-columns: minmax(0, 1fr); justify-items: start; } .tot b { font-size: 16px; } }
 @media (max-width: 700px) { .b { min-height: 44px; } .gifts a { padding: 10px 0; } }
-@media (min-width: 900px) and (max-height: 800px) { .sub, #costNote, #fxNote { display: none; } .flow .chart { height: 118px; } .gifts li:nth-child(n+4) { display: none; } .head b { font-size: 19px; } #costs small { display: none; } #costs li { padding: 6px 0; } .addrbox { grid-template-columns: 112px minmax(0, 1fr); } .qr { width: 112px; height: 112px; } .wallets .b { padding: 0 9px; letter-spacing: .06em; } .wallets { margin-top: 10px; } .not { gap: 3px; font-size: 12px; } .panel { padding: 14px 16px; } }   /* a 1366 × 768 laptop keeps the page on one screen */
+@media (min-width: 900px) and (max-height: 800px) { .sub, #costNote, #fxNote { display: none; } .flow .chart { height: 100px; } #even, #costBilled { display: none; } .gifts .fx { display: none; } .covtop .pct { font-size: 30px; } .gifts li:nth-child(n+4) { display: none; } .head b { font-size: 19px; } #costs small { display: none; } #costs li { padding: 6px 0; } .addrbox { grid-template-columns: 112px minmax(0, 1fr); } .qr { width: 112px; height: 112px; } .wallets .b { padding: 0 9px; letter-spacing: .06em; } .wallets { margin-top: 10px; } .not { gap: 3px; font-size: 12px; } .panel { padding: 14px 16px; } }   /* a 1366 × 768 laptop keeps the page on one screen */
 @media (prefers-reduced-motion: reduce) { .state::before { animation: none; } }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
@@ -180,12 +196,13 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
         <div class="head" id="head" hidden><div><b id="perMonth"></b><span id="perMonthL"></span></div><div><b id="paidAll"></b><span id="paidAllL"></span></div></div>
         <ul class="rows" id="costs"></ul>
         <div class="sum"><span>Running costs, not counting time</span><b id="costSum"></b></div>
+        <p class="fine" id="costBilled" hidden></p>
         <p class="fine" id="costNote">Amounts as billed, rounded, each in the currency of its bill. Further items are added here once their bills are in.</p>
         <details id="oneoff" class="oneoff" hidden>   <!-- folded: the list grows with every bill, the page fits 1366 × 768 (9.11 sim) -->
-          <summary><h2 class="sub2">Paid so far <span class="n">newest first</span></h2></summary>
+          <summary><h2 class="sub2">Extra top-ups <span class="n">newest first</span></h2></summary>
           <ul class="rows" id="oneoffRows"></ul>
-          <div class="sum"><span>Paid in all, not counting time</span><b id="paidSum"></b></div>
-          <p class="fine">Top-ups and bills of the tools, as billed. Our server reads them from the receipts as they come in.</p>
+          <div class="sum"><span>Top-ups in all, already inside the costs above</span><b id="paidSum"></b></div>
+          <p class="fine">Single top-ups of the tools (image credits and the like) on top of the monthly bills, as billed. They are part of the costs since the first bill above, not a separate total.</p>
         </details>
         <p class="fine">Work on the site is counted rather than claimed: <span id="effort">changes pushed to the public repository, counted live from GitHub</span>. <a href="/#updates">Update log ›</a></p>
       </section>
@@ -194,8 +211,14 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
       <section class="panel" aria-labelledby="hGot">
         <h2 id="hGot">Received, on chain <span class="n" id="nGot"></span></h2>
         <div class="flow" id="flow" hidden>
+          <div class="cover" id="cover">
+            <div class="covtop"><b class="pct" id="covPct"></b><span id="covL"></span></div>
+            <div class="bar" role="img" id="covBar"><i id="covFill"></i></div>
+            <div class="covnums"><span><em class="g" id="covGot"></em> <span>donated</span></span><span><em class="r" id="covGap"></em> <span>not covered</span></span></div>
+            <div class="mon"><span id="monL"></span><div class="bar thin" role="img" id="monBar"><i id="monFill"></i></div></div>
+          </div>
           <div class="chart" id="flowChart"></div>
-          <div class="legend"><span><i></i><span id="lgGift">donated so far</span></span><span><i class="w"></i><span id="lgPaid">spent so far</span></span></div>
+          <div class="legend"><span><i></i><span id="lgGift">donated so far</span></span><span><i class="w"></i><span id="lgPaid">spent so far</span></span><span><i class="z"></i><span>not covered</span></span></div>
           <p class="even" id="even"></p>
         </div>
         <div id="got"><p class="empty"><span class="state">Reading the Ethereum chain</span></p></div>
@@ -260,7 +283,8 @@ C.ready = (async () => {
   /* bills not in yet: one row naming them, so the list is honest about what is missing; left out of every sum */
   if (wait.length) { const e = li("Bills not in yet", "", T("amount to come"), "wait"); e.querySelector("small").textContent = wait.map(c => T(c.t) + " (" + T(c.n || c.t) + ")").join(" · "); ul.append(e); }
   const sums = {}; known.forEach(c => { sums[c.cur] = (sums[c.cur] || 0) + c.amount; });   // per currency here; converted only in the headline
-  $("costSum").textContent = G("about {v} a month", { v: Object.entries(sums).map(([c, n]) => cost(n, c)).join(" + ") });
+  C.billed = Object.entries(sums).map(([c, n]) => cost(n, c)).join(" + ");
+  $("costSum").textContent = G("about {v} a month", { v: C.billed });
   $("costNote").hidden = !wait.length;
   let PAID = [];
   try { const r = await fetch("https://node.tauhud.com/costs-paid.json", { cache: "no-store" }); if (r.ok) PAID = (await r.json()).items || []; } catch (e) {}
@@ -285,7 +309,7 @@ const dm = t => new Date(t).toLocaleDateString(L === "en" ? "en-GB" : L, { day: 
 const DAY = 86400000, dayOf = t => Math.floor(t / DAY) * DAY;
 /* the headline (costs per month, paid so far), the chart and the break-even line; needs the costs and one exchange rate */
 const money1 = v => new Intl.NumberFormat(RC === "USD" ? "en-US" : L === "en" ? "en-GB" : L, { style: "currency", currency: RC, maximumFractionDigits: 0 }).format(v);
-const RC = CUR[0];
+const RC = L === "en" ? "USD" : CUR[0];   // most bills are in dollars: one total in dollars in English (euros beside it), yuan / yen in Chinese / Japanese
 function flow(don) {
   const fx = (don || []).find(x => x.fiat && ["eur", "usd", "cny", "jpy"].every(k => x.fiat[k] > 0));
   if (!fx || !C.items.length) { $("head").hidden = true; return null; }
@@ -298,12 +322,19 @@ function flow(don) {
   ev.sort((a, b) => a.t - b.t);
   const paidAll = ev.filter(e => e.w === "p").reduce((a, e) => a + e.v, 0), gotAll = ev.filter(e => e.w === "g").reduce((a, e) => a + e.v, 0);
   const firstBill = ev.find(e => e.w === "p");
+  const eur = v => new Intl.NumberFormat("en-GB", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v * fx.fiat.eur / fx.fiat[RC.toLowerCase()]);
   $("perMonth").textContent = G("≈ {v}", { v: money1(month) });
-  $("perMonthL").textContent = G("a month now, at the {d} rate; time not counted", { d: dm(fx.ts * 1000) });
+  $("perMonthL").textContent = RC === "USD" ? G("a month now (≈ {e}), at the {d} rate; time not counted", { e: eur(month), d: dm(fx.ts * 1000) })
+    : G("a month now, at the {d} rate; time not counted", { d: dm(fx.ts * 1000) });
   $("paidAll").textContent = money1(paidAll);
   $("paidAllL").textContent = firstBill ? G("costs since {d}", { d: dm(firstBill.t) }) : "";
   $("head").hidden = false;
-  return { ev, month, paidAll, gotAll };
+  /* the monthly sum as one figure; the bills in their own currencies beneath */
+  $("costBilled").textContent = G("As billed: {v}, each in the currency of its bill", { v: C.billed }); $("costBilled").hidden = false; $("costSum").title = $("costBilled").textContent;
+  $("costSum").textContent = G("≈ {v} a month", { v: money1(month) });
+  const m0 = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1);
+  const gotMonth = ev.filter(e => e.w === "g" && e.t >= m0).reduce((a, e) => a + e.v, 0);
+  return { ev, month, paidAll, gotAll, gotMonth, since: firstBill && firstBill.t };
 }
 /* the chart: two running totals day by day, as steps (a bill or a donation lands on one day), the gap between them shaded */
 function drawFlow(f) {
@@ -340,10 +371,18 @@ function drawFlow(f) {
   };
   ov.addEventListener("mousemove", show); ov.addEventListener("touchstart", e => show(e.touches[0]), { passive: true });
   ov.addEventListener("mouseleave", () => { xh.setAttribute("visibility", "hidden"); tip.hidden = true; });
-  const pct = f.paidAll ? Math.round(f.gotAll / f.paidAll * 100) : 0;
-  $("even").innerHTML = "<span></span> <b></b>";
-  $("even").firstChild.textContent = G("Donations have covered {p} of what the site has cost so far.", { p: (pct < 1 && f.gotAll > 0 ? "<1" : pct) + "%" });
-  $("even").lastChild.textContent = G("To cover the running costs it would take about {v} a month.", { v: money1(f.month) });
+  const share = f.paidAll ? Math.min(1, f.gotAll / f.paidAll) : 0, pct = Math.round(share * 100), ps = (pct < 1 && f.gotAll > 0 ? "<1" : pct) + "%";
+  $("covPct").textContent = ps;
+  $("covL").textContent = G("of the costs since {d} covered by donations", { d: dm(f.since || Date.now()) });
+  $("covFill").style.width = (share * 100).toFixed(1) + "%";
+  $("covBar").setAttribute("aria-label", G("{p} covered", { p: ps }));
+  $("covGot").textContent = money1(f.gotAll);
+  $("covGap").textContent = money1(Math.max(0, f.paidAll - f.gotAll));
+  const ms = f.month ? Math.min(1, f.gotMonth / f.month) : 0;
+  $("monL").textContent = G("This month: {g} donated of about {c} it costs", { g: money1(f.gotMonth), c: money1(f.month) });
+  $("monFill").style.width = (ms * 100).toFixed(1) + "%";
+  $("monBar").setAttribute("aria-label", G("{p} of this month covered", { p: Math.round(ms * 100) + "%" }));
+  $("even").textContent = G("To cover the running costs, donations would need to reach about {v} a month. Nothing is owed in return.", { v: money1(f.month) });
 }
 let FLOW = null, LAST = null;
 async function load() {
@@ -356,11 +395,10 @@ async function load() {
   if (!items.length) { box.innerHTML = `<p class="empty"></p>`; box.firstChild.textContent = T("No donation yet."); $("nGot").textContent = ""; return; }
   const donors = Math.max(1, parseInt(d.donors, 10) || 1), tf = value(d.totals_fiat);
   $("nGot").textContent = nf.format(items.length);
-  const tot = document.createElement("div"); tot.className = "tot";
-  const cell = (v, l) => { const e = document.createElement("div"); e.innerHTML = "<b></b><span></span>"; e.firstChild.textContent = v; e.lastChild.textContent = l; return e; };
-  tot.append(cell(Object.entries(d.totals || {}).map(([k, v]) => v + " " + k).join(" · "), T("received in all")));
-  if (tf) tot.append(cell(tf, T("worth when they came in")));
-  tot.append(cell(nf.format(donors), T(donors === 1 ? "person so far" : "people so far")));
+  const tot = document.createElement("p"); tot.className = "got1";
+  tot.innerHTML = "<b></b> <span></span>";
+  tot.firstChild.textContent = Object.entries(d.totals || {}).map(([k, v]) => v + " " + k).join(" · ");
+  tot.lastChild.textContent = G(donors === 1 ? "received from {n} person{w}" : "received from {n} people{w}", { n: nf.format(donors), w: tf ? G(", worth {v} when they came in", { v: tf }) : "" });
   const nw = items[0], fresh = Date.now() / 1000 - nw.ts < 7 * 86400;
   const thanks = document.createElement("p"); thanks.className = "thanks";
   thanks.innerHTML = `<b></b> <span></span>`;
@@ -378,7 +416,7 @@ async function load() {
     if (v) { const s = document.createElement("span"); s.className = "fx"; s.textContent = G(x.fiat_at === "now" ? "worth {v} when it came in" : "worth {v} on that day", { v }); li.append(s); }
     ul.append(li);
   });
-  box.replaceChildren(tot, $("flow") || FLOW, thanks, ul);
+  box.replaceChildren($("flow") || FLOW, tot, thanks, ul);
   await C.ready; LAST = flow(items); drawFlow(LAST);
 }
 load();
