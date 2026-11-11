@@ -2909,5 +2909,6 @@
     "tag": "Donations",
     "on": "2026-11-11",
     "html": "Donations: the chart names each line at its end with its value instead of a legend, and one sentence says what the donations so far have paid for, in days of running the site."
-  }
+  },
+  {"tag": "Donations", "on": "2026-11-11", "html": "Donations: the page now reads as a story. First where it stands: the amount not covered by donations, shown once and large, and a chart that names each big jump in the costs and shows the bills still due this month as a dashed line. Then what it costs, then the address, with what it would take to cover the running costs."}
 ]
