@@ -130,4 +130,10 @@ TauI18n.add({ strings: {
   "Donations so far have paid for about {n} day of running the site.": "迄今的捐赠大约支付了本站 {n} 天的运行费用。",
   "Donations so far have paid for about {n} days of running the site.": "迄今的捐赠大约支付了本站 {n} 天的运行费用。",
   "Donations so far have paid for less than one day of running the site.": "迄今的捐赠支付了本站不到一天的运行费用。",
+  "Where it stands": "现状",
+  "of the costs since {d} not covered by donations": "自 {d} 起的花费中未被捐赠覆盖的部分",
+  "{p} covered: {v} donated of {w} spent": "已覆盖 {p}：花费 {w}，捐赠 {v}",
+  "spent {v}": "花费 {v}",
+  "donated {v}": "捐赠 {v}",
+  "due by {d}": "截至 {d} 应付",
 } });

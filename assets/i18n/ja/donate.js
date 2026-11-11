@@ -130,4 +130,10 @@ TauI18n.add({ strings: {
   "Donations so far have paid for about {n} day of running the site.": "これまでの寄付で、サイトの運営費およそ {n} 日分をまかなえました。",
   "Donations so far have paid for about {n} days of running the site.": "これまでの寄付で、サイトの運営費およそ {n} 日分をまかなえました。",
   "Donations so far have paid for less than one day of running the site.": "これまでの寄付でまかなえたのは、サイトの運営費の 1 日分に足りません。",
+  "Where it stands": "現状",
+  "of the costs since {d} not covered by donations": "{d} からの費用のうち寄付でまかなえていない額",
+  "{p} covered: {v} donated of {w} spent": "{p} をカバー：費用 {w} のうち寄付 {v}",
+  "spent {v}": "費用 {v}",
+  "donated {v}": "寄付 {v}",
+  "due by {d}": "{d} までの支払い予定",
 } });
