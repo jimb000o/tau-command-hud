@@ -20,34 +20,34 @@
   {
    "t": "Coding assistant",
    "n": "Codex",
-   "d": "Codex subscription (20x plan), a second AI tool the site's code and art are made with",
-   "amount": null,
+   "d": "Codex on the ChatGPT Pro plan with 20x the usage of Plus, a second AI tool the site's code and art are made with",
+   "amount": 200,
    "cur": "USD",
-   "since": null
+   "since": "2026-11-11"
   },
   {
    "t": "Image editing",
    "n": "Photoshop",
    "d": "Adobe Photoshop, for finishing the painted art",
-   "amount": null,
+   "amount": 19.34,
    "cur": "EUR",
-   "since": null
+   "since": "2026-11-11"
   },
   {
    "t": "Voices",
    "n": "ElevenLabs",
-   "d": "ElevenLabs Starter plan, for the voices of the Daily Consensus café; to be cancelled once the voices are made",
-   "amount": null,
+   "d": "ElevenLabs Creator plan, for the voices on the site; $22 plus tax",
+   "amount": 26.18,
    "cur": "USD",
-   "since": null
+   "since": "2026-11-30"
   },
   {
    "t": "Domains",
    "n": "tauhud.com, agorzilla.com",
-   "d": "tauhud.com and agorzilla.com",
-   "amount": null,
-   "cur": "EUR",
-   "since": null
+   "d": "tauhud.com and agorzilla.com, $11.48 a year each, shown per month",
+   "amount": 1.91,
+   "cur": "USD",
+   "since": "2026-10-30"
   },
   {
    "t": "X account",

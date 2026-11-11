@@ -110,4 +110,7 @@ TauI18n.add({ strings: {
   "Paid out and donated so far": "これまでの支出と寄付",
   "Donations have covered {p} of what was paid out so far.": "寄付はこれまでの支出の {p} をまかなっています。",
   "To cover the running costs it would take about {v} a month.": "運営費をまかなうには月に約 {v} が必要です。",
+  "Codex on the ChatGPT Pro plan with 20x the usage of Plus, a second AI tool the site's code and art are made with": "ChatGPT Pro プランの Codex（Plus の 20 倍の利用量）、サイトのコードと絵に使う二つ目の AI ツール",
+  "ElevenLabs Creator plan, for the voices on the site; $22 plus tax": "ElevenLabs Creator プラン、サイトの声のため。22 ドル＋税",
+  "tauhud.com and agorzilla.com, $11.48 a year each, shown per month": "tauhud.com と agorzilla.com、それぞれ年 11.48 ドル、月割りで表示",
 } });
