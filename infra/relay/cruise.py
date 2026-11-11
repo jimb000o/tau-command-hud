@@ -6,7 +6,8 @@ Three ships call by a timetable on the island's clock (Europe/Berlin); the other
                                   (TRICKS): paying more than the wallet holds, sending a payment the chain already took
                                   a second time, a payment whose time ran out, a payment signed with another pirate's key,
                                   a payment from another pirate's wallet, a payment that allows no fee, one whose block
-                                  deadline has passed, one bigger than a transfer can carry.
+                                  deadline has passed, one bigger than a transfer can carry, one that allows one test AGRS
+                                  less fee than the network's fee rule asks for it (the fee edge).
   Wednesday 16:00  MS Dry Run     a small expedition ship, 40 curious passengers: the lighthouse, Captain Wren's Old
                                   Ship, the school, the dive shop. It tries the rarer kinds of transaction.
   Saturday 14:00   Queen Mempool  a big luxury liner, 120 passengers: the South Current spa, Bar La Ola, song requests
@@ -29,6 +30,12 @@ Tau Testnet Alpha to the till of a place (island.PLACES, the same tills the game
           for the brakes; a trick the chain takes ("through") is a finding: it is held back from the public logbook
           (route: "held") and reported to the owner privately first (alerts/cruise_crier.py reads /cruise/held from
           inside the server), until `up cruise release <visit>` shows it (CRUISE_RELEASED_PATH)
+          The fee edge ("edge") reads the network's fee rule (o9 in the node's consensus rules) with rulefacts.py, exactly
+          for every amount, the same reading as the pages; where the fee steps up with the amount, the payment sits on the
+          dearer side of the lowest step (up to EDGE_MAX). It allows one test AGRS less than that fee and must be refused
+          (FEE_LIMIT_TOO_LOW); right after, the same payment allowing exactly the fee must go through (a fee refusal takes
+          no sequence number). If the node refuses that one for its fee too, it asks more than the rule as we read it
+          ("odd"): held back and reported like a trick that got through, since it may be our reading of the rule
 Booked ahead (a ship with "escrow", MS Dry Run): a few passengers book the call days before it, ESCROW_AHEAD at most. Each
 booking is a retractable transfer of the fare to the ship's till (a wallet made here like the passengers'), released at the
 arrival time: the chain pays the till by itself when the first block reaches it. The ship never draws on it before.
@@ -99,6 +106,7 @@ import time
 from collections import deque
 from urllib.parse import parse_qs
 
+import rulefacts
 from island import PLACES, base_fee
 
 log = logging.getLogger("cruise")
@@ -153,6 +161,7 @@ TAX_RULE = "always ( o8[t]:bv[24] = i1[t]:bv[24] / { 100 }:bv[24] )."   # the "t
 RETRACT_HOLD = 3600        # the "stranger" booking's release is this far out, so it stays open all evening for another pirate to try to take it back
 RETRACT_SOON = 180         # the "late" booking's release is this near, so its own release time passes during the visit
 MAX_PREP = 4               # open bookings a visit keeps for its retract tricks, so it never nears MAX_OPEN_RETRACTABLE_PER_SENDER
+EDGE_MAX = 5000            # the fee edge pays at most this: a step of the fee rule above it is not tried (a pirate's purse is 100,000)
 # the pirates' tricks: what the pirate does, and the node's answers that mean the chain said no for the right reason
 # (tau-testnet commands/sendtx.py; an overspend may also be refused by the transfer rule itself, TX_REJECTED)
 TRICKS = {
@@ -172,8 +181,69 @@ TRICKS = {
     "stranger": (("NOT_RETRACTABLE_SENDER",), "tries to take back another pirate’s booking"),
     "phantom": (("UNKNOWN_RETRACTABLE",), "tries to take back a booking the chain never had"),
     "late": (("RETRACT_TOO_LATE",), "tries to take back a booking after its release time"),
+    "edge": (("FEE_LIMIT_TOO_LOW",), "allows one test AGRS less fee than the network's fee rule asks for that very payment"),
 }
 CODES = sorted({c for codes, _ in TRICKS.values() for c in codes} | {"TX_INVALID", "INVALID_PARAMS", "TX_REJECTED"})
+
+
+def fee_rule(gov: dict | None) -> str | None:
+    """The network's fee rule (o9) as one rule text, from the node's consensus rules (getgovernance): the genesis spec,
+    or after a rule change the revisions it made, where a later definition of o9 wins. None when they hold no o9 (a
+    change that did not touch the fee leaves only its own revisions there)."""
+    text = rulefacts.strip_comments(str((gov or {}).get("consensus_rules") or ""))
+    found = None
+    for at in [m.start() for m in re.finditer(r"\balways\s*\(", text)] or [0]:
+        found = rulefacts.clauses_of(text[at:]).get("o9") or found
+    return f"always ( {found} )." if found else None
+
+
+def fee_edge(gov: dict | None, amount: int) -> dict | None:
+    """The fee the network's fee rule asks for one plain payment of the pirates, read exactly: {"amount", "fee", "step",
+    "rule"}. Where the fee steps up with the amount, the amount right above the lowest step up to EDGE_MAX (step: the
+    last amount below it and the first above); else the given amount (step None). None when the rule is not one to
+    read exactly here: it depends on more than the amount (the balance, the time, who pays), leaves the fee open, or
+    asks no fee."""
+    rule = fee_rule(gov)
+    if not rule:
+        return None
+    try:
+        if set(rulefacts.compile_rule(rule, "o9")["ins"]) - {"i1"}:
+            return None
+        reading = rulefacts.read(rule, "o9")
+        step = None
+        if reading["ok"]:
+            for e in rulefacts.value_edges(reading, "i1"):
+                if isinstance(e["was"], int) and isinstance(e["now"], int) and e["now"] > e["was"] and 1 <= e["above"] <= EDGE_MAX \
+                        and (step is None or e["above"] < step[1]):
+                    step = [e["below"], e["above"]]
+        elif reading["code"] != "computes":   # a fee computed from the amount is answered for the one amount below
+            return None
+        amount = step[1] if step else int(amount)
+        got = rulefacts.answer(rule, {"i1": amount}, "o9")
+    except (rulefacts.Outside, ValueError, KeyError, TypeError) as exc:
+        log.info("fee edge: the fee rule is not read: %r", exc)
+        return None
+    fee = got["value"]
+    if not isinstance(fee, int) or isinstance(fee, bool) or fee < 1 or len(got["allowed"]) != 1:
+        return None
+    return {"amount": amount, "fee": fee, "step": step, "rule": rule}
+
+
+def asked_fee(res) -> int | None:
+    """The fee the node said a payment needs, where its refusal names one (sendtx FEE_LIMIT_TOO_LOW: details.required_fee,
+    or "required estimated fee N" in its message)."""
+    todo = [res]
+    while todo:
+        d = todo.pop()
+        if isinstance(d, dict):
+            if d.get("required_fee") is not None:
+                try:
+                    return int(d["required_fee"])
+                except (TypeError, ValueError):
+                    return None
+            todo.extend(d.values())
+    m = re.search(r"required estimated fee (\d+)", json.dumps(res) if not isinstance(res, str) else res)
+    return int(m.group(1)) if m else None
 # MS Dry Run, 4 November 2026: eight sendtx went unanswered within 20 s (two a day on other days), were counted as
 # refusals, and the ship left after 34 minutes although the node had refused nothing. No answer is not a refusal.
 CHECK_BOOKINGS = 10        # passengers whose bookings are checked with the node when a visit ends
@@ -743,7 +813,7 @@ class Cruise:
                     changes.append({"what": f"{k} tries a visit", "from": n, "to": 1, "held": True,
                                     "because": "the chain took this trick; it is tried once a visit until it is refused again"})
                 t["tricks"][k], t["calm"][k] = 1, 0
-            elif c.get("tried") and c.get("right") == c.get("tried"):
+            elif c.get("tried") and c.get("right") == c.get("tried") and not c.get("odd"):   # an odd fee edge is no calm visit
                 t["calm"][k] = int(t["calm"].get(k, 0)) + 1
                 if t["calm"][k] >= TRICK_CALM and calm_down is None and n != TRICK_MIN:
                     calm_down = k
@@ -976,7 +1046,8 @@ class Cruise:
             env["expire_at_height"] = max(1, tip - 5)
         k = act["kind"]
         if k == "pay":
-            tx = {"tx_type": "user_tx", **env, "fee_limit": "0" if act.get("freeride") else str(fee * 5),
+            limit = 0 if act.get("freeride") else act["fee_limit"] if act.get("fee_limit") is not None else fee * 5   # the fee edge sets its own
+            tx = {"tx_type": "user_tx", **env, "fee_limit": str(int(limit)),
                   "operations": {"1": [[act.get("from") or pk, PLACES[act["to"]], str(act["amount"])]]}}
         elif k == "bill":
             to = act["to"]
@@ -1112,6 +1183,9 @@ class Cruise:
             entry.update(p=rp, seq=seq, height=tip, amount=0, rid=ripe["rid"], **{"from": rpk})
             tx = await asyncio.to_thread(self.build, ship, {"p": rp, "kind": "retrick", "rid": ripe["rid"]}, seq, tip, base_fee(gov()))
         else:
+            edge = fee_edge(gov(), act["amount"]) if trick == "edge" else None
+            if trick == "edge" and not edge:
+                return skip("the network's fee rule is not one this ship reads exactly (or the node's answer holds none), so there is no edge to try")
             st = await ask(f"getsequence {pk}")
             if not st or st.get("status") != "ok":
                 return skip("no answer from the node to getsequence")
@@ -1154,6 +1228,9 @@ class Cruise:
                 pay["kind"], pay["rule"], entry["amount"] = "taxrule", TAX_RULE, 0
             elif trick == "phantom":   # a retract of a booking id the chain never had
                 pay["kind"], pay["rid"], entry["amount"] = "retrick", secrets.token_hex(32), 0
+            elif trick == "edge":   # one test AGRS less fee than the fee rule asks for this very payment
+                pay["amount"], pay["fee_limit"] = edge["amount"], edge["fee"] - 1
+                entry.update(amount=edge["amount"], fee=edge["fee"], fee_limit=edge["fee"] - 1, step=edge["step"], fee_rule=edge["rule"])
             tx = await asyncio.to_thread(self.build, ship, pay, seq, tip, base_fee(gov()), None, signer)
         t_ask = time.monotonic()
         res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))
@@ -1194,8 +1271,54 @@ class Cruise:
         entry.update(ok=False, stopped=True, code=code, right=right,
                      err=(json.dumps(err, separators=(",", ":")) if not isinstance(err, str) else err)[:300],
                      note="stopped by the chain" + ("" if right else f", with another answer than {' or '.join(expect)}"))
+        if trick == "edge":
+            entry["asked"] = asked_fee(res)   # the fee the node named, to set beside the rule's
+            if right:
+                await self.edge_inside(v, entry, pay, c, ask)
         self.write(entry)
         return res
+
+    async def edge_inside(self, v: dict, entry: dict, pay: dict, c: dict, ask) -> None:
+        """The fee edge's other side: the same payment, allowing exactly the fee the rule asks, right after the refusal
+        (which took no sequence number). It must go through. Refused for its fee as well, the node asks more than the
+        rule as read ("odd"): held back and reported privately, like a trick that got through."""
+        import asyncio
+        ship, fee = v["ship"], entry["fee"]
+        tx = await asyncio.to_thread(self.build, ship, {**pay, "fee_limit": fee}, entry["seq"], entry["height"], fee)
+        t_ask = time.monotonic()
+        res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))
+        ins = {"fee_limit": fee, "ms": int((time.monotonic() - t_ask) * 1000)}
+        entry["inside"] = ins
+        if res is None:   # no answer in time: no result either way, the node is slow
+            now = self.clock()
+            self.hold_until, self.slow_until = now + QUIET_HOLD, now + QUIET_SLOW
+            v["unanswered"] = v.get("unanswered", 0) + 1
+            ins.update(ok=None, note="no answer from the node to the payment that allows exactly the fee")
+            return
+        ok = res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False
+        ins["ok"] = ok
+        if ok:
+            ins["hash"] = (res.get("data") or {}).get("tx_hash")
+            v["last_ok"] = int(self.clock())
+            self.spend()   # a real payment to the market
+            entry["note"] += f"; the same payment allowing exactly the fee, {fee} test AGRS, went through"
+            return
+        ins["code"], ins["asked"], ins["tx"] = self.code_of(res), asked_fee(res), tx
+        err = res.get("error") or res
+        ins["err"] = (json.dumps(err, separators=(",", ":")) if not isinstance(err, str) else err)[:300]
+        if ins["code"] != "FEE_LIMIT_TOO_LOW":
+            ins["note"] = "refused for another reason than its fee"
+            return
+        entry["odd"] = True
+        c["odd"] = c.get("odd", 0) + 1
+        entry["note"] = (f"stopped by the chain; but the same payment allowing exactly the fee the rule asks ({fee} test AGRS) "
+                         f"was refused for its fee too" + (f": the node asks {ins['asked']}" if ins["asked"] is not None else "")
+                         + ". Held back and reported privately first: it may be our reading of the rule")
+        self.incident(self.clock(), "edge refused",
+                      f"The node refused a payment allowing exactly the fee the network's fee rule asks for it as read ({fee} test AGRS)"
+                      + (f"; it asks {ins['asked']}" if ins["asked"] is not None else "") + ".",
+                      {"trick": "edge", "tx": tx, "answer": res, "fee_rule": entry.get("fee_rule")})
+        log.warning("cruise %s: fee edge: the node refused the fee the rule asks (%s, node %s)", v["id"], fee, ins["asked"])
 
     async def new_wallet(self, v: dict | None, pk: str, res, ask) -> bool:
         """Our node could not take this wallet because it is new to it (NEW_WALLET_CODE): the answer says so, the wallet
@@ -1654,7 +1777,11 @@ class Cruise:
         trick that got through stays out until `up cruise release`), and "by" the refused ones of each trick."""
         rel = v.get("id") in self.released()
         T = v.get("tricks") or {}
-        by = {k: int(c.get("stopped") or 0) for k, c in T.items() if c.get("stopped")}
+        by = {}
+        for k, c in T.items():   # an odd fee edge waits too
+            n = int(c.get("stopped") or 0) - (0 if rel else int(c.get("odd") or 0))
+            if n > 0:
+                by[k] = n
         stopped = sum(by.values())
         tried = sum(int(c.get("tried") or 0) for c in T.values()) if rel else stopped
         return {"tried": tried, "stopped": stopped, "by": by}
@@ -1675,14 +1802,14 @@ class Cruise:
         return self._released[1]
 
     def public(self, e: dict) -> dict:
-        """An entry, summary or incident as the public sees it: a trick that got through shows only that something
-        was held back, until its visit is released."""
+        """An entry, summary or incident as the public sees it: a trick that got through (or an odd fee edge) shows only
+        that something was held back, until its visit is released."""
         vid = e.get("visit") or e.get("id")
         if vid in self.released():
             return e
-        if e.get("through") or e.get("kind") == "trick through":
+        if e.get("through") or e.get("odd") or e.get("kind") in ("trick through", "edge refused"):
             return {k: e.get(k) for k in ("t", "at", "visit", "ship", "i", "p") if k in e} | {
-                "kind": "trick" if e.get("through") else "held", "held": True, "ok": None,
+                "kind": "trick" if e.get("through") or e.get("odd") else "held", "held": True, "ok": None,
                 "note": "held back: a finding, reported privately to the team behind the testnet first"}
         if "summary" in e or "changes" in e or "tricks" in e or "tail" in e:
             e = dict(e)
@@ -1694,16 +1821,17 @@ class Cruise:
                 e["changes"] = [c if not c.get("held") else {"what": "a pirate trick", "held": True} for c in e["changes"]]
             if isinstance(e.get("changed"), list):
                 e["changed"] = [c if not c.get("held") else {"what": "a pirate trick", "held": True} for c in e["changed"]]
-            if isinstance(e.get("tricks"), dict) and any(isinstance(c, dict) and c.get("through") for c in e["tricks"].values()):
-                e["tricks"] = {k: (c if not (isinstance(c, dict) and c.get("through")) else {"held": True}) for k, c in e["tricks"].items()}
+            if isinstance(e.get("tricks"), dict) and any(isinstance(c, dict) and (c.get("through") or c.get("odd")) for c in e["tricks"].values()):
+                e["tricks"] = {k: (c if not (isinstance(c, dict) and (c.get("through") or c.get("odd"))) else {"held": True})
+                               for k, c in e["tricks"].items()}
         return e
 
     def held(self) -> dict:
         """For the server only (alerts/cruise_crier.py, no X-Forwarded-For): every finding held back, newest first."""
         rel = self.released()
-        rows = [e for e in self.logbook if e.get("through")]
+        rows = [e for e in self.logbook if e.get("through") or e.get("odd")]
         return {"simulated": True, "entries": rows[::-1], "released": sorted(rel),
-                "incidents": [i for i in self.incidents if i.get("kind") == "trick through"][::-1]}
+                "incidents": [i for i in self.incidents if i.get("kind") in ("trick through", "edge refused")][::-1]}
 
     def route(self, path: str, query: str = "", internal: bool = False) -> dict | None:
         if path == "/cruise":

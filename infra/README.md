@@ -324,6 +324,13 @@ is **proposed**, **agreed** (quorum reached), **active** (its activation block a
   "Base fee 10 → 20 AGRS" or "Same rules as now (no real change)". The tracker page and
   the recap use the same words. `python alerts.py --preview` prints how the newest rule
   changes on the chain would be posted, without posting.
+- What a change decides differently is read for every case, not sampled (`alerts/rulefacts.py`,
+  the same reading as `assets/rulefacts.js` on /proposals/ and /history/): one line per change
+  such as "Newly rejected: block height exactly 0 and signature check passed", or "decides
+  exactly as before" for the same rules written another way. The Telegram posts carry these
+  lines. `relay/rulefacts.py` is the same file (each image copies only its own folder), and
+  `test_rulefacts.py` in both folders checks it against the real engine's answers in
+  `tests/rulefacts-cases.json` and the pages' lines in `tests/meaning-cases.json`.
 - Telegram and X: each event as a post, when the keys are in `.env`. Without keys that
   channel is off; the feed and the page work regardless.
 - While one yes vote is enough (one validator), a "proposed" post waits

@@ -225,5 +225,24 @@ def test_rule_diff():
     assert "Rule text diff: none" in alerts.telegram_text(item)
 
 
+def test_rule_meaning():
+    """What a change decides differently, read for every case (rulefacts.py, the same lines as the box on /proposals/)."""
+    spec = alerts.explain.clauses(alerts.explain.GENESIS_RULES)
+    m = alerts.meaning_of([FEE_RULE], spec)
+    assert m == {"same": False, "lines": ["Base fee per transaction · 10 AGRS → 20 AGRS: every transfer"], "unread": []}, m
+    item = {"kind": "proposed", "headline": "x", "what": [], "why": "", "facts": [], "link": "https://tauhud.com", "meaning": m}
+    t = alerts.telegram_text(item)
+    assert "<b>What it decides differently</b> (read for every case)\n• Base fee per transaction · 10 AGRS → 20 AGRS: every transfer" in t, t
+    m = alerts.meaning_of(["always ( o7[t]:bv[16] = { #x0001 }:bv[16] )."], spec)   # the same answer, written another way
+    assert m and m["same"] and "decides exactly as the old one" in alerts.telegram_text({**item, "meaning": m}), m
+    m = alerts.meaning_of(["always ( o6[t]:bv[16] = { 0 }:bv[16] && o10[t]:bv[16] = i15[t]:bv[16] )."], spec)
+    t = alerts.telegram_text({**item, "meaning": m})
+    assert "• Which blocks count as valid · Newly rejected: signature check passed" in t and "Not read exactly: output o10." in t, t
+    assert alerts.meaning_of([alerts.explain.GENESIS_RULES], spec) is None   # the text in force: nothing to read
+    assert alerts.meaning_of(["always(o6[t]:bv[16]=((i10[t]:bv[16]&i10[t]:bv[16])|(i6[t]:bv[16]^i6[t]:bv[16])))."], spec) is None
+    assert alerts.meaning_of(["always ( o6[t]:bv[16] = (( )."], spec) is None   # broken text never stops a post
+
+
 test_rule_diff()
+test_rule_meaning()
 asyncio.run(main())

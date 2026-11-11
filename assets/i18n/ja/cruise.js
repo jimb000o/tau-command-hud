@@ -155,4 +155,7 @@ TauI18n.add({ strings: {
   "tries to take back another pirate’s booking": "別の海賊の予約を取り消そうとする",
   "tries to take back a booking the chain never had": "チェーンに存在しない予約を取り消そうとする",
   "tries to take back a booking after its release time": "予約の解放時刻を過ぎてから取り消そうとする",
+  "allows one test AGRS less fee than the network’s fee rule asks for that very payment": "その支払いにネットワークの手数料ルールが求める額より 1 テスト AGRS 少ない手数料しか認めない",
+  "{a} allowed, the fee rule asks {b}": "{a} を認める、手数料ルールは {b} を求める",
+  "with {b} it went through": "{b} を認めると通った",
 } });

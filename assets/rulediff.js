@@ -126,6 +126,32 @@
     return [d.added ? `+${plural(d.added, "line")}` : "", d.removed ? `−${plural(d.removed, "line")}` : ""].filter(Boolean).join(", ");
   }
 
+  /* What the change decides differently, read for every case by assets/rulefacts.js (when the page loads it): one line
+     per change, such as "Newly rejected: block height exactly 0". An output it cannot read exactly is named with the
+     reason, and the sampled check below (effect) still speaks for it. */
+  const WHY_NOT = { new: "a new output, not defined before", other: "an output this page does not read",
+    computes: "computes with an input, so it is not read exactly", text: "not read exactly", temporal: "reads an earlier step, so it is not read exactly",
+    outputs: "sets several outputs together, so it is not read exactly", big: "tells too many cases apart to read here", noout: "not read exactly" };
+  function meaning(spec, revisions) {
+    const RF = typeof window !== "undefined" ? window.RuleFacts : null;
+    if (!RF || !Array.isArray(revisions) || !revisions.length) return null;
+    try { return RF.meaning(spec, revisions); } catch (e) { return null; }
+  }
+  function meaningHtml(spec, revisions) {
+    const m = meaning(spec, revisions);
+    // nothing to say when the text equals the rules in force (the diff note says so) or no changed output could be read
+    if (!m || !m.streams.length || !m.streams.some(x => x.ok)) return "";
+    const RF = window.RuleFacts, span = x => `<span>${esc(x)}</span>`;
+    const cond = c => c.map(span).join(" "), item = it => `<span class="rd-mc">${it.map(cond).join(' <i class="rd-and">and</i> ')}</span>`;
+    const rows = RF.words.meaningLines(m).map(l => `<li><b>${esc(l.topic)}</b><span class="rd-mh">${esc(l.head)}</span>${l.items.map(item).join('<i class="rd-sep">;</i> ')}${l.more ? ` <span class="rd-more">${esc(`and ${l.more} more`)}</span>` : ""}</li>`);
+    for (const s of m.streams) if (!s.ok) rows.push(`<li class="rd-mx"><b>${esc((RF.STREAMS[s.stream] || {}).topic || `Output ${s.stream}`)}</b><span>${esc(WHY_NOT[s.code] || WHY_NOT.text)}</span></li>`);
+    const same = m.ok && m.same, still = m.streams.every(x => !x.ok || x.same);   // still: what was read decides as before
+    const note = same ? "Read for every case: the new text gives the same answer as the rules in force."
+      : still ? "Read for every case where it can be read: no difference there." : "Read for every case, not sampled.";
+    if (still && !same) rows.unshift(`<li><span class="rd-mh rd-none">No difference in what could be read</span></li>`);
+    return `<div class="rd-mean${same ? " same" : ""}"><p class="rd-mt"><b>${same ? "Decides exactly as before" : "What it decides differently"}</b><span>${note}</span></p>${same ? "" : `<ul>${rows.join("")}</ul>`}</div>`;
+  }
+
   /* html(spec, revisions, {at, open, patch}) -> a collapsible "Rule text diff" block */
   function html(spec, revisions, o = {}) {
     style();
@@ -134,12 +160,12 @@
       return `<details class="rdiff"${o.open === false ? "" : " open"}><summary><b>Rule text diff</b><span>no rule text</span></summary>
         <p class="rd-note">This proposal carries no rule text${o.patch ? ", only settings (listed below)" : ""}. The rule text in force stays as it is.</p></details>`;
     }
-    const d = diff(spec, revisions);
+    const d = diff(spec, revisions), mean = meaningHtml(spec, revisions);
     const what = d.streams.map(s => TOPIC[s] ? `${s} (${TOPIC[s]})` : s);
     const head = d.same
       ? `<p class="rd-note rd-same"><b>No difference.</b> The proposed text equals the rules in force${at}, so nothing changes when it takes effect. The whole rule text is shown in grey.</p>`
       : `<p class="rd-note">Compared with the rules in force${at}. Changes ${what.join(", ")}. <span class="rd-key"><i class="a">+</i> added <i class="r">−</i> removed <i>·</i> grey: unchanged</span></p>`;
-    return `<details class="rdiff"${o.open === false ? "" : " open"}><summary><b>Rule text diff</b><span${d.same ? "" : ' class="on"'}>${summary(d)}</span></summary>${head}
+    return `${mean}<details class="rdiff"${o.open === false ? "" : " open"}><summary><b>Rule text diff</b><span${d.same ? "" : ' class="on"'}>${summary(d)}</span></summary>${head}
       <div class="rd-code" role="table" aria-label="Rule text diff">${d.rows.map(r => `<div class="rd-l rd-${r.op === "+" ? "add" : r.op === "-" ? "del" : "ctx"}" role="row"><span class="rd-g" aria-label="${r.op === "+" ? "added" : r.op === "-" ? "removed" : "unchanged"}">${r.op === "+" ? "+" : r.op === "-" ? "−" : ""}</span><span class="rd-t" style="--n:${r.i}">${r.html}</span></div>`).join("")}</div></details>`;
   }
 
@@ -296,9 +322,23 @@
 .rd-del .rd-t { text-decoration: line-through; text-decoration-color: rgba(255,255,255,.35); }
 .rd-del del { text-decoration: line-through; text-decoration-color: #fff; color: #c9c9cf; background: rgba(255,255,255,.08); border-radius: 2px; }
 .rd-add ins { text-decoration: none; background: rgba(57,255,138,.22); color: #b9ffd6; border-radius: 2px; }
+.rd-mean { margin: 12px 0 0; border: 1px solid var(--line, rgba(255,255,255,.09)); border-radius: 6px; padding: 8px 12px; }
+.rd-mean.same { border-color: rgba(57,255,138,.35); }
+.rd-mt { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; }
+.rd-mt b { font: 600 11px var(--display, sans-serif); letter-spacing: .18em; text-transform: uppercase; color: #fff; }
+.rd-mt span { font-size: 12px; color: var(--dim, #8a8a94); }
+.rd-mean ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 5px; font-size: 12.5px; line-height: 1.5; }
+.rd-mean li b { display: block; font: 600 11px var(--display, sans-serif); letter-spacing: .14em; text-transform: uppercase; color: var(--dim, #8a8a94); }
+.rd-mh { color: #fff; margin-right: 6px; }
+.rd-mh::after { content: ":"; }
+.rd-mh.rd-none::after { content: none; }
+.rd-mc { color: var(--ok, #39ff8a); }
+.rd-and, .rd-sep, .rd-more { font-style: normal; color: var(--dim, #8a8a94); }
+.rd-and { margin: 0 2px; }
+.rd-mx span { color: var(--dim, #8a8a94); }
 @media (max-width: 700px) { .rd-code, .rd-note { font-size: 12px; } .rd-t { padding-left: calc(var(--n, 0) * .5ch); } .rdiff > summary { min-height: 44px; } }`;
     document.head.appendChild(s);
   }
 
-  window.RuleDiff = { GENESIS, clauses, apply, specAt, diff, summary, html, effect };
+  window.RuleDiff = { GENESIS, clauses, apply, specAt, diff, summary, html, effect, meaning };
 })();

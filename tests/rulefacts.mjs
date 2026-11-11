@@ -2,7 +2,8 @@
    1. against the real Tau engine: every answer in tests/rulefacts-cases.json (rules we wrote, run with tau-lang);
    2. against the lessons on /learn/: every run and every rule-shaped sat in learn/lessons.json that it can read
       gets the answer the lesson expects (the lessons themselves are checked against the engine by `up tau`);
-   3. the facts the pages show for known rules (the Playground's examples, a rule that leaves its answer open, …).
+   3. the facts the pages show for known rules (the Playground's examples, a rule that leaves its answer open, …);
+   4. what a change to the network's rules decides differently (tests/meaning-cases.json, shared with the Python twin).
    Run: node tests/rulefacts.mjs */
 import { createRequire } from "node:module";
 import { readFile } from "node:fs/promises";
@@ -129,9 +130,23 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   check(RF.diff(`always ( (i1[t]:bv[24] > { 1000 }:bv[24]) ? ${O0} : ${O1} ).`, `always ( (i1[t]:bv[24] <= { 1000 }:bv[24]) ? ${O1} : ${O0} ).`).same, "diff: the same rule written two ways");
 }
 
+/* ---- 4. what a change to the network's rules decides differently (the box on /proposals/ and /history/; the
+   Telegram posts write the same lines with infra/alerts/rulefacts.py, checked against the same file) ---- */
+const mc = JSON.parse(await readFile(join(ROOT, "tests", "meaning-cases.json"), "utf8"));
+for (const c of mc.cases) {
+  const spec = RF.clausesOf(mc.spec);
+  for (const r of c.before || []) Object.assign(spec, RF.clausesOf(r));
+  const m = RF.meaning(spec, c.revisions);
+  const lines = RF.words.meaningLines(m).map(l => `${l.topic} · ${RF.words.lineText(l)}`);
+  const streams = m.streams.map(s => `${s.stream}:${s.ok ? (s.same ? "same" : "changed") : s.code}`).join(" ");
+  check(m.ok === c.ok && m.same === c.same && streams === c.streams, `meaning ${c.id}: ${m.ok} ${m.same} "${streams}", expected "${c.streams}"`);
+  check(same(lines, c.lines), `meaning ${c.id}: ${JSON.stringify(lines)}`);
+}
+
 const lines = [`## Rule reader: ${checked} checks`, "",
   `- ${engineAnswers} answers of the real Tau engine (tests/rulefacts-cases.json)`,
-  `- ${lessonAnswers} lesson answers from learn/lessons.json`, ""];
+  `- ${lessonAnswers} lesson answers from learn/lessons.json`,
+  `- ${mc.cases.length} rule changes read for /proposals/ and the Telegram posts (tests/meaning-cases.json)`, ""];
 if (fails.length) lines.push(`### ❌ ${fails.length} failed`, "", ...fails.map(f => "- " + f));
 else lines.push("Every answer matches. ✅");
 console.log(lines.join("\n"));

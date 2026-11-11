@@ -156,6 +156,11 @@ pf = blog.facts_of(plog, [])
 check(pf["pirate tricks"]["tried"] == 20 and pf["pirate tricks"]["refused with the expected answer"] == 20 and pf["refused in all"] == 0,
       "facts: 20 tricks, all refused with the expected answer, and they are no refusals of the ship's payments")
 check(pf["the ship changed for its next call"][0]["to"] == 4, "facts: what the ship changed for its next call, and why")
+ef = blog.facts_of(plog + [{"t": TUE + 4000, "visit": PV, "kind": "trick", "trick": "edge", "what": "edge", "ok": False, "right": True,
+                            "code": "FEE_LIMIT_TOO_LOW", "fee": 10, "fee_limit": 9, "amount": 8, "inside": {"fee_limit": 10, "ok": True}}], [])
+check(ef["pirate tricks"]["fee edge"] == {"fee the network's fee rule asks for the payment": [10], "allowing one test AGRS less: refused": 1,
+                                          "the same payment allowing exactly that fee: went through": 1} and "fee edge" not in pf["pirate tricks"],
+      "facts: the fee edge, both sides of it")
 tg, card, _ = cc.last_lines(pf)
 check("refused 20 of her pirates' 20 tricks" in tg and "Since then she changed overspend tries a visit from 6 to 4, because" in tg,
       "the next announcement: the tricks refused, and the learning line")
@@ -183,6 +188,19 @@ msg = told[-1]
 check("github.com/IDNI/tau-testnet/issues/new?" in msg and "cruise release 2026-11-10-pirates" in msg and "security/advisories/new" in msg
       and "Nothing about it is public" in msg, "with a ready IDNI issue, the private advisory link and the release command")
 check(cc.held(TUE + 2200, cc.state()) == 0 and len(told) == n_told + 1, "told once")
+# the fee edge: it rests on our reading of the fee rule, so the message says to check that first
+FR = "always ( o9[t]:bv[24] = { #x00000a }:bv[24] )."
+odd = {"t": TUE + 2050, "visit": PV, "i": 34, "kind": "trick", "trick": "edge", "ok": False, "right": True, "odd": True, "amount": 8, "fee": 10,
+       "fee_limit": 9, "fee_rule": FR, "height": 951, "inside": {"fee_limit": 10, "ok": False, "code": "FEE_LIMIT_TOO_LOW", "asked": 11, "tx": {"fee_limit": "10"}}}
+HELD["entries"] = [odd, thr]
+check(cc.held(TUE + 2210, cc.state()) == 1 and len(told) == n_told + 2, "an odd fee edge: one private message too")
+msg = told[-1]
+check("allowing exactly the fee" in msg and "the node asks 11" in msg and "Check first" in msg and FR in msg and "issues/new?" in msg
+      and "cruise release 2026-11-10-pirates" in msg, "it names the rule's fee, the node's, the rule as read, and says to check the reading first")
+edge_thr = {**odd, "i": 35, "odd": None, "ok": True, "through": True, "hash": "ef" * 32, "tx": {"fee_limit": "9"}, "inside": None}
+check("allowing 9 of fee went through" in cc.held_text(edge_thr, None) and "asks 10" in cc.held_text(edge_thr, None),
+      "a fee edge that got through: the fee it allowed and the fee the rule asks")
+HELD["entries"] = [thr]
 HELD["released"] = [PV]
 st = cc.state(); st["held_told"] = {}; cc.save(st)
 check(cc.held(TUE + 2300, cc.state()) == 0, "released: not told again")

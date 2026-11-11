@@ -237,6 +237,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
 <script src="../assets/predict.js" defer></script>
+<script src="../assets/rulefacts.js"></script>
 <script src="../assets/rulediff.js"></script>
 </head>
 <body>
@@ -383,15 +384,21 @@ function ruleDiff(p) {
   if (!window.RuleDiff) return "";
   return RuleDiff.html(RuleDiff.specAt(p.proposed_at, D.proposals.map(asRd)), p.revisions, { at: p.proposed_at, patch: !!p.patch });
 }
-/* behaviour check: does the new text decide anything differently from the rules it replaces? (sampled, assets/rulediff.js) */
+/* behaviour check: does the new text decide anything differently from the rules it replaces? Read for every case by
+   assets/rulefacts.js where it can (exact: true), else sampled on random inputs (assets/rulediff.js) */
 function effOf(p) {
   if (!window.RuleDiff || !p.revisions.length || p.patch) return null;
-  if (p._e === undefined) p._e = RuleDiff.effect(RuleDiff.specAt(p.proposed_at, D.proposals.map(asRd)), p.revisions);
+  if (p._e === undefined) {
+    const spec = RuleDiff.specAt(p.proposed_at, D.proposals.map(asRd)), m = RuleDiff.meaning(spec, p.revisions);
+    p._e = m && m.ok ? { same: m.same, exact: true } : RuleDiff.effect(spec, p.revisions);
+  }
   return p._e;
 }
 const TEST_TIP = "Checked on 400 random inputs: the new text decides exactly like the rules in force. The extra part is a maths fact that is always true, so nothing changes.";
+const TEST_TIP_EXACT = "Read for every case: the new text gives the same answer as the rules in force, so nothing changes.";
+const tipOf = p => (effOf(p) || {}).exact ? TEST_TIP_EXACT : TEST_TIP;
 const isTest = p => (effOf(p) || {}).same === true;
-const diffTag = p => { const d = diffOf(p); return (d ? ` · <span class="nw">rule text ${d.same ? "unchanged" : RuleDiff.summary(d)}</span>` : "") + (isTest(p) && (p.explain || {}).severity !== "none" ? ` · <span class="nw testch" title="${esc(TEST_TIP)}">test change · behaviour stays the same</span>` : ""); };
+const diffTag = p => { const d = diffOf(p); return (d ? ` · <span class="nw">rule text ${d.same ? "unchanged" : RuleDiff.summary(d)}</span>` : "") + (isTest(p) && (p.explain || {}).severity !== "none" ? ` · <span class="nw testch" title="${esc(tipOf(p))}">test change · behaviour stays the same</span>` : ""); };
 /* when a block is expected: from the real block pace, as a date in UTC and a countdown, like the simulation's programme */
 function inTime(s) {
   const m = Math.ceil(s / 60);
@@ -642,7 +649,7 @@ function openDetail(p, push) {
   $("dBody").innerHTML = `<div class="dcols"><div>${explainHtml(p)}<h3>Timeline</h3><ul class="steps">${steps.map(([c, t]) => `<li class="${c}">${t}</li>`).join("")}</ul>
     <h3>Update id</h3><p class="note" style="overflow-wrap:anywhere;margin:0">${esc(p.id)}${p.dups.length ? ` · proposed again at #${p.dups.join(", #")} (ignored, same id)` : ""}</p>
     <p class="note">Open any block number to see it in <a href="/history/#${p.proposed_at}">Time travel</a>. Votes count once per account while the change is open.</p></div><div>
-    ${isTest(p) ? `<p class="note"><b>Test change: behaviour stays the same.</b> ${esc(TEST_TIP)}</p>` : ""}${ruleDiff(p)}${p.revisions.length ? `<details class="raw"><summary>Rule text as sent (${p.revisions.length === 1 ? "1 revision" : p.revisions.length + " revisions"})</summary>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}</details>` : ""}
+    ${isTest(p) && !effOf(p).exact ? `<p class="note"><b>Test change: behaviour stays the same.</b> ${esc(TEST_TIP)}</p>` : ""}${ruleDiff(p)}${p.revisions.length ? `<details class="raw"><summary>Rule text as sent (${p.revisions.length === 1 ? "1 revision" : p.revisions.length + " revisions"})</summary>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}</details>` : ""}
     ${p.patch ? `<h3>Settings it ${p.status === "active" ? "changed" : "would change"}</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
 </div></div>`;
   // a link whose preview on X and Telegram shows a picture of this proposal (infra/share)
@@ -739,7 +746,7 @@ function sample() {
       revisions: ["always (o9[t]:bv[24] = { #x000014 }:bv[24])"], votes: [{ h: 4152, voter: V, counted: true, approve: true }],
       explain: ex("Base fee 10 → 20 AGRS", [{ topic: "Base fee per transaction", text: "10 → 20 AGRS" }], "Every transaction would cost 20 AGRS instead of 10.") }),
     P(4, { status: "voting", proposed_at: 4198, activate_at: 9198,
-      revisions: ["# ONE PROPOSER\nalways (\n    o7[t]:bv[16] = (i8[t]:bv[384] = { #x" + V + " }:bv[384]) ? { 1 }:bv[16] : { 0 }:bv[16] &&\n    o10[t]:bv[16] = i15[t]:bv[16]\n)"],
+      revisions: ["# ONE PROPOSER\nalways (\n    o6[t]:bv[16] = i10[t]:bv[16] &&\n    ((i8[t]:bv[384] = { #x" + V + " }:bv[384]) ?\n        o7[t]:bv[16] = { 1 }:bv[16] :\n        o7[t]:bv[16] = { 0 }:bv[16]) &&\n    o10[t]:bv[16] = i15[t]:bv[16]\n)"],
       explain: ex("Only one validator may make blocks + New definition of o10", [{ topic: "Who may make blocks", text: "only validator a1fe40…7d2b" }, { topic: "Output o10", text: "depends on the eligibility mode" }], "Block making would rest with a single validator. Others could no longer add blocks.") }),
     P(5, { status: "dropped", proposed_at: 1200, activate_at: 3200, expired_at: 3200, revisions: [], patch: { validator_additions: ["b7c2" + "0".repeat(92)] },
       explain: ex("Admit validator b7c200…0000", [{ topic: "Validators", text: "add b7c200…0000" }], "More parties would make blocks and vote on rule changes.") }),

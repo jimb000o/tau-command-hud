@@ -448,6 +448,8 @@ IDNI_REPO = "IDNI/tau-testnet"
 def held_text(e: dict, inc: dict | None) -> str:
     """The private message about a pirate trick the chain took, with a ready issue for IDNI."""
     import urllib.parse
+    if e.get("trick") == "edge":
+        return edge_text(e)
     what = e.get("what") or e.get("trick")
     tx = json.dumps(e.get("tx") or {}, indent=1)[:2500]
     title = f"Testnet accepted a transaction it should refuse: a payment that {what}"
@@ -463,6 +465,45 @@ def held_text(e: dict, inc: dict | None) -> str:
         "Nothing about it is public: the logbook shows only 'held back', no post goes out, the blog waits.",
         "Tell IDNI first. Their issues are public; a private note in the Tau Telegram may be the better first step.",
         f"Ready issue (public once you submit it):\n{url}",
+        f"Private advisory instead: https://github.com/{IDNI_REPO}/security/advisories/new",
+        "When it may be public, show it in the logbook and let the blog write the visit:",
+        UP.format(f"cruise release {e.get('visit')}")])
+
+
+def edge_text(e: dict) -> str:
+    """The private message about the pirates' fee edge (relay/cruise.py): a payment allowing one test AGRS less than the
+    fee the network's fee rule asks went through, or ("odd") the same payment allowing exactly that fee was refused for
+    its fee. Both rest on our reading of the rule, so the message says to check that first."""
+    import urllib.parse
+    fee, amount, sent, rule = e.get("fee"), e.get("amount"), e.get("fee_limit"), e.get("fee_rule") or "?"
+    ins = e.get("inside") or {}
+    asked = ins.get("asked")
+    if e.get("odd"):
+        tx, hash_ = ins.get("tx") or {}, None
+        title = f"Testnet asks a higher fee than its fee rule sets: a payment of {amount} allowing the rule's fee of {fee} is refused"
+        lead = (f"⚠ Fee edge on {e.get('visit')}: a pirate's payment of {amount} test AGRS allowing exactly the fee the network's fee "
+                f"rule asks for it as we read it ({fee}) was refused as FEE_LIMIT_TOO_LOW" + (f"; the node asks {asked}." if asked is not None else "."))
+        fact = (f"refused a user_tx of {amount} with fee_limit {fee} as FEE_LIMIT_TOO_LOW" + (f" (required {asked})" if asked is not None else "")
+                + f", although the consensus fee rule (o9) gives a fee of {fee} for that amount:")
+    else:
+        tx, hash_ = e.get("tx") or {}, e.get("hash")
+        title = f"Testnet accepted a payment whose fee limit ({sent}) is below the fee its fee rule sets ({fee})"
+        lead = (f"⚠ Fee edge on {e.get('visit')}: a pirate's payment of {amount} test AGRS allowing {sent} of fee went through, although "
+                f"the network's fee rule asks {fee} for it as we read it (tx {str(hash_ or '?')[:16]}…).")
+        fact = f"accepted a user_tx of {amount} with fee_limit {sent}, although the consensus fee rule (o9) gives a fee of {fee} for that amount:"
+    body = "\n".join([
+        "While testing Tau Testnet Alpha with simulated wallets (a community dashboard, not affiliated with IDNI), our node " + fact,
+        "", "```", rule, "```",
+        "", f"- when: {blog.day(e['t'])} {blog.clock(e['t'])} German time, chain height about {e.get('height', '?')}",
+        f"- tx hash: {hash_}" if hash_ else "- refused, so no tx hash", "", "Signed transaction as sent:", "```json", json.dumps(tx, indent=1)[:2500], "```",
+        "", "We have not published this. Happy to help reproduce it."])
+    url = f"https://github.com/{IDNI_REPO}/issues/new?" + urllib.parse.urlencode({"title": title, "body": body})
+    return "\n".join([
+        lead,
+        "Check first: the fee is our reading of that rule (the same reading as the Playground's rule X-ray). If the reading is wrong, this is no finding.",
+        f"The fee rule as read: {rule}",
+        "Nothing about it is public: the logbook shows only 'held back', no post goes out, the blog waits.",
+        f"Ready issue, once you are sure (public once you submit it):\n{url}",
         f"Private advisory instead: https://github.com/{IDNI_REPO}/security/advisories/new",
         "When it may be public, show it in the logbook and let the blog write the visit:",
         UP.format(f"cruise release {e.get('visit')}")])
