@@ -191,5 +191,14 @@ heldlog = plog
 blog.tick(TUE + 5400 + 4 * 3600)
 check(calls == [PV], "once released, the blog writes the visit")
 
+# ---------- fares booked ahead of the call, in escrow ----------
+esc = {"escrow": [{"arrival": NEXT_DRY, "called_off": None, "count": {"in escrow": 4, "refund sent": 1}}]}
+check(cc.booked_ahead(esc, NEXT_DRY) == 4 and cc.booked_ahead(esc, QUEEN) == 0 and cc.booked_ahead(None, NEXT_DRY) == 0, "bookings ahead: counted for this call only")
+check(cc.booked_ahead({"escrow": [{**esc["escrow"][0], "called_off": {"why": "stalled"}}]}, NEXT_DRY) == 0, "none when the call was called off")
+ta = cc.texts("dryrun", NEXT_DRY, f, 4)
+check("4 passengers paid their fare days ahead" in ta["telegram"] and "at 16:00 the chain hands it to the ship by itself" in ta["telegram"], "Telegram names the fares in escrow")
+check(ta["x"] == t["x"] and "days ahead" not in t["telegram"], "X unchanged, and no line without bookings")
+check(not blog.HYPE.search(ta["telegram"]) and not blog.BLAME.search(ta["telegram"]), "no hype or blame words in it")
+
 print("all ok" if not failed else f"{failed} FAILED")
 sys.exit(1 if failed else 0)

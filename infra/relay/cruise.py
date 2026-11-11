@@ -121,6 +121,7 @@ RECENT = 30
 VISITS_KEEP = 30
 VERDICT_EVERY = 20         # seconds between two looks at the load verdict
 RETRACT_MARGIN = 6 * 60    # a withdrawal goes out this long before the booking's time at the latest: a block's time can run up
+CANCEL_LATEST = 3 * 60     # a passenger's withdrawal that runs later than this before the booking's time is not sent any more
                            # to two minutes early, and a feeless retract waits last when blocks are full (docs/retractable.md)
 UNRELEASED = 3 * 60        # a booking still open this long after its time is reported as not released
 REFUSE_STOP, REFUSE_WINDOW = 5, 20   # refusals among the visit's last sends that send the ship away
@@ -1190,6 +1191,11 @@ class Cruise:
             entry["release_at_time"] = act["rel"]
         rid = None
         if act["kind"] == "cancel":
+            if self.clock() > act["rel"] - CANCEL_LATEST:   # the ship fell behind: the chain would refuse it now, and that is no refusal for the brakes
+                entry.update(ok=None, note="too late to withdraw: the booking pays the place")
+                v["skipped"] += 1
+                self.write(entry)
+                return None
             rid = await self.booking_id(pk, act, ask)
             if not rid:   # not open: the booking was refused, is not in a block yet, or its time came first
                 entry.update(ok=None, note="nothing to withdraw: the booking is not open")
