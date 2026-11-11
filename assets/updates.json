@@ -2879,5 +2879,10 @@
     "tag": "Cruise",
     "on": "2026-11-11",
     "html": "Cruise: the Black Sequence tries four more tricks the chain must refuse. A fee rule that would tax every wallet's transfers, not only its own; a retract of another pirate's booking; a retract of a booking the chain never had; and a retract of a booking after its release time. Each is sent like any payment, and the logbook shows the chain's own refusal. The two retract tricks first make a real booking that reaches a block, then try to take it back the wrong way. A trick that ever gets through is held back from the public and reported privately first."
+  },
+  {
+    "tag": "Learn",
+    "on": "2026-11-11",
+    "html": "Learn: a visitor asked in our chat whether Tau can do percentage fees or recurring payments. The answer is now on /learn/ under People ask, with a button that runs a 1 % fee on the real Tau engine: a rule on your own wallet can add a fee worked out from the amount, but no rule can start a payment yet, so the nearest thing to a standing order is a timed payment that pays itself out. Whoever finishes all six Missions now sees what a rule can and cannot do today, and No Memo can ask for a 1 % cut in Write the rule."
   }
 ]
