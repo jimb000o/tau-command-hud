@@ -119,6 +119,9 @@ tr.off .name { color: var(--text); font-weight: 400; }
 .agree.same { color: var(--ok); font-weight: 600; }
 .agree.different { color: #fff; font-weight: 600; }
 .agree.behind { color: #ffb13b; font-weight: 600; }
+.agree.synced { color: var(--ok); font-weight: 600; }
+.agree.catching_up { color: #ffb13b; font-weight: 600; }
+.agree.other_chain { color: #fff; font-weight: 600; }
 .bar { display: inline-block; width: 54px; height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; margin-right: 8px; vertical-align: 1px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: #fff; }
 .tag { display: inline-block; margin-left: 8px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; vertical-align: 1px; }
@@ -350,14 +353,34 @@ function samplePeers() {
   const list = [Object.assign(mk("12D3KooWDpWEYxBy8y84AssrPSLaq9DxC7Lncmn5wERJnAWZFnYC", 2 * d, 1412), { label: "IDNI bootnode" }),
     mk("12D3KooWBerLinArmxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 12 * d, 1412, { id: "a1b2c3d4e5f6", name: "berlin-arm" }),
     mk("12D3KooWNoKitPeerAxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 3 * d, 1411), mk("12D3KooWNoKitPeerBxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 5 * 3600, 1412)];
-  return { peers: list, counts: { connected: 4, met_30m: 4, met_24h: 4, seen_24h: 4, seen_30d: 4 }, validators: ["ab".repeat(48)], generated_at: now };
+  const known = [{ peer: "12D3KooWEafLrs7GSJjuBbrRtGXeCzMZcJZowHvpCcFXLyetuzTc", name: "Age of Chains", report_name: "Age-of-Chains", network: "tau-testnet-v2",
+    reach: "online", port: { open: true, checked: now - 120, last_open: now - 120, error: null, port: 4001 },
+    p2p: { talked: null, heard: now - 300, connected: false, online: false }, report: { live: false, last: null },
+    sync: { state: "unknown", height: null, ours: 1412, behind: null, source: null }, first_seen: now - 3 * 3600 }];
+  return { peers: list, known, counts: { connected: 4, met_30m: 4, met_24h: 4, seen_24h: 4, seen_30d: 4 }, validators: ["ab".repeat(48)], generated_at: now };
 }
 /* the network as our node sees it (GET /peers): the bootnode, kit nodes that said which peer they are, everyone else */
 function network(now) {
   // a peer known for only a few minutes (someone testing) is left out until the relay calls it steady
   const recent = ((peers && peers.peers) || []).filter(p => p.last_seen && now - p.last_seen < 86400 && p.steady !== false);
-  return { recent, boot: recent.find(p => p.label), others: recent.filter(p => !p.label && !p.community),
-           kit: recent.filter(p => !p.label && p.community) };
+  return { recent, boot: recent.find(p => p.label), others: recent.filter(p => !p.label && !p.community && !p.known),
+           kit: recent.filter(p => !p.label && p.community), known: (peers && peers.known) || [] };
+}
+/* named nodes (relay knownnodes.py): reachable and in sync are two questions, each answered only from real data */
+const REACH = { online: "Reachable", offline: "Not reachable", unknown: "Not checked yet" };
+const SYNC = { synced: "In sync", at_height: "At our height", catching_up: "Catching up", other_chain: "Other chain", ahead: "Ahead of ours", unknown: "Sync not known yet" };
+const SYNC_TIP = {
+  synced: "Its heartbeat reported a block hash that matches ours,\nat most two blocks below our head.",
+  at_height: "Our node sees it at our height, but without a block hash:\nnot called in sync until its heartbeat confirms the hash.",
+  catching_up: "Same network, still fetching blocks: {n} blocks below our head.",
+  other_chain: "Its block at that height differs from ours.",
+  ahead: "It is higher than our node; we check it once we get there.",
+  unknown: "No height from it yet: its heartbeat is not reporting\nand our node has not talked to it.",
+};
+function syncCell(k) {
+  const s = k.sync || {}, st = SYNC[s.state] ? s.state : "unknown";
+  const txt = T(SYNC[st]) + (st === "catching_up" && s.behind != null ? ` · ${s.behind.toLocaleString("en-US")}` : "");
+  return el("span", { class: `agree ${st}`, "data-tip": T(SYNC_TIP[st]).replace("{n}", s.behind != null ? s.behind.toLocaleString("en-US") : "?"), text: txt });
 }
 const OFF_PEERS = "None of them has been seen in the last 30 minutes, so the chain core and \"nodes online\" leave them out.";
 const shortId = id => `${id.slice(0, 8)}…${id.slice(-4)}`;
@@ -391,13 +414,13 @@ function upCell(u) {
 }
 function render() {
   const now = Date.now() / 1000, wrap = $("boardWrap"), list = rows || [];
-  const online = list.filter(r => r.online), net = network(now);
+  const online = list.filter(r => r.online), net = network(now), ranked = list.filter(r => !r.known);
   // one count for the whole network, so the chips agree with the board: our node, the peers our
   // node talked to in the last 30 min, and kit nodes online that are not already among those peers
   const peerOn = net.recent.filter(p => p.online ?? now - p.last_seen < 1800), named = new Set(peerOn.filter(p => p.community).map(p => p.community.id));
   const kitOn = online.filter(r => !named.has(r.id)), ours = ref && ref.online ? 1 : 0;
   const atTip = p => p.head != null && ref && ref.height != null && Math.abs(p.head - ref.height) <= 2;
-  const up = [ours ? "tauhud.com" : null, ...peerOn.map(p => p.label ? "IDNI" : p.community ? p.community.name : shortId(p.id)), ...kitOn.map(r => r.name)].filter(Boolean);
+  const up = [ours ? "tauhud.com" : null, ...peerOn.map(p => p.label ? "IDNI" : p.community ? p.community.name : p.known || shortId(p.id)), ...kitOn.map(r => r.name)].filter(Boolean);
   const loaded = rows || peers || ref;
   $("tOnline").textContent = loaded ? up.length : "–";
   $("tSame").textContent = loaded ? ours + peerOn.filter(atTip).length + kitOn.filter(r => r.agrees === "same").length : "–";
@@ -422,7 +445,8 @@ function render() {
   if (ref) CARDS.tauhud = { kind: "tauhud" };
   if (net.others.length) CARDS.peers = { kind: "peers", list: net.others };
   for (const p of net.others) CARDS["peer:" + p.id] = { kind: "peer", p };
-  for (const r of list) CARDS["kit:" + r.id] = { kind: "kit", r, rank: list.indexOf(r) + 1, p: net.recent.find(p => p.community && p.community.id === r.id) };
+  for (const r of ranked) CARDS["kit:" + r.id] = { kind: "kit", r, rank: ranked.indexOf(r) + 1, p: net.recent.find(p => p.community && p.community.id === r.id) };
+  for (const k of net.known) CARDS["known:" + k.peer] = { kind: "known", k };
   if (net.boot) body.append(el("tr", { class: "ref", "data-card": "idni", "data-tip": T("IDNI’s bootnode: every node joins the network through it.\nRunning counts from when our node first met it.") + "\n" + net.boot.id },
     el("td", { class: "n rank", text: "·" }),
     el("td", null, el("span", { class: "dot" + (net.boot.connected ? " on" : "") }), el("span", { class: "name", text: "IDNI" }), el("span", { class: "tag", text: T("bootnode") })),
@@ -440,6 +464,19 @@ function render() {
     el("td", { class: "n hide-s", text: ref.height != null ? `#${ref.height}` : "–" }),
     el("td", { class: "rank", text: T("the yardstick") }),
     el("td", { class: "hide-s", text: ref.online ? T("just now") : "–" })));
+  // named nodes: pinned under ours, reachability in the last column, sync in the chain column
+  for (const k of net.known) {
+    const r = k.reach || "unknown", seen = Math.max(k.port && k.port.open ? k.port.checked || 0 : 0, (k.p2p && k.p2p.talked) || 0, (k.report && k.report.last) || 0);
+    body.append(el("tr", { class: "ref" + (r === "online" ? "" : " off"), "data-card": "known:" + k.peer,
+      "data-tip": `${k.name} · ${k.network}\n` + T("Reachable and in sync are checked apart, each only from real data.\nClick for what was checked.") + "\n" + k.peer },
+      el("td", { class: "n rank", text: "·" }),
+      el("td", null, el("span", { class: "dot" + (r === "online" ? " on" : "") }), el("span", { class: "name", text: k.name }), el("span", { class: "tag", text: T("named node") })),
+      el("td", { text: k.first_seen ? span(now - k.first_seen) : "–" }),
+      el("td", { class: "hide-s", text: "–" }),
+      el("td", { class: "n hide-s", text: k.sync && k.sync.height != null ? `#${k.sync.height}` : "–" }),
+      el("td", null, syncCell(k)),
+      el("td", { class: "hide-s", text: T(REACH[r] || REACH.unknown) + (r === "online" && seen ? " · " + T(ago(now - seen)) : "") })));
+  }
   // peers without the kit: no name, no rank, one line for all of them
   if (net.others.length) {
     const top = Math.max(...net.others.map(p => p.head ?? -1)), last = Math.max(...net.others.map(p => p.last_seen));
@@ -454,7 +491,7 @@ function render() {
       el("td", { class: "hide-s", text: T(ago(now - last)) })));
   }
   const me = location.hash.slice(1);
-  list.forEach((r, i) => {
+  ranked.forEach((r, i) => {
     const chain = r.online ? el("span", { class: `agree ${r.agrees}`, "data-tip": AGREE_TIP[r.agrees] || "", text: AGREE[r.agrees] || "–" })
       : el("span", { class: "rank", text: "offline" });
     const tr = el("tr", { "data-id": r.id, "data-card": "kit:" + r.id, class: [r.online ? "" : "off", r.id === me ? "me" : "", r.you ? "you" : ""].join(" ").trim(),
@@ -470,7 +507,7 @@ function render() {
     body.append(tr);
   });
   // the next free place, in green: what your row will look like
-  const nextRank = list.length + 1, typed = $("name").value.trim();
+  const nextRank = ranked.length + 1, typed = $("name").value.trim();
   const next = el("tr", { class: "free next", "data-tip": "Free. Run the command on the right\nand your node takes this place." },
     el("td", { class: "n", text: nextRank }),
     el("td", null, el("span", { class: "dot on" }), el("span", { class: "name", text: NAME_OK.test(typed) ? typed : T("your node") })),
@@ -587,6 +624,22 @@ function openCard(key, push = true) {
     kv.push(["Running", ref.since ? span(now - ref.since) : "–"], ["Uptime", ref.uptime != null ? `${(ref.uptime * 100).toFixed(1)} %` : "–"], ["Height", heightLine(ref.height)]);
     what = T("The node behind this site. It runs the same kit as everyone else and checks every block; every other row is compared with it. It does not count as a community node.");
     acts.push(el("a", { href: "../status/", text: T("Uptime and outages") }));
+  } else if (c.kind === "known") {
+    const k = c.k, pt = k.port || {}, pp = k.p2p || {}, rp = k.report || {}, sy = k.sync || {};
+    title = k.name; tag = T("named node"); on = k.reach === "online";
+    last = Math.max(pt.last_open || 0, pp.talked || 0, rp.last || 0) || null;
+    const portTxt = pt.open === true ? T("open · checked {t}").replace("{t}", T(ago(now - pt.checked)))
+      : pt.open === false ? T("no answer · checked {t}").replace("{t}", T(ago(now - pt.checked))) + (pt.last_open ? " · " + T("last open {t}").replace("{t}", T(ago(now - pt.last_open))) : "")
+      : T("not checked yet");
+    const p2pTxt = pp.talked ? T("talked to it {t}").replace("{t}", T(ago(now - pp.talked))) + (pp.connected ? " · " + T("connected now") : "")
+      : pp.heard ? T("only heard of it from another peer, {t}").replace("{t}", T(ago(now - pp.heard))) : T("not seen yet");
+    const repTxt = rp.live ? T("reporting · last {t}").replace("{t}", T(ago(now - rp.last)))
+      : rp.last ? T("silent since {t}").replace("{t}", T(ago(now - rp.last))) : T("not set up yet");
+    const src = { report: T("from its heartbeat, block hash compared"), p2p: T("from our node’s peer list, height only") }[sy.source] || "";
+    kv.push(["Peer ID", el("span", null, k.peer + " ", el("button", { class: "copy", type: "button", "data-text": k.peer, text: T("Copy") }))],
+      ["Network", k.network], ["P2P port " + (pt.port || 4001), portTxt], ["Our node", p2pTxt], ["Heartbeat", repTxt],
+      ["Sync", el("span", null, syncCell(k), src ? el("small", { text: " " + src }) : null)], ["Height", heightLine(sy.height)]);
+    what = T("A node tauhud.com knows by name. Reachable: tauhud.com can open its P2P port, our node talked to it, or its heartbeat reports. In sync: only its heartbeat can say so, because only the heartbeat sends a block hash we compare with ours. Nothing here is guessed: without data it says so.");
   } else if (c.kind === "peers") {
     title = T("Other peers"); tag = String(c.list.length); on = c.list.some(p => p.online ?? p.connected); last = Math.max(...c.list.map(p => p.last_seen));
     what = T("Nodes our node met, or heard of from another peer, that do not run the Tau HUD kit. They have no name and no rank. Click one for its details.") + (on ? "" : " " + T(OFF_PEERS));

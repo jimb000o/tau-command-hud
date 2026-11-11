@@ -2911,5 +2911,17 @@
     "html": "Donations: the chart names each line at its end with its value instead of a legend, and one sentence says what the donations so far have paid for, in days of running the site."
   },
   {"tag": "Donations", "on": "2026-11-11", "html": "Donations: the page now reads as a story. First where it stands: the amount not covered by donations, shown once and large, and a chart that names each big jump in the costs and shows the bills still due this month as a dashed line. Then what it costs, then the address, with what it would take to cover the running costs."},
-  {"tag": "Menu", "on": "2026-11-11", "html": "Header: on big screens the hover text of the chips at the top right (people online, validator, chain, block, rev and the others) opens as a normal box under the chip again on Donations, Guardian and Challenge, instead of a narrow column at the right edge that covered the page."}
+  {"tag": "Menu", "on": "2026-11-11", "html": "Header: on big screens the hover text of the chips at the top right (people online, validator, chain, block, rev and the others) opens as a normal box under the chip again on Donations, Guardian and Challenge, instead of a narrow column at the right edge that covered the page."},
+  {
+    "tag": "Playground",
+    "on": "2026-11-11",
+    "html": "Playground: an X-ray for your rule. A new tab next to the test transfers shows what your rule answers for every possible transfer of yours, read exactly instead of tried one by one: where it lets a transfer through, where it blocks it, and where it gives no answer at all. The engine reads no answer as 0, so that transfer is blocked too. A blocked test transfer now says which single change would let it through, and a third tab builds a rule from cases (for example: above 5,000 block, to Bob pass) that gives every transfer exactly one answer. Three new lessons on the Learn page practise the same: when a rule says nothing, one answer per case, and what a rule really reads. The reader behind it is checked on every change against 53 answers the real Tau engine gave.",
+    "major": {
+      "id": "playground-xray",
+      "title": "Rule X-ray: what your rule answers for every transfer",
+      "text": "A rule that only says when to block stops every transfer of yours, because where a rule gives no answer the engine answers 0. The Playground's new X-ray shows such gaps in any rule, a blocked test says what would let it through, and three new lessons on the Learn page explain why.",
+      "link": "/playground/",
+      "image": "/assets/shots/playground-xray.png"
+    }
+  }
 ]

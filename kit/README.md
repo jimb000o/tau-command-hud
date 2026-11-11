@@ -109,10 +109,23 @@ as the `heartbeat_data` volume is kept.
 
 Only if `NODE_NAME` is set, once a minute, to `wss://node.tauhud.com`: the name, your
 node's canonical height and head block hash, the highest network tip it has heard of, the
-kit version and the tau-testnet commit. No IP address is shown or stored on disk, no keys,
-no peer IDs. A random secret in the `heartbeat_data` volume proves that later reports come
+kit version, the tau-testnet commit and the node's peer ID (so tauhud.com can tell your
+node among the peers its own node sees). No IP address is shown or stored on disk, no keys.
+A random secret in the `heartbeat_data` volume proves that later reports come
 from the same node; tauhud.com shows only a short hash of it. A node that stops reporting
 disappears from the list after 15 minutes.
+
+## Heartbeat only, for a node you already run
+
+The heartbeat also works next to a tau-testnet node that was not installed with the kit. It
+needs Python 3 and `websockets==15.0.1`, reads the node's WebSocket on the same machine
+(`NODE_URL`, e.g. `ws://127.0.0.1:65433`; that port stays closed to the internet) and only
+connects out to `wss://node.tauhud.com`. Such a node does not tell its peer ID over RPC, so set
+`NODE_PEER_ID` to it. `--once` sends one report and prints the answer.
+
+A node that tauhud.com shows under a fixed name (listed in
+[`infra/relay/knownnodes.py`](../infra/relay/knownnodes.py)) reports from its own public
+address only; `REPORT_FAMILY=4` keeps the report on IPv4 when that address is an IPv4 one.
 
 ## Public relay
 

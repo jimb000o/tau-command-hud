@@ -1,5 +1,5 @@
 {
-  "about": "Five short lessons for tauhud.com/learn. The page loads them; `up tau` on the server asks the engine every try and every solution and prints ok or FAIL, so the expected answers here are checked against the real engine. A task's `fill` is the fill-in shown to people who picked 'never written a formula': the pattern with ▢ and the choices for it. `guide` is the step-by-step tour shown to people who picked 'never written a formula': one idea per card, every question is a try or solution of the lessons above, so the self-test already checks it; for a guess, the engine's answer decides which choice was right. A lesson with \"level\": \"pro\" is shown only to people who picked 'I know logic or Tau'. `asked` holds questions from the community in IDNI's monthly Q&A videos or in our chat (`from`: \"chat\", no video), answered in our own words; a `try` is always a lesson try, so the self-test covers it. `brief` feeds tauhud.com/learn/brief/: a short software brief, each requirement in plain English with the Tau line written for it by hand; `checks` lists which requirements are switched on and the verdict the engine must give, and the self-test asks each of them.",
+  "about": "Short lessons for tauhud.com/learn. The page loads them; `up tau` on the server asks the engine every try and every solution and prints ok or FAIL, so the expected answers here are checked against the real engine. A task's `fill` is the fill-in shown to people who picked 'never written a formula': the pattern with ▢ and the choices for it. `guide` is the step-by-step tour shown to people who picked 'never written a formula': one idea per card, every question is a try or solution of the lessons above, so the self-test already checks it; for a guess, the engine's answer decides which choice was right. A lesson with \"level\": \"pro\" is shown only to people who picked 'I know logic or Tau'. `asked` holds questions from the community in IDNI's monthly Q&A videos or in our chat (`from`: \"chat\", no video), answered in our own words; a `try` is always a lesson try, so the self-test covers it. `brief` feeds tauhud.com/learn/brief/: a short software brief, each requirement in plain English with the Tau line written for it by hand; `checks` lists which requirements are switched on and the verdict the engine must give, and the self-test asks each of them.",
   "lessons": [
     {
       "id": "yesno",
@@ -290,6 +290,264 @@
           "100"
         ],
         "solution": "always ( (i1[t]:bv[24] > { 100 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) )."
+      }
+    },
+    {
+      "id": "open",
+      "title": "When a rule says nothing",
+      "text": "A rule must give o5 a value for every transfer. A rule that only says when to block says nothing about the rest, and there the engine answers 0. On the testnet 0 blocks, so such a rule stops every transfer of yours. Give both answers.",
+      "tries": [
+        {
+          "label": "Only says when to block",
+          "op": "run",
+          "spec": "always ( (i1[t]:bv[24] > { 5000 }:bv[24]) -> (o5[t]:bv[24] = { #x000000 }:bv[24]) ).",
+          "steps": [
+            {
+              "i1": "6000"
+            },
+            {
+              "i1": "100"
+            }
+          ],
+          "expect": {
+            "out": {
+              "o5": [
+                "0",
+                "0"
+              ]
+            }
+          },
+          "says": "6,000 is stopped, as written. 100 is stopped too: the rule says nothing about it, and the engine answers 0."
+        },
+        {
+          "label": "Both answers",
+          "op": "run",
+          "spec": "always ( (i1[t]:bv[24] > { 5000 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+          "steps": [
+            {
+              "i1": "6000"
+            },
+            {
+              "i1": "100"
+            }
+          ],
+          "expect": {
+            "out": {
+              "o5": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          "says": "With ? and : the rule answers in both cases: 6,000 is stopped (0), 100 goes through (1)."
+        }
+      ],
+      "task": {
+        "text": "Keep the -> and add a second part with && that lets 5,000 and less through. Run 6,000 and 100: the first is stopped, the second goes through.",
+        "op": "run",
+        "steps": [
+          {
+            "i1": "6000"
+          },
+          {
+            "i1": "100"
+          }
+        ],
+        "expect": {
+          "out": {
+            "o5": [
+              "0",
+              "1"
+            ]
+          }
+        },
+        "must": [
+          "->",
+          "&&"
+        ],
+        "solution": "always ( ((i1[t]:bv[24] > { 5000 }:bv[24]) -> (o5[t]:bv[24] = { #x000000 }:bv[24])) && ((i1[t]:bv[24] <= { 5000 }:bv[24]) -> (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+        "fill": {
+          "pattern": "always ( ((i1[t]:bv[24] > { 5000 }:bv[24]) -> (o5[t]:bv[24] = { #x000000 }:bv[24])) && ((i1[t]:bv[24] <= { 5000 }:bv[24]) -> (o5[t]:bv[24] = { ▢ }:bv[24])) ).",
+          "choices": [
+            "#x000000",
+            "#x000001"
+          ]
+        }
+      }
+    },
+    {
+      "id": "cases",
+      "title": "One answer per case",
+      "text": "Rules come in cases: above 5,000 block, otherwise let through. Two things go wrong. Cases that overlap and disagree leave no answer that fits; sat finds that, because it asks whether every input gets some output. A gap between cases gets 0 from the engine, as in the last lesson, and sat does not see it.",
+      "tries": [
+        {
+          "label": "Cases that overlap",
+          "op": "sat",
+          "spec": "((i1[t]:bv[24] > { 5000 }:bv[24]) -> (o5[t]:bv[24] = { #x000000 }:bv[24])) && ((i1[t]:bv[24] > { 1000 }:bv[24]) -> (o5[t]:bv[24] = { #x000001 }:bv[24]))",
+          "expect": {
+            "verdict": false
+          },
+          "says": "F: 6,000 is in both cases, and no o5 is 0 and 1 at once."
+        },
+        {
+          "label": "Cases that fit together",
+          "op": "sat",
+          "spec": "((i1[t]:bv[24] > { 5000 }:bv[24]) -> (o5[t]:bv[24] = { #x000000 }:bv[24])) && ((i1[t]:bv[24] <= { 5000 }:bv[24]) -> (o5[t]:bv[24] = { #x000001 }:bv[24]))",
+          "expect": {
+            "verdict": true
+          },
+          "says": "T: every amount falls into exactly one case."
+        },
+        {
+          "label": "A gap",
+          "op": "run",
+          "spec": "always ( ((i1[t]:bv[24] > { 5000 }:bv[24]) -> (o5[t]:bv[24] = { #x000000 }:bv[24])) && (((i1[t]:bv[24] > { 1000 }:bv[24]) && (i1[t]:bv[24] <= { 5000 }:bv[24])) -> (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+          "steps": [
+            {
+              "i1": "6000"
+            },
+            {
+              "i1": "3000"
+            },
+            {
+              "i1": "500"
+            }
+          ],
+          "expect": {
+            "out": {
+              "o5": [
+                "0",
+                "1",
+                "0"
+              ]
+            }
+          },
+          "says": "3,000 goes through. 500 falls into no case: the engine answers 0 and stops it."
+        }
+      ],
+      "task": {
+        "text": "Close the gap: change the second case so that every amount up to 5,000 goes through. Run 6,000, 3,000 and 500.",
+        "op": "run",
+        "steps": [
+          {
+            "i1": "6000"
+          },
+          {
+            "i1": "3000"
+          },
+          {
+            "i1": "500"
+          }
+        ],
+        "expect": {
+          "out": {
+            "o5": [
+              "0",
+              "1",
+              "1"
+            ]
+          }
+        },
+        "must": [
+          "5000"
+        ],
+        "solution": "always ( ((i1[t]:bv[24] > { 5000 }:bv[24]) -> (o5[t]:bv[24] = { #x000000 }:bv[24])) && ((i1[t]:bv[24] <= { 5000 }:bv[24]) -> (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+        "fill": {
+          "pattern": "always ( ((i1[t]:bv[24] > { 5000 }:bv[24]) -> (o5[t]:bv[24] = { #x000000 }:bv[24])) && ((i1[t]:bv[24] ▢ { 5000 }:bv[24]) -> (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+          "choices": [
+            "<=",
+            ">",
+            "="
+          ]
+        }
+      }
+    },
+    {
+      "id": "reads",
+      "title": "What a rule really reads",
+      "text": "A rule can name an input and still never decide by it. Change one input at a time and keep the rest: if the answer never changes, the rule does not read that input. Here i4 is the receiver; real receivers are long keys, 7 and 8 stand in for two of them.",
+      "tries": [
+        {
+          "label": "Only the receiver changes",
+          "op": "run",
+          "spec": "always ( (i4[t]:bv[384] = { 7 }:bv[384]) ? ((i1[t]:bv[24] > { 5000 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24])) : ((i1[t]:bv[24] > { 5000 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+          "steps": [
+            {
+              "i1": "6000",
+              "i4": "7"
+            },
+            {
+              "i1": "6000",
+              "i4": "8"
+            }
+          ],
+          "expect": {
+            "out": {
+              "o5": [
+                "0",
+                "0"
+              ]
+            }
+          },
+          "says": "Receiver 7 or 8, the same answer. Both branches say the same, so the rule names receiver 7 but never decides by it."
+        },
+        {
+          "label": "Only the amount changes",
+          "op": "run",
+          "spec": "always ( (i4[t]:bv[384] = { 7 }:bv[384]) ? ((i1[t]:bv[24] > { 5000 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24])) : ((i1[t]:bv[24] > { 5000 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+          "steps": [
+            {
+              "i1": "6000",
+              "i4": "7"
+            },
+            {
+              "i1": "100",
+              "i4": "7"
+            }
+          ],
+          "expect": {
+            "out": {
+              "o5": [
+                "0",
+                "1"
+              ]
+            }
+          },
+          "says": "6,000 or 100 to the same receiver, two answers: the rule reads the amount."
+        }
+      ],
+      "task": {
+        "text": "Make receiver 7 really special: it may receive any amount. Run 6,000 to receiver 7, then 6,000 to receiver 8.",
+        "op": "run",
+        "steps": [
+          {
+            "i1": "6000",
+            "i4": "7"
+          },
+          {
+            "i1": "6000",
+            "i4": "8"
+          }
+        ],
+        "expect": {
+          "out": {
+            "o5": [
+              "1",
+              "0"
+            ]
+          }
+        },
+        "must": [
+          "7"
+        ],
+        "solution": "always ( (i4[t]:bv[384] = { 7 }:bv[384]) ? (o5[t]:bv[24] = { #x000001 }:bv[24]) : ((i1[t]:bv[24] > { 5000 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+        "fill": {
+          "pattern": "always ( (i4[t]:bv[384] = { 7 }:bv[384]) ? (o5[t]:bv[24] = { ▢ }:bv[24]) : ((i1[t]:bv[24] > { 5000 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+          "choices": [
+            "#x000001",
+            "#x000000"
+          ]
+        }
       }
     },
     {
