@@ -110,4 +110,7 @@ TauI18n.add({ strings: {
   "Paid out and donated so far": "累计支出与捐赠",
   "Donations have covered {p} of what was paid out so far.": "捐赠已覆盖迄今支出的 {p}。",
   "To cover the running costs it would take about {v} a month.": "要覆盖运行成本，每月大约需要 {v}。",
+  "Codex on the ChatGPT Pro plan with 20x the usage of Plus, a second AI tool the site's code and art are made with": "ChatGPT Pro 套餐中的 Codex（用量是 Plus 的 20 倍），本站代码和图画所用的第二个 AI 工具",
+  "ElevenLabs Creator plan, for the voices on the site; $22 plus tax": "ElevenLabs Creator 套餐，用于本站的配音；22 美元另加税",
+  "tauhud.com and agorzilla.com, $11.48 a year each, shown per month": "tauhud.com 和 agorzilla.com，每个每年 11.48 美元，按月折算",
 } });
