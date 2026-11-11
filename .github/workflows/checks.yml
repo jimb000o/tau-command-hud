@@ -49,6 +49,8 @@ jobs:
         run: node tests/nomemo-voices.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: The facts for AI assistants (llms.txt, tauhud.com/facts/) say what facts/facts.json says
         run: node tools/facts.mjs --check | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: The rule reader behind the Playground's X-ray gives the real Tau engine's answers (tests/rulefacts-cases.json) and the lessons' answers
+        run: node tests/rulefacts.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Shared scripts parse
         run: for f in assets/*.js assets/i18n/*/*.js; do node --check "$f" || exit 1; done
 
