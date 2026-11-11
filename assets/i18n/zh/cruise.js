@@ -155,4 +155,7 @@ TauI18n.add({ strings: {
   "tries to take back another pirate’s booking": "试图取回另一个海盗的预订",
   "tries to take back a booking the chain never had": "试图取回一条链上从未有过的预订",
   "tries to take back a booking after its release time": "在预订的释放时间之后试图取回它",
+  "allows one test AGRS less fee than the network’s fee rule asks for that very payment": "付款时允许的手续费比网络收费规则对这笔付款要求的少 1 个测试 AGRS",
+  "{a} allowed, the fee rule asks {b}": "允许 {a}，收费规则要求 {b}",
+  "with {b} it went through": "允许 {b} 时就通过了",
 } });
