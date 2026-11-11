@@ -451,23 +451,39 @@ ARTICLE_SHAPE = _obj({   # the API shapes the answer by this schema, so no quote
     "card": _obj({"line": {"type": "string"}, "why": {"type": "array", "items": {"type": "string"}, "description": "up to 3 short lines"}})})
 
 
-def ask_ai(facts: dict, tries: int = 2, shaped: bool = True) -> dict:
+# The model's thinking and the article (three languages) share max_tokens. On 11 November 2026 the facts of the MS Dry Run
+# needed more than 8000: the answer was cut off twice and read as broken JSON. An answer cut at ROOM is asked once more
+# with ROOM_MAX (only what is written is billed).
+ROOM = 16000
+ROOM_MAX = 32000
+
+
+def ask_ai(facts: dict, tries: int = 2, shaped: bool = True, room: int = ROOM) -> dict:
     prompt = "Facts counted from the logbook of one cruise ship visit (JSON):\n\n" + json.dumps(facts, ensure_ascii=False, indent=1)
-    body = {"model": AI_MODEL, "max_tokens": 8000, "system": SYSTEM, "messages": [{"role": "user", "content": prompt}]}
+    body = {"model": AI_MODEL, "max_tokens": room, "system": SYSTEM, "messages": [{"role": "user", "content": prompt}]}
     if shaped:
         body["output_config"] = {"format": {"type": "json_schema", "schema": ARTICLE_SHAPE}}
     req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=json.dumps(body).encode(), headers={
         "x-api-key": AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=300) as r:
+        with urllib.request.urlopen(req, timeout=300 if room <= ROOM else 900) as r:
             j = urllib_json(r)
     except urllib.error.HTTPError as e:
         reason = e.read().decode("utf-8", "replace")[:600]
         log.warning("the API answered %s for model %s: %s", e.code, AI_MODEL, reason)
         if e.code == 400 and shaped:   # the model does not take the shaped answer: ask the plain way, the JSON in the text
-            return ask_ai(facts, tries, shaped=False)
+            return ask_ai(facts, tries, shaped=False, room=room)
         raise RuntimeError(f"the API answered {e.code} for model {AI_MODEL}: {reason}") from None
     ai_meter.meter("blog", AI_MODEL, j.get("usage"))
+    stop = j.get("stop_reason")
+    if stop == "refusal":
+        raise RuntimeError(f"the model declined to write this article ({(j.get('stop_details') or {}).get('category') or 'no reason given'})")
+    if stop == "max_tokens":
+        if room < ROOM_MAX:
+            log.warning("the model's answer was cut off at %d tokens (its thinking counts too): asking once more with room for %d",
+                        room, ROOM_MAX)
+            return ask_ai(facts, tries, shaped, ROOM_MAX)
+        raise RuntimeError(f"the model's answer did not fit in {room} tokens")
     text = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
     m = re.search(r"\{.*\}", text, re.S)
     try:
@@ -477,7 +493,7 @@ def ask_ai(facts: dict, tries: int = 2, shaped: bool = True) -> dict:
     except ValueError as e:
         if tries > 1:
             log.warning("the model's answer was not valid JSON (%s): asking once more", e)
-            return ask_ai(facts, tries - 1, shaped)
+            return ask_ai(facts, tries - 1, shaped, room)
         raise
 
 
