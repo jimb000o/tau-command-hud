@@ -643,9 +643,25 @@ NEWW |= {C6.pk[f"queen-{p}"] for p in range(30, 36)}   # with 11 and 13 above: e
 BUSY.clear()
 QT = next(t for t, k in cruise.calls_near(T[0] + 86400) if k == "queen" and t > T[0] + 86400)
 T[0] = QT - 25 * 60
-while T[0] < QT + (cruise.VISIT_MIN + 5) * 60:
-    asyncio.run(C6.step(full, gov))
-    T[0] += 1
+
+
+async def whole_call():
+    while T[0] < QT + (cruise.VISIT_MIN + 5) * 60:
+        await C6.step(full, gov)
+        T[0] += 1
+
+# the fake node checks no signature, and a pure-Python BLS signature for each of the call's sends would take most of the
+# 300 s every test file gets in CI: unsigned here only (the signatures themselves are checked above)
+OWN_SIGN = G2Basic.__dict__.get("Sign")   # py_ecc keeps Sign on a base class; set here, it is taken away again after
+G2Basic.Sign = staticmethod(lambda sk, msg: bytes(96))
+try:
+    asyncio.run(whole_call())
+finally:
+    if OWN_SIGN is None:
+        del G2Basic.Sign
+    else:
+        G2Basic.Sign = OWN_SIGN
+check(len(G2Basic.Sign(1, b"x")) == 96 and G2Basic.Sign(1, b"x") != bytes(96), "real signatures again after the whole call")
 s6 = next(v for v in C6.visits if v["ship"] == "queen")
 lo6 = [e for e in C6.logbook if e.get("new_wallet")]
 check(not s6.get("note") and sum(s6["refused"].values()) <= 2 and (s6.get("left_out") or {}).get("passengers", 0) >= 7,
