@@ -199,10 +199,10 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
         <p class="fine" id="costBilled" hidden></p>
         <p class="fine" id="costNote">Amounts as billed, rounded, each in the currency of its bill. Further items are added here once their bills are in.</p>
         <details id="oneoff" class="oneoff" hidden>   <!-- folded: the list grows with every bill, the page fits 1366 × 768 (9.11 sim) -->
-          <summary><h2 class="sub2">Paid so far <span class="n">newest first</span></h2></summary>
+          <summary><h2 class="sub2">Extra top-ups <span class="n">newest first</span></h2></summary>
           <ul class="rows" id="oneoffRows"></ul>
-          <div class="sum"><span>Paid in all, not counting time</span><b id="paidSum"></b></div>
-          <p class="fine">Top-ups and bills of the tools, as billed. Our server reads them from the receipts as they come in.</p>
+          <div class="sum"><span>Top-ups in all, already inside the costs above</span><b id="paidSum"></b></div>
+          <p class="fine">Single top-ups of the tools (image credits and the like) on top of the monthly bills, as billed. They are part of the costs since the first bill above, not a separate total.</p>
         </details>
         <p class="fine">Work on the site is counted rather than claimed: <span id="effort">changes pushed to the public repository, counted live from GitHub</span>. <a href="/#updates">Update log ›</a></p>
       </section>
@@ -309,7 +309,7 @@ const dm = t => new Date(t).toLocaleDateString(L === "en" ? "en-GB" : L, { day: 
 const DAY = 86400000, dayOf = t => Math.floor(t / DAY) * DAY;
 /* the headline (costs per month, paid so far), the chart and the break-even line; needs the costs and one exchange rate */
 const money1 = v => new Intl.NumberFormat(RC === "USD" ? "en-US" : L === "en" ? "en-GB" : L, { style: "currency", currency: RC, maximumFractionDigits: 0 }).format(v);
-const RC = CUR[0];
+const RC = L === "en" ? "USD" : CUR[0];   // most bills are in dollars: one total in dollars in English (euros beside it), yuan / yen in Chinese / Japanese
 function flow(don) {
   const fx = (don || []).find(x => x.fiat && ["eur", "usd", "cny", "jpy"].every(k => x.fiat[k] > 0));
   if (!fx || !C.items.length) { $("head").hidden = true; return null; }
@@ -322,8 +322,10 @@ function flow(don) {
   ev.sort((a, b) => a.t - b.t);
   const paidAll = ev.filter(e => e.w === "p").reduce((a, e) => a + e.v, 0), gotAll = ev.filter(e => e.w === "g").reduce((a, e) => a + e.v, 0);
   const firstBill = ev.find(e => e.w === "p");
+  const eur = v => new Intl.NumberFormat("en-GB", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v * fx.fiat.eur / fx.fiat[RC.toLowerCase()]);
   $("perMonth").textContent = G("≈ {v}", { v: money1(month) });
-  $("perMonthL").textContent = G("a month now, at the {d} rate; time not counted", { d: dm(fx.ts * 1000) });
+  $("perMonthL").textContent = RC === "USD" ? G("a month now (≈ {e}), at the {d} rate; time not counted", { e: eur(month), d: dm(fx.ts * 1000) })
+    : G("a month now, at the {d} rate; time not counted", { d: dm(fx.ts * 1000) });
   $("paidAll").textContent = money1(paidAll);
   $("paidAllL").textContent = firstBill ? G("costs since {d}", { d: dm(firstBill.t) }) : "";
   $("head").hidden = false;
