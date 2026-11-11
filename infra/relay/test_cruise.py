@@ -567,6 +567,97 @@ T[0] = relt - cruise.CANCEL_LATEST - 30
 asyncio.run(C.send(vv, {"i": 901, "p": 9, "kind": "cancel", "to": "dive", "amount": 24, "rel": relt, "t": T[0]}, ask, gov, "calm"))
 check(len(retracts) == r0 + 1 and retracts[-1]["retractable_id"] == "cd" * 32, "one in time still goes out")
 
+# ---------- our node has no room for a new wallet (IDNI tau-testnet #108, 11 November 2026): left out, no refusal ----------
+NEWW = {C.pk[f"queen-{p}"] for p in (11, 13)} | {C.pk["dryrun-3"]}
+BUSY = {C.pk["queen-14"]}
+FIXED = [False]
+FULL = {"refused": 0, "sent": []}
+
+
+async def full(cmd: str):
+    name, _, rest = cmd.partition(" ")
+    rest = rest.split()[0] if name != "sendtx" and rest else rest
+    if name == "getsequence":
+        return {"status": "ok", "data": {"sequence_number": 0 if rest in NEWW else 5, "tip_height": 9000}}
+    if name == "getbalance":
+        return {"status": "ok", "data": {"balance": 0 if rest in NEWW and not FIXED[0] else 99000}}
+    if name == "getretractables":
+        return {"status": "ok", "data": {"retractables": []}}
+    if name == "sendtx":
+        tx = json.loads(rest)
+        if (tx["sender_pubkey"] in NEWW and not FIXED[0]) or tx["sender_pubkey"] in BUSY:
+            FULL["refused"] += 1
+            return {"status": "error", "error": {"code": "ADMISSION_UNAVAILABLE", "message": "Transaction validation is temporarily unavailable; please resubmit."}}
+        FULL["sent"].append(tx)
+        return {"status": "ok", "data": {"ok": True, "tx_hash": hashlib.sha256(rest.encode()).hexdigest()}}
+    return None
+
+
+def visit6(vid):
+    return {"id": vid, "ship": "queen", "skipped": 0, "sent": {k: 0 for k in cruise.KINDS}, "refused": {k: 0 for k in cruise.KINDS}, "allowed": []}
+
+
+def stop6(i, p):
+    return {"i": i, "p": p, "kind": "pay", "to": "bar", "amount": 5, "t": T[0]}
+
+
+v6 = visit6("2026-11-14-queen")
+asyncio.run(C.send(v6, stop6(1000, 12), full, gov, "calm"))
+check(v6["sent"]["pay"] == 1 and v6.get("last_ok"), "a passenger the node knows pays as before")
+asyncio.run(C.send(v6, stop6(1001, 11), full, gov, "calm"))
+e6 = C.logbook[-1]
+check(v6.get("left_out") == [11] and not any(v6["refused"].values()) and e6.get("new_wallet") is True and e6.get("ok") is None
+      and e6.get("code") == "ADMISSION_UNAVAILABLE" and "resubmit" in e6.get("err", "") and "#108" in e6.get("note", ""),
+      "a new wallet our node has no room for: the passenger is left out, logged with the node's answer, no refusal")
+r6 = FULL["refused"]
+asyncio.run(C.send(v6, stop6(1002, 11), full, gov, "calm"))
+check(v6["left_out_stops"] == 2 and FULL["refused"] == r6 and C.logbook[-1].get("new_wallet") and "tx" not in C.logbook[-1],
+      "its next stop is not sent at all, and counted with the left-out stops")
+asyncio.run(C.send(v6, stop6(1003, 14), full, gov, "calm"))
+check(v6["refused"]["pay"] == 1 and 14 not in v6["left_out"], "a wallet the chain knows (balance above 0) with that answer is a refusal, as before")
+v6["last_ok"] = T[0] - cruise.NEW_WALLET_OK - 1
+asyncio.run(C.send(v6, stop6(1004, 13), full, gov, "calm"))
+check(v6["refused"]["pay"] == 2 and 13 not in v6["left_out"], "nothing taken lately: the same answer counts as a refusal, so the brakes see a node in trouble")
+FIXED[0] = True
+v7 = visit6("2026-11-21-queen")
+asyncio.run(C.send(v7, stop6(1100, 11), full, gov, "calm"))
+check(v7["sent"]["pay"] == 1 and not v7.get("left_out"), "the next visit tries again: once the node takes new wallets, the passenger sails, nothing to switch")
+FIXED[0] = False
+v8 = {**visit6("2026-11-28-queen"), "last_ok": int(T[0])}
+TX8 = {"status": "error", "error": {"code": "ADMISSION_UNAVAILABLE", "message": "Transaction validation is temporarily unavailable; please resubmit."}}
+RULE8 = {"status": "error", "error": {"code": "ADMISSION_UNAVAILABLE", "message": "Rule validation is temporarily unavailable; please resubmit."}}
+check(asyncio.run(C.new_wallet(v8, C.pk["queen-11"], TX8, full)) is True and asyncio.run(C.new_wallet(v8, C.pk["queen-11"], RULE8, full)) is False,
+      "only the node's words for a transaction it could not check mean a new wallet; the same code for a rule stays a refusal")
+
+# bookings ahead: a new wallet is "not booked", not refused
+eb = {"id": "2026-11-18-dryrun", "ship": "dryrun", "t0": int(T[0]) + 3 * 86400, "till": C.till["dryrun"]}
+bb = {"p": 3, "amount": 10, "status": "planned"}
+asyncio.run(C.send_escrow(eb, bb, "book ahead", full, gov, T[0]))
+check(bb["status"] == "not booked" and "#108" in bb.get("note", "") and C.logbook[-1].get("new_wallet") and C.logbook[-1].get("ok") is None,
+      "a booking ahead from a new wallet: not booked, with why, no refusal")
+
+# a whole call of the Queen with eight passengers new to the node: she stays, they are left out, no refusals
+C6 = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s6"), "log_path": os.path.join(d, "l6"), "incidents_path": os.path.join(d, "i6")}, clock=clock,
+                   enabled=True, verdict=lambda: "calm", background=False)
+NEWW |= {C6.pk[f"queen-{p}"] for p in range(30, 36)}   # with 11 and 13 above: eight new wallets
+BUSY.clear()
+QT = next(t for t, k in cruise.calls_near(T[0] + 86400) if k == "queen" and t > T[0] + 86400)
+T[0] = QT - 25 * 60
+while T[0] < QT + (cruise.VISIT_MIN + 5) * 60:
+    asyncio.run(C6.step(full, gov))
+    T[0] += 1
+s6 = next(v for v in C6.visits if v["ship"] == "queen")
+lo6 = [e for e in C6.logbook if e.get("new_wallet")]
+check(not s6.get("note") and sum(s6["refused"].values()) <= 2 and (s6.get("left_out") or {}).get("passengers", 0) >= 7,
+      f"a whole call with eight new wallets: no brake, {sum(s6['refused'].values())} refusals (only before the first send went through), "
+      f"{(s6.get('left_out') or {}).get('passengers')} passengers left out")
+check(len({e["p"] for e in lo6}) == s6["left_out"]["passengers"] and s6["left_out"]["stops"] == len(lo6), "the summary counts the passengers and their stops as logged")
+check(C6.lenders(QT) == [] and C6.lenders(QT + 2 * 3600) == [], "No Memo borrows from no passenger near a call")
+far = QT + 2 * 86400
+L6 = C6.lenders(far)
+check(len(L6) == 120 and L6[0][0] == "queen-0" and L6[0][2] == C6.pk["queen-0"] and L6[0][1] == C6.sk["queen-0"],
+      "far from every call the Queen's 120 passengers may lend No Memo's drop")
+
 print()
 print("all good" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)

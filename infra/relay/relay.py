@@ -190,6 +190,19 @@ FROM_MEMORY = CACHED + ("getblocks", "getblockrange", "presence")   # answered w
 # in the list). Both commands share one bucket per address and one for everyone,
 # because the relay holds ONE upstream connection and checktx is a heavy call.
 WALLET_COMMANDS = ("sendtx", "checktx")
+# Our node keeps at most 254 wallet addresses; with all of them in use it answers ADMISSION_UNAVAILABLE ("temporarily
+# unavailable; please resubmit") to every transaction with a wallet it has not seen before (IDNI tau-testnet #108, since
+# 11 November 2026). Sending again never helps. So when a visitor's transaction gets that answer, one of its wallets
+# holds nothing on the chain yet, and the node took another transaction through this relay in the last NEW_WALLET_OK
+# seconds, the answer says why instead (explain_new_wallet). Once the node takes new wallets again (IDNI's fix, which the
+# node's auto-follow brings in by itself), that answer stops coming and the visitor never sees this text.
+NEW_WALLET_CODE = "ADMISSION_UNAVAILABLE"
+NEW_WALLET_TEXT = "Transaction validation is temporarily unavailable"   # the node's words for it; a rule it cannot check says "Rule validation …"
+NEW_WALLET_OK = 30 * 60
+NEW_WALLET_ISSUE = "https://github.com/IDNI/tau-testnet/issues/108"
+NEW_WALLET_MESSAGE = ("Our node can't take this yet: it has a wallet our node has not seen before, and right now our node "
+                      "has no room for new wallet addresses (it keeps 254, all in use; IDNI tau-testnet issue #108). "
+                      "Wallets it already knows still work. Nothing was sent.")
 VIA = re.compile(r"^[a-z0-9-]{1,24}(/[a-z]{2})?$")   # a page name: start, rules, card, hud, story/zh …
 WALLET_TX_TYPES = frozenset({
     "user_tx", "consensus_rule_vote", "rule_offer", "rule_offer_accept", "rule_offer_reject",
@@ -406,6 +419,7 @@ class Relay:
         self.hack.on_tx = lambda ok: self.load.sent("cruise" if ok else "refused")
         self.nomemo = NoMemo()   # No Memo's crew purse: the share, the mark and the Tracer's dust (nomemo.py)
         self.nomemo.on_tx = lambda: self.load.sent("bot")
+        self.nomemo.lenders = self.cruise.lenders   # while our node cannot take the bank's fresh wallet (IDNI tau-testnet #108)
         self.nomemo_feedback = NoMemoFeedback()   # `feedback <text>` in the No Memo terminal, kept for the owner (nomemo_feedback.py)
         self.island.idle = self.idle_step
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
@@ -1449,6 +1463,8 @@ class Relay:
             if cmd == "sendtx":
                 return envelope_error(cmd, "The node did not answer in time; the transaction may still arrive.", "NO_ANSWER")
             return envelope_error(cmd, "Node is not reachable right now.", "UPSTREAM_DOWN")
+        if msg.get("status") == "error" and (msg.get("error") or {}).get("code") == NEW_WALLET_CODE:
+            msg = await self.explain_new_wallet(msg, tx, way)
         if cmd == "sendtx":
             self.load.sent("sent" if msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False else "refused")
         if cmd == "sendtx" and msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False:
@@ -1461,6 +1477,43 @@ class Relay:
             except (ValueError, AttributeError):
                 pass
         return json.dumps(msg, separators=(",", ":"))
+
+    async def explain_new_wallet(self, msg: dict, tx: str, way) -> dict:
+        """The node answered NEW_WALLET_CODE: when a wallet of this transaction holds nothing on the chain yet (balance
+        0) and the node took other transactions lately, the answer says why (NEW_WALLET_MESSAGE) instead of "please
+        resubmit"; the node's own words stay in node_message. Any other case keeps the node's answer as it is."""
+        if not str((msg.get("error") or {}).get("message") or "").startswith(NEW_WALLET_TEXT):
+            return msg   # a rule the node could not check, or other words: the node's answer as it is
+        if time.time() - self.load.last_ok > NEW_WALLET_OK:
+            return msg   # nothing went through lately either: the node's own trouble, not a full address table
+        try:
+            t = json.loads(tx)
+        except ValueError:
+            return msg
+        wallets = [t.get("sender_pubkey"), t.get("recipient_pubkey")]
+        for op in ((t.get("operations") or {}).get("1") or []) if isinstance(t.get("operations"), dict) else []:
+            if isinstance(op, list) and len(op) >= 2:
+                wallets += op[:2]
+        seen: list[str] = []
+        for w in wallets:
+            if isinstance(w, str) and HEX.match(w) and w.lower() not in seen:
+                seen.append(w.lower())
+        new = False
+        for w in seen[:6]:
+            r = await way.request(f"getbalance {w}")
+            if not r or r.get("status") != "ok":
+                return msg
+            try:
+                if int((r.get("data") or {}).get("balance") or 0) == 0:
+                    new = True
+                    break
+            except (TypeError, ValueError):
+                return msg
+        if not new:
+            return msg
+        err = dict(msg.get("error") or {})
+        err.update(message=NEW_WALLET_MESSAGE, node_message=err.get("message"), reason="new_wallet", issue=NEW_WALLET_ISSUE)
+        return {**msg, "error": err}
 
     async def lease_deposit(self, raw: str, ip: str) -> str:
         """Keep a pre-signed neutral clause for the holder's turn (slotlease.py), once the node has checked it."""

@@ -35,6 +35,7 @@ class Load:
         self.top = {"pool": 0, "per_min": 0, "per_block": 0, "wait": 0, "since": round(clock())}
         self.saved_at = 0.0
         self._cache = (0.0, None)
+        self.last_ok = 0.0   # when our node last took a transaction through the relay (any of the above but "refused")
         self.load()
 
     # ---------- what the relay tells it ----------
@@ -71,6 +72,8 @@ class Load:
         row = self._m(now)
         k = by if by in ("sent", "bot", "cruise", "refused") else "sent"
         row[k] = row.get(k, 0) + 1
+        if k != "refused":
+            self.last_ok = now
 
     # ---------- GET /load ----------
     def snapshot(self, blocks: list, waiting: int = 0, now: float | None = None) -> dict:

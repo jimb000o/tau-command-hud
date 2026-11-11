@@ -230,5 +230,49 @@ blog.write_json(os.path.join(TMP, "blog", "drafts", "old-1.json"), {"id": "old",
 check(blog.auto_publish(T0 + 10 * 86400) is None, "an old draft is never published by itself")
 blog.AUTO_PUBLISH_HOURS = 0
 
+# ---------- our node had no room for new wallets (IDNI tau-testnet #108; MS Dry Run, 11 November 2026) ----------
+T11 = 1794409200   # Wednesday 11 November 2026, 16:00 German time
+V11 = "2026-11-11-dryrun"
+AU = '{"code":"ADMISSION_UNAVAILABLE","message":"Transaction validation is temporarily unavailable; please resubmit."}'
+nlog = [{"t": T11, "visit": V11, "ship": "dryrun", "kind": "landed", "verdict": "calm", "plan": 232, "trial": []}]
+for i in range(222):
+    nlog.append({"t": T11 + 30 + i * 20, "visit": V11, "kind": "pay", "p": 40 + i % 30, "ok": True, "seq": 3, "verdict": "calm", "height": 7100 + i // 4})
+# as it was logged that day: two passengers' first sends were still waiting (sequence 1), their later ones at 0
+for i, (p, seq, k) in enumerate([(7, 1, "book"), (7, 1, "pay"), (25, 1, "pay"), (7, 0, "pay"), (25, 0, "pay"), (7, 0, "pay"),
+                                 (25, 0, "pay"), (7, 0, "pay"), (25, 0, "pay")]):
+    nlog.append({"t": T11 + 759 + i * 300, "visit": V11, "kind": k, "p": p, "ok": False, "seq": seq, "err": AU, "verdict": "calm"})
+nlog.append({"t": T11 + 5500, "visit": V11, "kind": "visit over", "summary": {"id": V11, "name": "MS Dry Run", "t0": T11, "landed": True,
+             "passengers": 40, "sent": {"pay": 217, "book": 4, "cancel": 1}, "refused": {"pay": 8, "book": 1}, "skipped": 1}})
+nf = blog.facts_of(nlog[::-1], [])
+nw = nf.get(blog.NEW_WALLET_FACT) or {}
+check(nf["refused in all"] == 0 and not nf.get("refused by the node") and not nf.get("refusal answers"),
+      "the nine answers of 11 November are no refusals: our node had no room for two new wallets")
+check(nw.get("passengers") == 2 and nw.get("their sends the node could not take or the ship left out") == 9 and "#108" in nw.get("why", "")
+      and "254" in nw.get("why", "") and "counted them as refusals" in nw.get("how this call handled them", ""),
+      "they are counted apart: two passengers, nine sends, why, and how that call still handled them")
+nn = blog.numbers_of(nf)
+check(any(x.endswith("none refused") for x in nn) and any("no room for the new wallets of 2 passengers (9 sends)" in x and "IDNI #108" in x for x in nn),
+      "the visit in numbers: none refused, and one line on the two new wallets")
+check(not blog.unknown_numbers("Our node had no room for the new wallets of 2 passengers: it keeps 254 wallet addresses (IDNI tau-testnet issue #108, "
+                                "11 November 2026); 9 sends.", nf), "the article may name 254, #108 and the date: they are in the facts")
+# since the ship leaves such a passenger out (relay/cruise.py), the logbook says so itself
+slog = [e for e in nlog if e.get("ok") is not False and e.get("kind") != "visit over"]
+slog += [{"t": T11 + 800, "visit": V11, "kind": "pay", "p": 7, "ok": None, "new_wallet": True, "code": "ADMISSION_UNAVAILABLE", "err": AU, "seq": 0},
+         {"t": T11 + 1400, "visit": V11, "kind": "pay", "p": 7, "ok": None, "new_wallet": True, "note": "left out"},
+         {"t": T11 - 3 * 86400, "visit": V11, "kind": "book ahead", "p": 9, "ok": None, "new_wallet": True},
+         {"t": T11 + 5500, "visit": V11, "kind": "visit over", "summary": {"id": V11, "name": "MS Dry Run", "t0": T11, "landed": True, "passengers": 40,
+                                                                           "sent": {"pay": 222}, "refused": {}, "skipped": 0, "left_out": {"passengers": 1, "stops": 2}}}]
+sf = blog.facts_of(slog, [])
+sw = sf.get(blog.NEW_WALLET_FACT) or {}
+check(sf["refused in all"] == 0 and sw.get("passengers") == 2 and sw.get("their sends the node could not take or the ship left out") == 3
+      and "left out" in sw.get("how this call handled them", ""), "logged the new way: counted apart the same, with how the ship left them out")
+check(sf["bookings ahead in escrow"].get("not booked: wallets new to our node, which had no room for them") == 1
+      and sf["bookings ahead in escrow"]["refused by the node"] == 0, "a booking ahead from a new wallet: not booked, not refused")
+# a wallet the chain knows that gets the same answer is a refusal as before
+klog = nlog[:1] + [{"t": T11 + 60, "visit": V11, "kind": "pay", "p": 5, "ok": False, "seq": 7, "err": AU, "verdict": "calm"}]
+kf = blog.facts_of(klog, [])
+check(kf["refused in all"] == 1 and not kf.get(blog.NEW_WALLET_FACT) and kf.get("refusal answers"), "the same answer to a wallet with transactions in blocks stays a refusal")
+check(blog.NEW_WALLET_FACT not in blog.facts_of(log[::-1], inc), "a visit without new wallets says nothing of them")
+
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)
