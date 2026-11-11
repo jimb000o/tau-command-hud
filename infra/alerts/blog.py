@@ -49,6 +49,7 @@ IMG = os.path.join(PUBLIC, "img")               # hero pictures and charts, node
 SHARE = os.path.join(PUBLIC, "a")               # one small page per article for link previews, node.tauhud.com/blog/a/<id>.html
 EVERY = 600
 PICS_VERSION = 3   # raise when the hero picture changes: every article's picture is made anew once (2: numbers and Rico, 3: one story on refusals)
+DESK_VERSION = 1   # the same for the heroes without island art (blog_pics.desk_hero): IDNI news, Q&As, testnet learnings
 CHECK_WAIT = 3 * 3600      # a visit whose bookings were never checked is drafted this long after it ended
 RETRY_AFTER = 2 * 3600
 # a draft whose check is clean (every number in the facts, no hype or blame words) goes on the blog by itself this many
@@ -505,16 +506,52 @@ def ship_of(a: dict) -> str:
     return "liner" if "queen" in name.lower() or a.get("ship") == "liner" else "expedition"
 
 
+def island_story(a: dict) -> bool:
+    """Only the island's and the ships' own articles get the island's painting (with the ship and Rico) as hero; an
+    article about IDNI news, a Q&A or what the testnet taught us gets the site's own look (blog_pics.desk_hero)."""
+    return a.get("kind") == "cruise" or bool(a.get("visit") or a.get("ship") or (a.get("facts") or {}).get("ship"))
+
+
+def pics_version(a: dict):
+    return PICS_VERSION if island_story(a) else f"desk-{DESK_VERSION}"
+
+
+def kicker(a: dict) -> str:
+    """The small line above the title on a desk hero: the article's kind and day, or its own `kicker`."""
+    if a.get("kicker"):
+        return str(a["kicker"])
+    label = {"learnings": "Learnings", "news": "News"}.get(a.get("kind") or "", "Tau HUD blog")
+    try:
+        day = dt.date.fromisoformat(str(a.get("on")))
+        return f"{label} · {day.day} {day.strftime('%B %Y')}"
+    except ValueError:
+        return label
+
+
+def make_hero(a: dict, stats: list | None) -> bool:
+    """The article's hero picture at IMG/<id>-hero.jpg: the island's painting for island and ship stories (only where
+    the paintings are), the site's own look for every other article. True when it was made."""
+    import blog_pics
+    os.makedirs(IMG, exist_ok=True)
+    out = os.path.join(IMG, a["id"] + "-hero.jpg")
+    if island_story(a):
+        if not os.path.exists(os.path.join(ART, "index.json")):
+            return False
+        blog_pics.hero(ART, SHIPS, a["card"], ship_of(a), out, stats=stats)
+    else:
+        blog_pics.desk_hero(a["card"], out, stats=stats, kicker=kicker(a))
+    return True
+
+
 def pictures(a: dict) -> dict:
     """The hero picture (the island's painting with the ship and the card, made only where the paintings are) and
     the charts of the visit's numbers; the article gets their addresses. Without paintings, no hero and no error."""
     import blog_pics
     os.makedirs(IMG, exist_ok=True)
-    if a.get("card") and os.path.exists(os.path.join(ART, "index.json")):
+    if a.get("card"):
         try:
-            blog_pics.hero(ART, SHIPS, a["card"], ship_of(a), os.path.join(IMG, a["id"] + "-hero.jpg"),
-                           stats=blog_pics.visit_stats(a.get("facts") or {}))
-            a["image"] = f"{NODE}/blog/img/{a['id']}-hero.jpg"
+            if make_hero(a, blog_pics.visit_stats(a.get("facts") or {})):
+                a["image"] = f"{NODE}/blog/img/{a['id']}-hero.jpg"
         except Exception as e:  # noqa: BLE001 - an article without its picture beats no article
             log.warning("hero for %s: %s", a["id"], e)
     if a.get("facts"):
@@ -559,20 +596,18 @@ def site_pictures(force: bool = False) -> int:
         if not a.get("id") or not ID_RE.match(a["id"]):
             continue
         st = state()
-        old = st.setdefault("pics", {}).get(a["id"]) != PICS_VERSION
+        old = st.setdefault("pics", {}).get(a["id"]) != pics_version(a)
         if force or old or not os.path.exists(os.path.join(SHARE, a["id"] + ".html")) or (a.get("card") and not os.path.exists(os.path.join(IMG, a["id"] + "-hero.jpg"))):
-            if a.get("card") and os.path.exists(os.path.join(ART, "index.json")):
+            if a.get("card"):
                 import blog_pics
                 try:
-                    os.makedirs(IMG, exist_ok=True)
-                    blog_pics.hero(ART, SHIPS, a["card"], ship_of(a), os.path.join(IMG, a["id"] + "-hero.jpg"),
-                                   stats=a.get("stats") or blog_pics.visit_stats(a.get("facts") or {}))
+                    make_hero(a, a.get("stats") or blog_pics.visit_stats(a.get("facts") or {}))
                 except Exception as e:  # noqa: BLE001
                     log.warning("hero for %s: %s", a["id"], e)
             share_page(a)
             if a.get("card") and os.path.exists(os.path.join(IMG, a["id"] + "-hero.jpg")):
                 st = state()
-                st.setdefault("pics", {})[a["id"]] = PICS_VERSION
+                st.setdefault("pics", {})[a["id"]] = pics_version(a)
                 write_json(STATE, st)
             n += 1
     return n

@@ -466,6 +466,8 @@ fi
 if [ "${1:-}" = "blog" ]; then
   shift
   [ -n "${1:-}" ] || set -- drafts
+  # up blog pictures: the blog service rebuilt first, so a change to the pictures' code is in them (node left alone)
+  if [ "$1" = "pictures" ]; then docker compose up -d --no-deps --build blog >/dev/null 2>&1 || docker compose up -d --no-deps --build blog || true; fi
   docker compose up -d blog >/dev/null 2>&1 || true
   docker compose exec -T blog python blog.py "$@"
   exit $?
