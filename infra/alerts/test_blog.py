@@ -137,7 +137,16 @@ tg_part, x_part = ann.split("--- x ---")[0], ann.split("--- x ---")[1].split("--
 check("<b>In numbers</b>" in tg_part and f"• {f['simulated passengers']} simulated passengers" in tg_part
       and f"• {f['accepted in all']} transactions accepted by the node" in tg_part and "<b>Why it matters</b>" in tg_part and "/blog/?p=" in tg_part,
       f"the announcement carries the logbook's numbers and the link {tg_part}")
-check("http" not in x_part and "Tau HUD blog" in x_part and __import__("alerts").x_len(x_part.strip()) <= 280, f"the X copy names the blog without a link {x_part}")
+check(f"/blog/a/{did}.html" in x_part and x_part.count("http") == 1 and "Tau HUD blog" in x_part and __import__("alerts").x_len(x_part.strip()) <= 280,
+      f"the X copy carries the share page's link, once, and fits {x_part}")
+check("as the link's card, $0.20" in ann, "the dry run says the picture comes as the card and what the post costs")
+blog.X_BLOG_LINK = False
+buf = io.StringIO()
+with contextlib.redirect_stdout(buf):
+    blog.announce(p[0], dry=True)
+x_old = buf.getvalue().split("--- x ---")[1].split("--- picture")[0]
+check("http" not in x_old and "Tau HUD blog" in x_old, f"X_BLOG_LINK=false: the X copy without a link, as before {x_old}")
+blog.X_BLOG_LINK = True
 nums = blog.numbers_of({"simulated passengers": 40, "accepted in all": 122, "refused in all": 0, "sends our node did not answer in time (not refusals)": 8,
                         "of those, reached the chain after all": 5, "left early": {"minutes in port": 61, "why": "the node refused 5 of the last 20"}})
 check(nums == ["40 simulated passengers, every stop a real transaction", "122 transactions accepted by the node, none refused",

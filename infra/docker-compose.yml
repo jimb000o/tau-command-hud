@@ -251,6 +251,7 @@ services:
       # after each Tuesday call of the pirates, a ~22 s clip of every trick the chain refused, to Telegram and X (alerts/
       # trick_clip.py; none when a trick got through); X only while the day's X posts leave room. false stops it
       TRICK_CLIP: ${TRICK_CLIP:-true}
+      X_BLOG_LINK: ${X_BLOG_LINK:-true}   # the article's X post with its link ($0.20 instead of $0.015)
       X_DAILY_CAP: ${X_DAILY_CAP:-8}
       TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
       # a clean blog draft on the blog by itself this many hours after it was written (24 since 6.11.2026); 0 = only by hand (up blog publish)

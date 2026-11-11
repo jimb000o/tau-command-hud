@@ -54,6 +54,10 @@ CHECK_WAIT = 3 * 3600      # a visit whose bookings were never checked is drafte
 RETRY_AFTER = 2 * 3600
 # a draft whose check is clean (every number in the facts, no hype or blame words) goes on the blog by itself this many
 # hours after it was written, with its one post; 0 (the default) keeps publishing by hand: up blog publish <id>
+# The article's X post carries its link (11 November 2026): the share page, whose card on X shows the hero picture,
+# title and summary. One post with a link costs $0.20 instead of $0.015 (a few articles a month); X refuses a post with
+# an uploaded picture AND a link (403, 3 November), so it goes without upload, and on a refusal once more the old way.
+X_BLOG_LINK = os.environ.get("X_BLOG_LINK", "true").lower() in ("1", "true", "yes")
 AUTO_PUBLISH_HOURS = float(os.environ.get("BLOG_AUTO_PUBLISH_HOURS", "0") or 0)
 KINDS = ("pay", "bill", "book", "cancel")
 LANGS = ("en", "zh", "ja")
@@ -835,8 +839,9 @@ def numbers_of(f: dict) -> list[str]:
 
 
 def announce(a: dict, dry: bool) -> None:
-    """The one post per article, on Telegram with the link and on X without (a link makes an X post 13 times dearer):
-    the headline, the visit in numbers from the logbook, why it matters, the link."""
+    """The one post per article, on Telegram and X with the link (on X the share page, whose card shows the picture;
+    X_BLOG_LINK=false posts X the old way, picture without link): the headline, the visit in numbers from the logbook,
+    why it matters, the link."""
     import alerts
     link = f"{SITE}/blog/?p={a['id']}"
     nums = numbers_of(a.get("facts") or {})
@@ -846,16 +851,28 @@ def announce(a: dict, dry: bool) -> None:
     parts += ["<b>Why it matters</b>\n" + "\n".join("• " + alerts.html.escape(w["en"]) for w in a["why"]),
               f'<a href="{link}">Read it on the Tau HUD blog</a>']
     tg = "\n\n".join(parts)
-    x = alerts.x_post([a["title"]["en"], a.get("x") or a["dek"]["en"], "The whole story is on the Tau HUD blog."], foot="📝 Tau HUD blog", keep=2)
+    lines = [a["title"]["en"], a.get("x") or a["dek"]["en"], "The whole story is on the Tau HUD blog."]
+    plain = alerts.x_post(lines, foot="📝 Tau HUD blog", keep=2, with_link=False)
+    card = share_page(a) if X_BLOG_LINK and not dry else f"{NODE}/blog/a/{a['id']}.html"
+    x = alerts.x_post(lines, card, foot="📝 Tau HUD blog", keep=2, with_link=True) if X_BLOG_LINK else plain
     pic = a.get("image") and (SITE + a["image"] if a["image"].startswith("/") else a["image"])
     if dry:
-        print("--- telegram ---\n" + tg + "\n--- x ---\n" + x + f"\n--- picture: {pic or 'none'}")
+        print("--- telegram ---\n" + tg + "\n--- x ---\n" + x + f"\n--- picture: {pic or 'none'}"
+              + (" (on X as the link's card, $0.20)" if X_BLOG_LINK else " ($0.015)"))
         return
     for out, text in ((alerts.Telegram(), tg), (alerts.X(), x)):
         if not out.enabled():
             print(f"{out.name}: not set up, not posted")
             continue
-        ok, _, err = out.send_text(text, picture=pic) if out.name == "telegram" else out.send_with_picture(text, pic)
+        if out.name == "telegram":
+            ok, _, err = out.send_text(text, picture=pic)
+        elif X_BLOG_LINK:
+            ok, _, err = out.send_text(text)
+            if not ok:   # refused with the link: the picture and the text without it, as before
+                print(f"x: with the link not posted ({err}), now without it")
+                ok, _, err = out.send_with_picture(plain, pic)
+        else:
+            ok, _, err = out.send_with_picture(text, pic)
         print(f"{out.name}: {'posted' if ok else 'not posted: ' + err}")
 
 
