@@ -43,6 +43,7 @@ import tau_native  # noqa: E402
 import tau_speculation  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import intel  # noqa: E402  No Memo's intel contracts: a hidden rule judged by the same engine (POST /tau/intel)
 import tau_sandbox  # noqa: E402  the Tau Language sandbox for tauhud.com/learn (POST /tau)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s checker %(levelname)s %(message)s")
@@ -281,7 +282,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"ok": True, "engine": ENGINE_LABEL})
         if self.path.rstrip("/") == "/tau/health":
             return self._json(200, {"ok": True, "engine": ENGINE_LABEL, "budget_s": tau_sandbox.BUDGET,
-                                    "max_spec": tau_sandbox.MAX_SPEC, "max_steps": tau_sandbox.MAX_STEPS})
+                                    "max_spec": tau_sandbox.MAX_SPEC, "max_steps": tau_sandbox.MAX_STEPS, "intel": list(intel.CASES)})
         self._json(404, {"error": "not found"})
 
     def _engine_slot(self) -> bool:
@@ -339,10 +340,65 @@ class Handler(BaseHTTPRequestHandler):
         log.info("tau: %s ok=%s %sms", req["op"], result.get("ok"), result.get("ms", "-"))
         self._json(200, result)
 
+    def _intel(self):
+        """POST /tau/intel: one move in a No Memo intel contract (intel.py). A probe or the one-shot edge runs the hidden
+        rule in the real engine, as /tau runs a question, and counts against the same per-address limit; naming the rule
+        or giving up needs no engine run but counts too, so the rule cannot be guessed by brute force."""
+        origin = self.headers.get("Origin")
+        if origin and origin not in ALLOWED_ORIGINS and "*" not in ALLOWED_ORIGINS:
+            return self._json(403, {"ok": False, "error": "origin not allowed"})
+        size = int(self.headers.get("Content-Length") or 0)
+        if size <= 0 or size > MAX_BODY:
+            return self._json(413, {"ok": False, "error": f"body must be 1 to {MAX_BODY} bytes"})
+        try:
+            req = intel.parse(json.loads(self.rfile.read(size)))
+        except (ValueError, intel.BadRequest) as exc:
+            return self._json(400, {"ok": False, "error": str(exc)})
+        client = "tau:" + self._client()
+        steps = intel.steps_of(req)
+        run = None
+        if steps is not None:
+            spec = intel.text(intel.deal(req["case"], req["seed"]))
+            key = "intel:" + hashlib.sha256(json.dumps({"spec": spec, "steps": steps}, sort_keys=True).encode()).hexdigest()
+            with _cache_lock:
+                run = _cache.get(key)
+                if run is not None:
+                    _cache.move_to_end(key)
+        if run is None:
+            wait = _rate_wait(client, TAU_RATE_MAX)
+            if wait:
+                return self._json(429, {"ok": False, "error": "too many questions from this address, wait a little",
+                                        "retry_after": wait}, {"Retry-After": str(wait)})
+            _rate_charge(client)
+        if steps is not None and run is None:
+            if not self._engine_slot():
+                return self._json(503, {"ok": False, "error": "the engine is busy, try again in a few seconds"})
+            try:
+                run = tau_sandbox.ask({"op": "run", "spec": spec, "steps": steps})
+            except Exception:
+                log.exception("intel failed")
+                run = {"ok": False, "error": "internal error"}
+            finally:
+                _engine.release()
+            if run.get("ok"):
+                with _cache_lock:
+                    _cache[key] = run
+                    while len(_cache) > 256:
+                        _cache.popitem(last=False)
+        result = intel.answer(req, lambda _spec, _steps: run)
+        if result.pop("agrees", True) is False:   # the engine is the judge; a contract that reads it otherwise must be fixed
+            log.warning("intel: the engine and the contract's reading differ (%s, %s)", req["case"], intel.deal(req["case"], req["seed"])["kind"])
+        result["engine"] = ENGINE_LABEL
+        log.info("intel: %s %s ok=%s %sms", req["case"], next((k for k in ("probe", "final", "name", "reveal", "lead") if k in req), "-"),
+                 result.get("ok"), result.get("ms", "-"))
+        self._json(200 if result.get("ok") else 503, result)
+
     def do_POST(self):
         global _waiting
         if self.path.rstrip("/") == "/tau":
             return self._tau()
+        if self.path.rstrip("/") == "/tau/intel":
+            return self._intel()
         if self.path.rstrip("/") != "/check":
             return self._json(404, {"error": "not found"})
         origin = self.headers.get("Origin")

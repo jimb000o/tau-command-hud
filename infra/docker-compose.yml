@@ -97,6 +97,7 @@ services:
       TAU_DB_PATH: /tmp/checker.db
       TAU_DATA_DIR: /tmp
       PYTHONDONTWRITEBYTECODE: "1"
+      INTEL_SECRET: ${INTEL_SECRET:-}   # No Memo's intel contracts deal their hidden rules from it (checker/intel.py); `up tau` makes one
     volumes:
       - ./checker:/checker:ro
       # the lesson examples, so `up tau` can check every one of them against this engine
