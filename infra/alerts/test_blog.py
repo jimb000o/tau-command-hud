@@ -288,7 +288,7 @@ check(nf.get("why stops were skipped, as logged") == {"nothing to withdraw: the 
 ip = nf.get(blog.IN_PORT) or {}
 check((ip.get("made"), ip.get("withdrawn by their passenger during the call"), ip.get("paid out to the place by the chain at their time"),
        ip.get("still open after their time (the chain had not paid them out)")) == (4, 1, 3, 0)
-      and ("3/3", "bookings in port paid out by the chain") in blog_pics.visit_stats(nf),
+      and ("3/3", "bookings in port paid out") in blog_pics.visit_stats(nf),
       "bookings made in port: 4 made, 1 withdrawn, 3 paid out, and the picture says 3/3, not 4/4")
 check("never compare the count of one with the other" in blog.SYSTEM and "bookings ahead" in blog.SYSTEM,
       "the article may not set the bookings ahead against the bookings made in port (the second redraft did: 4 against 5)")
@@ -341,6 +341,16 @@ blog.make_hero({"id": "2026-11-12-news", "kind": "news", "title": {"en": "A titl
                 "card": ["Hand-made line", "Tau HUD blog"]}, None)
 check(seen[-1][0] == "Hand-made line", "a hand-made first line that is not the title stays as it is")
 blog_pics.hero, blog_pics.desk_hero, blog.urllib.request.urlopen, blog.posts = own
+
+# every tile label fits the tile in two lines of the tile's type (a third ran over the tile's edge on 11 November)
+from PIL import ImageDraw  # noqa: E402
+od = ImageDraw.Draw(Image.new("RGB", (400, 200)))
+labels = {lab for fs in (nf, f, fq, {"minutes in port": 34, "the ship before": {"minutes in port": 90},
+          "refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)": 8, "refused in all": 9})
+          for _, lab in blog_pics.visit_stats(fs)}
+lines = lambda lab, size: len(blog_pics.wrap(od, lab, blog_pics.font(size, 500), 214 - 36))   # as blog_pics.hero sets a tile: 21, else 18
+wide = [lab for lab in labels if lines(lab, 21) > 2 and lines(lab, 18) > 2]
+check(not wide and "bookings in port paid out" in labels, f"every tile label fits in two lines {wide}")
 
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)
