@@ -107,6 +107,26 @@ try:
     check(False, "two 400s stop with the API's reason")
 except RuntimeError as e:
     check("no shaped answers here" in str(e) and "400" in str(e), "two 400s stop with the API's reason")
+# 11 November 2026: thinking and the article share max_tokens; an answer cut off there read as broken JSON, twice
+cut = json.dumps(answer)[:200]
+answers = [{"content": [{"type": "text", "text": cut}], "stop_reason": "max_tokens", "usage": {}},
+           {"content": [{"type": "text", "text": json.dumps(answer)}], "stop_reason": "end_turn", "usage": {}}]
+sent_bodies.clear()
+check(blog.ask_ai(f) == answer and [b["max_tokens"] for b in sent_bodies] == [blog.ROOM, blog.ROOM_MAX] and blog.ROOM >= 16000,
+      "an answer cut off at max_tokens is asked once more with more room, not read as broken JSON")
+answers = [{"content": [{"type": "text", "text": cut}], "stop_reason": "max_tokens", "usage": {}},
+           {"content": [{"type": "text", "text": cut}], "stop_reason": "max_tokens", "usage": {}}]
+try:
+    blog.ask_ai(f)
+    check(False, "cut off with the most room too: it says so")
+except RuntimeError as e:
+    check("did not fit" in str(e) and not answers, "cut off with the most room too: it says so, after two asks")
+answers = [{"content": [], "stop_reason": "refusal", "stop_details": {"type": "refusal", "category": "cyber"}, "usage": {}}]
+try:
+    blog.ask_ai(f)
+    check(False, "a refusal says so")
+except RuntimeError as e:
+    check("declined" in str(e) and "cyber" in str(e) and not answers, "a refusal says so, nothing asked again")
 
 card = blog.card_of({"line": "x", "why": []}, "Queen Mempool stays its full 90 minutes; our node slowed down")
 check(card[0] == "Queen Mempool stays its full 90 minutes; our node slowed", f"a long title is cut at a word on the card {card[0]!r}")
