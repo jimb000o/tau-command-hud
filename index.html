@@ -3607,8 +3607,14 @@ function draw(tm) {
     else if (liveHud) { cx.fillStyle = `rgba(57,255,138,${.10 + .22 * br})`; cx.fill(); }
     cx.lineWidth = 2.5; cx.strokeStyle = got ? `rgba(57,255,138,${.5 + got * .5})` : liveHud ? `rgba(57,255,138,${.55 + .35 * br})` : `rgba(${cyan},${al})`; cx.shadowColor = got || liveHud ? "rgb(57,255,138)" : `rgb(${cyan})`; cx.shadowBlur = got ? 12 : liveHud ? 8 + 12 * br : n.kind === "hud" ? 12 : 0; cx.stroke(); cx.shadowBlur = 0;
     if (n.you) { cx.save(); cx.setLineDash([4, 5]); cx.lineWidth = 2; cx.strokeStyle = "rgba(57,255,138,.8)"; cx.beginPath(); cx.arc(x, y, 15, 0, Math.PI * 2); cx.stroke(); cx.restore(); }   // your own node: a green halo
-    if (n.you) plate("You · " + n.name, x, y + (y > 0 ? 44 : -26), "500 18px JetBrains Mono, monospace", "rgba(57,255,138,.9)");   // centred above or below the dot, so a long name never runs off the canvas
-    else if (n.name) { const label = n.kind === "hud" ? "Tau HUD" : n.name, w = cx.measureText(label).width; plate(label, x + Math.sign(x || 1) * (w / 2 + 24), y + 7, "500 18px JetBrains Mono, monospace", `rgba(${cyan},${Math.min(.85, al)})`); }
+    // every name stays whole and on one line inside the canvas: beside the dot where it fits, else centred above or below it
+    const inside = (lw, lx) => { const lim = C - (lw + 24) / 2 - 6; return Math.max(-lim, Math.min(lim, lx)); };
+    if (n.you) { const label = "You · " + n.name; plate(label, inside(cx.measureText(label).width, x), y + (y > 0 ? 44 : -26), "500 18px JetBrains Mono, monospace", "rgba(57,255,138,.9)"); }
+    else if (n.name) {
+      const label = n.kind === "hud" ? "Tau HUD" : n.name, w = cx.measureText(label).width, side = x + Math.sign(x || 1) * (w / 2 + 24);
+      const fits = inside(w, side) === side;
+      plate(label, fits ? side : inside(w, x), fits ? y + 7 : y + (y > 0 ? 40 : -24), "500 18px JetBrains Mono, monospace", `rgba(${cyan},${Math.min(.85, al)})`);
+    }
     const age = n.age ? fmtAge(n.age) + " ago" : "just now", ahead = S.height - n.height;
     const alone = S.mode === "live" && !S.simfeed && nodes.length === 1 && S.validators.length === 1;   // the whole visible network: IDNI's validator and us
     if (n.you) { hit(x, y, 24, () => nodeHealth(n) + vt(`Your node “${n.name}”\nSimulated in your browser at #${fmt(n.height)}; it checks every block for itself.\nClick to open your node.`,
