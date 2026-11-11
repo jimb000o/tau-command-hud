@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Is Tau GxP-ready?</title>
+<meta name="description" content="Could a pharma company use standard Tau under GxP (GAMP 5, 21 CFR Part 11, EU Annex 11)? What a supplier assessment would ask, what exists today with a source for each answer, and what would change the answer. Live from IDNI's GitHub.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Is Tau GxP-ready?">
+<meta property="og:description" content="What an auditor would ask before a pharma company could use Tau, what exists today, and what would change the answer.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/gxp/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent; amber for a partial answer. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --part: #ffc861; --gap: #ff6b6b; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 84px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 12px; max-width: 1680px; }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.top { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: flex-end; justify-content: space-between; }
+.lead { margin: 4px 0 0; font: 500 clamp(20px, 2.6vw, 28px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 86ch; }
+.sub b { color: var(--text); font-weight: 500; }
+.stats { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-end; }
+.stat { display: grid; }
+.stat b { font: 600 22px/1.1 var(--display); color: #fff; }
+.stat span { color: var(--dim); font-size: 11px; }
+.live { display: inline-flex; align-items: center; gap: 7px; color: var(--dim); font-size: 12px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+.dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.cols { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+aside { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.panel h2 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; text-decoration: none; color: #000; background: #fff; border: 1px solid #fff; border-radius: 6px; padding: 7px 12px; min-height: 32px; cursor: pointer; }
+.btn.ghost { color: var(--text); background: none; border-color: var(--hair); }
+.btn:hover { background: var(--ok); border-color: var(--ok); color: #000; }
+.acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.note { color: var(--dim); font-size: 12px; margin: 6px 0 0; }
+.prompt { margin: 6px 0 0; padding: 8px 10px; background: #050506; border: 1px solid var(--hair); border-radius: 6px; font-size: 12px; color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.chips button { background: none; border: 1px solid var(--hair); border-radius: 999px; color: var(--text); font: 12px var(--mono); padding: 3px 10px; cursor: pointer; min-height: 28px; }
+.chips button:hover { border-color: #fff; }
+.chips button[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
+main { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.list { display: flex; flex-direction: column; gap: 14px; }
+.topic h3 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.topic ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+.fact { background: rgba(16,16,18,.9); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+.fact:hover { border-color: var(--hair); }
+.fact p { margin: 0; color: var(--text); }
+.src { margin-top: 6px; font-size: 11px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 2px 10px; }
+.src a { color: var(--dim); overflow-wrap: anywhere; }
+.src a:hover { color: #fff; }
+.stale { display: inline-block; margin-top: 6px; font-size: 11px; color: #000; background: var(--text); border-radius: 999px; padding: 0 8px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; }
+.kv dt { color: var(--dim); font-size: 12px; }
+.kv dd { margin: 0; color: #fff; overflow-wrap: anywhere; }
+.commits { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.commits li { display: grid; grid-template-columns: 74px 1fr; gap: 8px; font-size: 12px; }
+.commits time { color: var(--dim); }
+.commits a { color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
+.commits a:hover { color: #fff; text-decoration: underline; }
+.quiet { color: var(--dim); font-size: 12px; margin: 0; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer p { margin: 0; }
+footer a { color: var(--dim); }
+.rate { display: inline-block; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 0 7px; margin-right: 6px; vertical-align: 1px; white-space: nowrap; }
+.rate.ok { color: var(--ok); } .rate.part { color: var(--part); } .rate.gap { color: var(--gap); }
+.fact h4 { margin: 0 0 4px; font: 600 13px/1.35 var(--display); color: #fff; }
+.ref { color: var(--dim); font-size: 11px; }
+.verdict { font: 500 15px/1.45 var(--display); color: #fff; margin: 0; }
+.bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin: 8px 0 4px; background: #222; }
+.bar i { display: block; height: 100%; }
+.plain { margin: 0; padding-left: 18px; display: grid; gap: 4px; color: var(--text); }
+.plain b { color: #fff; font-weight: 500; }
+[hidden] { display: none !important; }
+@media (min-width: 1000px) { .cols { grid-template-columns: minmax(0, 1fr) 380px; } }
+/* laptop and up, landscape: one screen; the facts and the side panels scroll inside, the page does not */
+@media (min-width: 1100px) and (min-aspect-ratio: 4/3) {
+  body { height: 100vh; overflow: hidden; padding-bottom: 10px; }
+  .wrap { height: 100%; }
+  .wrap > .cols { flex: 1 1 0; min-height: 0; }
+  aside { overflow: auto; min-height: 0; padding-right: 2px; }
+  main { min-height: 0; }
+  .list { flex: 1 1 0; min-height: 0; overflow: auto; padding-right: 4px; }
+}
+/* phone: nothing smaller than 11 px, buttons big enough for a thumb */
+@media (max-width: 999px) {
+  .btn, .chips button { min-height: 44px; }
+  .topic ul { grid-template-columns: minmax(0, 1fr); }
+  aside { display: contents; }   /* the prompt for your AI first, the live panels after the facts */
+  #verdictPanel { order: -1; }
+  main { order: 0; }
+  aside > .panel:not(#verdictPanel) { order: 2; }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>GxP</span></a>
+  </header>
+  <nav class="tnav" data-page="gxp" aria-label="Pages and tools"></nav>
+  <div class="top">
+    <div>
+      <p class="lead">Is Tau ready for pharma (GxP)?</p>
+      <p class="sub">A pharma company can use standard software without validating the software itself: it <b>assesses the supplier</b> and checks its own use (GAMP 5, 21 CFR Part 11, EU Annex 11). These are the questions such an assessment asks, answered for Tau today from IDNI's public repositories.</p>
+    </div>
+    <div class="stats" aria-live="polite">
+      <div class="stat"><b id="nOk">–</b><span>meet</span></div>
+      <div class="stat"><b id="nPart">–</b><span>partly</span></div>
+      <div class="stat"><b id="nGap">–</b><span>gaps</span></div>
+      <div class="stat"><b id="nChecked">–</b><span>checked by hand on</span></div>
+      <span class="live"><i class="dot" id="dot"></i><span id="liveTxt">Reading GitHub…</span></span>
+    </div>
+  </div>
+  <div class="cols">
+    <main>
+      <ul class="chips" id="chips" aria-label="Topics"></ul>
+      <div class="list" id="list" aria-live="polite" translate="no"><p class="quiet">Loading the checklist…</p></div>
+    </main>
+    <aside>
+      <section class="panel" id="verdictPanel" aria-labelledby="hVerdict">
+        <h2 id="hVerdict">The answer today</h2>
+        <p class="verdict">Not yet. Tau's logic is its strength for validation, but the product is an alpha testnet: no releases, no quality system, no supplier agreement, no finality.</p>
+        <div class="bar" id="bar" aria-hidden="true"></div>
+        <p class="note">This is our reading of the rules, not legal or QA advice. Tau HUD is a community project, not affiliated with IDNI.</p>
+      </section>
+      <section class="panel" aria-labelledby="hLive">
+        <h2 id="hLive">Live from IDNI's GitHub</h2>
+        <dl class="kv" id="liveKv"></dl>
+        <p class="quiet" id="liveMsg">Reading GitHub…</p>
+      </section>
+      <section class="panel" aria-labelledby="hChange">
+        <h2 id="hChange">What would change the answer</h2>
+        <ul class="plain">
+          <li>A production network with a stated finality rule</li>
+          <li>Numbered releases with release notes</li>
+          <li>A published quality system, support terms and security policy</li>
+          <li>An agreement a regulated company can sign</li>
+          <li>An independent audit of cryptography and consensus</li>
+        </ul>
+      </section>
+      <section class="panel" aria-labelledby="hToday">
+        <h2 id="hToday">Where it fits today</h2>
+        <ul class="plain">
+          <li><b>Rule checker.</b> Prove offline that written process rules contain no contradiction; the validated system stays the record.</li>
+          <li><b>Hash anchoring.</b> Only fingerprints of records on a private network you control.</li>
+        </ul>
+      </section>
+      <section class="panel" id="kitPanel" aria-labelledby="hKit" hidden>
+        <h2 id="hKit">The assessment kit</h2>
+        <p class="quiet">Supplier questionnaire, ledger risk assessment and a Part 11 / Annex 11 checklist as editable files, with this Tau assessment worked out in full.</p>
+        <div class="acts"><a class="btn" id="kitLink" href="#" target="_blank" rel="noopener">Get the kit</a></div>
+      </section>
+    </aside>
+  </div>
+  <footer>
+    <p><span>Every answer was read by hand from IDNI's public repositories; an answer that IDNI's GitHub changes is marked until a person reads it again.</span> <span>A wrong or missing answer?</span> <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BGxP%5D%20" target="_blank" rel="noopener">Tell us</a> · <span>Tau HUD is a community project, not affiliated with IDNI.</span></p>
+  </footer>
+</div>
+<script>
+"use strict";
+(() => {
+const $ = id => document.getElementById(id);
+const P = new URLSearchParams(location.search);
+const SAMPLE = P.has("sample");
+const KIT_URL = "";   // the shop page of the assessment kit; the panel stays hidden while this is empty
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const LANG = window.TauI18n && TauI18n.lang ? TauI18n.lang : "en";
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const pick = o => (o && (o[LANG] || o.en)) || "";
+const CACHE_KEY = "tauhud.gxp.gh", CACHE_MS = 10 * 60000;
+const RATE = { ok: "Meets", part: "Partly", gap: "Gap" };
+const S = { data: null, gh: null, ok: null, topic: "all" };
+
+if (KIT_URL) { $("kitLink").href = KIT_URL; $("kitPanel").hidden = false; }
+
+/* what IDNI's GitHub says now, against what the answer was read from */
+function changed(item) {
+  const g = S.gh; if (!g || !item.live) return false;
+  if (item.live === "i108") return g.i108 && g.i108.state === "closed";
+  if (item.live === "i106") return g.i106 && g.i106.state === "closed";
+  if (item.live === "pr93") return g.pr93 && g.pr93.state === "closed";
+  if (item.live === "release") return !!(g.tn || (g.tl && g.tl.tag && g.tl.tag !== "v0.7-alpha"));
+  return false;
+}
+
+function render() {
+  const d = S.data; if (!d) return;
+  const topics = d.topics.filter(t => d.items.some(x => x.topic === t.id));
+  $("chips").innerHTML = [`<li><button type="button" data-k="all" aria-pressed="${S.topic === "all"}">${esc(T("All"))}</button></li>`]
+    .concat(topics.map(t => `<li><button type="button" data-k="${esc(t.id)}" aria-pressed="${S.topic === t.id}" translate="no">${esc(pick(t))}</button></li>`)).join("");
+  $("list").innerHTML = topics.filter(t => S.topic === "all" || S.topic === t.id).map(t => `<section class="topic"><h3 translate="no">${esc(pick(t))}</h3><ul>` +
+    d.items.filter(x => x.topic === t.id).map(x => `<li class="fact"><h4 translate="no"><span class="rate ${x.r}">${esc(T(RATE[x.r]))}</span>${esc(pick(x.q))}</h4>` +
+      `<p translate="no">${esc(pick(x.a))}</p><div class="src"><span class="ref" translate="no">${esc(x.ref)}</span>` +
+      x.src.map(([lab, url]) => `<a href="${esc(url)}" target="_blank" rel="noopener" translate="no">${esc(lab)}</a>`).join("") + `</div>` +
+      (changed(x) ? `<span class="stale">${esc(T("Changed on IDNI's GitHub since: to check again"))}</span>` : "") + `</li>`).join("") +
+    `</ul></section>`).join("");
+  const n = r => d.items.filter(x => x.r === r).length;
+  $("nOk").textContent = n("ok"); $("nPart").textContent = n("part"); $("nGap").textContent = n("gap");
+  $("nChecked").textContent = d.checked || "–";
+  const all = d.items.length || 1;
+  $("bar").innerHTML = [["ok", "var(--ok)"], ["part", "var(--part)"], ["gap", "var(--gap)"]].map(([r, c]) => `<i style="width:${(100 * n(r) / all).toFixed(1)}%;background:${c}"></i>`).join("");
+}
+
+function renderLive() {
+  const g = S.gh;
+  $("dot").classList.toggle("on", !!g);
+  $("liveTxt").textContent = S.ok === null ? T("Reading GitHub…") : !g ? T("GitHub not reachable") : SAMPLE ? T("Sample data") : T("Live, every 10 minutes");
+  if (!g) { $("liveKv").innerHTML = ""; $("liveMsg").hidden = false; $("liveMsg").textContent = S.ok === null ? T("Reading GitHub…") : T("GitHub could not be read right now. The answers on the left do not depend on it."); return; }
+  const st = x => !x ? "–" : x.merged ? T("merged") : x.state === "closed" ? T("closed") : T("open");
+  const rows = [
+    ["Newest Tau Language release", g.tl && g.tl.tag ? `${g.tl.tag}${g.tl.date ? " · " + g.tl.date : ""}` : "–"],
+    ["Tau Net releases", g.tn ? `${g.tn.tag}${g.tn.date ? " · " + g.tn.date : ""}` : T("none yet")],
+    ["#108 new addresses refused", st(g.i108)],
+    ["#106 templates block their author", st(g.i106)],
+    ["#93 restart from a new genesis", st(g.pr93)],
+  ];
+  $("liveKv").innerHTML = rows.map(([k, v]) => `<dt>${esc(T(k))}</dt><dd translate="no">${esc(v)}</dd>`).join("");
+  $("liveMsg").hidden = true;
+}
+
+function cached() { try { const c = JSON.parse(localStorage.getItem(CACHE_KEY)); if (c && Date.now() - c.at < CACHE_MS) return c.gh; } catch (e) {} return null; }
+async function get(path) {
+  const r = await fetch("https://api.github.com/repos/" + path, { headers: { Accept: "application/vnd.github+json" } });
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+async function loadGh() {
+  if (SAMPLE) return { tl: { tag: "v0.7-alpha", date: "" }, tn: null, i108: { state: "open" }, i106: { state: "open" }, pr93: { state: "open" } };
+  const hit = cached(); if (hit) return hit;
+  const rel = j => j && j.tag_name ? { tag: j.tag_name, date: String(j.published_at || "").slice(0, 10) } : null;
+  const iss = j => j ? { state: j.state, merged: !!(j.pull_request && j.pull_request.merged_at) } : null;
+  const [tl, tn, i108, i106, pr93] = await Promise.all([get("IDNI/tau-lang/releases/latest"), get("IDNI/tau-testnet/releases/latest"),
+    get("IDNI/tau-testnet/issues/108"), get("IDNI/tau-testnet/issues/106"), get("IDNI/tau-testnet/issues/93")]);
+  const gh = { tl: rel(tl), tn: rel(tn), i108: iss(i108), i106: iss(i106), pr93: iss(pr93) };
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), gh })); } catch (e) {}
+  return gh;
+}
+async function tick() {
+  try { S.gh = await loadGh(); S.ok = true; } catch (e) { S.ok = false; }
+  render(); renderLive();
+}
+
+$("chips").addEventListener("click", e => { const b = e.target.closest("button[data-k]"); if (b) { S.topic = b.dataset.k; render(); } });
+fetch("gxp.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => { if (j) { S.data = j; render(); } }).catch(() => {});
+renderLive();
+tick();
+setInterval(() => { if (!document.hidden) tick(); }, CACHE_MS);
+})();
+</script>
+</body>
+</html>

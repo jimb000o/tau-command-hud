@@ -651,6 +651,8 @@ TauI18n.add({ strings: {
   "No node needed: install tau, start the REPL, work through IDNI's demos, then write a rule for the testnet": "ノード不要：tau をインストールし、REPL を起動し、IDNI のデモを試し、テストネット用のルールを書く",
   "Learn Tau Language": "Tau Language を学ぶ",
   "Tau facts for your AI": "AI 向けの Tau の事実",
+  "Is Tau GxP-ready?": "Tau は GxP に対応できる？",
+  "What a pharma supplier assessment would ask of Tau, what exists today, and what would change the answer; live from IDNI's GitHub": "製薬会社のサプライヤー評価が Tau に何を問うか、今あるもの、答えを変えるもの。IDNI の GitHub からライブで",
   "What is true about Tau today, each fact with its source in IDNI's code, plus live numbers; point your AI assistant here": "今日の Tau について正しいこと。各事実に IDNI のコード内の出典、さらに最新の数字。AI アシスタントにここを読ませてください",
   "Services on the testnet": "テストネットのサービス",
   "A directory of what runs on the testnet: co-signers, rule givers, apps people pay; found on the chain by itself, live numbers": "テストネットで動いているものの一覧：共同署名者、ルールの提供者、みんなが支払うアプリ。チェーンから自動で見つけ、数字はライブ",

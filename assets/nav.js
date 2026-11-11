@@ -42,6 +42,7 @@
     chronicle:  { t: "Chronicle", d: "Tau from the first videos in 2014 to the testnet alpha", i: "◷", h: "chronicle/" },
     devpulse:   { t: "Build pulse", d: "How Tau's code is moving: newest commits, which parts change, the version our node runs", i: "⌥", h: "devpulse/" },
     findings:   { t: "Findings", d: "Issues we reported to IDNI, with their live GitHub status", i: "!", h: "findings/" },
+    gxp:        { t: "Is Tau GxP-ready?", d: "What a pharma supplier assessment would ask of Tau, what exists today, and what would change the answer; live from IDNI's GitHub", i: "℞", h: "gxp/" },
     roadmap:    { t: "Road to mainnet", d: "What we think must be fixed before mainnet, with proof and a path; our view, open for comments", i: "⇢", h: "roadmap/" },
     status:     { t: "Status", d: "Uptime, outages, sync gaps and restarts of the community node", i: "◍", h: "status/" },
     meta:       { t: "Tau HUD in numbers", d: "How many people use this site: visitors per day, growth and the most visited pages", i: "∑", h: "meta/" },
@@ -76,7 +77,7 @@
     /* 6 Nov: fewer doors. Testnet health (Stats, Load, Status) is one group with tabs across the three pages; the guided tour,
        Tau in 60 seconds and the tour of this page live on Start here, the one way in; anchors (chain state, validator seat)
        and Déjà stay reachable from their pages and from search */
-    { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "account", "rules", "history"]], ["Testnet health", ["stats", "load", "status"]], ["Road to mainnet", ["nodes", "findings", "roadmap", "devpulse"]]], tab: "≋" },
+    { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "account", "rules", "history"]], ["Testnet health", ["stats", "load", "status"]], ["Road to mainnet", ["nodes", "findings", "roadmap", "devpulse", "gxp"]]], tab: "≋" },
     { k: "learn", t: "Learn", groups: [["First steps", ["start", "taulang", "facts"]], ["Read and watch", ["gazette", "blog", "chronicle", "tau"]]], tab: "▸" },
     { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "whatif"]], ["On the real testnet", ["services", "wallet", "guardian", "vote", "challenge", "card"]], ["Games on the live testnet", ["rabbit", "nomemo", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
     { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "meta", "legal"]], ["Use our work", ["developers", "press"]]], tab: "i" },
@@ -668,7 +669,7 @@
     }
   }
 
-  const QUIET = new Set(["taulang", "blog", "legal", "press", "story", "facts", "chronicle", "gazette", "donate", "roadmap", "findings", "devpulse", "about"]);
+  const QUIET = new Set(["taulang", "blog", "legal", "press", "story", "facts", "chronicle", "gazette", "donate", "roadmap", "findings", "devpulse", "gxp", "about"]);
   function mount(nav) {
     if (nav.dataset.mounted) return;
     nav.dataset.mounted = "1";

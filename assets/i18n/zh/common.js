@@ -656,6 +656,8 @@ TauI18n.add({ strings: {
   "No node needed: install tau, start the REPL, work through IDNI's demos, then write a rule for the testnet": "不需要节点：安装 tau，启动 REPL，练习 IDNI 的示例，再为测试网写一条规则",
   "Learn Tau Language": "学习 Tau 语言",
   "Tau facts for your AI": "给 AI 的 Tau 事实",
+  "Is Tau GxP-ready?": "Tau 能满足 GxP 吗？",
+  "What a pharma supplier assessment would ask of Tau, what exists today, and what would change the answer; live from IDNI's GitHub": "制药企业的供应商评估会向 Tau 提出哪些问题，今天已有什么，什么会改变答案；实时读取 IDNI 的 GitHub",
   "What is true about Tau today, each fact with its source in IDNI's code, plus live numbers; point your AI assistant here": "今天关于 Tau 成立的事实，每条都附 IDNI 代码中的来源，外加实时数字；让你的 AI 助手读这里",
   "Services on the testnet": "测试网上的服务",
   "A directory of what runs on the testnet: co-signers, rule givers, apps people pay; found on the chain by itself, live numbers": "测试网上运行的一切的目录：共同签名者、规则提供者、大家付款的应用；直接从链上发现，实时数字",
