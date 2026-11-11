@@ -330,6 +330,13 @@ fi
 # nothing built, Caddy given /tau, the node left alone (safe any time); then every lesson example asked of the real engine
 if [ "${1:-}" = "tau" ]; then
   if [ "${2:-}" != "status" ]; then
+    # No Memo's intel contracts deal their hidden rules from this secret (checker/intel.py): made once here, kept in .env,
+    # so a restart of the checker does not deal every player's rule anew
+    if ! grep -q '^INTEL_SECRET=.' .env 2>/dev/null; then
+      [ -s .env ] && [ -n "$(tail -c1 .env)" ] && echo >> .env   # the last line ends first
+      printf 'INTEL_SECRET=%s\n' "$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')" >> .env; chmod 600 .env
+      echo "made INTEL_SECRET in .env (No Memo's intel contracts)"
+    fi
     docker compose up -d --no-deps --force-recreate checker >/dev/null
     docker compose up -d --no-deps --force-recreate caddy >/dev/null
     echo "waiting 8 s…"; sleep 8
