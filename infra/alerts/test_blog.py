@@ -261,6 +261,7 @@ for i in range(222):
 for i, (p, seq, k) in enumerate([(7, 1, "book"), (7, 1, "pay"), (25, 1, "pay"), (7, 0, "pay"), (25, 0, "pay"), (7, 0, "pay"),
                                  (25, 0, "pay"), (7, 0, "pay"), (25, 0, "pay")]):
     nlog.append({"t": T11 + 759 + i * 300, "visit": V11, "kind": k, "p": p, "ok": False, "seq": seq, "err": AU, "verdict": "calm"})
+nlog.append({"t": T11 + 3600, "visit": V11, "kind": "cancel", "p": 7, "ok": None, "note": "nothing to withdraw: the booking is not open", "verdict": "calm"})
 nlog.append({"t": T11 + 5500, "visit": V11, "kind": "visit over", "summary": {"id": V11, "name": "MS Dry Run", "t0": T11, "landed": True,
              "passengers": 40, "sent": {"pay": 217, "book": 4, "cancel": 1}, "refused": {"pay": 8, "book": 1}, "skipped": 1}})
 nf = blog.facts_of(nlog[::-1], [])
@@ -270,6 +271,11 @@ check(nf["refused in all"] == 0 and not nf.get("refused by the node") and not nf
 check(nw.get("passengers") == 2 and nw.get("their sends the node could not take or the ship left out") == 9 and "#108" in nw.get("why", "")
       and "254" in nw.get("why", "") and "counted them as refusals" in nw.get("how this call handled them", ""),
       "they are counted apart: two passengers, nine sends, why, and how that call still handled them")
+check("neither a yes nor a refusal" in nw.get("the node's answer", "") and "never write that every answer was a yes" in blog.SYSTEM,
+      "their answer was neither a yes nor a refusal, so the article may not say every answer was a yes (the first redraft did)")
+check(nf.get("why stops were skipped, as logged") == {"nothing to withdraw: the booking is not open (its booking was one of the sends our node "
+                                                       "could not take)": 1} and nf.get("stops skipped") == 1,
+      "the skipped stop comes with the logbook's reason, and why its booking was not open")
 nn = blog.numbers_of(nf)
 check(any(x.endswith("none refused") for x in nn) and any("no room for the new wallets of 2 passengers (9 sends)" in x and "IDNI #108" in x for x in nn),
       "the visit in numbers: none refused, and one line on the two new wallets")

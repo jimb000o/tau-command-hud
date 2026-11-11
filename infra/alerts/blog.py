@@ -89,7 +89,8 @@ must appear in the facts. When the facts do not show why something happened, say
 - "Our node" and "our relay" are Tau HUD's own, not IDNI's. Never blame the testnet or IDNI for something the facts \
 show on our side. "No answer from the node" is not a refusal; a refusal is the node saying no.
 - "Passengers our node could not take" are not refusals either: our node had no room for their new wallets (the facts \
-say why and that it is reported). Write it as our node's limit, never as the chain refusing them, and name no culprit.
+say why and that it is reported). Write it as our node's limit, never as the chain refusing them, and name no culprit. \
+Their sends got neither a yes nor a refusal, so when there are any, never write that every answer was a yes.
 - Who reads this: the Tau community and the IDNI team, and both should be glad to read it. Choose and frame what you \
 tell so each sees what it gains: for the community what works and what they can try, for IDNI what a community node \
 under real traffic shows them and what held up on their testnet. Stay honest: say what went wrong on our side and own \
@@ -219,11 +220,19 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
         f["refusal answers"] = dict(reasons.most_common(5))
     if nw:
         f[NEW_WALLET_FACT] = {"passengers": len({e.get("p") for e in nw}), "their sends the node could not take or the ship left out": len(nw),
+                              "the node's answer": "temporarily unavailable (ADMISSION_UNAVAILABLE): neither a yes nor a refusal",
                               "why": NEW_WALLET_WHY,
                               "how this call handled them": "the rule of the time counted them as refusals and sent each of their stops"
                               if nw_old else "each was left out for the rest of the call after the first answer, and is tried again on the next call"}
     if s.get("skipped") is not None:
         f["stops skipped"] = s.get("skipped")
+    nw_books = {e.get("p") for e in nw if e.get("kind") == "book"}   # a withdrawal finds nothing when its booking was not taken
+    skips = Counter(str(e["note"]) + (" (its booking was one of the sends our node could not take)"
+                                      if e.get("kind") == "cancel" and e.get("p") in nw_books else "")
+                    for e in sends if e.get("ok") is None and e.get("note") and not e.get("new_wallet")
+                    and "no answer" not in str(e["note"]))   # unanswered sends have their own fact
+    if skips:
+        f["why stops were skipped, as logged"] = dict(skips.most_common(5))
     f["sends logged"] = len(sends)
     v = Counter(e.get("verdict") for e in sends if e.get("verdict"))
     if v:
