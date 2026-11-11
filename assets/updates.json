@@ -2884,5 +2884,10 @@
     "tag": "Learn",
     "on": "2026-11-11",
     "html": "Learn: a visitor asked in our chat whether Tau can do percentage fees or recurring payments. The answer is now on /learn/ under People ask, with a button that runs a 1 % fee on the real Tau engine: a rule on your own wallet can add a fee worked out from the amount, but no rule can start a payment yet, so the nearest thing to a standing order is a timed payment that pays itself out. Whoever finishes all six Missions now sees what a rule can and cannot do today, and No Memo can ask for a 1 % cut in Write the rule."
+  },
+  {
+    "tag": "Learn",
+    "on": "2026-11-11",
+    "html": "Learn Tau Language: your level can be changed at any time. The Level button above the lessons and above the step-by-step guide now says change; it brings back the level choice with your current level marked, and Keep my level closes it again. Your progress stays."
   }
 ]
