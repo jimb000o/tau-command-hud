@@ -60,6 +60,15 @@ RETRY_AFTER = 2 * 3600
 X_BLOG_LINK = os.environ.get("X_BLOG_LINK", "true").lower() in ("1", "true", "yes")
 AUTO_PUBLISH_HOURS = float(os.environ.get("BLOG_AUTO_PUBLISH_HOURS", "0") or 0)
 KINDS = ("pay", "bill", "book", "cancel")
+# Our node keeps at most 254 wallet addresses; with all of them in use it answers ADMISSION_UNAVAILABLE to every
+# transaction with a wallet it has not seen before (IDNI tau-testnet #108, since 11 November 2026). The ships log such a
+# passenger as "new_wallet" and leave it out (relay/cruise.py NEW_WALLET_CODE); before, the answer was logged as a refusal.
+NEW_WALLET = "ADMISSION_UNAVAILABLE"
+NEW_WALLET_FACT = "passengers our node could not take (new wallets, not refusals)"
+NEW_WALLET_WHY = ("our node answered ADMISSION_UNAVAILABLE (\"temporarily unavailable\"): it keeps at most 254 wallet addresses and "
+                  "all of them are in use, so it cannot take a wallet it has not seen before, while wallets it already knows work "
+                  "as before. Sending again does not help. It is not a refusal by the chain's rules. We reported it as IDNI "
+                  "tau-testnet issue #108 on 11 November 2026, and it ends by itself once our node takes new wallets again")
 LANGS = ("en", "zh", "ja")
 ID_RE = re.compile(r"^[a-z0-9-]{3,60}$")
 
@@ -79,6 +88,8 @@ You get a list of facts counted from the ship's public logbook. Rules:
 must appear in the facts. When the facts do not show why something happened, say plainly that we do not know yet.
 - "Our node" and "our relay" are Tau HUD's own, not IDNI's. Never blame the testnet or IDNI for something the facts \
 show on our side. "No answer from the node" is not a refusal; a refusal is the node saying no.
+- "Passengers our node could not take" are not refusals either: our node had no room for their new wallets (the facts \
+say why and that it is reported). Write it as our node's limit, never as the chain refusing them, and name no culprit.
 - Who reads this: the Tau community and the IDNI team, and both should be glad to read it. Choose and frame what you \
 tell so each sees what it gains: for the community what works and what they can try, for IDNI what a community node \
 under real traffic shows them and what held up on their testnet. Stay honest: say what went wrong on our side and own \
@@ -155,6 +166,12 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
     left = next((e for e in rows if e.get("kind") == "left"), None)
     checked = next((e for e in rows if e.get("kind") == "bookings checked"), None)
     sends = [e for e in rows if e.get("kind") in KINDS]
+    # new wallets our node could not take (NEW_WALLET): logged so since this rule; before, as refusals: a passenger whose
+    # sequence was 0 at such an answer had no transaction in a block, so every such answer it got that visit was the limit
+    new_p = {e.get("p") for e in sends if e.get("ok") is False and NEW_WALLET in str(e.get("err") or "") and e.get("seq") == 0}
+    nw_old = [e for e in sends if e.get("ok") is False and NEW_WALLET in str(e.get("err") or "") and e.get("p") in new_p]
+    nw_ids = {id(e) for e in nw_old}
+    nw = nw_old + [e for e in rows if e.get("new_wallet")]
     answered = [e for e in sends if e.get("ok") is not None]
     later = [e for e in rows if e.get("kind") == "unanswered checked"]
     f: dict = {"ship": s.get("name") or (landed or {}).get("ship"), "visit": s.get("id") or (rows[0].get("visit") if rows else None),
@@ -179,8 +196,12 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
         f["minutes in port"] = 90   # the whole planned call
     f["sent and accepted"] = {k: v for k, v in (s.get("sent") or {}).items() if v} or \
         dict(Counter(e["kind"] for e in sends if e.get("ok") is True))
-    f["refused by the node"] = {k: v for k, v in (s.get("refused") or {}).items() if v} or \
+    refused = {k: v for k, v in (s.get("refused") or {}).items() if v} or \
         dict(Counter(e["kind"] for e in sends if e.get("ok") is False))
+    for e in nw_old:
+        if refused.get(e["kind"]):
+            refused[e["kind"]] -= 1
+    f["refused by the node"] = {k: v for k, v in refused.items() if v}
     f["accepted in all"] = sum(f["sent and accepted"].values())
     f["refused in all"] = sum(f["refused by the node"].values())
     unanswered = [e for e in sends if e.get("ok") is None and "no answer" in str(e.get("note") or "")]
@@ -192,9 +213,15 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
             f["of those, reached the chain after all"] = sum(1 for e in later if e.get("took"))
     if silent:
         f["refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)"] = len(silent)
-    reasons = Counter(re.sub(r"[0-9a-f]{16,}", "…", str(e.get("err")))[:120] for e in sends if e.get("ok") is False and e.get("err"))
+    reasons = Counter(re.sub(r"[0-9a-f]{16,}", "…", str(e.get("err")))[:120] for e in sends
+                      if e.get("ok") is False and e.get("err") and id(e) not in nw_ids)
     if reasons:
         f["refusal answers"] = dict(reasons.most_common(5))
+    if nw:
+        f[NEW_WALLET_FACT] = {"passengers": len({e.get("p") for e in nw}), "their sends the node could not take or the ship left out": len(nw),
+                              "why": NEW_WALLET_WHY,
+                              "how this call handled them": "the rule of the time counted them as refusals and sent each of their stops"
+                              if nw_old else "each was left out for the rest of the call after the first answer, and is tried again on the next call"}
     if s.get("skipped") is not None:
         f["stops skipped"] = s.get("skipped")
     f["sends logged"] = len(sends)
@@ -236,10 +263,12 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
                               "arrival time; only the sender can take one back, so there is no third party who decides",
              "booked": sum(1 for e in ahead if e["kind"] == "book ahead" and e.get("ok") is True),
              "refused by the node": sum(1 for e in ahead if e["kind"] == "book ahead" and e.get("ok") is False),
+             "not booked: wallets new to our node, which had no room for them": sum(1 for e in ahead if e["kind"] == "book ahead" and e.get("new_wallet")),
              "taken back before the arrival": sum(1 for e in ahead if e["kind"] == "refund" and e.get("ok") is True)}
         if off:
             g["call called off before the arrival"] = off.get("note")
         g["how they ended on the chain"] = (settled or {}).get("result") or "not looked up yet when this was written"
+        g = {k: v for k, v in g.items() if v or not k.startswith("not booked")}
         f["bookings ahead in escrow"] = g
     if checked and checked.get("checked"):   # a day without bookings has nothing to check, and the article says nothing of it
         f["bookings checked after the visit"] = checked.get("checked")
@@ -257,7 +286,8 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
     f["the ship's brakes"] = {"at most transactions a minute": 12,
                               "it leaves when the node refuses": "5 of the last 20 passenger transactions",
                               "strained testnet": "half pace", "stalled testnet": "it leaves at once",
-                              "our node does not answer a send within 20 seconds": "no refusal: the ship waits 30 seconds, then half pace for 10 minutes"}
+                              "our node does not answer a send within 20 seconds": "no refusal: the ship waits 30 seconds, then half pace for 10 minutes",
+                              "our node cannot take a passenger's new wallet": "no refusal: that passenger is left out for the rest of the call"}
     f["answered sends"] = len(answered)
     tricks = [e for e in rows if e.get("kind") == "trick" and (e.get("ok") is not None or e.get("held"))]
     if tricks or s.get("tricks"):   # the pirates (since 7 November 2026): what the chain is meant to refuse
@@ -813,6 +843,11 @@ def numbers_of(f: dict) -> list[str]:
     acc, ref = f.get("accepted in all"), (f.get("refused in all") or 0) - old
     if acc is not None:
         out.append(f"{acc} transactions accepted by the node" + (f", {ref} refused" if ref > 0 else ", none refused"))
+    nw = f.get(NEW_WALLET_FACT)
+    if nw:
+        n = nw["passengers"]
+        out.append(f"our node had no room for the new wallet{'s' if n != 1 else ''} of {n} passenger{'s' if n != 1 else ''} "
+                   f"({nw['their sends the node could not take or the ship left out']} sends): not refusals, reported as IDNI #108")
     if old:
         out.append(f"{old} got no answer from our node in time, and the ship counted them as refusals")
     tr = f.get("pirate tricks") or {}

@@ -150,6 +150,11 @@ def last_lines(f: dict | None) -> tuple[str, str, str]:
     tg = f"On her last call, {date}, our node accepted {acc} of her passengers' transactions" + (f", {ref} were refused" if ref > 0 else " and refused none")
     if una:
         tg += f"; {una} got no answer from our node in time"
+    nw = f.get(blog.NEW_WALLET_FACT) or {}   # new wallets our node had no room for (IDNI tau-testnet #108): no refusals
+    if nw.get("passengers"):
+        n, k = nw["passengers"], nw.get("their sends the node could not take or the ship left out") or 0
+        tg += (f"; our node could not take {k} send{'s' if k != 1 else ''} from {n} passenger{'s' if n != 1 else ''} whose "
+               f"wallet{'s were' if n != 1 else ' was'} new to it (it had no room for new wallet addresses)")
     tg += "."
     left = f.get("left early")
     if isinstance(left, dict) and left.get("minutes in port") is not None:

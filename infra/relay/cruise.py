@@ -122,6 +122,18 @@ VISITS_KEEP = 30
 VERDICT_EVERY = 20         # seconds between two looks at the load verdict
 RETRACT_MARGIN = 6 * 60    # a withdrawal goes out this long before the booking's time at the latest: a block's time can run up
 CANCEL_LATEST = 3 * 60     # a passenger's withdrawal that runs later than this before the booking's time is not sent any more
+# Our node keeps at most 254 wallet addresses; with all of them in use it answers ADMISSION_UNAVAILABLE to every
+# transaction with a wallet it has not seen before (IDNI tau-testnet #108, since 11 November 2026). A passenger whose
+# wallet holds nothing on the chain yet (balance 0: none of its transactions is in a block) and gets that answer, while
+# the node took another passenger's send within NEW_WALLET_OK seconds, is left out for the rest of the visit: its stops
+# are not sent, and it is no refusal for the brakes or the ship's learning. Every visit tries again, so once our node
+# takes new wallets (IDNI's fix, which the node's auto-follow brings in by itself) every passenger sails as before.
+NEW_WALLET_CODE = "ADMISSION_UNAVAILABLE"
+NEW_WALLET_TEXT = "Transaction validation is temporarily unavailable"   # the node's words for it; a rule it cannot check says "Rule validation …"
+NEW_WALLET_OK = 10 * 60
+NEW_WALLET_NOTE = "left out: our node cannot take a new wallet yet (it has no room for new wallet addresses, IDNI tau-testnet #108)"
+LEND_SHIP = "queen"        # No Memo's drop may borrow from these passengers while our node cannot take a fresh wallet (lenders)
+LEND_CLEAR = 3 * 3600      # never this close to any call, before or after
                            # to two minutes early, and a feeless retract waits last when blocks are full (docs/retractable.md)
 UNRELEASED = 3 * 60        # a booking still open this long after its time is reported as not released
 REFUSE_STOP, REFUSE_WINDOW = 5, 20   # refusals among the visit's last sends that send the ship away
@@ -537,6 +549,8 @@ class Cruise:
                                 "end": c.get("left") or int(c.get("t0") or 0) + VISIT_MIN * 60, "note": (c.get("note") or "") + " (the relay was down at its end)",
                                 "trial": c.get("trial") or [], "sent": c.get("sent") or {}, "refused": c.get("refused") or {},
                                 "skipped": c.get("skipped") or 0, "half": c.get("brake_half") or 0, "passengers": SHIPS[c["ship"]]["passengers"], "tried": {}})
+            if c.get("left_out"):
+                self.visits[-1]["left_out"] = {"passengers": len(c["left_out"]), "stops": c.get("left_out_stops") or 0}
             self._saved_cur = None
 
     def save_state(self):
@@ -545,7 +559,7 @@ class Cruise:
             cur = {k: self.cur.get(k) for k in ("id", "ship", "t0", "landed", "left", "note", "trial", "allowed", "sent", "refused",
                                                 "skipped", "unsent", "brake_half", "wait", "booked", "landed_at",
                                                 "unanswered", "quiet", "quiet_took", "quiet_lost", "half_strained", "half_node",
-                                                "tricks", "tricks_n", "took", "plan_per_min")}
+                                                "tricks", "tricks_n", "took", "plan_per_min", "left_out", "left_out_stops", "last_ok")}
             cur["done"] = sorted(self.cur["done"])
         try:
             tmp = self.state_path + ".tmp"
@@ -642,7 +656,7 @@ class Cruise:
             saved = getattr(self, "_saved_cur", None)
             if saved and saved.get("id") == vid:   # the relay restarted during this visit: carry on where it was
                 for k in ("landed", "left", "note", "trial", "allowed", "sent", "refused", "skipped", "unsent", "brake_half", "wait", "booked", "landed_at", "unanswered", "quiet", "quiet_took", "quiet_lost", "half_strained", "half_node",
-                          "tricks", "tricks_n", "took", "plan_per_min"):
+                          "tricks", "tricks_n", "took", "plan_per_min", "left_out", "left_out_stops", "last_ok"):
                     if k in saved:
                         self.cur[k] = saved[k]
                 self.cur["done"] = set(saved.get("done") or [])
@@ -866,6 +880,8 @@ class Cruise:
              "half_strained": v.get("half_strained", 0), "half_node": v.get("half_node", 0),
              "unanswered": v.get("unanswered", 0), "unanswered_took": v.get("quiet_took", 0),
              "passengers": SHIPS[v["ship"]]["passengers"]}
+        if v.get("left_out"):   # new wallets our node could not take (NEW_WALLET_CODE): not refusals, not skipped stops
+            s["left_out"] = {"passengers": len(v["left_out"]), "stops": v.get("left_out_stops", 0)}
         clean = v["landed"] and not v["left"]
         for k in v["trial"]:
             if clean and v["sent"].get(k) and not v["refused"].get(k) and not (k == "book" and v["refused"].get("cancel")):
@@ -1023,6 +1039,10 @@ class Cruise:
             v["skipped"] += 1
             self.write(entry)
 
+        if act["p"] in (v.get("left_out") or ()):   # its new wallet was not taken earlier this visit
+            self.leave_out(v, act["p"], entry)
+            return None
+
         if trick == "replay":   # the newest payment a pirate got through, while it is still within its time (else it is refused as expired)
             now = int(self.clock())
             fresh = [(t["expiration_time"], n, t) for n, t in (v.get("took") or {}).items() if t.get("expiration_time", 0) - now >= 120]
@@ -1042,6 +1062,8 @@ class Cruise:
             first = await asyncio.to_thread(self.build, ship, {**pay, "amount": act["amount"]}, seq, tip, fee)
             r1 = await ask("sendtx " + json.dumps(first, separators=(",", ":")))
             if not (r1 and r1.get("status") == "ok" and (r1.get("data") or {}).get("ok") is not False):
+                if await self.new_wallet(v, pk, r1, ask):
+                    return self.leave_out(v, act["p"], entry, r1)
                 return skip("could not place the first payment, so the second has nothing to collide with")
             self.spend()   # the first payment is a real transfer that takes the sequence number
             pay["amount"] = entry["amount"] = act["amount"] + 1   # a different payment, sent for the same sequence number
@@ -1073,6 +1095,8 @@ class Cruise:
                                                  int(d.get("sequence_number") or 0), int(d.get("tip_height") or 0), base_fee(gov()))
                 rb = await ask("sendtx " + json.dumps(booktx, separators=(",", ":")))
                 if not (rb and rb.get("status") == "ok" and (rb.get("data") or {}).get("ok") is not False):
+                    if await self.new_wallet(v, self.pk[f"{ship}-{owner}"], rb, ask):
+                        return self.leave_out(v, owner, entry, rb)
                     return skip("could not place the booking this trick needs")
                 self.spend()
                 retr.append({"owner": owner, "rid": None, "born": False, "release": rel, "to": PLACES["market"], "for": trick})
@@ -1136,6 +1160,10 @@ class Cruise:
         entry["ms"] = int((time.monotonic() - t_ask) * 1000)
         entry["tx"] = tx   # signed and public anyway once sent; a key never goes in here
         c = v.setdefault("tricks", {}).setdefault(trick, {"tried": 0, "stopped": 0, "right": 0, "through": 0})
+        if res is not None and not (res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False) \
+                and await self.new_wallet(v, entry.get("from") or pk, res, ask):   # a pirate wallet new to our node: no trick result
+            self.leave_out(v, entry.get("p", act["p"]), entry, res)
+            return res
         if res is None:   # no answer in time: not a refusal and not a finding, the node is slow
             now = self.clock()
             self.hold_until, self.slow_until = now + QUIET_HOLD, now + QUIET_SLOW
@@ -1169,6 +1197,43 @@ class Cruise:
         self.write(entry)
         return res
 
+    async def new_wallet(self, v: dict | None, pk: str, res, ask) -> bool:
+        """Our node could not take this wallet because it is new to it (NEW_WALLET_CODE): the answer says so, the wallet
+        holds nothing on the chain yet, and (during a visit) the node took another passenger's send not long before."""
+        if not res or self.code_of(res) != NEW_WALLET_CODE or NEW_WALLET_TEXT not in json.dumps(res):
+            return False
+        if v is not None and self.clock() - (v.get("last_ok") or 0) > NEW_WALLET_OK:
+            return False   # nothing went through lately either: the node's own trouble, which the brakes must see
+        b = await ask(f"getbalance {pk}")
+        if not b or b.get("status") != "ok":
+            return False
+        try:
+            return int((b.get("data") or {}).get("balance") or 0) == 0
+        except (TypeError, ValueError):
+            return False
+
+    def leave_out(self, v: dict, p: int, entry: dict, res=None) -> None:
+        """This passenger's wallet is new to our node, which cannot take it now: left out for the rest of the visit."""
+        if p not in v.setdefault("left_out", []):
+            v["left_out"].append(p)
+            log.info("cruise %s: passenger %s left out, our node cannot take its new wallet", v["id"], p)
+        v["left_out_stops"] = v.get("left_out_stops", 0) + 1
+        entry.update(ok=None, new_wallet=True, note=NEW_WALLET_NOTE)
+        if res is not None:
+            err = res.get("error") or res
+            entry.update(code=NEW_WALLET_CODE, err=(json.dumps(err, separators=(",", ":")) if not isinstance(err, str) else err)[:300])
+        self.write(entry)
+
+    def lenders(self, now: float | None = None) -> list[tuple[str, int, str]]:
+        """(name, key, address) of the LEND_SHIP passengers, for No Memo's drop while our node cannot take the fresh
+        wallet it normally fills the drop from (nomemo.py fill_drop). None while a ship is in port or a call is within
+        LEND_CLEAR, so a loan never meets a passenger's own send."""
+        now = self.clock() if now is None else now
+        if not self.ready or self.cur or any(abs(t0 - now) < LEND_CLEAR for t0, _ in calls_near(now)):
+            return []
+        return [(f"{LEND_SHIP}-{p}", self.sk[f"{LEND_SHIP}-{p}"], self.pk[f"{LEND_SHIP}-{p}"])
+                for p in range(SHIPS[LEND_SHIP]["passengers"]) if f"{LEND_SHIP}-{p}" in self.sk]
+
     async def booking_id(self, pk: str, act: dict, ask) -> str | None:
         """The id of the passenger's open booking at that place for that time, as the node lists it."""
         res = await ask(f"getretractables {pk} out")
@@ -1189,6 +1254,9 @@ class Cruise:
                  "to": act["to"], "amount": act["amount"], "from": pk, "verdict": state}
         if "rel" in act:
             entry["release_at_time"] = act["rel"]
+        if act["p"] in (v.get("left_out") or ()):   # its new wallet was not taken earlier this visit
+            self.leave_out(v, act["p"], entry)
+            return None
         rid = None
         if act["kind"] == "cancel":
             if self.clock() > act["rel"] - CANCEL_LATEST:   # the ship fell behind: the chain would refuse it now, and that is no refusal for the brakes
@@ -1234,6 +1302,12 @@ class Cruise:
             log.info("cruise %s %s unanswered", v["id"], act["kind"])
             return None
         ok = bool(res) and res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False
+        if ok:
+            v["last_ok"] = int(self.clock())
+        elif await self.new_wallet(v, pk, res, ask):   # not a refusal: our node has no room for a new wallet (#108)
+            entry.update(seq=seq, height=tip, tx=tx)
+            self.leave_out(v, act["p"], entry, res)
+            return res
         entry.update(seq=seq, height=tip, ok=ok, hash=((res or {}).get("data") or {}).get("tx_hash") if ok else None)
         if ok:
             v["sent"][act["kind"]] += 1
@@ -1444,6 +1518,11 @@ class Cruise:
                 b.update(status="in escrow", hash=h, booked_at=int(now))
             else:
                 b.update(status="refund sent", refund_hash=h, refund_at=int(now))
+        elif kind == "book ahead" and await self.new_wallet(None, pk, res, ask):   # our node has no room for a new wallet (#108)
+            b.update(status="not booked", note=NEW_WALLET_NOTE)
+            entry.update(ok=None, new_wallet=True, code=NEW_WALLET_CODE, note=NEW_WALLET_NOTE)
+            self.write(entry)
+            return True
         else:
             err = res.get("error") or res
             entry["err"] = (err if isinstance(err, str) else json.dumps(err, separators=(",", ":")))[:300]

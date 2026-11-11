@@ -56,6 +56,16 @@ QUIET = 20                 # seconds to wait before asking the chain again wheth
 TRIES = 40                 # gettxstatus asks per claim before it counts as not sealed
 TOPUP = 99_000             # what the bank sends the drop when the drop runs low (the faucet gives a wallet with balance 0 100,000 when it first pays)
 TOPUP_WAIT = 600           # seconds a top-up may stay unsealed before the drop is checked again
+# Our node keeps at most 254 wallet addresses; with all of them in use it answers ADMISSION_UNAVAILABLE to a transaction
+# with a wallet it has not seen before (IDNI tau-testnet #108), so it cannot take the bank's fresh wallet. Then a wallet
+# it knows lends the drop LEND (relay.py: Cruise.lenders, simulated passengers), and a fresh bank wallet is tried again
+# every FRESH_WAIT: once the node takes new wallets (IDNI's fix, brought in by the node's auto-follow) the bank fills the
+# drop as before, without a change here.
+FRESH_WAIT = 3600
+LEND = 50_000              # what one known wallet lends the drop
+LEND_KEEP = 10_000         # what the lending wallet keeps at least
+LEND_TRIES = 5             # wallets asked for their balance in one go
+LEND_WAIT = 600            # no wallet could lend: seconds before the purse asks again
 TAG = (6, 4)
 WEEK_GAP = 30      # the weekly board counts a wallet's payments to the drop at most once every 30 seconds
 WEEK_CAP = 300     # and at most 300 a week
@@ -122,6 +132,11 @@ class NoMemo:
         self.next_seq: dict[str, int] = {}
         self.last_send = 0.0
         self.topup: dict | None = None    # {"hash", "at"}: the bank's last payment to the drop, until it is sealed
+        self.lenders = None               # relay: wallets our node knows that may lend the drop (see FRESH_WAIT)
+        self.fresh_wait_until = 0.0       # no fresh bank wallet before this (our node refused the last one as new to it)
+        self.fill_wait_until = 0.0        # no top-up at all before this (no wallet could lend)
+        self.lend_i = 0
+        self.last_code: str | None = None   # the node's error code for the last payment it refused
         self.load_state()
         if keys:
             self.use_keys(keys)
@@ -251,6 +266,8 @@ class NoMemo:
         tx = await asyncio.to_thread(self.build_pay, key, wallet, amount, seq, int(d.get("tip_height") or 0), base_fee(gov()))
         res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))
         self.last_send = self.clock()
+        err = (res or {}).get("error") if isinstance(res, dict) else None
+        self.last_code = err.get("code") if isinstance(err, dict) else None
         if bool(res) and res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False:
             self.next_seq[key] = seq + 1
             self.today += 1
@@ -277,7 +294,13 @@ class NoMemo:
     async def fill_drop(self, ask, gov) -> bool:
         """The drop pays shares, so its balance is never 0 and the testnet's faucet never fills it (a wallet with
         balance 0 pays from the faucet; one that received before it ever sent does not). A bank wallet does instead:
-        a fresh key each time, its first payment comes from the faucet and goes to the drop. True when it was sent."""
+        a fresh key each time, its first payment comes from the faucet and goes to the drop. True when it was sent.
+        While our node cannot take a fresh wallet (FRESH_WAIT), a wallet it knows lends the drop instead (lend_drop)."""
+        now = self.clock()
+        if now < self.fill_wait_until:
+            return False
+        if now < self.fresh_wait_until:
+            return await self.lend_drop(ask, gov)
         from py_ecc.bls import G2Basic
         from py_ecc.optimized_bls12_381 import curve_order
         sk = secrets.randbelow(curve_order - 2) + 1
@@ -293,7 +316,44 @@ class NoMemo:
         if h:
             self.topup = {"hash": h, "at": int(self.clock())}
             log.info("no memo: the bank fills the drop with %d (%s)", TOPUP, h[:12])
-        return bool(h)
+            return True
+        if self.last_code != "ADMISSION_UNAVAILABLE":
+            return False
+        self.fresh_wait_until = now + FRESH_WAIT
+        log.info("no memo: our node cannot take the bank's fresh wallet (no room for new wallet addresses); a known wallet lends the drop")
+        return await self.lend_drop(ask, gov)
+
+    async def lend_drop(self, ask, gov) -> bool:
+        """A wallet our node knows lends the drop LEND, keeping LEND_KEEP (see FRESH_WAIT). True when the loan was sent."""
+        try:
+            cands = list(self.lenders() if self.lenders else [])
+        except Exception as exc:
+            log.warning("no memo: no lenders: %r", exc)
+            cands = []
+        for k in range(min(LEND_TRIES, len(cands))):
+            name, sk, pk = cands[(self.lend_i + k) % len(cands)]
+            m = await ask(f"getbalance {pk}")
+            if not m or m.get("status") != "ok":
+                break
+            try:
+                bal = int((m.get("data") or {}).get("balance") or 0)
+            except (TypeError, ValueError):
+                continue
+            if bal < LEND + LEND_KEEP:
+                continue
+            self.lend_i = (self.lend_i + k + 1) % len(cands)
+            self.sk["lend"], self.pk["lend"] = sk, pk
+            self.next_seq.pop("lend", None)
+            h = await self.send("lend", self.pk["drop"], LEND, ask, gov)
+            if h:
+                self.topup = {"hash": h, "at": int(self.clock()), "lent_by": name}
+                log.info("no memo: %s lends the drop %d (%s)", name, LEND, h[:12])
+                return True
+            break
+        if cands:
+            self.lend_i = (self.lend_i + LEND_TRIES) % len(cands)
+        self.fill_wait_until = self.clock() + LEND_WAIT
+        return False
 
     async def drop_ready(self, amount: int, ask, gov):
         """True when the drop can pay amount now, "filled" when the bank just sent it money (one top-up at a time),
@@ -412,7 +472,8 @@ class NoMemo:
     def snapshot(self) -> dict:
         return {"simulated": True, "enabled": bool(self.enabled), "ready": self.ready, "making_wallets": self.making, "tracer": bool(self.tracer),
                 "drop": self.pk.get("drop"), "drop_short": short(self.pk.get("drop", "")), "share": SHARE, "mark": MARK, "claim_base": CLAIM_BASE,
-                "board": self.board(), "waiting": len(self.jobs), "filling": bool(self.topup), "today": self.today, "limits": {"daily": DAILY, "gap": GAP, "claim_days": CLAIM_DAYS}}
+                "board": self.board(), "waiting": len(self.jobs), "filling": bool(self.topup), "today": self.today, "limits": {"daily": DAILY, "gap": GAP, "claim_days": CLAIM_DAYS},
+                "fresh_wallets": "our node cannot take them now; a known wallet lends the drop" if self.clock() < self.fresh_wait_until else "taken"}
 
     def wallet_view(self, pk: str) -> dict:
         w = self.wallets.get(pk) or {"claims": {}, "dust": []}

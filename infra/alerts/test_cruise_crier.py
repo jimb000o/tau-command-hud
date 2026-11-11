@@ -54,6 +54,14 @@ tg, card, x = cc.last_lines(f)
 check("accepted 122" in tg and "refused none" in tg and "8 got no answer from our node in time" in tg, "last call: 122 accepted, none refused, 8 timeouts")
 check("left after 34 minutes" in tg and "no longer" in tg, "left after 34 minutes, the old brake named as ours")
 check(card == "- Last call: 122 accepted, none refused", "card point")
+# passengers whose wallets were new to our node (no room for new wallet addresses, IDNI tau-testnet #108): said, never as refusals
+nlog = log[:-1] + [{"t": T0 + 900, "visit": V, "kind": "pay", "p": 7, "ok": None, "new_wallet": True, "code": "ADMISSION_UNAVAILABLE", "seq": 0},
+                   {"t": T0 + 960, "visit": V, "kind": "pay", "p": 7, "ok": None, "new_wallet": True},
+                   {"t": T0 + 990, "visit": V, "kind": "pay", "p": 9, "ok": None, "new_wallet": True, "code": "ADMISSION_UNAVAILABLE", "seq": 0}, log[-1]]
+ntg, ncard, _ = cc.last_lines(blog.facts_of(nlog, []))
+check("refused none" in ntg and "our node could not take 3 sends from 2 passengers whose wallets were new to it" in ntg
+      and ncard == card and not blog.BLAME.search(ntg) and not blog.HYPE.search(ntg),
+      "new wallets our node had no room for: said in the announcement, not as refusals, no blame")
 t = cc.texts("dryrun", NEXT_DRY, f)
 check(t["date"] == "2026-11-11" and t["card"][0] == "MS Dry Run · today 16:00 German time", "card title with the day's time")
 check("from 15:30" in t["telegram"].lower() and "https://node.tauhud.com/cruise/log" in t["telegram"] and "made up" in t["telegram"], "Telegram: horizon time, logbook, honest note")
