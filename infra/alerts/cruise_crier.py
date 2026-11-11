@@ -172,7 +172,24 @@ def changed_line(f: dict) -> str:
     return " Since then she changed " + "; ".join(f"{c['what']} from {c['from']} to {c['to']}, because {c['because']}" for c in ch) + "."
 
 
-def texts(ship: str, t0: float, last: dict | None) -> dict:
+def ahead_line(n: int, hh: str) -> str:
+    """One sentence on the fares booked ahead of the call that wait in escrow on the chain (relay /cruise "escrow")."""
+    if n < 1:
+        return ""
+    who = "One passenger paid the fare" if n == 1 else f"{n} passengers paid their fare"
+    return (f"{who} days ahead. It waits in escrow on the chain, and at {hh}:00 the chain hands it to the ship by itself, "
+            "with nobody pressing a button.")
+
+
+def booked_ahead(cruise: dict | None, t0: float) -> int:
+    """Fares still in escrow for the call arriving at t0; 0 when there are none or the call was called off."""
+    for e in (cruise or {}).get("escrow") or []:
+        if isinstance(e, dict) and e.get("arrival") == int(t0) and not e.get("called_off"):
+            return int((e.get("count") or {}).get("in escrow") or 0)
+    return 0
+
+
+def texts(ship: str, t0: float, last: dict | None, ahead: int = 0) -> dict:
     """The announcement written from the timetable and the last call: Telegram (HTML), X (no link), the picture's card."""
     import alerts
     s = SHIPS[ship]
@@ -181,7 +198,7 @@ def texts(ship: str, t0: float, last: dict | None) -> dict:
     tg_last, card_last, x_last = last_lines(last)
     tg = "\n\n".join([
         f"{s['emoji']} <b>{html.escape(s['head'].format(**fill), quote=False)}</b>",
-        html.escape(s["story"].format(**fill), quote=False),
+        html.escape(" ".join(x for x in (s["story"].format(**fill), ahead_line(ahead, fill["hh"])) if x), quote=False),
         html.escape(tg_last, quote=False),
         "Honest note: the passengers are made up. Their transactions are real, on Tau Testnet Alpha: never more than 12 "
         "a minute, fewer when the node is slow, and she only lands when the testnet is calm. Every transaction goes into "
@@ -268,7 +285,12 @@ def compose(ship: str, t0: int) -> dict:
         except Exception as e:  # noqa: BLE001 - without the logbook the post says nothing about the last call
             log.warning("last call of %s not read: %s", ship, e)
             last = None
-        t = texts(ship, t0, last)
+        try:
+            ahead = booked_ahead(blog.get("/cruise"), t0)
+        except Exception as e:  # noqa: BLE001 - without the relay's answer the post leaves the bookings ahead out
+            log.warning("bookings ahead of %s not read: %s", ship, e)
+            ahead = 0
+        t = texts(ship, t0, last, ahead)
     return t
 
 

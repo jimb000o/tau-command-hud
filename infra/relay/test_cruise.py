@@ -554,6 +554,19 @@ async def spin():
 asyncio.run(spin())
 check(1 <= len(calls) <= 2, f"with no moves waiting, the island bot asks the ship, one slot every {island.SPACING} s ({len(calls)})")
 
+# ---------- a withdrawal that runs late is not sent: the chain would refuse it, and that is no refusal ----------
+n0, r0 = len(sent), len(retracts)
+relt = int(T[0]) + 600
+pk9 = C.pk["dryrun-9"]
+OPEN.setdefault(pk9, []).append({"retractable_id": "cd" * 32, "recipient_pubkey": island.PLACES["dive"], "amount": 24, "release_at_time": relt, "status": "open"})
+vv = {"id": "2026-11-11-dryrun", "ship": "dryrun", "skipped": 0, "sent": {k: 0 for k in cruise.KINDS}, "refused": {k: 0 for k in cruise.KINDS}}
+T[0] = relt - cruise.CANCEL_LATEST + 1
+asyncio.run(C.send(vv, {"i": 900, "p": 9, "kind": "cancel", "to": "dive", "amount": 24, "rel": relt, "t": T[0]}, ask, gov, "calm"))
+check(len(sent) == n0 and len(retracts) == r0 and vv["skipped"] == 1 and not any(vv["refused"].values()), "a withdrawal later than three minutes before the booking's time is skipped, not sent, not a refusal")
+T[0] = relt - cruise.CANCEL_LATEST - 30
+asyncio.run(C.send(vv, {"i": 901, "p": 9, "kind": "cancel", "to": "dive", "amount": 24, "rel": relt, "t": T[0]}, ask, gov, "calm"))
+check(len(retracts) == r0 + 1 and retracts[-1]["retractable_id"] == "cd" * 32, "one in time still goes out")
+
 print()
 print("all good" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)
