@@ -823,7 +823,10 @@
     const box = el("div", "tn-tip"); box.hidden = true; box.setAttribute("role", "tooltip"); document.body.append(box);
     let cur = null, touch = matchMedia("(hover: none)").matches;
     const find = t => t instanceof Element ? t.closest("[data-tnt]") : null;
-    const place = (x, y) => { const w = box.offsetWidth, h = box.offsetHeight; box.style.left = Math.max(8, Math.min(innerWidth - w - 8, x + 14)) + "px"; box.style.top = (y + 18 + h > innerHeight ? Math.max(8, y - h - 10) : y + 18) + "px"; };
+    /* measured from the top left corner (a box left near the right edge would shrink to one word), and in the page's own
+       zoom: donate, guardian and challenge zoom the body by 1.3 on big screens, which scales a fixed box's left/top too */
+    const place = (x, y) => { box.style.left = box.style.top = "0px"; const z = parseFloat(getComputedStyle(document.body).zoom) || 1, r = box.getBoundingClientRect(), w = r.width, h = r.height;
+      box.style.left = Math.max(8, Math.min(innerWidth - w - 8, x + 14)) / z + "px"; box.style.top = (y + 18 + h > innerHeight ? Math.max(8, y - h - 10) : y + 18) / z + "px"; };
     const show = (t, x, y) => { cur = t; box.textContent = t.dataset.tnt; box.hidden = false; place(x, y); };
     const hide = () => { cur = null; box.hidden = true; };
     document.addEventListener("pointerdown", e => { touch = e.pointerType === "touch"; }, true);
