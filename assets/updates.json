@@ -2894,5 +2894,10 @@
     "tag": "Donations",
     "on": "2026-11-11",
     "html": "Donations: the page now says what the site costs per month in one figure, and what has been paid out so far. A new chart shows money paid out against donations received, day by day, how much of it donations have covered, and what it would take each month to cover the running costs. Codex, Photoshop and the ElevenLabs voices plan are now on the list with their prices; bills not in yet are named in one row and left out of the sums."
+  },
+  {
+    "tag": "Donations",
+    "on": "2026-11-11",
+    "html": "Donations: the X account is on the list of monthly costs, about $3 a month, an estimate from the posts sent (X bills each post, more for one with a link)."
   }
 ]

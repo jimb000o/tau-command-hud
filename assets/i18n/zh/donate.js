@@ -113,4 +113,5 @@ TauI18n.add({ strings: {
   "Codex on the ChatGPT Pro plan with 20x the usage of Plus, a second AI tool the site's code and art are made with": "ChatGPT Pro 套餐中的 Codex（用量是 Plus 的 20 倍），本站代码和图画所用的第二个 AI 工具",
   "ElevenLabs Creator plan, for the voices on the site; $22 plus tax": "ElevenLabs Creator 套餐，用于本站的配音；22 美元另加税",
   "tauhud.com and agorzilla.com, $11.48 a year each, shown per month": "tauhud.com 和 agorzilla.com，每个每年 11.48 美元，按月折算",
+  "the bot that posts on X, paid per post ($0.015, $0.20 with a link); an estimate from the posts sent, not a bill": "在 X 上发帖的机器人，按条付费（每条 0.015 美元，带链接 0.20 美元）；按已发帖数估算，并非账单",
 } });

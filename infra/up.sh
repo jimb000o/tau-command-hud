@@ -418,6 +418,14 @@ fi
 # alone, safe any time: up cost  the service started with the code just pulled and Caddy given costs-paid.json, then one
 # read of the receipts; up cost mail  asks for the mailbox and its app password once (ssh -t), writes them to .env;
 # up cost gemini 10 [EUR] [2026-11-08]  a payment by hand (its receipt replaces it later); up cost drop <id>  one taken off
+# what the X API costs this month, estimated from what was sent (X bills each post: $0.015, $0.20 with a link; the bill
+# itself and the credit left: console.x.com): the alerts posts counted by alerts.py, plus one link post per blog article
+# published this month (blog.py announce, X_BLOG_LINK); hand-sent pictures and clips (up post) are not counted
+x_line() {
+  XN=$(docker compose exec -T alerts python -c 'import json,time; x=json.load(open("/state/alerts.json")).get("x",{}); print(x.get("this_month",0) if x.get("month")==time.strftime("%Y-%m") else 0)' 2>/dev/null | tr -dc 0-9)
+  XB=$(docker compose exec -T blog python -c 'import json,os,time; p=json.load(open(os.path.join(os.environ.get("PUBLIC_DIR","/public"),"blog","posts.json"))).get("posts",[]); m=time.strftime("%Y-%m"); print(sum(1 for a in p if str(a.get("on","")).startswith(m)))' 2>/dev/null | tr -dc 0-9)
+  awk -v n="${XN:-0}" -v b="${XB:-0}" -v d="$(date -u +%d)" 'BEGIN { c = n * 0.015 + b * 0.20; printf "x:       %d posts and %d blog link posts this month, about $%.2f so far, about $%.2f for the whole month at this pace (estimate; the bill: console.x.com)\n", n, b, c, c * 30 / (d < 1 ? 1 : d) }'
+}
 if [ "${1:-}" = "cost" ] || [ "${1:-}" = "costs" ]; then
   if [ "${2:-}" = "mail" ]; then
     [ -t 0 ] || { echo "needs a terminal: ssh -t root@node.tauhud.com \"cd /opt/tau-command-hud && sh infra/up.sh cost mail\""; exit 2; }
@@ -441,6 +449,7 @@ if [ "${1:-}" = "cost" ] || [ "${1:-}" = "costs" ]; then
   esac
   echo "---------------- copy from here into the chat ----------------"
   docker compose exec -T costs python receipts.py line
+  x_line
   curl -s -o /dev/null -w "         https://node.tauhud.com/costs-paid.json answers %{http_code}\n" https://node.tauhud.com/costs-paid.json || true
   echo "---------------- to here --------------------------------------"
   exit 0
@@ -672,6 +681,7 @@ python3 rabbit-art/paint.py usage 2>/dev/null | tee -a "$NOTE" || true
 docker compose exec -T alerts python ai_meter.py line 2>/dev/null | tee -a "$NOTE" || true
 # what the site's tools were paid, read from their receipts (alerts/receipts.py; up cost for more)
 docker compose exec -T costs python receipts.py line 2>/dev/null | tee -a "$NOTE" || true
+x_line | tee -a "$NOTE" || true
 # Kling's clips this month (alerts/kling.py; KLING_MONTH_CAP in .env, default 30 clips)
 docker compose exec -T blog python kling.py line 2>/dev/null | tee -a "$NOTE" || true
 # a new painted island, only when asked for: up island

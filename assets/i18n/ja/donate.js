@@ -113,4 +113,5 @@ TauI18n.add({ strings: {
   "Codex on the ChatGPT Pro plan with 20x the usage of Plus, a second AI tool the site's code and art are made with": "ChatGPT Pro プランの Codex（Plus の 20 倍の利用量）、サイトのコードと絵に使う二つ目の AI ツール",
   "ElevenLabs Creator plan, for the voices on the site; $22 plus tax": "ElevenLabs Creator プラン、サイトの声のため。22 ドル＋税",
   "tauhud.com and agorzilla.com, $11.48 a year each, shown per month": "tauhud.com と agorzilla.com、それぞれ年 11.48 ドル、月割りで表示",
+  "the bot that posts on X, paid per post ($0.015, $0.20 with a link); an estimate from the posts sent, not a bill": "X に投稿するボット、投稿ごとの支払い（1 件 0.015 ドル、リンク付き 0.20 ドル）。送った投稿数からの見積もりで、請求書ではない",
 } });
