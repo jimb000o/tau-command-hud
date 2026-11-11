@@ -57,6 +57,7 @@ from chainhist import ChainHistory
 from services import Services
 from nodehist import NodeHistory
 from setupfunnel import SetupFunnel
+import knownnodes
 from visits import OWN_HOSTS, SITES, Visits
 
 log = logging.getLogger("tau-relay")
@@ -248,6 +249,7 @@ PEERS_SAVE_SECONDS = _env_float("PEERS_SAVE_SECONDS", 300)
 # PEER_ONLINE seconds after it was last seen (no flicker between two polls).
 PEER_STEADY = _env_float("PEER_STEADY_SECONDS", 600)
 PEER_ONLINE = _env_float("PEER_ONLINE_SECONDS", 1800)
+KNOWN_PROBE = os.environ.get("KNOWN_NODES_PROBE", "1") != "0"   # TCP checks of the named nodes' P2P ports (knownnodes.py)
 PEER_ID = re.compile(r"^[1-9A-HJ-NP-Za-km-z]{20,128}$")  # base58, like 12D3KooW...
 # the network's bootnode, run by IDNI (infra/docker-compose.yml TAU_BOOTSTRAP_PEERS)
 BOOTNODE_ID = os.environ.get("BOOTNODE_PEER_ID", "12D3KooWDpWEYxBy8y84AssrPSLaq9DxC7Lncmn5wERJnAWZFnYC")
@@ -498,6 +500,7 @@ class Relay:
         self.rulewall_at = 0.0
         self.board_at = 0.0
         self.peer_book = self._load_peers()      # {"since", "peers": {peer id -> row}}, kept across restarts
+        self.known_probe = knownnodes.Probe()    # TCP checks of the named nodes' P2P ports (knownnodes.py)
         self.nodehist = NodeHistory()             # nodes on the network hour by hour, for /nodes/history (nodehist.py)
         self.setup = SetupFunnel()                # how far node setups get, for /setup/stats (setupfunnel.py)
         self.peers_saved_at = 0.0
@@ -1541,6 +1544,10 @@ class Relay:
                                   "head=<64 hex> [tip=<n>|none] [kit=<version>] [ref=<commit>] [peer=<peer id>]", "INVALID_PARAMS")
         if "tauhud" in fields["name"].lower():
             return envelope_error("report", "That name is reserved.", "INVALID_PARAMS")
+        # a named node (knownnodes.py) reports only from its own addresses; its row then carries its name
+        known_peer, refused = knownnodes.check_report(fields["name"], fields.get("peer"), ip)
+        if refused:
+            return envelope_error("report", refused, "INVALID_PARAMS")
         now = time.time()
         self.expire_community(now)
         node_id = hashlib.sha256(fields["key"].encode()).hexdigest()[:12]
@@ -1555,7 +1562,8 @@ class Relay:
         self.community[node_id] = {
             "id": node_id, "name": fields["name"], "height": int(fields["height"]),
             "tip": int(fields["tip"]) if fields.get("tip", "none") != "none" else None,
-            "head": fields["head"], "kit": fields.get("kit"), "ref": fields.get("ref"), "peer": fields.get("peer"),
+            "head": fields["head"], "kit": fields.get("kit"), "ref": fields.get("ref"), "peer": fields.get("peer") or known_peer,
+            "known": known_peer,
             # first_seen survives a silence and a relay restart through the leaderboard
             "first_seen": known["first_seen"] if known else self.board.get(node_id, {}).get("first_seen", now),
             "last_seen": now, "ip": ip,
@@ -1720,7 +1728,8 @@ class Relay:
                 kit = named.get(pid)
                 steady = pid == BOOTNODE_ID or (last or 0) - r["first_seen"] >= PEER_STEADY
                 rows.append({"id": pid, "label": "IDNI bootnode" if pid == BOOTNODE_ID else None,
-                             "community": {"id": kit["id"], "name": kit["name"]} if kit else None,
+                             "known": knownnodes.KNOWN[pid]["name"] if pid in knownnodes.KNOWN else None,
+                             "community": {"id": kit["id"], "name": self.shown_name(kit)} if kit else None,
                              "steady": steady, "online": steady and now - (last or 0) < PEER_ONLINE,
                              "first_seen": r["first_seen"], "last_direct": r["last_direct"],
                              "last_heard": r["last_heard"], "last_seen": last, "head": r["head"],
@@ -1737,12 +1746,30 @@ class Relay:
                            "met_30m": within(1800, True), "met_24h": within(86400, True),
                            "seen_24h": within(86400), "seen_30d": len(rows)},
                 "bootnode": BOOTNODE_ID, "since": self.peer_book["since"],
+                "known": self.known_nodes(now),
                 "steady_seconds": PEER_STEADY, "online_seconds": PEER_ONLINE,
                 # the validator keys, so a page can link a node card on to the validator profile
                 "validators": list((self.governance() or {}).get("active_validators") or []),
                 "keep_days": PEERS_KEEP_DAYS, "generated_at": round(now),
             }, separators=(",", ":"))
         return self.peers_text
+
+    @staticmethod
+    def shown_name(row: dict) -> str:
+        """A named node's name (knownnodes.py), else the name it reports."""
+        k = knownnodes.KNOWN.get(row.get("known") or "")
+        return k["name"] if k else row["name"]
+
+    def known_nodes(self, now: float) -> list[dict]:
+        """Reachability and sync of each named node, apart and from real data only (knownnodes.state)."""
+        hashes, ours, out = self.hash_at(), self.canonical_height(), []
+        for pid in knownnodes.KNOWN:
+            report = next((n for n in self.community.values() if n.get("known") == pid), None)
+            board = max((b for b in self.board.values() if b.get("known") == pid), key=lambda b: b["last_seen"], default=None)
+            out.append(knownnodes.state(pid, self.peer_book["peers"].get(pid), report, board, self.known_probe.results.get(pid),
+                                        self.agreement(report, hashes) if report else None, ours, now,
+                                        online_seconds=PEER_ONLINE, lag=SYNC_LAG))
+        return out
 
     # ---------- leaderboard ----------
     def _load_board(self) -> dict[str, dict]:
@@ -1781,6 +1808,7 @@ class Relay:
         row.update(name=node["name"], last_seen=now, height=node["height"], kit=node["kit"], ref=node["ref"])
         if node.get("peer"):
             row["peer"] = node["peer"]
+        row["known"] = node.get("known")
         self.board_text = None
         cutoff = now - BOARD_KEEP_DAYS * 86400
         for k in [k for k, r in self.board.items() if r["last_seen"] < cutoff]:
@@ -1804,7 +1832,7 @@ class Relay:
         rows = []
         for r in self.board.values():
             live = self.community.get(r["id"])
-            rows.append({"id": r["id"], "name": r["name"], "first_seen": round(r["first_seen"]),
+            rows.append({"id": r["id"], "name": self.shown_name(r), "known": bool(r.get("known")), "first_seen": round(r["first_seen"]),
                          "last_seen": round(r["last_seen"]), "online": live is not None,
                          "days": int((now - r["first_seen"]) // 86400), "uptime": self.node_uptime(r, now),
                          "height": r.get("height"), "kit": r.get("kit"), "ref": r.get("ref"),
@@ -1935,7 +1963,8 @@ class Relay:
         if self.community_text is not None and now - self.community_at < STATS_CACHE_SECONDS:
             return self.community_text
         hashes = self.hash_at()
-        nodes = [{**{k: v for k, v in n.items() if k != "ip"}, "agrees": self.agreement(n, hashes),
+        nodes = [{**{k: v for k, v in n.items() if k != "ip"}, "name": self.shown_name(n), "known": bool(n.get("known")),
+                  "agrees": self.agreement(n, hashes),
                   "age_seconds": round(now - n["last_seen"])}
                  for n in sorted(self.community.values(), key=lambda n: (-n["height"], n["name"].lower()))]
         self.community_at = now
@@ -2386,6 +2415,7 @@ class Relay:
             asyncio.create_task(self.presence_loop()),
             asyncio.create_task(self.uptime_loop()),
             asyncio.create_task(self.poll_loop(RULES_POLL, self.poll_rules)),
+            *([asyncio.create_task(self.known_probe.run())] if KNOWN_PROBE else []),
         ]
         async with serve(self.handler, LISTEN_HOST, LISTEN_PORT, process_request=self.process_request,
                          max_size=TX_MAX_BYTES + 64, max_queue=8, ping_interval=15, ping_timeout=15,
