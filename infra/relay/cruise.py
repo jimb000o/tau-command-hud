@@ -136,6 +136,10 @@ TRICK_GAP = 120            # seconds between two pirate tricks, at least
 TRICK_START, TRICK_MIN, TRICK_CALM = 4, 2, 3   # each trick a visit at first; at least; visits stopped rightly before fewer
 MAX_TRANSFERS = 64         # tau-testnet MAX_TRANSFERS_PER_TX: the transfers one payment may carry; a payment over it is refused whole
 POISON_TRANSFERS = 10      # the "poison" trick's transfers: the first ones the wallet can pay, the last it cannot, so the node applies none
+TAX_RULE = "always ( o8[t]:bv[24] = i1[t]:bv[24] / { 100 }:bv[24] )."   # the "taxman" rule: a 1% fee on o8 for every transfer, not scoped to the sender → UNSCOPED_USER_RULE
+RETRACT_HOLD = 3600        # the "stranger" booking's release is this far out, so it stays open all evening for another pirate to try to take it back
+RETRACT_SOON = 180         # the "late" booking's release is this near, so its own release time passes during the visit
+MAX_PREP = 4               # open bookings a visit keeps for its retract tricks, so it never nears MAX_OPEN_RETRACTABLE_PER_SENDER
 # the pirates' tricks: what the pirate does, and the node's answers that mean the chain said no for the right reason
 # (tau-testnet commands/sendtx.py; an overspend may also be refused by the transfer rule itself, TX_REJECTED)
 TRICKS = {
@@ -151,6 +155,10 @@ TRICKS = {
     "poison": (("INSUFFICIENT_FUNDS", "TX_INVALID", "TX_REJECTED"), "pays several places in one payment, the last more than the wallet holds"),
     "cram": (("TX_INVALID", "TX_REJECTED"), "packs more transfers into one payment than it may carry (over 64)"),
     "governance": (("TX_REJECTED",), "sends a payment carrying a field only the chain’s own transactions may set"),
+    "taxman": (("UNSCOPED_USER_RULE",), "submits a fee rule that would tax every wallet’s transfers, not only its own"),
+    "stranger": (("NOT_RETRACTABLE_SENDER",), "tries to take back another pirate’s booking"),
+    "phantom": (("UNKNOWN_RETRACTABLE",), "tries to take back a booking the chain never had"),
+    "late": (("RETRACT_TOO_LATE",), "tries to take back a booking after its release time"),
 }
 CODES = sorted({c for codes, _ in TRICKS.values() for c in codes} | {"TX_INVALID", "INVALID_PARAMS", "TX_REJECTED"})
 # MS Dry Run, 4 November 2026: eight sendtx went unanswered within 20 s (two a day on other days), were counted as
@@ -977,6 +985,11 @@ class Cruise:
         elif k == "gov":   # a passenger's payment carrying a governance field only the chain's own transactions may set (not in the signed preimage)
             tx = {"tx_type": "user_tx", **env, "fee_limit": str(fee * 5),
                   "operations": {"1": [[pk, PLACES[act["to"]], str(act["amount"])]]}, act["field"]: act["value"]}
+        elif k == "taxrule":   # a user_tx whose rule (operations "0") writes a shared fee stream without a sender scope
+            tx = {"tx_type": "user_tx", **env, "fee_limit": str(fee * 5), "operations": {"0": act["rule"]}}
+        elif k == "retrick":   # a bare retract for the pirates' retract tricks: its own expiry is not capped to any release
+            env["expire_at_height"] = tip + 100
+            tx = {"tx_type": "retract_transfer", **env, "fee_limit": "0", "retractable_id": act["rid"]}
         else:
             raise ValueError(k)
         tx["signature"] = G2Basic.Sign(self.sk[signer or name], hashlib.sha256(signing_bytes(tx)).digest()).hex()
@@ -1032,6 +1045,47 @@ class Cruise:
             self.spend()   # the first payment is a real transfer that takes the sequence number
             pay["amount"] = entry["amount"] = act["amount"] + 1   # a different payment, sent for the same sequence number
             tx = await asyncio.to_thread(self.build, ship, pay, seq, tip, fee)
+        elif trick in ("stranger", "late"):   # a retract the chain must refuse: of another pirate's booking, or of one past its release
+            retr = v.setdefault("retr", [])   # the bookings this visit made for its retract tricks, one per trick (reused all evening)
+            mine = [e for e in retr if e.get("for") == trick]
+            for e in mine:   # resolve the id and confirm it reached a block (getretractables lists only booked ones, not the mempool)
+                if e.get("rid") and e.get("born"):
+                    continue
+                r = await ask("getretractables " + self.pk[f"{ship}-{e['owner']}"] + " out")
+                if r and r.get("status") == "ok":
+                    for x in (r.get("data") or {}).get("retractables") or []:
+                        if int(x.get("release_at_time") or 0) == e["release"] and str(x.get("recipient_pubkey", "")).lower() == e["to"]:
+                            e["rid"], e["born"] = str(x.get("retractable_id") or ""), True
+                            break
+            now = int(self.clock())
+            ripe = next((e for e in mine if e.get("rid") and e.get("born")
+                         and (now < e["release"] - 30 if trick == "stranger" else now >= e["release"])), None)
+            if ripe is None:   # nothing ready: make this trick's booking, unless one is already on its way or we hold enough
+                if mine or len(retr) >= MAX_PREP:
+                    return skip("the booking this trick needs is not in a block yet" if trick == "stranger" else "the booking this trick needs is still before its release")
+                owner, rel = act["p"], now + (RETRACT_HOLD if trick == "stranger" else RETRACT_SOON)
+                st = await ask("getsequence " + self.pk[f"{ship}-{owner}"])
+                if not st or st.get("status") != "ok":
+                    return skip("no answer from the node to getsequence")
+                d = st.get("data") or {}
+                booktx = await asyncio.to_thread(self.build, ship, {"p": owner, "kind": "book", "to": "market", "amount": act["amount"], "rel": rel},
+                                                 int(d.get("sequence_number") or 0), int(d.get("tip_height") or 0), base_fee(gov()))
+                rb = await ask("sendtx " + json.dumps(booktx, separators=(",", ":")))
+                if not (rb and rb.get("status") == "ok" and (rb.get("data") or {}).get("ok") is not False):
+                    return skip("could not place the booking this trick needs")
+                self.spend()
+                retr.append({"owner": owner, "rid": None, "born": False, "release": rel, "to": PLACES["market"], "for": trick})
+                return skip("made a booking; another pirate takes it back once it is in a block" if trick == "stranger"
+                            else "made a booking with a near release; its owner takes it back once its time has passed")
+            rp = ripe["owner"] if trick == "late" else (ripe["owner"] + 1) % SHIPS[ship]["passengers"]   # late: the owner retracts; stranger: a different pirate
+            rpk = self.pk[f"{ship}-{rp}"]
+            st = await ask("getsequence " + rpk)
+            if not st or st.get("status") != "ok":
+                return skip("no answer from the node to getsequence")
+            d = st.get("data") or {}
+            seq, tip = int(d.get("sequence_number") or 0), int(d.get("tip_height") or 0)
+            entry.update(p=rp, seq=seq, height=tip, amount=0, rid=ripe["rid"], **{"from": rpk})
+            tx = await asyncio.to_thread(self.build, ship, {"p": rp, "kind": "retrick", "rid": ripe["rid"]}, seq, tip, base_fee(gov()))
         else:
             st = await ask(f"getsequence {pk}")
             if not st or st.get("status") != "ok":
@@ -1071,6 +1125,10 @@ class Cruise:
                 entry["amount"] = pay["n"]
             elif trick == "governance":   # a payment carrying a field only the chain's own transactions may set
                 pay["kind"], pay["field"], pay["value"] = "gov", "rule_revisions", []
+            elif trick == "taxman":   # a user rule that would tax every wallet's transfers, not only the sender's own
+                pay["kind"], pay["rule"], entry["amount"] = "taxrule", TAX_RULE, 0
+            elif trick == "phantom":   # a retract of a booking id the chain never had
+                pay["kind"], pay["rid"], entry["amount"] = "retrick", secrets.token_hex(32), 0
             tx = await asyncio.to_thread(self.build, ship, pay, seq, tip, base_fee(gov()), None, signer)
         t_ask = time.monotonic()
         res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))
