@@ -4,6 +4,7 @@
    "id": "2026-11-10-idni-qa-november",
    "on": "2026-11-10",
    "kind": "learnings",
+   "kicker": "Learnings · IDNI Q&A · 10 November 2026",
    "title": {
     "en": "IDNI answered our questions in its November Q&A",
     "zh": "IDNI 在 11 月问答里回答了我们的问题",
@@ -55,9 +56,9 @@
    ],
    "image": "https://node.tauhud.com/blog/img/2026-11-10-idni-qa-november-hero.jpg",
    "image_alt": {
-    "en": "White Rabbit Key, painted as in the game, with the article's card",
-    "zh": "与游戏中一样绘制的白兔礁，配上文章的卡片",
-    "ja": "ゲームと同じ絵のホワイトラビット・キーと、記事のカード"
+    "en": "The article's card and its four numbers in the Tau HUD look, above a row of testnet blocks",
+    "zh": "以 Tau HUD 风格呈现的文章卡片和四个数字，下方是一排测试网区块",
+    "ja": "Tau HUD のデザインで描いた記事のカードと4つの数字、下に並ぶテストネットのブロック"
    },
    "stats": [
     [

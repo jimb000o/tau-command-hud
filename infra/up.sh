@@ -466,7 +466,8 @@ fi
 if [ "${1:-}" = "blog" ]; then
   shift
   [ -n "${1:-}" ] || set -- drafts
-  # rebuilt with the code just pulled (safe any time, the node left alone; nothing changes when the code did not)
+  # rebuilt with the code just pulled first (safe any time, the node left alone; nothing changes when the code did not),
+  # so publish, auto-publish and up blog pictures use it
   docker compose up -d --no-deps --build blog >/dev/null 2>&1 || docker compose up -d blog >/dev/null 2>&1 || true
   docker compose exec -T blog python blog.py "$@"
   exit $?
