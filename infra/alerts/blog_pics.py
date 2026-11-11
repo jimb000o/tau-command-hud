@@ -270,7 +270,7 @@ def visit_stats(facts: dict) -> list[tuple[str, str]]:
     port = facts.get("bookings made in port (not the bookings ahead)") or {}   # blog.IN_PORT
     due = (port.get("made") or 0) - (port.get("withdrawn by their passenger during the call") or 0)
     if due > 0:   # a booking its passenger withdrew is not paid out, and not owed either
-        out.append((f"{port.get('paid out to the place by the chain at their time', 0)}/{due}", "bookings in port paid out by the chain"))
+        out.append((f"{port.get('paid out to the place by the chain at their time', 0)}/{due}", "bookings in port paid out"))
     if len(out) < 4 and facts.get("stops skipped") is not None:   # the same four tiles on every ship's picture
         out.append((str(facts["stops skipped"]), "stops skipped"))
     return out[:4]
