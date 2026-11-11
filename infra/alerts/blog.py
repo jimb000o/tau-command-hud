@@ -124,7 +124,9 @@ our node) and the blog links them to their pages by itself.
 - When the facts have "pirate tricks": the ship is a pirate ship whose made-up pirates try, on purpose, what the \
 chain must refuse. A refused trick is good news: the chain did its job. Say which tricks were refused and with which \
 answer, in plain words (paying more than the wallet holds, sending the same payment twice, a payment whose time ran \
-out, a payment signed with the wrong key). Never call a refused trick a failure or a problem.
+out, a payment signed with the wrong key). Never call a refused trick a failure or a problem. When they have a \
+"fee edge", tell both sides with its numbers: how many payments allowing one test AGRS less than the fee the network's \
+fee rule asks were refused, and how many of the same payments allowing exactly that fee went through.
 - When the facts have "the ship changed for its next call": tell each change in the section "What is still open" as \
 "The ship changed <what> from <from> to <to> because <because>." Nothing else changed by itself; do not suggest more.
 - zh: Simplified Chinese, ja: Japanese, same meaning and the same numbers; keep Tau, IDNI, AGRS, White Rabbit Key and \
@@ -319,6 +321,11 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
         codes = Counter(e.get("code") for e in tricks if e.get("ok") is False and e.get("code"))
         if codes:
             t["the chain's answers"] = dict(codes)
+        edge = [e for e in tricks if e.get("trick") == "edge" and e.get("ok") is False and isinstance(e.get("inside"), dict)]
+        if edge:   # the fee edge (relay/cruise.py): both sides of the fee the network's fee rule asks for one payment
+            t["fee edge"] = {"fee the network's fee rule asks for the payment": sorted({e["fee"] for e in edge if e.get("fee") is not None}),
+                             "allowing one test AGRS less: refused": sum(1 for e in edge if e.get("right")),
+                             "the same payment allowing exactly that fee: went through": sum(1 for e in edge if e["inside"].get("ok") is True)}
         f["pirate tricks"] = {k: v for k, v in t.items() if v or k == "tried"}
         f["what a trick is"] = ("a pirate sends on purpose what the chain must refuse; a refused trick is the chain working, "
                                 "not a failure, and it never counts as a refusal for the ship's brakes")

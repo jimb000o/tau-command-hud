@@ -324,6 +324,32 @@ check(all(isinstance(e.get("ms"), int) for e in sends5 if e.get("ok") is not Non
 check(C5.brief(T[0])["now"]["brake"] in ("slow", "none") and (T[0] >= C5.slow_until or C5.brief(T[0])["now"]["brake"] == "slow"),
       "the pages see the node-slow brake as 'slow', never as the strained 'half'")
 
+# ---------- the fee edge: the network's fee rule, read exactly (rulefacts.py, the reading the pages use) ----------
+GEN = ("always ( (o6[t]:bv[8] = { #x01 }:bv[8]) && (o7[t]:bv[8] = { #x01 }:bv[8]) &&\n    o9[t]:bv[24] = { #x00000a }:bv[24]\n)."
+       "  # genesis: the fee term inside the one always block")
+check(cruise.fee_edge({"consensus_rules": GEN}, 8) == {"amount": 8, "fee": 10, "step": None, "rule": "always ( o9[t]:bv[24] = { #x00000a }:bv[24] )."},
+      "the genesis rules: a flat fee of 10, the payment as planned")
+check(cruise.fee_edge(gov(), 8)["fee"] == 10, "the short form the tests use reads the same")
+STEP = "always ( (i1[t]:bv[24] > { 1000 }:bv[24]) ? o9[t]:bv[24] = { 20 }:bv[24] : o9[t]:bv[24] = { 10 }:bv[24] )."
+e_ = cruise.fee_edge({"consensus_rules": STEP}, 8)
+check(e_ and (e_["amount"], e_["fee"], e_["step"]) == (1001, 20, [1000, 1001]), f"a fee that steps up above 1,000: the payment sits right above the step, 1,001 at 20 ({e_})")
+check(cruise.fee_edge({"consensus_rules": STEP.replace("1000", "9000")}, 8)["amount"] == 8, f"a step above {cruise.EDGE_MAX:,}: not tried, the payment as planned (10)")
+check(cruise.fee_edge({"consensus_rules": GEN + "\nalways ( o9[t]:bv[24] = { 25 }:bv[24] )."}, 8)["fee"] == 25,
+      "the revisions of a rule change after it: the later o9 wins")
+check(cruise.fee_edge({"consensus_rules": "always ( o9[t]:bv[24] = i1[t]:bv[24] / { 100 }:bv[24] )."}, 2550) is not None
+      and cruise.fee_edge({"consensus_rules": "always ( o9[t]:bv[24] = i1[t]:bv[24] / { 100 }:bv[24] )."}, 2550)["fee"] == 25,
+      "a fee computed from the amount: answered for that amount, 1% of 2,550 is 25")
+for why, rules in (("no fee rule in the node's answer", "always ( o7[t]:bv[8] = { #x01 }:bv[8] )."),
+                   ("a fee that depends on the balance", "always ( (i2[t]:bv[24] > { 50 }:bv[24]) ? o9[t]:bv[24] = { 20 }:bv[24] : o9[t]:bv[24] = { 10 }:bv[24] )."),
+                   ("a fee the rule leaves open", "always ( o9[t]:bv[24] > { 5 }:bv[24] )."),
+                   ("no fee at all", "always ( o9[t]:bv[24] = { 0 }:bv[24] )."),
+                   ("a fee of 1% of 8, which is 0", "always ( o9[t]:bv[24] = i1[t]:bv[24] / { 100 }:bv[24] )."),
+                   ("text that is no rule", "always ( o9[t]:bv[24] = = )."), ("nothing", "")):
+    check(cruise.fee_edge({"consensus_rules": rules}, 8) is None, f"no edge to try: {why}")
+check(cruise.asked_fee({"status": "error", "error": {"code": "FEE_LIMIT_TOO_LOW", "details": {"required_fee": 12}}}) == 12
+      and cruise.asked_fee({"error": "FEE_LIMIT_TOO_LOW: required estimated fee 30, fee_limit 9"}) == 30 and cruise.asked_fee({"ok": False}) is None,
+      "the fee the node names in its refusal, as details or in its words")
+
 # ---------- Black Sequence, Tuesday 18:00: pirates whose tricks the chain must refuse ----------
 TUE = next(t for t, k in cruise.calls_near(WED + 7 * 86400) if k == "pirates")
 check(cruise.berlin_day(TUE).weekday() == 1 and (TUE - cruise.berlin_t(cruise.berlin_day(TUE), 0)) == 18 * 3600, "the pirates call on Tuesday at 18:00")
@@ -339,7 +365,7 @@ check(len(cruise.plan("pirates", TUE, set(), {"trick"}, {k: 1 for k in cruise.TR
 check(C.next_call(TUE - 3600)[1] == "pirates" and C.next_call(TUE - 3600, surprise=False)[1] == "dryrun",
       "the pirates come unannounced: the next call named to pages and posts is the one after them")
 
-CH = {"seq": {}, "hole": False, "sent": [], "ret": {}}
+CH = {"seq": {}, "hole": False, "sent": [], "ret": {}, "dear": 0}
 
 
 async def chain(cmd: str):
@@ -359,7 +385,7 @@ async def chain(cmd: str):
     tx = json.loads(rest)
     pk, t = tx["sender_pubkey"], tx["tx_type"]
     rid = hashlib.sha256(rest.encode()).hexdigest()
-    err = lambda c: {"status": "error", "error": {"code": c, "message": c.lower()}}  # noqa: E731
+    err = lambda c, **x: {"status": "error", "error": {"code": c, "message": c.lower(), **({"details": x} if x else {})}}  # noqa: E731
     if tx["expiration_time"] < T[0] or tx["expire_at_height"] <= 901:
         return err("TX_EXPIRED")
     if tx["sequence_number"] != CH["seq"].get(pk, 0):
@@ -379,8 +405,9 @@ async def chain(cmd: str):
             return err("TX_INVALID")
         if any(int(x[2]) > (1 << 24) - 1 for x in ops):
             return err("TX_INVALID")
-        if int(tx["fee_limit"]) < 1:
-            return err("FEE_LIMIT_TOO_LOW")
+        need = (10 + CH["dear"]) * max(1, len(ops))   # the fee rule's 10 a transfer (gov below); "dear": a node that asks more
+        if int(tx["fee_limit"]) < need:   # sendtx.py ~1415: checked after the transfer dry run, before the funds
+            return err("FEE_LIMIT_TOO_LOW", required_fee=need, fee_limit=int(tx["fee_limit"]))
         if sum(int(x[2]) for x in ops) > 100000 and not (CH["hole"] and len(ops) <= 1):   # the modelled hole only lets a single-transfer overspend slip
             return err("INSUFFICIENT_FUNDS")
     elif t == "retractable_transfer":   # a booking: kept, in a block at once for the test, listed by getretractables
@@ -418,6 +445,14 @@ check({e["code"] for e in tricks} == {"INSUFFICIENT_FUNDS", "INVALID_SEQUENCE", 
       and {e["trick"] for e in tricks} == set(cruise.TRICKS), f"{len(cruise.TRICKS)} tricks, every one refused, eleven different answers")
 check(all(x is True for x in LOADS) and sum(s1["refused"].values()) == 0, "tricks are no refusals: not for the brakes, not on the load page")
 check(all(c["right"] == c["tried"] > 0 for c in s1["tricks"].values()), "the summary counts each trick: tried, stopped, stopped for the right reason")
+ed = [e for e in tricks if e["trick"] == "edge"]
+check(ed and all(e["fee"] == 10 and e["fee_limit"] == 9 and e["tx"]["fee_limit"] == "9" and e["asked"] == 10 and e["amount"] == 8 for e in ed),
+      "the fee edge: a payment of 8 allowing 9 of fee, one less than the rule's 10, refused; the node names 10 too")
+inside = [x for x in CH["sent"] if x["sender_pubkey"] in {e["from"] for e in ed} and x["fee_limit"] == "10"]
+check(all(e["inside"]["ok"] is True and e["inside"]["fee_limit"] == 10 and e["inside"]["hash"] for e in ed) and len(inside) >= len(ed)
+      and all(x["sequence_number"] == e["seq"] for e, x in zip(ed, inside)),
+      "and right after it the same payment allowing exactly 10 goes through, at the same sequence number")
+check(all("went through" in e["note"] and not e.get("odd") for e in ed), "the logbook says both sides of the edge")
 check(s1["per_min"] == cruise.RATE and [c for c in s1["changed"] if c["what"] != "stops planned a minute"] == [],
       "a clean first visit at full pace changes nothing but the plan's measure of our node")
 
@@ -505,6 +540,25 @@ check(P.tune["pirates"]["tricks"]["overspend"] == 1, "a trick that got through i
 with open(P.released_path, "w") as f:
     json.dump([s3["id"]], f)
 check(any(e.get("through") for e in P.route("/cruise/log", "n=2000")["entries"]), "up cruise release <visit>: then the logbook shows it in full")
+
+# a node that asks more than the fee rule: the payment allowing exactly the rule's fee is refused too ("odd"), held back like a finding
+CH["dear"], CH["hole"] = 1, False
+vo = {"id": "2026-12-01-pirates", "ship": "pirates", "skipped": 0, "acts": [], "done": set(), "left_out": []}
+asyncio.run(P.send_trick(vo, {"i": 7, "p": 3, "kind": "trick", "trick": "edge", "to": "market", "amount": 8}, chain, gov, "calm"))
+eo = P.logbook[-1]
+check(eo["trick"] == "edge" and eo["right"] and eo["odd"] and eo["inside"]["code"] == "FEE_LIMIT_TOO_LOW" and eo["inside"]["asked"] == 11
+      and vo["tricks"]["edge"]["odd"] == 1 and "may be our reading" in eo["note"],
+      "a node that asks 11 where the rule says 10: the payment allowing exactly 10 is refused too, an odd edge")
+check(P.held()["entries"][0] == eo and P.held()["incidents"][0]["kind"] == "edge refused" and P.held()["incidents"][0]["fee_rule"],
+      "held back and reported privately, like a trick that got through")
+pub = P.route("/cruise/log", "n=2000&visit=2026-12-01-pirates")["entries"]
+check(pub and all(e.get("held") and "inside" not in e and "odd" not in e for e in pub) and P.route("/cruise/incidents")["incidents"][0].get("held"),
+      "the public logbook and incidents show only that something is held back")
+check(P.public({"id": vo["id"], "tricks": vo["tricks"]})["tricks"]["edge"] == {"held": True} and "edge" not in P.tricks_seen(vo)["by"],
+      "nor do the visit's summary and the island's count of refused tricks")
+t_ = P.tune_after({**vo, "landed": True, "left": None, "refused": {}, "trial": []}, {"unanswered": 0})
+check(P.tune["pirates"]["calm"]["edge"] == 0 and not any("edge" in c["what"] for c in t_), "an odd edge is no calm visit: it keeps coming as often")
+CH["dear"] = 0
 
 # our node slow: the next visit goes one a minute slower, a clean one after it one faster again
 P.tune["pirates"]["rate"] = cruise.RATE

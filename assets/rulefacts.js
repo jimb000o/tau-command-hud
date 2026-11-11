@@ -1,5 +1,7 @@
 /* Rule facts: what a Tau rule answers, for every possible transfer. Used by the X-ray, the case builder and
-   "what would pass" on /playground/; the same reading is in infra/relay/rulefacts.py and infra/alerts/rulefacts.py.
+   "what would pass" on /playground/, and by meaning(): what a change to the network's rules decides differently
+   (the box on /proposals/ and /history/). The same reading is in infra/alerts/rulefacts.py (the Telegram posts) and
+   its twin infra/relay/rulefacts.py; tests/meaning-cases.json holds the lines both must write.
 
    A rule is one `always ( … ).` unit. It speaks about the inputs of one transfer (i1 amount, i3 sender,
    i4 receiver, i5 block time, …) and one answer (o5 for a personal rule). How the engine turns the rule into
@@ -537,16 +539,148 @@
     return res;
   }
 
+  /* ================ a change to the network's rules: what it decides differently ================ */
+  /* The node folds a rule change into the rules in force output by output: each output the change defines gets its
+     new definition, every other output keeps the old one. meaning() compares, for each output the change redefines,
+     the old definition with the new one over every possible case and says where the answer differs. Outputs whose
+     answer is yes or no (any value but 0 is yes, as the node reads o5, o6 and o7) and the fee outputs (an amount)
+     are read; any other output is only named. Same cutting as read(), so it is exact where it answers. */
+  const STREAMS = {
+    o5: { kind: "yesno", topic: "Personal rule", every: "every transfer", yes: "Newly passing", no: "Newly blocked" },
+    o6: { kind: "yesno", topic: "Which blocks count as valid", every: "every block", yes: "Newly accepted", no: "Newly rejected" },
+    o7: { kind: "yesno", topic: "Who may make blocks", every: "every proposer", yes: "Newly allowed to make blocks", no: "Newly barred from making blocks" },
+    o8: { kind: "value", topic: "Custom fee", every: "every transfer" },
+    o9: { kind: "value", topic: "Base fee per transaction", every: "every transfer" },
+  };
+  const norm = s => String(s).replace(/\s+/g, "");
+  function bodyOf(text) {
+    const t = stripComments(text), m = /\balways\s*\(/.exec(t);
+    if (!m) return t.trim().replace(/\.\s*$/, "");
+    let depth = 0; const start = m.index + m[0].length - 1;
+    for (let i = start; i < t.length; i++) {
+      if (t[i] === "(") depth++;
+      else if (t[i] === ")" && --depth === 0) return t.slice(start + 1, i);
+    }
+    return t.slice(start + 1);
+  }
+  function splitAnd(b) {
+    const parts = []; let depth = 0, cur = "";
+    for (let i = 0; i < b.length; i++) {
+      const ch = b[i];
+      if ("({[".includes(ch)) depth++; else if (")}]".includes(ch)) depth--;
+      if (depth === 0 && b.startsWith("&&", i)) { parts.push(cur); cur = ""; i++; continue; }
+      cur += ch;
+    }
+    parts.push(cur);
+    return parts.map(p => p.trim()).filter(Boolean);
+  }
+  /* output stream → the part of the rule that defines it (as assets/rulediff.js and infra/alerts/explain.py split it) */
+  function clausesOf(text) {
+    const res = {};
+    for (const part of splitAnd(bodyOf(text))) for (const s of new Set(part.match(/\bo\d+(?=\[t\])/g) || [])) res[s] = part;
+    return res;
+  }
+  /* the value an output takes in one case: the one value the rule allows, "open" when it allows more than one
+     (for o5 to o7 the engine then answers 0; for a fee nobody measured it), "none" when it allows none */
+  function valueOf(allowed, cuts) {
+    if (!allowed.length) return "none";
+    if (allowed.length === 1) { const p = cuts[pieceOf(cuts, allowed[0])]; if (p.lo === p.hi) return allowed[0]; }
+    return "open";
+  }
+  /* diff() for an output whose answer is an amount: the cases where the value changes */
+  function valueDiff(before, after, o) {
+    let a, b, en;
+    try { a = only(compile(before, o)); b = only(compile(after, o)); en = enumerate([a, b], o); }
+    catch (e) { if (e instanceof Outside) return { ok: false, code: e.code, why: e.message }; throw e; }
+    const { c, ins, cells } = en;
+    if ((c.classOf[o] || []).some(y => y[0] === "i")) return { ok: false, code: "computes", why: `${o} follows ${c.classOf[o].filter(y => y[0] === "i").join(", ")}` };
+    const cuts = c.cuts[o];
+    for (const cell of cells) {
+      cell.was = a.writes ? valueOf(cell.per[0].allowed, cuts) : "open";
+      cell.now = b.writes ? valueOf(cell.per[1].allowed, cuts) : "open";
+      delete cell.per;
+    }
+    const key = cell => String(cell.was) + ">" + String(cell.now);
+    const changed = cells.filter(cell => String(cell.was) !== String(cell.now));
+    const shared = ins.filter(x => c.classOf[x].filter(y => y[0] === "i").length > 1);
+    const inputs = ins.map(x => ({
+      name: x, width: c.W[x], pieces: c.cuts[x], shared: shared.includes(x),
+      groups: shared.includes(x) ? c.cuts[x].map((_, i) => [i]) : groupsOf(x, ins, cells, c.cuts[x], key),
+    }));
+    return { ok: true, out: o, inputs, cells, changed, read: readInputs(ins, cells, key), same: !changed.length };
+  }
+  /* the cases of one kind of change: every case, one box of input ranges ("all"), a few boxes ("any"; two boxes that
+     differ in one input only become one), or "some" when inputs compared with each other decide it */
+  function whereOf(r, sub) {
+    const mem = new Set(sub), names = r.inputs.map(x => x.name);
+    const read = readInputs(names, r.cells, cell => mem.has(cell));
+    if (!read.length) return { every: true };
+    const X = r.inputs.filter(x => read.includes(x.name));
+    if (X.some(x => x.shared)) return { some: true, inputs: X.map(x => x.name) };
+    const at = (x, cell) => pieceOf(x.pieces, cell.v[x.name]);
+    let boxes = [...new Set(sub.map(cell => X.map(x => at(x, cell)).join(",")))].map(k => k.split(",").map(i => [+i]));
+    for (let again = true; again;) {
+      again = false;
+      for (let j = 0; j < X.length; j++) {
+        const by = new Map();
+        for (const b of boxes) {
+          const k = b.map((g, i) => i === j ? "" : g.join(".")).join(",");
+          if (!by.has(k)) { by.set(k, b); continue; }
+          const m = by.get(k);
+          m[j] = [...new Set([...m[j], ...b[j]])].sort((p, q) => p - q);
+          again = true;
+        }
+        boxes = [...by.values()];
+      }
+    }
+    const asConds = b => b.map((group, j) => ({ input: X[j].name, width: X[j].width, pieces: X[j].pieces, group }));
+    if (boxes.length === 1) return { all: asConds(boxes[0]) };
+    return { any: boxes.slice(0, 4).map(asConds), more: Math.max(0, boxes.length - 4) };
+  }
+  function meaning(spec, revisions) {
+    const next = {};
+    for (const r of revisions || []) Object.assign(next, clausesOf(r));
+    const streams = [];
+    for (const s of Object.keys(next).sort((a, b) => +a.slice(1) - +b.slice(1))) {
+      const was = spec ? spec[s] : null, now = next[s], info = STREAMS[s];
+      if (was != null && norm(was) === norm(now)) continue;
+      const kind = info ? info.kind : "other";
+      if (was == null || !info) { streams.push({ stream: s, kind, ok: false, code: was == null ? "new" : "other" }); continue; }
+      const before = `always ( ${was} ).`, after = `always ( ${now} ).`;
+      const r = kind === "yesno" ? diff(before, after, { out: s }) : valueDiff(before, after, s);
+      if (!r.ok) { streams.push({ stream: s, kind, ok: false, code: r.code, why: r.why }); continue; }
+      const say = kind === "yesno" ? (d => d === "silent" ? "pass" : OUTCOME[d]) : (v => String(v));
+      const by = new Map();
+      for (const cell of r.changed) {
+        const was = say(cell.was), now = say(cell.now);
+        // a yes/no output gets one line per head: "No answer fits any more", whatever it answered before
+        const k = kind !== "yesno" ? was + ">" + now : now === "fail" ? "fail" : was === "fail" ? "again" : now;
+        if (!by.has(k)) by.set(k, { was, now, cells: [] });
+        const g = by.get(k);
+        if (g.was !== was) g.was = null;
+        if (g.now !== now) g.now = null;
+        g.cells.push(cell);
+      }
+      const changes = [...by.values()].map(g => ({ was: g.was, now: g.now, where: whereOf(r, g.cells) }));
+      streams.push({ stream: s, kind, ok: true, same: r.same, changes });
+    }
+    return { ok: streams.every(x => x.ok), same: streams.every(x => x.ok && x.same), streams };
+  }
+
   /* ================ words ================ */
   /* English phrases for the pages (each one a key of the page dictionaries, so it is translated whole) */
-  const LABEL = { i1: "amount", i2: "balance", i3: "sender", i4: "receiver", i5: "block time", i12: "sender" };
+  const LABEL = {
+    i1: "amount", i2: "balance", i3: "sender", i4: "receiver", i5: "block time", i12: "sender",
+    i6: "block height", i7: "block time", i8: "proposer", i9: "previous block", i10: "signature check", i11: "claims",
+    i13: "proposer key", i14: "proposer balance", i15: "eligibility mode",
+  };
   const label = x => LABEL[x] || x;
-  const isTime = x => x === "i5";
+  const isTime = x => x === "i5" || x === "i7";
   const isAddr = (x, W) => !isTime(x) && W === 384;
   const fmtNum = v => BigInt(v).toLocaleString("en-US");
   function fmtTime(v) {
     const s = Number(v);
-    if (!(s >= 0 && s < 8.64e12)) return fmtNum(v);
+    if (!(s >= 0 && s <= 253402300799)) return fmtNum(v);      // up to the year 9999
     const iso = new Date(s * 1000).toISOString();
     if (iso.slice(11, 19) === "00:00:00") return iso.slice(0, 10);
     return iso.slice(0, 10) + " " + (iso.slice(17, 19) === "00" ? iso.slice(11, 16) : iso.slice(11, 19)) + " UTC";
@@ -601,8 +735,54 @@
   }
   const SAYS = { pass: "passes", block: "blocked", open: "no answer: blocked", none: "fails" };
 
-  const api = { Outside, stripComments, parse, read, answer, wouldPass, diff, edges, OUTCOME, SAYS,
-    words: { label, fmtNum, fmtTime, fmtAddr, hexOf, stretchWords, groupWords, stretches, pieceOf, isAddr, isTime } };
+  /* one condition of a meaning() change in words, as parts that are each a key of the page dictionaries:
+     ["block height", "exactly 0"], ["proposer", "other than a1fe40…7d2b"], ["signature check failed"]; null = any */
+  function condParts(c, names) {
+    const x = c.input, W = c.width, ps = c.pieces, g = c.group, inG = new Set(g);
+    if (x === "i10") {                      // the host's signature check: 1 when it verified the block's signature, else 0
+      const zero = g.some(i => ps[i].lo === 0n), other = g.some(i => ps[i].hi > 0n);
+      return zero && other ? null : [zero ? "signature check failed" : "signature check passed"];
+    }
+    if (isAddr(x, W)) {
+      const point = i => ps[i].lo === ps[i].hi, all = ps.map((_, i) => i);
+      if (all.filter(i => !point(i)).every(i => inG.has(i))) {
+        const not = all.filter(i => point(i) && !inG.has(i)).map(i => fmtAddr(ps[i].lo, W, names));
+        return not.length ? [label(x), `other than ${not.join(", ")}`] : null;
+      }
+      if (g.every(point)) return [label(x), g.map(i => fmtAddr(ps[i].lo, W, names)).join(", ")];
+    }
+    const ss = stretches(ps, g);
+    if (ss.length === 1 && ss[0].lo === 0n && ss[0].hi === mask(W)) return null;
+    const res = [label(x)];
+    ss.forEach((s, i) => { if (i) res.push("or"); res.push(stretchWords(x, W, s, names, false)); });
+    return res;
+  }
+  /* meaning() in English, one line per change: { stream, topic, head, items, more }. items: one entry per case box
+     (one for "all", a few for "any"), each a list of conditions, each condition a list of parts (each part a key of
+     the page dictionaries). Read as text by lineText(): "Newly rejected: block height exactly 0 and signature check passed" */
+  function meaningLines(m, names) {
+    const lines = [];
+    for (const s of m.streams) {
+      if (!s.ok) continue;
+      const info = STREAMS[s.stream];
+      const fmtV = v => v === "open" ? "left open" : v === "none" ? "no answer" : `${fmtNum(v)} AGRS`;
+      for (const ch of s.changes) {
+        const head = s.kind === "yesno"
+          ? ch.now === "fail" ? "No answer fits any more" : ch.was === "fail" ? "An answer fits again" : ch.now === "pass" ? info.yes : info.no
+          : `${fmtV(ch.was)} → ${fmtV(ch.now)}`;
+        const w = ch.where, conds = list => list.map(c => condParts(c, names)).filter(Boolean);
+        const some = () => [["some cases, depending on", ...[...new Set(w.inputs.map(label))].flatMap((t, i) => i ? ["and", t] : [t])]];
+        let items = w.every ? [[[info.every]]] : w.some ? [some()] : w.all ? [conds(w.all)] : w.any.map(conds);
+        items = items.map(it => it.length ? it : [[info.every]]);
+        lines.push({ stream: s.stream, topic: info.topic, head, items, more: w.more || 0 });
+      }
+    }
+    return lines;
+  }
+  const lineText = l => `${l.head}: ${l.items.map(it => it.map(c => c.join(" ")).join(" and ")).join("; ")}${l.more ? `; and ${l.more} more` : ""}`;
+
+  const api = { Outside, stripComments, parse, read, answer, wouldPass, diff, edges, meaning, clausesOf, OUTCOME, SAYS, STREAMS,
+    words: { label, fmtNum, fmtTime, fmtAddr, hexOf, stretchWords, groupWords, stretches, pieceOf, isAddr, isTime, meaningLines, lineText } };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.RuleFacts = api;
 })(typeof window !== "undefined" ? window : globalThis);

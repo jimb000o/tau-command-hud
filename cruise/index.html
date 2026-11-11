@@ -74,6 +74,7 @@ th { font: 600 11px var(--display); letter-spacing: .12em; text-transform: upper
 td.n { text-align: right; font-variant-numeric: tabular-nums; }
 td .ok { color: var(--ok); } td .no { color: var(--bad); } td .skip { color: var(--behind); } td .ev { color: #fff; font-weight: 600; }
 td .note { color: var(--dim); white-space: normal; max-width: 44ch; display: inline-block; }
+td.trick { white-space: normal; min-width: 26ch; max-width: 40ch; }   /* a pirate's trick in words wraps, so the node's answer stays in view */
 td a { color: var(--dim); } td a:hover { color: #fff; }
 .more { margin: 10px 0 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .more button { font: 600 11px var(--display); letter-spacing: .08em; text-transform: uppercase; color: #fff; background: transparent; border: 1px solid var(--hair); border-radius: 999px; padding: 8px 14px; cursor: pointer; min-height: 36px; }
@@ -152,7 +153,11 @@ const KINDS = { pay: "pays", book: "books", cancel: "cancels", bill: "bills", tr
 const TRICKS = { overspend: "pays more than the wallet holds", replay: "sends a payment the chain already took a second time", expired: "sends a payment whose time ran out", forged: "signs a payment with another pirate’s key",
   impostor: "pays from another pirate’s wallet with their own signature", freeride: "allows no fee at all for a payment", stale: "sends a payment whose block height deadline has passed", giant: "pays more than a transfer can carry",
   double: "sends two different payments for the same sequence number at once", poison: "pays several places in one payment, the last more than the wallet holds", cram: "packs more transfers into one payment than it may carry (over 64)", governance: "sends a payment carrying a field only the chain’s own transactions may set",
-  taxman: "submits a fee rule that would tax every wallet’s transfers, not only its own", stranger: "tries to take back another pirate’s booking", phantom: "tries to take back a booking the chain never had", late: "tries to take back a booking after its release time" };
+  taxman: "submits a fee rule that would tax every wallet’s transfers, not only its own", stranger: "tries to take back another pirate’s booking", phantom: "tries to take back a booking the chain never had", late: "tries to take back a booking after its release time",
+  edge: "allows one test AGRS less fee than the network’s fee rule asks for that very payment" };
+/* the fee edge: what the rule asks, what the pirate allowed, and the same payment allowing exactly the fee */
+const edgeNote = r => r.trick !== "edge" || r.fee == null ? "" : " · " + F("{a} allowed, the fee rule asks {b}", { a: N(r.fee_limit), b: N(r.fee) })
+  + (r.inside && r.inside.ok === true ? " · " + F("with {b} it went through", { b: N(r.inside.fee_limit) }) : "");
 const EVENTS = ["landed", "no landing", "left", "called off", "tuned"];
 const isEvent = r => EVENTS.includes(r.kind) || (r.kind === "escrow" && r.p == null);
 /* a booking ahead: its state, the chip's look, and one line on what it means */
@@ -213,7 +218,7 @@ function visitLabel(id, rows) {
 function answer(r) {
   if (r.kind === "tuned") return el("span", { class: "note" }, (r.changes || []).map(c => c.held ? T("a pirate trick: held back for now") : F("{w}: {a} → {b}", { w: T(c.what), a: c.from, b: c.to }) + " · " + T(c.because || "")).join("; "));
   if (r.held) return el("span", null, el("span", { class: "skip" }, T("held back")), el("span", { class: "note" }, " · " + T("a finding, reported privately to the team behind the testnet first")));
-  if (r.kind === "trick" && r.ok === false) return el("span", null, el("span", { class: "ok" }, T("stopped by the chain")), el("span", { class: "note" }, " · " + (r.code || "") + (r.right === false ? " · " + T("another answer than expected") : "")));
+  if (r.kind === "trick" && r.ok === false) return el("span", null, el("span", { class: "ok" }, T("stopped by the chain")), el("span", { class: "note" }, " · " + (r.code || "") + (r.right === false ? " · " + T("another answer than expected") : "") + edgeNote(r)));
   if (r.kind === "trick" && r.ok === true) return el("span", null, el("span", { class: "no" }, T("got through")), r.hash ? el("a", { href: "/explorer/?q=" + r.hash, title: r.hash }, " " + r.hash.slice(0, 8) + "…") : null);
   if (r.kind === "escrow") {
     if (r.p == null) return el("span", null, el("span", { class: "ev" }, T(r.status === "settled" ? "settled" : r.status === "bookings open" ? "bookings open" : r.status || "")),
@@ -246,7 +251,7 @@ function render() {
       el("td", { text: SHIPS[r.ship] || r.ship || "" }),
       el("td", { text: ev ? "" : F("no. {n}", { n: r.p }) }),
       el("td", null, ev ? el("span", { class: "ev", text: T(KINDS[r.kind] || r.kind) }) : T(KINDS[r.kind] || r.kind)),
-      el("td", { text: r.kind === "trick" && r.trick ? T(TRICKS[r.trick] || r.trick) : r.to ? T(PLACES[r.to] || r.to) : "" }),
+      el("td", { class: r.kind === "trick" && r.trick ? "trick" : null, text: r.kind === "trick" && r.trick ? T(TRICKS[r.trick] || r.trick) : r.to ? T(PLACES[r.to] || r.to) : "" }),
       el("td", { class: "n", text: r.amount != null ? N(r.amount) : "" }),
       el("td", null, answer(r))));
   });

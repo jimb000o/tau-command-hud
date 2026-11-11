@@ -113,6 +113,7 @@ import gazette
 import ai_meter
 import idni_digest
 import recap
+import rulefacts
 import tickerwatch
 
 try:
@@ -414,6 +415,7 @@ def replay(blocks: dict[int, dict], gov: dict | None = None) -> tuple[list[dict]
                      "thr": thr, "rev": None, "dups": [], "tx_id": tx_id}
                 p["explain"] = explain.explain(p["revisions"], p["patch"], spec)
                 p["diff"] = explain.diff(p["revisions"], spec) if p["revisions"] else None
+                p["meaning"] = meaning_of(p["revisions"], spec)
                 p["title"] = p["explain"]["title"]
                 p["parts"] = [c["topic"] + ": " + c["text"] for c in p["explain"]["changes"]] or [p["title"]]
                 props[uid] = p
@@ -552,12 +554,34 @@ def describe(ev: dict, p: dict | None, head: int, pace: float | None) -> dict:
         rdiff = {"summary": explain.diff_summary(d), "lines": [r for r in d["lines"] if r[0] != " "][:DIFF_LINES],
                  "more": max(0, d["added"] + d["removed"] - DIFF_LINES)}
     note = SOLO_NOTE if k in ("proposed", "agreed") and p and p.get("thr") == 1 else None
+    mean = (p or {}).get("meaning") if k != "dropped" else None
     return {"headline": headline, "label": x.get("label"), "what": what, "why": why, "facts": facts, "diff": rdiff, "note": note,
+            "meaning": mean,
             "what_title": "What changed" if k == "active" else "What it would change" if k == "dropped" else "What changes",
             "severity": x.get("severity"), "body": body, "link": link}
 
 
 DIFF_LINES = 6  # changed lines shown in a post; the rest is on the page
+MEANING_LINES = 4  # lines of "what it decides differently" in a post; the rest is on the page
+
+
+def meaning_of(revisions: list, spec: dict) -> dict | None:
+    """What a rule change decides differently from the rules in force (spec), read for every case by rulefacts.py, the
+    same reading as the box on /proposals/: {same, lines, unread}. None when it carries no rule text, its text equals
+    the rules in force, or none of the outputs it changes can be read exactly."""
+    if not revisions:
+        return None
+    try:
+        m = rulefacts.meaning(spec, revisions)
+    except Exception as e:  # a reading never stops a post
+        log.warning("rule meaning not read: %s", e)
+        return None
+    if not any(s["ok"] for s in m["streams"]):
+        return None
+    lines = [f"{line['topic']} · {rulefacts.line_text(line)}" for line in rulefacts.meaning_lines(m)]
+    unread = [(rulefacts.STREAMS.get(s["stream"]) or {}).get("topic", f"output {s['stream']}") for s in m["streams"] if not s["ok"]]
+    return {"same": m["same"], "lines": lines, "unread": unread}
+
 
 NOW_TENSE = [("would cost", "costs"), ("would rest", "rests"), ("could no longer", "can no longer"), ("would be accepted", "are accepted"),
              ("would make", "make"), ("would follow", "follow"), ("Nothing would change", "Nothing changed"), ("If it takes effect, ", "")]
@@ -581,6 +605,19 @@ def telegram_text(item: dict) -> str:
         out += ["", f"<b>{e(item.get('why_title', 'Why it matters'))}</b>", warn + e(item["why"])]
     if len(item["what"]) > 1:  # one change is already the headline
         out += ["", f"<b>{e(item.get('what_title', 'What changes'))}</b>"] + [f"• {e(w)}" for w in item["what"]]
+    mean = item.get("meaning")
+    if mean:  # exact, not sampled: the same reading as the box on /proposals/
+        if mean["same"]:
+            out += ["", "<b>What it decides differently</b>", "Nothing. Read for every case, the new text decides exactly as the old one."]
+        else:
+            rows = [f"• {e(t)}" for t in mean["lines"][:MEANING_LINES]]
+            if len(mean["lines"]) > MEANING_LINES:
+                rows.append(f"… {len(mean['lines']) - MEANING_LINES} more on the page")
+            if not mean["lines"]:
+                rows.append("No difference where it can be read.")
+            if mean["unread"]:
+                rows.append(e("Not read exactly: " + ", ".join(mean["unread"]) + "."))
+            out += ["", "<b>What it decides differently</b> (read for every case)"] + rows
     if item["kind"] == "restart":
         out += [""] + [e(f) for f in facts]
         facts = []
