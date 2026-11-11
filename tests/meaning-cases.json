@@ -1,0 +1,261 @@
+{
+ "about": "What a change to the network's rules decides differently: the lines that assets/rulefacts.js (the box on /proposals/ and /history/) and infra/alerts/rulefacts.py (the Telegram posts) must both write. `spec` is the genesis rule text, `before` revisions in force before the change, `revisions` the change; `streams` says per changed output whether it was read (same / changed) or why not. Checked by tests/rulefacts.mjs and infra/alerts/test_rulefacts.py.",
+ "spec": "always (\n    o6[t]:bv[16] = i10[t]:bv[16] &&\n    o7[t]:bv[16] = { 1 }:bv[16]\n &&\n    o9[t]:bv[24] = { #x00000a }:bv[24]\n)\n",
+ "cases": [
+  {
+   "id": "fee20",
+   "about": "the base fee goes from 10 to 20",
+   "revisions": [
+    "always (o9[t]:bv[24] = { #x000014 }:bv[24])"
+   ],
+   "ok": true,
+   "same": false,
+   "streams": "o9:changed",
+   "lines": [
+    "Base fee per transaction · 10 AGRS → 20 AGRS: every transfer"
+   ]
+  },
+  {
+   "id": "whitelist",
+   "about": "one validator may make blocks (IDNI's wallet template)",
+   "revisions": [
+    "# WHITELIST PROPOSER\nalways (\n    o6[t]:bv[16] = i10[t]:bv[16] &&\n    ((i8[t]:bv[384] = { #xa1fe40d5e4f155a1af7cb5804ec1ecba9ee3fb1f594e8a7b398b7ed69a6b0ccfd5bb6fd6d8ff965f8e1eb98d5abe7d2b }:bv[384]) ? \n        o7[t]:bv[16] = { 1 }:bv[16] : \n        o7[t]:bv[16] = { 0 }:bv[16]\n    )\n)."
+   ],
+   "ok": true,
+   "same": false,
+   "streams": "o7:changed",
+   "lines": [
+    "Who may make blocks · Newly barred from making blocks: proposer other than a1fe40…7d2b"
+   ]
+  },
+  {
+   "id": "whitelist-two",
+   "about": "two validators may make blocks",
+   "revisions": [
+    "# WHITELIST PROPOSER\nalways (\n    o6[t]:bv[16] = i10[t]:bv[16] &&\n    ((i8[t]:bv[384] = { #xa1fe40d5e4f155a1af7cb5804ec1ecba9ee3fb1f594e8a7b398b7ed69a6b0ccfd5bb6fd6d8ff965f8e1eb98d5abe7d2b }:bv[384] || i8[t]:bv[384] = { #xb07c0ffee1f155a1af7cb5804ec1ecba9ee3fb1f594e8a7b398b7ed69a6b0ccfd5bb6fd6d8ff965f8e1eb98d5abe7aa1 }:bv[384]) ? \n        o7[t]:bv[16] = { 1 }:bv[16] : \n        o7[t]:bv[16] = { 0 }:bv[16]\n    )\n)."
+   ],
+   "ok": true,
+   "same": false,
+   "streams": "o7:changed",
+   "lines": [
+    "Who may make blocks · Newly barred from making blocks: proposer other than a1fe40…7d2b, b07c0f…7aa1"
+   ]
+  },
+  {
+   "id": "whitelist-shrink",
+   "about": "from two validators to one",
+   "before": [
+    "# WHITELIST PROPOSER\nalways (\n    o6[t]:bv[16] = i10[t]:bv[16] &&\n    ((i8[t]:bv[384] = { #xa1fe40d5e4f155a1af7cb5804ec1ecba9ee3fb1f594e8a7b398b7ed69a6b0ccfd5bb6fd6d8ff965f8e1eb98d5abe7d2b }:bv[384] || i8[t]:bv[384] = { #xb07c0ffee1f155a1af7cb5804ec1ecba9ee3fb1f594e8a7b398b7ed69a6b0ccfd5bb6fd6d8ff965f8e1eb98d5abe7aa1 }:bv[384]) ? \n        o7[t]:bv[16] = { 1 }:bv[16] : \n        o7[t]:bv[16] = { 0 }:bv[16]\n    )\n)."
+   ],
+   "revisions": [
+    "# WHITELIST PROPOSER\nalways (\n    o6[t]:bv[16] = i10[t]:bv[16] &&\n    ((i8[t]:bv[384] = { #xa1fe40d5e4f155a1af7cb5804ec1ecba9ee3fb1f594e8a7b398b7ed69a6b0ccfd5bb6fd6d8ff965f8e1eb98d5abe7d2b }:bv[384]) ? \n        o7[t]:bv[16] = { 1 }:bv[16] : \n        o7[t]:bv[16] = { 0 }:bv[16]\n    )\n)."
+   ],
+   "ok": true,
+   "same": false,
+   "streams": "o7:changed",
+   "lines": [
+    "Who may make blocks · Newly barred from making blocks: proposer b07c0f…7aa1"
+   ]
+  },
+  {
+   "id": "halt",
+   "about": "no block is valid and nobody may make blocks",
+   "revisions": [
+    "always ( o6[t]:bv[16] = { 0 }:bv[16] && o7[t]:bv[16] = { 0 }:bv[16] )."
+   ],
+   "ok": true,
+   "same": false,
+   "streams": "o6:changed o7:changed",
+   "lines": [
+    "Which blocks count as valid · Newly rejected: signature check passed",
+    "Who may make blocks · Newly barred from making blocks: every proposer"
+   ]
+  },
+  {
+   "id": "unsigned",
+   "about": "every block counts as valid, signed or not",
+   "revisions": [
+    "always ( o6[t]:bv[16] = { 1 }:bv[16] )."
+   ],
+   "ok": true,
+   "same": false,
+   "streams": "o6:changed",
+   "lines": [
+    "Which blocks count as valid · Newly accepted: signature check failed"
+   ]
+  },
+  {
+   "id": "same-text",
+   "about": "the rules in force, written again",
+   "revisions": [
+    "always (\n  o6[t]:bv[16] = i10[t]:bv[16] &&\n  o7[t]:bv[16] = { 1 }:bv[16]\n)"
+   ],
+   "ok": true,
+   "same": true,
+   "streams": "",
+   "lines": []
+  },
+  {
+   "id": "rewrite",
+   "about": "the same answer written another way",
+   "revisions": [
+    "always ( o7[t]:bv[16] = { #x0001 }:bv[16] )."
+   ],
+   "ok": true,
+   "same": true,
+   "streams": "o7:same",
+   "lines": []
+  },
+  {
+   "id": "height",
+   "about": "block 0 is never valid",
+   "revisions": [
+    "always ( ((i6[t]:bv[64] = { 0 }:bv[64]) ? o6[t]:bv[16] = { 0 }:bv[16] : o6[t]:bv[16] = i10[t]:bv[16]) )."
+   ],
+   "ok": true,
+   "same": false,
+   "streams": "o6:changed",
+   "lines": [
+    "Which blocks count as valid · Newly rejected: block height exactly 0 and signature check passed"
+   ]
+  },
+  {
+   "id": "height-or-time",
+   "about": "cases that are not one box of ranges: listed one by one",
+   "revisions": [
+    "always ( ((i6[t]:bv[64] = { 0 }:bv[64]) ? o6[t]:bv[16] = { 0 }:bv[16] : ((i7[t]:bv[64] >= { 1798761600 }:bv[64]) ? o6[t]:bv[16] = { 0 }:bv[16] : o6[t]:bv[16] = i10[t]:bv[16])) )."
+   ],
+   "ok": true,
+   "same": false,
+   "streams": "o6:changed",
+   "lines": [
+    "Which blocks count as valid · Newly rejected: block height exactly 0 and block time before 2027-01-01 and signature check passed; block time on or after 2027-01-01 and signature check passed"
+   ]
+  },
+  {
+   "id": "proposer-key",
+   "about": "two inputs compared with each other: no plain range",
+   "revisions": [
+    "always ( ((i8[t]:bv[384] = i13[t]:bv[384]) ? o7[t]:bv[16] = { 1 }:bv[16] : o7[t]:bv[16] = { 0 }:bv[16]) )."
+   ],
+   "ok": true,
+   "same": false,
+   "streams": "o7:changed",
+   "lines": [
+    "Who may make blocks · Newly barred from making blocks: some cases, depending on proposer and proposer key"
+   ]
+  },
+  {
+   "id": "fee-step",
+   "about": "a fee that depends on the amount",
+   "revisions": [
+    "always ( (i1[t]:bv[24] > { 1000 }:bv[24]) ? o9[t]:bv[24] = { 20 }:bv[24] : o9[t]:bv[24] = { 10 }:bv[24] )."
+   ],
+   "ok": true,
+   "same": false,
+   "streams": "o9:changed",
+   "lines": [
+    "Base fee per transaction · 10 AGRS → 20 AGRS: amount 1,001 or more"
+   ]
+  },
+  {
+   "id": "fee-open",
+   "about": "a fee the rule leaves open",
+   "revisions": [
+    "always ( o9[t]:bv[24] > { 5 }:bv[24] )."
+   ],
+   "ok": true,
+   "same": false,
+   "streams": "o9:changed",
+   "lines": [
+    "Base fee per transaction · 10 AGRS → left open: every transfer"
+   ]
+  },
+  {
+   "id": "fee-none",
+   "about": "a fee no answer fits",
+   "revisions": [
+    "always ( (o9[t]:bv[24] = { 5 }:bv[24] && o9[t]:bv[24] = { 6 }:bv[24]) )."
+   ],
+   "ok": true,
+   "same": false,
+   "streams": "o9:changed",
+   "lines": [
+    "Base fee per transaction · 10 AGRS → no answer: every transfer"
+   ]
+  },
+  {
+   "id": "valid-none",
+   "about": "a block rule no answer fits",
+   "revisions": [
+    "always ( (o6[t]:bv[16] = { 0 }:bv[16] && o6[t]:bv[16] = { 1 }:bv[16]) )."
+   ],
+   "ok": true,
+   "same": false,
+   "streams": "o6:changed",
+   "lines": [
+    "Which blocks count as valid · No answer fits any more: every block"
+   ]
+  },
+  {
+   "id": "valid-back",
+   "about": "an answer fits again",
+   "before": [
+    "always ( (o6[t]:bv[16] = { 0 }:bv[16] && o6[t]:bv[16] = { 1 }:bv[16]) )."
+   ],
+   "revisions": [
+    "always ( o6[t]:bv[16] = i10[t]:bv[16] )."
+   ],
+   "ok": true,
+   "same": false,
+   "streams": "o6:changed",
+   "lines": [
+    "Which blocks count as valid · An answer fits again: every block"
+   ]
+  },
+  {
+   "id": "term-ternary",
+   "about": "a form the reader does not parse, plus an output not defined before",
+   "revisions": [
+    "# ONE PROPOSER\nalways (\n    o7[t]:bv[16] = (i8[t]:bv[384] = { #xa1fe40d5e4f155a1af7cb5804ec1ecba9ee3fb1f594e8a7b398b7ed69a6b0ccfd5bb6fd6d8ff965f8e1eb98d5abe7d2b }:bv[384]) ? { 1 }:bv[16] : { 0 }:bv[16] &&\n    o10[t]:bv[16] = i15[t]:bv[16]\n)"
+   ],
+   "ok": false,
+   "same": false,
+   "streams": "o7:text o10:new",
+   "lines": []
+  },
+  {
+   "id": "computes",
+   "about": "arithmetic on inputs",
+   "revisions": [
+    "always(o6[t]:bv[16]=((i10[t]:bv[16]&i10[t]:bv[16])|(i6[t]:bv[16]^i6[t]:bv[16])))."
+   ],
+   "ok": false,
+   "same": false,
+   "streams": "o6:computes",
+   "lines": []
+  },
+  {
+   "id": "two-outputs",
+   "about": "one part sets two outputs",
+   "revisions": [
+    "always ( ((i6[t]:bv[64] = { 0 }:bv[64]) ? (o6[t]:bv[16] = { 0 }:bv[16] && o7[t]:bv[16] = { 0 }:bv[16]) : (o6[t]:bv[16] = i10[t]:bv[16] && o7[t]:bv[16] = { 1 }:bv[16])) )."
+   ],
+   "ok": false,
+   "same": false,
+   "streams": "o6:outputs o7:outputs",
+   "lines": []
+  },
+  {
+   "id": "earlier-step",
+   "about": "reads an earlier step",
+   "revisions": [
+    "always ( o6[t]:bv[16] = i10[t-1]:bv[16] )."
+   ],
+   "ok": false,
+   "same": false,
+   "streams": "o6:temporal",
+   "lines": []
+  }
+ ]
+}

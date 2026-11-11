@@ -2923,5 +2923,6 @@
       "link": "/playground/",
       "image": "/assets/shots/playground-xray.png"
     }
-  }
+  },
+  {"tag": "Proposals", "on": "2026-11-11", "html": "Proposals and Time travel: each rule change now says in plain words what it decides differently, read for every possible case instead of tried on samples. For example “Who may make blocks · Newly barred from making blocks: proposer other than a1fe40…7d2b”, or “Base fee per transaction · 10 AGRS → 20 AGRS: every transfer”. A change that only writes the same rules another way now says it decides exactly as before. The Telegram posts about rule changes carry the same lines. The reader behind them is checked on every change against the real Tau engine’s answers."}
 ]
