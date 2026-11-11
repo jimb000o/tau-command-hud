@@ -65,6 +65,8 @@ KINDS = ("pay", "bill", "book", "cancel")
 # passenger as "new_wallet" and leave it out (relay/cruise.py NEW_WALLET_CODE); before, the answer was logged as a refusal.
 NEW_WALLET = "ADMISSION_UNAVAILABLE"
 NEW_WALLET_FACT = "passengers our node could not take (new wallets, not refusals)"
+NEW_WALLET_SAID = "of those, sent and answered so by our node"   # the rest were left out unsent; counts among the node's answers
+IN_PORT = "bookings made in port (not the bookings ahead)"   # blog_pics.visit_stats reads it for its tile
 NEW_WALLET_WHY = ("our node answered ADMISSION_UNAVAILABLE (\"temporarily unavailable\"): it keeps at most 254 wallet addresses and "
                   "all of them are in use, so it cannot take a wallet it has not seen before, while wallets it already knows work "
                   "as before. Sending again does not help. It is not a refusal by the chain's rules. We reported it as IDNI "
@@ -91,6 +93,9 @@ show on our side. "No answer from the node" is not a refusal; a refusal is the n
 - "Passengers our node could not take" are not refusals either: our node had no room for their new wallets (the facts \
 say why and that it is reported). Write it as our node's limit, never as the chain refusing them, and name no culprit. \
 Their sends got neither a yes nor a refusal, so when there are any, never write that every answer was a yes.
+- Two sets of bookings can appear and they are not the same: "bookings ahead in escrow" (fares paid days before to \
+the ship's till) and "bookings made in port" (paid to a place on the island at their time). Say which one you mean, \
+and never compare the count of one with the other.
 - Who reads this: the Tau community and the IDNI team, and both should be glad to read it. Choose and frame what you \
 tell so each sees what it gains: for the community what works and what they can try, for IDNI what a community node \
 under real traffic shows them and what held up on their testnet. Stay honest: say what went wrong on our side and own \
@@ -221,6 +226,7 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
     if nw:
         f[NEW_WALLET_FACT] = {"passengers": len({e.get("p") for e in nw}), "their sends the node could not take or the ship left out": len(nw),
                               "the node's answer": "temporarily unavailable (ADMISSION_UNAVAILABLE): neither a yes nor a refusal",
+                              NEW_WALLET_SAID: sum(1 for e in nw if e.get("kind") in KINDS and (e.get("ok") is False or e.get("code") or e.get("err"))),
                               "why": NEW_WALLET_WHY,
                               "how this call handled them": "the rule of the time counted them as refusals and sent each of their stops"
                               if nw_old else "each was left out for the rest of the call after the first answer, and is tried again on the next call"}
@@ -280,8 +286,13 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
         g = {k: v for k, v in g.items() if v or not k.startswith("not booked")}
         f["bookings ahead in escrow"] = g
     if checked and checked.get("checked"):   # a day without bookings has nothing to check, and the article says nothing of it
-        f["bookings checked after the visit"] = checked.get("checked")
-        f["bookings the chain had not paid out"] = len(checked.get("not_released") or [])
+        made, stuck = checked["checked"], len(checked.get("not_released") or [])
+        back = min(made, (f.get("sent and accepted") or {}).get("cancel") or 0)   # a withdrawn booking is not paid out
+        f[IN_PORT] = {"what they are": "retractable transfers made during the call to a place on the island (a dive, a treatment), "
+                                       "paid to the place by the chain at their time",
+                      "made": made, "withdrawn by their passenger during the call": back,
+                      "paid out to the place by the chain at their time": max(0, made - back - stuck),
+                      "still open after their time (the chain had not paid them out)": stuck}
     if s.get("tried"):
         f["new kinds now count as tried"] = {k: bool(x) for k, x in s["tried"].items()}
     mine = [i for i in incidents if i.get("visit") == f["visit"]]
@@ -338,11 +349,15 @@ def meaning_of(f: dict) -> dict:
     acc, ref = f.get("accepted in all") or 0, f.get("refused in all") or 0
     old = f.get("refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)") or 0
     una = (f.get("sends our node did not answer in time (not refusals)") or 0) + old
-    answered = acc + ref - old
+    said = (f.get(NEW_WALLET_FACT) or {}).get(NEW_WALLET_SAID) or 0   # temporarily unavailable: an answer, but no yes
+    answered = acc + ref - old + said
     if plan:
         m["share of the planned stops that went through"] = f"{round(100 * acc / plan)}%"
     if answered:
         m["share of the node's answers that were a yes"] = f"{round(100 * acc / answered)}%"
+        if said:
+            m["share of the node's answers that were temporarily unavailable (new wallets: neither a yes nor a refusal)"] = \
+                f"{round(100 * said / answered)}%"
     if una and f.get("sends logged"):
         m["share of sends our node did not answer in time"] = f"{round(100 * una / f['sends logged'])}%"
     t = f.get("our node's answer time to a send, seconds") or {}
