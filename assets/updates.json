@@ -2889,5 +2889,10 @@
     "tag": "Learn",
     "on": "2026-11-11",
     "html": "Learn Tau Language: your level can be changed at any time. The Level button above the lessons and above the step-by-step guide now says change; it brings back the level choice with your current level marked, and Keep my level closes it again. Your progress stays."
+  },
+  {
+    "tag": "Donations",
+    "on": "2026-11-11",
+    "html": "Donations: the page now says what the site costs per month in one figure, and what has been paid out so far. A new chart shows money paid out against donations received, day by day, how much of it donations have covered, and what it would take each month to cover the running costs. Bills not in yet, such as Codex and Photoshop, are named in one row and left out of the sums until their amounts are in."
   }
 ]
