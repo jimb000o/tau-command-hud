@@ -111,7 +111,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .head b { display: block; font: 700 22px/1.2 var(--display); color: #fff; overflow-wrap: anywhere; }
 .head div + div b { font-size: 18px; }
 .head span { color: var(--dim); font-size: 11.5px; }
-/* Paid out and donated since the first bill: two running totals, the same chart look as In numbers */
+/* Spent and donated since the first bill: two running totals, the same chart look as In numbers */
 .flow { margin: 0 0 12px; }
 .flow .chart { position: relative; height: 150px; }
 .flow svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
@@ -195,7 +195,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
         <h2 id="hGot">Received, on chain <span class="n" id="nGot"></span></h2>
         <div class="flow" id="flow" hidden>
           <div class="chart" id="flowChart"></div>
-          <div class="legend"><span><i></i><span id="lgGift">donated so far</span></span><span><i class="w"></i><span id="lgPaid">paid out so far</span></span></div>
+          <div class="legend"><span><i></i><span id="lgGift">donated so far</span></span><span><i class="w"></i><span id="lgPaid">spent so far</span></span></div>
           <p class="even" id="even"></p>
         </div>
         <div id="got"><p class="empty"><span class="state">Reading the Ethereum chain</span></p></div>
@@ -291,7 +291,7 @@ function flow(don) {
   if (!fx || !C.items.length) { $("head").hidden = true; return null; }
   const to = (n, c) => (c === RC ? n : n * fx.fiat[RC.toLowerCase()] / fx.fiat[c.toLowerCase()]);
   const now = Date.now(), month = C.items.reduce((a, c) => a + to(c.amount, c.cur), 0);
-  const ev = [];   // [{t, v, w: "p" paid out | "g" donated}]
+  const ev = [];   // [{t, v, w: "p" spent | "g" donated}]
   C.items.forEach(c => bills(c, now).forEach(t => ev.push({ t, v: to(c.amount, c.cur), w: "p" })));
   C.once.forEach(c => ev.push({ t: Date.parse(c.on + "T12:00:00Z"), v: to(c.amount, c.cur), w: "p" }));
   (don || []).forEach(x => { const v = x.fiat && x.fiat[RC.toLowerCase()]; if (isFinite(v)) ev.push({ t: x.ts * 1000, v, w: "g" }); });
@@ -301,7 +301,7 @@ function flow(don) {
   $("perMonth").textContent = G("≈ {v}", { v: money1(month) });
   $("perMonthL").textContent = G("a month now, at the {d} rate; time not counted", { d: dm(fx.ts * 1000) });
   $("paidAll").textContent = money1(paidAll);
-  $("paidAllL").textContent = firstBill ? G("paid out since {d}", { d: dm(firstBill.t) }) : "";
+  $("paidAllL").textContent = firstBill ? G("costs since {d}", { d: dm(firstBill.t) }) : "";
   $("head").hidden = false;
   return { ev, month, paidAll, gotAll };
 }
@@ -320,7 +320,7 @@ function drawFlow(f) {
   const yMax = tk[tk.length - 1], lab = Math.max(...tk.map(v => money1(v).length)) * 7 + 12, Lx = lab, R = 8, top = 8, B = 20, cw = w - Lx - R, ch = h - top - B;
   const x = t => Lx + (end === start ? cw / 2 : cw * (t - start) / (end - start)), y = v => top + ch - ch * v / (yMax || 1), f1 = n => n.toFixed(1);
   const steps = k => pts.map((q, j) => (j ? `H${f1(x(q.t))} V${f1(y(q[k]))}` : `M${f1(x(q.t))} ${f1(y(q[k]))}`)).join(" ");
-  let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${T("Paid out and donated so far")}"><defs><linearGradient id="gGift" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#39ff8a" stop-opacity=".2"/><stop offset="1" stop-color="#39ff8a" stop-opacity="0"/></linearGradient></defs>`;
+  let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${T("Spent and donated so far")}"><defs><linearGradient id="gGift" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#39ff8a" stop-opacity=".2"/><stop offset="1" stop-color="#39ff8a" stop-opacity="0"/></linearGradient></defs>`;
   tk.forEach(v => { s += `<line class="grid" x1="${Lx}" x2="${w - R}" y1="${f1(y(v))}" y2="${f1(y(v))}"/><text x="${Lx - 6}" y="${f1(y(v) + 4)}" text-anchor="end">${money1(v)}</text>`; });
   const n = pts.length, every = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(cw / 70))));
   for (let j = n - 1; j >= 0; j -= every) s += `<text x="${f1(x(pts[j].t))}" y="${h - 4}" text-anchor="${j === n - 1 ? "end" : "middle"}">${new Date(pts[j].t).toLocaleDateString(L === "en" ? "en-GB" : L, { day: "numeric", month: "short", timeZone: "UTC" })}</text>`;
@@ -335,14 +335,14 @@ function drawFlow(f) {
     xh.setAttribute("x1", px); xh.setAttribute("x2", px); xh.setAttribute("visibility", "visible");
     tip.innerHTML = `<b></b><br><span></span><br><span></span>`;
     tip.firstChild.textContent = new Date(q.t).toLocaleDateString(L === "en" ? "en-GB" : L, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-    tip.children[2].textContent = G("donated so far {v}", { v: money1(q.g) }); tip.children[4].textContent = G("paid out so far {v}", { v: money1(q.p) });
+    tip.children[2].textContent = G("donated so far {v}", { v: money1(q.g) }); tip.children[4].textContent = G("spent so far {v}", { v: money1(q.p) });
     tip.hidden = false; const tw = tip.offsetWidth, left = px * r.width / w; tip.style.left = Math.max(0, Math.min(r.width - tw, left + (left > r.width / 2 ? -tw - 10 : 10))) + "px";
   };
   ov.addEventListener("mousemove", show); ov.addEventListener("touchstart", e => show(e.touches[0]), { passive: true });
   ov.addEventListener("mouseleave", () => { xh.setAttribute("visibility", "hidden"); tip.hidden = true; });
   const pct = f.paidAll ? Math.round(f.gotAll / f.paidAll * 100) : 0;
   $("even").innerHTML = "<span></span> <b></b>";
-  $("even").firstChild.textContent = G("Donations have covered {p} of what was paid out so far.", { p: (pct < 1 && f.gotAll > 0 ? "<1" : pct) + "%" });
+  $("even").firstChild.textContent = G("Donations have covered {p} of what the site has cost so far.", { p: (pct < 1 && f.gotAll > 0 ? "<1" : pct) + "%" });
   $("even").lastChild.textContent = G("To cover the running costs it would take about {v} a month.", { v: money1(f.month) });
 }
 let FLOW = null, LAST = null;

@@ -52,10 +52,10 @@
   {
    "t": "X account",
    "n": "X API",
-   "d": "the bot that posts rule changes on X",
-   "amount": null,
+   "d": "the bot that posts on X, paid per post ($0.015, $0.20 with a link); an estimate from the posts sent, not a bill",
+   "amount": 3,
    "cur": "USD",
-   "since": null
+   "since": "2026-10-30"
   }
  ],
  "oneoff": [
