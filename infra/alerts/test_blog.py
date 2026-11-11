@@ -129,7 +129,15 @@ except RuntimeError as e:
     check("declined" in str(e) and "cyber" in str(e) and not answers, "a refusal says so, nothing asked again")
 
 card = blog.card_of({"line": "x", "why": []}, "Queen Mempool stays its full 90 minutes; our node slowed down")
-check(card[0] == "Queen Mempool stays its full 90 minutes; our node slowed", f"a long title is cut at a word on the card {card[0]!r}")
+check(card[0] == "Queen Mempool stays its full 90 minutes", f"a long title keeps its whole first clause on the card {card[0]!r}")
+check(blog.card_title("MS Dry Run stays 90 minutes as our node runs out of wallet room") == "MS Dry Run stays 90 minutes"
+      and blog.card_title("Queen Mempool stays all 90 minutes after MS Dry Run left early") == "Queen Mempool stays all 90 minutes",
+      "the two titles the picture cut at a word (11 and 7 November) keep a whole clause instead")
+check(blog.card_title("MS Dry Run stays its full 90 minutes with 222 stops accepted") == "MS Dry Run stays its full 90 minutes with 222 stops accepted",
+      "a title that fits stays whole")
+long1 = "Supercalifragilistic expialidocious testnet ship visit stays ninety minutes"
+check(blog.card_title(long1) == "Supercalifragilistic expialidocious testnet ship visit stays", f"no clause to keep: cut at a word {blog.card_title(long1)!r}")
+check("title: at most 60 characters" in blog.SYSTEM, "the model is asked for a title the picture can hold")
 
 # a draft, then publish: by hand only, and the marked one needs --force
 blog.site_ids = lambda: set()
@@ -312,6 +320,27 @@ klog = nlog[:1] + [{"t": T11 + 60, "visit": V11, "kind": "pay", "p": 5, "ok": Fa
 kf = blog.facts_of(klog, [])
 check(kf["refused in all"] == 1 and not kf.get(blog.NEW_WALLET_FACT) and kf.get("refusal answers"), "the same answer to a wallet with transactions in blocks stays a refusal")
 check(blog.NEW_WALLET_FACT not in blog.facts_of(log[::-1], inc), "a visit without new wallets says nothing of them")
+
+# the picture holds the title on one line: a title cut at a word when it was drafted keeps a whole clause when made anew,
+# and a draft waiting to go out gets its picture made anew once, like the articles already out
+import io  # noqa: E402
+seen, own = [], (blog_pics.hero, blog_pics.desk_hero, blog.urllib.request.urlopen, blog.posts)
+blog_pics.hero = lambda art, ships, card, ship, out, stats=None, host="rico": seen.append(list(card)) or out
+blog_pics.desk_hero = lambda card, out, stats=None, kicker="": seen.append(list(card)) or out
+blog.urllib.request.urlopen = lambda *a, **k: io.BytesIO(b'{"posts": []}')
+blog.posts = lambda: {"posts": []}
+d11 = {"id": "2026-11-11-dryrun-learnings", "kind": "cruise", "visit": V11, "facts": nf,
+       "title": {"en": "MS Dry Run stays 90 minutes as our node runs out of wallet room"},
+       "card": ["MS Dry Run stays 90 minutes as our node runs out of wallet", "Chain refused nothing", "Tau HUD blog"]}
+blog.write_json(os.path.join(TMP, "blog", "drafts", "d11-tok.json"), d11)
+blog.write_json(blog.STATE, {"drafts": {d11["id"]: "d11-tok"}})
+n1, n2 = blog.site_pictures(), blog.site_pictures()
+check(n1 == 1 and n2 == 0 and seen and seen[0][:2] == ["MS Dry Run stays 90 minutes", "Chain refused nothing"],
+      f"a waiting draft's picture is made anew once, its title a whole clause, not '...runs out of wallet' {seen}")
+blog.make_hero({"id": "2026-11-12-news", "kind": "news", "title": {"en": "A title much longer than the line its hand-made card shows on the picture"},
+                "card": ["Hand-made line", "Tau HUD blog"]}, None)
+check(seen[-1][0] == "Hand-made line", "a hand-made first line that is not the title stays as it is")
+blog_pics.hero, blog_pics.desk_hero, blog.urllib.request.urlopen, blog.posts = own
 
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)
