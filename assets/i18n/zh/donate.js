@@ -126,4 +126,8 @@ TauI18n.add({ strings: {
   ", worth {v} when they came in": "，到账时价值 {v}",
   "≈ {v} a month": "每月约 {v}",
   "As billed: {v}, each in the currency of its bill": "按账单：{v}，各按账单币种",
+  "spent": "花费",
+  "Donations so far have paid for about {n} day of running the site.": "迄今的捐赠大约支付了本站 {n} 天的运行费用。",
+  "Donations so far have paid for about {n} days of running the site.": "迄今的捐赠大约支付了本站 {n} 天的运行费用。",
+  "Donations so far have paid for less than one day of running the site.": "迄今的捐赠支付了本站不到一天的运行费用。",
 } });

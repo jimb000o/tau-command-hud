@@ -132,6 +132,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .flow .chart { position: relative; height: 150px; }
 .flow svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
 .flow text { fill: var(--dim); font: 11px var(--mono); }
+.flow text.end.p { fill: var(--gap); } .flow text.end.g { fill: var(--ok); } .flow text.end.v { font-weight: 600; }
 .flow .grid { stroke: var(--line); }
 .flow .paid { fill: none; stroke: var(--gap); stroke-width: 2; stroke-linejoin: round; }
 .flow .gift { fill: none; stroke: var(--ok); stroke-width: 2; stroke-linejoin: round; }
@@ -218,7 +219,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
             <div class="mon"><span id="monL"></span><div class="bar thin" role="img" id="monBar"><i id="monFill"></i></div></div>
           </div>
           <div class="chart" id="flowChart"></div>
-          <div class="legend"><span><i></i><span id="lgGift">donated so far</span></span><span><i class="w"></i><span id="lgPaid">spent so far</span></span><span><i class="z"></i><span>not covered</span></span></div>
+          <p class="legend" id="days"></p>
           <p class="even" id="even"></p>
         </div>
         <div id="got"><p class="empty"><span class="state">Reading the Ethereum chain</span></p></div>
@@ -348,7 +349,7 @@ function drawFlow(f) {
   const hi = Math.max(1, ...pts.map(q => Math.max(q.p, q.g)));
   const stepN = [1, 2, 2.5, 5, 10].map(m => m * Math.pow(10, Math.floor(Math.log10(hi / 3)))).find(s => hi / s <= 4) || hi / 3;
   const tk = []; for (let v = 0; v <= hi + stepN * .999; v += stepN) tk.push(v);
-  const yMax = tk[tk.length - 1], lab = Math.max(...tk.map(v => money1(v).length)) * 7 + 12, Lx = lab, R = 8, top = 8, B = 20, cw = w - Lx - R, ch = h - top - B;
+  const yMax = tk[tk.length - 1], lab = Math.max(...tk.map(v => money1(v).length)) * 7 + 12, Lx = lab, R = 92, top = 8, B = 20, cw = w - Lx - R, ch = h - top - B;
   const x = t => Lx + (end === start ? cw / 2 : cw * (t - start) / (end - start)), y = v => top + ch - ch * v / (yMax || 1), f1 = n => n.toFixed(1);
   const steps = k => pts.map((q, j) => (j ? `H${f1(x(q.t))} V${f1(y(q[k]))}` : `M${f1(x(q.t))} ${f1(y(q[k]))}`)).join(" ");
   let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${T("Spent and donated so far")}"><defs><linearGradient id="gGift" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#39ff8a" stop-opacity=".2"/><stop offset="1" stop-color="#39ff8a" stop-opacity="0"/></linearGradient></defs>`;
@@ -358,6 +359,13 @@ function drawFlow(f) {
   s += `<path class="gap" d="${steps("p")} L${f1(x(end))} ${f1(y(pts[n - 1].g))} ${pts.slice().reverse().map(q => `H${f1(x(q.t))} V${f1(y(q.g))}`).join(" ")} Z"/>`;
   s += `<path d="${steps("g")} L${f1(x(end))} ${f1(y(0))} L${f1(x(start))} ${f1(y(0))} Z" fill="url(#gGift)"/><path class="gift" d="${steps("g")}"/><path class="paid" d="${steps("p")}"/>`;
   s += `<circle class="pt w" cx="${f1(x(end))}" cy="${f1(y(pts[n - 1].p))}" r="3.5"/><circle class="pt" cx="${f1(x(end))}" cy="${f1(y(pts[n - 1].g))}" r="4"/>`;
+  /* each line named at its end, with its value: no legend to look up */
+  let yp = y(pts[n - 1].p), yg = y(pts[n - 1].g);
+  if (yg - yp < 26) { const mid = (yp + yg) / 2; yp = mid - 13; yg = mid + 13; }
+  yp = Math.max(top + 4, yp); yg = Math.min(top + ch + 8, yg);
+  const lx = f1(x(end) + 8);
+  s += `<text class="end p" x="${lx}" y="${f1(yp - 1)}">${T("spent")}</text><text class="end p v" x="${lx}" y="${f1(yp + 11)}">${money1(pts[n - 1].p)}</text>`;
+  s += `<text class="end g" x="${lx}" y="${f1(yg - 1)}">${T("donated")}</text><text class="end g v" x="${lx}" y="${f1(yg + 11)}">${money1(pts[n - 1].g)}</text>`;
   s += `<line class="xh" y1="${top}" y2="${top + ch}" visibility="hidden"/><rect class="ov" x="${Lx}" y="${top}" width="${cw}" height="${ch}"/></svg><div class="ctip" hidden></div>`;
   box.innerHTML = s;
   const ov = box.querySelector(".ov"), xh = box.querySelector(".xh"), tip = box.querySelector(".ctip");
@@ -382,6 +390,9 @@ function drawFlow(f) {
   $("monL").textContent = G("This month: {g} donated of about {c} it costs", { g: money1(f.gotMonth), c: money1(f.month) });
   $("monFill").style.width = (ms * 100).toFixed(1) + "%";
   $("monBar").setAttribute("aria-label", G("{p} of this month covered", { p: Math.round(ms * 100) + "%" }));
+  const dd = f.month ? f.gotAll / (f.month * 12 / 365) : 0;
+  $("days").textContent = f.gotAll > 0 ? (dd < 1 ? T("Donations so far have paid for less than one day of running the site.")
+    : G(dd < 1.5 ? "Donations so far have paid for about {n} day of running the site." : "Donations so far have paid for about {n} days of running the site.", { n: String(Math.round(dd)) })) : "";
   $("even").textContent = G("To cover the running costs, donations would need to reach about {v} a month. Nothing is owed in return.", { v: money1(f.month) });
 }
 let FLOW = null, LAST = null;

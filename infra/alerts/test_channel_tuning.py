@@ -72,7 +72,9 @@ asyncio.run(w3.close_poll(alerts.POLL_OPEN + 1))
 check(w3.state["deepdives"]["voted"] == "b" and "open" not in w3.state["poll"], "poll: most votes goes next")
 
 # costs
-costs = json.load(open(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "costs.json")))
+# a fixed list (the real assets/costs.json changes with every bill): one euro bill, one dollar bill, one not in yet
+costs = {"items": [{"t": "Server", "amount": 6, "cur": "EUR"}, {"t": "AI assistant", "amount": 200, "cur": "USD"},
+                   {"t": "Voices", "amount": None, "cur": "USD"}]}
 c = alerts.costs_text(costs, {"count": 1, "donors": 1, "totals": {"AGRS": "50"}})
 check("About €6 + $200 a month" in c and "not in yet: Voices" in c and "50 AGRS" in c and "not affiliated with IDNI" in c,
       "costs: billed items summed per currency, open bills named, donations")
