@@ -80,6 +80,21 @@ def main():
             fails += not good
             print(f"{'ok  ' if good else 'FAIL'} brief · {' '.join(check['on'])}: {op} {spec[:70]}")
             print(f"       → {shown(got)} ({got.get('ms')} ms)" + ("" if good else f"  expected {check['expect']}"))
+    # No Memo's intel contracts (intel.py): every kind of hidden rule, run by this engine at its edges, must let through
+    # exactly what the contract says, or a player who reads the engine right is told otherwise
+    import intel
+    good_rules = 0
+    for rule in ({"kind": "cap", "a": 4100, "b": None}, {"kind": "floor", "a": 4100, "b": None}, {"kind": "band", "a": 3000, "b": 3500},
+                 {"kind": "hole", "a": 3000, "b": 3500}, {"kind": "none", "a": 4100, "b": None}, {"kind": "above", "a": 4100, "b": None}):
+        amounts = sorted({0, rule["a"] - 1, rule["a"], rule["a"] + 1, intel.MAX} | ({rule["b"] - 1, rule["b"], rule["b"] + 1} if rule["b"] else set()))[:8]
+        got = tau_sandbox.ask(tau_sandbox.parse({"op": "run", "spec": intel.text(rule), "steps": [{"i1": str(a)} for a in amounts]}))
+        seen = [str((row.get("out") or {}).get("o5")) for row in got.get("outputs") or []] if got.get("ok") else []
+        want = ["1" if intel.passes(rule, a) else "0" for a in amounts]
+        good = [int(x) != 0 if x.isdigit() else None for x in seen] == [w == "1" for w in want]
+        good_rules += good
+        print(f"{'ok  ' if good else 'FAIL'} intel · {rule['kind']}: {intel.words(rule)}")
+        print(f"       → o5 {' '.join(seen) or shown(got)} for {', '.join(map(str, amounts))} ({got.get('ms')} ms)" + ("" if good else f"  expected {' '.join(want)}"))
+    print(f"intel:   {good_rules} of 6 hidden rules answer as No Memo's contracts read them")
     # a guard that must hold: a file stream is refused before the engine sees it
     try:
         tau_sandbox.parse({"op": "run", "spec": "o1[t] = i1[t] && x := ifile(\"/etc/passwd\")"})

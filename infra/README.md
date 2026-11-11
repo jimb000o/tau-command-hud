@@ -252,6 +252,13 @@ repeated texts. The container uses the node's image (nothing extra to compile), 
 outbound network, a read-only filesystem, no capabilities, 512 MB, 1 CPU and 64 processes.
 `GET /check/health` answers `{"ok": true}`.
 
+No Memo's intel contracts use the same container: `POST https://node.tauhud.com/tau/intel` with
+`{"case", "seed"}` and one of `probe`, `final`, `name`, `reveal` or `lead` (`checker/intel.py`). The hidden rule is
+dealt from the seed and `INTEL_SECRET` in `.env` (`up tau` makes it once), and the page sees its text only once the
+player names it, shoots at the edge or gives up. A probe runs the rule in the Tau engine the Learn page uses and counts
+against the same 40 questions per 5 minutes per address. `up tau` runs six sample rules at their edges and prints
+`intel: 6 of 6 hidden rules answer as No Memo's contracts read them`.
+
 ## Node follows IDNI main
 
 `follow/idni_follow.py` keeps the node on the newest IDNI tau-testnet main by itself. Every `up` installs a systemd timer
