@@ -104,13 +104,40 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .state { display: inline-flex; align-items: center; gap: 8px; color: var(--text); }
 .state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 6px var(--amber); animation: pulse 1.2s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .35; } }
+.rows .v.wait { color: var(--dim); font-weight: 400; }
+.head { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 10px; margin: 0 0 14px; }
+.head div { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; min-width: 0; }
+.head div:first-child { border-color: var(--hair); }
+.head b { display: block; font: 700 22px/1.2 var(--display); color: #fff; overflow-wrap: anywhere; }
+.head div + div b { font-size: 18px; }
+.head span { color: var(--dim); font-size: 11.5px; }
+/* Paid out and donated since the first bill: two running totals, the same chart look as In numbers */
+.flow { margin: 0 0 12px; }
+.flow .chart { position: relative; height: 150px; }
+.flow svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
+.flow text { fill: var(--dim); font: 11px var(--mono); }
+.flow .grid { stroke: var(--line); }
+.flow .paid { fill: none; stroke: rgba(255,255,255,.75); stroke-width: 1.6; stroke-dasharray: 4 3; }
+.flow .gift { fill: none; stroke: var(--ok); stroke-width: 2; stroke-linejoin: round; }
+.flow .gap { fill: rgba(255,255,255,.035); }
+.flow .pt { fill: var(--ok); stroke: var(--void); stroke-width: 2; }
+.flow .pt.w { fill: #fff; }
+.flow .xh { stroke: rgba(255,255,255,.35); stroke-width: 1; }
+.flow .ov { fill: transparent; cursor: crosshair; }
+.ctip { position: absolute; top: 4px; pointer-events: none; background: rgba(9,9,10,.94); border: 1px solid var(--hair); border-radius: 6px; padding: 6px 9px; font-size: 11.5px; white-space: nowrap; z-index: 2; }
+.ctip b { color: #fff; font-weight: 600; }
+.legend { display: flex; gap: 6px 16px; flex-wrap: wrap; color: var(--dim); font-size: 11.5px; margin: 6px 0 0; }
+.legend i { display: inline-block; width: 16px; height: 0; border-top: 2px solid var(--ok); vertical-align: middle; margin-right: 6px; }
+.legend i.w { border-top: 2px dashed rgba(255,255,255,.75); }
+.even { margin: 8px 0 0; color: var(--text); }
+.even b { color: #fff; font-weight: 600; }
 [hidden] { display: none !important; }
 @media (min-width: 2200px) and (min-height: 1200px) { body { zoom: 1.3; } }
 @media (max-width: 1300px) { .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .main > .col:last-child { grid-column: 1 / -1; } }
 @media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 520px) { .addrbox { grid-template-columns: minmax(0, 1fr); justify-items: start; } .tot b { font-size: 16px; } }
 @media (max-width: 700px) { .b { min-height: 44px; } .gifts a { padding: 10px 0; } }
-@media (min-width: 900px) and (max-height: 800px) { .sub { display: none; } }   /* a 1366 × 768 laptop keeps the page on one screen */
+@media (min-width: 900px) and (max-height: 800px) { .sub, #costNote, #fxNote { display: none; } .flow .chart { height: 118px; } .gifts li:nth-child(n+4) { display: none; } .head b { font-size: 19px; } .addrbox { grid-template-columns: 112px minmax(0, 1fr); } .qr { width: 112px; height: 112px; } .wallets .b { padding: 0 9px; letter-spacing: .06em; } .wallets { margin-top: 10px; } .not { gap: 3px; font-size: 12px; } .panel { padding: 14px 16px; } }   /* a 1366 × 768 laptop keeps the page on one screen */
 @media (prefers-reduced-motion: reduce) { .state::before { animation: none; } }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
@@ -137,10 +164,20 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
         </div>
         <p class="fine msg" id="msg" aria-live="polite"><b>Ethereum mainnet only.</b> AGRS means the token on Ethereum; test AGRS from the testnet wallet cannot be sent here. Check the address against this page before sending; never trust a copy of it from elsewhere.</p>
       </section>
+      <section class="panel" aria-labelledby="hNot">
+        <h2 id="hNot">What a donation is not</h2>
+        <ul class="not">
+          <li><span>Not a purchase: it buys no access, no feature and no say.</span></li>
+          <li><span>Not a promise: nothing is owed in return, including that the site keeps running.</span></li>
+          <li><span>Not an investment: no share, no reward, no return.</span></li>
+        </ul>
+        <p class="fine">Each donation is public on Ethereum. The shortened sender address and the amount are shown here and thanked in the Telegram channel. <a href="/legal/#donations">Privacy notice, section 11 ›</a></p>
+      </section>
     </div>
     <div class="col">
       <section class="panel" aria-labelledby="hCost">
         <h2 id="hCost">What it costs <span class="n">per month</span></h2>
+        <div class="head" id="head" hidden><div><b id="perMonth"></b><span id="perMonthL"></span></div><div><b id="paidAll"></b><span id="paidAllL"></span></div></div>
         <ul class="rows" id="costs"></ul>
         <div class="sum"><span>Running costs, not counting time</span><b id="costSum"></b></div>
         <p class="fine" id="costNote">Amounts as billed, rounded, each in the currency of its bill. Further items are added here once their bills are in.</p>
@@ -156,18 +193,14 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
     <div class="col">
       <section class="panel" aria-labelledby="hGot">
         <h2 id="hGot">Received, on chain <span class="n" id="nGot"></span></h2>
+        <div class="flow" id="flow" hidden>
+          <div class="chart" id="flowChart"></div>
+          <div class="legend"><span><i></i><span id="lgGift">donated so far</span></span><span><i class="w"></i><span id="lgPaid">paid out so far</span></span></div>
+          <p class="even" id="even"></p>
+        </div>
         <div id="got"><p class="empty"><span class="state">Reading the Ethereum chain</span></p></div>
         <p class="fine"><a id="allTx" href="https://etherscan.io/address/0x23fB76A33A8d70f5c51aB558b85e4b93040003eb" target="_blank" rel="noopener">Every transfer to this address on Etherscan ›</a></p>
-        <p class="fine">Read from Ethereum every five minutes. Only AGRS of the real token contract and ETH count; tiny amounts and look-alike tokens are left out. Money values are the price when the donation came in, or that day's price for older ones (CoinGecko). Not advice, and no price of anything is promised.</p>
-      </section>
-      <section class="panel" aria-labelledby="hNot">
-        <h2 id="hNot">What a donation is not</h2>
-        <ul class="not">
-          <li><span>Not a purchase: it buys no access, no feature and no say.</span></li>
-          <li><span>Not a promise: nothing is owed in return, including that the site keeps running.</span></li>
-          <li><span>Not an investment: no share, no reward, no return.</span></li>
-        </ul>
-        <p class="fine">Each donation is public on Ethereum. The shortened sender address and the amount are shown here and thanked in the Telegram channel. <a href="/legal/#donations">Privacy notice, section 11 ›</a></p>
+        <p class="fine" id="fxNote">Read from Ethereum every five minutes. Only AGRS of the real token contract and ETH count; tiny amounts and look-alike tokens are left out. Money values are the price when the donation came in, or that day's price for older ones (CoinGecko). Not advice, and no price of anything is promised.</p>
       </section>
     </div>
   </main>
@@ -183,30 +216,6 @@ const G = (s, v) => { const ks = Object.keys(v); let o = T(ks.reduce((x, k, i) =
 const ADDR = "0x23fB76A33A8d70f5c51aB558b85e4b93040003eb", AGRS = "0x738865301a9b7dd80dc3666dd48cf034ec42bdda";
 const nf = new Intl.NumberFormat("en-US");
 const cost = (n, c) => new Intl.NumberFormat(c === "USD" ? "en-US" : L === "en" ? "en-GB" : L, { style: "currency", currency: c, maximumFractionDigits: n % 1 ? 2 : 0 }).format(n);
-(async () => {
-  let COSTS = [], ONE = [];
-  try { const j = await (await fetch("../assets/costs.json", { cache: "no-cache" })).json(); COSTS = j.items || []; ONE = j.oneoff || []; } catch (e) {}
-  const ul = $("costs"), known = COSTS.filter(c => typeof c.amount === "number");
-  const li = (t, d, v, cls) => { const e = document.createElement("li"); e.innerHTML = `<b></b><span class="v"></span><small></small>`; e.querySelector("b").textContent = T(t); e.querySelector("small").textContent = T(d); const s = e.querySelector(".v"); s.textContent = v; if (cls) s.classList.add(cls); return e; };
-  ul.append(li("Time", "Building and running the site, in spare time. Not paid and not counted in hours.", T("unpaid"), "time"));
-  known.forEach(c => ul.append(li(c.t, c.d, G("about {v}", { v: cost(c.amount, c.cur) }))));
-  const sums = {}; known.forEach(c => { sums[c.cur] = (sums[c.cur] || 0) + c.amount; });   // bills in different currencies are added up per currency, never converted
-  $("costSum").textContent = G("about {v} a month", { v: Object.entries(sums).map(([c, n]) => cost(n, c)).join(" + ") });
-  $("costNote").hidden = known.length === COSTS.length;
-  /* single payments (image credits, voices, clips and the like), newest first, each with its date; not part of the monthly
-     sum (the five newest listed, the sum counts all): the ones in costs.json and the ones our server reads from the receipts (node.tauhud.com/costs-paid.json, alerts/
-     receipts.py); the same payment in both (amount and currency equal, at most 3 days apart) is shown once */
-  let PAID = [];
-  try { const r = await fetch("https://node.tauhud.com/costs-paid.json", { cache: "no-store" }); if (r.ok) PAID = (await r.json()).items || []; } catch (e) {}
-  const ok = c => typeof c.amount === "number" && c.amount > 0 && /^[A-Z]{3}$/.test(c.cur || "") && /^\d{4}-\d{2}-\d{2}$/.test(c.on || "") && typeof c.t === "string";
-  const near = (a, b) => Math.abs(new Date(a.on) - new Date(b.on)) <= 3 * 86400000;
-  PAID = PAID.filter(ok);
-  const once = PAID.concat(ONE.filter(ok).filter(c => !PAID.some(p => p.cur === c.cur && Math.abs(p.amount - c.amount) < 0.01 && near(p, c)))).sort((a, b) => b.on.localeCompare(a.on));
-  once.slice(0, 5).forEach(c => { const e = li(c.t, c.d, cost(c.amount, c.cur)); e.querySelector("small").textContent = new Date(c.on + "T12:00:00Z").toLocaleDateString(L === "en" ? "en-GB" : L, { day: "numeric", month: "short", year: "numeric" }) + " · " + T(c.d); $("oneoffRows").append(e); });
-  const paid = {}; once.forEach(c => { paid[c.cur] = Math.round(((paid[c.cur] || 0) + c.amount) * 100) / 100; });
-  $("paidSum").textContent = Object.entries(paid).map(([c, n]) => cost(n, c)).join(" + ");
-  $("oneoff").hidden = !once.length;
-})();
 /* copy + wallet links (EIP-681: an Ethereum wallet app opens with the address filled in; AGRS as a token transfer) */
 $("wEth").href = `ethereum:${ADDR}@1`;
 $("wAgrs").href = `ethereum:${AGRS}@1/transfer?address=${ADDR}`;
@@ -237,10 +246,111 @@ const money = (c, v) => new Intl.NumberFormat(c === "USD" ? "en-US" : L === "en"
 /* each reader's own currency: euros and dollars in English, yuan in Chinese, yen in Japanese */
 const CUR = { en: ["EUR", "USD"], zh: ["CNY"], ja: ["JPY"] }[L] || ["EUR", "USD"];
 const value = f => f && CUR.every(c => isFinite(f[c.toLowerCase()])) ? CUR.map(c => money(c, f[c.toLowerCase()])).join(" · ") : "";
+/* costs: the monthly bills (assets/costs.json) and the single payments (costs.json oneoff + what our server reads from
+   the receipts). Each bill is listed in its own currency; the headline, the chart and the break-even line convert them into
+   the reader's currency at one rate, taken from the newest donation's value (the same CoinGecko prices), and say so. */
+const C = { items: [], once: [], ready: null };
+C.ready = (async () => {
+  let COSTS = [], ONE = [];
+  try { const j = await (await fetch("../assets/costs.json", { cache: "no-cache" })).json(); COSTS = j.items || []; ONE = j.oneoff || []; } catch (e) {}
+  const ul = $("costs"), num = c => typeof c.amount === "number" && /^[A-Z]{3}$/.test(c.cur || ""), known = COSTS.filter(num), wait = COSTS.filter(c => !num(c) && c.t);
+  const li = (t, d, v, cls) => { const e = document.createElement("li"); e.innerHTML = `<b></b><span class="v"></span><small></small>`; e.querySelector("b").textContent = T(t); e.querySelector("small").textContent = T(d); const s = e.querySelector(".v"); s.textContent = v; if (cls) s.classList.add(cls); return e; };
+  ul.append(li("Time", "Building and running the site, in spare time. Not paid and not counted in hours.", T("unpaid"), "time"));
+  known.forEach(c => ul.append(li(c.t, c.d, G("about {v}", { v: cost(c.amount, c.cur) }))));
+  /* bills not in yet: one row naming them, so the list is honest about what is missing; left out of every sum */
+  if (wait.length) { const e = li("Bills not in yet", "", T("amount to come"), "wait"); e.querySelector("small").textContent = wait.map(c => T(c.t) + " (" + T(c.n || c.t) + ")").join(" · "); ul.append(e); }
+  const sums = {}; known.forEach(c => { sums[c.cur] = (sums[c.cur] || 0) + c.amount; });   // per currency here; converted only in the headline
+  $("costSum").textContent = G("about {v} a month", { v: Object.entries(sums).map(([c, n]) => cost(n, c)).join(" + ") });
+  $("costNote").hidden = !wait.length;
+  let PAID = [];
+  try { const r = await fetch("https://node.tauhud.com/costs-paid.json", { cache: "no-store" }); if (r.ok) PAID = (await r.json()).items || []; } catch (e) {}
+  const ok = c => typeof c.amount === "number" && c.amount > 0 && /^[A-Z]{3}$/.test(c.cur || "") && /^\d{4}-\d{2}-\d{2}$/.test(c.on || "") && typeof c.t === "string";
+  const near = (a, b) => Math.abs(new Date(a.on) - new Date(b.on)) <= 3 * 86400000;
+  PAID = PAID.filter(ok);
+  const once = PAID.concat(ONE.filter(ok).filter(c => !PAID.some(p => p.cur === c.cur && Math.abs(p.amount - c.amount) < 0.01 && near(p, c)))).sort((a, b) => b.on.localeCompare(a.on));
+  once.slice(0, 5).forEach(c => { const e = li(c.t, c.d, cost(c.amount, c.cur)); e.querySelector("small").textContent = new Date(c.on + "T12:00:00Z").toLocaleDateString(L === "en" ? "en-GB" : L, { day: "numeric", month: "short", year: "numeric" }) + " · " + T(c.d); $("oneoffRows").append(e); });
+  const paid = {}; once.forEach(c => { paid[c.cur] = Math.round(((paid[c.cur] || 0) + c.amount) * 100) / 100; });
+  $("paidSum").textContent = Object.entries(paid).map(([c, n]) => cost(n, c)).join(" + ");
+  $("oneoff").hidden = !once.length;
+  C.items = known; C.once = once;
+})();
+/* every bill of a monthly item from its "since" day to now, on the same day each month (the 31st falls back to the month's last day) */
+function bills(it, until) {
+  const out = []; if (!/^\d{4}-\d{2}-\d{2}$/.test(it.since || "")) return out;
+  const [y, m, d] = it.since.split("-").map(Number);
+  for (let k = 0; k < 600; k++) { const last = new Date(Date.UTC(y, m + k, 0)).getUTCDate(), t = Date.UTC(y, m - 1 + k, Math.min(d, last)); if (t > until) break; out.push(t); }
+  return out;
+}
+const dm = t => new Date(t).toLocaleDateString(L === "en" ? "en-GB" : L, { day: "numeric", month: "short", timeZone: "UTC" });
+const DAY = 86400000, dayOf = t => Math.floor(t / DAY) * DAY;
+/* the headline (costs per month, paid so far), the chart and the break-even line; needs the costs and one exchange rate */
+const money1 = v => new Intl.NumberFormat(RC === "USD" ? "en-US" : L === "en" ? "en-GB" : L, { style: "currency", currency: RC, maximumFractionDigits: 0 }).format(v);
+const RC = CUR[0];
+function flow(don) {
+  const fx = (don || []).find(x => x.fiat && ["eur", "usd", "cny", "jpy"].every(k => x.fiat[k] > 0));
+  if (!fx || !C.items.length) { $("head").hidden = true; return null; }
+  const to = (n, c) => (c === RC ? n : n * fx.fiat[RC.toLowerCase()] / fx.fiat[c.toLowerCase()]);
+  const now = Date.now(), month = C.items.reduce((a, c) => a + to(c.amount, c.cur), 0);
+  const ev = [];   // [{t, v, w: "p" paid out | "g" donated}]
+  C.items.forEach(c => bills(c, now).forEach(t => ev.push({ t, v: to(c.amount, c.cur), w: "p" })));
+  C.once.forEach(c => ev.push({ t: Date.parse(c.on + "T12:00:00Z"), v: to(c.amount, c.cur), w: "p" }));
+  (don || []).forEach(x => { const v = x.fiat && x.fiat[RC.toLowerCase()]; if (isFinite(v)) ev.push({ t: x.ts * 1000, v, w: "g" }); });
+  ev.sort((a, b) => a.t - b.t);
+  const paidAll = ev.filter(e => e.w === "p").reduce((a, e) => a + e.v, 0), gotAll = ev.filter(e => e.w === "g").reduce((a, e) => a + e.v, 0);
+  const firstBill = ev.find(e => e.w === "p");
+  $("perMonth").textContent = G("≈ {v}", { v: money1(month) });
+  $("perMonthL").textContent = G("a month now, at the {d} rate; time not counted", { d: dm(fx.ts * 1000) });
+  $("paidAll").textContent = money1(paidAll);
+  $("paidAllL").textContent = firstBill ? G("paid out since {d}", { d: dm(firstBill.t) }) : "";
+  $("head").hidden = false;
+  return { ev, month, paidAll, gotAll };
+}
+/* the chart: two running totals day by day, as steps (a bill or a donation lands on one day), the gap between them shaded */
+function drawFlow(f) {
+  const box = $("flowChart"), wrap = $("flow");
+  if (!f || !f.ev.length) { wrap.hidden = true; return; }
+  wrap.hidden = false;
+  const start = dayOf(f.ev[0].t), end = dayOf(Date.now()), pts = [];
+  let p = 0, g = 0, i = 0;
+  for (let t = start; t <= end; t += DAY) { while (i < f.ev.length && dayOf(f.ev[i].t) <= t) { const e = f.ev[i++]; if (e.w === "p") p += e.v; else g += e.v; } pts.push({ t, p, g }); }
+  const w = Math.max(box.clientWidth, 10), h = Math.max(box.clientHeight, 10);
+  const hi = Math.max(1, ...pts.map(q => Math.max(q.p, q.g)));
+  const stepN = [1, 2, 2.5, 5, 10].map(m => m * Math.pow(10, Math.floor(Math.log10(hi / 3)))).find(s => hi / s <= 4) || hi / 3;
+  const tk = []; for (let v = 0; v <= hi + stepN * .999; v += stepN) tk.push(v);
+  const yMax = tk[tk.length - 1], lab = Math.max(...tk.map(v => money1(v).length)) * 7 + 12, Lx = lab, R = 8, top = 8, B = 20, cw = w - Lx - R, ch = h - top - B;
+  const x = t => Lx + (end === start ? cw / 2 : cw * (t - start) / (end - start)), y = v => top + ch - ch * v / (yMax || 1), f1 = n => n.toFixed(1);
+  const steps = k => pts.map((q, j) => (j ? `H${f1(x(q.t))} V${f1(y(q[k]))}` : `M${f1(x(q.t))} ${f1(y(q[k]))}`)).join(" ");
+  let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${T("Paid out and donated so far")}"><defs><linearGradient id="gGift" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#39ff8a" stop-opacity=".2"/><stop offset="1" stop-color="#39ff8a" stop-opacity="0"/></linearGradient></defs>`;
+  tk.forEach(v => { s += `<line class="grid" x1="${Lx}" x2="${w - R}" y1="${f1(y(v))}" y2="${f1(y(v))}"/><text x="${Lx - 6}" y="${f1(y(v) + 4)}" text-anchor="end">${money1(v)}</text>`; });
+  const n = pts.length, every = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(cw / 70))));
+  for (let j = n - 1; j >= 0; j -= every) s += `<text x="${f1(x(pts[j].t))}" y="${h - 4}" text-anchor="${j === n - 1 ? "end" : "middle"}">${new Date(pts[j].t).toLocaleDateString(L === "en" ? "en-GB" : L, { day: "numeric", month: "short", timeZone: "UTC" })}</text>`;
+  s += `<path class="gap" d="${steps("p")} L${f1(x(end))} ${f1(y(pts[n - 1].g))} ${pts.slice().reverse().map(q => `H${f1(x(q.t))} V${f1(y(q.g))}`).join(" ")} Z"/>`;
+  s += `<path d="${steps("g")} L${f1(x(end))} ${f1(y(0))} L${f1(x(start))} ${f1(y(0))} Z" fill="url(#gGift)"/><path class="gift" d="${steps("g")}"/><path class="paid" d="${steps("p")}"/>`;
+  s += `<circle class="pt w" cx="${f1(x(end))}" cy="${f1(y(pts[n - 1].p))}" r="3.5"/><circle class="pt" cx="${f1(x(end))}" cy="${f1(y(pts[n - 1].g))}" r="4"/>`;
+  s += `<line class="xh" y1="${top}" y2="${top + ch}" visibility="hidden"/><rect class="ov" x="${Lx}" y="${top}" width="${cw}" height="${ch}"/></svg><div class="ctip" hidden></div>`;
+  box.innerHTML = s;
+  const ov = box.querySelector(".ov"), xh = box.querySelector(".xh"), tip = box.querySelector(".ctip");
+  const show = e => {
+    const r = box.getBoundingClientRect(), mx = (e.clientX - r.left) * w / r.width, j = Math.max(0, Math.min(n - 1, Math.round((mx - Lx) / (cw || 1) * (n - 1)))), q = pts[j], px = x(q.t);
+    xh.setAttribute("x1", px); xh.setAttribute("x2", px); xh.setAttribute("visibility", "visible");
+    tip.innerHTML = `<b></b><br><span></span><br><span></span>`;
+    tip.firstChild.textContent = new Date(q.t).toLocaleDateString(L === "en" ? "en-GB" : L, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+    tip.children[2].textContent = G("donated so far {v}", { v: money1(q.g) }); tip.children[4].textContent = G("paid out so far {v}", { v: money1(q.p) });
+    tip.hidden = false; const tw = tip.offsetWidth, left = px * r.width / w; tip.style.left = Math.max(0, Math.min(r.width - tw, left + (left > r.width / 2 ? -tw - 10 : 10))) + "px";
+  };
+  ov.addEventListener("mousemove", show); ov.addEventListener("touchstart", e => show(e.touches[0]), { passive: true });
+  ov.addEventListener("mouseleave", () => { xh.setAttribute("visibility", "hidden"); tip.hidden = true; });
+  const pct = f.paidAll ? Math.round(f.gotAll / f.paidAll * 100) : 0;
+  $("even").innerHTML = "<span></span> <b></b>";
+  $("even").firstChild.textContent = G("Donations have covered {p} of what was paid out so far.", { p: (pct < 1 && f.gotAll > 0 ? "<1" : pct) + "%" });
+  $("even").lastChild.textContent = G("To cover the running costs it would take about {v} a month.", { v: money1(f.month) });
+}
+let FLOW = null, LAST = null;
 async function load() {
   let d = null;
   try { const r = await fetch("https://node.tauhud.com/donations.json", { cache: "no-store" }); if (r.ok) d = await r.json(); } catch (e) {}
   const box = $("got");
+  if (!FLOW) FLOW = $("flow");
   if (!d) { box.innerHTML = `<p class="empty"></p>`; box.firstChild.textContent = T("Our server can't be reached right now. Every transfer is still on Etherscan, below."); return; }
   const items = (d.items || []).filter(x => /^0x[0-9a-f]{40}$/i.test(x.from) && /^0x[0-9a-f]{64}$/i.test(x.tx) && (x.asset === "AGRS" || x.asset === "ETH") && isFinite(x.amount));
   if (!items.length) { box.innerHTML = `<p class="empty"></p>`; box.firstChild.textContent = T("No donation yet."); $("nGot").textContent = ""; return; }
@@ -257,7 +367,7 @@ async function load() {
   thanks.firstChild.textContent = G("Thank you, {w}.", { w: short(nw.from) });
   thanks.lastChild.textContent = G(fresh ? "The newest donation, {x} on {d}. A voluntary gift; nothing is owed in return." : "The latest donation, {x} on {d}. A voluntary gift; nothing is owed in return.", { x: amt(nw), d: day(nw.ts) });
   const ul = document.createElement("ul"); ul.className = "gifts";
-  items.slice(0, 12).forEach((x, i) => {
+  items.slice(0, 8).forEach((x, i) => {
     const li = document.createElement("li");
     li.innerHTML = `<span class="d"></span><span><a target="_blank" rel="noopener" translate="no"></a></span><span class="amt" translate="no"></span>`;
     li.querySelector(".d").textContent = new Date(x.ts * 1000).toLocaleDateString(L === "en" ? "en-GB" : L, { day: "numeric", month: "short" });
@@ -268,10 +378,12 @@ async function load() {
     if (v) { const s = document.createElement("span"); s.className = "fx"; s.textContent = G(x.fiat_at === "now" ? "worth {v} when it came in" : "worth {v} on that day", { v }); li.append(s); }
     ul.append(li);
   });
-  box.replaceChildren(tot, thanks, ul);
+  box.replaceChildren(tot, $("flow") || FLOW, thanks, ul);
+  await C.ready; LAST = flow(items); drawFlow(LAST);
 }
 load();
 setInterval(() => { if (!document.hidden) load(); }, 300000);
+let rz = 0; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => drawFlow(LAST), 200); });
 </script>
 </body>
 </html>
