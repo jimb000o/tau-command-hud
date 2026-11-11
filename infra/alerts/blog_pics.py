@@ -3,6 +3,7 @@ game shows, with the painted ship and a card that says at a glance why the artic
 the numbers the article was written from, in the site's look (near-black, white, one green accent).
 
   python blog_pics.py hero <art dir> <ships dir> <card.json> <out.jpg>
+  python blog_pics.py desk <card.json> <out.jpg>   the hero of an article not about the island (IDNI news, a Q&A)
   python blog_pics.py demo <out dir>        the charts of the MS Dry Run article, from its logbook numbers
 
 Every chart says its point in its title, so a picture shared alone still tells why it matters."""
@@ -145,6 +146,82 @@ def hero(art: str, ships: str, card: list[str], ship: str, out: str, stats: list
                 od.text((x + 20, y + (88 if size == 21 else 84) + j * (size + 5)), part, font=font(size, 500), fill=(190, 196, 204, 255))
         pic = Image.alpha_composite(pic, over)
     pic.convert("RGB").save(out, quality=90)
+    return out
+
+
+def desk_hero(card: list[str], out: str, stats: list | None = None, kicker: str = "") -> str:
+    """The hero of an article that is not about the island or a ship (IDNI news, a Q&A, testnet learnings): no island,
+    no ship, no radio host, only the site's own look. The card on the left in large type, the article's hard numbers
+    as tiles on the right, a row of blocks along the foot (the last one lit) so a picture shared alone still reads as
+    the testnet. Island art stays with the island's and the ships' own articles."""
+    im = Image.new("RGBA", (W, H), BG + (255,))
+    d = ImageDraw.Draw(im)
+    for x in range(0, W, 64):
+        d.line([(x, 0), (x, H)], fill=(15, 15, 17))
+    for y in range(0, H, 64):
+        d.line([(0, y), (W, y)], fill=(15, 15, 17))
+    glow = Image.new("RGBA", (W, H))
+    gd = ImageDraw.Draw(glow)
+    for r in range(520, 0, -20):   # a faint green light from the upper left, the site's one accent
+        gd.ellipse([180 - r, 120 - r, 180 + r, 120 + r], fill=(57, 255, 138, max(0, 7 - r // 80)))
+    im = Image.alpha_composite(im, glow)
+    d = ImageDraw.Draw(im)
+    lines = [str(c) for c in (card or []) if c]
+    foot = lines.pop() if lines and "not affiliated" in lines[-1] else "Tau HUD blog · community project, not affiliated with IDNI"
+    title = lines.pop(0) if lines else ""
+    sub = lines.pop(0) if lines and not lines[0].startswith(("#", "-")) else ""
+    why = [c[1:].strip() for c in lines if c.startswith("-")]
+    head = next((c.lstrip("# ").strip() for c in lines if c.startswith("#")), "Why it matters")
+    x0, col = 80, 860 if stats else 1440
+    y = 78
+    if kicker:
+        d.text((x0, y), kicker.upper(), font=font(24, 600, mono=True), fill=OK)
+        y += 56
+    f, size = font(72, 700), 72
+    tl = wrap(d, title, f, col - x0)
+    if len(tl) > 2:
+        size = 58
+        f = font(size, 700)
+        tl = wrap(d, title, f, col - x0)
+    for part in tl[:3]:
+        d.text((x0, y), part, font=f, fill=TEXT)
+        y += round(size * 1.14)
+    if sub:
+        y += 10
+        for part in wrap(d, sub, font(32, 400), col - x0)[:2]:
+            d.text((x0, y), part, font=font(32, 400), fill=(190, 196, 204))
+            y += 44
+    if why:
+        y += 30
+        d.text((x0, y), head.upper(), font=font(22, 600, mono=True), fill=OK)
+        y += 44
+        for w in why[:3]:
+            d.ellipse([x0 + 2, y + 13, x0 + 14, y + 25], fill=OK)
+            d.text((x0 + 32, y), w, font=font(30, 500), fill=TEXT)
+            y += 48
+    if stats:
+        tw, th, gap = 300, 196, 20
+        sx, sy = W - 80 - 2 * tw - gap, 120
+        for i, (num, label) in enumerate(stats[:4]):
+            tx, ty = sx + (i % 2) * (tw + gap), sy + (i // 2) * (th + gap)
+            d.rounded_rectangle([tx, ty, tx + tw, ty + th], radius=18, fill=(14, 18, 22), outline=(57, 255, 138) if i == 0 else LINE, width=2)
+            fn = font(76 if len(str(num)) <= 4 else 54, 700)
+            d.text((tx + 26, ty + 20), str(num), font=fn, fill=OK if i == 0 else TEXT)
+            for j, part in enumerate(wrap(d, str(label), font(24, 500), tw - 52)[:2]):
+                d.text((tx + 26, ty + 120 + j * 31), part, font=font(24, 500), fill=(190, 196, 204))
+    # the chain along the foot: blocks linked left to right, the newest one lit
+    by, bs, bg_ = H - 150, 46, 30
+    n = (W - 2 * x0 + bg_) // (bs + bg_)
+    for i in range(n):
+        bx = x0 + i * (bs + bg_)
+        last = i == n - 1
+        fade = 40 + round(110 * i / max(1, n - 1))
+        col_ = OK if last else (fade, fade, fade + 6)
+        d.rounded_rectangle([bx, by, bx + bs, by + bs], radius=8, outline=col_, width=3, fill=(16, 40, 26) if last else None)
+        if i:
+            d.line([(bx - bg_ + 4, by + bs // 2), (bx - 4, by + bs // 2)], fill=(fade, fade, fade + 6), width=3)
+    d.text((x0, H - 72), foot, font=font(22, 400, mono=True), fill=DIM)
+    im.convert("RGB").save(out, quality=90)
     return out
 
 
@@ -299,6 +376,9 @@ def demo(outdir: str) -> None:
 if __name__ == "__main__":
     if sys.argv[1:2] == ["hero"] and len(sys.argv) == 6:
         hero(sys.argv[2], sys.argv[3], json.load(open(sys.argv[4])).get("card"), json.load(open(sys.argv[4])).get("ship", "expedition"), sys.argv[5])
+    elif sys.argv[1:2] == ["desk"] and len(sys.argv) == 4:
+        c = json.load(open(sys.argv[2]))
+        desk_hero(c.get("card"), sys.argv[3], stats=c.get("stats"), kicker=c.get("kicker", ""))
     elif sys.argv[1:2] == ["demo"] and len(sys.argv) == 3:
         demo(sys.argv[2])
     else:
