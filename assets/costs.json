@@ -1,35 +1,61 @@
 {
- "about": "Running costs as billed, each in the currency of its bill; amount null = bill not in yet, not shown. items: monthly. oneoff: single purchases with their date (YYYY-MM-DD), newest first. Time is never priced. Payments read from receipts by the server (node.tauhud.com/costs-paid.json, infra/alerts/receipts.py) are added on /donate/; the same payment in both is shown once. Read by /donate/, the About window and the Updates panel.",
+ "about": "Running costs as billed, each in the currency of its bill; amount null = bill not in yet, named in one 'Bills not in yet' row and left out of every sum. items: monthly; since = first month counted on the chart of /donate/ (YYYY-MM-DD, the bill repeats on that day each month; null = not on the chart). oneoff: single purchases with their date (YYYY-MM-DD), newest first. Time is never priced. Payments read from receipts by the server (node.tauhud.com/costs-paid.json, infra/alerts/receipts.py) are added on /donate/; the same payment in both is shown once. Read by /donate/, the About window and the Updates panel. n: short product name for that row.",
  "items": [
   {
    "t": "Server",
+   "n": "Hetzner",
    "d": "Hetzner CAX11 at node.tauhud.com: the community node, the relay, alerts and bots",
    "amount": 6,
-   "cur": "EUR"
+   "cur": "EUR",
+   "since": "2026-10-30"
   },
   {
    "t": "AI assistant",
+   "n": "Claude Max",
    "d": "Claude Max plan (20x), the AI tool the site is built and run with. Its weekly limit for the most advanced models has at times been used up in about half a week.",
    "amount": 200,
-   "cur": "USD"
+   "cur": "USD",
+   "since": "2026-10-30"
+  },
+  {
+   "t": "Coding assistant",
+   "n": "Codex",
+   "d": "Codex subscription (20x plan), a second AI tool the site's code and art are made with",
+   "amount": null,
+   "cur": "USD",
+   "since": null
+  },
+  {
+   "t": "Image editing",
+   "n": "Photoshop",
+   "d": "Adobe Photoshop, for finishing the painted art",
+   "amount": null,
+   "cur": "EUR",
+   "since": null
   },
   {
    "t": "Voices",
+   "n": "ElevenLabs",
    "d": "ElevenLabs Starter plan, for the voices of the Daily Consensus café; to be cancelled once the voices are made",
    "amount": null,
-   "cur": "USD"
+   "cur": "USD",
+   "since": null
   },
   {
    "t": "Domains",
+   "n": "tauhud.com, agorzilla.com",
    "d": "tauhud.com and agorzilla.com",
    "amount": null,
-   "cur": "EUR"
+   "cur": "EUR",
+   "since": null
   },
   {
    "t": "X account",
+   "n": "X API",
    "d": "the bot that posts rule changes on X",
    "amount": null,
-   "cur": "USD"
+   "cur": "USD",
+   "since": null
   }
  ],
  "oneoff": [
