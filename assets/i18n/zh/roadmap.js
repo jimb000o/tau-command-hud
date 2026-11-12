@@ -182,7 +182,7 @@ TauI18n.add({ strings: {
 
   "Restarts from block 0 come unannounced": "从第 0 块重启时没有通知",
   "The testnet has started over from block 0 without notice, last on 1 November; a mainnet cannot start over.": "测试网曾无通知地从第 0 块重新开始，最近一次是 11 月 1 日；主网不能从头再来。",
-  "The testnet has started over from block 0 on the same genesis, without a notice beforehand and without anything a node can check. The last time was on 1 November, after the chain had stopped at block 5028. Nodes that missed it kept a dead chain. IDNI’s open pull request #93 plans the next restart, with a new genesis.": "测试网曾在同一个创世块上从第 0 块重新开始，事先没有通知，也没有任何节点可以检查的标记。最近一次是 11 月 1 日，此前链停在了第 5028 块。错过的节点一直停在一条死链上。IDNI 尚未合并的拉取请求 #93 计划下一次重启，并换用新的创世块。",
+  "The testnet has started over from block 0 on the same genesis, without a notice beforehand and without anything a node can check. The last time was on 1 November, after the chain had stopped at block 5028. Nodes that missed it kept a dead chain. On 12 November IDNI merged pull request #93: the next restart comes with a new genesis, and IDNI’s README names its block 0 hash, so an operator can check which chain a node is on.": "测试网曾在同一个创世块上从第 0 块重新开始，事先没有通知，也没有任何节点可以检查的标记。最近一次是 11 月 1 日，此前链停在了第 5028 块。错过的节点一直停在一条死链上。11 月 12 日，IDNI 合并了拉取请求 #93：下一次重启将换用新的创世块，IDNI 的 README 写明了它第 0 块的哈希，运营者可以据此核对节点在哪条链上。",
   "A mainnet cannot start over. The way to upgrade a running chain without a restart is best practised on the testnet first.": "主网不能从头再来。不重启就升级运行中的链，最好先在测试网上练习。",
   "Tau changes its own rules by vote without new node versions. An upgrade that keeps the chain is the same idea for the node software.": "Tau 通过投票改变自己的规则，而无需新的节点版本。保留链的升级是把同样的思路用在节点软件上。",
   "Stats page": "统计页",

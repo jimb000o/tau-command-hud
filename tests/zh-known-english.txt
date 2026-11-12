@@ -78,6 +78,19 @@ tauhud.com · {n}D{n}KooW…V{n}Lr · alice-node · bob · {n}D{n}KooW…igvn
 tauhud.com/nodes
 tauhud.com/playground
 tauhud.com/story/zh
+tauhud.com/#donate
+tauhud.com/cruise/
+tauhud.com/guardian/
+tauhud.com/gxp/
+tauhud.com/gxp/?use=net
+tauhud.com/learn/brief/
+tauhud.com/llms.txt
+tauhud.com/nomemo/sfx/
+tauhud.com/rabbit/
+tauhud.com/services
+tauhud.com/story/ja
+tauhud.com/tau-today.md
+tauhud.com/wallet/#book
 youtube.com/@TauNetwork
 {h}
 {h} → {h} {n}
