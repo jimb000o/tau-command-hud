@@ -376,3 +376,9 @@ TauI18n.add({ strings: {
   "Rules are written in Tau, not in plain words. The rule builder turns plain words into a Tau rule and checks it; or start from an example above.": "ルールは日常の言葉ではなく Tau で書きます。ルールビルダーなら普通の言葉を Tau ルールに変えて確認できます。上の例から始めることもできます。",
   "Open the rule builder ›": "ルールビルダーを開く ›",
 } });
+/* the warning for long co-signer rules (measured on the engine the testnet runs) */
+TauI18n.add({ strings: {
+  "Long rule: on the engine the testnet runs today, two accounts with 10 or more co-signer conditions each made the engine stop while building a block, and their payments waited. Up to 9 each worked.": "長いルールです：テストネットが現在使うエンジンでは、2 つのアカウントがそれぞれ 10 個以上の共同署名条件を持つと、ブロックの作成中にエンジンが止まり、その支払いは待たされました。それぞれ 9 個までは動きました。",
+  "Long rule: on the engine the testnet runs today, two accounts with 10 or more co-signer conditions each made the engine stop while building a block, and their payments waited.": "長いルールです：テストネットが現在使うエンジンでは、2 つのアカウントがそれぞれ 10 個以上の共同署名条件を持つと、ブロックの作成中にエンジンが止まり、その支払いは待たされました。",
+  "Up to 9 each worked.": "それぞれ 9 個までは動きました。",
+} });

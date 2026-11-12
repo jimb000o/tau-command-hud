@@ -2524,3 +2524,6 @@ TauI18n.add({ strings: {
   "GxP page: the free sample of the assessment kit now lists the ten steps of the method guide, with the sheets of the workbook for each step, as in the kit itself. The earlier sample showed a shortened list of eight.": "GxP 页面：评估工具包的免费样章现在列出方法指南中的十个步骤，并注明每一步对应的工作簿工作表，与工具包本身一致。之前的样章只列出了缩短后的八个步骤。",
   "Road to mainnet: every link to an IDNI issue or pull request now carries its state, merged, closed or open, checked every hour by our server. When one of them changes, we get a private note to look at that item’s text, because the page never rewrites its own words.": "Road to mainnet：每个指向 IDNI issue 或拉取请求的链接旁边，现在都会显示它的状态（已合并、已关闭或仍开放），由我们的服务器每小时检查一次。其中任何一个发生变化时，我们会收到一条私信，提醒我们查看该项的文字，因为页面从不自己改写文字。"
 } });
+TauI18n.add({ strings: {
+  "Rule Playground: a warning for long co-signer rules. We measured on the engine the testnet runs today that when two accounts each have a rule with 10 or more co-signer conditions, the engine stops while it builds a block and their payments wait; with 9 each it worked. The Playground still lets such a rule through its checks, as the node does, and now says so in amber under the verdict.": "规则演练场：对很长的共同签名规则给出警告。我们在测试网当前使用的引擎上测得：当两个账户的规则各有 10 个或更多共同签名条件时，引擎在构建区块时停止，它们的付款只能等待；每个 9 个时运行正常。演练场仍像节点一样让这样的规则通过检查，但现在会在结论下方用琥珀色说明这一点。",
+} });
