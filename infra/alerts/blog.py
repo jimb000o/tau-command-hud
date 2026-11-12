@@ -7,7 +7,8 @@ IDNI (idni_report.py).
                                       checked) gets one draft; nothing is published
   python blog.py drafts               the drafts waiting, with the address to read each one
   python blog.py draft <visit-id>     write the draft of that visit (anew, if there is one)
-  python blog.py publish <id> [--dry] put the draft on the blog and post it once to Telegram and X (--dry: show only)
+  python blog.py publish <id> [--dry] put the draft on the blog and post it once to Telegram and X (--dry: show only;
+                                      a call older than BLOG_POST_MAX_HOURS is not posted, --post posts it anyway)
   python blog.py unpublish <id>       take a published article off the blog again (the posts stay)
   python blog.py pictures             make the hero pictures and link-preview pages of all articles anew
 
@@ -59,6 +60,11 @@ RETRY_AFTER = 2 * 3600
 # an uploaded picture AND a link (403, 3 November), so it goes without upload, and on a refusal once more the old way.
 X_BLOG_LINK = os.environ.get("X_BLOG_LINK", "true").lower() in ("1", "true", "yes")
 AUTO_PUBLISH_HOURS = float(os.environ.get("BLOG_AUTO_PUBLISH_HOURS", "0") or 0)
+# The article's one post on Telegram and X goes out only while its call is news: at most this many hours after the call
+# began. A later publish (a draft written anew, auto-publish switched back on, a draft left waiting) puts the article on
+# the blog without a post; on 12 November 2026 two articles went out on X one and two days after their calls, after the
+# ship's own posts had told those calls already. 0 = no limit; `up blog publish <id> --post` posts a late one by hand.
+POST_MAX_HOURS = float(os.environ.get("BLOG_POST_MAX_HOURS", "30") or 0)
 KINDS = ("pay", "bill", "book", "cancel")
 # Our node keeps at most 254 wallet addresses; with all of them in use it answers ADMISSION_UNAVAILABLE to every
 # transaction with a wallet it has not seen before (IDNI tau-testnet #108, since 11 November 2026). The ships log such a
@@ -783,6 +789,11 @@ def write_draft(vid: str, now: float | None = None) -> str:
     facts = compare_with(facts_of(entries, inc, cr), before_facts(vid, log_.get("visits") or [], inc, cr))
     facts["what the numbers mean"] = meaning_of(facts)
     a = pictures(article(facts, ask_ai(facts), now))
+    over = next((e for e in entries if e.get("kind") == "visit over"), None) or {}
+    landed = next((e for e in entries if e.get("kind") == "landed"), None) or {}
+    t0 = (over.get("summary") or {}).get("t0") or landed.get("t")
+    if t0:
+        a["t0"] = int(t0)   # when the call began: the post's window (POST_MAX_HOURS) counts from here
     st = state()
     name = st["drafts"].get(a["id"]) or f"{a['id']}-{secrets.token_hex(4)}"
     st["drafts"][a["id"]], st["drafted"][vid] = name, a["id"]
@@ -867,6 +878,27 @@ def auto_publish(now: float | None = None) -> str | None:
     return None
 
 
+def call_time(a: dict) -> float | None:
+    """When the article's call began: its t0, or (drafts written before t0 was kept) the visit's day and timetable time."""
+    if a.get("t0"):
+        return float(a["t0"])
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})-", str(a.get("visit") or a.get("id") or ""))
+    if not m:
+        return None
+    hm = re.match(r"^(\d{1,2}):(\d{2})$", str((a.get("facts") or {}).get("timetable time") or ""))
+    h, mi = (int(hm.group(1)), int(hm.group(2))) if hm else (0, 0)
+    return dt.datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), h, mi, tzinfo=TZ or dt.timezone.utc).timestamp()
+
+
+def too_late_to_post(a: dict, now: float) -> float | None:
+    """The hours since the call when that is more than POST_MAX_HOURS (the article then goes out without a post), else None."""
+    t0 = call_time(a)
+    if POST_MAX_HOURS <= 0 or t0 is None:
+        return None
+    hours = (now - t0) / 3600
+    return hours if hours > POST_MAX_HOURS else None
+
+
 def auto_note(st: dict, did: str, a: dict) -> str:
     """Whether this draft goes on the blog by itself (auto_publish), said plainly for the up block."""
     at = (st.get("drafted_at") or {}).get(did)
@@ -875,7 +907,9 @@ def auto_note(st: dict, did: str, a: dict) -> str:
         return "never by itself: written before drafts published themselves, only by hand"
     if chk.get("unknown_numbers") or chk.get("hype"):
         return "never by itself: the check marked numbers or wording (up blog publish --force after a read)"
-    return f"by itself on {day(at + AUTO_PUBLISH_HOURS * 3600)} {clock(at + AUTO_PUBLISH_HOURS * 3600)}, unless published by hand before"
+    when = at + AUTO_PUBLISH_HOURS * 3600
+    quiet = " (without a post on Telegram and X: by then the call is too old)" if too_late_to_post(a, when) else ""
+    return f"by itself on {day(when)} {clock(when)}{quiet}, unless published by hand before"
 
 
 def drafts_cli() -> int:
@@ -992,7 +1026,7 @@ def announce(a: dict, dry: bool) -> None:
         print(f"{out.name}: {'posted' if ok else 'not posted: ' + err}")
 
 
-def publish_cli(did: str, dry: bool, force: bool) -> int:
+def publish_cli(did: str, dry: bool, force: bool, post_late: bool = False, now: float | None = None) -> int:
     st = state()
     if did not in st["drafts"]:
         print(f"no draft {did}; waiting: {', '.join(st['drafts']) or 'none'}")
@@ -1016,6 +1050,11 @@ def publish_cli(did: str, dry: bool, force: bool) -> int:
         print(f"published: {SITE}/blog/?p={did}  (link preview: {share_page(a)})")
     if did in st.setdefault("announced", []):
         print("already posted to Telegram and X once: not posted again")
+        return 0
+    late = too_late_to_post(a, now or time.time())
+    if late and not post_late:
+        print(f"not posted to Telegram and X: the call was {late:.0f} h ago (more than BLOG_POST_MAX_HOURS={POST_MAX_HOURS:g}), "
+              f"its news went out with the call; to post it all the same: up blog publish {did} --post")
         return 0
     announce(a, dry)
     if not dry:
@@ -1051,7 +1090,7 @@ def main(argv: list[str]) -> int:
         print(f"draft {did} written")
         return drafts_cli()
     if cmd == "publish" and args and ID_RE.match(args[0]):
-        return publish_cli(args[0], "--dry" in argv, "--force" in argv)
+        return publish_cli(args[0], "--dry" in argv, "--force" in argv, "--post" in argv)
     if cmd == "unpublish" and args and ID_RE.match(args[0]):
         return unpublish_cli(args[0])
     if cmd == "pictures":
