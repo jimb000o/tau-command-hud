@@ -730,3 +730,9 @@ TauI18n.add({ strings: {
   "sets several outputs together, so it is not read exactly": "複数の出力をまとめて設定するため、正確には読み取れない",
   "tells too many cases apart to read here": "区別するケースが多すぎて、ここでは読み取れない",
 } });
+/* Rule builder: menu entry and the wallet's way back */
+TauI18n.add({ strings: {
+  "Rule builder": "ルールビルダー",
+  "Say what your wallet may do in plain words; see what the rule really does, checked by the real Tau engine, before you sign": "ウォレットに許すことを普通の言葉で書く。署名する前に、ルールが本当は何をするのかを本物の Tau エンジンで確かめる",
+  "Back to the rule builder": "ルールビルダーに戻る",
+} });

@@ -2929,5 +2929,17 @@
   {"tag": "Nodes", "on": "2026-11-11", "html": "Nodes: Age of Chains now runs its own testnet node, and it has its own row on the Nodes page and its own name in the chain core. Whether it is reachable and whether it is in sync are shown apart, each only from real data: in sync only once its block hash matches ours. In the chain core every node name now stays whole on one line inside the ring."},
   {"tag": "No Memo", "on": "2026-11-11", "html": "No Memo: four intel contracts. A wallet is guarded by a personal rule in Tau that nobody has shown you. You ask the guard with probe and an amount, and the real Tau engine on our server judges each probe with that rule; nothing goes to the chain. Find what the guard does and name it: a cap, a floor, a window, a hole, or a rule that lets nothing through. One shot asks for the edge in a single try. Once the rule is named, missed or given up, the terminal shows it in Tau, with a link that runs it at its edges on the Learn page. The blind guard practises a trap of personal rules: where a rule says nothing, the engine answers 0, so a rule that only says when to block blocks everything."},
   {"tag": "HUD", "on": "2026-11-11", "html": "Chain core: a named node such as Age of Chains now looks like our own node, a green breathing dot, once it is reachable and in sync. Reachable but not confirmed in sync, it is a white ring; not reachable, a grey one. Its hover says which, from what tauhud.com actually checked."},
-  {"tag": "No Memo", "on": "2026-11-11", "html": "No Memo: the cabin around the terminal comes alive. Moonlit waves roll in the porthole and the windows, the lantern flame flickers and sand runs through the hourglass, as short painted loops over the painting, so everything else stays as painted. During the Tuesday pirate op the sea runs rough. Phones, reduced motion and Save-Data keep the still picture."}
+  {"tag": "No Memo", "on": "2026-11-11", "html": "No Memo: the cabin around the terminal comes alive. Moonlit waves roll in the porthole and the windows, the lantern flame flickers and sand runs through the hourglass, as short painted loops over the painting, so everything else stays as painted. During the Tuesday pirate op the sea runs rough. Phones, reduced motion and Save-Data keep the still picture."},
+  {
+    "tag": "Rule builder",
+    "on": "2026-11-12",
+    "html": "Rule builder: a new page at tauhud.com/builder/. Say in plain words what your wallet may do, for example “at most 5,000 per payment, above 1,000 the Guardian co-signs, nothing before Friday”, and the page writes the rule in Tau. Six checks then show what the rule really does: every possible payment gets exactly one answer, money can still leave, no part is without effect, two independent readings agree, and the testnet's own Tau engine is asked whether it takes the rule and how it answers test payments. A part that can never matter is named, and so is what the testnet cannot do yet, such as a limit per day. You can also paste a rule written in Tau: one that locks its own wallet is caught, with a fix in one click. Another click hands the rule to your wallet, where you sign it.",
+    "major": {
+      "id": "builder",
+      "title": "Rule builder: see what your rule really does before you sign",
+      "text": "Write in plain words what your wallet may do. The new rule builder turns it into a Tau rule, reads it for every possible payment and asks the testnet's own Tau engine. It names parts that can never matter and rules that would lock your wallet, then hands the rule to your wallet to sign.",
+      "link": "/builder/",
+      "image": "/assets/shots/builder.png"
+    }
+  }
 ]
