@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Is Tau GxP-ready?</title>
-<meta name="description" content="Could a pharma company rely on Tau under GxP (21 CFR Part 11, EU GMP Annex 11)? One intended use, the questions a supplier assessment asks, each answered from IDNI's public repositories with its source, and what would change the answer. Live from IDNI's GitHub.">
+<meta name="description" content="Could a pharma company rely on Tau under GxP (21 CFR Part 11, EU GMP Annex 11)? Two intended uses, the questions a supplier assessment asks, each answered from IDNI's public repositories with its source, and what would change the answer. Live from IDNI's GitHub.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -66,6 +66,8 @@ aside { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .chips button { background: none; border: 1px solid var(--hair); border-radius: 999px; color: var(--text); font: 12px var(--mono); padding: 3px 10px; cursor: pointer; min-height: 28px; }
 .chips button:hover { border-color: #fff; }
 .chips button[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
+.uses { margin-top: 8px; }
+.uses button { font: 600 12px var(--display); letter-spacing: .06em; border-radius: 6px; padding: 4px 12px; }
 main { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 .list { display: flex; flex-direction: column; gap: 14px; }
 .topic h3 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
@@ -134,7 +136,8 @@ footer a { color: var(--dim); }
   <nav class="tnav" data-page="gxp" aria-label="Pages and tools"></nav>
   <div class="top">
     <p class="lead">Is Tau ready for pharma (GxP)?</p>
-    <p class="sub">A regulated company does not approve a platform in general. It decides whether it can rely on the software, and on the parties behind it, for one intended use (21 CFR Part 11, EU GMP Annex 11). These are questions such a supplier assessment asks, answered from IDNI's public repositories for one use: the public Tau Net testnet as the signed record of a batch release decision.</p>
+    <p class="sub" id="sub" translate="no"></p>
+    <ul class="chips uses" id="uses" aria-label="Intended use"></ul>
   </div>
   <div class="cols">
     <main>
@@ -144,12 +147,12 @@ footer a { color: var(--dim); }
     <aside>
       <section class="panel" id="verdictPanel" aria-labelledby="hVerdict">
         <div class="ph"><h2 id="hVerdict">The answer today</h2><span class="when">Checked by hand on <b id="nChecked" translate="no">–</b></span></div>
-        <p class="verdict">Not for this use, on the evidence that is public today.</p>
+        <p class="verdict" id="verdict" translate="no"></p>
         <dl class="use">
           <dt>The use</dt>
-          <dd>The public Tau Net testnet as the signed record of a batch release decision at a medicine manufacturer.</dd>
+          <dd id="useTxt" translate="no"></dd>
           <dt>Main reasons</dt>
-          <dd>IDNI itself describes the network as alpha, for testing and experimentation. An entry is not final. A signed entry shows no name and no meaning. No agreement or support is offered.</dd>
+          <dd id="reasons" translate="no"></dd>
         </dl>
         <div class="bar" id="bar" aria-hidden="true"></div>
         <ul class="legend" id="legend"></ul>
@@ -161,27 +164,16 @@ footer a { color: var(--dim); }
         <div class="ph"><h2 id="hLive">Live from IDNI's GitHub</h2><span class="live" aria-live="polite"><i class="dot" id="dot"></i><span id="liveTxt">Reading GitHub…</span></span></div>
         <dl class="kv" id="liveKv"></dl>
         <p class="quiet" id="liveMsg">Reading GitHub…</p>
-        <p class="note">#106 and #108 were reported by Tau HUD and were not confirmed by IDNI when the answers were read. A closed issue alone changes no answer: the fix and its test are read first.</p>
+        <p class="note" id="liveNote" translate="no"></p>
       </section>
       <section class="panel" aria-labelledby="hChange">
         <h2 id="hChange">What would change the answer</h2>
-        <ul class="plain">
-          <li>Fixes that are shown, not only announced: a closed issue with its fix and a regression test</li>
-          <li>Controlled versions: releases or pinned commits with release notes and test evidence</li>
-          <li>A finality rule, or a use that does not depend on finality</li>
-          <li>Written responsibilities for every service the use depends on</li>
-          <li>An independent review of cryptography and consensus</li>
-          <li>A signature layer that carries name, time and meaning</li>
-        </ul>
-        <p class="note">A private or permissioned network is judged on its own merits. A public mainnet is not a precondition for every use.</p>
+        <ul class="plain" id="change"></ul>
+        <p class="note" id="changeNote" translate="no"></p>
       </section>
       <section class="panel" aria-labelledby="hOther">
         <h2 id="hOther">Other uses, other decisions</h2>
-        <ul class="plain">
-          <li><b>Rule checker, offline.</b> Check written process rules for contradictions during validation. If you rely on its verdict, assess it as a tool: a pinned version, kept inputs and outputs, and an UNKNOWN or an error never counts as a pass. Commercial use outside Tau Net needs a further licence from IDNI; a 30-day internal evaluation is free.</li>
-          <li><b>Hash anchoring.</b> Fingerprints of records that stay in a validated system, written to a network you control. The anchor adds tamper evidence. A hash can still be personal data, so check data protection first.</li>
-          <li><b>Exploratory pilots.</b> Learning projects whose results are checked again independently need no supplier approval, as long as nothing they produce is relied on for a GxP decision.</li>
-        </ul>
+        <ul class="plain" id="other"></ul>
       </section>
       <section class="panel" id="kitPanel" aria-labelledby="hKit" hidden>
         <h2 id="hKit">The assessment kit</h2>
@@ -216,7 +208,9 @@ const MEANS = {
   ok: "Shown by the sources for this use.",
 };
 const ORDER = ["gap", "enm", "cond", "ok"];
-const S = { data: null, gh: null, ok: null, topic: "all" };
+const S = { data: null, gh: null, ok: null, topic: "all", use: P.get("use") === "net" ? "net" : "lang" };
+/* the page answers the same questions for two intended uses; ?use=net opens the second one */
+const use = () => S.data && (S.data.uses.find(u => u.id === S.use) || S.data.uses[0]);
 
 if (KIT_URL) { $("kitLink").href = KIT_URL; $("kitPanel").hidden = false; }
 
@@ -231,8 +225,14 @@ function changed(item) {
 }
 
 function render() {
-  const d = S.data; if (!d) return;
-  const topics = d.topics.filter(t => d.items.some(x => x.topic === t.id));
+  const d = use(); if (!d) return;
+  const all_topics = S.data.topics;
+  $("uses").innerHTML = S.data.uses.map(u => `<li><button type="button" data-u="${esc(u.id)}" aria-pressed="${u.id === d.id}" translate="no">${esc(T(u.tab))}</button></li>`).join("");
+  $("sub").textContent = T(d.sub); $("verdict").textContent = T(d.verdict); $("useTxt").textContent = T(d.use); $("reasons").textContent = T(d.reasons);
+  $("change").innerHTML = d.change.map(x => `<li translate="no">${esc(T(x))}</li>`).join("");
+  $("changeNote").textContent = T(d.changeNote); $("liveNote").textContent = T(d.liveNote);
+  $("other").innerHTML = d.other.map(([b, t]) => `<li translate="no"><b>${esc(T(b))}</b> ${esc(T(t))}</li>`).join("");
+  const topics = all_topics.filter(t => d.items.some(x => x.topic === t.id));
   $("chips").innerHTML = [`<li><button type="button" data-k="all" aria-pressed="${S.topic === "all"}">${esc(T("All"))}</button></li>`]
     .concat(topics.map(t => `<li><button type="button" data-k="${esc(t.id)}" aria-pressed="${S.topic === t.id}" translate="no">${esc(pick(t))}</button></li>`)).join("");
   $("list").innerHTML = topics.filter(t => S.topic === "all" || S.topic === t.id).map(t => `<section class="topic"><h3 translate="no">${esc(pick(t))}</h3><ul>` +
@@ -243,7 +243,7 @@ function render() {
     `</ul></section>`).join("");
   const n = r => d.items.filter(x => x.r === r).length;
   const all = d.items.length || 1;
-  $("nChecked").textContent = d.checked || "–";
+  $("nChecked").textContent = S.data.checked || "–";
   $("basis").textContent = pick(d.basis);
   $("bar").innerHTML = ORDER.map(r => `<i style="width:${(100 * n(r) / all).toFixed(1)}%;background:var(--${r})"></i>`).join("");
   $("legend").innerHTML = ORDER.filter(r => n(r)).map(r => `<li translate="no"><i class="sw" style="background:var(--${r})"></i><b>${n(r)}</b>` +
@@ -257,14 +257,15 @@ function renderLive() {
   $("liveTxt").textContent = S.ok === null ? T("Reading GitHub…") : !g ? T("GitHub not reachable") : SAMPLE ? T("Sample data") : T("Live, every 10 minutes");
   if (!g) { $("liveKv").innerHTML = ""; $("liveMsg").hidden = false; $("liveMsg").textContent = S.ok === null ? T("Reading GitHub…") : T("GitHub could not be read right now. The answers do not depend on it."); return; }
   const st = x => !x ? "–" : x.merged ? T("merged") : x.state === "closed" ? T("closed") : T("open");
+  const d = use(), on = d ? d.live : [];
   const rows = [
-    ["Newest Tau Language release", g.tl && g.tl.tag ? `${g.tl.tag}${g.tl.date ? " · " + g.tl.date : ""}` : "–"],
-    ["Tau Net releases", g.tn ? `${g.tn.tag}${g.tn.date ? " · " + g.tn.date : ""}` : T("none yet")],
-    ["#108 report: new addresses refused on one node", st(g.i108)],
-    ["#106 report: two rule templates block their author", st(g.i106)],
-    ["#93 proposal: restart from a new genesis", st(g.pr93)],
-  ];
-  $("liveKv").innerHTML = rows.map(([k, v]) => `<dt translate="no">${esc(T(k))}</dt><dd translate="no">${esc(v)}</dd>`).join("");
+    ["tl", "Newest Tau Language release", g.tl && g.tl.tag ? `${g.tl.tag}${g.tl.date ? " · " + g.tl.date : ""}` : "–"],
+    ["tn", "Tau Net releases", g.tn ? `${g.tn.tag}${g.tn.date ? " · " + g.tn.date : ""}` : T("none yet")],
+    ["i108", "#108 report: new addresses refused on one node", st(g.i108)],
+    ["i106", "#106 report: two rule templates block their author", st(g.i106)],
+    ["pr93", "#93 proposal: restart from a new genesis", st(g.pr93)],
+  ].filter(r => on.includes(r[0]));
+  $("liveKv").innerHTML = rows.map(([, k, v]) => `<dt translate="no">${esc(T(k))}</dt><dd translate="no">${esc(v)}</dd>`).join("");
   $("liveMsg").hidden = true;
 }
 
@@ -292,7 +293,14 @@ async function tick() {
 }
 
 $("chips").addEventListener("click", e => { const b = e.target.closest("button[data-k]"); if (b) { S.topic = b.dataset.k; render(); } });
-fetch("gxp.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => { if (j) { S.data = j; render(); } }).catch(() => {});
+$("uses").addEventListener("click", e => {
+  const b = e.target.closest("button[data-u]"); if (!b || b.dataset.u === S.use) return;
+  S.use = b.dataset.u; S.topic = "all";
+  const q = new URLSearchParams(location.search); if (S.use === "net") q.set("use", "net"); else q.delete("use");
+  try { history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash); } catch (err) {}
+  render(); renderLive(); $("list").scrollTop = 0;
+});
+fetch("gxp.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => { if (j) { S.data = j; render(); renderLive(); } }).catch(() => {});
 renderLive();
 tick();
 setInterval(() => { if (!document.hidden) tick(); }, CACHE_MS);
