@@ -16,7 +16,7 @@ from PIL import Image  # noqa: E402
 Image.new("RGB", (1600, 900), (40, 120, 160)).save(os.path.join(ART, "isle.jpg"))
 json.dump({"scenes": {"island": "isle.jpg"}}, open(os.path.join(ART, "index.json"), "w"))
 SHIPS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "rabbit", "art", "ships")
-os.environ.update(BLOG_ART=ART, BLOG_SHIPS=SHIPS, PUBLIC_DIR=TMP, BLOG_STATE=os.path.join(TMP, "state.json"), NEWS_AI_KEY="test", CHAT_AI_KEY="",
+os.environ.update(BLOG_ART=ART, BLOG_SHIPS=SHIPS, PUBLIC_DIR=TMP, BLOG_STATE=os.path.join(TMP, "state.json"), NEWS_AI_KEY="test", CHAT_AI_KEY="", BLOG_POST_MAX_HOURS="0",
                   TELEGRAM_BOT_TOKEN="", X_API_KEY="")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import blog  # noqa: E402
@@ -257,6 +257,38 @@ blog.write_json(blog.STATE, st0)
 blog.write_json(os.path.join(TMP, "blog", "drafts", "old-1.json"), {"id": "old", "check": {}})
 check(blog.auto_publish(T0 + 10 * 86400) is None, "an old draft is never published by itself")
 blog.AUTO_PUBLISH_HOURS = 0
+
+# a late publish goes on the blog without a post (12 November 2026: the pirates' article of Tuesday 10 November went out
+# on X on Thursday night, after a redraft and auto-publish switched back on)
+blog.POST_MAX_HOURS = 30
+TP = 1794333600   # Tuesday 10 November 2026, 19:00 German time
+old_draft = {"id": "2026-11-10-pirates-learnings", "visit": "2026-11-10-pirates", "facts": {"timetable time": "19:00"}}
+check(blog.call_time(old_draft) == TP, "a draft without t0: its call time from the visit's day and timetable time")
+check(blog.call_time({"t0": TP + 60}) == TP + 60, "a draft with t0: that time")
+check(blog.too_late_to_post(old_draft, TP + 28.5 * 3600) is None, "the usual way (drafted after the check, 24 h wait) still posts")
+check(round(blog.too_late_to_post(old_draft, TP + 51 * 3600)) == 51, "two days later: too late to post")
+blog.AUTO_PUBLISH_HOURS = 24
+check("without a post" in blog.auto_note({"drafted_at": {"x": TP + 30 * 3600}}, "x", dict(old_draft, check={})),
+      "the up block says a late draft goes out without a post")
+check("without a post" not in blog.auto_note({"drafted_at": {"x": TP + 2 * 3600}}, "x", dict(old_draft, check={})),
+      "and a timely one with its post")
+blog.AUTO_PUBLISH_HOURS = 0
+LD = "2026-11-10-pirates-learnings"
+stl = blog.state()
+stl["drafts"][LD] = LD + "-1"
+blog.write_json(blog.STATE, stl)
+blog.write_json(os.path.join(TMP, "blog", "drafts", LD + "-1.json"), dict(old_draft, title=three("t"), dek=three("d"), why=[three("w")], check={}))
+told = []
+real_announce = blog.announce
+blog.announce = lambda a, dry: told.append(a["id"])
+check(blog.publish_cli(LD, dry=False, force=False, now=TP + 51 * 3600) == 0 and not told
+      and any(p.get("id") == LD for p in blog.posts()["posts"]) and LD not in blog.state().get("announced", []),
+      "published two days late: on the blog, no post on Telegram or X")
+check(blog.publish_cli(LD, dry=False, force=False, post_late=True, now=TP + 51 * 3600) == 0 and told == [LD],
+      "--post posts a late one by hand")
+blog.announce = real_announce
+blog.unpublish_cli(LD)
+blog.POST_MAX_HOURS = 0
 
 # ---------- our node had no room for new wallets (IDNI tau-testnet #108; MS Dry Run, 11 November 2026) ----------
 T11 = 1794409200   # Wednesday 11 November 2026, 16:00 German time

@@ -259,6 +259,9 @@ services:
       TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
       # a clean blog draft on the blog by itself this many hours after it was written (24 since 6.11.2026); 0 = only by hand (up blog publish)
       BLOG_AUTO_PUBLISH_HOURS: ${BLOG_AUTO_PUBLISH_HOURS:-24}
+      # the article's post on Telegram and X only up to this many hours after its call began; later it goes on the blog
+      # without a post (0 = no limit; up blog publish <id> --post posts a late one by hand)
+      BLOG_POST_MAX_HOURS: ${BLOG_POST_MAX_HOURS:-30}
       # the weekly report for IDNI (alerts/idni_report.py): counted from our public data, written as an unlisted page with
       # a pre-filled issue link for IDNI/tau-testnet and told to the owner's private chat (Sunday 18:00 German time);
       # never filed by itself. IDNI_REPORT=false stops it; up report shows it any time
