@@ -335,6 +335,10 @@ services:
       IDNI_DIGEST_HOUR: ${IDNI_DIGEST_HOUR:-10}
       IDNI_DIGEST_LATE_HOURS: ${IDNI_DIGEST_LATE_HOURS:-3}
       IDNI_DIGEST_LANG_ALONE: ${IDNI_DIGEST_LANG_ALONE:-false}   # true: a day with only tau-lang changes gets a post too
+      # roadmap_watch.py: when an IDNI issue or pull request that tauhud.com/roadmap/ links changes state, one private
+      # note to the owner (the chat `up owner` set, in /state/owner.json), never the channel
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
     volumes:
       - alerts_state:/state     # the clones, in /state/devpulse; digests.json (the daily IDNI post)
       - alerts_public:/public   # devpulse.json, served by Caddy
@@ -342,6 +346,7 @@ services:
       - ./node/Dockerfile:/pins/Dockerfile:ro
       - ./node/patches:/pins/patches:ro   # tried on each new upstream main: do our node patches still apply?
       - ../facts:/facts:ro   # the hand-checked facts for Tau today (knowledge.py, tauhud.com/facts/); a folder, so a pull reaches it
+      - ../roadmap:/roadmap:ro   # the Road to mainnet page: which IDNI issues and pull requests it links (roadmap_watch.py)
     depends_on: [relay]
     mem_limit: 256m
     restart: unless-stopped

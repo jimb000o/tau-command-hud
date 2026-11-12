@@ -16,7 +16,9 @@ by Caddy at https://node.tauhud.com/devpulse.json:
     build still uses our tau-lang commit, and whether each of our node patches still applies to the newest main
     (checked once per new upstream commit on a shallow checkout; `up` prints it)
   - refs: which IDNI issue and pull request numbers IDNI's own commits name, on main and on work branches, so
-    tauhud.com/roadmap/ moves an item's badge by itself when IDNI fixes it (git only, never guessed)
+    tauhud.com/roadmap/ moves an item's badge by itself when IDNI fixes it (git only, never guessed); refs.states:
+    GitHub's state of every IDNI issue and pull request the page links, once an hour (roadmap_watch.py, which also
+    tells the owner privately when one changes)
   - digest: once a day, everything IDNI merged since the last one read together as ONE post for Telegram and X
     (idni_digest.py writes it, alerts.py posts it; quiet days get none)
   - after each pass, Tau today (knowledge.py): the hand-checked facts, the live numbers and IDNI's latest work as
@@ -674,15 +676,22 @@ def main():
         write_atomic(sys.argv[2], json.dumps(data, separators=(",", ":")))
         print(f"wrote {sys.argv[2]}: {', '.join(r['repo'] for r in data['repos'])}")
         return
-    trackers, api_at = {}, 0.0
+    trackers, api_at, links = {}, 0.0, None
     while True:
         started = time.time()
         try:
             if started - api_at >= API_EVERY:
                 fresh = {r: tracker(r, int(started)) for r in REPOS}
                 trackers.update({r: v for r, v in fresh.items() if v})
+                try:   # the IDNI issues and pull requests tauhud.com/roadmap/ links: their state, a note when one changes
+                    import roadmap_watch
+                    links = roadmap_watch.step(started) or links
+                except Exception as e:  # noqa: BLE001 - never stops the pulse
+                    log.warning("roadmap links: %s", e)
                 api_at = started
             data = build(int(started), trackers, digest=True)
+            if links and isinstance(data.get("refs"), dict):
+                data["refs"]["states"] = links
             if data["repos"]:
                 write_atomic(PUBLIC_PATH, json.dumps(data, separators=(",", ":")))
                 try:   # Tau today for AI assistants and tauhud.com/facts/ (knowledge.py): facts, live numbers, IDNI's work

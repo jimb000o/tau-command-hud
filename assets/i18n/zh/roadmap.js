@@ -18,6 +18,10 @@ TauI18n.add({ strings: {
   "Open": "未解决",
   "Partly fixed": "部分修复",
   "Fixed": "已修复",
+  "merged": "已合并",
+  "closed": "已关闭",
+  "not planned": "不予处理",
+  "open": "仍开放",
   "Fix in review": "修复审核中",
   "IDNI’s list": "IDNI 的清单",
   "Status unknown": "状态未知",
@@ -79,7 +83,7 @@ TauI18n.add({ strings: {
   "IDNI work branch, not on main yet, names #{n}": "IDNI 的工作分支，尚未进入主分支，提到 #{n}",
   "our node runs it": "我们的节点已在运行",
   "our node does not run it yet": "我们的节点还没有运行",
-  "Status from the public GitHub API, refreshed every 10 minutes, and from IDNI’s own git history: a fix on IDNI’s main that names an item’s issue marks it partly fixed by itself. Quotes from IDNI’s monthly videos on the Tau Net YouTube channel. Comments are kept by the same moderator as the troll box.": "状态来自公开的 GitHub API（每 10 分钟刷新）以及 IDNI 自己的 git 历史：IDNI 主分支上提到某一项问题编号的修复，会自动把该项标为部分修复。引语出自 Tau Net YouTube 频道上 IDNI 的月度视频。评论由与闲聊箱相同的管理员维护。",
+  "Status from the public GitHub API, checked every hour by our server (the chip beside each linked IDNI issue or pull request), and from IDNI’s own git history: a fix on IDNI’s main that names an item’s issue marks it partly fixed by itself. Quotes from IDNI’s monthly videos on the Tau Net YouTube channel. Comments are kept by the same moderator as the troll box.": "状态来自公开的 GitHub API（由我们的服务器每小时检查一次，即每个 IDNI issue 或拉取请求链接旁的标签）以及 IDNI 自己的 git 历史：IDNI 主分支上提到某一项问题编号的修复，会自动把该项标为部分修复。引语出自 Tau Net YouTube 频道上 IDNI 的月度视频。评论由与闲聊箱相同的管理员维护。",
 
   /* relay answers (roadmap.py, chat.py) */
   "At most 600 characters, please.": "请最多 600 个字符。",
@@ -238,5 +242,5 @@ TauI18n.add({ strings: {
   "Oct 2026 Dev update": "2026 年 10 月开发进展",
   "the development branch and the next release": "开发分支与下次发布",
   "how the code moves, live": "代码如何变化，实时",
-  "Ours to offer: run each new release in our node image and publish load and check times for the rules people use.": "我们能做的：在我们的节点镜像中运行每个新版本，并公布常用规则的加载和检查耗时。",
+  "What we could do, not yet offered to IDNI: time each new release on our own node and publish how long the rules people use take to load and check.": "我们可以做的（尚未向 IDNI 提出）：在我们自己的节点上为每个新版本计时，并公布常用规则的加载和检查耗时。",
 } });

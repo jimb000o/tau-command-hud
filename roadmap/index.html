@@ -100,6 +100,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .det ul, .det ol { margin: 0; padding-left: 24px; display: grid; gap: 3px; max-width: 76ch; }
 .det .proof a { color: #fff; }
 .det .proof span { color: var(--dim); }
+.det .proof .lk { display: inline-block; margin-left: 4px; font: 600 10px var(--display); letter-spacing: .12em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 0 6px; vertical-align: 1px; }
+.det .proof .lk:empty { display: none; }
+.det .proof .lk.lk-merged, .det .proof .lk.lk-closed { color: var(--ok); } .det .proof .lk.lk-open { color: #fff; } .det .proof .lk.lk-not_planned { color: var(--dim); }
 .det .fit { border-left: 2px solid var(--ok); padding: 4px 10px; background: rgba(57,255,138,.04); }
 .det .fit a { color: var(--dim); }
 .det .src { margin-top: 3px; font-size: 11px; color: var(--dim); }
@@ -211,7 +214,7 @@ p.sub, .sub, .rules, .det p, .said li { max-width: 76ch; }
   </main>
 
   <footer>
-    <p>Status from the public GitHub API, refreshed every 10 minutes, and from IDNI’s own git history: a fix on IDNI’s main that names an item’s issue marks it partly fixed by itself. Quotes from IDNI’s monthly videos on the Tau Net YouTube channel. Comments are kept by the same moderator as the troll box. <a href="/findings/">Findings</a> · <a href="/status/">Status</a> · <a href="/devpulse/">Build pulse</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BRoadmap%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+    <p>Status from the public GitHub API, checked every hour by our server (the chip beside each linked IDNI issue or pull request), and from IDNI’s own git history: a fix on IDNI’s main that names an item’s issue marks it partly fixed by itself. Quotes from IDNI’s monthly videos on the Tau Net YouTube channel. Comments are kept by the same moderator as the troll box. <a href="/findings/">Findings</a> · <a href="/status/">Status</a> · <a href="/devpulse/">Build pulse</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BRoadmap%5D%20" target="_blank" rel="noopener">Feedback</a></p>
   </footer>
 </div>
 
@@ -382,7 +385,7 @@ const ITEMS = [
       ["/devpulse/", "Build pulse", "how the code moves, live"],
     ],
     path: [
-      "Ours to offer: run each new release in our node image and publish load and check times for the rules people use.",
+      "What we could do, not yet offered to IDNI: time each new release on our own node and publish how long the rules people use take to load and check.",
     ],
     fit: "Timings from a node outside IDNI help decide which optimisation matters most.",
     talks: ["aug", "octDev"] },
@@ -430,13 +433,33 @@ async function fetchIssues() {
 const PULSE_URL = "https://node.tauhud.com/devpulse.json";
 async function fetchPulse() {
   if (SAMPLE) return { items: { 81: { main: [], work: [{ branch: "issue/81-drop-sealed", ts: Date.now() / 1000 - 7200, url: `${IDNI}/tree/issue/81-drop-sealed` }] },
-    78: { main: [{ sha: "e6c8f9283f29fb53ba2a6d3b9448f4faebfd83a8", ts: 1793232000, kind: "fix", url: `${IDNI}/commit/e6c8f9283f29fb53ba2a6d3b9448f4faebfd83a8`, runs: true }], work: [] } }, news: [] };
+    78: { main: [{ sha: "e6c8f9283f29fb53ba2a6d3b9448f4faebfd83a8", ts: 1793232000, kind: "fix", url: `${IDNI}/commit/e6c8f9283f29fb53ba2a6d3b9448f4faebfd83a8`, runs: true }], work: [] } }, news: [],
+    states: { 78: { state: "closed", pr: false }, 82: { state: "open", pr: false }, 93: { state: "merged", pr: true } } };
   try {
     const r = await fetch(PULSE_URL, { cache: "no-store" });
     if (!r.ok) return null;
     const j = await r.json();
-    return j && j.refs ? { items: j.refs.items || {}, news: j.news || [] } : null;
+    return j && j.refs ? { items: j.refs.items || {}, news: j.news || [], states: j.refs.states || null } : null;
   } catch { return null; }
+}
+/* GitHub's state of every IDNI issue and pull request the page links, checked once an hour by our server
+   (infra/alerts/roadmap_watch.py, in devpulse.json refs.states; it also tells us privately when one changes, so an
+   item's words get a look). A chip beside each such link says merged, closed or open; the badges read it too, so a
+   visitor's browser asks GitHub only when our server has no answer. */
+const linkNo = h => { const m = String(h).match(/^https:\/\/github\.com\/IDNI\/tau-testnet\/(?:issues|pull)\/(\d+)$/); return m ? +m[1] : null; };
+const CHIP = { merged: "merged", closed: "closed", not_planned: "not planned", open: "open" };
+function linkState(n) {
+  const s = PULSE && PULSE.states && PULSE.states[n];
+  if (s) return s.state;
+  const i = ISSUES[n];
+  return i ? (i.merged ? "merged" : i.state === "closed" ? (i.reason === "not_planned" ? "not_planned" : "closed") : "open") : "";
+}
+const chip = n => { const s = linkState(n); return `<span class="lk lk-${s}" data-n="${n}">${s ? CHIP[s] : ""}</span>`; };
+function fromPulse(p) {   // the hourly states in the shape fetchIssues gives, when they cover every ref
+  const nums = [...new Set(ITEMS.flatMap(it => it.refs))];
+  if (!p || !p.states || !nums.every(n => p.states[n])) return null;
+  return Object.fromEntries(nums.map(n => { const s = p.states[n];
+    return [n, { state: s.state === "open" ? "open" : "closed", reason: s.state === "not_planned" ? "not_planned" : null, pr: !!s.pr, merged: s.state === "merged" }]; }));
 }
 let ISSUES = {}, PULSE = null;
 const work = it => {   // what IDNI's git says about this item: fixes on main, and branches still at work
@@ -570,7 +593,7 @@ function renderDetail() {
     <div class="meta"><span class="badge b-${cls}">${label}</span><span>${it.must ? "Must be fixed" : "Should be fixed"}</span>${refs ? `<span>At IDNI: ${refs}</span>` : ""}</div>
     <h3>The problem</h3><p>${esc(it.problem)}</p>
     <h3>Why it matters for mainnet</h3><p>${esc(it.why)}</p>
-    <h3>Proof</h3><ul class="proof">${it.proof.map(([h, t, d]) => `<li><a href="${h}"${/^https?:/.test(h) ? ' target="_blank" rel="noopener"' : ""}>${esc(t)}</a> <span>${esc(d)}</span></li>`).join("")}</ul>
+    <h3>Proof</h3><ul class="proof">${it.proof.map(([h, t, d]) => `<li><a href="${h}"${/^https?:/.test(h) ? ' target="_blank" rel="noopener"' : ""}>${esc(t)}</a>${linkNo(h) ? chip(linkNo(h)) : ""} <span>${esc(d)}</span></li>`).join("")}</ul>
     <div id="work">${renderWork(it)}</div>
     <h3>A path to a fix</h3><ol>${it.path.map(p => `<li>${esc(p)}</li>`).join("")}</ol>
     <h3>How it fits IDNI’s way</h3><div class="fit"><p>${esc(it.fit)}</p>${it.talks.map(k => `<p>${talk(k)}</p>`).join("")}</div>
@@ -640,13 +663,17 @@ document.addEventListener("click", e => {
 });
 
 async function tick() {
-  [ISSUES, PULSE] = await Promise.all([fetchIssues(), fetchPulse()]);
+  PULSE = await fetchPulse();
+  ISSUES = fromPulse(PULSE) || await fetchIssues();
   const got = Object.keys(ISSUES).length;
   $("state").className = "state " + (got ? "live" : "off");
   $("stateText").textContent = got ? (SAMPLE ? "Sample data" : "Live from GitHub") : "GitHub unreachable";
   renderList();
   const b = SEL && $("det").querySelector(".meta .badge");   // only the badge and IDNI's work: a comment being typed stays
   if (b) { const [cls, label] = status(SEL); b.className = `badge b-${cls}`; b.textContent = label; }
+  if (SEL) for (const c of $("det").querySelectorAll(".proof .lk[data-n]")) {
+    const s = linkState(+c.dataset.n); c.className = `lk lk-${s}`; c.textContent = s ? CHIP[s] : "";
+  }
   const wk = SEL && $("det").querySelector("#work"), html = SEL ? renderWork(SEL) : "";
   if (wk && wk.dataset.html !== html) { wk.innerHTML = html; wk.dataset.html = html; }
 }
