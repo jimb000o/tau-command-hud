@@ -6,23 +6,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Is Tau GxP-ready?</title>
-<meta name="description" content="Could a pharma company use standard Tau under GxP (GAMP 5, 21 CFR Part 11, EU Annex 11)? What a supplier assessment would ask, what exists today with a source for each answer, and what would change the answer. Live from IDNI's GitHub.">
+<meta name="description" content="Could a pharma company rely on Tau under GxP (21 CFR Part 11, EU GMP Annex 11)? One intended use, the questions a supplier assessment asks, each answered from IDNI's public repositories with its source, and what would change the answer. Live from IDNI's GitHub.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#09090a">
 <meta property="og:title" content="Tau HUD · Is Tau GxP-ready?">
-<meta property="og:description" content="What an auditor would ask before a pharma company could use Tau, what exists today, and what would change the answer.">
+<meta property="og:description" content="What an auditor would ask before a pharma company could rely on Tau, what the public sources show today, and what would change the answer.">
 <meta property="og:image" content="https://tauhud.com/og.png">
 <meta property="og:url" content="https://tauhud.com/gxp/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@TauHUDcom">
 <link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
 <style>
-/* Same tokens as the HUD: black and white, phosphor green as the one accent; amber for a partial answer. */
+/* Same tokens as the HUD: black and white, phosphor green as the one accent. An outcome has its own mark:
+   red for a confirmed gap, amber for acceptable with conditions, a dashed neutral one where evidence was not obtained. */
 :root {
   --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
-  --ok: #39ff8a; --part: #ffc861; --gap: #ff6b6b; --dim: #8a8a94; --text: #ebebee;
+  --ok: #39ff8a; --cond: #ffb13b; --gap: #ff4d6d; --enm: #b4b4be; --dim: #8a8a94; --text: #ebebee;
   --display: "Sora", "Manrope", "Segoe UI", sans-serif;
   --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   color-scheme: dark;
@@ -44,14 +45,12 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .mark .pulse { stroke: var(--ok); }
 .brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
 .brand span { color: var(--dim); font: 12px var(--mono); }
-.top { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: flex-end; justify-content: space-between; }
 .lead { margin: 4px 0 0; font: 500 clamp(20px, 2.6vw, 28px)/1.25 var(--display); color: #fff; }
-.sub { margin: 4px 0 0; color: var(--dim); max-width: 86ch; }
-.sub b { color: var(--text); font-weight: 500; }
-.stats { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-end; }
-.stat { display: grid; }
-.stat b { font: 600 22px/1.1 var(--display); color: #fff; }
-.stat span { color: var(--dim); font-size: 11px; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 132ch; }
+.ph { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; margin: 0 0 6px; }
+.ph h2 { margin: 0; }
+.when { color: var(--dim); font-size: 11px; }
+.when b { color: #fff; font-weight: 500; }
 .live { display: inline-flex; align-items: center; gap: 7px; color: var(--dim); font-size: 12px; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
 .dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
@@ -60,11 +59,9 @@ aside { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
 .panel h2 { margin: 0 0 6px; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; text-decoration: none; color: #000; background: #fff; border: 1px solid #fff; border-radius: 6px; padding: 7px 12px; min-height: 32px; cursor: pointer; }
-.btn.ghost { color: var(--text); background: none; border-color: var(--hair); }
 .btn:hover { background: var(--ok); border-color: var(--ok); color: #000; }
 .acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .note { color: var(--dim); font-size: 12px; margin: 6px 0 0; }
-.prompt { margin: 6px 0 0; padding: 8px 10px; background: #050506; border: 1px solid var(--hair); border-radius: 6px; font-size: 12px; color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .chips button { background: none; border: 1px solid var(--hair); border-radius: 999px; color: var(--text); font: 12px var(--mono); padding: 3px 10px; cursor: pointer; min-height: 28px; }
 .chips button:hover { border-color: #fff; }
@@ -76,34 +73,38 @@ main { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 .fact { background: rgba(16,16,18,.9); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
 .fact:hover { border-color: var(--hair); }
 .fact p { margin: 0; color: var(--text); }
+.fact h4 { margin: 0 0 4px; font: 600 13px/1.35 var(--display); color: #fff; }
+.rate { display: inline-block; max-width: 100%; font: 600 11px/1.5 var(--display); letter-spacing: .1em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 10px; padding: 0 8px; margin: 0 0 6px; }
+.rate.ok { color: var(--ok); } .rate.cond { color: var(--cond); } .rate.gap { color: var(--gap); }
+.rate.enm { color: var(--enm); border-style: dashed; }
 .src { margin-top: 6px; font-size: 11px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 2px 10px; }
 .src a { color: var(--dim); overflow-wrap: anywhere; }
 .src a:hover { color: #fff; }
 .stale { display: inline-block; margin-top: 6px; font-size: 11px; color: #000; background: var(--text); border-radius: 999px; padding: 0 8px; }
-.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; margin: 0; }
 .kv dt { color: var(--dim); font-size: 12px; }
-.kv dd { margin: 0; color: #fff; overflow-wrap: anywhere; }
-.commits { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
-.commits li { display: grid; grid-template-columns: 74px 1fr; gap: 8px; font-size: 12px; }
-.commits time { color: var(--dim); }
-.commits a { color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
-.commits a:hover { color: #fff; text-decoration: underline; }
+.kv dd { margin: 0; color: #fff; overflow-wrap: anywhere; text-align: right; }
 .quiet { color: var(--dim); font-size: 12px; margin: 0; }
 footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 footer p { margin: 0; }
 footer a { color: var(--dim); }
-.rate { display: inline-block; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 0 7px; margin-right: 6px; vertical-align: 1px; white-space: nowrap; }
-.rate.ok { color: var(--ok); } .rate.part { color: var(--part); } .rate.gap { color: var(--gap); }
-.fact h4 { margin: 0 0 4px; font: 600 13px/1.35 var(--display); color: #fff; }
-.ref { color: var(--dim); font-size: 11px; }
 .verdict { font: 500 15px/1.45 var(--display); color: #fff; margin: 0; }
-.bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin: 8px 0 4px; background: #222; }
+.use { margin: 6px 0 0; }
+.use dt { margin-top: 6px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.use dd { margin: 0; color: var(--text); }
+.bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin: 10px 0 0; background: #222; }
 .bar i { display: block; height: 100%; }
+.legend { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.legend li { display: grid; grid-template-columns: 10px auto 1fr; gap: 0 8px; align-items: baseline; }
+.legend .sw { width: 10px; height: 10px; border-radius: 2px; align-self: center; }
+.legend b { font: 600 15px var(--display); color: #fff; min-width: 2ch; text-align: right; }
+.legend span { color: #fff; }
+.legend small { grid-column: 3; color: var(--dim); font-size: 12px; }
 .plain { margin: 0; padding-left: 18px; display: grid; gap: 4px; color: var(--text); }
 .plain b { color: #fff; font-weight: 500; }
 [hidden] { display: none !important; }
-@media (min-width: 1000px) { .cols { grid-template-columns: minmax(0, 1fr) 380px; } }
-/* laptop and up, landscape: one screen; the facts and the side panels scroll inside, the page does not */
+@media (min-width: 1000px) { .cols { grid-template-columns: minmax(0, 1fr) 400px; } }
+/* laptop and up, landscape: one screen; the answers and the side panels scroll inside, the page does not */
 @media (min-width: 1100px) and (min-aspect-ratio: 4/3) {
   body { height: 100vh; overflow: hidden; padding-bottom: 10px; }
   .wrap { height: 100%; }
@@ -116,7 +117,7 @@ footer a { color: var(--dim); }
 @media (max-width: 999px) {
   .btn, .chips button { min-height: 44px; }
   .topic ul { grid-template-columns: minmax(0, 1fr); }
-  aside { display: contents; }   /* the prompt for your AI first, the live panels after the facts */
+  aside { display: contents; }   /* the answer first, the other panels after the questions */
   #verdictPanel { order: -1; }
   main { order: 0; }
   aside > .panel:not(#verdictPanel) { order: 2; }
@@ -132,61 +133,65 @@ footer a { color: var(--dim); }
   </header>
   <nav class="tnav" data-page="gxp" aria-label="Pages and tools"></nav>
   <div class="top">
-    <div>
-      <p class="lead">Is Tau ready for pharma (GxP)?</p>
-      <p class="sub">A pharma company can use standard software without validating the software itself: it <b>assesses the supplier</b> and checks its own use (GAMP 5, 21 CFR Part 11, EU Annex 11). These are the questions such an assessment asks, answered for Tau today from IDNI's public repositories.</p>
-    </div>
-    <div class="stats" aria-live="polite">
-      <div class="stat"><b id="nOk">–</b><span>meet</span></div>
-      <div class="stat"><b id="nPart">–</b><span>partly</span></div>
-      <div class="stat"><b id="nGap">–</b><span>gaps</span></div>
-      <div class="stat"><b id="nChecked">–</b><span>checked by hand on</span></div>
-      <span class="live"><i class="dot" id="dot"></i><span id="liveTxt">Reading GitHub…</span></span>
-    </div>
+    <p class="lead">Is Tau ready for pharma (GxP)?</p>
+    <p class="sub">A regulated company does not approve a platform in general. It decides whether it can rely on the software, and on the parties behind it, for one intended use (21 CFR Part 11, EU GMP Annex 11). These are questions such a supplier assessment asks, answered from IDNI's public repositories for one use: the public Tau Net testnet as the signed record of a batch release decision.</p>
   </div>
   <div class="cols">
     <main>
       <ul class="chips" id="chips" aria-label="Topics"></ul>
-      <div class="list" id="list" aria-live="polite" translate="no"><p class="quiet">Loading the checklist…</p></div>
+      <div class="list" id="list" aria-live="polite"><p class="quiet">Loading the answers…</p></div>
     </main>
     <aside>
       <section class="panel" id="verdictPanel" aria-labelledby="hVerdict">
-        <h2 id="hVerdict">The answer today</h2>
-        <p class="verdict">Not yet. Tau's logic is its strength for validation, but the product is an alpha testnet: no releases, no quality system, no supplier agreement, no finality.</p>
+        <div class="ph"><h2 id="hVerdict">The answer today</h2><span class="when">Checked by hand on <b id="nChecked" translate="no">–</b></span></div>
+        <p class="verdict">Not for this use, on the evidence that is public today.</p>
+        <dl class="use">
+          <dt>The use</dt>
+          <dd>The public Tau Net testnet as the signed record of a batch release decision at a medicine manufacturer.</dd>
+          <dt>Main reasons</dt>
+          <dd>IDNI itself describes the network as alpha, for testing and experimentation. An entry is not final. A signed entry shows no name and no meaning. No agreement or support is offered.</dd>
+        </dl>
         <div class="bar" id="bar" aria-hidden="true"></div>
-        <p class="note">This is our reading of the rules, not legal or QA advice. Tau HUD is a community project, not affiliated with IDNI.</p>
+        <ul class="legend" id="legend"></ul>
+        <p class="note" id="countNote"></p>
+        <p class="note" id="basis" translate="no"></p>
+        <p class="note">Our reading of public sources, not legal or QA advice. IDNI was not asked and may hold documents it has not published. Tau HUD is a community project, not affiliated with IDNI.</p>
       </section>
       <section class="panel" aria-labelledby="hLive">
-        <h2 id="hLive">Live from IDNI's GitHub</h2>
+        <div class="ph"><h2 id="hLive">Live from IDNI's GitHub</h2><span class="live" aria-live="polite"><i class="dot" id="dot"></i><span id="liveTxt">Reading GitHub…</span></span></div>
         <dl class="kv" id="liveKv"></dl>
         <p class="quiet" id="liveMsg">Reading GitHub…</p>
+        <p class="note">#106 and #108 were reported by Tau HUD and were not confirmed by IDNI when the answers were read. A closed issue alone changes no answer: the fix and its test are read first.</p>
       </section>
       <section class="panel" aria-labelledby="hChange">
         <h2 id="hChange">What would change the answer</h2>
         <ul class="plain">
-          <li>A production network with a stated finality rule</li>
-          <li>Numbered releases with release notes</li>
-          <li>A published quality system, support terms and security policy</li>
-          <li>An agreement a regulated company can sign</li>
-          <li>An independent audit of cryptography and consensus</li>
+          <li>Fixes that are shown, not only announced: a closed issue with its fix and a regression test</li>
+          <li>Controlled versions: releases or pinned commits with release notes and test evidence</li>
+          <li>A finality rule, or a use that does not depend on finality</li>
+          <li>Written responsibilities for every service the use depends on</li>
+          <li>An independent review of cryptography and consensus</li>
+          <li>A signature layer that carries name, time and meaning</li>
         </ul>
+        <p class="note">A private or permissioned network is judged on its own merits. A public mainnet is not a precondition for every use.</p>
       </section>
-      <section class="panel" aria-labelledby="hToday">
-        <h2 id="hToday">Where it fits today</h2>
+      <section class="panel" aria-labelledby="hOther">
+        <h2 id="hOther">Other uses, other decisions</h2>
         <ul class="plain">
-          <li><b>Rule checker.</b> Prove offline that written process rules contain no contradiction; the validated system stays the record. Commercial use outside Tau Net needs a licence from IDNI.</li>
-          <li><b>Hash anchoring.</b> Only fingerprints of records on a private network you control.</li>
+          <li><b>Rule checker, offline.</b> Check written process rules for contradictions during validation. If you rely on its verdict, assess it as a tool: a pinned version, kept inputs and outputs, and an UNKNOWN or an error never counts as a pass. Commercial use outside Tau Net needs a further licence from IDNI; a 30-day internal evaluation is free.</li>
+          <li><b>Hash anchoring.</b> Fingerprints of records that stay in a validated system, written to a network you control. The anchor adds tamper evidence. A hash can still be personal data, so check data protection first.</li>
+          <li><b>Exploratory pilots.</b> Learning projects whose results are checked again independently need no supplier approval, as long as nothing they produce is relied on for a GxP decision.</li>
         </ul>
       </section>
       <section class="panel" id="kitPanel" aria-labelledby="hKit" hidden>
         <h2 id="hKit">The assessment kit</h2>
-        <p class="quiet">Supplier questionnaire, ledger risk assessment and a Part 11 / Annex 11 checklist as editable files, with this Tau assessment worked out in full.</p>
+        <p class="quiet">A method guide, a reusable assessment workbook with 77 questions, 24 risk prompts and 82 requirement rows (Part 11, Annex 11 and related guidance), and this Tau assessment in full as a dated evidence snapshot with 79 checked source citations.</p>
         <div class="acts"><a class="btn" id="kitLink" href="#" target="_blank" rel="noopener">Get the kit</a></div>
       </section>
     </aside>
   </div>
   <footer>
-    <p><span>Every answer was read by hand from IDNI's public repositories; an answer that IDNI's GitHub changes is marked until a person reads it again.</span> <span>A wrong or missing answer?</span> <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BGxP%5D%20" target="_blank" rel="noopener">Tell us</a> · <span>Tau HUD is a community project, not affiliated with IDNI.</span></p>
+    <p><span>Every answer was read by hand from IDNI's public repositories at fixed commits; an answer that IDNI's GitHub changes is marked until a person reads it again.</span> <span>A wrong or missing answer?</span> <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BGxP%5D%20" target="_blank" rel="noopener">Tell us</a> · <span>Tau HUD is a community project, not affiliated with IDNI.</span></p>
   </footer>
 </div>
 <script>
@@ -201,12 +206,21 @@ const LANG = window.TauI18n && TauI18n.lang ? TauI18n.lang : "en";
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const pick = o => (o && (o[LANG] || o.en)) || "";
 const CACHE_KEY = "tauhud.gxp.gh", CACHE_MS = 10 * 60000;
-const RATE = { ok: "Meets", part: "Partly", gap: "Gap" };
+/* The outcome of one answer, in the words of the assessment kit. "Evidence requirement not met" is about the evidence,
+   not about the supplier: nothing was obtained, which does not show that the practice is absent. */
+const RATE = { gap: "Confirmed gap", enm: "Evidence requirement not met", cond: "Acceptable with conditions", ok: "Acceptable" };
+const MEANS = {
+  gap: "The sources show that the need is not met for this use.",
+  enm: "Evidence was not obtained. It does not mean the practice is absent.",
+  cond: "Acceptable if the stated condition is checked.",
+  ok: "Shown by the sources for this use.",
+};
+const ORDER = ["gap", "enm", "cond", "ok"];
 const S = { data: null, gh: null, ok: null, topic: "all" };
 
 if (KIT_URL) { $("kitLink").href = KIT_URL; $("kitPanel").hidden = false; }
 
-/* what IDNI's GitHub says now, against what the answer was read from */
+/* what IDNI's GitHub says now, against what the answer was read from; a change asks for a new reading, it never changes an outcome by itself */
 function changed(item) {
   const g = S.gh; if (!g || !item.live) return false;
   if (item.live === "i108") return g.i108 && g.i108.state === "closed";
@@ -222,32 +236,35 @@ function render() {
   $("chips").innerHTML = [`<li><button type="button" data-k="all" aria-pressed="${S.topic === "all"}">${esc(T("All"))}</button></li>`]
     .concat(topics.map(t => `<li><button type="button" data-k="${esc(t.id)}" aria-pressed="${S.topic === t.id}" translate="no">${esc(pick(t))}</button></li>`)).join("");
   $("list").innerHTML = topics.filter(t => S.topic === "all" || S.topic === t.id).map(t => `<section class="topic"><h3 translate="no">${esc(pick(t))}</h3><ul>` +
-    d.items.filter(x => x.topic === t.id).map(x => `<li class="fact"><h4 translate="no"><span class="rate ${x.r}">${esc(T(RATE[x.r]))}</span>${esc(pick(x.q))}</h4>` +
-      `<p translate="no">${esc(pick(x.a))}</p><div class="src"><span class="ref" translate="no">${esc(x.ref)}</span>` +
+    d.items.filter(x => x.topic === t.id).map(x => `<li class="fact"><span class="rate ${esc(x.r)}" translate="no">${esc(T(RATE[x.r] || ""))}</span>` +
+      `<h4 translate="no">${esc(pick(x.q))}</h4><p translate="no">${esc(pick(x.a))}</p><div class="src"><span translate="no">${esc(x.ref)}</span>` +
       x.src.map(([lab, url]) => `<a href="${esc(url)}" target="_blank" rel="noopener" translate="no">${esc(lab)}</a>`).join("") + `</div>` +
-      (changed(x) ? `<span class="stale">${esc(T("Changed on IDNI's GitHub since: to check again"))}</span>` : "") + `</li>`).join("") +
+      (changed(x) ? `<span class="stale" translate="no">${esc(T("Changed on IDNI's GitHub since: to check again"))}</span>` : "") + `</li>`).join("") +
     `</ul></section>`).join("");
   const n = r => d.items.filter(x => x.r === r).length;
-  $("nOk").textContent = n("ok"); $("nPart").textContent = n("part"); $("nGap").textContent = n("gap");
-  $("nChecked").textContent = d.checked || "–";
   const all = d.items.length || 1;
-  $("bar").innerHTML = [["ok", "var(--ok)"], ["part", "var(--part)"], ["gap", "var(--gap)"]].map(([r, c]) => `<i style="width:${(100 * n(r) / all).toFixed(1)}%;background:${c}"></i>`).join("");
+  $("nChecked").textContent = d.checked || "–";
+  $("basis").textContent = pick(d.basis);
+  $("bar").innerHTML = ORDER.map(r => `<i style="width:${(100 * n(r) / all).toFixed(1)}%;background:var(--${r})"></i>`).join("");
+  $("legend").innerHTML = ORDER.filter(r => n(r)).map(r => `<li translate="no"><i class="sw" style="background:var(--${r})"></i><b>${n(r)}</b>` +
+    `<span>${esc(T(RATE[r]))}</span><small>${esc(T(MEANS[r]))}</small></li>`).join("");
+  $("countNote").textContent = T(`Counted over ${d.items.length} questions. This is not a compliance score: one confirmed gap in a critical area can stop a use.`);
 }
 
 function renderLive() {
   const g = S.gh;
   $("dot").classList.toggle("on", !!g);
   $("liveTxt").textContent = S.ok === null ? T("Reading GitHub…") : !g ? T("GitHub not reachable") : SAMPLE ? T("Sample data") : T("Live, every 10 minutes");
-  if (!g) { $("liveKv").innerHTML = ""; $("liveMsg").hidden = false; $("liveMsg").textContent = S.ok === null ? T("Reading GitHub…") : T("GitHub could not be read right now. The answers on the left do not depend on it."); return; }
+  if (!g) { $("liveKv").innerHTML = ""; $("liveMsg").hidden = false; $("liveMsg").textContent = S.ok === null ? T("Reading GitHub…") : T("GitHub could not be read right now. The answers do not depend on it."); return; }
   const st = x => !x ? "–" : x.merged ? T("merged") : x.state === "closed" ? T("closed") : T("open");
   const rows = [
     ["Newest Tau Language release", g.tl && g.tl.tag ? `${g.tl.tag}${g.tl.date ? " · " + g.tl.date : ""}` : "–"],
     ["Tau Net releases", g.tn ? `${g.tn.tag}${g.tn.date ? " · " + g.tn.date : ""}` : T("none yet")],
-    ["#108 new addresses refused", st(g.i108)],
-    ["#106 templates block their author", st(g.i106)],
-    ["#93 restart from a new genesis", st(g.pr93)],
+    ["#108 report: new addresses refused on one node", st(g.i108)],
+    ["#106 report: two rule templates block their author", st(g.i106)],
+    ["#93 proposal: restart from a new genesis", st(g.pr93)],
   ];
-  $("liveKv").innerHTML = rows.map(([k, v]) => `<dt>${esc(T(k))}</dt><dd translate="no">${esc(v)}</dd>`).join("");
+  $("liveKv").innerHTML = rows.map(([k, v]) => `<dt translate="no">${esc(T(k))}</dt><dd translate="no">${esc(v)}</dd>`).join("");
   $("liveMsg").hidden = true;
 }
 
