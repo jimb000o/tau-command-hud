@@ -243,7 +243,7 @@ TauI18n.add({ strings: {
   "validator": "バリデーター",
   "Vote for real": "本番で投票",
   "Wallet": "ウォレット",
-  "A testnet account with its own rules: send, take back, co-sign, vote, form a Pakt": "独自ルールを持つテストネットのアカウント：送金、取り消し、共同署名、投票、Pakt の結成",
+  "A testnet account with its own rules: send, take back, co-sign, vote, form a Pakt; and your wallet on one picture, ready to post": "独自ルールを持つテストネットのアカウント：送金、取り消し、共同署名、投票、Pakt の結成。ウォレットを 1 枚の画像にして、そのまま投稿できます",
   "Write your own transfer rule and run the testnet’s own checks on it, take a simulated validator seat, play six short missions on a practice chain, or vote on the real testnet yourself.": "自分の送金ルールを書いてテストネット自身の検証にかける、シミュレーションのバリデーター席に座る、練習用チェーンで 6 つの短いミッションに挑戦する、または実際のテストネットで自分で投票する。",
   "Vote on the real testnet yourself: node, key, ready commands, practised first": "実際のテストネットで自分で投票：ノード、鍵、すぐ使えるコマンド、まず練習から",
   "Write your own transfer rule and run the testnet’s own checks on it, take a simulated validator seat, or vote on the real testnet yourself.": "自分の送金ルールを書いてテストネット自身の検証にかける、シミュレーションのバリデーター席に座る、または実際のテストネットで自分で投票する。",
