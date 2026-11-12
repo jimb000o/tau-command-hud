@@ -65,6 +65,12 @@ TAU_RATE_MAX = int(os.environ.get("TAU_RATE_MAX", "40"))  # /tau questions per a
 MAX_BV24 = (1 << 24) - 1
 MAX_TIME = (1 << 64) - 1
 HEX96 = re.compile(r"^[0-9a-f]{96}$")
+# The co-signature slots i18..i25 (tau_defs.APPROVAL_SLOT_BASE/COUNT). The node feeds every slot on each step once a rule
+# reads them: 0 for no signature, else the approver's key (consensus/engine.py); a test does the same, so a co-signature
+# rule is stepped as the chain steps it.
+SLOT_BASE, SLOT_COUNT = 18, 8
+SIGNED_OK = False   # set by _prove_signed once this engine has answered a co-signature rule as expected
+READS_SLOTS = re.compile(r"\bi(1[89]|2[0-5])\s*\[")
 
 # The application spec a fresh node starts from, built the way the node builds it
 # (tau_native.compile_revisions_isolated): genesis.tau seeds the interpreter, and
@@ -164,7 +170,17 @@ def _validate_request(data):
         amount, time_, frm, to = int(t["amount"]), int(t["time"]), str(t["from"]).lower(), str(t["to"]).lower()
         if not (0 <= amount <= MAX_BV24 and 0 <= time_ <= MAX_TIME and HEX96.match(frm) and HEX96.match(to)):
             raise ValueError("test transfer out of range")
-        clean.append({"amount": amount, "time": time_, "from": frm, "to": to})
+        # co-signatures for this transfer (tauhud.com/builder/): signed[k] is the approver in slot i(18+k), "" for none
+        signed = t.get("signed") or []
+        if not isinstance(signed, list) or len(signed) > SLOT_COUNT:
+            raise ValueError(f"signed must be a list of at most {SLOT_COUNT} addresses")
+        signed = [str(x or "").lower() for x in signed]
+        if not all(x == "" or HEX96.match(x) for x in signed):
+            raise ValueError("signed holds 96 lowercase hex digits or empty strings")
+        row = {"amount": amount, "time": time_, "from": frm, "to": to}
+        if any(signed):
+            row["signed"] = signed
+        clean.append(row)
     return rule, sender, clean
 
 
@@ -214,11 +230,16 @@ def check(rule: str, sender: str, tests: list, engine_ok: bool = True) -> dict:
         else:
             result["accepted"] = True
             runs = []
+            slots = bool(READS_SLOTS.search(composite))
             for t in tests:
-                resp = session.step({
-                    "i1": str(t["amount"]), "i3": "#x" + t["from"], "i4": "#x" + t["to"],
-                    "i5": str(t["time"]), "i12": "#x" + t["from"],
-                }, timeout=left())
+                inputs = {"i1": str(t["amount"]), "i3": "#x" + t["from"], "i4": "#x" + t["to"],
+                          "i5": str(t["time"]), "i12": "#x" + t["from"]}
+                if slots:
+                    signed = t.get("signed") or []
+                    for k in range(SLOT_COUNT):
+                        who = signed[k] if k < len(signed) else ""
+                        inputs[f"i{SLOT_BASE + k}"] = "#x" + who if who else "0"
+                resp = session.step(inputs, timeout=left())
                 outs = resp.get("outputs") if resp.get("ok") else None
                 runs.append({"ok": outs is not None,
                              "o5": _o5_value(outs.get("o5")) if outs else None,
@@ -279,7 +300,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path.rstrip("/") in ("/check/health", "/health"):
-            return self._json(200, {"ok": True, "engine": ENGINE_LABEL})
+            # signed: test transfers may carry co-signatures, proven on this engine at start (_prove_signed)
+            return self._json(200, {"ok": True, "engine": ENGINE_LABEL, "signed": SIGNED_OK})
         if self.path.rstrip("/") == "/tau/health":
             return self._json(200, {"ok": True, "engine": ENGINE_LABEL, "budget_s": tau_sandbox.BUDGET,
                                     "max_spec": tau_sandbox.MAX_SPEC, "max_steps": tau_sandbox.MAX_STEPS, "intel": list(intel.CASES)})
@@ -449,6 +471,27 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
+def _prove_signed() -> None:
+    """Once at start: step a co-signature rule with and without its signature on this engine. Only when all four
+    answers are the expected ones does /check/health say "signed": true, and only then does tauhud.com/builder/
+    send co-signed test payments; until then it shows them as not checked."""
+    global SIGNED_OK
+    you, bob, carol, now = "db" * 48, "8a" * 48, "42" * 48, int(time.time())
+    rule = (f"always ( (i1[t]:bv[24] > {{ #x0003e8 }}:bv[24] && !(i18[t]:bv[384] = {{ #x{carol} }}:bv[384]))"
+            " ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).")
+    tx = lambda amount, signed: {"amount": amount, "time": now, "from": you, "to": bob, "signed": signed}  # noqa: E731
+    try:
+        with _engine:
+            got = check(rule, you, [tx(500, []), tx(5000, []), tx(5000, [carol]), tx(5000, [bob])])
+        answers = [t.get("o5") for t in got.get("tests") or []]
+        SIGNED_OK = got.get("accepted") is True and answers == [1, 0, 1, 0]
+        log.info("co-signed test payments: %s (answers %s%s)", "on" if SIGNED_OK else "off", answers,
+                 "" if got.get("accepted") else f", rule refused: {got.get('reason')}")
+    except Exception:
+        log.exception("co-signed test payments: off, the self-check failed")
+
+
 if __name__ == "__main__":
+    threading.Thread(target=_prove_signed, daemon=True).start()
     log.info("baseline: genesis + %d builtin rules, listening on :%d", len(BUILTIN_RULES), PORT)
     ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()

@@ -1217,7 +1217,7 @@ window.addEventListener("hashchange", takeRulesHash);
 (() => {
   const q = new URLSearchParams(location.search);
   const from = q.get("from");
-  const back = { hud: ["/", "Back to the HUD"], start: ["/start/", "Back to Start here"], rules: ["/rules/", "Back to the rules wall"], playground: ["/playground/", "Back to the Playground"], challenge: ["/challenge/", "Back to the challenge"] }[from];
+  const back = { hud: ["/", "Back to the HUD"], start: ["/start/", "Back to Start here"], rules: ["/rules/", "Back to the rules wall"], builder: ["/builder/", "Back to the rule builder"], playground: ["/playground/", "Back to the Playground"], challenge: ["/challenge/", "Back to the challenge"] }[from];
   if (!back) return;
   const lang = q.get("lang");
   $("backHud").href = back[0] + (lang ? "?lang=" + encodeURIComponent(lang) : "");
