@@ -241,5 +241,5 @@ TauI18n.add({ strings: {
   "Oct 2026 Dev update": "2026 年 10 月 開発アップデート",
   "the development branch and the next release": "開発ブランチと次のリリース",
   "how the code moves, live": "コードの動きをライブで",
-  "Ours to offer: run each new release in our node image and publish load and check times for the rules people use.": "私たちにできること：新しいリリースごとにノードイメージで動かし、よく使われるルールの読み込みとチェックの時間を公開する。",
+  "What we could do, not yet offered to IDNI: time each new release on our own node and publish how long the rules people use take to load and check.": "私たちにできること（IDNIにはまだ提案していません）：新しいリリースごとに自分たちのノードで計測し、よく使われるルールの読み込みとチェックにかかる時間を公開する。",
 } });

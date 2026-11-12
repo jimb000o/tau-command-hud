@@ -242,5 +242,5 @@ TauI18n.add({ strings: {
   "Oct 2026 Dev update": "2026 年 10 月开发进展",
   "the development branch and the next release": "开发分支与下次发布",
   "how the code moves, live": "代码如何变化，实时",
-  "Ours to offer: run each new release in our node image and publish load and check times for the rules people use.": "我们能做的：在我们的节点镜像中运行每个新版本，并公布常用规则的加载和检查耗时。",
+  "What we could do, not yet offered to IDNI: time each new release on our own node and publish how long the rules people use take to load and check.": "我们可以做的（尚未向 IDNI 提出）：在我们自己的节点上为每个新版本计时，并公布常用规则的加载和检查耗时。",
 } });
