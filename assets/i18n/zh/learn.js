@@ -382,4 +382,6 @@ TauI18n.add({ strings: {
   "Only the amount changes": "只改金额",
   "6,000 or 100 to the same receiver, two answers: the rule reads the amount.": "给同一个收款方转 6,000 或 100，得到两个答案：规则读取了金额。",
   "Make receiver 7 really special: it may receive any amount. Run 6,000 to receiver 7, then 6,000 to receiver 8.": "让收款方 7 真正特殊：它可以收任意金额。先给收款方 7 转 6,000，再给收款方 8 转 6,000。",
+  "Rule builder ›": "规则搭建器 ›",
+  "Say a wallet rule in plain words and see the Tau rule it becomes.": "用日常语言说出一条钱包规则，看它变成怎样的 Tau 规则。",
 } });

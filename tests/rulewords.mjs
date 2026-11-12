@@ -52,6 +52,24 @@ const WORDS = [
   ["At most 5,000 per payment, above 1,000 the Guardian co-signs, nothing before Friday", { cap: 5000, co: [1000, G], from: day(2026, 11, 13) }],
   ["Only to Mia and at most 300 per payment; nothing before 2027-01-01", { only: [MIA], cap: 300, from: day(2027, 1, 1) }],
   ["max 100\nmax 200", { cap: 200 }],
+  /* a word for "everything" followed by an amount is a limit, never a freeze */
+  ["block everything over 1000", { cap: 1000 }],
+  ["stop all payments above 2k", { cap: 2000 }],
+  ["payments over 500 are blocked", { cap: 500 }],
+  ["don't let me send more than 200", { cap: 200 }],
+  ["only 100 per payment", { cap: 100 }],
+  ["stop all payments", { freeze: true }],
+  ["no payments", { freeze: true }],
+  ["pause my wallet", { freeze: true }],
+  ["block everything over 1000 unless Mia signs", { co: [1000, MIA] }],
+  ["above 1000, the Guardian co-signs", { co: [1000, G] }],
+  ["block everything except Mia", { only: [MIA] }],
+  ["nothing to anyone but Mia", { only: [MIA] }],
+  ["block payments to strangers", { only: [MIA, LEE] }],
+  ["only to Mia at most 300 per payment", { only: [MIA], cap: 300 }],
+  ["lock my savings until 2028", { from: day(2028, 1, 1) }],
+  ["nothing before the end of 2027", { from: day(2028, 1, 1) }],
+  ["nothing until next month, then at most 100", { cap: 100, from: day(2026, 12, 1) }],
 ];
 for (const [text, want] of WORDS) {
   const p = RW.parse(text, ctx), r = p.rule || {};
@@ -62,13 +80,24 @@ for (const [text, want] of WORDS) {
 }
 /* what is not possible, or not understood, builds nothing and says which */
 const NO = [["max 100 a day", "period"], ["at most 500 per week", "period"], ["only on weekdays", "clock"], ["between 9 and 17 o'clock", "clock"], ["keep at least 1000", "balance"],
-  ["never to " + X, "blocklist"], ["hello world", "unknown"], ["only to Bob", "only-who"], ["nothing before", "day"], ["co-sign everything", "co-amount"], ["max 99999999", "range"]];
+  ["never to " + X, "blocklist"], ["hello world", "unknown"], ["only to Bob", "only-who"], ["nothing before", "day"], ["co-sign everything", "co-amount"], ["max 99999999", "range"],
+  /* part of a coin is never rounded; an exception, a forbidden payee and an unknown co-signer build nothing and say so */
+  ["at most 1,5 per payment", "whole"], ["at most 1.5 per payment", "whole"], ["above 2.5 the Guardian co-signs", "whole"],
+  ["send at most 100 to anyone except Mia", "except"], ["above 1000 the Guardian co-signs except for Mia", "except"],
+  ["block all payments to Mia", "blocklist"], ["block everything over 1k unless my brother signs", "co-who"], ["block everything except Bob", "only-who"],
+  ["payments above 1000", "above-what"]];
 for (const [text, code] of NO) {
   const p = RW.parse(text, ctx);
   check(!p.rule && p.items.length === 1 && p.items[0].kind === "no" && p.items[0].code === code, `“${text}”: wanted no rule (${code}), got ${JSON.stringify(p.items.map(i => [i.kind, i.code]))}`);
 }
 check(RW.parse("co-sign above 1000", { now: NOW }).items[0].code === "co-who", "a co-signature without a co-signer and without the Guardian asks who");
 check(RW.parse("max 500, max 100 a day", ctx).rule.cap === 500, "a part that is not possible leaves the other parts standing");
+check(/my brother/.test(RW.parse("block everything over 1k unless my brother signs", ctx).items[0].why), "an unknown co-signer is not named in the answer");
+check(RW.parse("max 2.5k", ctx).rule.cap === 2500, "2.5k is a whole amount");
+/* words of an understood part that are not in the rule are said, never dropped in silence */
+const UNUSED = [["at most 100 to Mia", "“to Mia”"], ["at most 500 before Friday", "“before Friday”"], ["only to Mia and Bob", "“Bob”"], ["only to Mia before Friday", "“before Friday”"], ["freeze my llama", "“my llama”"]];
+for (const [text, want] of UNUSED) { const p = RW.parse(text, ctx); check(p.rule && p.items[0].unused === want, `“${text}”: wanted ${want} reported as not used, got ${p.items[0].unused}`); }
+for (const [text] of WORDS) check(RW.parse(text, ctx).items.every(i => !i.unused), `“${text}”: words reported as not used: ${RW.parse(text, ctx).items.map(i => i.unused).filter(Boolean).join(" ")}`);
 
 /* ---- 2 to 4. the rules it writes, read by the exact reader ---- */
 let kinds = 0, tests = 0;
@@ -101,7 +130,7 @@ for (const [text] of WORDS) {
 check(RW.fromTau("always ( (i1[t]:bv[24] > { 5000 }:bv[24]) -> (o5[t]:bv[24] = { #x000000 }:bv[24]) ).") === null, "a hand-written rule is taken for one of the wallet's");
 
 const lines = [`## Rule words: ${checked} checks`, "",
-  `- ${WORDS.length} sentences that give a rule, ${NO.length} that say why they cannot`,
+  `- ${WORDS.length} sentences that give a rule, ${NO.length} that say why they cannot, ${UNUSED.length} that say which words they did not use`,
   `- ${kinds} kinds of payment where the plain reading must match the exact reader, ${tests} test payments`, ""];
 if (fails.length) lines.push(`### ❌ ${fails.length} failed`, "", ...fails.map(f => "- " + f));
 else lines.push("Every answer matches. ✅");

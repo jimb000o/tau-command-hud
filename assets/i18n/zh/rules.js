@@ -71,4 +71,5 @@ TauI18n.add({ strings: {
   "Feedback": "反馈",
   "Make one like it": "照着做一条",
   "Its names are the author's own people. Pick yours in the wallet's builder.": "其中的名字是作者自己的联系人。请在钱包的构建器里选你自己的。",
+  "Say it in plain words": "用日常语言说出来",
 } });

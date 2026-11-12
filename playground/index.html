@@ -932,7 +932,8 @@ function showNext(text, plain) {
   if (plain) { a.href = "../builder/?q=" + encodeURIComponent(ruleEl.value.trim().slice(0, 500)) + (lang ? "&lang=" + encodeURIComponent(lang) : ""); a.textContent = "Open the rule builder ›"; }
   a.addEventListener("click", () => { try { if (d) localStorage.setItem(WALLET_DRAFT, JSON.stringify(d)); } catch (e) {} });
   const m = document.createElement("a"); m.className = "btn"; m.href = "../missions/"; m.textContent = "Rules for everyone: Missions ›";
-  row.append(a, m); box.append(p, row); box.hidden = false;
+  const w2 = document.createElement("a"); w2.className = "btn"; w2.href = "../builder/" + (lang ? "?lang=" + encodeURIComponent(lang) : ""); w2.textContent = "Say a rule in plain words ›";
+  row.append(a, ...(plain ? [] : [w2]), m); box.append(p, row); box.hidden = false;
 }
 function holdStep(sec) {
   return { title: "Tau engine", ok: null, detail: `Paused for your connection after many engine runs. Back in ${mmss(sec)}. The text checks above ran as usual.` };
@@ -1565,8 +1566,10 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) { cle
 
 /* ---------------- start ---------------- */
 renderExamples();
-ruleEl.value = EXAMPLES[0].text;
-document.querySelector('#examples [data-ex="limit"]').classList.add("on");
+/* ?ex=combo opens with that example (the rule builder sends an exception it cannot build here) */
+const EX0 = EXAMPLES.find(e => e.id === new URLSearchParams(location.search).get("ex")) || EXAMPLES[0];
+ruleEl.value = EX0.text;
+document.querySelector('#examples [data-ex="' + EX0.id + '"]').classList.add("on");
 renderCases();
 renderTests();
 simReset();

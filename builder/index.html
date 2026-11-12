@@ -62,7 +62,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 .panel h2 { margin: 0; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .panel h2 b { color: var(--ok); font-weight: 700; }
-.panel h2 .mode { margin-left: auto; letter-spacing: .1em; color: var(--text); border: 1px solid var(--hair); border-radius: 999px; padding: 2px 9px; font-size: 10px; }
+.panel h2 .mode { margin-left: auto; letter-spacing: .1em; color: var(--text); border: 1px solid var(--hair); border-radius: 999px; padding: 2px 9px; font-size: 11px; }
 textarea { width: 100%; min-height: 104px; resize: vertical; background: #050506; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 10px 12px; font: 14px/1.5 var(--mono); }
 textarea:focus { outline: none; border-color: var(--ok); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -79,6 +79,8 @@ ul.proof li.wait > i, ul.proof li.off > i { color: var(--dim); }
 ul.got .say, ul.proof .t { color: #fff; font: 500 13.5px/1.4 var(--display); }
 ul.got .src, ul.got .why, ul.proof .d { color: var(--dim); font-size: 12px; overflow-wrap: anywhere; }
 ul.got li.no .say { color: var(--sim); }
+ul.got .why.unused { color: var(--sim); }
+ul.got a.go { display: inline-block; margin-top: 4px; color: var(--ok); font-size: 12px; }
 ul.got .why b, ul.proof .d b { color: var(--text); font-weight: 600; }
 ul.proof li.bad .t { color: var(--refused); } ul.proof li.warn .t { color: var(--sim); }
 ul.proof li.wait .t, ul.proof li.off .t { color: var(--dim); }
@@ -90,7 +92,7 @@ details.tau summary { cursor: pointer; }
 details.tau pre { margin: 6px 0 0; background: #050506; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: 11.5px/1.55 var(--mono); color: #fff; white-space: pre-wrap; word-break: break-all; max-height: 150px; overflow: auto; }
 .tw { overflow: auto; min-height: 0; }
 table.tests { width: 100%; border-collapse: collapse; font-size: 12px; }
-table.tests th { text-align: left; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); padding: 0 8px 6px 0; white-space: nowrap; }
+table.tests th { text-align: left; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); padding: 0 8px 6px 0; white-space: nowrap; }
 table.tests td { padding: 6px 8px 6px 0; border-top: 1px solid var(--line); vertical-align: top; }
 table.tests td.n { font-variant-numeric: tabular-nums; white-space: nowrap; color: #fff; }
 table.tests td.what { color: #fff; min-width: 120px; }
@@ -195,6 +197,8 @@ const isAddr = s => /^[0-9a-f]{96}$/.test(s || "");
 const langQ = (() => { const l = window.TauI18n && TauI18n.lang; return l && l !== "en" ? "&lang=" + l : ""; })();
 const ME = (() => { try { const k = JSON.parse(store.get("tauhud-wallet-key") || "null"); return k && isAddr(k.pk) ? k.pk : null; } catch (e) { return null; } })();
 const BOOK_KEY = `tauhud-wallet-book-${MODE}`;
+/* in the simulation a first visit gets the three names the simulated wallet starts with, so "only to Bob" has somebody to mean */
+if (SIM && store.get(BOOK_KEY) == null && TauSim.accounts) store.set(BOOK_KEY, JSON.stringify(["Bob", "Carol", "Dave"].map((name, i) => ({ name, addr: TauSim.accounts[i + 1] }))));
 const BOOK = (() => { try { return JSON.parse(store.get(BOOK_KEY) || "[]").filter(c => c && c.name && isAddr(c.addr)); } catch (e) { return []; } })();
 let GUARD = null;                       // the Guardian's address (tauhud.com/guardian/): the co-signer when none is named
 const YOU = "db".repeat(48);            // a made-up sender for the engine's test payments: only the rule is under test
@@ -222,7 +226,7 @@ const inputName = x => INPUT[x] || (/^i(1[89]|2[0-5])$/.test(x) ? "a co-signatur
 
 /* ---------- examples ---------- */
 const TRAP = "always ( (i1[t]:bv[24] > { 5000 }:bv[24]) -> (o5[t]:bv[24] = { #x000000 }:bv[24]) ).";
-const FIRST = "At most 5,000 per payment, nothing before Friday";
+const FIRST = SIM && BOOK[0] ? "At most 5,000 per payment, above 1,000 " + BOOK[0].name + " co-signs, nothing before Friday" : "At most 5,000 per payment, nothing before Friday";
 const FIRST_CO = "At most 5,000 per payment, above 1,000 the Guardian co-signs, nothing before Friday";
 const EXAMPLES = [
   ["Limit, co-signer, date", () => GUARD ? FIRST_CO : FIRST, "A limit per payment, a second signature above an amount, and a day before which nothing leaves."],
@@ -338,15 +342,21 @@ function renderGot() {
     else if (S.read) rows.push(el("li", { class: "no" }, el("i", { text: "↳" }), el("div", {}, el("div", { class: "say", text: T("This rule is outside what the exact reader covers.") }), el("div", { class: "why", text: S.read.why || "" }))));
   } else {
     for (const it of S.items) {
-      if (it.kind === "no") { rows.push(el("li", { class: "no" }, el("i", { text: "↳" }), el("div", {}, el("div", { class: "say", translate: "no", text: "“" + it.src + "”" }), el("div", { class: "why", text: T(it.why) })))); continue; }
+      if (it.kind === "no") {
+        const go = it.code === "only-who" || it.code === "co-who" ? el("a", { class: "go", href: "/wallet/?from=builder" + (SIM ? "&mode=sim" : "") + langQ + "#book", text: T("Open my address book ›") })
+          : it.code === "except" ? el("a", { class: "go", href: "/playground/?ex=combo" + (SIM ? "&mode=sim" : "") + langQ, text: T("Open that example in the Playground ›") }) : null;
+        rows.push(el("li", { class: "no" }, el("i", { text: "↳" }), el("div", {}, el("div", { class: "say", translate: "no", text: "“" + it.src + "”" }), el("div", { class: "why", text: T(it.why) }), go)));
+        continue;
+      }
       const one = { freeze: it.kind === "freeze", only: it.kind === "only" ? it.who.map(w => w.addr) : [], cap: it.cap, from: it.from, co: it.kind === "co" ? { limit: it.limit, who: it.who.map(w => w.addr) } : null };
       const notes = [it.replaced ? T("Said again further on; the later one counts.") : null, it.note ? T(it.note) : null, it.past ? T("That day is already past, so this part stops nothing.") : null,
         it.kind === "co" && it.guardian && !/guardian/i.test(it.src) ? T("No co-signer named, so the Guardian is used: it co-signs with a code from your Authenticator app.") : null].filter(Boolean);
       rows.push(el("li", { class: it.replaced ? "no" : "" }, el("i", { text: it.replaced ? "↳" : "✓" }), el("div", {}, el("div", { class: "say", text: sentence(one, it.kind) }),
-        el("div", { class: "src", translate: "no", text: "“" + it.src + "”" }), ...notes.map(n => el("div", { class: "why", text: n })))));
+        el("div", { class: "src", translate: "no", text: "“" + it.src + "”" }), ...notes.map(n => el("div", { class: "why", text: n })),
+        it.unused ? el("div", { class: "why unused", text: F("Not used: {x}. The line above is all this part does.", { x: it.unused }) }) : null)));
     }
   }
-  if (!rows.length) rows.push(el("li", { class: "no" }, el("i", { text: "↳" }), el("div", { class: "why", text: T("Write what your wallet may do, for example: at most 500 per payment, only to Mia, nothing before 1 Dec.") })));
+  if (!rows.length) rows.push(el("li", { class: "no" }, el("i", { text: "↳" }), el("div", { class: "why", text: T("Write what your wallet may do, for example: at most 500 per payment, only to Bob, nothing before 1 Dec.") })));
   got.replaceChildren(...rows);
 }
 function proofRows() {
@@ -421,7 +431,7 @@ function renderActs() {
   w.href = "/wallet/?from=builder" + (SIM ? "&mode=sim" : "") + langQ + "#rules-mine";
   w.textContent = T(S.rule && S.rule.freeze ? "Open my wallet ›" : "Put it on my wallet ›");
   $("btnCopy").disabled = !S.tau; $("btnAgain").disabled = !S.tau || E.state === "wait";
-  const no = S.items.filter(x => x.kind === "no").length;
+  const no = S.items.filter(x => x.kind === "no" || x.unused).length;
   $("walletNote").textContent = S.tau && !S.rule ? T("The wallet signs rules made of its four blocks. A hand-written rule is checked here; to try it further, open it in the Playground.")
     : dead ? T("A rule that stops every payment is not handed to the wallet. Change it first.")
     : S.rule && S.rule.freeze ? T("Freezing is one button in your wallet (Freeze). Nothing is sent from this page.")

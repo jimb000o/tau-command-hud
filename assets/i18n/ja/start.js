@@ -125,4 +125,5 @@ TauI18n.add({ strings: {
   "Rule signed and sent.": "ルールに署名して送信しました。",
   "Meal sent.": "ごはんを送りました。",
   "The simulation makes a block every eight seconds; this card turns green by itself.": "シミュレーションは 8 秒ごとにブロックを作ります。このカードは自動で緑になります。",
+  "Say it in plain words": "普通の言葉で書く",
 } });

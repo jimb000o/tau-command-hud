@@ -71,4 +71,5 @@ TauI18n.add({ strings: {
   "Feedback": "フィードバック",
   "Make one like it": "同じようなルールを作る",
   "Its names are the author's own people. Pick yours in the wallet's builder.": "名前は作者自身の相手です。ウォレットのビルダーで自分の相手を選んでください。",
+  "Say it in plain words": "普通の言葉で書く",
 } });

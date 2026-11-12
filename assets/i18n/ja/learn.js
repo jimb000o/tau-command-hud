@@ -382,4 +382,6 @@ TauI18n.add({ strings: {
   "Only the amount changes": "金額だけ変える",
   "6,000 or 100 to the same receiver, two answers: the rule reads the amount.": "同じ受取人に 6,000 か 100、答えは 2 つ：ルールは金額を読んでいます。",
   "Make receiver 7 really special: it may receive any amount. Run 6,000 to receiver 7, then 6,000 to receiver 8.": "受取人 7 を本当に特別にしてください：どんな金額でも受け取れるようにします。受取人 7 に 6,000、次に受取人 8 に 6,000 を実行してください。",
+  "Rule builder ›": "ルールビルダー ›",
+  "Say a wallet rule in plain words and see the Tau rule it becomes.": "ウォレットのルールを普通の言葉で書き、どんな Tau ルールになるかを見ます。",
 } });
