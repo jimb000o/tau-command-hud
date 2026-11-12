@@ -597,6 +597,22 @@ TauI18n.add({ strings: {
   "Games on the live testnet": "本物のテストネットで動くゲーム",
   "Déjà, the café cat": "カフェの猫 Déjà",
   "Agorzilla's café cat: she eats when three wallets each send her 1 test AGRS in a day, and runs across at every rule change": "Agorzilla のカフェの猫：1 日のうちに 3 つのウォレットがそれぞれテスト AGRS を 1 枚送ると食事をし、ルールが変わるたびに駆け抜けます",
+  "Find any block, transaction or address; every account with its rules; the chain at any earlier block": "ブロック・取引・アドレスを検索。各アカウントとそのルール、過去の任意のブロック時点のチェーンも",
+  "Every rule change from proposal to law, with alerts on Telegram, X and RSS; and how to vote on the real testnet yourself": "提案から法になるまでのすべてのルール変更。Telegram・X・RSS で通知。本物のテストネットで自分で投票する方法も",
+  "Write a transfer rule in Tau and run the testnet's own checks on it": "Tau で送金ルールを書き、テストネット自身のチェックにかけます",
+  "Is the testnet well? Block pace and transactions over the whole chain, the load right now, uptime and outages": "テストネットは元気？チェーン全体のブロックのペースと取引、いまの負荷、稼働時間と停止",
+  "What we think must be fixed before mainnet, the issues we reported to IDNI, and how Tau's code is moving": "メインネットまでに直すべきだと私たちが考える点、IDNI に報告した問題、Tau のコードの動き",
+  "The Daily Consensus, a newspaper every Monday; the blog from our own logbooks; Tau's story since 2014": "毎週月曜の新聞「The Daily Consensus」、私たちの航海日誌から書くブログ、2014 年からの Tau の歩み",
+  "Give your wallet a rule: say it in plain words, write it in Tau, take one from others, or try this week's task": "ウォレットにルールを：普通の言葉で書く、Tau で書く、他の人のルールを使う、または今週の課題に挑戦",
+  "On a practice chain: six missions, a validator seat of your own, and what happens when you change the numbers": "練習用チェーンで：6 つのミッション、自分のバリデーター席、そして数字を変えると何が起きるか",
+  "Wallet rules": "ウォレットのルール",
+  "Practise voting": "投票を練習",
+  "In words": "言葉で",
+  "In Tau": "Tau で",
+  "From others": "他の人から",
+  "This week": "今週",
+  "The testnet": "テストネット",
+  "Your wallet": "あなたのウォレット",
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 送信者自身のルールが拒否しました（o5 = 0 · ${TauI18n.t(r)}）`]] });

@@ -1248,6 +1248,7 @@ function showTab(seat) {
   $("tabPolicy").setAttribute("aria-selected", String(!seat)); $("tabSeat").setAttribute("aria-selected", String(seat));
   $("viewPolicy").hidden = seat; $("viewSeat").hidden = !seat;
   try { history.replaceState(null, "", seat ? "#seat" : "#rule"); } catch (e) {}
+  if (window.TauNav && TauNav.tabs) TauNav.tabs();   // the header's tabs: the seat belongs to Practise voting, the rule to Wallet rules
 }
 $("tabPolicy").addEventListener("click", () => showTab(false));
 $("tabSeat").addEventListener("click", () => showTab(true));

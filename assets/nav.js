@@ -26,14 +26,14 @@
   const P = {
     hud:        { t: "HUD", d: "The chain core live: blocks, rules and agreement as they happen", i: "◉", h: "" },
     state:      { t: "Chain state", d: "Every rule in force right now: fee, agreement threshold, validators, agreed changes, personal rules", i: "≡", h: "#chain-state", act: "state" },
-    explorer:   { t: "Explorer", d: "Find any block, transaction or address", i: "⌕", h: "explorer/", view: true },
+    explorer:   { t: "Explorer", d: "Find any block, transaction or address; every account with its rules; the chain at any earlier block", i: "⌕", h: "explorer/", view: true },
     stats:      { t: "Stats", d: "Block pace, transactions, validators and rule changes over the whole chain", i: "≋", h: "stats/", view: true },
     cruise:     { t: "Cruise logbook", d: "What each cruise ship sent to the testnet and what the node answered", i: "🛳", h: "cruise/" },
     load:       { t: "Testnet load", d: "How hard the testnet is working right now: sealed, waiting, time to a block", i: "∿", h: "load/" },
     history:    { t: "Time travel", d: "Step through the chain block by block and see the rules at any height", i: "⟲", h: "history/" },
     account:    { t: "Accounts", d: "Balance, own rules, offers and refusals of any address", i: "@", h: "account/", view: true },
     nodes:      { t: "Nodes", d: "Community nodes that follow the chain, with badges for uptime and sync", i: "◎", h: "nodes/" },
-    proposals:  { t: "Proposals", d: "Every rule change from proposal to law, with alerts on Telegram, X and RSS", i: "§", h: "proposals/" },
+    proposals:  { t: "Proposals", d: "Every rule change from proposal to law, with alerts on Telegram, X and RSS; and how to vote on the real testnet yourself", i: "§", h: "proposals/" },
     story:      { t: "Tau in 60 seconds", d: "Propose, check, agree, law: how Tau changes its rules without a fork", i: "▶", h: "story/" },
     start:      { t: "Start here", d: "Try Tau in four steps: a test wallet, a rule of your own, a block that seals it, a meal for Agorzilla", i: "➜", h: "start/" },
     tour:       { t: "Guided tour", d: "One minute, eight steps: how rules change by agreement", i: "▸", h: "?tour=1", act: "tour" },
@@ -52,7 +52,7 @@
     legal:      { t: "Privacy", d: "Privacy notice: exactly what this site processes (no cookies, no tracking)", i: "§", h: "legal/" },
     about:      { t: "About Tau HUD", d: "Who built this page, sources, how to support it", i: "i", h: "#about", act: "about" },
     share:      { t: "Share this page", d: "Copy the link, or post it on X, Telegram, Reddit or Hacker News", i: "↗", h: "#share", act: "share" },
-    playground: { t: "Playground", d: "Write a transfer rule and run the testnet's own checks on it", i: "◇", h: "playground/" },
+    playground: { t: "Rule Playground", d: "Write a transfer rule in Tau and run the testnet's own checks on it", i: "◇", h: "playground/" },
     seat:       { t: "Validator seat", d: "Take a simulated seat and vote a rule change into law", i: "✓", h: "playground/#seat" },
     whatif:     { t: "What if", d: "Move block time, validators and votes needed, and watch the chain react", i: "≈", h: "whatif/" },
     agorzilla:  { t: "Agorzilla", d: "One creature the whole testnet feeds: give it a meal, choose tomorrow's change", i: `<img src="${ROOT}${agzPic}" alt="">`, h: "https://agorzilla.com", ext: true, live: true },
@@ -70,22 +70,45 @@
     guardian:   { t: "Guardian", d: "Payments above your own limit wait for a code from your Authenticator app; our Guardian co-signs, never sends", i: "⛨", h: "guardian/" },
     challenge:  { t: "Rule challenge", d: "A small task every Monday, answered with a real rule in your wallet; good answers are shown, no prizes", i: "✎", h: "challenge/" },
     missions:   { t: "Missions", d: "Six short tasks on a practice chain: pass a rule, fail one, survive an outage, switch to proof of stake", i: "★", h: "missions/" },
+    /* one menu entry for pages that answer the same question; it opens the first of them, and each carries tabs to the others (TABS) */
+    health:     { t: "Testnet health", d: "Is the testnet well? Block pace and transactions over the whole chain, the load right now, uptime and outages", i: "≋", h: "stats/" },
+    road:       { t: "Road to mainnet", d: "What we think must be fixed before mainnet, the issues we reported to IDNI, and how Tau's code is moving", i: "⇢", h: "roadmap/" },
+    read:       { t: "Read", d: "The Daily Consensus, a newspaper every Monday; the blog from our own logbooks; Tau's story since 2014", i: "❡", h: "gazette/" },
+    wrules:     { t: "Wallet rules", d: "Give your wallet a rule: say it in plain words, write it in Tau, take one from others, or try this week's task", i: "✐", h: "builder/" },
+    practise:   { t: "Practise voting", d: "On a practice chain: six missions, a validator seat of your own, and what happens when you change the numbers", i: "★", h: "missions/" },
   };
+  /* 12 Nov: 33 doors became 17. Pages that answer the same question share one menu entry (its key here) and a row of tabs
+     under the header, as Testnet health already did. No page and no address is gone; [page, tab label if not the page's name] */
+  const TABS = {
+    explorer:  ["Explorer", [["explorer"], ["account"], ["history"]]],
+    proposals: ["Proposals", [["proposals"], ["vote"]]],
+    health:    ["Testnet health", [["stats"], ["load"], ["status"]]],
+    road:      ["Road to mainnet", [["roadmap", "Roadmap"], ["findings"], ["devpulse"]]],
+    read:      ["Read", [["gazette"], ["blog"], ["chronicle"]]],
+    wrules:    ["Wallet rules", [["builder", "In words"], ["playground", "In Tau"], ["rules", "From others"], ["challenge", "This week"]]],
+    practise:  ["Practise voting", [["missions"], ["seat"], ["whatif"]]],
+  };
+  /* the Rule Playground is two pages in one: its validator seat (#seat) belongs to Practise voting */
+  const tabPage = page => (page === "playground" && location.hash === "#seat" ? "seat" : page);
+  const tabGroup = page => Object.keys(TABS).find(k => TABS[k][1].some(([p]) => p === tabPage(page)));
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
     /* grouped by what a visitor came to do (29 Oct); inside each menu small labelled groups (30 Oct), so no menu is one long list */
     /* 6 Nov: fewer doors. Testnet health (Stats, Load, Status) is one group with tabs across the three pages; the guided tour,
        Tau in 60 seconds and the tour of this page live on Start here, the one way in; anchors (chain state, validator seat)
        and Déjà stay reachable from their pages and from search */
-    { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "account", "rules", "history"]], ["Testnet health", ["stats", "load", "status"]], ["Road to mainnet", ["nodes", "findings", "roadmap", "devpulse"]]], tab: "≋" },
-    { k: "learn", t: "Learn", groups: [["First steps", ["start", "taulang", "facts"]], ["Read and watch", ["gazette", "blog", "chronicle", "tau"]]], tab: "▸" },
-    { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "whatif"]], ["On the real testnet", ["services", "builder", "wallet", "guardian", "vote", "challenge", "card"]], ["Games on the live testnet", ["rabbit", "nomemo", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
-    { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "meta", "legal"]], ["Use our work", ["developers", "press"]]], tab: "i" },
+    /* 12 Nov: one entry per question, tabs inside (TABS). My Tau card is reached from the wallet, Tau facts sits with the
+       other things to reuse under About */
+    { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "services"]], ["The testnet", ["health", "road", "nodes"]]], tab: "≋" },
+    { k: "learn", t: "Learn", groups: [["First steps", ["start", "taulang"]], ["Read and watch", ["read", "tau"]]], tab: "▸" },
+    { k: "play", t: "Playground", groups: [["Your wallet", ["wallet", "wrules", "guardian"]], ["Practise · simulated", ["practise"]], ["Games on the live testnet", ["rabbit", "nomemo", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
+    { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "meta", "legal"]], ["Use our work", ["developers", "press", "facts"]]], tab: "i" },
   ];
   SECTIONS.forEach(s => { if (s.groups) s.items = s.groups.flatMap(g => g[1]); });
   const SECTION_OF = { hud: "hud" };
   SECTIONS.forEach(s => (s.items || []).forEach(k => { if (P[k] && !P[k].ext && !P[k].act && !/#/.test(P[k].h)) SECTION_OF[k] = s.k; }));
-  Object.assign(SECTION_OF, { story: "learn", cruise: "explore" });
+  SECTIONS.forEach(s => (s.items || []).forEach(k => { if (TABS[k]) TABS[k][1].forEach(([p]) => { if (P[p] && !/#/.test(P[p].h)) SECTION_OF[p] = s.k; }); }));
+  Object.assign(SECTION_OF, { story: "learn", cruise: "explore", card: "play" });
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken, and what changed lately: the feedback form and the update log, right here. Ideas with the most agreement get built first.",
@@ -384,7 +407,8 @@
     SHARE.querySelector(".tn-sh-copy").focus({ preventScroll: true });
   }
   function item(k, page, isHud, tip) {
-    const p = P[k], a = el(p.soon ? "div" : "a", "mi" + (k === page ? " here" : "") + (p.soon ? " soon" : "") + (k === "start" ? " first" : ""));
+    const here = k === page || (TABS[k] && tabGroup(page) === k);
+    const p = P[k], a = el(p.soon ? "div" : "a", "mi" + (here ? " here" : "") + (p.soon ? " soon" : "") + (k === "start" ? " first" : ""));
     a.setAttribute("role", "menuitem");
     a.innerHTML = `<span class="ic">${p.i}</span><b>${p.live ? '<i class="tn-live" aria-hidden="true"></i>' : ""}${esc(p.t)}${p.ext ? ' <span class="ext">↗</span>' : ""}${p.play ? `<em class="tn-play" data-play="${p.play}" hidden><i aria-hidden="true"></i><b translate="no"></b> <span>playing now</span></em>` : ""}</b><span>${esc(p.d)}</span>`;
     if (p.soon) { a.setAttribute("aria-disabled", "true"); a.title = "This page is not online yet"; }
@@ -392,7 +416,7 @@
     else if (p.act === "share") { a.href = "#share"; a.addEventListener("click", e => { e.preventDefault(); closeAll(); openShare(); }); }
     else if (p.act && isHud) { a.href = "#"; a.addEventListener("click", e => { e.preventDefault(); closeAll(); emit(p.act); }); }
     else a.href = ROOT + p.h;
-    if (k === page) a.setAttribute("aria-current", "page");
+    if (here) a.setAttribute("aria-current", k === page ? "page" : "true");
     return a;
   }
 
@@ -719,8 +743,9 @@
     }
     /* alerts: one pill named for what you get, not for the app; it opens the three ways to get them */
     /* the label is set here: the simulated node on the HUD uses "Follow the chain" for a sync step with another meaning */
-    const FOLLOW = { zh: "关注这条链", ja: "チェーンを追う" };
-    const tg = el("div", "ni-wrap tn-alerts"), tgb = el("button", "pill tg", `${PLANE}${XLOGO}<span translate="no">${FOLLOW[window.TauI18n && TauI18n.lang] || "Follow the chain"}</span>`), tgm = el("div", "menu tn-alm");
+    /* laptops (up to 1365 px wide) get the short word, so the menu and the tools share one line instead of two */
+    const FOLLOW = { zh: "关注这条链", ja: "チェーンを追う" }, FOLLOW_SH = { zh: "关注", ja: "フォロー" }, LNG = window.TauI18n && TauI18n.lang;
+    const tg = el("div", "ni-wrap tn-alerts"), tgb = el("button", "pill tg", `${PLANE}${XLOGO}<span class="lg" translate="no">${FOLLOW[LNG] || "Follow the chain"}</span><span class="sh" translate="no">${FOLLOW_SH[LNG] || "Follow"}</span>`), tgm = el("div", "menu tn-alm");
     tgb.type = "button"; tgb.setAttribute("aria-haspopup", "true"); tgb.setAttribute("aria-expanded", "false"); tgb.setAttribute("aria-label", "Follow the chain: Telegram, X or RSS"); tip(tgb, TIPS.alerts);
     tgm.hidden = true; tgm.setAttribute("role", "menu"); tgm.setAttribute("aria-label", "Follow the chain");
     [[TELEGRAM, PLANE, "Telegram @tauHUDcom", "To your phone the moment it happens: rule changes, restarts, new nodes, a weekly recap"],
@@ -733,7 +758,7 @@
     tg.append(tgb, tgm);
     /* feedback, impossible to miss: opens the feedback form in place, the HUD's own on the start page */
     /* feedback and the update log open the same overlay, so they are one button; the green dot says something new shipped */
-    const fbk = el("button", "pill fbk", `${BUBBLE}<span>Feedback &amp; updates</span>`); fbk.type = "button"; fbk.setAttribute("aria-label", "Feedback and updates"); tip(fbk, TIPS.feedback);
+    const fbk = el("button", "pill fbk", `${BUBBLE}<span class="lg">Feedback &amp; updates</span><span class="sh">Feedback</span>`); fbk.type = "button"; fbk.setAttribute("aria-label", "Feedback and updates"); tip(fbk, TIPS.feedback);
     fbk.addEventListener("click", () => { closeAll(); markSeen(); if (isHud && slots.updates) slots.updates.click(); else openUpdates(page); });
     const fbkWrap = el("span", "tn-upd tn-fbk"); fbkWrap.append(fbk);
     let upd = slots.updates;
@@ -885,14 +910,19 @@
     [[TELEGRAM, PLANE, "Telegram"], [XCOM, XLOGO, "X"], [AGZX, `<img src="${ROOT}${agzPic}" alt="">`, "Agorzilla"]].forEach(([h, ic, t]) => { const a = el("a", "tn-soc", `${ic}<span>${esc(t)}</span>`); a.href = h; a.target = "_blank"; a.rel = "noopener"; so.append(a); });
     host.append(" ", so);
   }
-  /* Testnet health: Stats, Testnet load and Status answer the same question, so each carries tabs to the other two */
-  const HEALTH = ["stats", "load", "status"];
-  function healthTabs(nav, page) {
-    if (!HEALTH.includes(page)) return;
+  /* pages that answer the same question carry tabs to each other (TABS): Stats, Testnet load and Status are Testnet health,
+     the four ways to a wallet rule are Wallet rules, and so on. The row sits right under the header */
+  function groupTabs(nav, page) {
+    const old = nav.nextElementSibling; if (old && old.classList.contains("tn-tabs")) old.remove();
+    const key = tabGroup(page); if (!key) return;
+    const [name, tabs] = TABS[key], cur = tabPage(page);
     const lang = new URLSearchParams(location.search).get("lang"), q = lang ? "?lang=" + encodeURIComponent(lang) : "";
-    const t = el("div", "tn-tabs"); t.setAttribute("role", "navigation"); t.setAttribute("aria-label", "Testnet health");
-    t.append(el("span", "lbl", "Testnet health"));
-    HEALTH.forEach(k => { const a = el("a", "tab" + (k === page ? " here" : ""), esc(P[k].t)); a.href = ROOT + P[k].h + q; a.dataset.tnt = P[k].d; if (k === page) a.setAttribute("aria-current", "page"); t.append(a); });
+    const t = el("div", "tn-tabs"); t.setAttribute("role", "navigation"); t.setAttribute("aria-label", name);
+    if (!tabs.some(([k, label]) => (label || P[k].t) === name)) t.append(el("span", "lbl", esc(name)));   // "Explorer: Explorer · Accounts" would say it twice
+    tabs.forEach(([k, label]) => {
+      const a = el("a", "tab" + (k === cur ? " here" : ""), esc(label || P[k].t)), [path, hash] = P[k].h.split("#");
+      a.href = ROOT + path + q + (hash ? "#" + hash : ""); a.dataset.tnt = P[k].d; if (k === cur) a.setAttribute("aria-current", "page"); t.append(a);
+    });
     nav.after(t);
   }
   /* "what is real": today's transactions by sender, one line on the HUD, Stats and In numbers (relay /api/v1/sources). The
@@ -931,7 +961,10 @@
     row.querySelectorAll("button:not([disabled]), [role=button], .seg").forEach(b => { const r = b.getBoundingClientRect(); if (!r.width) return; const x = Math.abs(e.clientX - (r.left + r.width / 2)); if (x < d) { d = x; best = b; } });
     if (best && d < 40) best.click();
   });
-  const init = () => { document.querySelectorAll("nav.tnav").forEach(nav => { mount(nav); const pg = nav.dataset.page || "hud"; healthTabs(nav, pg); realLine(pg); }); mountFootLinks(); countVisit(); if (location.hash === "#share") setTimeout(openShare, 60); };
+  const init = () => { document.querySelectorAll("nav.tnav").forEach(nav => { mount(nav); const pg = nav.dataset.page || "hud"; groupTabs(nav, pg); realLine(pg); }); mountFootLinks(); countVisit(); if (location.hash === "#share") setTimeout(openShare, 60); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
-  window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM };
+  /* the Rule Playground switches between its two halves without leaving the page: the tabs follow */
+  const retab = () => document.querySelectorAll("nav.tnav").forEach(nav => { if ((nav.dataset.page || "hud") === "playground") groupTabs(nav, "playground"); });
+  addEventListener("hashchange", retab);
+  window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM, tabs: retab };
 })();
