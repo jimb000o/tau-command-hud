@@ -210,6 +210,38 @@
     document.querySelectorAll(".tn-upd, .tabbar .tb-upd").forEach(e => e.classList.toggle("new", fresh));
   }).catch(() => { const fresh = store.get(SEEN_KEY) !== LATEST; document.querySelectorAll(".tn-upd, .tabbar .tb-upd").forEach(e => e.classList.toggle("new", fresh)); });
 
+  /* ---------- where an entry of the update log leads: shared by the Updates overlay here and the HUD's own log (window.TauLogLink) ----------
+     An entry's own "link" (tauhud.com path like "/gxp/", or a full https address) wins, then the link of its Telegram post ("major"),
+     then the page its tag names. The tag chip always opens the part of the site it names; the entry's text ends with "Open …" to its link. */
+  const LOGPAGE = { Nodes: "nodes/", Node: "nodes/", Validator: "nodes/", Accounts: "account/", "My Tau card": "card/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", "Rule changes": "proposals/",
+    Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", Gazette: "gazette/", "Daily Consensus": "gazette/", Blog: "blog/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/",
+    Wallet: "wallet/", Guardian: "guardian/", "Rule builder": "builder/", "Rules wall": "rules/", "Rule challenge": "challenge/", Missions: "missions/", Vote: "vote/", "Start here": "start/", Learn: "learn/",
+    Findings: "findings/", Roadmap: "roadmap/", Status: "status/", Stats: "stats/", "Testnet stats": "stats/", "Testnet load": "load/", "Build pulse": "devpulse/", "In numbers": "meta/", Services: "services/",
+    Developers: "developers/", Press: "press/", "Press films": "press/", Privacy: "legal/", Donations: "donate/", Chinese: "?lang=zh", Japanese: "?lang=ja", "Guided tour": "?tour=1",
+    "White Rabbit Key": "rabbit/", "Rabbit Key": "rabbit/", "No Memo": "nomemo/", Cruise: "cruise/", Agorzilla: "https://agorzilla.com", Telegram: TELEGRAM, HUD: "" };
+  const logRel = l => typeof l !== "string" || !l.trim() ? null : /^https?:\/\//.test(l) ? l : l.replace(/^\//, "");
+  const logLink = e => { const tag = String(e && e.tag || ""), area = /^v\d/i.test(tag) ? "" : tag in LOGPAGE ? LOGPAGE[tag] : null;
+    const own = logRel(e && e.link) ?? logRel(e && e.major && e.major.link); return { area, go: own ?? area }; };
+  const logHref = (rel, root) => /^https?:\/\//.test(rel) ? rel : (root + rel) || "./";
+  const logShow = rel => /^https?:\/\//.test(rel) ? rel.replace(/^https?:\/\//, "").replace(/\/$/, "") : "tauhud.com/" + rel;
+  /* the headline and its fold; the fold ends with "Open tauhud.com/… ›" and every tauhud.com address in the text is a link.
+     A one-line entry is itself the link. Nothing is added where it would only open the page already shown. */
+  function logFold(li, head, rest, tr, root) {
+    const rel = li.dataset.go, here = rel != null && !/[?#]/.test(rel) && new URL(logHref(rel, root), location.href).pathname === location.pathname;
+    const go = rel != null && !here ? logHref(rel, root) : null, ext = go && /^https?:\/\//.test(go) && !go.startsWith(location.origin);
+    const a = (href, text, cls) => { const x = document.createElement("a"); x.href = href; x.textContent = text; if (cls) x.className = cls; if (/^https?:\/\//.test(href) && !href.startsWith(location.origin)) { x.target = "_blank"; x.rel = "noopener"; } return x; };
+    if (rest) {
+      const d = document.createElement("details"), sm = document.createElement("summary"), pr = document.createElement("p"); sm.textContent = head;
+      const re = /tauhud\.com(\/[\w\-./#?=&%]*[\w/])?/g; let at = 0, m;
+      while ((m = re.exec(rest))) { pr.append(rest.slice(at, m.index), a(root + (m[1] || "/").replace(/^\//, "") || "./", m[0])); at = m.index + m[0].length; }
+      pr.append(rest.slice(at));
+      if (go) pr.append(" ", a(go, `${tr("Open")} ${logShow(rel)}${ext ? " ↗" : " ›"}`, "go"));
+      d.append(sm, pr); li.append(d);
+    } else if (go) li.append(a(go, head, "one"));
+    else { const o = document.createElement("div"); o.className = "one"; o.textContent = head; li.append(o); }
+  }
+  window.TauLogLink = e => logLink(e);
+  window.TauLogFold = logFold;
   /* ---------- the Updates overlay, in place on every page but the HUD (which has its own, with the feedback box that needs no account) ---------- */
   const DONATE = { addr: "0x23fB76A33A8d70f5c51aB558b85e4b93040003eb", donors: "https://node.tauhud.com/donations.json", qr: `<svg class="tn-qr" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 33" shape-rendering="crispEdges" role="img" aria-label="QR code of the donation address"><rect width="33" height="33" fill="#fff"/><path d="M2 2h7v1h-7zM11 2h2v1h-2zM16 2h1v1h-1zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h1v1h-1zM14 3h1v1h-1zM17 3h1v1h-1zM19 3h2v1h-2zM22 3h1v1h-1zM24 3h1v1h-1zM30 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM13 4h1v1h-1zM17 4h2v1h-2zM20 4h1v1h-1zM24 4h1v1h-1zM26 4h3v1h-3zM30 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM14 5h2v1h-2zM17 5h4v1h-4zM24 5h1v1h-1zM26 5h3v1h-3zM30 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM16 6h1v1h-1zM21 6h2v1h-2zM24 6h1v1h-1zM26 6h3v1h-3zM30 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM13 7h2v1h-2zM17 7h1v1h-1zM22 7h1v1h-1zM24 7h1v1h-1zM30 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h7v1h-7zM10 9h1v1h-1zM14 9h1v1h-1zM17 9h1v1h-1zM2 10h1v1h-1zM4 10h5v1h-5zM12 10h1v1h-1zM15 10h1v1h-1zM17 10h4v1h-4zM22 10h1v1h-1zM24 10h5v1h-5zM2 11h4v1h-4zM11 11h3v1h-3zM16 11h1v1h-1zM21 11h1v1h-1zM24 11h1v1h-1zM26 11h1v1h-1zM30 11h1v1h-1zM2 12h4v1h-4zM7 12h2v1h-2zM12 12h2v1h-2zM17 12h2v1h-2zM22 12h8v1h-8zM2 13h1v1h-1zM6 13h1v1h-1zM9 13h1v1h-1zM11 13h2v1h-2zM22 13h2v1h-2zM26 13h2v1h-2zM29 13h2v1h-2zM3 14h1v1h-1zM8 14h3v1h-3zM12 14h2v1h-2zM15 14h1v1h-1zM17 14h4v1h-4zM22 14h1v1h-1zM26 14h1v1h-1zM28 14h2v1h-2zM2 15h1v1h-1zM4 15h1v1h-1zM6 15h1v1h-1zM13 15h1v1h-1zM16 15h1v1h-1zM19 15h1v1h-1zM21 15h1v1h-1zM23 15h5v1h-5zM30 15h1v1h-1zM2 16h4v1h-4zM7 16h2v1h-2zM13 16h3v1h-3zM17 16h2v1h-2zM20 16h1v1h-1zM22 16h1v1h-1zM25 16h1v1h-1zM28 16h2v1h-2zM3 17h1v1h-1zM5 17h1v1h-1zM7 17h1v1h-1zM9 17h2v1h-2zM13 17h2v1h-2zM16 17h2v1h-2zM20 17h2v1h-2zM23 17h1v1h-1zM26 17h2v1h-2zM29 17h1v1h-1zM2 18h1v1h-1zM4 18h1v1h-1zM6 18h4v1h-4zM11 18h1v1h-1zM13 18h4v1h-4zM18 18h2v1h-2zM23 18h1v1h-1zM25 18h1v1h-1zM29 18h2v1h-2zM2 19h3v1h-3zM9 19h2v1h-2zM12 19h2v1h-2zM20 19h3v1h-3zM24 19h1v1h-1zM26 19h1v1h-1zM30 19h1v1h-1zM2 20h1v1h-1zM4 20h1v1h-1zM7 20h3v1h-3zM12 20h3v1h-3zM16 20h2v1h-2zM19 20h2v1h-2zM22 20h1v1h-1zM25 20h1v1h-1zM28 20h1v1h-1zM2 21h1v1h-1zM4 21h4v1h-4zM9 21h1v1h-1zM11 21h1v1h-1zM16 21h1v1h-1zM20 21h1v1h-1zM22 21h1v1h-1zM24 21h1v1h-1zM26 21h1v1h-1zM29 21h1v1h-1zM2 22h1v1h-1zM4 22h2v1h-2zM8 22h6v1h-6zM15 22h3v1h-3zM19 22h2v1h-2zM22 22h8v1h-8zM10 23h4v1h-4zM18 23h2v1h-2zM21 23h2v1h-2zM26 23h2v1h-2zM30 23h1v1h-1zM2 24h7v1h-7zM11 24h5v1h-5zM17 24h1v1h-1zM20 24h3v1h-3zM24 24h1v1h-1zM26 24h4v1h-4zM2 25h1v1h-1zM8 25h1v1h-1zM10 25h1v1h-1zM17 25h2v1h-2zM20 25h1v1h-1zM22 25h1v1h-1zM26 25h1v1h-1zM29 25h2v1h-2zM2 26h1v1h-1zM4 26h3v1h-3zM8 26h1v1h-1zM10 26h2v1h-2zM13 26h1v1h-1zM17 26h4v1h-4zM22 26h9v1h-9zM2 27h1v1h-1zM4 27h3v1h-3zM8 27h1v1h-1zM10 27h3v1h-3zM14 27h1v1h-1zM22 27h2v1h-2zM25 27h1v1h-1zM27 27h1v1h-1zM29 27h2v1h-2zM2 28h1v1h-1zM4 28h3v1h-3zM8 28h1v1h-1zM10 28h1v1h-1zM15 28h4v1h-4zM21 28h1v1h-1zM24 28h1v1h-1zM26 28h1v1h-1zM28 28h2v1h-2zM2 29h1v1h-1zM8 29h1v1h-1zM11 29h2v1h-2zM17 29h2v1h-2zM22 29h2v1h-2zM25 29h3v1h-3zM29 29h1v1h-1zM2 30h7v1h-7zM10 30h2v1h-2zM13 30h2v1h-2zM17 30h1v1h-1zM19 30h1v1h-1zM21 30h1v1h-1zM23 30h1v1h-1zM26 30h1v1h-1z" fill="#000"/></svg>` };
   const UPD = { el: null, loaded: false, donorsAt: 0 };
@@ -309,14 +341,13 @@
     catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
     const vers = siteVersions(list); SITE_VER = vers.filter(Boolean).pop() || SITE_VER;
     const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
-    const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", "Daily Consensus": "gazette/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Wallet: "wallet/", Findings: "findings/", Roadmap: "roadmap/", Status: "status/", Stats: "stats/", "Testnet load": "load/", "Build pulse": "devpulse/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", Japanese: "?lang=ja", "Guided tour": "playground/#tour", Donations: "donate/" };
     let day = null, html = "";
     for (const e of order) {
       const tag = String(e.tag || ""), on = String(e.on || ""), ver = /^v\d/i.test(tag);
       if (on !== day) { day = on; html += `<li class="day">${logDate(on)}</li>`; }
-      const area = e.sv && (ver || tag === "HUD") ? `<a class="tag" href="${ROOT}">HUD</a>` : PAGE[tag] ? `<a class="tag" href="${ROOT}${PAGE[tag]}">${esc(tag)}</a>` : `<b class="tag">${esc(tag)}</b>`;
+      const L = logLink(e), area = e.sv && (ver || tag === "HUD") ? `<a class="tag" href="${ROOT}">HUD</a>` : L.area != null ? `<a class="tag" href="${esc(logHref(L.area, ROOT))}"${/^https?:/.test(L.area) ? ' target="_blank" rel="noopener"' : ""}>${esc(tag)}</a>` : `<b class="tag">${esc(tag)}</b>`;
       const t = e.sv ? `<span class="tags"><b class="tag ver">${esc(e.sv)}</b>${area}</span>` : ver ? `<a class="tag ver" href="${ROOT}">${esc(tag)}</a>` : area;
-      html += `<li data-tag="${esc(e.sv && ver ? "HUD" : tag)}">${t}<span class="body">${e.html || esc(e.text || "")}</span></li>`;
+      html += `<li data-tag="${esc(e.sv && ver ? "HUD" : tag)}"${L.go != null ? ` data-go="${esc(L.go)}"` : ""}>${t}<span class="body">${e.html || esc(e.text || "")}</span></li>`;
     }
     ul.innerHTML = html;
     foldUpdLog(ul);
@@ -334,8 +365,7 @@
       if (cut > 90 || (cut < 0 && text.length > 90)) { const sp = text.slice(0, 84).lastIndexOf(" "); cut = sp > 20 ? sp : cut; }
       const head = cut > 0 ? text.slice(0, cut).replace(/[:.;,]$/, "") + (/[:.;,]\s|[：。；，]/.test(text.slice(cut, cut + 2)) ? "" : " …") : text, rest = cut > 0 ? text.slice(cut).replace(/^[:.;,：。；，]?\s*/, "") : "";
       body.remove();
-      if (rest) { const d = document.createElement("details"), sm = document.createElement("summary"), pr = document.createElement("p"); sm.textContent = head; pr.textContent = rest; d.append(sm, pr); li.append(d); }
-      else { const o = document.createElement("div"); o.className = "one"; o.textContent = head; li.append(o); }
+      logFold(li, head, rest, tr, ROOT);
     });
     const all = [...ul.querySelectorAll("li:not(.day)")], days = [...ul.querySelectorAll("li.day")];
     let shown = 12;

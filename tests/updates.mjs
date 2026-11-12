@@ -1,5 +1,8 @@
 /* Checks assets/updates.json, the Updates log every page reads:
-   - it is valid JSON, a list of {tag, on, html[, major]} with a date in "on" and a unique id in each "major"
+   - it is valid JSON, a list of {tag, on, html[, link][, major]} with a date in "on" and a unique id in each "major"
+   - "link" is where the entry leads: a tauhud.com path such as "/gxp/" or "/wallet/#book", or a full https address.
+     An entry about one page, game or tool that its tag does not already name (tags map to pages in LOGPAGE, assets/nav.js)
+     gets one, so the log can take the reader straight there; with BASE, a new entry that leads nowhere is listed as a warning
    - no merge-conflict markers in it or in the Chinese dictionaries
    - with BASE=<file> (the log on the target branch): no entry there is missing here, so a merge did not drop one
    - with BASE and PR_TITLE (a pull request): the pull request adds at least one entry, so every release is in the log;
@@ -50,7 +53,9 @@ if (list) {
         }
       }
     }
-    for (const k of Object.keys(e)) if (!["tag", "on", "html", "major", "backfill"].includes(k)) fail(`${at} has an unknown field "${k}"`);
+    if ("link" in e && (typeof e.link !== "string" || !/^(\/[^\s"<>]*|https:\/\/[^\s"<>]+)$/.test(e.link)))
+      fail(`${at} "link" should be a tauhud.com path like "/gxp/" or a full https address: ${e.link}`);
+    for (const k of Object.keys(e)) if (!["tag", "on", "html", "link", "major", "backfill"].includes(k)) fail(`${at} has an unknown field "${k}"`);
   });
 
   for (const [at, img] of images) {
@@ -71,6 +76,12 @@ if (list) {
     for (const e of list) if (e && e.major && !old.has(e.major.id) && !e.major.image && !e.major.skip)
       fail(`the new "major" ${e.major.id} has no "image": add a 16:9 screenshot of it as assets/shots/${e.major.id}.png `
          + `(PNG or JPEG, at most 5 MB, about 1600×900) and "image": "/assets/shots/${e.major.id}.png" in its "major"`);
+    /* a new entry that leads nowhere: its tag names no page (LOGPAGE in assets/nav.js) and it has no "link"; a warning, since some changes have no page */
+    const nav = await readFile(join(ROOT, "assets/nav.js"), "utf8"), lp = /const LOGPAGE = \{([\s\S]*?)\};/.exec(nav);
+    const pages = new Set(lp ? [...lp[1].matchAll(/(?:"([^"]+)"|(\w[\w ]*?))\s*:/g)].map(m => m[1] || m[2]) : []);
+    const seen = new Set(base.map(e => e && e.tag + "|" + e.on + "|" + e.html));
+    for (const e of list) if (e && !seen.has(e.tag + "|" + e.on + "|" + e.html) && !e.link && !(e.major && e.major.link) && !pages.has(e.tag) && !/^v\d/i.test(e.tag))
+      console.log(`⚠ new entry "${e.tag}" of ${e.on} leads nowhere: if it is about one page, game or tool, add "link": "/that-page/" so the log links to it`);
     const title = process.env.PR_TITLE;
     if (title !== undefined && base.length && list.length <= base.length && !/\[no log\]/i.test(title))
       fail(`this pull request adds no entry to the Updates log. Every release gets one: append {tag, on, html} to assets/updates.json `
