@@ -175,10 +175,10 @@ footer a { color: var(--dim); }
         <h2 id="hOther">Other uses, other decisions</h2>
         <ul class="plain" id="other"></ul>
       </section>
-      <section class="panel" id="kitPanel" aria-labelledby="hKit" hidden>
+      <section class="panel" id="kitPanel" aria-labelledby="hKit">
         <h2 id="hKit">The assessment kit</h2>
-        <p class="quiet">A method guide, a reusable assessment workbook with 77 questions, 24 risk prompts and 82 requirement rows (Part 11, Annex 11 and related guidance), and this Tau assessment in full as a dated evidence snapshot with 79 checked source citations.</p>
-        <div class="acts"><a class="btn" id="kitLink" href="#" target="_blank" rel="noopener">Get the kit</a></div>
+        <p class="quiet">A method guide, a reusable assessment workbook with 77 questions, 24 risk prompts and 82 requirement rows (Part 11, Annex 11 and related guidance), and both assessments of this page in full as dated evidence snapshots with 122 checked source citations.</p>
+        <div class="acts"><a class="btn" id="kitLink" href="#" target="_blank" rel="noopener" hidden>Get the kit</a><a class="btn" href="/gxp/dlt-gxp-kit-sample.pdf" target="_blank" rel="noopener">Free sample (PDF)</a></div>
       </section>
     </aside>
   </div>
@@ -192,7 +192,7 @@ footer a { color: var(--dim); }
 const $ = id => document.getElementById(id);
 const P = new URLSearchParams(location.search);
 const SAMPLE = P.has("sample");
-const KIT_URL = "";   // the shop page of the assessment kit; the panel stays hidden while this is empty
+const KIT_URL = "";   // the shop page of the assessment kit; the buy button stays hidden while this is empty
 const T = s => (window.TauI18n ? TauI18n.t(s) : s);
 const LANG = window.TauI18n && TauI18n.lang ? TauI18n.lang : "en";
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -212,7 +212,7 @@ const S = { data: null, gh: null, ok: null, topic: "all", use: P.get("use") === 
 /* the page answers the same questions for two intended uses; ?use=net opens the second one */
 const use = () => S.data && (S.data.uses.find(u => u.id === S.use) || S.data.uses[0]);
 
-if (KIT_URL) { $("kitLink").href = KIT_URL; $("kitPanel").hidden = false; }
+if (KIT_URL) { $("kitLink").href = KIT_URL; $("kitLink").hidden = false; }
 
 /* what IDNI's GitHub says now, against what the answer was read from; a change asks for a new reading, it never changes an outcome by itself */
 function changed(item) {
