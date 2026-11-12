@@ -42,6 +42,7 @@
     chronicle:  { t: "Chronicle", d: "Tau from the first videos in 2014 to the testnet alpha", i: "◷", h: "chronicle/" },
     devpulse:   { t: "Build pulse", d: "How Tau's code is moving: newest commits, which parts change, the version our node runs", i: "⌥", h: "devpulse/" },
     findings:   { t: "Findings", d: "Issues we reported to IDNI, with their live GitHub status", i: "!", h: "findings/" },
+    gxp:        { t: "Is Tau GxP-ready?", d: "What a pharma supplier assessment would ask of Tau, what exists today, and what would change the answer; live from IDNI's GitHub", i: "℞", h: "gxp/" },
     roadmap:    { t: "Road to mainnet", d: "What we think must be fixed before mainnet, with proof and a path; our view, open for comments", i: "⇢", h: "roadmap/" },
     status:     { t: "Status", d: "Uptime, outages, sync gaps and restarts of the community node", i: "◍", h: "status/" },
     meta:       { t: "Tau HUD in numbers", d: "How many people use this site: visitors per day, growth and the most visited pages", i: "∑", h: "meta/" },
@@ -72,7 +73,7 @@
     missions:   { t: "Missions", d: "Six short tasks on a practice chain: pass a rule, fail one, survive an outage, switch to proof of stake", i: "★", h: "missions/" },
     /* one menu entry for pages that answer the same question; it opens the first of them, and each carries tabs to the others (TABS) */
     health:     { t: "Testnet health", d: "Is the testnet well? Block pace and transactions over the whole chain, the load right now, uptime and outages", i: "≋", h: "stats/" },
-    road:       { t: "Road to mainnet", d: "What we think must be fixed before mainnet, the issues we reported to IDNI, and how Tau's code is moving", i: "⇢", h: "roadmap/" },
+    road:       { t: "Road to mainnet", d: "What we think must be fixed before mainnet, the issues we reported to IDNI, how Tau's code is moving, and whether Tau is ready for pharma (GxP)", i: "⇢", h: "roadmap/" },
     read:       { t: "Read", d: "The Daily Consensus, a newspaper every Monday; the blog from our own logbooks; Tau's story since 2014", i: "❡", h: "gazette/" },
     wrules:     { t: "Wallet rules", d: "Give your wallet a rule: say it in plain words, write it in Tau, take one from others, or try this week's task", i: "✐", h: "builder/" },
     practise:   { t: "Practise voting", d: "On a practice chain: six missions, a validator seat of your own, and what happens when you change the numbers", i: "★", h: "missions/" },
@@ -83,7 +84,7 @@
     explorer:  ["Explorer", [["explorer"], ["account"], ["history"]]],
     proposals: ["Proposals", [["proposals"], ["vote"]]],
     health:    ["Testnet health", [["stats"], ["load"], ["status"]]],
-    road:      ["Road to mainnet", [["roadmap", "Roadmap"], ["findings"], ["devpulse"]]],
+    road:      ["Road to mainnet", [["roadmap", "Roadmap"], ["findings"], ["devpulse"], ["gxp", "GxP"]]],
     read:      ["Read", [["gazette"], ["blog"], ["chronicle"]]],
     wallet:    ["Wallet", [["wallet"], ["card"]]],
     wrules:    ["Wallet rules", [["builder", "In words"], ["playground", "In Tau"], ["rules", "From others"], ["challenge", "This week"]]],
@@ -719,7 +720,7 @@
     }
   }
 
-  const QUIET = new Set(["taulang", "blog", "legal", "press", "story", "facts", "chronicle", "gazette", "donate", "roadmap", "findings", "devpulse", "about"]);
+  const QUIET = new Set(["taulang", "blog", "legal", "press", "story", "facts", "chronicle", "gazette", "donate", "roadmap", "findings", "devpulse", "gxp", "about"]);
   function mount(nav) {
     if (nav.dataset.mounted) return;
     nav.dataset.mounted = "1";
@@ -953,6 +954,9 @@
       a.href = ROOT + path + q + (hash ? "#" + hash : ""); a.dataset.tnt = P[k].d; if (k === cur) a.setAttribute("aria-current", "page"); t.append(a);
     });
     nav.after(t);
+    /* on a phone the row scrolls sideways: bring the tab of this page into view, again once the web font has its real widths */
+    const show = () => { const h = t.querySelector(".tab.here"); if (!h) return; const over = h.getBoundingClientRect().right - t.getBoundingClientRect().right; if (over > 0) t.scrollLeft += Math.ceil(over) + 12; };
+    show(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(show);
   }
   /* "what is real": today's transactions by sender, one line on the HUD, Stats and In numbers (relay /api/v1/sources). The
      groups are the relay's: IDNI's genesis accounts, White Rabbit Key's players, our cruise ships' simulated passengers and the
