@@ -762,7 +762,7 @@ const STEP_INFO = [
     fix: "Write it as always ( condition ? (o5[t]:bv[24] = { #x000001 }:bv[24]) : (o5[t]:bv[24] = { #x000000 }:bv[24]) ). Start from an example chip if unsure.",
     src: ["rule_offers.py", "normalize_offer_rule_text"] },
   { tip: "Does it read only the current step [t]? Looking back at [t-1] or ahead is refused.",
-    why: "Rules change by agreement while the chain runs. A rule that remembered earlier steps would carry stale state across every rule change and break other accounts’ outputs.",
+    why: "Rules change by agreement while the chain runs. A rule that remembered earlier steps would carry stale state across every rule change and break other accounts’ outputs. The engine shows it: with one look-back anywhere in the rules, every output is 0 at the first step, and on o5 a 0 blocks.",
     fix: "Replace [t-1] (or any other step) with [t]. Decide on the transfer in front of you, not on earlier ones.",
     src: ["admission.py", "temporal screen"] },
   { tip: "Does it read only inputs a personal rule may read, and write no network-owned output?",

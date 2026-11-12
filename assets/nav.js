@@ -233,7 +233,8 @@
     if (rest) {
       const d = document.createElement("details"), sm = document.createElement("summary"), pr = document.createElement("p"); sm.textContent = head;
       const re = /tauhud\.com(\/[\w\-./#?=&%]*[\w/])?/g; let at = 0, m;
-      while ((m = re.exec(rest))) { pr.append(rest.slice(at, m.index), a(root + (m[1] || "/").replace(/^\//, "") || "./", m[0])); at = m.index + m[0].length; }
+      while ((m = re.exec(rest))) { const x = a(root + (m[1] || "/").replace(/^\//, "") || "./", m[0]); x.setAttribute("translate", "no");   // an address is a name, not a text: it stays as written in every language
+        pr.append(rest.slice(at, m.index), x); at = m.index + m[0].length; }
       pr.append(rest.slice(at));
       if (go) pr.append(" ", a(go, `${tr("Open")} ${logShow(rel)}${ext ? " ↗" : " ›"}`, "go"));
       d.append(sm, pr); li.append(d);
