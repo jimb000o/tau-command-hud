@@ -879,6 +879,9 @@ a.btn { text-decoration: none; display: inline-block; }
 .changes li details[open] summary::after { content: " ‹"; }
 .changes li details p { margin: 4px 0 0; color: var(--dim); line-height: 1.5; }
 .changes li .one { color: #fff; font-weight: 600; line-height: 1.4; }
+.changes li a.one { display: block; text-decoration: none; } .changes li a.one::after { content: " ›"; color: var(--dim); font-weight: 400; } .changes li a.one:hover { text-decoration: underline; }
+.changes li details p a { color: var(--ok); text-decoration: none; } .changes li details p a:hover { text-decoration: underline; }
+.changes li details p a.go { display: inline-block; white-space: nowrap; font-weight: 600; }
 .community { align-items: start; }
 .community .col { display: grid; gap: 12px; align-content: start; min-width: 0; }
 .keep .lead { margin: 0 0 6px; }
@@ -2199,14 +2202,15 @@ async function loadLog() {
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD; from v17.54 every entry carries the site version beside its page */
-  const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Findings: "findings/", Status: "status/", Stats: "stats/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", Japanese: "?lang=ja", Donations: "donate/" };
   let day = null, html = "";
   for (const e of order) {
     const tag = String(e.tag || ""), on = String(e.on || ""), ver = /^v\d/i.test(tag);
     if (on !== day) { day = on; html += `<li class="day">${fmtLogDate(on)}</li>`; }
-    const area = e.sv && (ver || tag === "HUD") ? `<a class="tag" href="./">HUD</a>` : PAGE[tag] ? `<a class="tag" href="${PAGE[tag]}">${esc(tag)}</a>` : `<b class="tag">${esc(tag)}</b>`;
+    /* where the entry leads comes from the shared helper in assets/nav.js: the tag chip opens its page, the text ends with a link to the entry's own page */
+    const L = window.TauLogLink ? TauLogLink(e) : { area: null, go: null }, href = r => /^https?:\/\//.test(r) ? r : r || "./";
+    const area = e.sv && (ver || tag === "HUD") ? `<a class="tag" href="./">HUD</a>` : L.area != null ? `<a class="tag" href="${esc(href(L.area))}"${/^https?:/.test(L.area) ? ' target="_blank" rel="noopener"' : ""}>${esc(tag)}</a>` : `<b class="tag">${esc(tag)}</b>`;
     const t = e.sv ? `<span class="tags"><b class="tag ver">${esc(e.sv)}</b>${area}</span>` : ver ? `<b class="tag ver">${esc(tag)}</b>` : area;
-    html += `<li data-tag="${esc(e.sv && ver ? "HUD" : tag)}">${t}<span class="body">${e.html || esc(e.text || "")}</span></li>`;
+    html += `<li data-tag="${esc(e.sv && ver ? "HUD" : tag)}"${L.go != null ? ` data-go="${esc(L.go)}"` : ""}>${t}<span class="body">${e.html || esc(e.text || "")}</span></li>`;
   }
   ul.innerHTML = html;
   foldLog();
@@ -2253,6 +2257,7 @@ function foldLog() {
     if (cut > 90 || (cut < 0 && text.length > 90)) { const sp = text.slice(0, 84).lastIndexOf(" "); cut = sp > 20 ? sp : cut; }
     const head = cut > 0 ? text.slice(0, cut).replace(/[:.;,]$/, "") + (/[:.;,]\s|[：。；，]/.test(text.slice(cut, cut + 2)) ? "" : " …") : text, rest = cut > 0 ? text.slice(cut).replace(/^[:.;,：。；，]?\s*/, "") : "";
     body.remove();
+    if (window.TauLogFold) { TauLogFold(li, head, rest, tr, ""); return; }
     if (rest) { const d = document.createElement("details"), sm = document.createElement("summary"), pr = document.createElement("p"); sm.textContent = head; pr.textContent = rest; d.append(sm, pr); li.append(d); }
     else { const o = document.createElement("div"); o.className = "one"; o.textContent = head; li.append(o); }
   });
