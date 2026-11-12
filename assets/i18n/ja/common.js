@@ -613,6 +613,18 @@ TauI18n.add({ strings: {
   "This week": "今週",
   "The testnet": "テストネット",
   "Your wallet": "あなたのウォレット",
+  "Beginner": "初心者",
+  "Intermediate": "中級者",
+  "Expert": "上級者",
+  "Your level": "あなたのレベル",
+  "One choice for every page: how much is explained, and how much detail is shown.": "すべてのページに共通の設定です：どこまで説明するか、どこまで細部を見せるか。",
+  "Beginner: plain words and the first step first; the fine print stays folded until you need it.": "初心者：やさしい言葉で、まず最初の一歩から。細かい注意書きは必要になるまで折りたたまれています。",
+  "Intermediate: plain words; Learn gives lessons with a cheat sheet instead of the step-by-step guide.": "中級者：やさしい言葉のまま。「学ぶ」ページは手順ガイドの代わりに、早見表つきのレッスンになります。",
+  "Expert: keys, hashes, stream names and rule text; boxes open from the start; Wallet rules opens on the Tau box.": "上級者：鍵、ハッシュ、ストリーム名、ルール本文を表示。ボックスは最初から開き、「ウォレットのルール」は Tau の入力欄から始まります。",
+  "Settings: your level, node address and Connect, background rain.": "設定：あなたのレベル、ノードのアドレスと接続、背景の雨。",
+  "Settings: your level, which node this page reads, guided tour, about.": "設定：あなたのレベル、このページが読むノード、ガイドツアー、概要。",
+  "Settings: level, node, guided tour, about": "設定：レベル、ノード、ガイドツアー、概要",
+  "Settings: level, node address, background rain": "設定：レベル、ノードのアドレス、背景の雨",
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 送信者自身のルールが拒否しました（o5 = 0 · ${TauI18n.t(r)}）`]] });

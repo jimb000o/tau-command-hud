@@ -618,6 +618,18 @@ TauI18n.add({ strings: {
   "This week": "本周",
   "The testnet": "测试网",
   "Your wallet": "你的钱包",
+  "Beginner": "入门",
+  "Intermediate": "进阶",
+  "Expert": "专家",
+  "Your level": "你的水平",
+  "One choice for every page: how much is explained, and how much detail is shown.": "一次选择，适用于每个页面：解释多少，显示多少细节。",
+  "Beginner: plain words and the first step first; the fine print stays folded until you need it.": "入门：通俗用语，先看第一步；细则保持折叠，需要时再展开。",
+  "Intermediate: plain words; Learn gives lessons with a cheat sheet instead of the step-by-step guide.": "进阶：通俗用语；“学习”页提供带速查表的课程，而不是逐步引导。",
+  "Expert: keys, hashes, stream names and rule text; boxes open from the start; Wallet rules opens on the Tau box.": "专家：显示密钥、哈希、数据流名称和规则原文；各个框一开始就展开；“钱包规则”直接打开 Tau 输入框。",
+  "Settings: your level, node address and Connect, background rain.": "设置：你的水平、节点地址与连接、背景代码雨。",
+  "Settings: your level, which node this page reads, guided tour, about.": "设置：你的水平、本页读取哪个节点、导览、关于。",
+  "Settings: level, node, guided tour, about": "设置：水平、节点、导览、关于",
+  "Settings: level, node address, background rain": "设置：水平、节点地址、背景代码雨",
 } });
 /* "<account> · the sender's own rule said no (o5 = 0 · <rule>)": the rule's own " · " would split the line in the wrong place */
 TauI18n.add({ patterns: [[/^(\S+) · the sender's own rule said no \(o5 = 0 · (.+)\)$/, (s, a, r) => `${a} · 发送方自己的规则说不 (o5 = 0 · ${TauI18n.t(r)})`]] });

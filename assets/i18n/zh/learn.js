@@ -384,4 +384,6 @@ TauI18n.add({ strings: {
   "Make receiver 7 really special: it may receive any amount. Run 6,000 to receiver 7, then 6,000 to receiver 8.": "让收款方 7 真正特殊：它可以收任意金额。先给收款方 7 转 6,000，再给收款方 8 转 6,000。",
   "Rule builder ›": "规则搭建器 ›",
   "Say a wallet rule in plain words and see the Tau rule it becomes.": "用日常语言说出一条钱包规则，看它变成怎样的 Tau 规则。",
+  "Your answer also sets your level on the other pages.": "你的回答也会设定你在其他页面的水平。",
+  "Change it at any time under the gear, top right.": "随时可在右上角的齿轮里更改。",
 } });

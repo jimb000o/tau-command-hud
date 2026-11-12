@@ -412,7 +412,7 @@ function render() {
   const appOk = live && have && !!G.info && G.info.enabled !== false;
   $("pApp").classList.toggle("done", enrolled);
   /* the fine print waits, folded to one line, until step 1 is done: a first visit shows the three steps first. One click opens it at any time. */
-  if (!howTouched && matchMedia("(min-width: 1001px)").matches) $("howD").open = enrolled;
+  if (!howTouched && matchMedia("(min-width: 1001px)").matches) $("howD").open = enrolled || document.documentElement.dataset.level === "pro";   // an expert reads it from the start
   $("stApp").textContent = enrolled ? T("connected") : ""; $("stApp").className = "st" + (enrolled ? " ok" : "");
   $("btnQr").hidden = enrolled || !!shown; $("btnQr").disabled = !appOk;
   $("qrBox").hidden = !shown || enrolled; document.body.classList.toggle("qrOpen", !!shown && !enrolled);
@@ -457,6 +457,7 @@ function render() {
   const row = hit && !jumped && $("pay").querySelector("li.hit"); if (row) { jumped = true; row.scrollIntoView({ block: "center" }); const i = row.querySelector("input"); if (i) i.focus({ preventScroll: true }); }
 }
 let jumped = false, howTouched = false;
+addEventListener("tau-level", e => { if (!howTouched && e.detail === "pro" && matchMedia("(min-width: 1001px)").matches) $("howD").open = true; });
 $("howD").querySelector("summary").addEventListener("click", () => { howTouched = true; });   // the visitor's own click (or Enter on it), not the page folding it
 /* why "Sign the rule" cannot be pressed now, in words; "" when it can */
 function ruleWhy({ live, have, enrolled, full }) {

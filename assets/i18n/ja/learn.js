@@ -384,4 +384,6 @@ TauI18n.add({ strings: {
   "Make receiver 7 really special: it may receive any amount. Run 6,000 to receiver 7, then 6,000 to receiver 8.": "受取人 7 を本当に特別にしてください：どんな金額でも受け取れるようにします。受取人 7 に 6,000、次に受取人 8 に 6,000 を実行してください。",
   "Rule builder ›": "ルールビルダー ›",
   "Say a wallet rule in plain words and see the Tau rule it becomes.": "ウォレットのルールを普通の言葉で書き、どんな Tau ルールになるかを見ます。",
+  "Your answer also sets your level on the other pages.": "この答えは、ほかのページでのあなたのレベルにもなります。",
+  "Change it at any time under the gear, top right.": "右上の歯車からいつでも変更できます。",
 } });

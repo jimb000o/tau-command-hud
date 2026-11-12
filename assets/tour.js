@@ -257,7 +257,7 @@
   /* first visit to the site: offer this page's tour once. Not to a visitor who arrives in the middle of a task
      (?from=: a rule carried over from another page) or with a walk a friend sent, which has its own steps */
   function offer() {
-    if (i >= 0 || seen() || innerWidth < 900 || /[?&](?:walk|from)=/.test(location.search) || document.querySelector(".modal:not([hidden]), .tn-modal:not([hidden])")) return;
+    if (i >= 0 || seen() || document.documentElement.dataset.level === "pro" || innerWidth < 900 || /[?&](?:walk|from)=/.test(location.search) || document.querySelector(".modal:not([hidden]), .tn-modal:not([hidden])")) return;
     store.set(SEEN, "1");
     offered = true; target = null; ring.hidden = true;
     card.classList.remove("anchored", "side-top", "side-bottom", "side-left", "side-right"); card.style.left = card.style.top = ""; card.style.zoom = zoom() === 1 ? "" : String(zoom());

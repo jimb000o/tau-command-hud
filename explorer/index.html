@@ -827,7 +827,7 @@ function blockView(h) {
     ${R && R.here.length ? `<p class="note"><b>The rules changed at this block.</b> ${R.here.length === 1 ? "An agreed rule change" : `${R.here.length} agreed rule changes`} took effect at the end of it, so from #${fmtN(h + 1)} on every block is judged by revision ${R.rev + R.here.length}. No fork, no software upgrade. ${R.here.map(u => u.update_id ? `<a href="/proposals/#${esc(String(u.update_id).slice(0, 16))}">See what changed</a>` : "").filter(Boolean).join(" · ")}</p>` : ""}
     ${txs.length ? `<h3>Transactions in order</h3><table><thead><tr><th class="n">#</th><th>What</th><th>From → to</th><th class="n">AGRS</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
     <p class="note vt">The state hash is a fingerprint of every balance and rule after this block. Two nodes that agree on it agree on the whole state.</p>
-    <p class="note vp">Every node checked this block against the Tau rules before adding it. Switch View to Technical for its hashes and the raw data.</p>
+    <p class="note vp">Every node checked this block against the Tau rules before adding it. Set your level to Expert under the gear for its hashes and the raw data.</p>
     <details class="raw vt"><summary>Raw block</summary><pre class="code">${esc(JSON.stringify(b, null, 2))}</pre></details>`;
 }
 function txView(key) {

@@ -262,6 +262,9 @@ let SEL = null;  // selected event key "era:i"
 /* a first visit reads as one story: the older eras show their turning points, the newest era every moment.
    An era's button opens or folds it; on one screen an open era gets a column twice as wide. */
 const OPEN = new Set([ERAS[ERAS.length - 1].id]);
+let foldTouched = false;
+/* an expert (the level under the gear) starts with every era open */
+addEventListener("tau-level", e => { if (foldTouched || e.detail !== "pro") return; ERAS.forEach(x => OPEN.add(x.id)); OPEN.add("gone"); if ($("eras").children.length) { layoutEras(); fitText(); } });
 function layoutEras() {
   const host = $("eras");
   host.querySelectorAll(".panel[data-era]").forEach(p => {
@@ -293,7 +296,7 @@ function renderEras() {
       <ul class="ev">${GONE.map(g => `<li><span class="t">${esc(g.t)}</span><div class="more">${esc(g.m)}</div></li>`).join("")}</ul>
       <button class="fold" type="button" data-fold="gone"></button>
     </section>`;
-  host.querySelectorAll("[data-fold]").forEach(b => b.addEventListener("click", () => { const id = b.dataset.fold; OPEN.has(id) ? OPEN.delete(id) : OPEN.add(id); layoutEras(); fitText(); }));
+  host.querySelectorAll("[data-fold]").forEach(b => b.addEventListener("click", () => { foldTouched = true; const id = b.dataset.fold; OPEN.has(id) ? OPEN.delete(id) : OPEN.add(id); layoutEras(); fitText(); }));
   layoutEras();
   host.querySelectorAll("li[data-k]").forEach(li => {
     li.addEventListener("click", () => select(li.dataset.k, false));
