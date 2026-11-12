@@ -267,9 +267,10 @@ def visit_stats(facts: dict) -> list[tuple[str, str]]:
     ref = (facts.get("refused in all") or 0) - old
     if ref > 0:
         out.append((str(ref), "refused by the node"))
-    checked = facts.get("bookings checked after the visit")
-    if checked:
-        out.append((f"{checked - (facts.get('bookings the chain had not paid out') or 0)}/{checked}", "bookings paid out by the chain"))
+    port = facts.get("bookings made in port (not the bookings ahead)") or {}   # blog.IN_PORT
+    due = (port.get("made") or 0) - (port.get("withdrawn by their passenger during the call") or 0)
+    if due > 0:   # a booking its passenger withdrew is not paid out, and not owed either
+        out.append((f"{port.get('paid out to the place by the chain at their time', 0)}/{due}", "bookings in port paid out"))
     if len(out) < 4 and facts.get("stops skipped") is not None:   # the same four tiles on every ship's picture
         out.append((str(facts["stops skipped"]), "stops skipped"))
     return out[:4]

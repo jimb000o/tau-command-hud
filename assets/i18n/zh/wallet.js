@@ -599,4 +599,7 @@ TauI18n.add({ strings: {
   "The rule above does not fit this task yet.": "上面的规则还不符合这项任务。",
   "Back to the Playground": "返回规则试验场",
   "Back to the challenge": "返回挑战",
+  "In plain words": "用日常语言",
+  "In plain words ›": "用日常语言 ›",
+  "Write what your wallet may do as a sentence. The rule builder turns it into these blocks, checks it and brings it back here to sign.": "用一句话写下你的钱包可以做什么。规则搭建器会把它变成这些积木，检查它，再带回这里让你签名。",
 } });

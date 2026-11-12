@@ -94,6 +94,7 @@ import json
 import logging
 import os
 import re
+import statistics
 import secrets
 import sys
 import time
@@ -145,10 +146,10 @@ X_KEYS = {k: os.environ.get(k, "").strip() for k in ("X_API_KEY", "X_API_SECRET"
 # Findings (findings.py) go to X only for real-chain incidents (no blocks reaching us, no peers, a reorg, a busy stretch),
 # at most FINDINGS_X_DAILY_CAP a day.
 X_LINKS = os.environ.get("X_LINKS", "false").lower() in ("1", "true", "yes")
-X_DAILY_CAP = int(os.environ.get("X_DAILY_CAP", 8))
+X_DAILY_CAP = int(os.environ.get("X_DAILY_CAP", 2))   # 12 Nov 2026: the day's best only, not 8 automatic posts
 X_MONTHLY_CAP = int(os.environ.get("X_MONTHLY_CAP", 240))
-X_RESERVE = int(os.environ.get("X_RESERVE", 2))
-X_SIM = os.environ.get("X_SIM", "true").lower() in ("1", "true", "yes")
+X_RESERVE = int(os.environ.get("X_RESERVE", 1))
+X_SIM = os.environ.get("X_SIM", "false").lower() in ("1", "true", "yes")
 # A picture under the X post where one fits: the rule change's card and the live overview from the share service (share/),
 # a new page's own preview picture. Uploading it costs nothing extra; a picture that cannot be had leaves the text alone.
 X_PICTURES = os.environ.get("X_PICTURES", "true").lower() in ("1", "true", "yes")
@@ -643,13 +644,14 @@ def telegram_text(item: dict) -> str:
 
 # An X post: the headline first, a blank line, the text (list lines stay together), a blank line, then one quiet
 # line that says where it comes from, with the hashtag. Simulation posts also open with their marker line.
-X_REAL = "⛓ Live from Tau Testnet Alpha"
+X_REAL = "⛓ Tau Testnet Alpha"
 X_SIM_LINE = "🧪 SIMULATION · not the real testnet"
 X_SIM_FOOT = "🧪 Simulation, not the real testnet"
 X_SITE_NOTE = "✨ Tau HUD website update, not testnet news"
 X_TAG = "#TauNet"
-# Every X post carries these two, once, at the very end after the source line (29 Oct 2026); never more tags.
-X_MUST = ("#TauNet", "$AGRS")
+# Every X post carries this, once, at the very end after the source line; never more tags. $AGRS was dropped on
+# 12 Nov 2026: a cashtag puts the posts into price feeds next to price bots, and Tau HUD makes no coin talk.
+X_MUST = ("#TauNet",)
 
 
 def x_len(s: str) -> int:
@@ -1078,14 +1080,39 @@ def today_wallets(active: dict | None, day: str, ships: list[str] | None = None)
         return None
     by = {t: int(n) for t, n in zip(tags, row) if n}
     before = sorted(d for d in days if d < day)[-USUAL_DAYS:]
-    past = [sum((days[d].get("1") or [0])) for d in before if isinstance(days[d].get("1"), list)]
-    usual = round(sum(past) / len(past)) if past else None
+    rows = [r for r in (days[d].get("1") for d in before) if isinstance(r, list) and len(r) == len(tags)]
+    # the usual day: the median of the days before, without our simulated passengers (11 Nov 2026: one cruise day
+    # lifted the mean from 28 to 48, and every ordinary day after it read "fewer than usual")
+    past = [sum(int(n) for t, n in zip(tags, r) if t != "cruise") for r in rows]
+    usual = round(statistics.median(past)) if past else None
+    oi = tags.index("other") if "other" in tags else None
+    other_usual = statistics.median([int(r[oi]) for r in rows]) if rows and oi is not None else 0
     new_row = (active.get("new") or {}).get(day) or []
     new = sum(int(n) for n in new_row) if isinstance(new_row, list) else 0
+    other_new = int(new_row[oi]) if isinstance(new_row, list) and oi is not None and len(new_row) == len(tags) else 0
     total = sum(by.values())
     ratio = round(total / usual, 1) if usual else None
     return {"total": total, "by": by, "usual": usual, "ratio": ratio, "new": new, "ships": list(ships or []),
+            "other_new": other_new, "other_usual": other_usual,
             "ours": sum(by.get(t, 0) for t in ("bot", "cruise", "agorzilla", "tauhud", "rabbit"))}
+
+
+def outsiders_news(w: dict | None) -> bool:
+    """Wallets that are not ours and not IDNI's are news only when one is new or there are more than usual; the same
+    one wallet every day is not (11 Nov 2026: the same sentence four evenings in a row)."""
+    if not w:
+        return False
+    n = w["by"].get("other", 0)
+    return bool(n) and (w.get("other_new", 0) > 0 or n > w.get("other_usual", 0))
+
+
+def outsiders_line(w: dict, short: bool = False) -> str:
+    n, fresh = w["by"].get("other", 0), w.get("other_new", 0)
+    if fresh:
+        who = "one of them" if n > 1 and fresh == 1 else ("all of them" if fresh == n and n > 1 else f"{fresh} of them" if n > 1 else "it")
+        first = f"{plural(n, 'wallet')} that {'is' if n == 1 else 'are'} not ours and not IDNI's sent today, {who} for the first time"
+        return (first + ".") if short else first + ": someone new is trying the testnet on their own."
+    return f"{n} wallets that are not ours and not IDNI's sent today, more than the usual {w['other_usual']:g}."
 
 
 def wallets_head(w: dict, short: bool = False) -> str:
@@ -1113,9 +1140,81 @@ def wallets_lines(w: dict) -> list[str]:
     return out
 
 
+PAGE_DAYS = int(os.environ.get("PAGE_REPEAT_DAYS", 30))   # a page shown in a post is not shown again for this long
+
+
+def page_key(link: str | None) -> str | None:
+    """The page a post points to, as its path ("/rules/"); None for the front page or another site (never blocked)."""
+    if not link:
+        return None
+    u = urllib.parse.urlsplit(str(link))
+    if u.netloc and u.netloc.split(":")[0] not in ("tauhud.com", "www.tauhud.com"):
+        return None
+    path = "/" + u.path.strip("/") + "/" if u.path.strip("/") else None
+    return path
+
+
+def page_recent(state: dict, link: str | None, now: float) -> bool:
+    """True when a closer look, a planned spotlight or a site update showed this page within PAGE_DAYS days (11 Nov
+    2026: the rules wall came as a new page, then again as "worth a look"; each source only knew its own posts)."""
+    pages_seed(state)
+    k = page_key(link)
+    t = state["pages"].get(k) if k else None
+    return bool(t) and now - t < PAGE_DAYS * 86400
+
+
+def pages_seed(state: dict) -> None:
+    """The first time: the pages the closer looks and planned posts already showed, from their own records."""
+    if "pages" in state:
+        return
+    pages = state["pages"] = {}
+    for kind in ("deepdives", "plan"):
+        st = state.get(kind) or {}
+        links = {q.get("id"): q.get("link") for q in st.get("posts") or [] if isinstance(q, dict)}
+        for pid, t in {**(st.get("x_posted") or {}), **(st.get("posted") or {})}.items():
+            k = page_key(links.get(pid))
+            if k and t and t > pages.get(k, 0):
+                pages[k] = t
+
+
+def page_shown(state: dict, link: str | None, now: float) -> None:
+    pages_seed(state)
+    k = page_key(link)
+    if k:
+        state["pages"][k] = round(now)
+
+
+SAID_DAYS, SAID_MAX = 7, 2   # a sentence the bot already said this often in this many days is left out
+
+
+def said_key(text: str) -> str:
+    """A sentence as a template: numbers and spacing do not make it new ("1 wallet …" and "2 wallets …" are the same)."""
+    t = re.sub(r"<[^>]+>", "", html.unescape(text or "")).lower()
+    t = re.sub(r"\b(are|were)\b", "is", re.sub(r"(\w{3,})s\b", r"\1", t))   # "1 wallet that is" = "3 wallets that are"
+    return hashlib.sha1(re.sub(r"\s+", " ", re.sub(r"\d[\d,.]*", "#", t)).strip().encode()).hexdigest()[:16]
+
+
+def said_often(state: dict, text: str, now: float) -> bool:
+    """True when the bot said this sentence (as a template) SAID_MAX times in the last SAID_DAYS days (11 Nov 2026:
+    the same "why it matters" four evenings in a row read as a machine). The post then says less instead."""
+    seen = (state.get("said") or {}).get(said_key(text)) or []
+    return sum(1 for t in seen if now - t < SAID_DAYS * 86400) >= SAID_MAX
+
+
+def remember_said(state: dict, text: str, now: float) -> None:
+    said = state.setdefault("said", {})
+    for k in list(said):
+        said[k] = [t for t in said[k] if now - t < SAID_DAYS * 86400]
+        if not said[k]:
+            del said[k]
+    said.setdefault(said_key(text), []).append(now)
+
+
 def today_why(r: dict, short: bool = False) -> str | None:
     """One sentence on what the day's numbers mean, from the facts only; None when there is nothing to say.
     `short`: the X wording."""
+    if r.get("why_off"):
+        return None   # said too often lately (said_often)
     w, pace = r.get("wallets"), r.get("pace")
     steady = bool(r["blocks"]) and pace is not None and pace <= 90 and not r.get("slow")
     if not r["blocks"]:
@@ -1131,14 +1230,8 @@ def today_why(r: dict, short: bool = False) -> str | None:
         kept = "the chain kept one block a minute" if steady else f"the chain slowed to one block every {round(pace)} seconds"
         return f"Each a real signed transaction the one validator checked; {kept}." if short else \
             f"Every one of these was a real signed transaction the single validator had to check, and {kept}."
-    if w and w["by"].get("other"):
-        n = w["by"]["other"]
-        return f"{plural(n, 'wallet')} not ours and not IDNI's: people trying the testnet on their own." if short else \
-            f"{plural(n, 'wallet')} that {'is' if n == 1 else 'are'} not ours and not IDNI's sent today: people are trying the testnet on their own."
-    if w and w.get("new"):
-        return "New wallets are people trying the testnet for the first time; the Start page shows them what to do."
-    if steady:
-        return "A quiet day: the chain kept one block a minute without anyone pushing it."
+    if outsiders_news(w):
+        return outsiders_line(w, short)
     return None
 
 
@@ -1185,8 +1278,6 @@ def today_lead(r: dict) -> str | None:
         return "Blocks came slowly for a while today."
     if not r["blocks"]:
         return None
-    if w.get("by", {}).get("other"):
-        return "People outside Tau HUD and IDNI used the testnet today."
     return None
 
 
@@ -1201,7 +1292,7 @@ def today_text(r: dict) -> str:
     w = r.get("wallets")
     if w and w["total"]:
         out.append(f"<b>{e(wallets_head(w))}</b>")
-        out += [f"• {e(x)}" for x in wallets_lines(w)]
+        out.append(e(wallets_compact(w)))
         out.append("")
     if r["blocks"]:
         line = f"• {plural(r['blocks'], 'block')}{pace}"
@@ -1257,6 +1348,23 @@ def today_x(r: dict) -> str:
 
 X_WHO = {"idni": "IDNI's test accounts", "bot": "our island bot", "cruise": "passengers of {ship} (ours, simulated)",
          "rabbit": "White Rabbit Key players", "agorzilla": "Agorzilla feeders", "tauhud": "sent from Tau HUD", "other": "not ours"}
+
+
+GAMES = ("rabbit", "agorzilla", "tauhud", "bot")
+
+
+def wallets_compact(w: dict) -> str:
+    """Who sent, on one line (11 Nov 2026: seven bullets every evening): our simulated passengers, our games and bots,
+    IDNI, everyone else, the newcomers. "38 simulated passengers of MS Dry Run (ours) · 12 in our games and bots ·
+    7 IDNI test accounts · 1 from outside · 2 new"."""
+    by, ship = w["by"], " and ".join(w.get("ships") or []) or "our cruise ships"
+    games = sum(by.get(t, 0) for t in GAMES)
+    parts = [f"{by['cruise']} simulated passengers of {ship} (ours)" if by.get("cruise") else None,
+             f"{games} in our games and bots" if games else None,
+             f"{by['idni']} IDNI test {'account' if by['idni'] == 1 else 'accounts'}" if by.get("idni") else None,
+             f"{by['other']} from outside" if by.get("other") else None,
+             f"{w['new']} new" if w.get("new") else None]
+    return " · ".join(x for x in parts if x)
 
 
 def wallets_short(w: dict, top: int = 3, new: bool = True) -> list[str]:
@@ -1561,7 +1669,7 @@ def island_report(day: str, snap: dict, days: int) -> dict:
         lines.append(f"the law of the day: {t}" + (f", passed {plural(n, 'time')}" if n > 1 else ""))
     if played and len(played) > 1 and p.get("campaigns", 0) > 1:
         lines.append(f"most ran as {played[0][0]} ({plural(played[0][1], 'campaign')})")
-    if isl.get("moves"):
+    if isl.get("moves") and not p.get("moves"):   # our bot's own moves only on a day without players (11 Nov 2026: same line daily)
         ilaws = island_tally(isl.get("laws"), ISLAND_LAWS)
         lines.append(("the islanders kept their own politics going: " if not p.get("moves") else "the islanders made ")
                      + f"{plural(isl['moves'], 'move')} of their own" + (f", {plural(sum(n for _, n in ilaws), 'law')} passed" if ilaws else ""))
@@ -1592,14 +1700,8 @@ def island_text(r: dict) -> str:
     out += [f"• {e(x)}" for x in r["lines"]]
     if not r["players"]:
         out.append("• no visitor made a move; the island waits for you")
-    if w:   # the standing explanation once a week, with the count; the other days say only what is real about it
-        out += ["", "<i>A campaign is the week, Monday to Sunday, an island day a real day: speeches on the square, laws in "
-                    "the hall, pacts at the bar, embassy money and rumours on Radio Coco, then the election on Sunday evening. "
-                    "Everyone plays their own campaign and nobody waits for anybody; the island adds up what everyone did that "
-                    "day, and every campaign won is a ballot in the governor's count on Monday 00:00 German time. Every move "
-                    "is one real transaction on Tau Testnet Alpha, with test AGRS that have no value.</i>"]
-    else:
-        out += ["", "<i>Every move is one real transaction on Tau Testnet Alpha, with test AGRS that have no value.</i>"]
+    # one short line; how a campaign works is on the island's page (11 Nov 2026: a 90-word paragraph every Monday)
+    out += ["", "<i>Every move is one real transaction on Tau Testnet Alpha, with test AGRS that have no value.</i>"]
     return "\n".join(out)
 
 
@@ -2118,6 +2220,42 @@ def item_picture(item: dict) -> str:
         else f"{SHARE_HTTP}/og/hud.png"
 
 
+PAGESHOTS = os.path.join(PUBLIC_DIR, "pageshots")   # checked pictures of Tau HUD's pages (agorzilla-shots/site-shots.mjs)
+
+
+def live_shot(link: str | None) -> str | None:
+    """The checked picture of the page a post links to, as site-shots.mjs took it in Live mode after the live data came
+    (green header, no "–", no simulation data), or None. 11 Nov 2026: a post carried the rules wall with a red header
+    and the simulation's made-up wallets, a picture taken where our node could not be reached."""
+    k = page_key(link)
+    if k is None and link and urllib.parse.urlsplit(str(link)).path.strip("/") == "" and \
+            urllib.parse.urlsplit(str(link)).netloc.split(":")[0] in ("", "tauhud.com", "www.tauhud.com"):
+        k = "/"
+    if not k:
+        return None
+    name = k.strip("/").replace("/", "-") or "hud"
+    try:
+        with open(os.path.join(PAGESHOTS, "index.json")) as f:
+            e = json.load(f).get(name) or {}
+    except (OSError, ValueError, AttributeError):
+        return None
+    if not e.get("ok") or not os.path.exists(os.path.join(PAGESHOTS, name + ".jpg")):
+        return None
+    return f"{NODE_PUBLIC}/pageshots/{name}.jpg?v={re.sub(r'[^0-9]', '', str(e.get('at')))[:12]}"
+
+
+def post_picture(image: str | None, link: str | None) -> str | None:
+    """The picture a post about a Tau HUD page carries: the page's checked live picture; a screenshot or preview picture
+    from the repo (assets/shots/, assets/og/, made without live data) never, then the post goes without one.
+    Other pictures (paintings, blog pictures, cards) as they are."""
+    shot = live_shot(link)
+    if shot:
+        return shot
+    if not image or re.search(r"/assets/(shots|og)/", str(image)) or str(image).rstrip("/").endswith("/og.png"):
+        return None
+    return image
+
+
 def major_picture(m: dict) -> str:
     """The screenshot the update log names for it ("image"), else the page's own preview picture, else the site's."""
     return m.get("image") or page_picture(m["link"]) or f"{SITE}/og.png"
@@ -2404,6 +2542,15 @@ class Watcher:
 
     def tg_on(self) -> list:
         return [o for o in self.outlets if o.name == "telegram" and o.enabled()]
+
+    # At most one post a day about Tau HUD itself on Telegram (11 Nov 2026: a new-page post, a closer look, a "worth a
+    # look" and a poll within eight hours read as an advert stream): a site update, a closer look or a planned spotlight
+    # takes the day; the others wait (a closer look for the next day) or stay out (a spotlight). Chain news never waits.
+    def promo_taken(self, now: float) -> bool:
+        return self.state.get("promo_day") == datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
+
+    def promo_take(self, now: float) -> None:
+        self.state["promo_day"] = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
 
     def x_alone(self, st: dict, now: float) -> bool:
         """True when the X copy must not wait for Telegram: the channel is off, or its last send failed and it is
@@ -2780,6 +2927,10 @@ class Watcher:
         ships = ships_in(await asyncio.to_thread(self.relay_json, "/cruise/log?n=300"), slot - 86400, slot) if active else []
         r["wallets"] = today_wallets(active, datetime.fromtimestamp(slot, timezone.utc).strftime("%Y-%m-%d"), ships)
         r["peak"] = (self.state.get("newnodes", {}).get("peak") or {}).get(datetime.fromtimestamp(slot - 1, timezone.utc).strftime("%Y-%m-%d"))
+        why = today_why(r)
+        if why and said_often(self.state, why, now):
+            r["why_off"] = True
+            log.info("testnet today: the why line was said too often lately, left out")
         if tg_due:
             for o in tg:
                 ok, retry, err = await asyncio.to_thread(o.send_text, today_text(r), today_buttons())
@@ -2789,6 +2940,8 @@ class Watcher:
                     break
             else:
                 log.info("testnet today posted%s", "" if today_worth_posting(r) else " (a quiet day)")
+                if why and not r.get("why_off"):
+                    remember_said(self.state, why, now)
                 st["slot"] = slot  # recorded before X: a failed X copy must not repeat the Telegram post
         # the X copy once the Telegram post is out, or on its own while Telegram is off or failing; a quiet day with
         # blocks is Telegram's alone, a day without a block is news for X too
@@ -2886,15 +3039,22 @@ class Watcher:
             self.save_state()
             return
         await self.close_poll(now)
+        if st.get("current_slot") != slot and self.promo_taken(now):
+            return   # Tau HUD had its post today; the closer look waits for the next day
+        dpoll = datetime.fromtimestamp(slot, timezone.utc)
+        if POLL_ON and dpoll.weekday() == POLL_WEEKDAY and (self.state.get("poll") or {}).get("week") != dpoll.strftime("%G-W%V") \
+                and st.get("current_slot") != slot:
+            return   # the poll day: the poll about the next closer look is the day's post
         tg = self.tg_on()
         # the day's post: the one started this slot (Telegram or X went first), else the file's next unposted one
         p = next((q for q in st["posts"] if q["id"] == st.get("current") and st.get("current_slot") == slot), None) \
             or next((q for q in st["posts"] if q["id"] == st.get("voted") and q["id"] not in st["posted"]), None) \
-            or next((q for q in st["posts"] if q["id"] not in st["posted"] and q["id"] not in st["x_posted"]), None)
+            or next((q for q in st["posts"] if q["id"] not in st["posted"] and q["id"] not in st["x_posted"]
+                     and not page_recent(self.state, q.get("link"), now)), None)
         if not p:
             return
         pid = p["id"]
-        pic = site_link(p["image"]) if p.get("image") else None
+        pic = post_picture(site_link(p["image"]) if p.get("image") else None, p.get("link"))
         if tg and pid not in st["posted"] and st.get("pause_until", 0) <= now:
             text, buttons = deepdive_text(p), deepdive_buttons(p)
             for o in tg:
@@ -2906,6 +3066,8 @@ class Watcher:
                     break
             else:
                 st["posted"][pid] = round(now)
+                page_shown(self.state, p.get("link"), now)
+                self.promo_take(now)
                 st["current"], st["current_slot"] = pid, slot
                 if pid not in st["x_posted"]:
                     st["n"] = st.get("n", 0) + 1
@@ -3088,7 +3250,13 @@ class Watcher:
             pid = p.get("id")
             if not pid or not (at <= now < at + PLAN_WINDOW):
                 continue
-            pic = site_link(p["image"]) if p.get("image") else None
+            if pid not in st["posted"] and pid not in st["x_posted"] and str(pid).startswith("spot-") and p.get("link") \
+                    and (page_recent(self.state, p.get("link"), now) or self.promo_taken(now)):
+                st["posted"][pid] = st["x_posted"][pid] = round(now)   # the page was in a post lately: not again
+                log.info("plan: %s skipped (page shown within %d days, or Tau HUD had its post today)", pid, PAGE_DAYS)
+                self.save_state()
+                continue
+            pic = post_picture(site_link(p["image"]) if p.get("image") else None, p.get("link"))
             did = False
             if tg and p.get("tg") and pid not in st["posted"] and st.get("pause_until", 0) <= now:
                 buttons = {"inline_keyboard": [[{"text": p.get("button") or "Open it", "url": site_link(p["link"])}]]} if p.get("link") else None
@@ -3103,6 +3271,9 @@ class Watcher:
                         break
                 else:
                     st["posted"][pid] = round(now)
+                    page_shown(self.state, p.get("link"), now)
+                    if str(pid).startswith("spot-"):
+                        self.promo_take(now)
                     did = True
                     log.info("plan: posted %s", pid)
                 self.save_state()
@@ -3192,10 +3363,13 @@ class Watcher:
             shown = 1 if len(batch) == 1 else catchup_text(batch).count("\n• ")
             if tg_due:
                 m = batch[0]
-                sent = await self.site_send(tg, major_text(m), major_buttons(m), now, m.get("image")) if shown == 1 else \
+                sent = await self.site_send(tg, major_text(m), major_buttons(m), now, post_picture(m.get("image"), m.get("link"))) if shown == 1 else \
                     await self.site_send(tg, catchup_text(batch), digest_buttons(), now)
                 if not sent:
                     return
+                self.promo_take(now)
+                for m in batch[:shown]:
+                    page_shown(self.state, m.get("link"), now)
                 del st["majors"][:shown]
                 st["slot"], st["last_major"] = slot, round(now)
                 log.info("site updates: posted %s", ", ".join(m["key"] for m in batch[:shown]))
@@ -3206,7 +3380,7 @@ class Watcher:
                 text_x = major_x(for_x[0]) if len(for_x) == 1 else catchup_x(for_x)
                 st["x_done"] = (st["x_done"] + [m["key"] for m in for_x])[-60:]
                 self.save_state()
-                pic = next((m["image"] for m in for_x if m.get("image")), None) or await asyncio.to_thread(major_picture, for_x[0])
+                pic = next((p for p in (post_picture(m.get("image"), m.get("link")) for m in for_x) if p), None)
                 await self.post_x(text_x, "site " + ", ".join(m["key"] for m in for_x), now, pic)
             self.save_state()
             return

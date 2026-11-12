@@ -338,7 +338,11 @@ def end_post(key: str, inc: dict, now: float, blocks: dict) -> dict:
     return {"tg": "\n".join(lines), "x": [head, xb]}
 
 
+LOAD_KEYS = ("drops", "votes", "ghost", "reorg")   # what heavy use by someone else can cause; the rest is a node or network matter
+
+
 def summary_post(held: list[dict], now: float) -> dict:
+    """A busy stretch in one post (only with two or more things held; one is not a stretch, 11 Nov 2026)."""
     e = html.escape
     first, last = min(h["at"] for h in held), max(h["at"] for h in held)
     count: dict[str, int] = {}
@@ -346,12 +350,18 @@ def summary_post(held: list[dict], now: float) -> dict:
         count[h["key"]] = count.get(h["key"], 0) + 1
     rows = [f"{n}× {DETECTORS[k]['label']}" for k, n in sorted(count.items(), key=lambda kv: -kv[1])]
     head = "🌀 A busy stretch on the testnet"
-    what = (f"Between {hm(first, now)} and {hm(last, now)} our node saw {plural(len(held), 'unusual thing')}, more than we post "
-            "one by one. Maybe someone is testing hard, which is what a testnet is for. All of it in one post:")
+    when = f"between {hm(first, now)} and {hm(last, now)}" if last - first >= 600 else f"around {hm(first, now)}"
+    n = plural(len(held), "unusual thing")
+    if all(k in LOAD_KEYS for k in count):
+        why = "That is what heavy use looks like, and a testnet is there to take it."
+    elif not any(k in LOAD_KEYS for k in count):
+        why = "These are about the connection between our node and the network, not about anyone's transactions."
+    else:
+        why = "Some of it is heavy use, some the connection between our node and the network."
+    what = f"Our node saw {n} {when}, too many to post one by one. {why}"
     lines = [REAL_LINE, f"<b>{e(head)}</b>", e(what)] + [f"• {e(r)}" for r in rows]
-    lines += ["", f"<i>{e(FOOT)}</i>", f"<a href=\"{SITE}/status/\">Live status on Tau HUD</a>"]
-    return {"tg": "\n".join(lines), "x": [head, f"Between {hm(first, now)} and {hm(last, now)} our node saw {len(held)} unusual things:"]
-            + [f"• {r}" for r in rows[:4]]}
+    lines += ["", f"<a href=\"{SITE}/status/\">Live status on Tau HUD</a>"]
+    return {"tg": "\n".join(lines), "x": [head, f"Our node saw {n} {when}:"] + [f"• {r}" for r in rows[:4]]}
 
 
 # ---------------- the engine ----------------
@@ -428,7 +438,7 @@ def observe(st: dict, snap: dict, now: float) -> list[dict]:
         st.get("summary_day") != datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")
     if held and (calm or day_end):
         stormy = st["storm"] is not None or any(h.get("storm") for h in held)
-        if stormy or len(held) >= 3:
+        if len(held) >= 3 or stormy and len(held) >= 2:
             p = summary_post(held, now)
             made.append({"what": "summary", "tg": p["tg"], "x": p["x"] if stormy else None})
             st["summary_day"] = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d")

@@ -229,7 +229,7 @@ check(len(tgx.sent) == 4 and len(xx.sent) == 2, "SITE_DIGEST_X: the digest leave
 wx.state["site"]["pending"] = [{"key": "y" + str(i), "at": at("2026-11-09", "07:00"), "area": "Stats", "line": "Calmer.", "on": "2026-11-09"} for i in range(3)]
 wx.state["x"].update(day="2026-11-13", today=0)
 run(wx, at("2026-11-13", "16:00"))
-check(len(xx.sent) == 3 and xx.sent[2].startswith("🛠 3 smaller changes to Tau HUD") and xx.sent[2].endswith("#TauNet $AGRS"),
+check(len(xx.sent) == 3 and xx.sent[2].startswith("🛠 3 smaller changes to Tau HUD") and xx.sent[2].endswith("#TauNet"),
       "SITE_DIGEST_X with room: the digest on X, a line each")
 alerts.SITE_DIGEST_X = False
 
@@ -257,12 +257,13 @@ run(wr, at("2026-10-29", "05:20"), covered + [ru])
 check([m["key"] for m in wr.state["site"]["majors"]] == ["major:roundup-1"] and wr.state["site"]["pending"] == [],
       "the round-up replaces the majors it covers and the digest so far")
 run(wr, at("2026-10-29", "08:00"))
-t, _, pic = tgr.sent[0]
+t, *rest = tgr.sent[0]
+pic = rest[1] if len(rest) > 1 else None
 check(len(tgr.sent) == 1 and '• <a href="https://tauhud.com/">Troll box</a>: a live chat on the HUD.' in t
       and '<a href="https://agorzilla.com">Agorzilla</a>' in t and "A busy few days." in t, "one post, a line and a link per change")
-check(pic == "https://tauhud.com/assets/shots/roundup-1.png", "its screenshot shows above the text")
+check(pic is None, "a repo screenshot (taken without live data) never goes out; no checked live picture: none")
 x = alerts.major_x(alerts.major_item(ru))
-check(x.startswith("What's new on Tau HUD\n\n• Troll box, a live chat\n• Agorzilla") and "http" not in x and x.endswith("#TauNet $AGRS"),
+check(x.startswith("What's new on Tau HUD\n\n• Troll box, a live chat\n• Agorzilla") and "http" not in x and x.endswith("#TauNet"),
       "X: the title and a short line per change, no links")
 run(wr, at("2026-10-29", "12:00"), covered + [ru])
 check(len(tgr.sent) == 1, "the covered majors never come back")

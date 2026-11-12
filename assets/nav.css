@@ -58,6 +58,11 @@
 .mi .ic svg { width: 13px; height: 13px; fill: currentColor; }
 .mi .ic img { width: 18px; height: auto; display: block; }
 .tnav .pill.fbk { background: #fff; border-color: #fff; color: #000; font-weight: 700; }   /* the most visible thing in the header, still monochrome */
+/* laptops: the menu and the tools on one line instead of two. Up to 1365 px wide Follow and Feedback say one word;
+   up to 1129 px they are their icons (the hover and the screen reader keep the words) */
+.tnav .pill.tg .sh, .tnav .pill.fbk .sh { display: none; }
+@media (min-width: 701px) and (max-width: 1365px) { .tnav .pill.tg .lg, .tnav .pill.fbk .lg { display: none; } .tnav .pill.tg .sh, .tnav .pill.fbk .sh { display: inline; } }
+@media (min-width: 701px) and (max-width: 1129px) { .tnav .pill.tg .sh, .tnav .pill.fbk .sh { display: none; } .tnav .pill.tg, .tnav .pill.fbk { padding-left: 11px; padding-right: 11px; } .tnav-r { gap: 8px; } }
 .tnav .pill.fbk svg { width: 13px; height: 13px; fill: currentColor; flex: none; }
 .tnav .pill.fbk:hover, .tnav .pill.fbk:focus-visible { background: #d6d6dc; border-color: #d6d6dc; color: #000; }
 .tnav .tl { display: inline-block; font: 500 12px var(--tn-font); letter-spacing: .09em; text-transform: uppercase; color: #a3a3ad; white-space: nowrap; cursor: pointer; text-decoration: none; background: transparent; border: 0; padding: 6px 2px; }
@@ -237,6 +242,8 @@ body[data-view="simple"] .vp { display: block; }
 .tn-changes summary { cursor: pointer; list-style: none; color: #fff; font-weight: 600; line-height: 1.4; } .tn-changes summary::-webkit-details-marker { display: none; }
 .tn-changes summary::after { content: " ›"; color: var(--u-dim); font-weight: 400; } .tn-changes details[open] summary::after { content: " ‹"; }
 .tn-changes details p { margin: 4px 0 0; color: var(--u-dim); line-height: 1.5; } .tn-changes .one { color: #fff; font-weight: 600; line-height: 1.4; }
+.tn-changes a.one { display: block; text-decoration: none; } .tn-changes a.one::after { content: " ›"; color: var(--u-dim); font-weight: 400; } .tn-changes a.one:hover { text-decoration: underline; }
+.tn-changes details p a { color: var(--u-ok); text-decoration: none; } .tn-changes details p a:hover { text-decoration: underline; } .tn-changes details p a.go { display: inline-block; white-space: nowrap; font-weight: 600; }
 @media (max-width: 1100px) { .tn-community { grid-template-columns: minmax(0, 1fr); } .tn-panel h2 { flex-wrap: wrap; row-gap: 2px; } .tn-panel h2 small { white-space: normal; flex: 1 1 140px; line-height: 1.35; } }
 @media (max-width: 700px) { .tn-modal { padding: 8px; } .tn-tgstrip { padding-right: 44px; } .tn-changes { max-height: none; overflow: visible; padding-right: 0; } .tn-btn { font-size: 11px; padding: 8px 12px; min-height: 36px; } }
 @media (max-width: 520px) { .tn-donate { grid-template-columns: minmax(0, 1fr); justify-items: start; } }
@@ -306,7 +313,7 @@ header.trail .unoff.q:hover, header.rail > button.chip.unoff.unoff:hover { color
 .tn-onair button:hover { color: #fff; }
 .tn-onair a.blk { color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
 .tn-onair a.blk:hover { color: var(--tn-ok, #39ff8a); }
-@media (max-width: 1365px) { .tnav .pill.tn-radiob .lbl { display: none; } .tnav .pill.tn-radiob { padding-left: 10px; padding-right: 10px; } }   /* the icon alone; the hover says what it is */
+@media (max-width: 1499px) { .tnav .pill.tn-radiob .lbl { display: none; } .tnav .pill.tn-radiob { padding-left: 10px; padding-right: 10px; } }   /* the icon alone; the hover says what it is */
 @media (max-width: 700px), (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
   .tnav .pill.tn-radiob { padding: 0; width: 44px; justify-content: center; }
   .tn-onair { left: 12px; right: 12px; max-width: none; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); flex-wrap: wrap; }
@@ -323,10 +330,11 @@ header.trail .unoff.q:hover, header.rail > button.chip.unoff.unoff:hover { color
 /* Testnet health tabs (Stats · Testnet load · Status) under the nav row */
 .tn-tabs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 2px 0 0; font: 500 11px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; }
 .tn-tabs .lbl { color: var(--tn-dim); margin-right: 4px; }
-.tn-tabs .tab { color: var(--tn-dim); text-decoration: none; padding: 5px 12px; min-height: 28px; display: inline-flex; align-items: center; border: 1px solid var(--tn-hair); border-radius: 999px; }
+.tn-tabs .tab { color: var(--tn-dim); text-decoration: none; padding: 3px 11px; min-height: 24px; box-sizing: border-box; display: inline-flex; align-items: center; border: 1px solid var(--tn-hair); border-radius: 999px; }
 .tn-tabs .tab:hover { color: #fff; border-color: #fff; }
 .tn-tabs .tab.here { color: var(--tn-ok); border-color: var(--tn-ok); }
-@media (max-width: 700px) { .tn-tabs { gap: 6px; } .tn-tabs .tab { min-height: 44px; padding: 0 14px; } }
+/* phones: one row that moves sideways instead of two or three rows of tabs before the page starts */
+@media (max-width: 700px) { .tn-tabs { gap: 6px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-right: -12px; padding-right: 12px; } .tn-tabs::-webkit-scrollbar { display: none; } .tn-tabs .lbl { display: none; } .tn-tabs .tab { min-height: 44px; padding: 0 14px; white-space: nowrap; flex: none; } }
 /* "what is real": today's transactions by sender, one quiet line */
 .tn-real { color: var(--tn-dim); font: 500 11px/1.5 var(--tn-mono); }
 p.tn-real { margin: 4px 0 0; padding: 4px 12px; border: 1px solid var(--tn-hair); border-radius: 4px; }

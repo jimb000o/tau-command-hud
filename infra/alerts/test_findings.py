@@ -10,7 +10,7 @@ import sys
 import tempfile
 
 TMP = tempfile.mkdtemp()
-os.environ.update(STATE_PATH=os.path.join(TMP, "alerts.json"), PUBLIC_DIR=TMP, TELEGRAM_BOT_TOKEN="", HEALTH_CONFIRM_SECONDS="600")
+os.environ.update(STATE_PATH=os.path.join(TMP, "alerts.json"), PUBLIC_DIR=TMP, TELEGRAM_BOT_TOKEN="", HEALTH_CONFIRM_SECONDS="600", X_DAILY_CAP="8")   # the findings cap inside a roomy X cap
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import alerts  # noqa: E402
 import findings  # noqa: E402
@@ -116,6 +116,17 @@ for i in range(1, 200):
 check(len(quiet) == 1 and quiet[0]["what"] == "summary" and "7× blocks replaced" in quiet[0]["tg"] and quiet[0]["x"],
       f"one summary after 2 calm hours {[q['what'] for q in quiet]} {quiet and quiet[0]['tg']}")
 check(st["storm"] is None and not st["held"], "the stretch is over")
+check("heavy use" in quiet[0]["tg"] and "Between" not in quiet[0]["tg"], f"reorgs read as heavy use {quiet[0]['tg']}")
+
+# 6a. one thing held in a stretch is not a busy stretch (11 Nov 2026: "between 21:50 and 21:50, 1 unusual thing")
+st = findings.fresh_state()
+st.update(held=[{"key": "peers", "at": T, "storm": True}], storm={"since": T}, primed=True)
+quiet = []
+for i in range(1, 200):
+    quiet += findings.observe(st, snap(), T + 60 * i)
+check(quiet == [] and not st["held"], f"one held thing: no summary {[q['what'] for q in quiet]}")
+p = findings.summary_post([{"key": "peers", "at": T}, {"key": "stall", "at": T + 3600}], T + 7200)
+check("between" in p["tg"] and "connection between our node" in p["tg"] and "testing hard" not in p["tg"], f"node matters say so {p['tg']}")
 
 # 6b. the same proposal again and again: one finding with the likely meaning, Telegram only
 st = findings.fresh_state()

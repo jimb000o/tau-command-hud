@@ -369,4 +369,10 @@ TauI18n.add({ strings: {
   "Case {n} never applies: the cases above it already catch every transfer it would.": "ケース {n} は使われません：上のケースがすでに、それが当てはまる送金をすべて受け止めています。",
   "Case {n} changes nothing: without it, the same transfers get the same answers.": "ケース {n} は何も変えません：それがなくても、同じ送金に同じ答えが出ます。",
   "Every transfer gets exactly one answer, and every case matters.": "どの送金にもちょうど 1 つの答えが出て、どのケースにも意味があります。",
+  "Say a rule in plain words ›": "ルールを普通の言葉で書く ›",
+} });
+/* plain words typed into the rule box: the way to the rule builder */
+TauI18n.add({ strings: {
+  "Rules are written in Tau, not in plain words. The rule builder turns plain words into a Tau rule and checks it; or start from an example above.": "ルールは日常の言葉ではなく Tau で書きます。ルールビルダーなら普通の言葉を Tau ルールに変えて確認できます。上の例から始めることもできます。",
+  "Open the rule builder ›": "ルールビルダーを開く ›",
 } });

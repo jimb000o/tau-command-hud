@@ -26,14 +26,14 @@
   const P = {
     hud:        { t: "HUD", d: "The chain core live: blocks, rules and agreement as they happen", i: "◉", h: "" },
     state:      { t: "Chain state", d: "Every rule in force right now: fee, agreement threshold, validators, agreed changes, personal rules", i: "≡", h: "#chain-state", act: "state" },
-    explorer:   { t: "Explorer", d: "Find any block, transaction or address", i: "⌕", h: "explorer/", view: true },
+    explorer:   { t: "Explorer", d: "Find any block, transaction or address; every account with its rules; the chain at any earlier block", i: "⌕", h: "explorer/", view: true },
     stats:      { t: "Stats", d: "Block pace, transactions, validators and rule changes over the whole chain", i: "≋", h: "stats/", view: true },
     cruise:     { t: "Cruise logbook", d: "What each cruise ship sent to the testnet and what the node answered", i: "🛳", h: "cruise/" },
     load:       { t: "Testnet load", d: "How hard the testnet is working right now: sealed, waiting, time to a block", i: "∿", h: "load/" },
     history:    { t: "Time travel", d: "Step through the chain block by block and see the rules at any height", i: "⟲", h: "history/" },
     account:    { t: "Accounts", d: "Balance, own rules, offers and refusals of any address", i: "@", h: "account/", view: true },
     nodes:      { t: "Nodes", d: "Community nodes that follow the chain, with badges for uptime and sync", i: "◎", h: "nodes/" },
-    proposals:  { t: "Proposals", d: "Every rule change from proposal to law, with alerts on Telegram, X and RSS", i: "§", h: "proposals/" },
+    proposals:  { t: "Proposals", d: "Every rule change from proposal to law, with alerts on Telegram, X and RSS; and how to vote on the real testnet yourself", i: "§", h: "proposals/" },
     story:      { t: "Tau in 60 seconds", d: "Propose, check, agree, law: how Tau changes its rules without a fork", i: "▶", h: "story/" },
     start:      { t: "Start here", d: "Try Tau in four steps: a test wallet, a rule of your own, a block that seals it, a meal for Agorzilla", i: "➜", h: "start/" },
     tour:       { t: "Guided tour", d: "One minute, eight steps: how rules change by agreement", i: "▸", h: "?tour=1", act: "tour" },
@@ -42,6 +42,7 @@
     chronicle:  { t: "Chronicle", d: "Tau from the first videos in 2014 to the testnet alpha", i: "◷", h: "chronicle/" },
     devpulse:   { t: "Build pulse", d: "How Tau's code is moving: newest commits, which parts change, the version our node runs", i: "⌥", h: "devpulse/" },
     findings:   { t: "Findings", d: "Issues we reported to IDNI, with their live GitHub status", i: "!", h: "findings/" },
+    gxp:        { t: "Is Tau GxP-ready?", d: "What a pharma supplier assessment would ask of Tau, what exists today, and what would change the answer; live from IDNI's GitHub", i: "℞", h: "gxp/" },
     roadmap:    { t: "Road to mainnet", d: "What we think must be fixed before mainnet, with proof and a path; our view, open for comments", i: "⇢", h: "roadmap/" },
     status:     { t: "Status", d: "Uptime, outages, sync gaps and restarts of the community node", i: "◍", h: "status/" },
     meta:       { t: "Tau HUD in numbers", d: "How many people use this site: visitors per day, growth and the most visited pages", i: "∑", h: "meta/" },
@@ -52,13 +53,14 @@
     legal:      { t: "Privacy", d: "Privacy notice: exactly what this site processes (no cookies, no tracking)", i: "§", h: "legal/" },
     about:      { t: "About Tau HUD", d: "Who built this page, sources, how to support it", i: "i", h: "#about", act: "about" },
     share:      { t: "Share this page", d: "Copy the link, or post it on X, Telegram, Reddit or Hacker News", i: "↗", h: "#share", act: "share" },
-    playground: { t: "Playground", d: "Write a transfer rule and run the testnet's own checks on it", i: "◇", h: "playground/" },
+    playground: { t: "Rule Playground", d: "Write a transfer rule in Tau and run the testnet's own checks on it", i: "◇", h: "playground/" },
     seat:       { t: "Validator seat", d: "Take a simulated seat and vote a rule change into law", i: "✓", h: "playground/#seat" },
     whatif:     { t: "What if", d: "Move block time, validators and votes needed, and watch the chain react", i: "≈", h: "whatif/" },
     agorzilla:  { t: "Agorzilla", d: "One creature the whole testnet feeds: give it a meal, choose tomorrow's change", i: `<img src="${ROOT}${agzPic}" alt="">`, h: "https://agorzilla.com", ext: true, live: true },
     deja:       { t: "Déjà, the café cat", d: "Agorzilla's café cat: she eats when three wallets each send her 1 test AGRS in a day, and runs across at every rule change", i: `<img src="${ROOT}assets/deja.webp" alt="">`, h: "https://agorzilla.com/cat/", ext: true, live: true },
     rules:      { t: "Rules wall", d: "The rules people gave their own accounts; take one for yours to agree", i: "▤", h: "rules/" },
-    wallet:     { t: "Wallet", d: "A testnet account with its own rules: send, take back, co-sign, vote, form a Pakt", i: "◈", h: "wallet/" },
+    builder:    { t: "Rule builder", d: "Say what your wallet may do in plain words; see what the rule really does, checked by the real Tau engine, before you sign", i: "✐", h: "builder/" },
+    wallet:     { t: "Wallet", d: "A testnet account with its own rules: send, take back, co-sign, vote, form a Pakt; and your wallet on one picture, ready to post", i: "◈", h: "wallet/" },
     vote:       { t: "Vote for real", d: "Vote on the real testnet yourself: node, key, ready commands, practised first", i: "✔", h: "vote/" },
     card:       { t: "My Tau card", d: "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post", i: "▣", h: "card/" },
     rabbit:     { t: "White Rabbit Key", d: "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet", i: `<img src="${ROOT}assets/rabbit-key.webp" alt="">`, h: "rabbit/", live: true, play: "rabbit" },
@@ -69,36 +71,58 @@
     guardian:   { t: "Guardian", d: "Payments above your own limit wait for a code from your Authenticator app; our Guardian co-signs, never sends", i: "⛨", h: "guardian/" },
     challenge:  { t: "Rule challenge", d: "A small task every Monday, answered with a real rule in your wallet; good answers are shown, no prizes", i: "✎", h: "challenge/" },
     missions:   { t: "Missions", d: "Six short tasks on a practice chain: pass a rule, fail one, survive an outage, switch to proof of stake", i: "★", h: "missions/" },
+    /* one menu entry for pages that answer the same question; it opens the first of them, and each carries tabs to the others (TABS) */
+    health:     { t: "Testnet health", d: "Is the testnet well? Block pace and transactions over the whole chain, the load right now, uptime and outages", i: "≋", h: "stats/" },
+    road:       { t: "Road to mainnet", d: "What we think must be fixed before mainnet, the issues we reported to IDNI, how Tau's code is moving, and whether Tau is ready for pharma (GxP)", i: "⇢", h: "roadmap/" },
+    read:       { t: "Read", d: "The Daily Consensus, a newspaper every Monday; the blog from our own logbooks; Tau's story since 2014", i: "❡", h: "gazette/" },
+    wrules:     { t: "Wallet rules", d: "Give your wallet a rule: say it in plain words, write it in Tau, take one from others, or try this week's task", i: "✐", h: "builder/" },
+    practise:   { t: "Practise voting", d: "On a practice chain: six missions, a validator seat of your own, and what happens when you change the numbers", i: "★", h: "missions/" },
   };
+  /* 12 Nov: 33 doors became 17. Pages that answer the same question share one menu entry (its key here) and a row of tabs
+     under the header, as Testnet health already did. No page and no address is gone; [page, tab label if not the page's name] */
+  const TABS = {
+    explorer:  ["Explorer", [["explorer"], ["account"], ["history"]]],
+    proposals: ["Proposals", [["proposals"], ["vote"]]],
+    health:    ["Testnet health", [["stats"], ["load"], ["status"]]],
+    road:      ["Road to mainnet", [["roadmap", "Roadmap"], ["findings"], ["devpulse"], ["gxp", "GxP"]]],
+    read:      ["Read", [["gazette"], ["blog"], ["chronicle"]]],
+    wallet:    ["Wallet", [["wallet"], ["card"]]],
+    wrules:    ["Wallet rules", [["builder", "In words"], ["playground", "In Tau"], ["rules", "From others"], ["challenge", "This week"]]],
+    practise:  ["Practise voting", [["missions"], ["seat"], ["whatif"]]],
+  };
+  /* the Rule Playground is two pages in one: its validator seat (#seat) belongs to Practise voting */
+  const tabPage = page => (page === "playground" && location.hash === "#seat" ? "seat" : page);
+  const tabGroup = page => Object.keys(TABS).find(k => TABS[k][1].some(([p]) => p === tabPage(page)));
   const SECTIONS = [
     { k: "hud", t: "HUD", single: true, tab: "◉" },
     /* grouped by what a visitor came to do (29 Oct); inside each menu small labelled groups (30 Oct), so no menu is one long list */
     /* 6 Nov: fewer doors. Testnet health (Stats, Load, Status) is one group with tabs across the three pages; the guided tour,
        Tau in 60 seconds and the tour of this page live on Start here, the one way in; anchors (chain state, validator seat)
        and Déjà stay reachable from their pages and from search */
-    { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "account", "rules", "history"]], ["Testnet health", ["stats", "load", "status"]], ["Road to mainnet", ["nodes", "findings", "roadmap", "devpulse"]]], tab: "≋" },
-    { k: "learn", t: "Learn", groups: [["First steps", ["start", "taulang", "facts"]], ["Read and watch", ["gazette", "blog", "chronicle", "tau"]]], tab: "▸" },
-    { k: "play", t: "Playground", groups: [["Practise · simulated", ["playground", "missions", "whatif"]], ["On the real testnet", ["services", "wallet", "guardian", "vote", "challenge", "card"]], ["Games on the live testnet", ["rabbit", "nomemo", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
-    { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "meta", "legal"]], ["Use our work", ["developers", "press"]]], tab: "i" },
+    /* 12 Nov: one entry per question, tabs inside (TABS). My Tau card is a tab of the Wallet (most of its visitors came
+       by the menu, so it keeps a place there), Tau facts sits with the other things to reuse under About */
+    { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "services"]], ["The testnet", ["health", "road", "nodes"]]], tab: "≋" },
+    { k: "learn", t: "Learn", groups: [["First steps", ["start", "taulang"]], ["Read and watch", ["read", "tau"]]], tab: "▸" },
+    { k: "play", t: "Playground", groups: [["Your wallet", ["wallet", "wrules", "guardian"]], ["Practise · simulated", ["practise"]], ["Games on the live testnet", ["rabbit", "nomemo", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
+    { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "meta", "legal"]], ["Use our work", ["developers", "press", "facts"]]], tab: "i" },
   ];
   SECTIONS.forEach(s => { if (s.groups) s.items = s.groups.flatMap(g => g[1]); });
   const SECTION_OF = { hud: "hud" };
   SECTIONS.forEach(s => (s.items || []).forEach(k => { if (P[k] && !P[k].ext && !P[k].act && !/#/.test(P[k].h)) SECTION_OF[k] = s.k; }));
-  Object.assign(SECTION_OF, { story: "learn", cruise: "explore" });
+  SECTIONS.forEach(s => (s.items || []).forEach(k => { if (TABS[k]) TABS[k][1].forEach(([p]) => { if (P[p] && !/#/.test(P[p].h)) SECTION_OF[p] = s.k; }); }));
+  Object.assign(SECTION_OF, { story: "learn", cruise: "explore", card: "play" });
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken, and what changed lately: the feedback form and the update log, right here. Ideas with the most agreement get built first.",
     telegram: "Join @tauHUDcom on Telegram: every new proposal, agreement, activation and chain restart the moment it happens, a weekly recap picture, every HUD update. Questions (height, proposals, your transaction or address): write to @tauhud_alerts_bot. Opens Telegram.",
     alerts: "Follow the chain: every rule change, chain restart and new node as it happens, on Telegram, X or RSS. No account on this site needed.",
     updates: "What changed on this page and when, built from your feedback. Also where to leave feedback.",
-    gear: "Settings: Simple or Technical view, node address and Connect, background rain.",
-    gearSub: "Settings: Simple or Technical view, which node this page reads, guided tour, about.",
+    gear: "Settings: your level, node address and Connect, background rain.",
+    gearSub: "Settings: your level, which node this page reads, guided tour, about.",
     live: "Live node: this page reads the real testnet through the community relay at node.tauhud.com. The choice holds on every page.",
     sim: "Simulation: invented activity that follows the documented protocol, generated in your browser. The same made-up chain on every page, eight seconds per block, a fresh start every day at 00:00 UTC. No real chain data. The choice holds on every page.",
     simMode: "Simulation: this page shows a made-up chain generated in your browser, the same on every page. No real chain data. Switch to Live node for the real testnet.",
     simBadge: "Everything on this page is simulated: invented but protocol-true activity, generated in your browser. Nothing here happened on the real testnet. Opens the full notice.",
-    simple: "Simple view: plain words, fewer numbers, no stream names.",
-    tech: "Technical view: stream names (i10, o5, o9), hashes and rule text everywhere.",
     unoff: "Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Opens the full notice.",
     mode: "Live: this page reads the real testnet through the community relay at node.tauhud.com.",
     online: "People looking at Tau HUD right now, counted by the community relay; no cookies, no analytics, nobody is identified. “—” means the relay has not answered yet.",
@@ -115,6 +139,39 @@
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+  /* one level for the whole site: "new" beginner, "mid" intermediate, "pro" expert; "" until the visitor picks one.
+     It joins the two older switches, which keep their own keys and are written along: the door on Learn (tauhud-learn)
+     and the Simple/Technical view (tau-view). A visitor who answered one of those before keeps that answer.
+     Every page hears it as the window event "tau-level" (sent once when the header is built, and on a change) and reads
+     <html data-level>; "tau-level-set" comes only with the visitor's own choice. */
+  const LEVEL_KEY = "tau-level", LEARN_KEY = "tauhud-learn", LEVELS = { new: "Beginner", mid: "Intermediate", pro: "Expert" }, LEARN_OF = { new: "new", mid: "code", pro: "pro" };
+  const LEVEL_TIPS = { new: "Beginner: plain words and the first step first; the fine print stays folded until you need it.",
+    mid: "Intermediate: plain words; Learn gives lessons with a cheat sheet instead of the step-by-step guide.",
+    pro: "Expert: keys, hashes, stream names and rule text; boxes open from the start; Wallet rules opens on the Tau box." };
+  const learnState = () => { try { return JSON.parse(store.get(LEARN_KEY) || "{}") || {}; } catch (e) { return {}; } };
+  const readLevel = () => { const v = store.get(LEVEL_KEY); if (LEVELS[v]) return v;
+    const l = learnState().level; return Object.keys(LEARN_OF).find(k => LEARN_OF[k] === l) || ""; };
+  const viewNow = () => (LEVEL ? (LEVEL === "pro" ? "tech" : "simple") : store.get(VIEW_KEY) === "tech" ? "tech" : "simple");   // no level yet: the view chosen earlier stays
+  let LEVEL = readLevel();
+  const levelBtns = [], wrulesHref = () => (LEVEL === "pro" ? "playground/" : "builder/");
+  /* by: "gear" the visitor's click in the header, "learn" the door on Learn, "" page load (nothing is stored) */
+  function setLevel(l, by) {
+    LEVEL = LEVELS[l] ? l : "";
+    if (by) { store.set(LEVEL_KEY, LEVEL); store.set(VIEW_KEY, LEVEL === "pro" ? "tech" : "simple");
+      if (by !== "learn") { const st = learnState(); st.level = LEARN_OF[LEVEL] || ""; st.levelBy = "site"; store.set(LEARN_KEY, JSON.stringify(st)); } }
+    document.documentElement.dataset.level = LEVEL;
+    if (document.body && !document.getElementById("btnSimple")) document.body.dataset.view = viewNow();   // the HUD sets its own view when it hears the event
+    levelBtns.forEach(([k, b]) => b.setAttribute("aria-pressed", String(k === LEVEL)));
+    document.querySelectorAll('.mi[data-k="wrules"]').forEach(a => { a.href = ROOT + wrulesHref(); });
+    window.dispatchEvent(new CustomEvent("tau-level", { detail: LEVEL }));
+    if (by) window.dispatchEvent(new CustomEvent("tau-level-set", { detail: LEVEL }));   // only the visitor's own choice
+  }
+  function levelSeg(tip) {
+    const seg = el("div", "seg tn-level"); seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "Your level");
+    Object.keys(LEVELS).forEach(k => { const b = el("button", "", LEVELS[k]); b.type = "button"; b.setAttribute("aria-pressed", String(k === LEVEL)); tip(b, LEVEL_TIPS[k]);
+      b.addEventListener("click", () => setLevel(k, "gear")); levelBtns.push([k, b]); seg.append(b); });
+    return seg;
+  }
   /* simulation mode (assets/sim.js): the header reads the simulated chain and says so; the people-online count stays real */
   const SIM = !!(window.TauSim && TauSim.on);
   if (SIM) document.documentElement.classList.add("tau-sim");
@@ -153,6 +210,38 @@
     document.querySelectorAll(".tn-upd, .tabbar .tb-upd").forEach(e => e.classList.toggle("new", fresh));
   }).catch(() => { const fresh = store.get(SEEN_KEY) !== LATEST; document.querySelectorAll(".tn-upd, .tabbar .tb-upd").forEach(e => e.classList.toggle("new", fresh)); });
 
+  /* ---------- where an entry of the update log leads: shared by the Updates overlay here and the HUD's own log (window.TauLogLink) ----------
+     An entry's own "link" (tauhud.com path like "/gxp/", or a full https address) wins, then the link of its Telegram post ("major"),
+     then the page its tag names. The tag chip always opens the part of the site it names; the entry's text ends with "Open …" to its link. */
+  const LOGPAGE = { Nodes: "nodes/", Node: "nodes/", Validator: "nodes/", Accounts: "account/", "My Tau card": "card/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", "Rule changes": "proposals/",
+    Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", Gazette: "gazette/", "Daily Consensus": "gazette/", Blog: "blog/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/",
+    Wallet: "wallet/", Guardian: "guardian/", "Rule builder": "builder/", "Rules wall": "rules/", "Rule challenge": "challenge/", Missions: "missions/", Vote: "vote/", "Start here": "start/", Learn: "learn/",
+    Findings: "findings/", Roadmap: "roadmap/", Status: "status/", Stats: "stats/", "Testnet stats": "stats/", "Testnet load": "load/", "Build pulse": "devpulse/", "In numbers": "meta/", Services: "services/",
+    Developers: "developers/", Press: "press/", "Press films": "press/", Privacy: "legal/", Donations: "donate/", Chinese: "?lang=zh", Japanese: "?lang=ja", "Guided tour": "?tour=1",
+    "White Rabbit Key": "rabbit/", "Rabbit Key": "rabbit/", "No Memo": "nomemo/", Cruise: "cruise/", Agorzilla: "https://agorzilla.com", Telegram: TELEGRAM, HUD: "" };
+  const logRel = l => typeof l !== "string" || !l.trim() ? null : /^https?:\/\//.test(l) ? l : l.replace(/^\//, "");
+  const logLink = e => { const tag = String(e && e.tag || ""), area = /^v\d/i.test(tag) ? "" : tag in LOGPAGE ? LOGPAGE[tag] : null;
+    const own = logRel(e && e.link) ?? logRel(e && e.major && e.major.link); return { area, go: own ?? area }; };
+  const logHref = (rel, root) => /^https?:\/\//.test(rel) ? rel : (root + rel) || "./";
+  const logShow = rel => /^https?:\/\//.test(rel) ? rel.replace(/^https?:\/\//, "").replace(/\/$/, "") : "tauhud.com/" + rel;
+  /* the headline and its fold; the fold ends with "Open tauhud.com/… ›" and every tauhud.com address in the text is a link.
+     A one-line entry is itself the link. Nothing is added where it would only open the page already shown. */
+  function logFold(li, head, rest, tr, root) {
+    const rel = li.dataset.go, here = rel != null && !/[?#]/.test(rel) && new URL(logHref(rel, root), location.href).pathname === location.pathname;
+    const go = rel != null && !here ? logHref(rel, root) : null, ext = go && /^https?:\/\//.test(go) && !go.startsWith(location.origin);
+    const a = (href, text, cls) => { const x = document.createElement("a"); x.href = href; x.textContent = text; if (cls) x.className = cls; if (/^https?:\/\//.test(href) && !href.startsWith(location.origin)) { x.target = "_blank"; x.rel = "noopener"; } return x; };
+    if (rest) {
+      const d = document.createElement("details"), sm = document.createElement("summary"), pr = document.createElement("p"); sm.textContent = head;
+      const re = /tauhud\.com(\/[\w\-./#?=&%]*[\w/])?/g; let at = 0, m;
+      while ((m = re.exec(rest))) { pr.append(rest.slice(at, m.index), a(root + (m[1] || "/").replace(/^\//, "") || "./", m[0])); at = m.index + m[0].length; }
+      pr.append(rest.slice(at));
+      if (go) pr.append(" ", a(go, `${tr("Open")} ${logShow(rel)}${ext ? " ↗" : " ›"}`, "go"));
+      d.append(sm, pr); li.append(d);
+    } else if (go) li.append(a(go, head, "one"));
+    else { const o = document.createElement("div"); o.className = "one"; o.textContent = head; li.append(o); }
+  }
+  window.TauLogLink = e => logLink(e);
+  window.TauLogFold = logFold;
   /* ---------- the Updates overlay, in place on every page but the HUD (which has its own, with the feedback box that needs no account) ---------- */
   const DONATE = { addr: "0x23fB76A33A8d70f5c51aB558b85e4b93040003eb", donors: "https://node.tauhud.com/donations.json", qr: `<svg class="tn-qr" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 33" shape-rendering="crispEdges" role="img" aria-label="QR code of the donation address"><rect width="33" height="33" fill="#fff"/><path d="M2 2h7v1h-7zM11 2h2v1h-2zM16 2h1v1h-1zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h1v1h-1zM14 3h1v1h-1zM17 3h1v1h-1zM19 3h2v1h-2zM22 3h1v1h-1zM24 3h1v1h-1zM30 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM13 4h1v1h-1zM17 4h2v1h-2zM20 4h1v1h-1zM24 4h1v1h-1zM26 4h3v1h-3zM30 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM14 5h2v1h-2zM17 5h4v1h-4zM24 5h1v1h-1zM26 5h3v1h-3zM30 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM16 6h1v1h-1zM21 6h2v1h-2zM24 6h1v1h-1zM26 6h3v1h-3zM30 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM13 7h2v1h-2zM17 7h1v1h-1zM22 7h1v1h-1zM24 7h1v1h-1zM30 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h7v1h-7zM10 9h1v1h-1zM14 9h1v1h-1zM17 9h1v1h-1zM2 10h1v1h-1zM4 10h5v1h-5zM12 10h1v1h-1zM15 10h1v1h-1zM17 10h4v1h-4zM22 10h1v1h-1zM24 10h5v1h-5zM2 11h4v1h-4zM11 11h3v1h-3zM16 11h1v1h-1zM21 11h1v1h-1zM24 11h1v1h-1zM26 11h1v1h-1zM30 11h1v1h-1zM2 12h4v1h-4zM7 12h2v1h-2zM12 12h2v1h-2zM17 12h2v1h-2zM22 12h8v1h-8zM2 13h1v1h-1zM6 13h1v1h-1zM9 13h1v1h-1zM11 13h2v1h-2zM22 13h2v1h-2zM26 13h2v1h-2zM29 13h2v1h-2zM3 14h1v1h-1zM8 14h3v1h-3zM12 14h2v1h-2zM15 14h1v1h-1zM17 14h4v1h-4zM22 14h1v1h-1zM26 14h1v1h-1zM28 14h2v1h-2zM2 15h1v1h-1zM4 15h1v1h-1zM6 15h1v1h-1zM13 15h1v1h-1zM16 15h1v1h-1zM19 15h1v1h-1zM21 15h1v1h-1zM23 15h5v1h-5zM30 15h1v1h-1zM2 16h4v1h-4zM7 16h2v1h-2zM13 16h3v1h-3zM17 16h2v1h-2zM20 16h1v1h-1zM22 16h1v1h-1zM25 16h1v1h-1zM28 16h2v1h-2zM3 17h1v1h-1zM5 17h1v1h-1zM7 17h1v1h-1zM9 17h2v1h-2zM13 17h2v1h-2zM16 17h2v1h-2zM20 17h2v1h-2zM23 17h1v1h-1zM26 17h2v1h-2zM29 17h1v1h-1zM2 18h1v1h-1zM4 18h1v1h-1zM6 18h4v1h-4zM11 18h1v1h-1zM13 18h4v1h-4zM18 18h2v1h-2zM23 18h1v1h-1zM25 18h1v1h-1zM29 18h2v1h-2zM2 19h3v1h-3zM9 19h2v1h-2zM12 19h2v1h-2zM20 19h3v1h-3zM24 19h1v1h-1zM26 19h1v1h-1zM30 19h1v1h-1zM2 20h1v1h-1zM4 20h1v1h-1zM7 20h3v1h-3zM12 20h3v1h-3zM16 20h2v1h-2zM19 20h2v1h-2zM22 20h1v1h-1zM25 20h1v1h-1zM28 20h1v1h-1zM2 21h1v1h-1zM4 21h4v1h-4zM9 21h1v1h-1zM11 21h1v1h-1zM16 21h1v1h-1zM20 21h1v1h-1zM22 21h1v1h-1zM24 21h1v1h-1zM26 21h1v1h-1zM29 21h1v1h-1zM2 22h1v1h-1zM4 22h2v1h-2zM8 22h6v1h-6zM15 22h3v1h-3zM19 22h2v1h-2zM22 22h8v1h-8zM10 23h4v1h-4zM18 23h2v1h-2zM21 23h2v1h-2zM26 23h2v1h-2zM30 23h1v1h-1zM2 24h7v1h-7zM11 24h5v1h-5zM17 24h1v1h-1zM20 24h3v1h-3zM24 24h1v1h-1zM26 24h4v1h-4zM2 25h1v1h-1zM8 25h1v1h-1zM10 25h1v1h-1zM17 25h2v1h-2zM20 25h1v1h-1zM22 25h1v1h-1zM26 25h1v1h-1zM29 25h2v1h-2zM2 26h1v1h-1zM4 26h3v1h-3zM8 26h1v1h-1zM10 26h2v1h-2zM13 26h1v1h-1zM17 26h4v1h-4zM22 26h9v1h-9zM2 27h1v1h-1zM4 27h3v1h-3zM8 27h1v1h-1zM10 27h3v1h-3zM14 27h1v1h-1zM22 27h2v1h-2zM25 27h1v1h-1zM27 27h1v1h-1zM29 27h2v1h-2zM2 28h1v1h-1zM4 28h3v1h-3zM8 28h1v1h-1zM10 28h1v1h-1zM15 28h4v1h-4zM21 28h1v1h-1zM24 28h1v1h-1zM26 28h1v1h-1zM28 28h2v1h-2zM2 29h1v1h-1zM8 29h1v1h-1zM11 29h2v1h-2zM17 29h2v1h-2zM22 29h2v1h-2zM25 29h3v1h-3zM29 29h1v1h-1zM2 30h7v1h-7zM10 30h2v1h-2zM13 30h2v1h-2zM17 30h1v1h-1zM19 30h1v1h-1zM21 30h1v1h-1zM23 30h1v1h-1zM26 30h1v1h-1z" fill="#000"/></svg>` };
   const UPD = { el: null, loaded: false, donorsAt: 0 };
@@ -252,14 +341,13 @@
     catch (e) { ul.innerHTML = `<li class="day">Could not load the log (assets/updates.json).</li>`; return; }
     const vers = siteVersions(list); SITE_VER = vers.filter(Boolean).pop() || SITE_VER;
     const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
-    const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", "Daily Consensus": "gazette/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Wallet: "wallet/", Findings: "findings/", Roadmap: "roadmap/", Status: "status/", Stats: "stats/", "Testnet load": "load/", "Build pulse": "devpulse/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", Japanese: "?lang=ja", "Guided tour": "playground/#tour", Donations: "donate/" };
     let day = null, html = "";
     for (const e of order) {
       const tag = String(e.tag || ""), on = String(e.on || ""), ver = /^v\d/i.test(tag);
       if (on !== day) { day = on; html += `<li class="day">${logDate(on)}</li>`; }
-      const area = e.sv && (ver || tag === "HUD") ? `<a class="tag" href="${ROOT}">HUD</a>` : PAGE[tag] ? `<a class="tag" href="${ROOT}${PAGE[tag]}">${esc(tag)}</a>` : `<b class="tag">${esc(tag)}</b>`;
+      const L = logLink(e), area = e.sv && (ver || tag === "HUD") ? `<a class="tag" href="${ROOT}">HUD</a>` : L.area != null ? `<a class="tag" href="${esc(logHref(L.area, ROOT))}"${/^https?:/.test(L.area) ? ' target="_blank" rel="noopener"' : ""}>${esc(tag)}</a>` : `<b class="tag">${esc(tag)}</b>`;
       const t = e.sv ? `<span class="tags"><b class="tag ver">${esc(e.sv)}</b>${area}</span>` : ver ? `<a class="tag ver" href="${ROOT}">${esc(tag)}</a>` : area;
-      html += `<li data-tag="${esc(e.sv && ver ? "HUD" : tag)}">${t}<span class="body">${e.html || esc(e.text || "")}</span></li>`;
+      html += `<li data-tag="${esc(e.sv && ver ? "HUD" : tag)}"${L.go != null ? ` data-go="${esc(L.go)}"` : ""}>${t}<span class="body">${e.html || esc(e.text || "")}</span></li>`;
     }
     ul.innerHTML = html;
     foldUpdLog(ul);
@@ -277,8 +365,7 @@
       if (cut > 90 || (cut < 0 && text.length > 90)) { const sp = text.slice(0, 84).lastIndexOf(" "); cut = sp > 20 ? sp : cut; }
       const head = cut > 0 ? text.slice(0, cut).replace(/[:.;,]$/, "") + (/[:.;,]\s|[：。；，]/.test(text.slice(cut, cut + 2)) ? "" : " …") : text, rest = cut > 0 ? text.slice(cut).replace(/^[:.;,：。；，]?\s*/, "") : "";
       body.remove();
-      if (rest) { const d = document.createElement("details"), sm = document.createElement("summary"), pr = document.createElement("p"); sm.textContent = head; pr.textContent = rest; d.append(sm, pr); li.append(d); }
-      else { const o = document.createElement("div"); o.className = "one"; o.textContent = head; li.append(o); }
+      logFold(li, head, rest, tr, ROOT);
     });
     const all = [...ul.querySelectorAll("li:not(.day)")], days = [...ul.querySelectorAll("li.day")];
     let shown = 12;
@@ -383,15 +470,16 @@
     SHARE.querySelector(".tn-sh-copy").focus({ preventScroll: true });
   }
   function item(k, page, isHud, tip) {
-    const p = P[k], a = el(p.soon ? "div" : "a", "mi" + (k === page ? " here" : "") + (p.soon ? " soon" : "") + (k === "start" ? " first" : ""));
-    a.setAttribute("role", "menuitem");
+    const here = k === page || (TABS[k] && tabGroup(page) === k);
+    const p = P[k], a = el(p.soon ? "div" : "a", "mi" + (here ? " here" : "") + (p.soon ? " soon" : "") + (k === "start" ? " first" : ""));
+    a.setAttribute("role", "menuitem"); a.dataset.k = k;
     a.innerHTML = `<span class="ic">${p.i}</span><b>${p.live ? '<i class="tn-live" aria-hidden="true"></i>' : ""}${esc(p.t)}${p.ext ? ' <span class="ext">↗</span>' : ""}${p.play ? `<em class="tn-play" data-play="${p.play}" hidden><i aria-hidden="true"></i><b translate="no"></b> <span>playing now</span></em>` : ""}</b><span>${esc(p.d)}</span>`;
     if (p.soon) { a.setAttribute("aria-disabled", "true"); a.title = "This page is not online yet"; }
     else if (p.ext) { a.href = p.h; a.target = "_blank"; a.rel = "noopener"; }
     else if (p.act === "share") { a.href = "#share"; a.addEventListener("click", e => { e.preventDefault(); closeAll(); openShare(); }); }
     else if (p.act && isHud) { a.href = "#"; a.addEventListener("click", e => { e.preventDefault(); closeAll(); emit(p.act); }); }
-    else a.href = ROOT + p.h;
-    if (k === page) a.setAttribute("aria-current", "page");
+    else a.href = ROOT + (k === "wrules" ? wrulesHref() : p.h);   // an expert lands on the Tau box, everyone else on plain words
+    if (here) a.setAttribute("aria-current", k === page ? "page" : "true");
     return a;
   }
 
@@ -625,17 +713,11 @@
     const go = m => { if (window.TauSim) TauSim.set(m); else { store.set("tau-mode", m); location.href = ROOT + "?mode=" + m; } };
     live.addEventListener("click", () => { if (SIM) go("live"); }); sim.addEventListener("click", () => { if (!SIM) go("sim"); });
     src.append(live, sim);
-    const view = el("div", "seg"); view.setAttribute("role", "group"); view.setAttribute("aria-label", "Detail level");
-    const bS = el("button", "", "Simple"), bT = el("button", "", "Technical"); bS.type = bT.type = "button"; tip(bS, TIPS.simple); tip(bT, TIPS.tech);
-    const setView = v => { document.body.dataset.view = v; bS.setAttribute("aria-pressed", String(v === "simple")); bT.setAttribute("aria-pressed", String(v === "tech")); store.set(VIEW_KEY, v); };
-    bS.addEventListener("click", () => setView("simple")); bT.addEventListener("click", () => setView("tech"));
-    setView(store.get(VIEW_KEY) === "tech" ? "tech" : "simple");
-    view.append(bS, bT);
     const gear = el("div", "gearbody", `<h4>Node</h4><div class="row"><code>wss://${RELAY}</code><span class="hint">Community relay in front of a Tau testnet node run for this site. To read your own node, open the HUD and put its address under the gear there.</span></div><h4>Look</h4><div class="row"></div>`);
     const row = gear.querySelector(".row:last-child");
     const tour = el("a", "pill", "Tour of this page"); tour.href = "#tour"; tour.addEventListener("click", e => { e.preventDefault(); closeAll(); startTour(false); });
     const hudTour = el("a", "pill", "HUD tour"); hudTour.href = ROOT + "?tour=1"; const about = el("a", "pill", "About"); about.href = ROOT + "#about"; const legal = el("a", "pill", "Privacy"); legal.href = ROOT + "legal/"; row.append(tour, hudTour, about, legal);
-    return { src, view, gear };
+    return { src, gear };
   }
 
   /* guided tours: the HUD keeps its own; a subpage loads assets/tour.js (and its Chinese texts first) */
@@ -668,7 +750,7 @@
     }
   }
 
-  const QUIET = new Set(["taulang", "blog", "legal", "press", "story", "facts", "chronicle", "gazette", "donate", "roadmap", "findings", "devpulse", "about"]);
+  const QUIET = new Set(["taulang", "blog", "legal", "press", "story", "facts", "chronicle", "gazette", "donate", "roadmap", "findings", "devpulse", "gxp", "about"]);
   function mount(nav) {
     if (nav.dataset.mounted) return;
     nav.dataset.mounted = "1";
@@ -680,8 +762,10 @@
     if (!isHud && location.hash === "#updates") setTimeout(() => openUpdates(page), 50);   // the deep link lands in the overlay, not on the HUD
     const tip = (e, txt) => { if (!txt) return; if (isHud) e.dataset.full = txt; else e.dataset.tnt = txt; };
     const slots = {}; nav.querySelectorAll("[data-slot]").forEach(e => { slots[e.dataset.slot] = e; });
-    // the Simple/Technical switch appears only where it changes something (`view: true` in P); the stored choice stays global
-    if (!isHud) { const c = subControls(tip); slots.source = slots.source || c.src; slots.view = slots.view || (P[page] && P[page].view ? c.view : null); slots.gear = slots.gear || c.gear; mountRail(nav, page); if (!tipsOn) { tipsOn = true; hoverTips(); } }
+    /* the level switch sits under the gear on every page; the HUD's own Simple/Technical buttons stay in the page, hidden, and follow it */
+    const hudView = slots.view || null; if (hudView) { hudView.hidden = true; hudView.style.display = "none"; }
+    slots.view = levelSeg(tip);
+    if (!isHud) { const c = subControls(tip); slots.source = slots.source || c.src; slots.gear = slots.gear || c.gear; mountRail(nav, page); if (!tipsOn) { tipsOn = true; hoverTips(); } }
     const left = el("div", "tnav-l"), right = el("div", "tnav-r"), bar = el("div", "tnav-nav");
     /* Live/Simulation sits with the chain chips in row 1, in place of the chip that only repeated it */
     const railChips = document.querySelector(isHud ? "header.rail .chips" : "header.trail .chips");
@@ -718,8 +802,9 @@
     }
     /* alerts: one pill named for what you get, not for the app; it opens the three ways to get them */
     /* the label is set here: the simulated node on the HUD uses "Follow the chain" for a sync step with another meaning */
-    const FOLLOW = { zh: "关注这条链", ja: "チェーンを追う" };
-    const tg = el("div", "ni-wrap tn-alerts"), tgb = el("button", "pill tg", `${PLANE}${XLOGO}<span translate="no">${FOLLOW[window.TauI18n && TauI18n.lang] || "Follow the chain"}</span>`), tgm = el("div", "menu tn-alm");
+    /* laptops (up to 1365 px wide) get the short word, so the menu and the tools share one line instead of two */
+    const FOLLOW = { zh: "关注这条链", ja: "チェーンを追う" }, FOLLOW_SH = { zh: "关注", ja: "フォロー" }, LNG = window.TauI18n && TauI18n.lang;
+    const tg = el("div", "ni-wrap tn-alerts"), tgb = el("button", "pill tg", `${PLANE}${XLOGO}<span class="lg" translate="no">${FOLLOW[LNG] || "Follow the chain"}</span><span class="sh" translate="no">${FOLLOW_SH[LNG] || "Follow"}</span>`), tgm = el("div", "menu tn-alm");
     tgb.type = "button"; tgb.setAttribute("aria-haspopup", "true"); tgb.setAttribute("aria-expanded", "false"); tgb.setAttribute("aria-label", "Follow the chain: Telegram, X or RSS"); tip(tgb, TIPS.alerts);
     tgm.hidden = true; tgm.setAttribute("role", "menu"); tgm.setAttribute("aria-label", "Follow the chain");
     [[TELEGRAM, PLANE, "Telegram @tauHUDcom", "To your phone the moment it happens: rule changes, restarts, new nodes, a weekly recap"],
@@ -732,7 +817,7 @@
     tg.append(tgb, tgm);
     /* feedback, impossible to miss: opens the feedback form in place, the HUD's own on the start page */
     /* feedback and the update log open the same overlay, so they are one button; the green dot says something new shipped */
-    const fbk = el("button", "pill fbk", `${BUBBLE}<span>Feedback &amp; updates</span>`); fbk.type = "button"; fbk.setAttribute("aria-label", "Feedback and updates"); tip(fbk, TIPS.feedback);
+    const fbk = el("button", "pill fbk", `${BUBBLE}<span class="lg">Feedback &amp; updates</span><span class="sh">Feedback</span>`); fbk.type = "button"; fbk.setAttribute("aria-label", "Feedback and updates"); tip(fbk, TIPS.feedback);
     fbk.addEventListener("click", () => { closeAll(); markSeen(); if (isHud && slots.updates) slots.updates.click(); else openUpdates(page); });
     const fbkWrap = el("span", "tn-upd tn-fbk"); fbkWrap.append(fbk);
     let upd = slots.updates;
@@ -775,16 +860,16 @@
       });
       right.append(seg, lw);
     }
-    if (slots.gear) {   // settings, including the Simple/Technical view where a page has one
+    if (slots.gear) {   // settings, with the level switch first
       const gw = el("div", "tnav-gearwrap"), gb = el("button", "tnav-gear", "⚙"), pop = el("div", "tnav-pop");
-      gb.type = "button"; gb.setAttribute("aria-label", isHud ? "Settings: view, node address, background rain" : "Settings: view, node, guided tour, about"); gb.setAttribute("aria-haspopup", "true"); gb.setAttribute("aria-expanded", "false"); tip(gb, isHud ? TIPS.gear : TIPS.gearSub);
+      gb.type = "button"; gb.setAttribute("aria-label", isHud ? "Settings: level, node address, background rain" : "Settings: level, node, guided tour, about"); gb.setAttribute("aria-haspopup", "true"); gb.setAttribute("aria-expanded", "false"); tip(gb, isHud ? TIPS.gear : TIPS.gearSub);
       pop.hidden = true;
-      if (slots.view) { tip(slots.view, "View: Simple says what each thing means; Technical adds keys, hashes, heights and stream names."); const vh = el("h4", "", "View"), vr = el("div", "row"); vr.append(slots.view); pop.append(vh, vr); }
+      { const vh = el("h4", "", "Your level"), vr = el("div", "row"); vr.append(slots.view, el("span", "hint", "One choice for every page: how much is explained, and how much detail is shown.")); pop.append(vh, vr); }
       pop.append(slots.gear);
       gb.addEventListener("click", () => toggle(gb, pop));
       gw.append(gb, pop); right.append(gw);
-    } else if (slots.view) right.append(slots.view);
-    nav.innerHTML = ""; nav.append(left, right);
+    }
+    nav.innerHTML = ""; nav.append(left, right); if (hudView) nav.append(hudView);   // the HUD's script still presses its own two buttons
     mountPhone(nav, page, isHud, here, upd);
     checkLog();
     if (!isHud) breakout([nav.previousElementSibling, nav].filter(e => e && (e.classList.contains("trail") || e === nav)));
@@ -822,7 +907,7 @@
       .tn-tip { position: fixed; z-index: 90; max-width: min(420px, 90vw); padding: 8px 11px; background: #151517; border: 1px solid rgba(255,255,255,.16); border-radius: 6px; font: 12px/1.5 "JetBrains Mono", ui-monospace, Menlo, monospace; color: #ececf0; white-space: pre-wrap; overflow-wrap: anywhere; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; letter-spacing: 0; text-transform: none; } .tn-tip[hidden] { display: none; }`; document.head.append(css);
     const box = el("div", "tn-tip"); box.hidden = true; box.setAttribute("role", "tooltip"); document.body.append(box);
     let cur = null, touch = matchMedia("(hover: none)").matches;
-    const find = t => t instanceof Element ? t.closest("[data-tnt]") : null;
+    const find = t => { const e = t instanceof Element ? t.closest("[data-tnt]") : null; return e && e.getAttribute("aria-expanded") === "true" ? null : e; };   // an open menu needs no hover text over its first row
     /* measured from the top left corner (a box left near the right edge would shrink to one word), and in the page's own
        zoom: donate, guardian and challenge zoom the body by 1.3 on big screens, which scales a fixed box's left/top too */
     const place = (x, y) => { box.style.left = box.style.top = "0px"; const z = parseFloat(getComputedStyle(document.body).zoom) || 1, r = box.getBoundingClientRect(), w = r.width, h = r.height;
@@ -830,6 +915,7 @@
     const show = (t, x, y) => { cur = t; box.textContent = t.dataset.tnt; box.hidden = false; place(x, y); };
     const hide = () => { cur = null; box.hidden = true; };
     document.addEventListener("pointerdown", e => { touch = e.pointerType === "touch"; }, true);
+    document.addEventListener("click", () => { if (cur && cur.getAttribute("aria-expanded") === "true") hide(); });
     document.addEventListener("mouseover", e => { if (touch) return; const t = find(e.target); if (t) show(t, e.clientX, e.clientY); else if (cur) hide(); });
     document.addEventListener("mousemove", e => { if (cur && !touch) place(e.clientX, e.clientY); });
     document.addEventListener("focusin", e => { const t = find(e.target); if (t) { const r = t.getBoundingClientRect(); show(t, r.left, r.bottom - 8); } else if (cur) hide(); });
@@ -884,15 +970,23 @@
     [[TELEGRAM, PLANE, "Telegram"], [XCOM, XLOGO, "X"], [AGZX, `<img src="${ROOT}${agzPic}" alt="">`, "Agorzilla"]].forEach(([h, ic, t]) => { const a = el("a", "tn-soc", `${ic}<span>${esc(t)}</span>`); a.href = h; a.target = "_blank"; a.rel = "noopener"; so.append(a); });
     host.append(" ", so);
   }
-  /* Testnet health: Stats, Testnet load and Status answer the same question, so each carries tabs to the other two */
-  const HEALTH = ["stats", "load", "status"];
-  function healthTabs(nav, page) {
-    if (!HEALTH.includes(page)) return;
+  /* pages that answer the same question carry tabs to each other (TABS): Stats, Testnet load and Status are Testnet health,
+     the four ways to a wallet rule are Wallet rules, and so on. The row sits right under the header */
+  function groupTabs(nav, page) {
+    const old = nav.nextElementSibling; if (old && old.classList.contains("tn-tabs")) old.remove();
+    const key = tabGroup(page); if (!key) return;
+    const [name, tabs] = TABS[key], cur = tabPage(page);
     const lang = new URLSearchParams(location.search).get("lang"), q = lang ? "?lang=" + encodeURIComponent(lang) : "";
-    const t = el("div", "tn-tabs"); t.setAttribute("role", "navigation"); t.setAttribute("aria-label", "Testnet health");
-    t.append(el("span", "lbl", "Testnet health"));
-    HEALTH.forEach(k => { const a = el("a", "tab" + (k === page ? " here" : ""), esc(P[k].t)); a.href = ROOT + P[k].h + q; a.dataset.tnt = P[k].d; if (k === page) a.setAttribute("aria-current", "page"); t.append(a); });
+    const t = el("div", "tn-tabs"); t.setAttribute("role", "navigation"); t.setAttribute("aria-label", name);
+    if (!tabs.some(([k, label]) => (label || P[k].t) === name)) t.append(el("span", "lbl", esc(name)));   // "Explorer: Explorer · Accounts" would say it twice
+    tabs.forEach(([k, label]) => {
+      const a = el("a", "tab" + (k === cur ? " here" : ""), esc(label || P[k].t)), [path, hash] = P[k].h.split("#");
+      a.href = ROOT + path + q + (hash ? "#" + hash : ""); a.dataset.tnt = P[k].d; if (k === cur) a.setAttribute("aria-current", "page"); t.append(a);
+    });
     nav.after(t);
+    /* on a phone the row scrolls sideways: bring the tab of this page into view, again once the web font has its real widths */
+    const show = () => { const h = t.querySelector(".tab.here"); if (!h) return; const over = h.getBoundingClientRect().right - t.getBoundingClientRect().right; if (over > 0) t.scrollLeft += Math.ceil(over) + 12; };
+    show(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(show);
   }
   /* "what is real": today's transactions by sender, one line on the HUD, Stats and In numbers (relay /api/v1/sources). The
      groups are the relay's: IDNI's genesis accounts, White Rabbit Key's players, our cruise ships' simulated passengers and the
@@ -930,7 +1024,10 @@
     row.querySelectorAll("button:not([disabled]), [role=button], .seg").forEach(b => { const r = b.getBoundingClientRect(); if (!r.width) return; const x = Math.abs(e.clientX - (r.left + r.width / 2)); if (x < d) { d = x; best = b; } });
     if (best && d < 40) best.click();
   });
-  const init = () => { document.querySelectorAll("nav.tnav").forEach(nav => { mount(nav); const pg = nav.dataset.page || "hud"; healthTabs(nav, pg); realLine(pg); }); mountFootLinks(); countVisit(); if (location.hash === "#share") setTimeout(openShare, 60); };
+  const init = () => { document.querySelectorAll("nav.tnav").forEach(nav => { mount(nav); const pg = nav.dataset.page || "hud"; groupTabs(nav, pg); realLine(pg); }); setLevel(LEVEL, ""); mountFootLinks(); countVisit(); if (location.hash === "#share") setTimeout(openShare, 60); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
-  window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM };
+  /* the Rule Playground switches between its two halves without leaving the page: the tabs follow */
+  const retab = () => document.querySelectorAll("nav.tnav").forEach(nav => { if ((nav.dataset.page || "hud") === "playground") groupTabs(nav, "playground"); });
+  addEventListener("hashchange", retab);
+  window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM, tabs: retab, level: () => LEVEL, setLevel };
 })();

@@ -1574,6 +1574,8 @@ class Relay:
         self.note_board(self.community[node_id], now)
         hashes = self.hash_at()
         agrees = self.agreement(self.community[node_id], hashes)
+        # when its head last matched ours block for block: a node one block ahead of our relay is still in sync (knownnodes.py)
+        self.community[node_id]["same_at"] = now if agrees == "same" else (known or {}).get("same_at")
         row = self.board.get(node_id)
         # the first report on our chain within a few blocks of our tip: the node has caught up (/setup/stats)
         if row is not None and not row.get("synced_at") and agrees == "same" and hashes and int(fields["height"]) >= max(hashes) - 5:

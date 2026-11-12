@@ -96,8 +96,16 @@ html.fit #det { display: block; min-height: calc(2 * 1.45em + 14px); margin: 4px
 .ev li.on .more { display: block; }
 .ev li .more a { color: var(--ok); text-decoration: none; white-space: nowrap; }
 .ev li .more a:hover { text-decoration: underline; }
+/* an older era starts folded to its turning points; its button shows every moment */
+.panel.folded .ev li:not(.key):not(.on) { display: none; }
+.fold { flex: none; margin: 8px 0 0; padding: 6px 10px; min-height: 32px; width: 100%; text-align: left; background: none; border: 1px dashed var(--hair); border-radius: 6px; color: var(--text); font: 12px var(--mono); cursor: pointer; }
+.fold:hover, .fold:focus-visible { border-color: #fff; color: #fff; }
+.fold::after { content: " ›"; color: var(--dim); }
+@media (max-width: 700px) { .fold { min-height: 44px; } }
+html.fit .fold { margin-top: 6px; font-size: .96em; }
 .p-gone .ev li { border-left-style: dashed; cursor: default; }
 .p-gone .ev li .more { display: block; }
+.p-gone.folded .ev li .more { display: none; }
 
 footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 footer p { margin: 0 0 4px; }
@@ -114,7 +122,7 @@ html.fit .wrap { max-width: none; zoom: var(--z); height: var(--fitH); display: 
 html.fit .wrap > * { flex: none; }
 /* every era is one column and every moment one compact row, so nothing scrolls; if a short
    screen still cannot hold them, the text size --fs steps down until it does (see fitText) */
-html.fit .eras { flex: 1 1 0; min-height: 0; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 10px; align-items: stretch; font-size: var(--fs, 12.5px); }
+html.fit .eras { flex: 1 1 0; min-height: 0; grid-template-columns: var(--cols, repeat(6, minmax(0, 1fr))); grid-template-rows: minmax(0, 1fr); gap: 10px; align-items: stretch; font-size: var(--fs, 12.5px); }
 html.fit .panel { min-height: 0; overflow: hidden; padding: 10px 12px; }
 html.fit .panel > * { flex: none; }
 html.fit .panel .yrs { font-size: 1.45em; }
@@ -251,6 +259,23 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 const yt = v => `https://www.youtube.com/watch?v=${v}`;
 let SEL = null;  // selected event key "era:i"
 
+/* a first visit reads as one story: the older eras show their turning points, the newest era every moment.
+   An era's button opens or folds it; on one screen an open era gets a column twice as wide. */
+const OPEN = new Set([ERAS[ERAS.length - 1].id]);
+let foldTouched = false;
+/* an expert (the level under the gear) starts with every era open */
+addEventListener("tau-level", e => { if (foldTouched || e.detail !== "pro") return; ERAS.forEach(x => OPEN.add(x.id)); OPEN.add("gone"); if ($("eras").children.length) { layoutEras(); fitText(); } });
+function layoutEras() {
+  const host = $("eras");
+  host.querySelectorAll(".panel[data-era]").forEach(p => {
+    const e = ERAS.find(e => e.id === p.dataset.era), open = OPEN.has(e.id), b = p.querySelector(".fold");
+    p.classList.toggle("folded", !open); b.setAttribute("aria-expanded", String(open));
+    b.textContent = open ? "Turning points only" : `Show all ${e.ev.length} moments`;
+  });
+  const g = host.querySelector(".p-gone"), gb = g.querySelector(".fold"), go = OPEN.has("gone");
+  g.classList.toggle("folded", !go); gb.setAttribute("aria-expanded", String(go)); gb.textContent = go ? "Names only" : "Show what became of them";
+  host.style.setProperty("--cols", [...ERAS.map(e => `minmax(0, ${OPEN.has(e.id) ? 2 : 1}fr)`), "minmax(0, 1fr)"].join(" "));
+}
 function renderEras() {
   const host = $("eras");
   host.innerHTML = ERAS.map(e => `
@@ -263,12 +288,16 @@ function renderEras() {
           <span class="d">${esc(x.label)}</span><span class="t">${esc(x.t)}</span>
           <div class="more">${esc(x.m)}${x.v ? ` <a href="${yt(x.v)}" target="_blank" rel="noopener">Watch the video</a>` : ""}</div>
         </li>`).join("")}</ul>
+      <button class="fold" type="button" data-fold="${e.id}"></button>
     </section>`).join("") + `
     <section class="panel p-gone">
       <h2>Dropped along the way</h2>
       <p class="gist">Ideas and tools the project tried and left behind.</p>
       <ul class="ev">${GONE.map(g => `<li><span class="t">${esc(g.t)}</span><div class="more">${esc(g.m)}</div></li>`).join("")}</ul>
+      <button class="fold" type="button" data-fold="gone"></button>
     </section>`;
+  host.querySelectorAll("[data-fold]").forEach(b => b.addEventListener("click", () => { foldTouched = true; const id = b.dataset.fold; OPEN.has(id) ? OPEN.delete(id) : OPEN.add(id); layoutEras(); fitText(); }));
+  layoutEras();
   host.querySelectorAll("li[data-k]").forEach(li => {
     li.addEventListener("click", () => select(li.dataset.k, false));
     li.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(li.dataset.k, false); } });

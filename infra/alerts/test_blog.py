@@ -129,7 +129,15 @@ except RuntimeError as e:
     check("declined" in str(e) and "cyber" in str(e) and not answers, "a refusal says so, nothing asked again")
 
 card = blog.card_of({"line": "x", "why": []}, "Queen Mempool stays its full 90 minutes; our node slowed down")
-check(card[0] == "Queen Mempool stays its full 90 minutes; our node slowed", f"a long title is cut at a word on the card {card[0]!r}")
+check(card[0] == "Queen Mempool stays its full 90 minutes", f"a long title keeps its whole first clause on the card {card[0]!r}")
+check(blog.card_title("MS Dry Run stays 90 minutes as our node runs out of wallet room") == "MS Dry Run stays 90 minutes"
+      and blog.card_title("Queen Mempool stays all 90 minutes after MS Dry Run left early") == "Queen Mempool stays all 90 minutes",
+      "the two titles the picture cut at a word (11 and 7 November) keep a whole clause instead")
+check(blog.card_title("MS Dry Run stays its full 90 minutes with 222 stops accepted") == "MS Dry Run stays its full 90 minutes with 222 stops accepted",
+      "a title that fits stays whole")
+long1 = "Supercalifragilistic expialidocious testnet ship visit stays ninety minutes"
+check(blog.card_title(long1) == "Supercalifragilistic expialidocious testnet ship visit stays", f"no clause to keep: cut at a word {blog.card_title(long1)!r}")
+check("title: at most 60 characters" in blog.SYSTEM, "the model is asked for a title the picture can hold")
 
 # a draft, then publish: by hand only, and the marked one needs --force
 blog.site_ids = lambda: set()
@@ -196,7 +204,7 @@ qsum = {"id": Q, "ship": "queen", "name": "Queen Mempool", "t0": T0 + 3 * 86400,
 qlog.append({"t": T0 + 3 * 86400 + 5400, "visit": Q, "kind": "visit over", "summary": qsum})
 qlog.append({"t": T0 + 3 * 86400 + 5500, "visit": Q, "kind": "bookings checked", "checked": 0, "not_released": []})
 qf = blog.facts_of(qlog[::-1], [])
-check(qf["minutes in port"] == 90 and "bookings checked after the visit" not in qf, "a ship that stayed: 90 minutes, and no line for bookings that were never made")
+check(qf["minutes in port"] == 90 and blog.IN_PORT not in qf, "a ship that stayed: 90 minutes, and no line for bookings that were never made")
 blog.get = lambda path: ({"entries": log, "visits": [Q, V]} if f"visit={V}" in path else {"entries": qlog, "visits": [Q, V]}) if path.startswith("/cruise/log") else {}
 bf = blog.before_facts(Q, [Q, V], [], None)
 qf = blog.compare_with(qf, bf)
@@ -264,6 +272,7 @@ for i, (p, seq, k) in enumerate([(7, 1, "book"), (7, 1, "pay"), (25, 1, "pay"), 
 nlog.append({"t": T11 + 3600, "visit": V11, "kind": "cancel", "p": 7, "ok": None, "note": "nothing to withdraw: the booking is not open", "verdict": "calm"})
 nlog.append({"t": T11 + 5500, "visit": V11, "kind": "visit over", "summary": {"id": V11, "name": "MS Dry Run", "t0": T11, "landed": True,
              "passengers": 40, "sent": {"pay": 217, "book": 4, "cancel": 1}, "refused": {"pay": 8, "book": 1}, "skipped": 1}})
+nlog.append({"t": T11 + 5600, "visit": V11, "ship": "dryrun", "kind": "bookings checked", "checked": 4, "not_released": []})
 nf = blog.facts_of(nlog[::-1], [])
 nw = nf.get(blog.NEW_WALLET_FACT) or {}
 check(nf["refused in all"] == 0 and not nf.get("refused by the node") and not nf.get("refusal answers"),
@@ -276,6 +285,17 @@ check("neither a yes nor a refusal" in nw.get("the node's answer", "") and "neve
 check(nf.get("why stops were skipped, as logged") == {"nothing to withdraw: the booking is not open (its booking was one of the sends our node "
                                                        "could not take)": 1} and nf.get("stops skipped") == 1,
       "the skipped stop comes with the logbook's reason, and why its booking was not open")
+ip = nf.get(blog.IN_PORT) or {}
+check((ip.get("made"), ip.get("withdrawn by their passenger during the call"), ip.get("paid out to the place by the chain at their time"),
+       ip.get("still open after their time (the chain had not paid them out)")) == (4, 1, 3, 0)
+      and ("3/3", "bookings in port paid out") in blog_pics.visit_stats(nf),
+      "bookings made in port: 4 made, 1 withdrawn, 3 paid out, and the picture says 3/3, not 4/4")
+check("never compare the count of one with the other" in blog.SYSTEM and "bookings ahead" in blog.SYSTEM,
+      "the article may not set the bookings ahead against the bookings made in port (the second redraft did: 4 against 5)")
+nm = blog.meaning_of(nf)
+check(nw.get(blog.NEW_WALLET_SAID) == 9 and nm.get("share of the node's answers that were a yes") == "96%"
+      and nm.get("share of the node's answers that were temporarily unavailable (new wallets: neither a yes nor a refusal)") == "4%",
+      f"222 yes of 231 answers is 96%, not 100%: the nine temporarily unavailable count as answers {nm}")
 nn = blog.numbers_of(nf)
 check(any(x.endswith("none refused") for x in nn) and any("no room for the new wallets of 2 passengers (9 sends)" in x and "IDNI #108" in x for x in nn),
       "the visit in numbers: none refused, and one line on the two new wallets")
@@ -292,6 +312,7 @@ sf = blog.facts_of(slog, [])
 sw = sf.get(blog.NEW_WALLET_FACT) or {}
 check(sf["refused in all"] == 0 and sw.get("passengers") == 2 and sw.get("their sends the node could not take or the ship left out") == 3
       and "left out" in sw.get("how this call handled them", ""), "logged the new way: counted apart the same, with how the ship left them out")
+check(sw.get(blog.NEW_WALLET_SAID) == 1, "the new way, only the send the node answered counts as its answer: the left-out stop and the booking ahead do not")
 check(sf["bookings ahead in escrow"].get("not booked: wallets new to our node, which had no room for them") == 1
       and sf["bookings ahead in escrow"]["refused by the node"] == 0, "a booking ahead from a new wallet: not booked, not refused")
 # a wallet the chain knows that gets the same answer is a refusal as before
@@ -299,6 +320,37 @@ klog = nlog[:1] + [{"t": T11 + 60, "visit": V11, "kind": "pay", "p": 5, "ok": Fa
 kf = blog.facts_of(klog, [])
 check(kf["refused in all"] == 1 and not kf.get(blog.NEW_WALLET_FACT) and kf.get("refusal answers"), "the same answer to a wallet with transactions in blocks stays a refusal")
 check(blog.NEW_WALLET_FACT not in blog.facts_of(log[::-1], inc), "a visit without new wallets says nothing of them")
+
+# the picture holds the title on one line: a title cut at a word when it was drafted keeps a whole clause when made anew,
+# and a draft waiting to go out gets its picture made anew once, like the articles already out
+import io  # noqa: E402
+seen, own = [], (blog_pics.hero, blog_pics.desk_hero, blog.urllib.request.urlopen, blog.posts)
+blog_pics.hero = lambda art, ships, card, ship, out, stats=None, host="rico": seen.append(list(card)) or out
+blog_pics.desk_hero = lambda card, out, stats=None, kicker="": seen.append(list(card)) or out
+blog.urllib.request.urlopen = lambda *a, **k: io.BytesIO(b'{"posts": []}')
+blog.posts = lambda: {"posts": []}
+d11 = {"id": "2026-11-11-dryrun-learnings", "kind": "cruise", "visit": V11, "facts": nf,
+       "title": {"en": "MS Dry Run stays 90 minutes as our node runs out of wallet room"},
+       "card": ["MS Dry Run stays 90 minutes as our node runs out of wallet", "Chain refused nothing", "Tau HUD blog"]}
+blog.write_json(os.path.join(TMP, "blog", "drafts", "d11-tok.json"), d11)
+blog.write_json(blog.STATE, {"drafts": {d11["id"]: "d11-tok"}})
+n1, n2 = blog.site_pictures(), blog.site_pictures()
+check(n1 == 1 and n2 == 0 and seen and seen[0][:2] == ["MS Dry Run stays 90 minutes", "Chain refused nothing"],
+      f"a waiting draft's picture is made anew once, its title a whole clause, not '...runs out of wallet' {seen}")
+blog.make_hero({"id": "2026-11-12-news", "kind": "news", "title": {"en": "A title much longer than the line its hand-made card shows on the picture"},
+                "card": ["Hand-made line", "Tau HUD blog"]}, None)
+check(seen[-1][0] == "Hand-made line", "a hand-made first line that is not the title stays as it is")
+blog_pics.hero, blog_pics.desk_hero, blog.urllib.request.urlopen, blog.posts = own
+
+# every tile label fits the tile in two lines of the tile's type (a third ran over the tile's edge on 11 November)
+from PIL import ImageDraw  # noqa: E402
+od = ImageDraw.Draw(Image.new("RGB", (400, 200)))
+labels = {lab for fs in (nf, f, fq, {"minutes in port": 34, "the ship before": {"minutes in port": 90},
+          "refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)": 8, "refused in all": 9})
+          for _, lab in blog_pics.visit_stats(fs)}
+lines = lambda lab, size: len(blog_pics.wrap(od, lab, blog_pics.font(size, 500), 214 - 36))   # as blog_pics.hero sets a tile: 21, else 18
+wide = [lab for lab in labels if lines(lab, 21) > 2 and lines(lab, 18) > 2]
+check(not wide and "bookings in port paid out" in labels, f"every tile label fits in two lines {wide}")
 
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)

@@ -373,4 +373,10 @@ TauI18n.add({ strings: {
   "Case {n} never applies: the cases above it already catch every transfer it would.": "情形 {n} 永远用不上：上面的情形已经接住了它会匹配的每笔转账。",
   "Case {n} changes nothing: without it, the same transfers get the same answers.": "情形 {n} 不改变任何结果：没有它，同样的转账得到同样的答案。",
   "Every transfer gets exactly one answer, and every case matters.": "每笔转账恰好得到一个答案，并且每个情形都有作用。",
+  "Say a rule in plain words ›": "用日常语言说一条规则 ›",
+} });
+/* plain words typed into the rule box: the way to the rule builder */
+TauI18n.add({ strings: {
+  "Rules are written in Tau, not in plain words. The rule builder turns plain words into a Tau rule and checks it; or start from an example above.": "规则用 Tau 写成，而不是用日常语言。规则搭建器能把日常语言变成 Tau 规则并检查它；也可以从上面的示例开始。",
+  "Open the rule builder ›": "打开规则搭建器 ›",
 } });

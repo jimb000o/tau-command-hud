@@ -924,14 +924,16 @@ function showNext(text, plain) {
   const w = "/wallet/?from=playground" + (lang ? "&lang=" + encodeURIComponent(lang) : "") + "#rules-mine";
   box.innerHTML = "";
   const p = document.createElement("p"); p.style.margin = "0";
-  p.textContent = plain ? "Rules are written in Tau, not in plain words. Start from an example above, or let the wallet build one from blocks: a limit, a list of who may be paid, a date, a co-signer."
+  p.textContent = plain ? "Rules are written in Tau, not in plain words. The rule builder turns plain words into a Tau rule and checks it; or start from an example above."
     : d ? "Next: put a rule like this on your own test account. The wallet fills in the same block; you check it and sign."
     : "Next: the wallet builds and signs rules like this from blocks: a limit, a list of who may be paid, a date, a co-signer.";
   const row = document.createElement("div"); row.className = "row";
   const a = document.createElement("a"); a.className = "btn primary"; a.href = w; a.textContent = d ? "Sign it in my wallet ›" : "Open the wallet’s rule builder ›";
+  if (plain) { a.href = "../builder/?q=" + encodeURIComponent(ruleEl.value.trim().slice(0, 500)) + (lang ? "&lang=" + encodeURIComponent(lang) : ""); a.textContent = "Open the rule builder ›"; }
   a.addEventListener("click", () => { try { if (d) localStorage.setItem(WALLET_DRAFT, JSON.stringify(d)); } catch (e) {} });
   const m = document.createElement("a"); m.className = "btn"; m.href = "../missions/"; m.textContent = "Rules for everyone: Missions ›";
-  row.append(a, m); box.append(p, row); box.hidden = false;
+  const w2 = document.createElement("a"); w2.className = "btn"; w2.href = "../builder/" + (lang ? "?lang=" + encodeURIComponent(lang) : ""); w2.textContent = "Say a rule in plain words ›";
+  row.append(a, ...(plain ? [] : [w2]), m); box.append(p, row); box.hidden = false;
 }
 function holdStep(sec) {
   return { title: "Tau engine", ok: null, detail: `Paused for your connection after many engine runs. Back in ${mmss(sec)}. The text checks above ran as usual.` };
@@ -1246,6 +1248,7 @@ function showTab(seat) {
   $("tabPolicy").setAttribute("aria-selected", String(!seat)); $("tabSeat").setAttribute("aria-selected", String(seat));
   $("viewPolicy").hidden = seat; $("viewSeat").hidden = !seat;
   try { history.replaceState(null, "", seat ? "#seat" : "#rule"); } catch (e) {}
+  if (window.TauNav && TauNav.tabs) TauNav.tabs();   // the header's tabs: the seat belongs to Practise voting, the rule to Wallet rules
 }
 $("tabPolicy").addEventListener("click", () => showTab(false));
 $("tabSeat").addEventListener("click", () => showTab(true));
@@ -1564,8 +1567,10 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) { cle
 
 /* ---------------- start ---------------- */
 renderExamples();
-ruleEl.value = EXAMPLES[0].text;
-document.querySelector('#examples [data-ex="limit"]').classList.add("on");
+/* ?ex=combo opens with that example (the rule builder sends an exception it cannot build here) */
+const EX0 = EXAMPLES.find(e => e.id === new URLSearchParams(location.search).get("ex")) || EXAMPLES[0];
+ruleEl.value = EX0.text;
+document.querySelector('#examples [data-ex="' + EX0.id + '"]').classList.add("on");
 renderCases();
 renderTests();
 simReset();
