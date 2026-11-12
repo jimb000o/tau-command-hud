@@ -29,13 +29,23 @@ class Evening(unittest.TestCase):
         self.assertIn("nothing changed", out[1])
         self.assertNotIn("no value", out[1])
 
+    def test_no_value_line_once_a_week(self):
+        r = {"n": 3, "category": "Fur", "options": ["A", "B"], "tally": [2, 1], "winner": "A", "feeders": 3}
+        self.assertNotIn("no value", A.text(r, LATEST, foot=False))
+        s, out = {"last": 2, "x_last": 2, "foot_at": 1_000_000}, []
+        A.step({**LATEST, "rounds": [r]}, s, send=lambda m: out.append(m) or True, send_x=lambda m, st: True, now=1_000_000 + 86400)
+        self.assertTrue(out and "no value" not in out[0])
+        s2, out2 = {"last": 2, "x_last": 2, "foot_at": 1_000_000}, []
+        A.step({**LATEST, "rounds": [r]}, s2, send=lambda m: out2.append(m) or True, send_x=lambda m, st: True, now=1_000_000 + 7 * 86400)
+        self.assertTrue(out2 and "no value" in out2[0] and s2["foot_at"] == 1_000_000 + 7 * 86400)
+
     def test_x_copy_once_without_link(self):
         s, xs = {"last": -1}, []
         A.step(LATEST, s, send=lambda m: True, send_x=lambda m, st: xs.append(m) or True)
         A.step(LATEST, s, send=lambda m: True, send_x=lambda m, st: xs.append(m) or True)
         self.assertEqual(len(xs), 2)
-        self.assertTrue(xs[0].startswith("🦍 Evening 1: Pendant light became Rose\n\nWhite 4 · Rose 9 · Blue 2"))
-        self.assertTrue(xs[0].endswith("#TauNet $AGRS"))
+        self.assertTrue(xs[0].startswith("🦍 7 wallets fed Agorzilla today, and its pendant light became Rose (9 of 15 votes)."), xs[0])
+        self.assertTrue(xs[0].endswith("#TauNet"))
         self.assertNotIn("http", xs[0] + xs[1])
         self.assertNotIn("agorzilla.com", xs[0] + xs[1])
         self.assertNotIn("<b>", xs[0])
@@ -157,7 +167,7 @@ class RuleEvenings(unittest.TestCase):
         self.assertIn("Tonight is a rule evening, a vote on the rules of the game: May a decided question come back? "
                       "(Never again, After 7 evenings, Any time). agorzilla.com", tg[0])
         self.assertNotIn("Tonight's choice", tg[0])
-        self.assertTrue(xs[0].startswith("🦍 Evening 6: Temperament became Calm"))
+        self.assertIn("its temperament became Calm", xs[0])
         self.assertIn("Tonight is a rule evening, a vote on the rules of the game: May a decided question come back?", xs[0])   # on X before the growth line
         self.assertLessEqual(__import__("alerts").x_len(xs[0]), 280)
 
@@ -174,7 +184,7 @@ class RuleEvenings(unittest.TestCase):
         self.assertTrue(xs[0].startswith("🦍 Evening 7, a rule evening: May a decided question come back?\n\n"
                                          "The feeders changed it to After 7 evenings (3 of 4 votes). "
                                          "From now on: A decided question can come back after 7 evenings."), xs[0])
-        self.assertTrue(xs[0].endswith("#TauNet $AGRS"))
+        self.assertTrue(xs[0].endswith("#TauNet"))
         self.assertLessEqual(__import__("alerts").x_len(xs[0]), 280)
         self.assertEqual(s["rules_known"]["repeat"], "After 7 evenings")
 
@@ -246,7 +256,7 @@ class KeptTest(unittest.TestCase):
 
     def test_x_says_stays(self):
         t = A.x_text(self.R, self.L)
-        self.assertIn("Sky stays Aurora", t)
+        self.assertIn("Its sky stays Aurora: only", t)
         self.assertNotIn("became", t)
 
     def test_no_card_for_a_kept_look(self):

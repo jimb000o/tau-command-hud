@@ -43,6 +43,7 @@ def at(s: str) -> float:
 
 
 alerts.X_PICTURES = False
+alerts.POLL_ON = False   # the poll day is tested at the end
 alerts.Watcher.fetch_deepdives = lambda self: None
 POSTS = [{"id": "a", "title": "A", "text": "About A.", "x": ["Head A", "Text A."], "link": "/a/", "image": "/assets/og/a.png"},
          {"id": "b", "title": "B", "text": "About B.\nMore B.", "try": "do B", "x": ["Head B"], "link": "/b/"},
@@ -51,14 +52,15 @@ POSTS = [{"id": "a", "title": "A", "text": "About A.", "x": ["Head A", "Text A."
 tg, x = Fake("telegram"), Fake("x")
 w = alerts.Watcher([tg, x])
 w.state.pop("deepdives", None)
+w.state.pop("pages", None)
 w.state.pop("x", None)
 asyncio.run(w.maybe_deepdive(at("2026-11-03T12:59:00Z"), POSTS))
 check(tg.sent == [], "nothing before 13:00 UTC")
 asyncio.run(w.maybe_deepdive(at("2026-11-03T13:00:30Z")))
 check(len(tg.sent) == 1 and "<b>A</b>" in tg.sent[0][0] and tg.sent[0][0].startswith(alerts.DEEPDIVE_LINE), "the first one on Telegram at 13:00")
-check(tg.sent[0][1][0]["inline_keyboard"][0][0]["url"] == "https://tauhud.com/a/" and tg.sent[0][1][1] == "https://tauhud.com/assets/og/a.png",
-      "with its button and its picture")
-check(len(x.sent) == 1 and x.sent[0][0].startswith("Head A") and x.sent[0][0].endswith("#TauNet $AGRS"), "the first one on X too")
+check(tg.sent[0][1][0]["inline_keyboard"][0][0]["url"] == "https://tauhud.com/a/" and len(tg.sent[0][1]) == 1,
+      "with its button, and no repo preview picture (made in Simulation mode)")
+check(len(x.sent) == 1 and x.sent[0][0].startswith("Head A") and x.sent[0][0].endswith("#TauNet"), "the first one on X too")
 asyncio.run(w.maybe_deepdive(at("2026-11-03T14:00:00Z")))
 check(len(tg.sent) == 1, "one a day")
 asyncio.run(w.maybe_deepdive(at("2026-11-04T13:01:00Z")))
@@ -79,6 +81,7 @@ alerts.DEEPDIVE_DAYS = (0, 2, 4)
 tgd, xd = Fake("telegram"), Fake("x")
 wd = alerts.Watcher([tgd, xd])
 wd.state.pop("deepdives", None)
+wd.state.pop("pages", None)
 wd.state.pop("x", None)
 asyncio.run(wd.maybe_deepdive(at("2026-11-03T13:00:00Z"), POSTS))
 check(tgd.sent == [], "Tuesday: no closer look")
@@ -94,6 +97,7 @@ alerts.DEEPDIVE_DAYS = tuple(range(7))
 tg2, x2 = Fake("telegram", fail=True), Fake("x")
 w2 = alerts.Watcher([tg2, x2])
 w2.state.pop("deepdives", None)
+w2.state.pop("pages", None)
 w2.state.pop("x", None)
 asyncio.run(w2.maybe_deepdive(at("2026-11-03T13:00:00Z"), POSTS))
 check(tg2.sent == [] and len(x2.sent) == 1 and x2.sent[0][0].startswith("Head A"), "Telegram fails: X posts the first one alone")
@@ -104,6 +108,54 @@ asyncio.run(w2.maybe_deepdive(at("2026-11-03T13:06:00Z")))
 check(len(tg2.sent) == 1 and "<b>A</b>" in tg2.sent[0][0] and len(x2.sent) == 1, "Telegram back: the same one goes out there, X not again")
 asyncio.run(w2.maybe_deepdive(at("2026-11-04T13:00:00Z")))
 check(len(tg2.sent) == 2 and "<b>B</b>" in tg2.sent[1][0] and len(x2.sent) == 1, "next day the second, Telegram only")
+
+
+# a page shown in the last 30 days is not shown again, whichever kind of post showed it (11 Nov 2026: the rules wall)
+tg3, x3 = Fake("telegram"), Fake("x")
+w3 = alerts.Watcher([tg3, x3])
+w3.state.pop("deepdives", None)
+w3.state["pages"] = {"/a/": at("2026-11-01T10:00:00Z")}
+asyncio.run(w3.maybe_deepdive(at("2026-11-03T13:00:00Z"), POSTS))
+check(len(tg3.sent) == 1 and "<b>B</b>" in tg3.sent[0][0] and w3.state["pages"].get("/b/"), "a page shown 2 days ago is passed over")
+check(alerts.page_key("https://tauhud.com/rules/?ref=x") == "/rules/" and alerts.page_key("/") is None
+      and alerts.page_key("https://chess.taumorrow.com") is None, "page keys: the path, never the front page or another site")
+s4 = {"plan": {"posted": {"spot-rules": at("2026-11-11T14:00:00Z")}, "posts": [{"id": "spot-rules", "link": "/rules/"}]}}
+check(alerts.page_recent(s4, "/rules/", at("2026-11-20T00:00:00Z")) and not alerts.page_recent(s4, "/rules/", at("2026-12-12T00:00:00Z")),
+      "the first time, the ledger is seeded from what was already posted")
+
+
+# the page's checked live picture (site-shots.mjs) is the one a post carries
+shots = os.path.join(alerts.PUBLIC_DIR, "pageshots")
+os.makedirs(shots, exist_ok=True)
+with open(os.path.join(shots, "index.json"), "w") as f:
+    json.dump({"rules": {"path": "/rules/", "at": "2026-11-12T06:00:00Z", "ok": True}, "status": {"ok": False, "why": "mode chip not green"},
+               "hud": {"path": "/", "at": "2026-11-12T06:00:00Z", "ok": True}}, f)
+for n in ("rules", "status", "hud"):
+    open(os.path.join(shots, n + ".jpg"), "wb").close()
+check(alerts.post_picture("https://tauhud.com/assets/og/rules.png", "/rules/") == alerts.NODE_PUBLIC + "/pageshots/rules.jpg?v=202611120600",
+      "a checked live picture replaces the repo's preview picture")
+check(alerts.post_picture("https://tauhud.com/assets/shots/status.png", "https://tauhud.com/status/?ref=x") is None, "a page that failed its check: no picture")
+check(alerts.live_shot("https://tauhud.com/") and alerts.live_shot("https://chess.taumorrow.com") is None, "the front page has one, another site none")
+check(alerts.post_picture("https://node.tauhud.com/blog/img/x.jpg", "/blog/") == "https://node.tauhud.com/blog/img/x.jpg", "other pictures stay")
+
+
+# one post a day about Tau HUD itself: after a site update the closer look waits a day; on the poll day the poll is the post
+tg5, x5 = Fake("telegram"), Fake("x")
+w5 = alerts.Watcher([tg5, x5])
+for k in ("deepdives", "pages", "x", "poll"):
+    w5.state.pop(k, None)
+w5.promo_take(at("2026-11-02T08:00:00Z"))
+asyncio.run(w5.maybe_deepdive(at("2026-11-02T13:00:00Z"), POSTS))
+check(tg5.sent == [], "a site update this morning: no closer look today")
+asyncio.run(w5.maybe_deepdive(at("2026-11-03T13:00:00Z")))
+check(len(tg5.sent) == 1 and "<b>A</b>" in tg5.sent[0][0], "the next day it goes out")
+alerts.POLL_ON = True
+asyncio.run(w5.maybe_deepdive(at("2026-11-04T13:00:00Z")))
+check(len(tg5.sent) == 1, "Wednesday: the poll's day, no closer look")
+w5.state["poll"] = {"week": "2026-W45"}
+asyncio.run(w5.maybe_deepdive(at("2026-11-05T13:00:00Z")))
+check(len(tg5.sent) == 2, "Thursday the closer looks go on")
+alerts.POLL_ON = False
 
 # the real file
 with open(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "deepdives.json")) as f:
