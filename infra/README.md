@@ -278,6 +278,19 @@ against the same 40 questions per 5 minutes per address. `up tau` runs six sampl
    3 minutes apart.
 7. If not: the old image and the copied chain data go back, and the commit is not tried again (the next IDNI commit is).
 
+**A new chain.** When the new commit ships another genesis (`networks/tau-testnet-v2/genesis.json`, block 0 hash; first
+time IDNI/tau-testnet#93, 12.11.2026), there is nothing to compare it with until IDNI restarts the testnet on it:
+- While our node still gets new blocks (its head moved in the last 45 minutes), the check only waits and builds nothing.
+  The owner hears once that a new chain is coming.
+- When our node has had no new block for 45 minutes, the image is built (and kept) and a trial node must join the new
+  chain from the bootnode and reach its tip (past block 0 and at the tip it hears, or its head block is under
+  10 minutes old, twice in a row). A trial node that stays on block 0 means the testnet does not run that genesis yet:
+  the check waits and tries again after `IDNI_FOLLOW_GENESIS_RETRY_MINUTES` (120). It is never marked failed.
+- The switch is the same as above; `infra/node/start.sh` wipes the old chain's data because the genesis differs, and
+  relay, alerts and caddy start fresh as `rejoin.sh` does. The node must be past block 0 and in sync.
+- Heights here are canonical heads (`getgovernance`), not `getblocks`, which also lists stored blocks that never joined
+  the chain (a node on its genesis read "block 1999" there on 12.11.2026).
+
 The owner's private Telegram chat (`up owner`) hears about every switch and once about every commit held back.
 `up` shows it under `idni:` as `auto-follow:`. State and log: `/var/lib/tau-idni-follow/`.
 

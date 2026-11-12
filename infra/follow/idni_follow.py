@@ -15,6 +15,9 @@ One pass (`run`):
   6. switches: stops the node, keeps a copy of its chain data, starts the new image on the same data, and checks that it
      answers and is in sync with the network tip twice, 3 minutes apart
   7. any failure in 6 puts the old image and the copied chain data back
+A commit that ships another genesis starts a new chain (new_chain_pass): it waits while our node still gets blocks on
+the old chain, then a trial node must join the new chain and reach its tip; staying on block 0 means "not yet", tried
+again every IDNI_FOLLOW_GENESIS_RETRY_MINUTES, never a failure. The switch then wipes the old chain (start.sh).
 The owner's private Telegram chat (`up owner`, the watchtower's chat) hears about every switch and every commit held
 back for good (once per commit). A commit that failed is not tried again; the next IDNI commit is.
 
@@ -78,6 +81,42 @@ for b in d.get("blocks") or []:
         pass
 print(json.dumps({"ok": m.get("status") == "ok", "hashes": out}))
 '''
+
+# the head probe: the node's CANONICAL head (getgovernance; getblocks also lists stored blocks that never joined the
+# chain, so a node still sitting on its genesis can show "block 1999" there), the highest tip it heard from a peer
+# (our network-tip patch) and the time stamp of the head block when it is among the newest ten
+HEAD_PROBE = r'''
+import json, socket
+def ask(cmd):
+    s = socket.create_connection(("127.0.0.1", 65432), timeout=20)
+    s.sendall(cmd.encode() + b"\r\n")
+    buf = b""
+    while not buf.endswith(b"\n"):
+        c = s.recv(65536)
+        if not c:
+            break
+        buf += c
+    s.close()
+    return json.loads(buf)
+g = ask("getgovernance")
+d = g.get("data") or {}
+tip = (d.get("network_tip") or {}).get("number")
+ts = None
+try:
+    for b in (ask("getblocks 10").get("data") or {}).get("blocks") or []:
+        if b.get("block_hash") == d.get("head_hash"):
+            ts = (b.get("header") or {}).get("timestamp")
+except Exception:
+    pass
+print(json.dumps({"ok": g.get("status") == "ok", "head": d.get("head_number"), "hash": d.get("head_hash"), "tip": tip, "ts": ts}))
+'''
+# When an IDNI commit ships another genesis (a new chain, IDNI/tau-testnet#93 on 12.11.2026), there is nothing to test
+# it against until IDNI restarts the testnet on it. While our node still gets new blocks on its chain, the old chain is
+# alive: wait without building. Then the trial node must join the new chain and reach its tip; until it does, it is
+# tried again every IDNI_FOLLOW_GENESIS_RETRY_MINUTES.
+ALIVE_MINUTES = 45      # our node's head moved within this time: the testnet still runs our genesis
+GENESIS_RETRY_DEFAULT = 120
+NETWORK_GENESIS = "networks/tau-testnet-v2/genesis.json"   # what infra/node/start.sh copies into the node
 
 
 # ---------------- small things the tests replace ----------------
@@ -299,6 +338,58 @@ def probe(container: str | None = None) -> dict | None:
     return {int(k): v for k, v in (d.get("hashes") or {}).items()}
 
 
+def head_probe(container: str | None = None) -> dict | None:
+    """{head, hash, tip, ts} of a node's canonical head; container None = our running node."""
+    cmd = (["docker", "exec", "-i", container, "python", "-"] if container
+           else ["docker", "compose", "exec", "-T", "tau-node", "python", "-"])
+    rc, out = sh(cmd, input=HEAD_PROBE, timeout=60)
+    try:
+        d = json.loads(out.strip().splitlines()[-1]) if rc == 0 else None
+    except (ValueError, IndexError):
+        return None
+    if not d or not d.get("ok"):
+        return None
+    try:
+        d["head"] = int(d.get("head"))
+    except (TypeError, ValueError):
+        return None
+    return d
+
+
+def idni_genesis(sha: str) -> str | None:
+    """block 0 hash of the testnet profile an IDNI commit ships (what our node image starts from)."""
+    raw = get(f"{RAW}/{sha}/{NETWORK_GENESIS}")
+    try:
+        h = json.loads(raw)["block_0"]["hash"] if raw else None
+    except (ValueError, KeyError, TypeError):
+        return None
+    return h if isinstance(h, str) and re.fullmatch(r"[0-9a-f]{64}", h) else None
+
+
+def node_genesis(running: str) -> str | None:
+    """block 0 hash our running node's chain data belongs to (start.sh writes it), else that of its commit."""
+    rc, out = sh(["docker", "compose", "exec", "-T", "tau-node", "cat", "/data/genesis.hash"], timeout=60)
+    h = out.strip().splitlines()[-1].strip() if rc == 0 and out.strip() else ""
+    if re.fullmatch(r"[0-9a-f]{64}", h):
+        return h
+    return idni_genesis(running) if re.fullmatch(r"[0-9a-f]{40}", running or "") else None
+
+
+def old_chain_alive(st: dict) -> tuple[bool, str]:
+    """Does our node still get new blocks on its chain? Remembers its head between passes."""
+    h = head_probe()
+    seen = st.get("ours") or {}
+    if h is None:
+        moved_at = seen.get("at", 0)
+        return now() - moved_at < ALIVE_MINUTES * 60, "our node does not answer"
+    if h["head"] != seen.get("head"):
+        seen = {"head": h["head"], "at": now()}
+        st["ours"] = seen
+        save(st)
+    alive = h["head"] > 0 and now() - seen["at"] < ALIVE_MINUTES * 60
+    return alive, f"our node at block {h['head']}" + ("" if alive else f", no new block for {round((now() - seen['at']) / 60)} min")
+
+
 def synced() -> tuple[bool, str]:
     """Our running node answers and the relay sees it within LAG_OK blocks of the network tip."""
     blocks = probe()
@@ -406,6 +497,70 @@ def trial(sha: str, cfg: dict) -> tuple[bool, str]:
     return ok, why
 
 
+def at_new_tip(h: dict) -> bool:
+    """A trial node on a new chain is at its tip: past block 0 and at the highest tip it heard, or its head block is
+    from the last 10 minutes (a peer still on the old run can announce an old, higher tip)."""
+    if h["head"] < 1:
+        return False
+    tip = h.get("tip")
+    if isinstance(tip, int) and h["head"] >= tip - LAG_OK:
+        return True
+    ts = h.get("ts")
+    return isinstance(ts, (int, float)) and -300 <= now() - ts <= 600
+
+
+def genesis_trial(sha: str, genesis: str, cfg: dict) -> tuple[str, str]:
+    """Trial of a commit that starts a new chain: ("ok" | "wait", why). It cannot be compared with our node, which is
+    on the old chain, so it must join the new chain from IDNI's bootnode and reach that chain's tip. A trial node that
+    stays on block 0 means the testnet does not run this genesis yet: wait and try later, never a failure."""
+    minutes = int(cfg.get("IDNI_FOLLOW_TRIAL_MINUTES") or 45)
+    cap = max(minutes, int(cfg.get("IDNI_FOLLOW_TRIAL_MAX_MINUTES") or 360))
+    log(f"trial node of {short(sha)}: joining the new chain (genesis {genesis[:8]}) on the live testnet ({minutes} min, "
+        f"longer while it climbs, at most {cap})")
+    sh(["docker", "rm", "-f", TRIAL])
+    sh(["docker", "volume", "rm", "-f", TRIAL])
+    args = ["docker", "run", "-d", "--name", TRIAL, "--memory", cfg.get("IDNI_FOLLOW_TRIAL_MEMORY") or "1500m",
+            "--cpus", "1", "-v", f"{TRIAL}:/data"]
+    for k, v in sorted(node_env().items()):
+        args += ["-e", f"{k}={v}"]
+    rc, out = sh(args + [f"{IMAGE}:{sha}", "/usr/local/bin/tau-node-start"], timeout=120)
+    if rc != 0:
+        return "wait", f"the trial node did not start: {out.strip()[-120:]}"
+    verdict, why, best, good = "wait", "", None, 0
+    try:
+        start = now()
+        deadline, last_up = start + minutes * 60, start
+        while now() < deadline or (now() - last_up < 600 and now() < start + cap * 60):
+            sleep(30)
+            rc, state = sh(["docker", "inspect", "-f", "{{.State.Running}}", TRIAL])
+            if state.strip() != "true":
+                _, tail = sh(["docker", "logs", "--tail", "3", TRIAL])
+                why = f"the trial node stopped: {tail.strip().splitlines()[-1][:140] if tail.strip() else 'no log'}"
+                break
+            h = head_probe(TRIAL)
+            if not h:
+                continue
+            if best is None or h["head"] > best:
+                last_up = now()
+            best = h["head"]
+            good = good + 1 if at_new_tip(h) else 0
+            if good >= 2:   # twice in a row, a minute apart: it follows the chain, not one lucky look
+                verdict = "ok"
+                why = f"joined the new chain and reached its tip, block {h['head']}, in {round((now() - start) / 60)} min"
+                break
+        else:
+            why = (f"the testnet does not run genesis {genesis[:8]} yet (the trial node stayed on block 0)" if not best
+                   else f"the trial node reached block {best} of the new chain in {round((now() - start) / 60)} min, not its tip")
+    finally:
+        _, tail = sh(["docker", "logs", "--tail", "60", TRIAL])
+        with open(os.path.join(DIR, "trial.log"), "w") as f:
+            f.write(tail)
+        sh(["docker", "rm", "-f", TRIAL])
+        sh(["docker", "volume", "rm", "-f", TRIAL])
+    log(f"trial: {why}")
+    return verdict, why
+
+
 def data_volume() -> str | None:
     rc, cid = sh(["docker", "compose", "ps", "-a", "-q", "tau-node"])
     cid = cid.strip().splitlines()[0] if rc == 0 and cid.strip() else ""
@@ -424,17 +579,39 @@ def copy_volume(src: str, dst: str, image: str) -> bool:
     return rc == 0
 
 
-def wait_synced(minutes: int) -> tuple[bool, str]:
+def synced_on(new_chain: bool) -> tuple[bool, str]:
+    """synced(), and on a new chain also past its block 0 (a node that just wiped its data answers on genesis)."""
+    ok, why = synced()
+    if ok and new_chain:
+        h = head_probe()
+        if not h or h["head"] < 1:
+            return False, "our node is still on block 0 of the new chain"
+    return ok, why
+
+
+def wait_synced(minutes: int, new_chain: bool = False) -> tuple[bool, str]:
     end, why = now() + minutes * 60, "not checked"
     while now() < end:
         sleep(20)
-        ok, why = synced()
+        ok, why = synced_on(new_chain)
         if ok:
             return True, why
     return False, why
 
 
-def switch(old: str, new: str, st: dict) -> bool:
+def start_all(new_chain: bool) -> tuple[int, str]:
+    """Start the node on the image .env names. After a new genesis the relay and the watchtower start fresh too, as
+    rejoin.sh does after a chain restart (they keep the old chain's blocks in memory)."""
+    if not new_chain:
+        return sh(["docker", "compose", "up", "-d", "--no-build"], timeout=600)
+    rc, out = sh(["docker", "compose", "up", "-d", "--no-build", "--force-recreate", "tau-node", "relay", "alerts"], timeout=600)
+    rc2, out2 = sh(["docker", "compose", "up", "-d", "--no-build", "--force-recreate", "caddy"], timeout=300)
+    return (rc or rc2), out + out2
+
+
+def switch(old: str, new: str, st: dict, genesis: str | None = None) -> bool:
+    """genesis: the block 0 hash of the new chain when `new` starts one (start.sh then wipes the old chain's data)."""
+    new_chain = bool(genesis)
     vol = data_volume()
     if not vol:
         hold(st, "could not find the node's chain data volume")
@@ -448,29 +625,34 @@ def switch(old: str, new: str, st: dict) -> bool:
              f"The node runs {short(old)} as before.")
         return False
     set_env("TAU_TESTNET_REF", new)
-    rc, out = sh(["docker", "compose", "up", "-d", "--no-build"], timeout=600)
+    rc, out = start_all(new_chain)
     ok, why = (rc == 0, out.strip()[-160:])
     if ok:
-        ok, why = wait_synced(15)
+        ok, why = wait_synced(30 if new_chain else 15, new_chain)
     if ok:
         sleep(180)
-        ok, why = synced()
+        ok, why = synced_on(new_chain)
     if ok:
         st["live"] = {"sha": new, "since": now(), "base": repo_pin(), "prev": old}
         st["last_switch"] = {"from": old, "to": new, "at": now(), "ok": True}
-        st.pop("held", None), st.pop("failed", None), st.pop("tested", None)
+        st.pop("held", None), st.pop("failed", None), st.pop("tested", None), st.pop("genesis", None), st.pop("ours", None)
         save(st)
         log(f"switched to {short(new)}: {why}")
         news = commits_between(old, new)
-        tell(f"Node auto-follow: our node now runs IDNI tau-testnet main {short(new)} (was {short(old)}). "
-             f"Trial sync and the switch went fine, {why}.\n" + "\n".join(news))
+        if new_chain:
+            tell(f"Node auto-follow: IDNI restarted the testnet on a new genesis ({genesis[:8]}). Our node now runs IDNI "
+                 f"tau-testnet main {short(new)} (was {short(old)}) on the new chain, {why}. Everything on the old chain "
+                 f"(balances, wallets, rules) is gone there; a copy of our old chain data stays in {SNAPSHOT}.\n" + "\n".join(news))
+        else:
+            tell(f"Node auto-follow: our node now runs IDNI tau-testnet main {short(new)} (was {short(old)}). "
+                 f"Trial sync and the switch went fine, {why}.\n" + "\n".join(news))
         sh(["docker", "rmi", f"{IMAGE}:{old}"])   # several GB; the chain data copy stays for a hand rollback
         return True
     log(f"the new node failed ({why}); putting {short(old)} back")
     sh(["docker", "compose", "stop", "tau-node"], timeout=180)
     restored = copy_volume(SNAPSHOT, vol, f"{IMAGE}:{old}")
     set_env("TAU_TESTNET_REF", old)
-    sh(["docker", "compose", "up", "-d", "--no-build"], timeout=600)
+    start_all(new_chain)
     back, bwhy = wait_synced(15)
     st["last_switch"] = {"from": old, "to": new, "at": now(), "ok": False, "why": why, "rolled_back": back}
     fail(st, new, f"switched, but the new node failed ({why}); rolled back to {short(old)}"
@@ -518,7 +700,17 @@ def run_pass() -> str:
         st.pop("held", None)
         save(st)
         return "up to date"
+    # a commit that ships another genesis starts a new chain: tested and switched in its own way (new_chain_pass)
+    new_gen = idni_genesis(head)
+    our_gen = node_genesis(running) if new_gen else None
+    new_chain = new_gen if (new_gen and our_gen and new_gen != our_gen) else None
     f = st.get("failed") or {}
+    if new_chain and f.get("sha") == head and "not the live tip" in (f.get("reason") or ""):
+        # held back by a trial against our old chain (before this script knew new chains): that measure did not apply
+        st.pop("failed", None)
+        save(st)
+        f = {}
+        log(f"{short(head)} starts a new chain (genesis {new_chain[:8]}): its trial against our old chain no longer counts")
     if f.get("sha") == head:
         hold(st, f"{short(head)}: {f.get('reason')}")
         return "failed before"
@@ -536,6 +728,8 @@ def run_pass() -> str:
         fail(st, head, f"IDNI's build moved to tau-lang {short(lang)} (ours {short(ours)}); a tau-lang rebuild takes "
                        "hours on this server, so this one needs a repin by hand")
         return "tau-lang"
+    if new_chain:
+        return new_chain_pass(st, cfg, head, running, new_chain, our_gen, spec)
     tested = st.get("tested") or {}
     have_image = sh(["docker", "image", "inspect", f"{IMAGE}:{head}"])[0] == 0   # a full up removes other images
     if not (tested.get("sha") == head and now() - tested.get("at", 0) < 24 * 3600 and have_image):
@@ -563,6 +757,64 @@ def run_pass() -> str:
         hold(st, "an up changed the node meanwhile; the next check starts over")
         return "changed"
     return "switched" if switch(running, head, st) else "rolled back"
+
+
+def new_chain_pass(st: dict, cfg: dict, head: str, running: str, genesis: str, ours: str, spec: str) -> str:
+    """IDNI main ships another genesis. Wait while the testnet still runs ours; once our node stops getting blocks,
+    build the new image (kept between tries), let a trial node join the new chain, and switch when it reached the tip.
+    A trial node that cannot join is a reason to wait, not a failure: it is tried again after a while."""
+    g = st.get("genesis") or {}
+    if g.get("sha") != head:
+        g = {"sha": head, "want": genesis, "ours": ours, "since": now()}
+        st["genesis"] = g
+        save(st)
+        log(f"{short(head)} starts a new chain: genesis {genesis[:8]}, our node's chain {ours[:8]}")
+        tell(f"Node auto-follow: IDNI main {short(head)} starts a new chain (genesis {genesis[:8]}, ours {ours[:8]}). "
+             "Our node stays on the current chain while the testnet runs it, and switches by itself once IDNI has "
+             "restarted the testnet on the new genesis and a trial node reached the new chain's tip.")
+    alive, why = old_chain_alive(st)
+    if alive:
+        hold(st, f"{short(head)} starts a new chain (genesis {genesis[:8]}); the testnet still runs ours ({why}), "
+                 "waiting for IDNI to restart it")
+        return "waiting for genesis"
+    retry = int(cfg.get("IDNI_FOLLOW_GENESIS_RETRY_MINUTES") or GENESIS_RETRY_DEFAULT)
+    tested = st.get("tested") or {}
+    have_image = sh(["docker", "image", "inspect", f"{IMAGE}:{head}"])[0] == 0
+    if not (tested.get("sha") == head and tested.get("genesis") == genesis and now() - tested.get("at", 0) < 24 * 3600
+            and have_image):
+        tried = g.get("tried_at")
+        if tried and now() - tried < retry * 60:
+            hold(st, f"{short(head)} (new chain {genesis[:8]}): {g.get('why')}; next try in "
+                     f"{max(1, round((tried + retry * 60 - now()) / 60))} min")
+            return "waiting for genesis"
+        if not have_image:
+            if free_gb() < MIN_FREE_GB:
+                hold(st, f"only {free_gb():.1f} GB free on disk, a node build needs about {MIN_FREE_GB}")
+                return "disk"
+            ok, bwhy = build(head, cfg)
+            if not ok:
+                fail(st, head, bwhy)
+                sh(["docker", "rmi", f"{IMAGE}:{head}"])
+                return "build"
+        verdict, why = genesis_trial(head, genesis, cfg)
+        g = st.get("genesis") or g
+        g.update(tried_at=now(), why=why)
+        st["genesis"] = g
+        save(st)
+        if verdict != "ok":
+            hold(st, f"{short(head)} (new chain {genesis[:8]}): {why}; tried again in {retry} min")   # image kept
+            return "waiting for genesis"
+        st["tested"] = {"sha": head, "at": now(), "why": why, "genesis": genesis}
+        save(st)
+    t = now()
+    q = quiet_reason(t, 30, spec) or cruise_reason(t, 60)
+    if q:
+        hold(st, f"{q}; {short(head)} joined the new chain in its trial and switches at the next quiet check")
+        return "quiet after test"
+    if read_env().get("TAU_TESTNET_REF", "") != running:
+        hold(st, "an up changed the node meanwhile; the next check starts over")
+        return "changed"
+    return "switched" if switch(running, head, st, genesis) else "rolled back"
 
 
 # ---------------- what `up` shows ----------------
