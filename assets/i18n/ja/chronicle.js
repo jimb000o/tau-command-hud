@@ -128,4 +128,8 @@ TauI18n.add({ strings: {
   "Click a moment below or a dot on the timeline for details and the video it comes from.": "下の瞬間か、タイムライン上の点をクリックすると、詳細と元になった動画が表示されます。",
   "Tap a moment for details and the video it comes from.": "瞬間をタップすると、詳細と元になった動画が表示されます。",
   "The road did.": "変わったのは道のりです。",
+  "Show all {n} moments": "{n} の瞬間をすべて表示",
+  "Turning points only": "転換点だけを表示",
+  "Show what became of them": "その後どうなったかを表示",
+  "Names only": "名前だけを表示",
 } });

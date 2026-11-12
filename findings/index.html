@@ -140,6 +140,12 @@ html.fit .panel > .scroll { flex: 1 1 0; min-height: 0; overflow: auto; padding-
 html.fit .tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 html.fit .lead { font-size: 22px; margin: 0; }
 html.fit .sub { font-size: 12px; margin: 2px 0 0; }
+/* the one-sentence answer above the numbers, for a first-time reader: what is true right now */
+.now { margin: 6px 0 0; color: var(--text); font-size: 13px; font-weight: 500; display: flex; align-items: baseline; gap: 8px; }
+.now::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); transform: translateY(-1px); }
+.now.ok::before { background: var(--ok); box-shadow: 0 0 8px var(--ok); } .now.watch::before, .now.sim::before { background: var(--behind); } .now.bad::before { background: var(--bad); }
+.now:empty { display: none; }
+html.fit .now { margin: 3px 0 0; }
 html.fit header { padding: 4px 0 6px; }
 html.fit .modal .sheet { zoom: var(--z); }
 html.fit .modal .sheet { max-height: calc(100% / var(--z)); }
@@ -218,6 +224,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
   <div class="top">
     <div>
       <p class="lead">A testnet is there to break. Here is what broke for us.</p>
+      <p class="now" id="nowLine" aria-live="polite"></p>
       <p class="sub">Running a node for tauhud.com, we hit bugs in the Tau Testnet Alpha. Each one is filed with IDNI, the team behind Tau; its status below comes live from GitHub. What we could fix on our side runs in our node today.</p>
     </div>
   </div>
@@ -436,6 +443,11 @@ function render() {
   const st = FINDINGS.filter(f => !f.kind).map(f => status(ISSUES[f.n], f)[0]);
   $("state").className = "state " + (got.length ? "live" : "off");
   $("stateText").textContent = got.length ? (SAMPLE ? "Sample data" : "Live from GitHub") : "GitHub unreachable";
+  /* the answer before the numbers: how many of our bug reports are still open */
+  { const open = st.filter(s => s === "open").length, fixed = st.filter(s => s === "fixed" || s === "partly").length, p = $("nowLine");
+    const text = !got.length ? `${plural(st.length, "bug")} listed here. GitHub cannot be reached right now, so their status is unknown.`
+      : `${SAMPLE ? "Sample data: " : ""}${open} of the ${plural(st.length, "bug")} listed here ${open === 1 ? "is" : "are"} still open at IDNI. IDNI has fixed ${fixed}.`;
+    p.className = "now " + (!got.length ? "" : SAMPLE ? "sim" : open ? "watch" : "ok"); p.textContent = text; }
   const tiles = [
     ["Filed with IDNI", FINDINGS.length, `${plural(FINDINGS.filter(f => !f.kind).length, "bug")}, ${plural(FINDINGS.filter(f => f.kind === "request").length, "request")}, ${plural(FINDINGS.filter(f => f.kind === "fix").length, "fix", "fixes")}`],
     ["Open bugs", got.length ? st.filter(s => s === "open").length : "—", "waiting for IDNI"],

@@ -132,4 +132,10 @@ TauI18n.add({ strings: {
   "{n} hours ago": "{n} 時間前",
   "{n} minutes ago": "{n} 分前",
   "{x1} partly: fix landed, issue still open": "部分的に {x1} 件：修正は入ったが issue は未解決",
+  "{n} bugs listed here.": "ここには {n} 件のバグを載せています。",
+  "1 bug listed here.": "ここには 1 件のバグを載せています。",
+  "GitHub cannot be reached right now, so their status is unknown.": "いま GitHub に接続できないため、状況は不明です。",
+  "{n} of the {m} bugs listed here are still open at IDNI.": "ここに載せた {m} 件のバグのうち {n} 件は IDNI でまだ未解決です。",
+  "{n} of the {m} bugs listed here is still open at IDNI.": "ここに載せた {m} 件のバグのうち {n} 件は IDNI でまだ未解決です。",
+  "IDNI has fixed {n}.": "IDNI は {n} 件を修正しました。",
 } });

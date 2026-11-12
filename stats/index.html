@@ -133,6 +133,12 @@ html.fit .ev { font-size: 12px; gap: 3px; align-content: start; }
 html.fit .ev li { padding: 3px 8px; }
 html.fit .lead { font-size: 22px; margin: 0; }
 html.fit .sub { font-size: 12px; margin: 2px 0 0; }
+/* the one-sentence answer above the numbers, for a first-time reader: what is true right now */
+.now { margin: 6px 0 0; color: var(--text); font-size: 13px; font-weight: 500; display: flex; align-items: baseline; gap: 8px; }
+.now::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); transform: translateY(-1px); }
+.now.ok::before { background: var(--ok); box-shadow: 0 0 8px var(--ok); } .now.watch::before, .now.sim::before { background: var(--behind); } .now.bad::before { background: var(--bad); }
+.now:empty { display: none; }
+html.fit .now { margin: 3px 0 0; }
 html.fit header { padding: 4px 0 6px; }
 html.fit .tiles { gap: 8px; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 html.fit .tile { padding: 8px 12px; }
@@ -240,6 +246,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
   <div class="top">
     <div class="intro">
       <p class="lead">How the Tau testnet is doing, block by block.</p>
+      <p class="now" id="nowLine" aria-live="polite"></p>
       <p class="sub" id="sourceLine">Read from our own node, which verifies every block of the Tau Testnet Alpha itself. Nothing here is simulated unless it says so.</p>
     </div>
     <div class="filters" role="group" aria-label="Time range">
@@ -984,10 +991,26 @@ function playerPanel(W) {
 /* ------------------------------ render ------------------------------ */
 function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = text; s.dataset.tip = tipText; }
 
+/* the answer before the numbers: is the testnet running right now? No block for half an hour is a stall, the rule our relay and the HUD use */
+function nowLine(all, last, now) {
+  const pace = median(all.slice(-11).map((r, i, a) => i ? r.ts - a[i - 1].ts : 0).filter(g => g > 0));
+  const lately = pace != null ? ` Lately a new block came about every ${fmtDur(pace)}.` : "";
+  let cls = "", text = "Waiting for the first block.";
+  if (D.mode === "sample") { cls = "sim"; text = "Sample data, not the real chain."; }
+  else if (last) {
+    const age = now - last.ts, quiet = (Date.now() - lastFetch) / 1000;
+    if (SIM) { cls = "sim"; text = `In the simulation, block #${fmtN(last.n)} came ${fmtDur(age)} ago.${lately}`; }
+    else if (quiet > 120) { cls = "bad"; text = `Our node last answered ${fmtDur(quiet)} ago. The last block we saw is #${fmtN(last.n)}.`; }
+    else if (age >= 1800) { cls = "watch"; text = `No new block for ${fmtDur(age)}: the testnet has stalled. The newest block is #${fmtN(last.n)}.`; }
+    else { cls = "ok"; text = `The testnet is running: block #${fmtN(last.n)} came ${fmtDur(age)} ago.${lately}`; }
+  }
+  const p = $("nowLine"); p.className = "now " + cls; if (nowLine.text !== text) p.textContent = nowLine.text = text;   // rewritten only when it changes, so the translation is not redone every 15 s
+}
 function render() {
   if (!D) return;
   const all = D.rows.filter(r => r.n > 0 && r.ts), rows = inRange(), now = Date.now() / 1000;
   const last = all[all.length - 1];
+  nowLine(all, last, now);
   // header state + banner
   const banner = $("banner");
   if (D.mode === "sample") {

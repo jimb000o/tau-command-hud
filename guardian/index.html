@@ -110,6 +110,8 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
 [hidden] { display: none !important; }
 @media (min-width: 2200px) and (min-height: 1200px) { body { zoom: 1.3; } }
 @media (max-width: 1000px) { .main { grid-template-columns: minmax(0, 1fr); } .main.payFirst .col:last-child { display: contents; } .main.payFirst #pPay { order: -1; } }
+#howD summary { cursor: pointer; }
+#howD h2 .cnt { color: var(--dim); font: 11px var(--mono); letter-spacing: 0; text-transform: none; margin-left: 10px; } #howD[open] h2 .cnt { display: none; }
 #howD:not([open]) summary { cursor: pointer; } #howD:not([open]) h2 { margin: 0; } #howD:not([open]) h2::after { content: "›"; margin-left: auto; font-size: 14px; }
 /* a laptop (1366 × 768): everything on one screen */
 @media (min-width: 1001px) and (max-height: 820px) { body { font-size: 12px; padding-top: 6px; padding-bottom: 4px; } .wrap { gap: 8px; } .lead { font-size: 21px; } .panel { padding: 8px 16px; } .main, .col { gap: 8px; } .how { gap: 2px; } .how li, .holders, .modes, .sub { font-size: 11.5px; } .lead { font-size: 19px; margin-top: 0; } .modes { gap: 3px; margin: 4px 0 0; } .modes input[type=number] { min-height: 26px; font-size: 12px; } .fine { margin-top: 3px; } .list li { padding: 5px 0; } .panel p { margin-bottom: 5px; } .panel h2 { margin-bottom: 5px; } .row { margin-top: 4px; gap: 6px; } .hint { margin-top: 4px; } .holders { margin-top: 2px; display: flex; flex-wrap: wrap; gap: 0 14px; } .note { padding: 5px 12px; } .sim .sub { display: none; } .qr { margin: 4px 0 2px; } .qr .img, .qr { grid-template-columns: 110px minmax(0, 1fr); } .qr .img { width: 110px; height: 110px; } .busy #payHint { display: none; } }
@@ -178,7 +180,7 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
         <p class="fine" id="payHint">A payment from the <a href="/wallet/?from=guardian">wallet</a> that the Guardian does not sign by itself waits here for your code. A payment nobody confirms runs out after about 1,000 blocks and the amount stays with you (the fee is spent).</p>
       </section>
       <section class="panel" aria-labelledby="hHow">
-        <details id="howD" open><summary><h2 id="hHow">What it can do, and what it cannot</h2></summary>
+        <details id="howD"><summary><h2 id="hHow">What it can do, and what it cannot <small class="cnt">2 things it does, 4 limits</small></h2></summary>
         <ul class="how">
           <li><i>✓</i><span>It co-signs only payments your own account asked for, and only after the right code. It cannot send, move or hold anything.</span></li>
           <li><i>✓</i><span>The code never goes on the chain: it comes to our server, which checks it and signs. Each code works once; five wrong codes lock your account for 15 minutes.</span></li>
@@ -409,6 +411,8 @@ function render() {
   // 1: the app
   const appOk = live && have && !!G.info && G.info.enabled !== false;
   $("pApp").classList.toggle("done", enrolled);
+  /* the fine print waits, folded to one line, until step 1 is done: a first visit shows the three steps first. One click opens it at any time. */
+  if (!howTouched && matchMedia("(min-width: 1001px)").matches) $("howD").open = enrolled;
   $("stApp").textContent = enrolled ? T("connected") : ""; $("stApp").className = "st" + (enrolled ? " ok" : "");
   $("btnQr").hidden = enrolled || !!shown; $("btnQr").disabled = !appOk;
   $("qrBox").hidden = !shown || enrolled; document.body.classList.toggle("qrOpen", !!shown && !enrolled);
@@ -453,7 +457,7 @@ function render() {
   const row = hit && !jumped && $("pay").querySelector("li.hit"); if (row) { jumped = true; row.scrollIntoView({ block: "center" }); const i = row.querySelector("input"); if (i) i.focus({ preventScroll: true }); }
 }
 let jumped = false, howTouched = false;
-$("howD").addEventListener("toggle", () => { howTouched = true; }, { once: true });
+$("howD").querySelector("summary").addEventListener("click", () => { howTouched = true; });   // the visitor's own click (or Enter on it), not the page folding it
 /* why "Sign the rule" cannot be pressed now, in words; "" when it can */
 function ruleWhy({ live, have, enrolled, full }) {
   if (!live) return T("The Guardian works only on the real testnet: switch the HUD to Live.");

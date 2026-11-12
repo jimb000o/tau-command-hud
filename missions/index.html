@@ -591,7 +591,8 @@ function renderBrief(tickGoal) {
   lastBriefKey = key;
   const goals = m.goals.map((g, i) => `<li class="${S.met[i] ? "met" : i === idx ? "now" : ""}${i === tickGoal ? " tick" : ""}"><span class="ic">${S.met[i] ? "✓" : i === idx ? "▸" : i + 1}</span><div><b>${esc(g.t)}</b><p>${esc(g.d)}</p></div></li>`).join("");
   const allWon = S.won && MISSIONS.every(x => DONE[x.id]);   // all six done: the "What now?" card takes the place of the ticked goals
-  const real = `<div class="real"><b>On the real testnet</b><p>${esc(m.real.text)}</p><div class="links">${m.real.links.map(([t, h]) => `<a class="btn small" href="${h}"${/^http/.test(h) ? ' target="_blank" rel="noopener"' : ""}>${esc(t)}</a>`).join("")}</div></div>`;
+  /* where to see the same thing on the real testnet: once this mission is done (now or on an earlier visit), not before the first move */
+  const real = !(S.won || DONE[m.id]) ? "" : `<div class="real"><b>On the real testnet</b><p>${esc(m.real.text)}</p><div class="links">${m.real.links.map(([t, h]) => `<a class="btn small" href="${h}"${/^http/.test(h) ? ' target="_blank" rel="noopener"' : ""}>${esc(t)}</a>`).join("")}</div></div>`;
   const done = S.won ? `<div class="won${Date.now() - S.wonAt < 1500 ? " pop" : ""}"><b>Mission complete</b><p>${esc(m.win)}</p>
     <div class="row"><button class="btn primary" type="button" data-go="${nxt.id}">${DONE[nxt.id] ? "Play" : "Next"}: ${esc(nxt.title)}</button><button class="btn" type="button" id="btnShare">Share this mission</button><span class="copied" id="copied" aria-live="polite"></span></div></div>` : "";
   $("brief").innerHTML = `<h2>Mission ${m.n} of ${MISSIONS.length} <small>${DONE[m.id] && !S.won ? "done before · play it again" : ""}</small></h2>

@@ -129,4 +129,8 @@ TauI18n.add({ strings: {
   "Click a moment below or a dot on the timeline for details and the video it comes from.": "点击下方的某个时刻或时间线上的点，查看详情和它出自的视频。",
   "Tap a moment for details and the video it comes from.": "点按某个时刻，查看详情和它出自的视频。",
   "The road did.": "变的是道路。",
+  "Show all {n} moments": "显示全部 {n} 个时刻",
+  "Turning points only": "只看转折点",
+  "Show what became of them": "看看它们后来怎样了",
+  "Names only": "只看名称",
 } });
