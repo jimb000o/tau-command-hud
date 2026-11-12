@@ -1,6 +1,6 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
-  "Donations: the way to the Tau HUD crew is now a green button under the headline, with the price beside it (from €3.50 a month plus tax). It was a grey line that was easy to miss.": "捐赠：通往 Tau HUD 船员的入口现在是标题下方的一个按钮，旁边写着价格（每月 3.50 欧元起，另加税）。此前是一行容易被忽略的灰色文字。",
+  "Donations: the way to the Tau HUD crew is now a green button under the headline. The line beside it says that it is a paid monthly membership in our external shop, billed until you cancel. It was a grey line that was easy to miss.": "捐赠：通往 Tau HUD 船员的入口现在是标题下方的一个按钮。旁边的文字说明这是我们外部商店的付费月度会员，每月扣款直到取消。此前是一行容易被忽略的灰色文字。",
   "Donations: no crypto wallet? A new line under the headline leads to the Tau HUD crew, a monthly membership in our shop (from €3.50 a month plus tax) with a discount on everything there. Unlike a donation, it is a purchase; the Ethereum address stays as it is.": "捐赠：没有加密钱包？标题下新增一行，通往 Tau HUD 船员，即我们商店的月度会员（每月 3.50 欧元起，另加税），店内所有商品都有折扣。与捐赠不同，这是一次购买；以太坊地址保持不变。",
   "IDNI genesis account, one of the 11 the testnet started with.": "IDNI 创世账户，测试网启动时就有的 11 个账户之一。",
   "genesis": "创世",
