@@ -116,6 +116,7 @@ pre { margin: 6px 0 0; padding: 8px 10px; background: rgba(255,255,255,.04); bor
 .eng.on i { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
 .eng.off i { background: #e5484d; }
 .chips, #chips { display: flex; gap: 6px; }
+#chips { flex-wrap: wrap; }   /* twelve lessons at the logic level: a second row instead of a row wider than its panel */
 .chips { margin: 0 0 10px; justify-content: space-between; flex-wrap: wrap; }
 #lNext { color: var(--text); }
 button.b { background: none; cursor: pointer; }
@@ -354,7 +355,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
       <section class="panel lesson" aria-labelledby="hLes">
         <h2 id="hLes">8 short lessons</h2>
         <p class="pro-note" id="newNote" hidden><button type="button" class="backg" id="gReturn">‹ Back to the step-by-step guide</button></p>
-        <p class="pro-note" id="proNote" hidden>Lessons 1 to 4 are the basics, lesson 5 is a real testnet rule, and 6 to 8 are for logic people: terms, quantifiers and how sat treats inputs. Then the <a href="/playground/">Rule Playground ›</a>.</p>
+        <p class="pro-note" id="proNote" hidden>Lessons 1 to 4 are the basics, 5 to 8 are real testnet rules and their traps, and 9 to 12 are for logic people: terms, quantifiers, how sat treats inputs and what a rule leaves open. Then the <a href="/playground/">Rule Playground ›</a>.</p>
         <div class="chips"><span id="chips" role="tablist" aria-label="Lessons"></span><button type="button" id="lNext">Next ›</button></div>
         <h3 id="lTitle"></h3>
         <p id="lText"></p>
