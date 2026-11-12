@@ -301,8 +301,8 @@ TauI18n.add({ strings: {
   "is 255, all bits on. The number one is": "是 255，所有位都为 1。数字一写作",
   "for every x,": "对每个 x，",
   "for some x. A spec without always or sometimes holds at every step.": "存在某个 x。没有 always 或 sometimes 的规范在每一步都成立。",
-  "Lessons 1 to 4 are the basics, lesson 5 is a real testnet rule, and 6 to 8 are for logic people: terms, quantifiers and how sat treats inputs. Then the {e1}": "第 1 到 4 课是基础，第 5 课是一条真实的测试网规则，第 6 到 8 课给懂逻辑的人：项、量词，以及 sat 如何对待输入。之后是 {e1}",
-  "Lessons 1 to 4 are the basics, lesson 5 is a real testnet rule, and 6 to 8 are for logic people: terms, quantifiers and how sat treats inputs. Then the": "第 1 到 4 课是基础，第 5 课是一条真实的测试网规则，第 6 到 8 课给懂逻辑的人：项、量词，以及 sat 如何对待输入。之后是",
+  "Lessons 1 to 4 are the basics, 5 to 8 are real testnet rules and their traps, and 9 to 12 are for logic people: terms, quantifiers, how sat treats inputs and what a rule leaves open. Then the {e1}": "第 1 到 4 课是基础，第 5 到 8 课是真实的测试网规则和其中的陷阱，第 9 到 12 课给懂逻辑的人：项、量词、sat 如何对待输入，以及规则留下了什么没说。之后是 {e1}",
+  "Lessons 1 to 4 are the basics, 5 to 8 are real testnet rules and their traps, and 9 to 12 are for logic people: terms, quantifiers, how sat treats inputs and what a rule leaves open. Then the": "第 1 到 4 课是基础，第 5 到 8 课是真实的测试网规则和其中的陷阱，第 9 到 12 课给懂逻辑的人：项、量词、sat 如何对待输入，以及规则留下了什么没说。之后是",
   "{n} lessons, then {m} for logic people": "{n} 课基础，再加 {m} 课给懂逻辑的人",
   "How sat reads a spec ↗": "sat 如何读规范 ↗",
   "Inputs for all, outputs exist, step by step: the exact rule in IDNI's README.": "输入全称、输出存在，逐步进行：IDNI README 里的准确规则。",
@@ -386,4 +386,16 @@ TauI18n.add({ strings: {
   "Say a wallet rule in plain words and see the Tau rule it becomes.": "用日常语言说出一条钱包规则，看它变成怎样的 Tau 规则。",
   "Your answer also sets your level on the other pages.": "你的回答也会设定你在其他页面的水平。",
   "Change it at any time under the gear, top right.": "随时可在右上角的齿轮里更改。",
+} });
+/* the lesson for logic people on what a rule leaves open: the first step of a look-back, a choice between two answers */
+TauI18n.add({ strings: {
+  "Only what the rule forces": "只有规则强制的才算数",
+  "Tau keeps every promise a rule makes, and nothing more. A rule that reads [t-1] has no earlier step to read at its first step, so that step stays open and the engine writes 0 everywhere. And where a rule allows two answers, the engine picks one, not always the same. If a value matters, write the line that fixes it.": "规则许下的每个承诺 Tau 都会遵守，但不会多做。读取 [t-1] 的规则在第一步没有更早的一步可读，所以这一步是开放的，引擎在所有输出上都写 0。规则允许两个答案时，引擎会选一个，而且不一定每次都选同一个。如果某个值很重要，就写下固定它的那一行。",
+  "Count and copy": "计数并复制",
+  "At the first step both outputs are 0, although the input was 1: the rule has no earlier step to read there. From the second step on o29 copies the input and o30 counts.": "第一步两个输出都是 0，尽管输入是 1：规则在这一步没有更早的一步可读。从第二步起，o29 复制输入，o30 计数。",
+  "Seven, one step late": "七，晚了一步",
+  "o30 should be 7 at every step and never looks back. It is 0 at the first step all the same: one [t-1] anywhere in the rule leaves the whole first step open.": "o30 本应在每一步都是 7，而且从不回看。可它在第一步仍然是 0：规则里任何一处 [t-1] 都会让整个第一步保持开放。",
+  "Two answers allowed": "允许两个答案",
+  "The rule only says that o30 and o31 share the input's bits. The engine gives them all to one side, and not always the same side: 240 goes to o30 at the second step and to o31 at the last. Both keep the promise.": "规则只说 o30 和 o31 分掉输入的各个位。引擎把它们全给了一边，而且不总是同一边：240 在第二步给了 o30，在最后一步给了 o31。两种都遵守了承诺。",
+  "Make the counter of the first try start at 7: add a line that fixes o30 at step 0. Run it with the inputs 1, 2, 3, 4.": "让第一个示例里的计数器从 7 开始：加一行，把第 0 步的 o30 固定下来。用输入 1、2、3、4 运行。",
 } });
