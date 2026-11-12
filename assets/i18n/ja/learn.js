@@ -301,8 +301,8 @@ TauI18n.add({ strings: {
   "is 255, all bits on. The number one is": "は 255 (全ビットが 1)。数の 1 は",
   "for every x,": "すべての x について、",
   "for some x. A spec without always or sometimes holds at every step.": "ある x について。always も sometimes もない仕様は毎ステップ成り立ちます。",
-  "Lessons 1 to 4 are the basics, lesson 5 is a real testnet rule, and 6 to 8 are for logic people: terms, quantifiers and how sat treats inputs. Then the {e1}": "レッスン 1〜4 は基礎、5 は本物のテストネットのルール、6〜8 は論理に慣れた人向けで、項、量化子、sat の入力の扱いです。そのあとは {e1}",
-  "Lessons 1 to 4 are the basics, lesson 5 is a real testnet rule, and 6 to 8 are for logic people: terms, quantifiers and how sat treats inputs. Then the": "レッスン 1〜4 は基礎、5 は本物のテストネットのルール、6〜8 は論理に慣れた人向けで、項、量化子、sat の入力の扱いです。そのあとは",
+  "Lessons 1 to 4 are the basics, 5 to 8 are real testnet rules and their traps, and 9 to 12 are for logic people: terms, quantifiers, how sat treats inputs and what a rule leaves open. Then the {e1}": "レッスン 1〜4 は基礎、5〜8 は本物のテストネットのルールとその落とし穴、9〜12 は論理に慣れた人向けで、項、量化子、sat の入力の扱い、ルールが決めずに残すものです。そのあとは {e1}",
+  "Lessons 1 to 4 are the basics, 5 to 8 are real testnet rules and their traps, and 9 to 12 are for logic people: terms, quantifiers, how sat treats inputs and what a rule leaves open. Then the": "レッスン 1〜4 は基礎、5〜8 は本物のテストネットのルールとその落とし穴、9〜12 は論理に慣れた人向けで、項、量化子、sat の入力の扱い、ルールが決めずに残すものです。そのあとは",
   "{n} lessons, then {m} for logic people": "基礎 {n} レッスンと、論理向け {m} レッスン",
   "How sat reads a spec ↗": "sat は仕様をどう読むか ↗",
   "Inputs for all, outputs exist, step by step: the exact rule in IDNI's README.": "入力は全称、出力は存在、一歩ずつ：IDNI の README にある正確な規則。",
@@ -386,4 +386,16 @@ TauI18n.add({ strings: {
   "Say a wallet rule in plain words and see the Tau rule it becomes.": "ウォレットのルールを普通の言葉で書き、どんな Tau ルールになるかを見ます。",
   "Your answer also sets your level on the other pages.": "この答えは、ほかのページでのあなたのレベルにもなります。",
   "Change it at any time under the gear, top right.": "右上の歯車からいつでも変更できます。",
+} });
+/* the lesson for logic people on what a rule leaves open: the first step of a look-back, a choice between two answers */
+TauI18n.add({ strings: {
+  "Only what the rule forces": "ルールが強制することだけ",
+  "Tau keeps every promise a rule makes, and nothing more. A rule that reads [t-1] has no earlier step to read at its first step, so that step stays open and the engine writes 0 everywhere. And where a rule allows two answers, the engine picks one, not always the same. If a value matters, write the line that fixes it.": "Tau はルールが立てた約束をすべて守りますが、それ以上のことはしません。[t-1] を読むルールは最初のステップで読むべき前のステップがないため、そのステップは未決定のままになり、エンジンはすべての出力に 0 を書きます。また、ルールが二つの答えを許すとき、エンジンはどちらかを選びますが、いつも同じとは限りません。値が重要なら、それを固定する行を書いてください。",
+  "Count and copy": "数えて写す",
+  "At the first step both outputs are 0, although the input was 1: the rule has no earlier step to read there. From the second step on o29 copies the input and o30 counts.": "最初のステップでは、入力が 1 だったのに出力はどちらも 0 です。ルールにはそこで読むべき前のステップがありません。二番目のステップからは o29 が入力を写し、o30 が数えます。",
+  "Seven, one step late": "7、ただし一歩遅れ",
+  "o30 should be 7 at every step and never looks back. It is 0 at the first step all the same: one [t-1] anywhere in the rule leaves the whole first step open.": "o30 はどのステップでも 7 のはずで、過去を振り返ることもありません。それでも最初のステップでは 0 です。ルールのどこかに [t-1] が一つあるだけで、最初のステップ全体が未決定のままになります。",
+  "Two answers allowed": "答えが二つ許される",
+  "The rule only says that o30 and o31 share the input's bits. The engine gives them all to one side, and not always the same side: 240 goes to o30 at the second step and to o31 at the last. Both keep the promise.": "このルールが言っているのは、o30 と o31 が入力のビットを分け合うということだけです。エンジンはすべてを片方に渡しますが、いつも同じ側とは限りません。240 は二番目のステップでは o30 に、最後のステップでは o31 に渡されます。どちらも約束を守っています。",
+  "Make the counter of the first try start at 7: add a line that fixes o30 at step 0. Run it with the inputs 1, 2, 3, 4.": "最初の例のカウンターを 7 から始めてください。ステップ 0 の o30 を固定する行を足します。入力 1、2、3、4 で実行してください。",
 } });
