@@ -1,0 +1,584 @@
+{
+  "checked": "2026-11-12",
+  "basis": {
+    "en": "Read at IDNI/tau-testnet commit 6c32ee8 (10 Nov 2026) and its pinned engine IDNI/tau-lang c3ea334 (14 Oct 2026). Issues and pull requests as of 12 Nov 2026.",
+    "zh": "读取自 IDNI/tau-testnet 的提交 6c32ee8（2026 年 11 月 10 日）及其固定的引擎 IDNI/tau-lang c3ea334（2026 年 10 月 14 日）。问题和拉取请求的状态截至 2026 年 11 月 12 日。",
+    "ja": "IDNI/tau-testnet のコミット 6c32ee8（2026 年 11 月 10 日）と、それが固定しているエンジン IDNI/tau-lang c3ea334（2026 年 10 月 14 日）から読み取りました。イシューとプルリクエストは 2026 年 11 月 12 日時点のものです。"
+  },
+  "topics": [
+    {
+      "id": "supplier",
+      "en": "The supplier",
+      "zh": "供应商",
+      "ja": "サプライヤー"
+    },
+    {
+      "id": "release",
+      "en": "Versions and maturity",
+      "zh": "版本与成熟度",
+      "ja": "バージョンと成熟度"
+    },
+    {
+      "id": "rules",
+      "en": "The rule engine",
+      "zh": "规则引擎",
+      "ja": "ルールエンジン"
+    },
+    {
+      "id": "network",
+      "en": "The network",
+      "zh": "网络",
+      "ja": "ネットワーク"
+    },
+    {
+      "id": "records",
+      "en": "Records and signatures",
+      "zh": "记录与签名",
+      "ja": "記録と署名"
+    },
+    {
+      "id": "ops",
+      "en": "Security and support",
+      "zh": "安全与支持",
+      "ja": "セキュリティとサポート"
+    }
+  ],
+  "items": [
+    {
+      "id": "qms",
+      "topic": "supplier",
+      "r": "enm",
+      "kit": "A1",
+      "ref": "Annex 11 §4.5",
+      "q": {
+        "en": "Quality practices an auditor can assess",
+        "zh": "审计员可以评估的质量管理做法",
+        "ja": "監査人が評価できる品質の取り組み"
+      },
+      "a": {
+        "en": "Nothing is published for Tau Net or the Tau Language: no quality system, no certificate, no written development procedure. Development itself is public, with pull requests and automated tests. Whether written practices exist is not known. IDNI was not asked.",
+        "zh": "Tau Net 和 Tau 语言都没有公开这类材料：没有质量体系，没有认证，也没有书面的开发规程。开发过程本身是公开的，有拉取请求和自动化测试。是否存在书面的质量做法尚不清楚。我们没有询问 IDNI。",
+        "ja": "Tau Net についても Tau 言語についても、公開されたものはありません。品質システムも、認証も、文書化された開発手順もありません。開発そのものは公開されており、プルリクエストと自動テストがあります。文書化された取り組みがあるかどうかは分かりません。IDNI には問い合わせていません。"
+      },
+      "src": [
+        [
+          "tau-testnet at 6c32ee8",
+          "https://github.com/IDNI/tau-testnet/tree/6c32ee8a182c25c122cf1ab99be86ab64888640c"
+        ],
+        [
+          "tau-lang at c3ea334",
+          "https://github.com/IDNI/tau-lang/tree/c3ea334cd1e6612930ea9f404933211858f0009f"
+        ]
+      ]
+    },
+    {
+      "id": "agreement",
+      "topic": "supplier",
+      "r": "gap",
+      "kit": "A3",
+      "ref": "Annex 11 §3.1",
+      "q": {
+        "en": "A supplier or service agreement you can sign",
+        "zh": "可以签署的供应商协议或服务协议",
+        "ja": "署名できるサプライヤー契約またはサービス契約"
+      },
+      "a": {
+        "en": "None is offered for the testnet. The licence provides the software as is, caps liability at 0.00 USD, and IDNI can change its terms at its sole discretion. There are no service terms for running the network.",
+        "zh": "测试网没有提供这类协议。许可证按“现状”提供软件，把责任上限定为 0.00 美元，IDNI 可以自行决定修改条款。网络的运行没有任何服务条款。",
+        "ja": "テストネットには用意されていません。ライセンスはソフトウェアを「現状のまま」提供し、責任の上限を 0.00 米ドルとし、IDNI は自らの裁量で条件を変更できます。ネットワークの運営についてのサービス条件はありません。"
+      },
+      "src": [
+        [
+          "LICENSE.md, terms can change",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/LICENSE.md#L4"
+        ],
+        [
+          "LICENSE.md, warranty and liability",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/LICENSE.md#L17-L19"
+        ],
+        [
+          "README, status",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L12-L14"
+        ]
+      ]
+    },
+    {
+      "id": "source",
+      "topic": "supplier",
+      "r": "cond",
+      "kit": "B7",
+      "ref": "Annex 11 §3.1, §17",
+      "q": {
+        "en": "Source code you can read and keep",
+        "zh": "可以阅读并长期保存的源代码",
+        "ja": "読むことができ、保管できるソースコード"
+      },
+      "a": {
+        "en": "The source of both repositories is public. The Tau Net licence allows copying, modifying and distributing, also for commercial purposes. The Tau Language licence is narrower: free commercial use only in connection with Tau Net, and no redistribution. Condition: a legal check for your use and for as long as you must keep the records.",
+        "zh": "两个仓库的源代码都是公开的。Tau Net 的许可证允许复制、修改和分发，包括用于商业目的。Tau 语言的许可证更窄：只有与 Tau Net 相关的商业使用才免费，并且不允许再分发。条件：针对你的用途以及记录必须保存的整个期限做一次法律核查。",
+        "ja": "両方のリポジトリのソースは公開されています。Tau Net のライセンスは、商用目的を含め、複製・改変・配布を認めています。Tau 言語のライセンスはより狭く、無償の商用利用は Tau Net に関連する場合に限られ、再配布は認められていません。条件：自社の用途と、記録を保管しなければならない期間について、法務の確認を行うこと。"
+      },
+      "src": [
+        [
+          "tau-testnet LICENSE.md",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/LICENSE.md#L3"
+        ],
+        [
+          "tau-lang LICENSE.md",
+          "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/LICENSE.md#L3-L16"
+        ]
+      ]
+    },
+    {
+      "id": "versions",
+      "topic": "release",
+      "r": "enm",
+      "kit": "B1",
+      "ref": "Annex 11 §4.5, §10",
+      "live": "release",
+      "q": {
+        "en": "Controlled versions with release notes",
+        "zh": "有发布说明的受控版本",
+        "ja": "リリースノートのある管理されたバージョン"
+      },
+      "a": {
+        "en": "A build can be pinned by commit, and the node's build file pins its engine that way. Tau Net has no release tags. The Tau Language has one packaged release, v0.7-alpha from November 2024, and nightly tags. No version policy and no release notes are published for Tau Net.",
+        "zh": "构建可以按提交（commit）固定，节点的构建文件就是这样固定引擎版本的。Tau Net 没有版本标签。Tau 语言有一个打包发布的版本，即 2024 年 11 月的 v0.7-alpha，另有 nightly 标签。Tau Net 没有公开版本策略，也没有发布说明。",
+        "ja": "ビルドはコミットで固定でき、ノードのビルドファイルもエンジンをその方法で固定しています。Tau Net にはリリースタグがありません。Tau 言語にはパッケージ版のリリースが一つ（2024 年 11 月の v0.7-alpha）あり、ほかに nightly タグがあります。Tau Net について、バージョン方針もリリースノートも公開されていません。"
+      },
+      "src": [
+        [
+          "Dockerfile.standalone, engine pin",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/Dockerfile.standalone#L7"
+        ],
+        [
+          "tau-testnet tags",
+          "https://github.com/IDNI/tau-testnet/tags"
+        ],
+        [
+          "tau-lang tags",
+          "https://github.com/IDNI/tau-lang/tags"
+        ]
+      ]
+    },
+    {
+      "id": "maturity",
+      "topic": "release",
+      "r": "gap",
+      "kit": "B8",
+      "ref": "Annex 11, Principle",
+      "q": {
+        "en": "A product meant for production use",
+        "zh": "面向生产使用的产品",
+        "ja": "本番利用を想定した製品"
+      },
+      "a": {
+        "en": "IDNI says it is not: alpha, for testing and experimentation, not to be used with real funds. The engine's README also calls its releases alpha.",
+        "zh": "IDNI 自己说明不是：这是 alpha 阶段，用于测试和试验，不要用于真实资金。引擎的 README 也说它的发布版本处于 alpha 状态。",
+        "ja": "IDNI 自身が、そうではないと述べています。アルファ版であり、テストと実験のためのもので、実際の資金では使わないこと、としています。エンジンの README も、そのリリースはアルファ状態だと述べています。"
+      },
+      "src": [
+        [
+          "tau-testnet README, status",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L12-L14"
+        ],
+        [
+          "tau-lang README, alpha",
+          "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L82-L83"
+        ]
+      ]
+    },
+    {
+      "id": "proof",
+      "topic": "rules",
+      "r": "cond",
+      "kit": "C2-C4",
+      "ref": "Part 11 §11.10(a); Annex 11 §4.7",
+      "q": {
+        "en": "Rules checked by logic before they apply",
+        "zh": "规则在生效前经过逻辑检查",
+        "ja": "ルールが適用前に論理で検査される"
+      },
+      "a": {
+        "en": "This is what sets Tau apart: a rule is a formula, and the engine checks whether a specification can be satisfied. Such a result covers the written formula. It does not show that the formula says what the process needs. The engine's documentation names limits: some searches are bounded, and a verdict it cannot reach is reported as UNKNOWN. Condition: for your rule, an UNKNOWN or an error must never count as a pass.",
+        "zh": "这正是 Tau 的独特之处：规则是一条公式，引擎会检查一份规范能否被满足。这样的结果只针对写下来的公式，并不能说明公式表达的就是流程真正需要的内容。引擎的文档列出了限制：有些搜索是有界的；得不出结论时会报告为 UNKNOWN。条件：对你的规则而言，UNKNOWN 或报错绝不能算作通过。",
+        "ja": "これが Tau の特長です。ルールは論理式であり、エンジンは仕様が充足可能かどうかを検査します。その結果が対象とするのは、書かれた式です。その式が工程に必要なことを表しているかどうかは示しません。エンジンの文書には限界が挙げられています。一部の探索には上限があり、結論に達しない場合は UNKNOWN として報告されます。条件：自社のルールについて、UNKNOWN やエラーを決して合格として扱わないこと。"
+      },
+      "src": [
+        [
+          "tau-lang README, introduction",
+          "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L58-L63"
+        ],
+        [
+          "tau-lang README, UNKNOWN",
+          "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L1364-L1367"
+        ],
+        [
+          "tau-lang README, bounded searches",
+          "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L4202-L4210"
+        ]
+      ]
+    },
+    {
+      "id": "enginereview",
+      "topic": "rules",
+      "r": "enm",
+      "kit": "C10",
+      "ref": "Annex 11 §4.5",
+      "q": {
+        "en": "Independent evidence that the engine is correct",
+        "zh": "引擎正确性的独立证据",
+        "ja": "エンジンの正しさを裏づける独立した証拠"
+      },
+      "a": {
+        "en": "The theory behind the language is published by its author: a paper on arXiv and a book draft. No independent review of the engine's implementation was found.",
+        "zh": "这门语言背后的理论由其作者发表：一篇 arXiv 论文和一部书稿。没有找到对引擎实现的独立评审。",
+        "ja": "この言語の背後にある理論は、作者自身が公表しています。arXiv の論文と書籍の草稿です。エンジンの実装に対する独立したレビューは見つかりませんでした。"
+      },
+      "src": [
+        [
+          "tau-lang README, theory",
+          "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L4180-L4184"
+        ]
+      ]
+    },
+    {
+      "id": "templates",
+      "topic": "rules",
+      "r": "enm",
+      "kit": "C8",
+      "ref": "Annex 11 §10",
+      "live": "i106",
+      "q": {
+        "en": "A deployed rule behaves as written",
+        "zh": "部署后的规则按写法生效",
+        "ja": "展開したルールが書いたとおりに動く"
+      },
+      "a": {
+        "en": "The deployed rule text is signed, so it can be compared with the approved text. How the node combines rules also matters. Report #106, filed by Tau HUD and not confirmed by IDNI: two wallet rule templates block every transfer of their author once they are combined the way the node combines them. This was reproduced offline with the engine, not through a node.",
+        "zh": "部署的规则文本带有签名，因此可以与批准的文本逐字比对。节点如何组合规则同样重要。报告 #106 由 Tau HUD 提交，尚未得到 IDNI 确认：两个钱包规则模板按节点的方式组合之后，会阻止其作者自己的每一笔转账。这是用引擎离线复现的，没有经过节点。",
+        "ja": "展開されたルールの文面は署名されているため、承認された文面と照合できます。ノードがルールをどう組み合わせるかも重要です。報告 #106（Tau HUD が提出、IDNI は未確認）：ウォレットのルールテンプレート 2 つは、ノードと同じ方法で組み合わせると、作成者自身の送金をすべて止めます。これはエンジンを使ってオフラインで再現したもので、ノードを通してはいません。"
+      },
+      "src": [
+        [
+          "tx_signing.py, rule text is signed",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/consensus/tx_signing.py#L152-L168"
+        ],
+        [
+          "IDNI/tau-testnet #106",
+          "https://github.com/IDNI/tau-testnet/issues/106"
+        ]
+      ]
+    },
+    {
+      "id": "operators",
+      "topic": "network",
+      "r": "gap",
+      "kit": "D1, D2",
+      "ref": "Annex 11 §3.1, §10",
+      "q": {
+        "en": "Who runs the network and can change its rules",
+        "zh": "谁在运行网络，谁能修改它的规则",
+        "ja": "誰がネットワークを運営し、そのルールを変えられるか"
+      },
+      "a": {
+        "en": "It is a public network. Validators that the company does not control decide which entries are valid, and they change the network's rules by vote. The genesis file lists one active validator key. The operators are not named in the sources, and the current validator set was not read.",
+        "zh": "这是一个公共网络。由企业无法控制的验证者决定哪些条目有效，他们还通过投票修改网络的规则。创世文件中列出一个活跃的验证者密钥。来源中没有写明运营方是谁，我们也没有读取当前的验证者集合。",
+        "ja": "パブリックなネットワークです。どのエントリーが有効かは、会社が管理していないバリデーターが決め、ネットワークのルールも投票で変更します。ジェネシスファイルには、アクティブなバリデーターの鍵が一つ記載されています。運営者の名前は情報源に示されておらず、現在のバリデーター構成は確認していません。"
+      },
+      "src": [
+        [
+          "genesis.json, active validators",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/networks/tau-testnet-v2/genesis.json#L37-L39"
+        ],
+        [
+          "README, quorum and activation",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L502-L503"
+        ]
+      ]
+    },
+    {
+      "id": "finality",
+      "topic": "network",
+      "r": "gap",
+      "kit": "D3",
+      "ref": "Part 11 §11.10(c); Annex 11 §7.1",
+      "q": {
+        "en": "A written entry that stays written",
+        "zh": "写入的条目不会被替换",
+        "ja": "書き込んだエントリーが書き換わらない"
+      },
+      "a": {
+        "en": "No finality and no checkpoints. A reorganisation can replace entries, back to the common ancestor. Only a switch longer than 2000 blocks is refused.",
+        "zh": "没有最终性，也没有检查点。链重组可以替换条目，一直回溯到共同祖先。只有超过 2000 个区块的切换才会被拒绝。",
+        "ja": "ファイナリティもチェックポイントもありません。再編成（reorg）によって、共通の祖先までさかのぼってエントリーが置き換わることがあります。拒否されるのは、2000 ブロックを超える切り替えだけです。"
+      },
+      "src": [
+        [
+          "README, fork choice and finality",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L764"
+        ]
+      ]
+    },
+    {
+      "id": "reset",
+      "topic": "network",
+      "r": "gap",
+      "kit": "D4",
+      "ref": "Annex 11 §10, §16, §17",
+      "live": "pr93",
+      "q": {
+        "en": "No halt or reset of the network",
+        "zh": "网络不会停止或重置",
+        "ja": "ネットワークが停止もリセットもされない"
+      },
+      "a": {
+        "en": "IDNI states that a faulty rule change can halt the chain until it is corrected. Its README describes an upgrade that needs a new genesis. Pull request #93, an open proposal and not a decision, says that deploying it would reset this testnet.",
+        "zh": "IDNI 说明，有缺陷的规则变更可能让链停止，直到被纠正。它的 README 描述了一次需要新创世区块的升级。拉取请求 #93 是一个尚未关闭的提案，并不是决定；它写明，部署它将重置这个测试网。",
+        "ja": "IDNI は、欠陥のあるルール変更が、修正されるまでチェーンを停止させ得ると述べています。README には、新しいジェネシスを必要とするアップグレードが記載されています。プルリクエスト #93 は未決の提案であって決定ではありませんが、これを展開するとこのテストネットがリセットされると書かれています。"
+      },
+      "src": [
+        [
+          "README, status",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L12-L14"
+        ],
+        [
+          "README, upgrade",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L606"
+        ],
+        [
+          "IDNI/tau-testnet #93",
+          "https://github.com/IDNI/tau-testnet/pull/93"
+        ]
+      ]
+    },
+    {
+      "id": "capacity",
+      "topic": "network",
+      "r": "enm",
+      "kit": "D5",
+      "ref": "Annex 11 §4.4, §16",
+      "live": "i108",
+      "q": {
+        "en": "No limit that refuses valid entries",
+        "zh": "没有会拒绝有效条目的容量上限",
+        "ja": "有効なエントリーを拒否する上限がない"
+      },
+      "a": {
+        "en": "Report #108, filed by Tau HUD and not confirmed by IDNI: one read node refused every transaction involving an address it had not seen, once its own address table held 254 entries. Transfers between known addresses still passed. Whether validators or other configurations are affected is not established.",
+        "zh": "报告 #108 由 Tau HUD 提交，尚未得到 IDNI 确认：一个只读节点在自己的地址表达到 254 条之后，拒绝了每一笔涉及它没见过的地址的交易。已知地址之间的转账仍然通过。验证者或其他配置是否受影响，尚未查明。",
+        "ja": "報告 #108（Tau HUD が提出、IDNI は未確認）：ある読み取り専用ノードは、自身のアドレス表が 254 件に達した後、まだ見たことのないアドレスを含むトランザクションをすべて拒否しました。既知のアドレス同士の送金は通りました。バリデーターやほかの構成に影響があるかどうかは確かめられていません。"
+      },
+      "src": [
+        [
+          "IDNI/tau-testnet #108",
+          "https://github.com/IDNI/tau-testnet/issues/108"
+        ]
+      ]
+    },
+    {
+      "id": "why",
+      "topic": "records",
+      "r": "gap",
+      "kit": "E1, F2",
+      "ref": "Part 11 §11.10(e); Annex 11 §9",
+      "q": {
+        "en": "Who, what, when and why in each entry",
+        "zh": "每个条目中的谁、做了什么、何时、为何",
+        "ja": "各エントリーの「誰が・何を・いつ・なぜ」"
+      },
+      "a": {
+        "en": "Who: a public key, not a person. What: a transfer, plus a few coded values that feed the sender's rules. When: the block time. Why: there is no field for a reason and no free text, so a reason needs a coded value or a linked record elsewhere.",
+        "zh": "谁：一把公钥，而不是一个人。做了什么：一笔转账，外加少量供发送方规则使用的编码值。何时：区块时间。为何：没有填写原因的字段，也没有自由文本，所以原因只能用编码值表示，或记在别处并与之关联。",
+        "ja": "誰が：公開鍵であり、人ではありません。何を：送金と、送信者のルールに渡される少数の符号化された値。いつ：ブロックの時刻。なぜ：理由を書く欄も自由記述もないため、理由は符号化した値で表すか、別の場所の記録と結び付ける必要があります。"
+      },
+      "src": [
+        [
+          "tx_signing.py, signed fields",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/consensus/tx_signing.py#L127-L151"
+        ],
+        [
+          "admission.py, custom values",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/consensus/admission.py#L359-L363"
+        ]
+      ]
+    },
+    {
+      "id": "tamper",
+      "topic": "records",
+      "r": "cond",
+      "kit": "E4, G8",
+      "ref": "Part 11 §11.10(a); Annex 11 §5",
+      "q": {
+        "en": "Altered entries can be detected",
+        "zh": "被篡改的条目能被发现",
+        "ja": "改ざんされたエントリーを検出できる"
+      },
+      "a": {
+        "en": "Transactions are signed with BLS12-381 keys and blocks are hash-linked, so a verifying node notices altered history. Conditions: the cryptography is not audited, and a signature is not bound to one network. IDNI states that a signed transaction is also valid on any other network where the same key is funded.",
+        "zh": "交易用 BLS12-381 密钥签名，区块以哈希相连，所以执行验证的节点能发现被改动的历史。条件：密码学未经审计，而且签名没有绑定到某一个网络。IDNI 说明，一笔已签名的交易在同一密钥有余额的任何其他网络上同样有效。",
+        "ja": "トランザクションは BLS12-381 の鍵で署名され、ブロックはハッシュでつながっているため、検証を行うノードは履歴の改変に気づきます。条件：暗号は監査されておらず、署名は一つのネットワークに結び付けられていません。IDNI は、署名済みのトランザクションは、同じ鍵に残高があるほかのどのネットワークでも有効だと述べています。"
+      },
+      "src": [
+        [
+          "README, signatures",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L464-L466"
+        ],
+        [
+          "README, no network binding",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L471"
+        ]
+      ]
+    },
+    {
+      "id": "export",
+      "topic": "records",
+      "r": "enm",
+      "kit": "E5",
+      "ref": "Part 11 §11.10(b); Annex 11 §8",
+      "q": {
+        "en": "Complete, readable copies of a record",
+        "zh": "完整、可读的记录副本",
+        "ja": "完全で読める形の記録の写し"
+      },
+      "a": {
+        "en": "Chain data can be read through the node's interfaces. No export of complete records with their signature information in readable form is documented, and no procedure to verify a copy.",
+        "zh": "链上数据可以通过节点的接口读取。文档中没有说明如何以可读形式导出带有签名信息的完整记录，也没有核对副本的规程。",
+        "ja": "チェーンのデータはノードのインターフェースから読み出せます。署名情報を含む完全な記録を読める形で出力する方法は文書化されておらず、写しを検証する手順もありません。"
+      },
+      "src": [
+        [
+          "README, RPC and WebSocket",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L774"
+        ]
+      ]
+    },
+    {
+      "id": "time",
+      "topic": "records",
+      "r": "gap",
+      "kit": "F6",
+      "ref": "Part 11 §11.10(e)",
+      "q": {
+        "en": "A trusted time stamp",
+        "zh": "可信的时间戳",
+        "ja": "信頼できるタイムスタンプ"
+      },
+      "a": {
+        "en": "The block's proposer chooses its time stamp, between the parent's time and its own clock plus 120 seconds. In this use the block time would be the time of the decision.",
+        "zh": "区块时间戳由出块者选择，范围在父区块的时间与其本地时钟加 120 秒之间。在这种用途下，区块时间就会成为决定的时间。",
+        "ja": "ブロックのタイムスタンプは提案者が選び、親ブロックの時刻から自身の時計に 120 秒を加えた時刻までの範囲に収まります。この用途では、ブロックの時刻が判定の時刻になります。"
+      },
+      "src": [
+        [
+          "README, block time stamp",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L602"
+        ]
+      ]
+    },
+    {
+      "id": "person",
+      "topic": "records",
+      "r": "gap",
+      "kit": "G7",
+      "ref": "Part 11 §11.50; Annex 11 §14",
+      "q": {
+        "en": "A signature that shows a named person and its meaning",
+        "zh": "签名能显示具名的人及其含义",
+        "ja": "署名が、名前のある本人とその意味を示す"
+      },
+      "a": {
+        "en": "A signed entry carries a public key. It has no printed name and no meaning such as approved or released. Both would need a layer outside the ledger, with a register that links keys to people.",
+        "zh": "已签名的条目带有一把公钥。它没有签名人的姓名，也没有“批准”或“放行”这样的含义。这两项都需要在账本之外加一层来实现，并用一份登记表把密钥与人对应起来。",
+        "ja": "署名済みのエントリーには公開鍵が含まれます。署名者の氏名も、「承認」や「出荷判定」といった意味も含まれません。どちらも台帳の外側の層で補い、鍵と人を対応づける登録簿を持つ必要があります。"
+      },
+      "src": [
+        [
+          "tx_signing.py, signed fields",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/consensus/tx_signing.py#L127-L151"
+        ]
+      ]
+    },
+    {
+      "id": "audit",
+      "topic": "ops",
+      "r": "gap",
+      "kit": "H5",
+      "ref": "Annex 11 §12",
+      "q": {
+        "en": "Independent review of cryptography and consensus",
+        "zh": "对密码学和共识的独立评审",
+        "ja": "暗号と合意形成の独立したレビュー"
+      },
+      "a": {
+        "en": "Not done. IDNI states that the cryptography and the consensus are not audited.",
+        "zh": "尚未进行。IDNI 说明密码学和共识都未经审计。",
+        "ja": "行われていません。IDNI は、暗号と合意形成は監査されていないと述べています。"
+      },
+      "src": [
+        [
+          "README, status",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L12-L14"
+        ],
+        [
+          "README, known alpha risks",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L776"
+        ]
+      ]
+    },
+    {
+      "id": "access",
+      "topic": "ops",
+      "r": "gap",
+      "kit": "H1",
+      "ref": "Part 11 §11.10(d), (g); Annex 11 §12.1",
+      "q": {
+        "en": "Access to the node is controlled",
+        "zh": "节点访问受控",
+        "ja": "ノードへのアクセスが管理されている"
+      },
+      "a": {
+        "en": "The node's RPC and WebSocket interfaces have no authentication per call. IDNI advises keeping them on localhost, or putting TLS and an origin allowlist in front if they must be exposed. That limits who can reach the node. It does not check what a user is allowed to do.",
+        "zh": "节点的 RPC 和 WebSocket 接口没有逐次调用的身份验证。IDNI 建议只绑定在本机；如果必须对外开放，就在前面加上 TLS 和来源白名单。这只限制了谁能连到节点，并不检查某个用户被允许做什么。",
+        "ja": "ノードの RPC と WebSocket のインターフェースには、呼び出しごとの認証がありません。IDNI は、localhost に限定するか、公開が必要な場合は TLS とオリジンの許可リストを前段に置くよう勧めています。これはノードに到達できる相手を絞るものであり、利用者に何が許されているかを確認するものではありません。"
+      },
+      "src": [
+        [
+          "README, bind to localhost",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L37"
+        ],
+        [
+          "README, no per-call authentication",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L774"
+        ]
+      ]
+    },
+    {
+      "id": "support",
+      "topic": "ops",
+      "r": "gap",
+      "kit": "I1, H3",
+      "ref": "Annex 11 §3.1",
+      "q": {
+        "en": "Support terms and a security contact",
+        "zh": "支持条款和安全联系渠道",
+        "ja": "サポート条件とセキュリティの連絡先"
+      },
+      "a": {
+        "en": "No support terms: the licence provides the software as is, without warranty. No security policy or advisory process was found in the repositories. A public issue tracker exists.",
+        "zh": "没有支持条款：许可证按“现状”提供软件，不作任何保证。在仓库中没有找到安全策略或安全通告流程。有一个公开的问题跟踪系统。",
+        "ja": "サポート条件はありません。ライセンスはソフトウェアを「現状のまま」、無保証で提供しています。リポジトリには、セキュリティポリシーも脆弱性の告知手順も見つかりませんでした。公開のイシュートラッカーはあります。"
+      },
+      "src": [
+        [
+          "LICENSE.md, warranty",
+          "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/LICENSE.md#L17"
+        ],
+        [
+          "IDNI/tau-testnet issues",
+          "https://github.com/IDNI/tau-testnet/issues"
+        ]
+      ]
+    }
+  ]
+}
