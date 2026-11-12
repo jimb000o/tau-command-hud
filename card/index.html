@@ -81,6 +81,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .look { display: flex; gap: 8px; }
 .look input { flex: 1; min-width: 0; background: rgba(0,0,0,.4); color: var(--text); border: 1px solid var(--hair); border-radius: 6px; padding: 0 10px; min-height: 36px; font: 12px var(--mono); }
 .look input.bad { border-color: #e5484d; }
+.lookerr { color: #ff8589; font-size: 12px; margin: 6px 0 0; }
+.simnote { border: 1px solid rgba(255,177,59,.45); border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 12px; margin: 0 0 10px; }
+.simnote b { color: var(--amber); font-weight: 600; }
 .none { color: var(--text); }
 .none b { color: #fff; font-family: var(--display); font-weight: 600; }
 /* Agorzilla, the puppet from agorzilla.com (card/agz.js): feet stay put, the trunk and the face are soft meshes, the head turns on the trunk.
@@ -204,6 +207,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
       </figure>
     </div>
     <div class="side">
+      <p class="simnote" id="simNote" hidden><b>You are in the simulation.</b> A card is read from the live testnet only: what you do on the practice chain never shows up here.</p>
       <section class="panel" id="pShare" aria-labelledby="hShare">
         <h2 id="hShare">Pass it on</h2>
         <div class="btns">
@@ -227,6 +231,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
       <section class="panel" aria-labelledby="hLook">
         <h2 id="hLook">Someone else's card</h2>
         <form class="look" id="look"><input id="lookIn" placeholder="Address (96 hex characters)" spellcheck="false" autocomplete="off" aria-label="Address"><button class="b" type="submit">Show</button></form>
+        <p class="lookerr" id="lookErr" role="alert" hidden></p>
       </section>
     </div>
   </main>
@@ -460,8 +465,11 @@ if (navigator.share) {
     navigator.share(data).catch(() => {});
   };
 }
-$("look").onsubmit = e => { e.preventDefault(); const v = $("lookIn").value.trim().toLowerCase(); if (!isAddr(v)) { $("lookIn").classList.add("bad"); return; } location.href = "/card/?a=" + v + (window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : ""); };
-$("lookIn").addEventListener("input", () => $("lookIn").classList.remove("bad"));
+$("look").onsubmit = e => { e.preventDefault(); const v = $("lookIn").value.trim().toLowerCase().replace(/^0x/, "");
+  if (!isAddr(v)) { $("lookIn").classList.add("bad"); $("lookErr").hidden = false; $("lookErr").textContent = v ? F("That is not an address: it has {n} characters, an address has 96 (0 to 9 and a to f).", { n: v.length }) : T("Paste an address first: 96 characters, 0 to 9 and a to f."); return; }
+  location.href = "/card/?a=" + v + (window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : ""); };
+$("lookIn").addEventListener("input", () => { $("lookIn").classList.remove("bad"); $("lookErr").hidden = true; });
+if (window.TauSim && TauSim.on) $("simNote").hidden = false;
 /* the webfonts first, so the canvas draws in Sora and JetBrains Mono */
 (document.fonts ? Promise.race([Promise.all([document.fonts.load(`700 46px Sora`), document.fonts.load(`400 16px "JetBrains Mono"`)]), new Promise(r => setTimeout(r, 2500))]) : Promise.resolve()).then(load, load);
 </script>

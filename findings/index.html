@@ -164,6 +164,10 @@ html.fit .cards > li > button { display: flex; flex-direction: column; height: 1
 html.fit .cards > li > button .m { margin-top: auto; padding-top: 4px; }
 /* more findings than fit with their one-line brief: title and status only, the brief moves to the hover and the detail view */
 html.fit .cards.tight .brief { display: none; }
+/* still more than the panel holds (a small laptop, long titles): cards keep their own height and the list scrolls inside its panel, so no line runs over the next card */
+html.fit .p-issues .scroll.flow { display: block; overflow: auto; }
+html.fit .cards.flow { grid-auto-rows: auto; align-content: start; }
+html.fit .cards.flow > li > button { height: auto; }
 html.fit .report .btns:first-of-type { grid-template-columns: 1fr 1fr; }
 html.fit .report h3 { margin-top: 6px; }
 html.fit .report ol { gap: 1px; }
@@ -454,10 +458,12 @@ function render() {
 }
 function fitCards() {
   const c = $("cards");
-  c.classList.remove("tight");
+  const over = () => [...c.children].some(li => li.firstElementChild.scrollHeight > li.clientHeight + 1);
+  c.classList.remove("tight", "flow"); c.parentElement.classList.remove("flow");
   c.querySelectorAll("button[data-ix]").forEach(b => { b.title = FINDINGS[+b.dataset.ix].brief; });
   if (!document.documentElement.classList.contains("fit")) return;
-  if ([...c.children].some(li => li.firstElementChild.scrollHeight > li.clientHeight + 1)) c.classList.add("tight");
+  if (over()) c.classList.add("tight");
+  if (over()) { c.classList.add("flow"); c.parentElement.classList.add("flow"); }
 }
 addEventListener("resize", () => requestAnimationFrame(fitCards));
 $("cards").addEventListener("click", e => {

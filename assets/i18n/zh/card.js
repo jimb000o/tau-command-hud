@@ -90,4 +90,8 @@ TauI18n.add({ strings: {
   "Tau HUD and this card are free, built in spare time.": "Tau HUD 和这张卡片都免费，用业余时间搭建。",
   "Donations are voluntary ›": "捐赠出于自愿 ›",
   "Favourite on White Rabbit Key": "White Rabbit Key 最爱",
+  "You are in the simulation.": "你正处于模拟模式。",
+  "A card is read from the live testnet only: what you do on the practice chain never shows up here.": "卡片只从真实测试网读取：你在练习链上做的事不会出现在这里。",
+  "That is not an address: it has {n} characters, an address has 96 (0 to 9 and a to f).": "这不是一个地址：它有 {n} 个字符，而地址有 96 个（0 到 9 和 a 到 f）。",
+  "Paste an address first: 96 characters, 0 to 9 and a to f.": "请先粘贴一个地址：96 个字符，0 到 9 和 a 到 f。",
 } });
