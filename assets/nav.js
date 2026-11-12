@@ -59,7 +59,7 @@
     deja:       { t: "Déjà, the café cat", d: "Agorzilla's café cat: she eats when three wallets each send her 1 test AGRS in a day, and runs across at every rule change", i: `<img src="${ROOT}assets/deja.webp" alt="">`, h: "https://agorzilla.com/cat/", ext: true, live: true },
     rules:      { t: "Rules wall", d: "The rules people gave their own accounts; take one for yours to agree", i: "▤", h: "rules/" },
     builder:    { t: "Rule builder", d: "Say what your wallet may do in plain words; see what the rule really does, checked by the real Tau engine, before you sign", i: "✐", h: "builder/" },
-    wallet:     { t: "Wallet", d: "A testnet account with its own rules: send, take back, co-sign, vote, form a Pakt", i: "◈", h: "wallet/" },
+    wallet:     { t: "Wallet", d: "A testnet account with its own rules: send, take back, co-sign, vote, form a Pakt; and your wallet on one picture, ready to post", i: "◈", h: "wallet/" },
     vote:       { t: "Vote for real", d: "Vote on the real testnet yourself: node, key, ready commands, practised first", i: "✔", h: "vote/" },
     card:       { t: "My Tau card", d: "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post", i: "▣", h: "card/" },
     rabbit:     { t: "White Rabbit Key", d: "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet", i: `<img src="${ROOT}assets/rabbit-key.webp" alt="">`, h: "rabbit/", live: true, play: "rabbit" },
@@ -85,6 +85,7 @@
     health:    ["Testnet health", [["stats"], ["load"], ["status"]]],
     road:      ["Road to mainnet", [["roadmap", "Roadmap"], ["findings"], ["devpulse"]]],
     read:      ["Read", [["gazette"], ["blog"], ["chronicle"]]],
+    wallet:    ["Wallet", [["wallet"], ["card"]]],
     wrules:    ["Wallet rules", [["builder", "In words"], ["playground", "In Tau"], ["rules", "From others"], ["challenge", "This week"]]],
     practise:  ["Practise voting", [["missions"], ["seat"], ["whatif"]]],
   };
@@ -97,8 +98,8 @@
     /* 6 Nov: fewer doors. Testnet health (Stats, Load, Status) is one group with tabs across the three pages; the guided tour,
        Tau in 60 seconds and the tour of this page live on Start here, the one way in; anchors (chain state, validator seat)
        and Déjà stay reachable from their pages and from search */
-    /* 12 Nov: one entry per question, tabs inside (TABS). My Tau card is reached from the wallet, Tau facts sits with the
-       other things to reuse under About */
+    /* 12 Nov: one entry per question, tabs inside (TABS). My Tau card is a tab of the Wallet (most of its visitors came
+       by the menu, so it keeps a place there), Tau facts sits with the other things to reuse under About */
     { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "services"]], ["The testnet", ["health", "road", "nodes"]]], tab: "≋" },
     { k: "learn", t: "Learn", groups: [["First steps", ["start", "taulang"]], ["Read and watch", ["read", "tau"]]], tab: "▸" },
     { k: "play", t: "Playground", groups: [["Your wallet", ["wallet", "wrules", "guardian"]], ["Practise · simulated", ["practise"]], ["Games on the live testnet", ["rabbit", "nomemo", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
