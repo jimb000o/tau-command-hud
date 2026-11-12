@@ -193,6 +193,7 @@ textarea:focus, input:focus, select:focus { outline: 1px solid var(--ok); border
 .pnext .row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
 .pnext a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .verdict.bad { border-left-color: var(--refused); background: rgba(229,72,77,.09); }
+.verdict.warn { border-left-color: var(--behind); background: rgba(255,177,59,.07); }
 .verdict.idle { border-left-color: var(--hair); background: rgba(255,255,255,.03); color: var(--dim); }
 pre.code { margin: 6px 0 0; padding: 8px 10px; background: #0c0c0d; border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 var(--mono); color: var(--text); }
 details summary { cursor: pointer; color: #fff; font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; margin-top: 10px; }
@@ -671,6 +672,16 @@ function slotWidths(text) {
   }
   return null;
 }
+/* co-signer conditions: one approval-slot comparison each. Measured on the engine the testnet pins (tau-lang c3ea334,
+   November 2026): with two accounts' rules of 10 such conditions each, the engine ran out of stack while a block was
+   built; 9 each worked. The node keeps running and the payment waits, so this is a warning, not a refusal. */
+const LONG_GUARDS = 10;
+const LONG_NOTE = "Long rule: on the engine the testnet runs today, two accounts with 10 or more co-signer conditions each made the engine stop while building a block, and their payments waited. Up to 9 each worked.";
+function slotConditions(body) {
+  const s = stripComments(body); let n = 0;
+  for (const m of s.matchAll(/\bi(\d+)\s*\[\s*t\s*\]/g)) { const k = +m[1]; if (k >= SLOT_FIRST && k <= SLOT_LAST) n++; }
+  return n;
+}
 function compose(body, pubkey) {
   const guard = `(i12[t]:bv[384] = { #x${pubkey} }:bv[384])`;
   return `always ( (${guard} ? ( ${body} ) : ${NEUTRAL_O5}) ).`;
@@ -699,7 +710,7 @@ function admission(text) {
   if (!add("Widths", !pw, pw || "o5 and its values are typed bv[24], as the network requires.")) return { steps };
   const composite = compose(body, KEYS.you);
   add("Wrapped in your address guard", true, "The node puts your rule behind “only if the sender is you”.");
-  return { steps, body, composite, ok: true };
+  return { steps, body, composite, ok: true, long: slotConditions(body) >= LONG_GUARDS };
 }
 
 /* ---------------- in-browser preview: the shared rule reader (assets/rulefacts.js) ---------------- */
@@ -898,6 +909,7 @@ async function runCheck(animate) {
     verdictEl.className = "verdict bad"; verdictEl.textContent = "Refused by the Tau engine. The testnet would not take this rule.";
     note = res.cached ? "engine answer reused" : res.ms != null ? `engine ${(res.ms / 1000).toFixed(1)} s` : "engine";
   }
+  if (a.long && verdictEl.className === "verdict") { verdictEl.className = "verdict warn"; verdictEl.textContent += " " + LONG_NOTE; }
   if (gap) putStep(n, eng, eng.ok === true ? "tick" : null);
   else stepsEl.innerHTML = allSteps(steps, eng).map(stepHtml).join("");
   testsEl.classList.remove("pending");

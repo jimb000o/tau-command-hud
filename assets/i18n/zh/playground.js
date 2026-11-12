@@ -380,3 +380,9 @@ TauI18n.add({ strings: {
   "Rules are written in Tau, not in plain words. The rule builder turns plain words into a Tau rule and checks it; or start from an example above.": "规则用 Tau 写成，而不是用日常语言。规则搭建器能把日常语言变成 Tau 规则并检查它；也可以从上面的示例开始。",
   "Open the rule builder ›": "打开规则搭建器 ›",
 } });
+/* the warning for long co-signer rules (measured on the engine the testnet runs) */
+TauI18n.add({ strings: {
+  "Long rule: on the engine the testnet runs today, two accounts with 10 or more co-signer conditions each made the engine stop while building a block, and their payments waited. Up to 9 each worked.": "规则很长：在测试网当前使用的引擎上，两个账户各有 10 个或更多共同签名条件时，引擎在构建区块时停止，它们的付款只能等待。每个账户最多 9 个时运行正常。",
+  "Long rule: on the engine the testnet runs today, two accounts with 10 or more co-signer conditions each made the engine stop while building a block, and their payments waited.": "规则很长：在测试网当前使用的引擎上，两个账户各有 10 个或更多共同签名条件时，引擎在构建区块时停止，它们的付款只能等待。",
+  "Up to 9 each worked.": "每个账户最多 9 个时运行正常。",
+} });
