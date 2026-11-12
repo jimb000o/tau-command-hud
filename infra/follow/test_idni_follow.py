@@ -57,11 +57,13 @@ def write(path, text):
 
 class Server:
     def __init__(self, head=NEW, idni_lang=LANG, build_ok=True, build_out="", trial_hashes=None, after_switch_ok=True,
-                 cruise=None, image=False):
+                 cruise=None, image=False, genesis=None, our_head=None, trial_head=None, new_head=None):
         self.head, self.idni_lang, self.build_ok, self.build_out = head, idni_lang, build_ok, build_out
         self.trial_hashes = trial_hashes if trial_hashes is not None else {str(n): f"h{n}" for n in range(91, 101)}
         self.after_switch_ok, self.cruise, self.image = after_switch_ok, cruise or {}, image
         self.calls, self.notes, self.t = [], [], utc("2026-11-09 11:00")   # a quiet Monday noon
+        # genesis: {sha: block 0 hash} of the testnet profile each commit ships (None: GitHub gives nothing)
+        self.genesis, self.our_head, self.trial_head, self.new_head = genesis, our_head, trial_head, new_head
 
     def sh(self, cmd, env=None, timeout=600, input=None):
         self.calls.append((cmd, env))
@@ -87,6 +89,16 @@ class Server:
             return 0, "nodecid\n"
         if cmd[:2] == ["docker", "inspect"] and "Mounts" in j:
             return 0, "infra_tau_data\n"
+        if cmd[:3] == ["docker", "exec", "-i"] and input == f.HEAD_PROBE:   # the trial node's canonical head
+            h = self.trial_head(self.t) if self.trial_head else None
+            return (0, json.dumps({"ok": True, **h})) if h else (1, "connection refused")
+        if "exec -T tau-node cat /data/genesis.hash" in j:
+            return 0, (self.genesis or {}).get(f.read_env().get("TAU_TESTNET_REF"), "") + "\n"
+        if "exec -T tau-node" in j and input == f.HEAD_PROBE:                 # our node's canonical head
+            on_new = f.read_env().get("TAU_TESTNET_REF") == NEW
+            fn = self.new_head if on_new else self.our_head
+            h = fn(self.t) if fn else {"head": 100, "tip": 100}
+            return (0, json.dumps({"ok": True, **h})) if h else (1, "connection refused")
         if cmd[:3] == ["docker", "exec", "-i"]:   # the trial node
             return 0, json.dumps({"ok": True, "hashes": self.trial_hashes(self.t) if callable(self.trial_hashes) else self.trial_hashes})
         if "exec -T tau-node" in j:               # our node
@@ -97,6 +109,10 @@ class Server:
         return 0, ""
 
     def get(self, url, timeout=20):
+        if url.endswith("/networks/tau-testnet-v2/genesis.json"):
+            sha = url.split("/")[-4]
+            g = (self.genesis or {}).get(sha)
+            return json.dumps({"block_0": {"hash": g}}) if g else None
         if url.endswith("/Dockerfile.standalone"):
             return f"ARG TAU_LANG_REF={self.idni_lang}\n"
         if url.endswith("/cruise"):
@@ -233,6 +249,85 @@ check(f.run_pass() == "off" and not s.notes, "IDNI_FOLLOW=0: nothing happens")
 check("OFF" in f.status_lines(s.t)[0], "... and up says it is off")
 f.set_env("IDNI_FOLLOW", "1")
 check(f.read_env()["IDNI_FOLLOW"] == "1" and f.read_env()["TAU_TESTNET_REF"] == OLD, "up follow on rewrites only that line")
+
+# ---------------- a commit that starts a new chain (another genesis) ----------------
+G_OLD, G_NEW = "3" * 64, "5" * 64
+GEN = {OLD: G_OLD, NEW: G_NEW}
+check(f.at_new_tip({"head": 50, "tip": 51}), "new chain: at the tip it hears")
+check(not f.at_new_tip({"head": 0, "tip": 8386}), "... block 0 is never the tip")
+f.now = lambda: utc("2026-11-12 12:00")
+check(f.at_new_tip({"head": 50, "tip": 8386, "ts": utc("2026-11-12 11:58")}),
+      "... an old run's tip heard from a peer does not count when the head block is fresh")
+check(not f.at_new_tip({"head": 50, "tip": 8386, "ts": utc("2026-11-12 10:00")}), "... a stale head below that tip is not")
+
+
+def climbing(t0, per_min=1.0, start=8386):
+    return lambda t: {"head": int(start + (t - t0) / 60 * per_min), "tip": int(start + (t - t0) / 60 * per_min)}
+
+
+reset()
+t0 = utc("2026-11-09 11:00")
+s = Server(genesis=GEN, our_head=climbing(t0)).install()
+check(f.run_pass() == "waiting for genesis", "new genesis while the testnet still runs ours: waits")
+check(not any("compose build" in " ".join(c) for c, _ in s.calls) and not any(c[:2] == ["docker", "run"] for c, _ in s.calls),
+      "... builds nothing and starts no trial node")
+check(len(s.notes) == 1 and "new chain" in s.notes[0] and "55555555" in s.notes[0], "... the owner hears once that a new chain is coming")
+check("still runs ours" in f.load()["held"]["reason"] and "failed" not in f.load(), "... held with the reason, not failed")
+s.t += 1800
+check(f.run_pass() == "waiting for genesis" and len(s.notes) == 1, "... still waiting 30 min later, nobody told again")
+check(f.read_env()["TAU_TESTNET_REF"] == OLD, "... the node stays on its commit")
+
+reset(state={"failed": {"sha": NEW, "reason": "the trial node reached block 1999 in 45 min, not the live tip", "at": 1}})
+s = Server(genesis=GEN, our_head=climbing(t0)).install()
+check(f.run_pass() == "waiting for genesis" and "failed" not in f.load(),
+      "a trial held back against our old chain (12.11.2026) is forgotten once the new genesis is known")
+
+reset()
+s = Server(genesis=GEN, our_head=lambda t: {"head": 8386, "tip": 8386}, trial_head=lambda t: {"head": 0, "tip": 8386}).install()
+f.run_pass()                         # first look at our node: its head is remembered
+s.t += 50 * 60
+check(f.run_pass() == "waiting for genesis", "our node got no block for 50 min, the trial node stays on block 0: waits")
+st = f.load()
+check(any("compose build" in " ".join(c) for c, _ in s.calls) and "stayed on block 0" in st["held"]["reason"],
+      "... it built the image and tried: the testnet does not run the new genesis yet")
+check("failed" not in st and not any(c[:2] == ["docker", "rmi"] for c, _ in s.calls), "... not failed, and the image is kept")
+n_runs = sum(1 for c, _ in s.calls if c[:2] == ["docker", "run"] and "-d" in c)
+s.t += 30 * 60
+s.image = True
+check(f.run_pass() == "waiting for genesis" and "next try in" in f.load()["held"]["reason"], "... 30 min later it only waits")
+check(sum(1 for c, _ in s.calls if c[:2] == ["docker", "run"] and "-d" in c) == n_runs, "... no trial node in between")
+s.calls.clear()
+s.t += 100 * 60
+f.run_pass()
+check(any(c[:2] == ["docker", "run"] and "-d" in c for c, _ in s.calls) and not any("compose build" in " ".join(c) for c, _ in s.calls),
+      "... after the retry time a new trial runs on the kept image, no rebuild")
+
+reset()
+t1 = utc("2026-11-09 11:50")         # the testnet restarted: the new chain climbs from block 0, a block a minute
+s = Server(genesis=GEN, our_head=lambda t: {"head": 8386, "tip": 8386},
+           trial_head=lambda t: {"head": min(60, int((t - t1) / 60)), "tip": 60},
+           new_head=lambda t: {"head": 70, "tip": 70}).install()
+f.run_pass()
+s.t += 50 * 60
+check(f.run_pass() == "switched", "the trial node joins the new chain and reaches its tip: switched")
+st = f.load()
+check(f.read_env()["TAU_TESTNET_REF"] == NEW and st["live"]["sha"] == NEW, "... .env and state name the new commit")
+check(any("--force-recreate" in c and "relay" in c for c, _ in s.calls), "... relay and alerts start fresh, as after a chain restart")
+check(any("tau-follow-snapshot" in " ".join(c) for c, _ in s.calls), "... the old chain data was copied first")
+check("genesis" not in st and "ours" not in st, "... the new-chain bookkeeping is cleared")
+check(any("new genesis" in n and "gone" in n for n in s.notes), "... and the owner hears that the old chain's state is gone")
+
+reset()
+s = Server(genesis=GEN, our_head=lambda t: {"head": 8386, "tip": 8386}, trial_head=lambda t: {"head": 60, "tip": 60},
+           new_head=lambda t: {"head": 0, "tip": 60}).install()
+f.run_pass()
+s.t += 50 * 60
+check(f.run_pass() == "rolled back", "the switched node stays on block 0 of the new chain: rolled back")
+check(f.read_env()["TAU_TESTNET_REF"] == OLD and f.load()["failed"]["sha"] == NEW, "... old commit back, this one failed")
+
+reset()
+s = Server(genesis={OLD: G_OLD, NEW: G_OLD}).install()
+check(f.run_pass() == "switched", "same genesis on both commits: the usual trial against our node")
 
 print("all ok" if not failed else f"{failed} FAILED")
 sys.exit(1 if failed else 0)
