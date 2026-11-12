@@ -9,8 +9,10 @@
 		}
 		reverse_proxy checker:8090
 	}
-	# Tau Language questions from tauhud.com/learn (checker/tau_sandbox.py).
-	handle /tau* {
+	# Tau Language questions from tauhud.com/learn (checker/tau_sandbox.py): /tau, /tau/intel, /tau/health. Not /tau*,
+	# which also caught /tau-today.md and /tau-today.json below and answered them 404 from the checker.
+	@tau path /tau /tau/*
+	handle @tau {
 		request_body {
 			max_size 16KB
 		}

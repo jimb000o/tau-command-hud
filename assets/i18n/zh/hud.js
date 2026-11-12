@@ -2526,4 +2526,5 @@ TauI18n.add({ strings: {
 } });
 TauI18n.add({ strings: {
   "Rule Playground: a warning for long co-signer rules. We measured on the engine the testnet runs today that when two accounts each have a rule with 10 or more co-signer conditions, the engine stops while it builds a block and their payments wait; with 9 each it worked. The Playground still lets such a rule through its checks, as the node does, and now says so in amber under the verdict.": "规则演练场：对很长的共同签名规则给出警告。我们在测试网当前使用的引擎上测得：当两个账户的规则各有 10 个或更多共同签名条件时，引擎在构建区块时停止，它们的付款只能等待；每个 9 个时运行正常。演练场仍像节点一样让这样的规则通过检查，但现在会在结论下方用琥珀色说明这一点。",
+  "Tau facts for your AI: the two files the page offers, tau-today.md and tau-today.json, open again. Since the Tau engine door for the Learn page came in on 9 November, the server sent them to that door by mistake, and it answered “not found”.": "给 AI 助手的 Tau 事实：页面提供的两个文件 tau-today.md 和 tau-today.json 又能打开了。自 11 月 9 日 Learn 页面的 Tau 引擎接口上线以来，服务器误把它们转给了这个接口，结果返回“未找到”。"
 } });
