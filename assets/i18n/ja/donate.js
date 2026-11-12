@@ -1,8 +1,8 @@
 /* Japanese for the Donations page. Keys are the English text; {n} {v} … are placeholders. */
 TauI18n.add({ strings: {
-  "Rather pay by card?": "カードで払いたい方へ。",
+  "No crypto wallet?": "暗号資産のウォレットがない方へ。",
   "Join the Tau HUD crew ›": "Tau HUD クルーに参加 ›",
-  "A monthly membership in our shop with a discount on everything. A purchase, not a donation.": "ショップの月額メンバーシップで、全商品が割引になります。寄付ではなく購入です。",
+  "A monthly membership in our shop, with a discount on everything there. Unlike a donation, it is a purchase.": "ショップの月額メンバーシップで、ショップの全商品が割引になります。寄付とは違い、これは購入です。",
   "Donate to Tau HUD": "Tau HUD への寄付",
   "Donations": "寄付",
   "Tau HUD is free. Donations are voluntary, and nothing is owed in return.": "Tau HUD は無料です。寄付は任意で、見返りは何もありません。",

@@ -1,8 +1,8 @@
 /* Simplified Chinese for the Donations page. Keys are the English text; {n} {v} … are placeholders. */
 TauI18n.add({ strings: {
-  "Rather pay by card?": "想用银行卡支付？",
+  "No crypto wallet?": "没有加密钱包？",
   "Join the Tau HUD crew ›": "加入 Tau HUD 船员 ›",
-  "A monthly membership in our shop with a discount on everything. A purchase, not a donation.": "我们商店的月度会员，全店商品打折。这是购买，不是捐赠。",
+  "A monthly membership in our shop, with a discount on everything there. Unlike a donation, it is a purchase.": "我们商店的月度会员，店内所有商品都有折扣。与捐赠不同，这是一次购买。",
   "Donate to Tau HUD": "向 Tau HUD 捐赠",
   "Donations": "捐赠",
   "Tau HUD is free. Donations are voluntary, and nothing is owed in return.": "Tau HUD 免费使用。捐赠出于自愿，不欠任何回报。",
