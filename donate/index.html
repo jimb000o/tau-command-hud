@@ -158,6 +158,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 @media (max-width: 520px) { .addrbox { grid-template-columns: minmax(0, 1fr); justify-items: start; } .tot b { font-size: 16px; } }
 @media (max-width: 700px) { .b { min-height: 44px; } .gifts a { padding: 10px 0; } }
 @media (min-width: 900px) and (max-height: 800px) { .sub, #costNote, #fxNote { display: none; } .flow .chart { height: 120px; } #notFine, .thanks span { display: none; } #costBilled { display: none; } .gifts .fx { display: none; } .covtop .gapv { font-size: 30px; } .gifts li:nth-child(n+4) { display: none; } .head b { font-size: 19px; } #costs small { display: none; } #costs li { padding: 6px 0; } .addrbox { grid-template-columns: 112px minmax(0, 1fr); } .qr { width: 112px; height: 112px; } .wallets .b { padding: 0 9px; letter-spacing: .06em; } .wallets { margin-top: 10px; } .not { gap: 3px; font-size: 12px; } .panel { padding: 14px 16px; } }   /* a 1366 × 768 laptop keeps the page on one screen */
+.crew { margin: 4px 0 0; font-size: 13px; color: var(--dim); } .crew a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .state::before { animation: none; } }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
@@ -171,6 +172,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
   <nav class="tnav" data-page="donate" aria-label="Pages and tools"></nav>
   <div>
     <p class="lead">Tau HUD is free. Donations are voluntary, and nothing is owed in return.</p>
+    <p class="crew" id="crew" hidden>No crypto wallet? <a id="crewLink" href="#" target="_blank" rel="noopener">Join the Tau HUD crew ›</a> A monthly membership in our shop, with a discount on everything there. Unlike a donation, it is a purchase.</p>
     <p class="sub">An independent community project, built by one person in their free time and not affiliated with IDNI. If you find it useful, a donation is welcome. Below: <b>what it costs</b>, <b>every donation received</b> with its transaction on Ethereum, and <b>the address</b>.</p>
   </div>
   <main class="main">
@@ -244,6 +246,8 @@ const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));
 const L = window.TauI18n ? TauI18n.lang : "en";
 /* a value that is already Chinese or Japanese (a date, ￥) would stop the template from matching: translate with stand-ins, then put the values in */
 const G = (s, v) => { const ks = Object.keys(v); let o = T(ks.reduce((x, k, i) => x.split("{" + k + "}").join("904170" + i), s)); ks.forEach((k, i) => { o = o.split("904170" + i).join(v[k]); }); return o; };
+const CREW_URL = "https://tau-hud-shop.fourthwall.com/supporters/pricing";   // the Fourthwall membership page; the "Join the Tau HUD crew" line stays hidden while this is empty
+if (CREW_URL) { $("crewLink").href = CREW_URL; $("crew").hidden = false; }
 const ADDR = "0x23fB76A33A8d70f5c51aB558b85e4b93040003eb", AGRS = "0x738865301a9b7dd80dc3666dd48cf034ec42bdda";
 const nf = new Intl.NumberFormat("en-US");
 const cost = (n, c) => new Intl.NumberFormat(c === "USD" ? "en-US" : L === "en" ? "en-GB" : L, { style: "currency", currency: c, maximumFractionDigits: n % 1 ? 2 : 0 }).format(n);

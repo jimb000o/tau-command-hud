@@ -1,5 +1,6 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Donations: no crypto wallet? A new line under the headline leads to the Tau HUD crew, a monthly membership in our shop (from €3.50 a month plus tax) with a discount on everything there. Unlike a donation, it is a purchase; the Ethereum address stays as it is.": "捐赠：没有加密钱包？标题下新增一行，通往 Tau HUD 船员，即我们商店的月度会员（每月 3.50 欧元起，另加税），店内所有商品都有折扣。与捐赠不同，这是一次购买；以太坊地址保持不变。",
   "IDNI genesis account, one of the 11 the testnet started with.": "IDNI 创世账户，测试网启动时就有的 11 个账户之一。",
   "genesis": "创世",
   "Personal money rules: an account that is one of IDNI's genesis accounts (the 11 the testnet started with) now carries a small “genesis” tag, and its hover says so. Every other account stays unnamed.": "个人资金规则：属于 IDNI 创世账户（测试网启动时就有的 11 个账户）的账户现在带有一个小小的“创世”标签，悬停时也会说明。其他账户一律不命名。",
