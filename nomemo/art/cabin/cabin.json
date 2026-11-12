@@ -1,5 +1,5 @@
 {
- "about": "The cabin of the Black Sequence around No Memo's screen. Fractions of the picture: screen = x0,y0,x1,y1 of the black glass; lamp = the lantern flame; windows = where the sea is.",
+ "about": "The cabin of the Black Sequence around No Memo's screen. Fractions of the picture: screen = x0,y0,x1,y1 of the black glass; lamp = the lantern flame; windows = where the sea is. live = short painted loops (made with Kling from crops of the painting) that play over it through a soft mask: box = x0,y0,x1,y1 of the clip; rough = the sea during the Tuesday op.",
  "variants": [
   {
    "src": "cabin-16x9.webp",
@@ -24,7 +24,39 @@
      0.519
     ]
    ],
-   "draft": "std-c1"
+   "draft": "std-c1",
+   "live": [
+    {
+     "src": "live/porthole.mp4",
+     "mask": "live/porthole-mask.png",
+     "box": [
+      0.0307,
+      0.2547,
+      0.1382,
+      0.5713
+     ]
+    },
+    {
+     "src": "live/lamp16.mp4",
+     "mask": "live/lamp16-mask.png",
+     "box": [
+      0.1779,
+      0.5306,
+      0.2581,
+      0.7471
+     ]
+    },
+    {
+     "src": "live/hourglass16.mp4",
+     "mask": "live/hourglass16-mask.png",
+     "box": [
+      0.7927,
+      0.5628,
+      0.8498,
+      0.7086
+     ]
+    }
+   ]
   },
   {
    "src": "cabin-21x9.webp",
@@ -55,7 +87,50 @@
      0.7179
     ]
    ],
-   "draft": "wide-c2"
+   "draft": "wide-c2",
+   "live": [
+    {
+     "src": "live/window21l.mp4",
+     "mask": "live/window21l-mask.png",
+     "box": [
+      0.0,
+      0.1935,
+      0.0798,
+      0.7609
+     ],
+     "rough": "live/window21l-rough.mp4"
+    },
+    {
+     "src": "live/lamp21.mp4",
+     "mask": "live/lamp21-mask.png",
+     "box": [
+      0.1046,
+      0.6502,
+      0.2122,
+      0.9186
+     ]
+    },
+    {
+     "src": "live/window21r.mp4",
+     "mask": "live/window21r-mask.png",
+     "box": [
+      0.9048,
+      0.1711,
+      1.0,
+      0.755
+     ]
+    },
+    {
+     "src": "live/hourglass21.mp4",
+     "mask": "live/hourglass21-mask.png",
+     "box": [
+      0.8245,
+      0.6367,
+      0.8894,
+      0.9204
+     ]
+    }
+   ]
   }
  ]
 }

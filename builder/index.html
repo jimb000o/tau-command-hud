@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<script src="../assets/sim.js"></script>
+<script src="../assets/rulefacts.js"></script>
+<script src="../assets/rulewords.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Rule builder</title>
+<meta name="description" content="Say in plain words what your wallet may do, or paste a Tau rule. See what the rule really does for every possible payment, checked by the real Tau engine, before you sign it on Tau Testnet Alpha.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Rule builder">
+<meta property="og:description" content="Say what your wallet may do in plain words. See what the rule really does before you sign: every possible payment, checked by the real Tau engine.">
+<meta property="og:image" content="https://tauhud.com/assets/shots/builder.png">
+<meta property="og:image:width" content="1600">
+<meta property="og:image:height" content="900">
+<meta property="og:url" content="https://tauhud.com/builder/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<meta name="twitter:image" content="https://tauhud.com/assets/shots/builder.png">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as /start and /vote: black and white, phosphor green as the one accent, amber for the simulation. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee; --sim: #ffb13b; --refused: #e5484d;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.state { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; color: var(--dim); font-size: 12px; white-space: nowrap; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+.state.ok { color: var(--text); } .state.ok i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.sim i { background: var(--sim); }
+.state.off i { background: #ff4d6d; }
+.lead { margin: 6px 0 0; font: 600 clamp(22px, 3vw, 32px)/1.2 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 96ch; }
+.sub b { color: var(--text); font-weight: 600; }
+.main { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.panel h2 { margin: 0; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.panel h2 b { color: var(--ok); font-weight: 700; }
+.panel h2 .mode { margin-left: auto; letter-spacing: .1em; color: var(--text); border: 1px solid var(--hair); border-radius: 999px; padding: 2px 9px; font-size: 10px; }
+textarea { width: 100%; min-height: 104px; resize: vertical; background: #050506; color: #fff; border: 1px solid var(--hair); border-radius: 6px; padding: 10px 12px; font: 14px/1.5 var(--mono); }
+textarea:focus { outline: none; border-color: var(--ok); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chips .lbl { color: var(--dim); font-size: 11px; margin-right: 2px; }
+.chips button { font: 500 11.5px var(--mono); color: var(--text); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; cursor: pointer; text-align: left; min-height: 26px; }
+.chips button:hover { border-color: #fff; color: #fff; }
+/* what was understood: one line per part of the sentence */
+ul.got, ul.proof { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+ul.got li, ul.proof li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: start; }
+ul.got li > i, ul.proof li > i { font-style: normal; font-weight: 700; text-align: center; color: var(--ok); }
+ul.got li.no > i, ul.proof li.warn > i { color: var(--sim); }
+ul.proof li.bad > i { color: var(--refused); }
+ul.proof li.wait > i, ul.proof li.off > i { color: var(--dim); }
+ul.got .say, ul.proof .t { color: #fff; font: 500 13.5px/1.4 var(--display); }
+ul.got .src, ul.got .why, ul.proof .d { color: var(--dim); font-size: 12px; overflow-wrap: anywhere; }
+ul.got li.no .say { color: var(--sim); }
+ul.got .why b, ul.proof .d b { color: var(--text); font-weight: 600; }
+ul.proof li.bad .t { color: var(--refused); } ul.proof li.warn .t { color: var(--sim); }
+ul.proof li.wait .t, ul.proof li.off .t { color: var(--dim); }
+.fix { border: 1px solid rgba(255,177,59,.45); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 12px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.fix span { flex: 1 1 220px; }
+.empty { border: 1px dashed var(--hair); border-radius: 8px; padding: 12px 14px; color: var(--dim); }
+details.tau { font-size: 12px; color: var(--dim); }
+details.tau summary { cursor: pointer; }
+details.tau pre { margin: 6px 0 0; background: #050506; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: 11.5px/1.55 var(--mono); color: #fff; white-space: pre-wrap; word-break: break-all; max-height: 150px; overflow: auto; }
+.tw { overflow: auto; min-height: 0; }
+table.tests { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.tests th { text-align: left; font: 600 10px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); padding: 0 8px 6px 0; white-space: nowrap; }
+table.tests td { padding: 6px 8px 6px 0; border-top: 1px solid var(--line); vertical-align: top; }
+table.tests td.n { font-variant-numeric: tabular-nums; white-space: nowrap; color: #fff; }
+table.tests td.what { color: #fff; min-width: 120px; }
+table.tests td.nw { white-space: nowrap; }
+table.tests .pass { color: var(--ok); } table.tests .stop { color: var(--text); } table.tests .dim { color: var(--dim); } table.tests .bad { color: var(--refused); }
+.acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: auto; }
+.b { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; font: 600 11px var(--display); letter-spacing: .06em; text-decoration: none; color: var(--text); background: none; border: 1px solid var(--hair); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+.b:hover { color: #000; background: #fff; border-color: #fff; }
+.b.go { color: #000; background: var(--ok); border-color: var(--ok); }
+.b.go:hover { background: #fff; border-color: #fff; }
+.b[aria-disabled="true"], .b:disabled { opacity: .4; pointer-events: none; }
+.note { color: var(--dim); font-size: 12px; margin: 0; }
+.note b { color: var(--text); font-weight: 600; }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+#tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(340px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); white-space: pre-line; }
+[hidden] { display: none !important; }
+@media (min-width: 1100px) { .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr); } }
+/* landscape from laptop size up: one screen; long lists scroll inside their panel */
+html.fit body { height: 100vh; overflow: hidden; padding-top: 0; padding-bottom: 0; }
+html.fit .wrap { zoom: var(--z); height: var(--fitH); padding: 6px 0 8px; gap: 12px; }
+html.fit #tip { zoom: var(--z); }
+html.fit .wrap > .main { flex: 1 1 0; min-height: 0; }
+html.fit .main > .panel { min-height: 0; overflow: auto; }
+@media (max-width: 700px) {
+  .b { min-height: 44px; flex: 1 1 auto; }
+  .chips button { min-height: 44px; font-size: 12px; }
+  table.tests td, table.tests th { padding-right: 6px; }
+  table.tests td.what { min-width: 0; }
+}
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Rule builder</span></a>
+    <div class="hdr-right">
+      <span class="state" id="state" tabindex="0" data-tip="The Tau engine on our node answers the last two checks. Everything else runs in your browser."><i></i><span id="stateText">Tau engine: asking…</span></span>
+    </div>
+  </header>
+  <nav class="tnav" data-page="builder" aria-label="Pages and tools"></nav>
+  <div class="intro">
+    <p class="lead">See what your rule really does, before you sign it.</p>
+    <p class="sub" id="subLine">Say in plain words what your wallet may do, or paste a rule written in Tau. This page writes the rule, reads it for every possible payment, and lets the real Tau engine check it. Then one click takes it to your wallet on Tau Testnet Alpha.</p>
+  </div>
+  <main class="main">
+    <section class="panel" id="p1">
+      <h2><b>1</b> In your words <span class="mode" id="mode" hidden></span></h2>
+      <textarea id="words" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Your rule in plain words, or in Tau"></textarea>
+      <div class="chips" id="chips"></div>
+      <h2 id="gotHead">What this page understood</h2>
+      <ul class="got" id="got" aria-live="polite"></ul>
+      <p class="note" id="canNote">A personal rule on the testnet sees one payment at a time: its amount, who is paid, the block time and who co-signed. So it can cap a payment, but not add up a day.</p>
+    </section>
+    <section class="panel" id="p2">
+      <h2><b>2</b> The checks</h2>
+      <ul class="proof" id="proof" aria-live="polite"></ul>
+      <div class="fix" id="fixBox" hidden><span>This rule only says when to block. Give the other case an answer too, and it does what it reads like.</span> <button class="b" type="button" id="btnFix">Answer both cases</button></div>
+      <details class="tau" id="tauBox" hidden><summary>The rule in Tau</summary><pre id="tauText" translate="no"></pre></details>
+    </section>
+    <section class="panel" id="p3">
+      <h2><b>3</b> Test payments</h2>
+      <div class="tw"><table class="tests" id="tests"></table></div>
+      <p class="note" id="testNote"></p>
+      <div class="acts">
+        <a class="b go" id="btnWallet" href="/wallet/#rules-mine" aria-disabled="true">Put it on my wallet ›</a>
+        <button class="b" type="button" id="btnCopy" disabled>Copy the Tau rule</button>
+        <button class="b" type="button" id="btnAgain" disabled>Ask the engine again</button>
+      </div>
+      <p class="note" id="walletNote">Nothing is sent from this page. Your wallet shows the same blocks, you sign there, and the rule goes to the testnet through our node. Test AGRS have no value.</p>
+    </section>
+  </main>
+  <footer>
+    <p><span>The first four checks run in your browser; the last two ask the testnet's own engine on <a href="https://node.tauhud.com/check/health" target="_blank" rel="noopener">node.tauhud.com</a>. Not affiliated with IDNI.</span> · <a href="/wallet/">Wallet</a> · <a href="/playground/">Playground</a> · <a href="/rules/">Rules wall</a> · <a href="/learn/">Learn Tau Language</a> · <a href="https://github.com/jimb000o/tau-command-hud/blob/main/assets/rulewords.js" target="_blank" rel="noopener">Source code</a></p>
+  </footer>
+</div>
+<div id="tip" hidden></div>
+<script>
+"use strict";
+/* The rule builder. Words or a pasted Tau rule go in; out come the wallet's blocks (assets/rulewords.js), the rule in Tau,
+   six checks and a table of test payments. Checks 1 to 4 run here: the exact reader (assets/rulefacts.js) lists every kind
+   of payment the rule tells apart, and the plain reading of the blocks must give the same answer for each. Checks 5 and 6
+   ask the testnet's own engine (infra/checker/checker.py, POST /check): does the node take the rule on top of the
+   network's rules, and does it answer the test payments as predicted. Signing happens in the wallet, never here. */
+const $ = id => document.getElementById(id);
+const RELAY = "https://node.tauhud.com", CHECK_URL = RELAY + "/check";
+const SIM = !!(window.TauSim && TauSim.on), MODE = SIM ? "sim" : "live";
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));
+const short = h => h ? `${h.slice(0, 8)}…${h.slice(-4)}` : "";
+const fmt = n => Number(n).toLocaleString("en-US");
+const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) { if (v == null) continue; if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); }
+  for (const k of kids) if (k != null && k !== false) e.append(k);
+  return e;
+}
+const isAddr = s => /^[0-9a-f]{96}$/.test(s || "");
+const langQ = (() => { const l = window.TauI18n && TauI18n.lang; return l && l !== "en" ? "&lang=" + l : ""; })();
+const ME = (() => { try { const k = JSON.parse(store.get("tauhud-wallet-key") || "null"); return k && isAddr(k.pk) ? k.pk : null; } catch (e) { return null; } })();
+const BOOK_KEY = `tauhud-wallet-book-${MODE}`;
+const BOOK = (() => { try { return JSON.parse(store.get(BOOK_KEY) || "[]").filter(c => c && c.name && isAddr(c.addr)); } catch (e) { return []; } })();
+let GUARD = null;                       // the Guardian's address (tauhud.com/guardian/): the co-signer when none is named
+const YOU = "db".repeat(48);            // a made-up sender for the engine's test payments: only the rule is under test
+const STRANGER = "5e".repeat(48);       // an address on nobody's list
+const MAX_SAFE_TIME = 2 ** 53 - 1;
+const tag = a => { const c = BOOK.find(c => c.addr === a); return c ? c.name : a === GUARD ? T("the Guardian") : a === ME ? T("you") : a === STRANGER ? T("a stranger") : short(a); };
+/* dates: words in English; as 2026-12-01 in Chinese and Japanese, so a date inside a sentence still finds its translation */
+const NUMERIC = !!(window.TauI18n && TauI18n.lang !== "en");
+const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const dayOf = secs => NUMERIC ? iso(new Date(secs * 1000)) : new Date(secs * 1000).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" });
+
+/* ---------- a rule in plain sentences, one per block (the wallet's own sentences) ---------- */
+function sentence(r, k) {
+  if (k === "freeze") return T("Nothing leaves this account.");
+  if (k === "only") return F("Payments only to {x}.", { x: r.only.map(tag).join(", ") });
+  if (k === "cap") return F("At most {n} test AGRS per payment.", { n: fmt(r.cap) });
+  if (k === "from") return F("Nothing leaves before {x}.", { x: dayOf(r.from) });
+  if (k === "co") return F("Above {n} test AGRS, {x} co-signs.", { n: fmt(r.co.limit), x: tag(r.co.who[0]) });
+  return "";
+}
+const blocksOf = r => !r ? [] : r.freeze ? ["freeze"] : [r.only.length ? "only" : null, r.cap != null ? "cap" : null, r.from != null ? "from" : null, r.co ? "co" : null].filter(Boolean);
+const STOP = { freeze: "frozen", only: "not on your list", cap: "above your limit", from: "before your day", co: "waits for the co-signature" };
+const INPUT = { i1: "the amount", i3: "the sender", i4: "who is paid", i5: "the block time" };
+const inputName = x => INPUT[x] || (/^i(1[89]|2[0-5])$/.test(x) ? "a co-signature" : x);
+
+/* ---------- examples ---------- */
+const TRAP = "always ( (i1[t]:bv[24] > { 5000 }:bv[24]) -> (o5[t]:bv[24] = { #x000000 }:bv[24]) ).";
+const FIRST = "At most 5,000 per payment, nothing before Friday";
+const FIRST_CO = "At most 5,000 per payment, above 1,000 the Guardian co-signs, nothing before Friday";
+const EXAMPLES = [
+  ["Limit, co-signer, date", () => GUARD ? FIRST_CO : FIRST, "A limit per payment, a second signature above an amount, and a day before which nothing leaves."],
+  ["A part that never decides", () => "Max 500 per payment, co-sign above 1,000" + (GUARD ? " by the Guardian" : BOOK[0] ? " by " + BOOK[0].name : ""), "Reads fine, but one part can never matter. Check 3 finds it."],
+  ["A limit per day", () => "Max 100 a day", "What most people ask for first. The testnet cannot do it yet, and the page says why."],
+  ["Savings lock", () => "Lock everything for 90 days", "Nothing leaves before a day 90 days from today."],
+  ["Only my people", () => "Only to my address book, at most 2,000 per payment", "Payments only to names in your wallet's address book."],
+  ["A Tau rule that locks its wallet", () => TRAP, "A hand-written rule that only says when to block. It looks right and stops every payment. Checks 1 and 2 show why."],
+];
+$("chips").append(el("span", { class: "lbl", text: T("Try") }), ...EXAMPLES.map(([name, text, tip]) => el("button", { type: "button", text: T(name), "data-tip": tip, onclick: () => { $("words").value = text(); touched = true; changed(true); } })));
+
+/* ---------- reading the text ---------- */
+const S = { mode: "words", items: [], rule: null, tau: null, read: null, cases: [], tests: [], idle: [], disagree: 0 };
+const E = { state: "idle", res: null, forTau: null, signed: false, seq: 0, hold: 0 };   // the engine's side
+const hex96 = v => BigInt(v).toString(16).padStart(96, "0");
+const noon = () => Math.floor(Date.now() / 86400000) * 86400 + 43200;
+/* one kind of payment the exact reader tells apart, as a payment the plain reading and the engine can answer */
+function caseOf(cell) {
+  const v = cell.v, signed = [];
+  for (let k = 0; k < 8; k++) { const x = v["i" + (18 + k)]; signed.push(x != null && BigInt(x) !== 0n ? hex96(x) : ""); }
+  while (signed.length && !signed[signed.length - 1]) signed.pop();
+  return { amount: Number(v.i1 != null ? v.i1 : 1), to: v.i4 != null ? hex96(v.i4) : STRANGER, ts: v.i5 != null ? Number(v.i5) : noon(), signed, d: RuleFacts.OUTCOME[cell.d] };
+}
+/* a rule that only says when to block ("cond -> o5 = 0") leaves every other payment without an answer. The same rule with
+   an answer for both cases, offered only when the exact reader finds it gives every payment one answer and lets some pass. */
+function bothCases(tau) {
+  const m = /^\s*always\s*\(\s*([\s\S]+?)\s*->\s*\(?\s*o5\[t\](?::bv\[24\])?\s*=\s*\{\s*(?:#x0+|0)\s*\}(?::bv\[24\])?\s*\)?\s*\)\s*\.\s*$/.exec(tau || "");
+  if (!m) return null;
+  const fixed = `always ( ${m[1]} ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).`, r = RuleFacts.read(fixed);
+  return r.ok && !r.has.open && !r.has.none && r.has.pass ? fixed : null;
+}
+function analyse() {
+  const text = $("words").value.trim();
+  S.mode = /^\s*always\b/i.test(text) || /\bo\d+\s*\[\s*t/.test(text) ? "tau" : "words";
+  S.items = []; S.rule = null; S.tau = null; S.read = null; S.cases = []; S.tests = []; S.idle = []; S.disagree = 0; S.fix = null;
+  if (!text) return;
+  if (S.mode === "tau") { S.tau = text; S.rule = RuleWords.fromTau(text); }
+  else { const p = RuleWords.parse(text, { now: new Date(), book: BOOK, guardian: GUARD, me: ME }); S.items = p.items; S.rule = p.rule; S.tau = p.text; }
+  if (!S.tau) return;
+  S.read = RuleFacts.read(S.tau);
+  S.fix = S.read.ok && S.read.has.open ? bothCases(S.tau) : null;
+  if (S.read.ok) S.cases = S.read.cells.map(caseOf);
+  if (S.rule) {
+    S.tests = RuleWords.tests(S.rule, { now: new Date(), stranger: STRANGER }).map(p => ({ ...p, expect: p.stop.length ? "block" : "pass" }));
+    S.idle = RuleWords.idle(S.rule, S.cases);
+    S.disagree = S.cases.filter(c => (RuleWords.judge(S.rule, c).length ? "block" : "pass") !== c.d).length;
+  } else if (S.read.ok && S.read.inputs.every(x => /^i(1|4|5|1[89]|2[0-5])$/.test(x.name))) {
+    /* a hand-written rule: up to 8 kinds of payment as tests, each outcome first */
+    const pick = [], seen = new Set();
+    for (const c of S.cases) if (!seen.has(c.d) && c.ts <= MAX_SAFE_TIME) { seen.add(c.d); pick.push(c); }
+    for (const c of S.cases) if (pick.length < 8 && !pick.includes(c) && c.ts <= MAX_SAFE_TIME) pick.push(c);
+    S.tests = pick.map(c => ({ ...c, stop: [], expect: c.d, says: null }));
+  }
+}
+
+/* ---------- the engine ---------- */
+/* a rule that reads co-signature slots gets its test payments stepped only once the checker has proven on its engine
+   that it steps such rules as the chain does (its health says "signed"); until then the engine only judges the rule itself */
+const readsSlots = () => /\bi(1[89]|2[0-5])\s*\[/.test(S.tau || "");
+const sendable = t => E.signed || !readsSlots();
+async function askEngine() {
+  const tau = S.tau; if (!tau) return;
+  const seq = ++E.seq, tests = S.tests.map((t, i) => [t, i]).filter(([t]) => sendable(t));
+  E.state = "wait"; E.res = null; E.forTau = tau; render();
+  let out;
+  try {
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 60000);
+    const r = await fetch(CHECK_URL, { method: "POST", headers: { "Content-Type": "application/json" }, signal: ctl.signal,
+      body: JSON.stringify({ rule: tau, sender: YOU, tests: tests.map(([t]) => ({ amount: t.amount, time: t.ts, from: YOU, to: t.to, ...(t.signed.some(Boolean) ? { signed: t.signed } : {}) })) }) });
+    clearTimeout(timer);
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 429) out = { state: "hold", hold: Math.max(1, Math.min(600, Number(j.retry_after) || 120)) };
+    else if (r.status === 503 && j.accepted === undefined) out = { state: "busy" };
+    else if (!r.ok && j.accepted === undefined) throw new Error("http " + r.status);
+    else out = { state: j.accepted == null ? "off" : "done", res: j };
+    setEngine(true);
+  } catch (e) { out = { state: "off" }; setEngine(false); }
+  if (seq !== E.seq) return;
+  E.state = out.state; E.res = out.res || null; E.hold = out.hold || 0;
+  if (E.res && E.res.tests) { E.runs = new Map(tests.map(([, i], k) => [i, E.res.tests[k]])); } else E.runs = new Map();
+  render();
+}
+function setEngine(on) {
+  $("state").className = "state " + (on ? "ok" : "off");
+  $("stateText").textContent = T(on ? "Tau engine: online" : "Tau engine: not reachable");
+}
+let timer = null, engineTimer = null, touched = false;
+function changed(now) {
+  clearTimeout(timer); clearTimeout(engineTimer);
+  timer = setTimeout(() => {
+    analyse();
+    if (S.tau !== E.forTau) { E.seq++; E.state = S.tau ? "soon" : "idle"; E.res = null; E.runs = new Map(); }
+    render();
+    if (S.tau && S.tau !== E.forTau) engineTimer = setTimeout(askEngine, now ? 50 : 1300);
+  }, now ? 0 : 220);
+}
+$("words").addEventListener("input", () => { touched = true; changed(false); });
+$("btnFix").addEventListener("click", () => { if (S.fix) { $("words").value = S.fix; touched = true; changed(true); } });
+$("btnAgain").addEventListener("click", () => askEngine());
+$("btnCopy").addEventListener("click", e => { if (!S.tau || !navigator.clipboard) return; navigator.clipboard.writeText(S.tau).then(() => { e.target.textContent = T("Copied"); setTimeout(() => { e.target.textContent = T("Copy the Tau rule"); }, 1500); }).catch(() => {}); });
+
+/* ---------- what is shown ---------- */
+function renderGot() {
+  const got = $("got"), mode = $("mode");
+  mode.hidden = S.mode !== "tau"; mode.textContent = T("read as Tau");
+  $("gotHead").textContent = T(S.mode === "tau" ? "What this page read" : "What this page understood");
+  const rows = [];
+  if (S.mode === "tau") {
+    if (S.rule) rows.push(...blocksOf(S.rule).map(k => el("li", {}, el("i", { text: "✓" }), el("div", {}, el("div", { class: "say", text: sentence(S.rule, k) })))),
+      el("li", {}, el("i", { text: "·" }), el("div", { class: "why", text: T("One of the wallet's own rules, so the wallet can sign it as it stands.") })));
+    else if (S.read && S.read.ok) rows.push(el("li", {}, el("i", { text: "✓" }), el("div", {}, el("div", { class: "say", text: T("A rule written by hand.") }),
+      el("div", { class: "why", text: S.read.read.length ? F("It decides by: {x}.", { x: S.read.read.map(x => T(inputName(x))).join(", ") }) : T("It gives every payment the same answer.") }))));
+    else if (S.read) rows.push(el("li", { class: "no" }, el("i", { text: "↳" }), el("div", {}, el("div", { class: "say", text: T("This rule is outside what the exact reader covers.") }), el("div", { class: "why", text: S.read.why || "" }))));
+  } else {
+    for (const it of S.items) {
+      if (it.kind === "no") { rows.push(el("li", { class: "no" }, el("i", { text: "↳" }), el("div", {}, el("div", { class: "say", translate: "no", text: "“" + it.src + "”" }), el("div", { class: "why", text: T(it.why) })))); continue; }
+      const one = { freeze: it.kind === "freeze", only: it.kind === "only" ? it.who.map(w => w.addr) : [], cap: it.cap, from: it.from, co: it.kind === "co" ? { limit: it.limit, who: it.who.map(w => w.addr) } : null };
+      const notes = [it.replaced ? T("Said again further on; the later one counts.") : null, it.note ? T(it.note) : null, it.past ? T("That day is already past, so this part stops nothing.") : null,
+        it.kind === "co" && it.guardian && !/guardian/i.test(it.src) ? T("No co-signer named, so the Guardian is used: it co-signs with a code from your Authenticator app.") : null].filter(Boolean);
+      rows.push(el("li", { class: it.replaced ? "no" : "" }, el("i", { text: it.replaced ? "↳" : "✓" }), el("div", {}, el("div", { class: "say", text: sentence(one, it.kind) }),
+        el("div", { class: "src", translate: "no", text: "“" + it.src + "”" }), ...notes.map(n => el("div", { class: "why", text: n })))));
+    }
+  }
+  if (!rows.length) rows.push(el("li", { class: "no" }, el("i", { text: "↳" }), el("div", { class: "why", text: T("Write what your wallet may do, for example: at most 500 per payment, only to Mia, nothing before 1 Dec.") })));
+  got.replaceChildren(...rows);
+}
+function proofRows() {
+  if (!S.tau) return [];
+  const rows = [], r = S.read, add = (state, t, d) => rows.push({ state, t, d });
+  const n = r.ok ? r.kinds : 0, frozen = S.rule && S.rule.freeze;
+  if (!r.ok) add("off", "One answer for every payment", F("Not read here: {x}. The engine check below still runs.", { x: r.why || T("outside the reader's scope") }));
+  else if (r.has.none) add("bad", "One answer for every payment", F("{a} of {n} kinds of payment contradict: the rule asks for two answers at once, and the payment fails.", { a: r.has.none, n }));
+  else if (r.has.open) add("bad", "One answer for every payment", F("{a} of {n} kinds of payment get no answer from this rule. The engine reads no answer as 0, so they are stopped.", { a: r.has.open, n }));
+  else add("ok", "One answer for every payment", F("The rule tells {n} kinds of payment apart, and each gets exactly one answer: pass or stop. Nothing is left open and nothing contradicts.", { n }));
+  if (r.ok) {
+    const pass = r.has.pass;
+    if (frozen) add("ok", "Money can still leave", T("Nothing leaves, as you asked: a frozen account. A new rule lifts it."));
+    else if (!pass) add("bad", "Money can still leave", T("No. Every possible payment is stopped: this rule locks its own wallet."));
+    else add("ok", "Money can still leave", F("{a} of {n} kinds of payment go through.", { a: pass, n }));
+  }
+  if (S.rule && r.ok && !frozen) {
+    if (S.idle.length) add("warn", "Every part decides something", S.idle.map(k => F("“{x}” never decides: another part already stops every payment it would stop.", { x: sentence(S.rule, k) })).join(" "));
+    else add("ok", "Every part decides something", T(blocksOf(S.rule).length > 1 ? "Take any part away and some payment ends differently." : "One part, and it decides."));
+    if (S.disagree) add("bad", "Two readings agree", F("The plain reading and the exact reader differ for {a} of {n} kinds of payment. Do not sign this rule; please report it.", { a: S.disagree, n }));
+    else add("ok", "Two readings agree", F("The sentences on the left and the exact reader of the Tau text give the same answer for all {n} kinds of payment.", { n }));
+  }
+  const res = E.res, runs = E.runs || new Map();
+  if (E.state === "wait" || E.state === "soon") { add("wait", "The Tau engine takes the rule", T("Asking the Tau engine on our node…")); return rows; }
+  if (E.state === "hold") { add("off", "The Tau engine takes the rule", F("Paused for your connection after many engine runs. Try again in about {n} seconds.", { n: E.hold })); return rows; }
+  if (E.state === "busy") { add("off", "The Tau engine takes the rule", T("The engine is busy with another check. Try again shortly.")); return rows; }
+  if (E.state !== "done" || !res) { add("off", "The Tau engine takes the rule", T("Our Tau engine is not reachable right now. The checks above ran in your browser.")); return rows; }
+  if (!res.accepted) { add("bad", "The Tau engine takes the rule", F("Refused ({x}): {y}", { x: res.stage || "engine", y: res.reason || "" })); return rows; }
+  add("ok", "The Tau engine takes the rule", F("Accepted on top of the network's own rules, by the check the node runs before it takes a rule. {n} ms.", { n: res.ms != null ? res.ms : "–" }) + (res.engine ? " " + res.engine : ""));
+  const judged = S.tests.map((t, i) => [t, runs.get(i)]).filter(([, run]) => run), good = judged.filter(([t, run]) => agrees(t, run)).length;
+  if (!judged.length && S.tests.length && !sendable(S.tests[0])) add("off", "The engine answers as predicted", T("Not stepped yet: our engine service has not confirmed that it steps rules with a co-signer as the chain does. It judged the rule itself."));
+  else if (!judged.length) add("off", "The engine answers as predicted", T("No test payments for this rule."));
+  else if (good === judged.length) add("ok", "The engine answers as predicted", F("{a} of {b} test payments: the engine's answer is the predicted one.", { a: good, b: judged.length }));
+  else add("bad", "The engine answers as predicted", F("{a} of {b} test payments get a different answer from the engine. Do not sign this rule; please report it.", { a: judged.length - good, b: judged.length }));
+  return rows;
+}
+const agrees = (t, run) => t.expect === "pass" ? run.ok && run.o5 != null && run.o5 !== 0 : t.expect === "block" ? run.ok && run.o5 === 0 : !run.ok || run.o5 == null;
+const MARK = { ok: "✓", warn: "!", bad: "✕", wait: "…", off: "–" };
+function renderProof() {
+  const rows = proofRows();
+  $("proof").replaceChildren(...(rows.length ? rows.map((x, i) => el("li", { class: x.state }, el("i", { text: MARK[x.state] }), el("div", {}, el("div", { class: "t", text: (i + 1) + " · " + T(x.t) }), el("div", { class: "d", text: x.d }))))
+    : [el("li", { class: "off" }, el("i", { text: "–" }), el("div", { class: "d", text: T("The checks appear once there is a rule.") }))]));
+  $("fixBox").hidden = !S.fix;
+  $("tauBox").hidden = !S.tau; $("tauText").textContent = S.tau || "";
+}
+function renderTests() {
+  const runs = E.runs || new Map(), tb = $("tests");
+  if (!S.tests.length) { tb.replaceChildren(); $("testNote").textContent = S.tau ? T("Test payments are made for rules on amount, recipient, time and co-signer.") : T("Test payments appear once there is a rule."); return; }
+  /* a column only when the test payments differ in it */
+  const show = { to: new Set(S.tests.map(t => t.to)).size > 1, when: new Set(S.tests.map(t => t.ts)).size > 1, co: S.tests.some(t => t.signed.some(Boolean)) };
+  const head = el("tr", {}, ...[["Payment", 1], ["Amount", 1], ["To", show.to], ["When", show.when], ["Co-signed", show.co], ["Predicted", 1], ["Engine", 1]].filter(h => h[1]).map(h => el("th", { text: T(h[0]) })));
+  const rows = S.tests.map((t, i) => {
+    const run = runs.get(i), co = t.signed.find(Boolean);
+    const pred = t.expect === "pass" ? el("span", { class: "pass", text: T("passes") }) : t.expect === "block" ? el("span", { class: "stop", text: T("stopped") + (t.stop.length ? ": " + t.stop.map(k => T(STOP[k])).join(", ") : "") }) : el("span", { class: "bad", text: T("fails") });
+    const said = run && (run.ok && run.o5 ? "passes" : run.ok && run.o5 === 0 ? "stopped" : "fails");
+    let eng;
+    if (E.state === "wait" || E.state === "soon") eng = el("span", { class: "dim", text: "…" });
+    else if (!sendable(t)) eng = el("span", { class: "dim", text: T("not yet"), "data-tip": "Our engine service has not confirmed yet that it steps co-signature rules as the chain does, so it judges the rule itself only." });
+    else if (!run) eng = el("span", { class: "dim", text: "–" });
+    else eng = el("span", { class: agrees(t, run) ? "pass" : "bad", text: agrees(t, run) ? "✓" : "✕ " + T(said), "data-tip": agrees(t, run) ? "The engine gave the predicted answer." : "The engine gave a different answer than predicted." });
+    return el("tr", {}, el("td", { class: "what", text: t.says ? T(t.says) : F("kind {n}", { n: i + 1 }) }), el("td", { class: "n", text: fmt(t.amount) }),
+      show.to ? el("td", { class: "nw", translate: "no", text: tag(t.to) }) : null, show.when ? el("td", { class: "n", text: dayOf(t.ts) }) : null,
+      show.co ? el("td", { class: "nw", translate: co ? "no" : null, text: co ? tag(co) : "–" }) : null, el("td", {}, pred), el("td", { class: "nw" }, eng));
+  });
+  tb.replaceChildren(head, ...rows);
+  $("testNote").textContent = S.rule ? T("One payment that passes every part, then one change at a time.") : T("One payment for each kind the rule tells apart, up to 8.");
+}
+function renderActs() {
+  const r = S.read, dead = r && r.ok && (r.has.none || r.has.open || !r.has.pass) && !(S.rule && S.rule.freeze);
+  const ok = !!S.rule && !dead && !S.disagree, w = $("btnWallet");
+  w.setAttribute("aria-disabled", ok ? "false" : "true");
+  w.href = "/wallet/?from=builder" + (SIM ? "&mode=sim" : "") + langQ + "#rules-mine";
+  w.textContent = T(S.rule && S.rule.freeze ? "Open my wallet ›" : "Put it on my wallet ›");
+  $("btnCopy").disabled = !S.tau; $("btnAgain").disabled = !S.tau || E.state === "wait";
+  const no = S.items.filter(x => x.kind === "no").length;
+  $("walletNote").textContent = S.tau && !S.rule ? T("The wallet signs rules made of its four blocks. A hand-written rule is checked here; to try it further, open it in the Playground.")
+    : dead ? T("A rule that stops every payment is not handed to the wallet. Change it first.")
+    : S.rule && S.rule.freeze ? T("Freezing is one button in your wallet (Freeze). Nothing is sent from this page.")
+    : (no ? T("Parts in amber are not in the rule.") + " " : "") + T("Nothing is sent from this page. Your wallet shows the same blocks, you sign there, and the rule goes to the testnet through our node. Test AGRS have no value.");
+}
+function render() { renderGot(); renderProof(); renderTests(); renderActs(); }
+/* the hand-over: the wallet's own draft (as the rules wall does), and names for addresses its address book does not know yet */
+$("btnWallet").addEventListener("click", () => {
+  const r = S.rule; if (!r || r.freeze) return;
+  const book = (() => { try { return JSON.parse(store.get(BOOK_KEY) || "[]"); } catch (e) { return []; } })(), has = a => book.some(c => c && c.addr === a);
+  let n = 0;
+  if (r.co && !has(r.co.who[0])) book.push({ name: r.co.who[0] === GUARD ? "Guardian" : "Co-signer", addr: r.co.who[0] });
+  for (const a of r.only) if (!has(a)) book.push({ name: "Payee " + (++n), addr: a });
+  store.set(BOOK_KEY, JSON.stringify(book));
+  store.set("tauhud-wallet-draft", JSON.stringify({ freeze: false, only: r.only, cap: r.cap, from: r.from, co: r.co ? { limit: r.co.limit, who: r.co.who.slice(0, 1), slots: [[18, r.co.who[0]]], need: "any" } : null }));
+});
+
+/* ---------- hover tips ---------- */
+const tip = $("tip");
+document.addEventListener("mouseover", e => {
+  const t = e.target.closest("[data-tip]");
+  if (!t || !t.dataset.tip) { tip.hidden = true; return; }
+  tip.textContent = T(t.dataset.tip.replace(/\\n/g, "\n"));
+  tip.hidden = false;
+});
+document.addEventListener("mousemove", e => {
+  if (tip.hidden) return;
+  const z = document.documentElement.classList.contains("fit") ? +getComputedStyle(document.documentElement).getPropertyValue("--z") || 1 : 1;
+  const w = tip.offsetWidth * z, h = tip.offsetHeight * z;
+  tip.style.left = Math.max(8, Math.min(e.clientX + 14, innerWidth - w - 8)) / z + "px";
+  tip.style.top = (e.clientY + 18 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 18) / z + "px";
+});
+document.addEventListener("mouseleave", () => { tip.hidden = true; });
+
+/* ---------- one screen ---------- */
+function fit() {
+  const w = innerWidth, h = innerHeight, root = document.documentElement;
+  const on = w >= 1200 && h >= 640 && w / h >= 1.3;
+  const z = on ? Math.max(.82, Math.min(2, w / 1600, h / 860)) : 1;
+  root.classList.toggle("fit", on);
+  root.style.setProperty("--z", z);
+  root.style.setProperty("--fitH", Math.floor(h / z) + "px");
+}
+addEventListener("resize", fit);
+
+/* ---------- start: ?q=<words> fills the box (a shared link); else the first example ---------- */
+if (SIM) TauSim.mark();
+fit();
+const Q = (new URLSearchParams(location.search).get("q") || "").slice(0, 2000);
+$("words").value = Q || FIRST;
+if (Q) touched = true;
+changed(true);
+fetch(CHECK_URL + "/health", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => { setEngine(!!j); if (j && j.signed) { E.signed = true; if (readsSlots()) askEngine(); } }).catch(() => setEngine(false));
+/* the Guardian's address: once it is known, the first example gets its co-signer (unless the visitor already wrote something) */
+if (!SIM) fetch(RELAY + "/guardian/info", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => {
+  if (!j || !isAddr(j.pubkey) || j.enabled === false) return;
+  GUARD = j.pubkey;
+  if (!touched) $("words").value = FIRST_CO;
+  changed(true);
+}).catch(() => {});
+</script>
+</body>
+</html>

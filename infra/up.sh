@@ -28,6 +28,8 @@
 #                            node left alone, safe any time), then this month's clips; up kling test  one 5 s clip of the
 #                            live island to look at (proves the key), up kling list  every clip, up kling send <key>  posts
 #                            a draft, up kling off island  the island still again (until the next painting)
+#              up shots      the post pictures of Tau HUD's pages taken anew in Live mode and checked (node left alone):
+#                            which pages have a picture, why the others have none; up shots rules status  only these
 #              up escrow     the relay alone restarted with the code just pulled (not while a ship is due), then the
 #                            cruise bookings ahead in escrow, each with its state; up escrow status  only those
 #              up nomemo     No Memo's crew purse (relay/nomemo.py): the drop, the players' board, what waits to be paid (nothing rebuilt)
@@ -162,6 +164,25 @@ if [ "${1:-}" = "clip" ]; then
     docker compose cp blog:/tmp/trick-clip.mp4 /opt/sites/rico/art/drafts/trick-clip.mp4
     echo "look: https://node.tauhud.com/rico/art/drafts/trick-clip.mp4"
   fi
+  exit 0
+fi
+# The post pictures of Tau HUD's own pages (agorzilla-shots/site-shots.mjs), the node left alone: the picture service
+# built and started, Caddy given /pageshots/*, one round at once, then which pages have a checked picture and why the
+# others have none. up shots rules status  only these pages.
+if [ "${1:-}" = "shots" ]; then
+  docker compose up -d --no-deps --build site-shots >/dev/null 2>&1 || docker compose up -d --no-deps --build site-shots
+  docker compose up -d --no-deps --force-recreate caddy >/dev/null 2>&1 || true
+  shift
+  docker compose exec -T site-shots node site-shots.mjs --once "$@" | tail -40
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T site-shots sh -c 'cat /out/pageshots/index.json' | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+ok = [k for k, v in d.items() if v.get("ok")]
+print("page pictures: %d of %d checked" % (len(ok), len(d)))
+for k, v in sorted(d.items()):
+    print(("  ok    " if v.get("ok") else "  none  ") + k + ("" if v.get("ok") else "  (" + str(v.get("why")) + ")"))
+'
   exit 0
 fi
 # Kling's clips (alerts/kling.py, kling_island.py), the node left alone: the blog and agorzilla services rebuilt with the

@@ -9,6 +9,9 @@
    - Living cabin: the lantern flickers, the cabin rocks a hair, moonlight moves on the water, the screen lights the desk
      and glows brighter while the terminal writes; a refused transaction flashes red, an accepted one brightens the
      lantern, a chapter card turns it gold; Tuesday 18:00–20:00 German time (the pirate op) a red alarm lamp turns.
+   - Living paintings: `live` in cabin.json lists short painted loops (sea, moon, lantern flame, hourglass sand) cut
+     from the painting and played over it through a soft mask, so only what moves changes; during the Tuesday op the
+     sea runs rough where a `rough` loop exists. No loops with reduced motion or Save-Data; paused in a hidden tab.
    - Sitting down: on load the cabin shows whole, then the camera comes to the screen (a click skips it).
    - `scene off` / `stand up` and `scene on` / `sit down` in the terminal, or the ⌂ button in the top bar; remembered in
      localStorage (tauhud-nomemo-scene). prefers-reduced-motion: no rocking, no flicker, no camera move. */
@@ -16,6 +19,7 @@
   const root = document.documentElement, $ = id => document.getElementById(id);
   const KEY = "tauhud-nomemo-scene", BASE = "art/cabin/";
   const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const LIVE = !REDUCED && !(navigator.connection && navigator.connection.saveData);
   const get = () => { try { return localStorage.getItem(KEY); } catch (e) { return null; } };
   const put = v => { try { localStorage.setItem(KEY, v); } catch (e) {} };
   let meta = null, cur = null, el = null, want = get() !== "off", shown = false, introDone = false, last = null;
@@ -88,7 +92,7 @@
     set("--gx", p.g[0] + inset); set("--gy", p.g[1] + inset); set("--gw", p.g[2] - 2 * inset); set("--gh", p.g[3] - 2 * inset);
     set("--gp", Math.max(6, Math.min(14, p.g[2] * 0.008))); set("--hdr", Y0 + 30);
     const top = $("top"); set("--toph", top ? top.offsetHeight : 36);
-    if (!shown) { root.classList.add("scene"); shown = true; btn(); }
+    if (!shown) { root.classList.add("scene"); shown = true; btn(); playing(true); }
     if (intro && !introDone && !REDUCED) sitDown(); else introDone = true;
   }
 
@@ -103,7 +107,52 @@
     const lamp = el.querySelector(".cab-lamp");
     lamp.style.left = v.lamp[0] * 100 + "%"; lamp.style.top = v.lamp[1] * 100 + "%";
     lamp.style.width = 36 * v.h / v.w + "%";
+    live(v);
   }
+
+  /* the painted loops over the painting; each fades in once it can play, so a slow line shows the still picture */
+  function live(v) {
+    const sway = el.querySelector(".cab-sway");
+    sway.querySelectorAll(".cab-live").forEach(n => n.remove());
+    root.classList.remove("cab-alive");
+    if (!LIVE) return;
+    const img = sway.querySelector("img");
+    for (const c of v.live || []) {
+      const [x0, y0, x1, y1] = c.box, m = "url(" + BASE + c.mask + ")";
+      const vid = document.createElement("video");
+      vid.className = "cab-live"; vid.muted = true; vid.loop = true; vid.playsInline = true; vid.preload = "auto";
+      vid.setAttribute("muted", ""); vid.setAttribute("playsinline", ""); vid.setAttribute("aria-hidden", "true");
+      Object.assign(vid.style, { left: x0 * 100 + "%", top: y0 * 100 + "%", width: (x1 - x0) * 100 + "%", height: (y1 - y0) * 100 + "%",
+        webkitMaskImage: m, maskImage: m });
+      vid.dataset.calm = BASE + c.src; if (c.rough) vid.dataset.rough = BASE + c.rough;
+      vid.addEventListener("playing", () => { vid.classList.add("on"); root.classList.add("cab-alive"); });
+      img.after(vid);
+      seen.observe(vid);   // loaded only once it is in view: on a laptop the camera sits close and most loops stay outside
+    }
+  }
+  const seen = "IntersectionObserver" in window ? new IntersectionObserver(es => {
+    for (const e of es) { e.target.inView = e.isIntersecting; wake(e.target); }
+  }) : { observe: v => { v.inView = true; wake(v); } };
+  function wake(vid) {
+    if (vid.inView && shown && !document.hidden) { if (!vid.getAttribute("src")) vid.src = sea(vid); vid.play().catch(() => {}); }
+    else vid.pause();
+  }
+  /* each loop is there as .webm (VP9, smaller) and .mp4 (H.264); the browser gets the one it plays */
+  const WEBM = (() => { try { return !!document.createElement("video").canPlayType('video/webm; codecs="vp9"'); } catch (e) { return false; } })();
+  function sea(vid) { const s = root.classList.contains("cab-op") && vid.dataset.rough || vid.dataset.calm; return WEBM ? s.replace(/\.mp4$/, ".webm") : s; }
+  function swapSea() {
+    if (!el) return;
+    for (const vid of el.querySelectorAll(".cab-live[data-rough]")) {
+      if (!vid.getAttribute("src")) continue;
+      const want = sea(vid); if (vid.src.endsWith(want)) continue;
+      vid.classList.remove("on"); vid.src = want; wake(vid);
+    }
+  }
+  function playing(on) {
+    if (!el) return;
+    for (const vid of el.querySelectorAll(".cab-live")) on ? wake(vid) : vid.pause();
+  }
+  document.addEventListener("visibilitychange", () => playing(true));
 
   /* the camera from standing at the door to the chair */
   function from(p, W, H) {
@@ -131,6 +180,7 @@
   function off() {
     if (!shown) return;
     shown = false; root.classList.remove("scene", "cab-intro", "cab-move");
+    playing(false);
     for (const k of ["--gx", "--gy", "--gw", "--gh", "--gp", "--hdr", "--toph"]) root.style.removeProperty(k);
     btn();
   }
@@ -197,7 +247,9 @@
     let d = "", h = 0;
     try { const f = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", weekday: "short", hour: "2-digit", hour12: false }).formatToParts(new Date());
       d = (f.find(x => x.type === "weekday") || {}).value; h = +(f.find(x => x.type === "hour") || {}).value; } catch (e) {}
+    const was = root.classList.contains("cab-op");
     root.classList.toggle("cab-op", d === "Tue" && h >= 18 && h < 20);
+    if (was !== root.classList.contains("cab-op")) swapSea();
   }
 
   let rt = 0;

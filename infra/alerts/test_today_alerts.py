@@ -183,7 +183,7 @@ STATS4 = {"fields": STATS["fields"], "head": 1800, "blocks": [[h, T4 - 86400 + h
 r4 = alerts.today_numbers(STATS4, [], PROPS, 2, T4)
 r4["wallets"] = w
 t4 = alerts.today_text(r4)
-check("<b>77 wallets sent transactions, 3.5× the usual 22</b>" in t4 and "• 52 of them: simulated passengers of MS Dry Run" in t4
+check("<b>77 wallets sent transactions, 3.5× the usual 22</b>\n52 simulated passengers of MS Dry Run (ours) · 7 in our games and bots · 11 IDNI test accounts · 7 from outside · 61 new" in t4
       and "from 3 accounts" not in t4, "Testnet today leads with who sent, the stats' account count is not repeated")
 check("<b>Why it matters</b>\nEvery one of these was a real signed transaction the single validator had to check, and the chain kept one block a minute." in t4,
       f"a spike says why it matters, from the facts {t4}")
@@ -194,13 +194,32 @@ check(x4.startswith("📋 Testnet today, 4 November\n\n77 wallets sent today, 3.
 check(alerts.today_worth_x(r4), "a spike goes to X")
 r3 = dict(r4, wallets=w3, events=[])
 check(not alerts.today_worth_x(r3), "an ordinary day with the usual wallets is Telegram's alone")
-check("Why it matters</b>\n3 wallets that are not ours and not IDNI&#x27;s sent today: people are trying the testnet on their own." in alerts.today_text(r3),
-      "an ordinary day with strangers says so")
+check("Why it matters" not in alerts.today_text(r3) and "People outside" not in alerts.today_text(r3),
+      "the usual outside wallets again: no sentence about them (11 Nov 2026: the same line four evenings in a row)")
+r3n = dict(r3, wallets=dict(w3, other_new=1))
+check("Why it matters</b>\n3 wallets that are not ours and not IDNI&#x27;s sent today, one of them for the first time: someone new" in alerts.today_text(r3n),
+      f"a new outside wallet says so {alerts.today_text(r3n)}")
+r3m = dict(r3, wallets=dict(w3, by=dict(w3["by"], other=6)))
+check("6 wallets that are not ours and not IDNI&#x27;s sent today, more than the usual 3." in alerts.today_text(r3m), "more outside wallets than usual")
+A2 = {"tags": TAGS, "days": {**ACTIVE["days"], "2026-11-05": {"1": [11, 3, 0, 2, 1, 2, 3]}}}
+check(alerts.today_wallets(A2, "2026-11-05")["usual"] == 22, "a cruise day before does not lift the usual number")
 r5 = dict(r3, wallets=alerts.today_wallets(dict(ACTIVE, new={}), "2026-11-02"))
 r5["wallets"]["by"] = {"idni": 11, "bot": 3}
-check("A quiet day: the chain kept one block a minute" in alerts.today_text(r5) and not alerts.today_worth_x(r5), "only our own and IDNI's wallets: a quiet day")
+check("Why it matters" not in alerts.today_text(r5) and not alerts.today_worth_x(r5), "only our own and IDNI's wallets: no generic why")
 slow = dict(r4, pace=140)
 check("the chain slowed to one block every 140 seconds" in alerts.today_text(slow), "a spike on a slow chain says so, no praise")
 check(alerts.today_worth_x(dict(r3, wallets=dict(w3, new=3))), "three newcomers are news for X")
+
+# the same sentence over and over (11 Nov 2026): a template said twice in 7 days is left out the third time
+S, N0 = {}, at("2026-11-08", "19:00")
+a, b = "1 wallet that is not ours sent today.", "3 wallets that are not ours sent today."
+check(alerts.said_key(a) == alerts.said_key(b), "numbers do not make a sentence new")
+alerts.remember_said(S, a, N0)
+check(not alerts.said_often(S, b, N0 + 86400), "once: may be said again")
+alerts.remember_said(S, b, N0 + 86400)
+check(alerts.said_often(S, a, N0 + 2 * 86400), "twice in a week: left out")
+alerts.remember_said(S, "other", N0 + 9 * 86400)
+check(not alerts.said_often(S, a, N0 + 9 * 86400) and len(S["said"]) == 1, f"old entries are forgotten {S}")
+check(alerts.today_why(dict(r4, why_off=True)) is None, "why_off: no why")
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)

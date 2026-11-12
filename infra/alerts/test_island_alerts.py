@@ -59,13 +59,13 @@ check("12 campaigns played, 7 of them to the election: Hana won 4, Marisol won 2
 check("38 moves by the players: 15 speeches on the square, 9 laws passed, 5 embassy envelopes" in t, "the moves, the three most used kinds")
 check("the law of the day: Night market every Friday, passed 5 times" in t, "the law of the day by its name")
 check("most ran as Hana (6 campaigns)" in t, "who most people ran as")
-check("the islanders made 120 moves of their own, 7 laws passed" in t, "the islanders' own moves")
+check("islanders" not in t, "a day with players leaves our bot's own moves out")
 check("A campaign is the week" not in t and t.rstrip().endswith("<i>Every move is one real transaction on Tau Testnet Alpha, with test AGRS that have no value.</i>"),
       "a weekday says only what is real about it, not the whole cycle")
 x = alerts.island_x(r)
 check(x.startswith("🐇 The Key Crier, 3 November: 7 island elections won: Hana 4, Marisol 2, Tobias 1.")
       and "Every move behind it was a signed transaction on Tau Testnet Alpha (38 moves by real players that day)." in x
-      and "New law: Night market every Friday." in x and x.endswith("#TauNet $AGRS") and alerts.x_len(x) <= 280 and "…" not in x,
+      and "New law: Night market every Friday." in x and x.endswith("#TauNet") and alerts.x_len(x) <= 280 and "…" not in x,
       "the X copy tells the day's story and why it matters, and fits")
 check(alerts.island_story(dict(r, wins=[("Hana", 1)])) == "Hana won an island election", "one election: who won it")
 check(alerts.island_story(dict(r, wins=[])) == "New law of the island: Night market every Friday", "no election: the law passed")
@@ -80,7 +80,7 @@ LAST = {"id": "2026-W44", "from": "2026-10-26", "to": "2026-11-01", "campaigns":
 m = alerts.island_report("2026-11-01", dict(DAY, last=LAST), 7)
 mt = alerts.island_text(m)
 check(m["week"] and m["week"]["governor"] == "Hana" and m["week"]["span"] == "26 October to 1 November", "the governor's count read from the relay's last week")
-check("A campaign is the week" in mt and "governor's count on Monday 00:00 German time" in mt, "Monday: the standing explanation of the cycle, with the count")
+check("A campaign is the week" not in mt and "governs the island this week" in mt, "Monday: the count, without the long explanation")
 check("<b>The governor's count, 26 October to 1 November</b>" in mt and "• Hana governs the island this week: 3 campaigns won of 6 that reached the election (9 played)" in mt
       and "• the count: Hana 3, Marisol 2, Tobias 1" in mt and "• laws of the island this week: A school boat every morning; Protect the reef: no big ships in the bay" in mt
       and mt.index("governor's count") < mt.index("Yesterday on the island, 1 November"), "Monday's report opens with the count, then Sunday's day")

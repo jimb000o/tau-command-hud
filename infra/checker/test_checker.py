@@ -42,6 +42,18 @@ check("limit verdicts", [t["o5"] for t in r.get("tests", [])] == [1, 0, 1], r.ge
 r = checker.check(ONLY_BOB, YOU, [tx(9, YOU, BOB), tx(9, YOU, CAROL)])
 check("recipient rule verdicts", [t["o5"] for t in r.get("tests", [])] == [1, 0], r.get("tests"))
 
+# a co-signature rule (the wallet's and tauhud.com/builder/'s shape): above 1000 Carol must sign in slot i18
+COSIGN = (f"always ( (i1[t]:bv[24] > {{ #x0003e8 }}:bv[24] && !(i18[t]:bv[384] = {{ #x{CAROL} }}:bv[384]))"
+          " ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).")
+signed = dict(tx(5000, YOU, BOB), signed=[CAROL])
+r = checker.check(COSIGN, YOU, [tx(500, YOU, BOB), tx(5000, YOU, BOB), signed, dict(tx(5000, YOU, BOB), signed=[BOB])])
+check("co-signature verdicts", [t["o5"] for t in r.get("tests", [])] == [1, 0, 1, 0], r.get("tests"))
+try:
+    checker._validate_request({"rule": COSIGN, "sender": YOU, "tests": [dict(tx(1, YOU, BOB), signed=["nothex"])]})
+    check("bad co-signer refused", False)
+except ValueError:
+    check("bad co-signer refused", True)
+
 r = checker.check(LIMIT.replace("i1[t]", "i2[t]"), YOU, [])
 check("balance read refused before the engine", r["accepted"] is False and r["stage"] == "streams", r)
 

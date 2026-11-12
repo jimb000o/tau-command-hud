@@ -51,6 +51,8 @@ jobs:
         run: node tools/facts.mjs --check | tee -a "$GITHUB_STEP_SUMMARY"
       - name: The rule reader behind the Playground's X-ray gives the real Tau engine's answers (tests/rulefacts-cases.json) and the lessons' answers
         run: node tests/rulefacts.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: The rule builder's plain words give the wallet's blocks, and its rules read the same by the exact reader
+        run: node tests/rulewords.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Shared scripts parse
         run: for f in assets/*.js assets/i18n/*/*.js; do node --check "$f" || exit 1; done
 
