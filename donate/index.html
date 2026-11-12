@@ -246,7 +246,7 @@ const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));
 const L = window.TauI18n ? TauI18n.lang : "en";
 /* a value that is already Chinese or Japanese (a date, ￥) would stop the template from matching: translate with stand-ins, then put the values in */
 const G = (s, v) => { const ks = Object.keys(v); let o = T(ks.reduce((x, k, i) => x.split("{" + k + "}").join("904170" + i), s)); ks.forEach((k, i) => { o = o.split("904170" + i).join(v[k]); }); return o; };
-const CREW_URL = "";   // the Fourthwall membership page; the "Join the Tau HUD crew" line stays hidden while this is empty
+const CREW_URL = "https://tau-hud-shop.fourthwall.com/supporters/pricing";   // the Fourthwall membership page; the "Join the Tau HUD crew" line stays hidden while this is empty
 if (CREW_URL) { $("crewLink").href = CREW_URL; $("crew").hidden = false; }
 const ADDR = "0x23fB76A33A8d70f5c51aB558b85e4b93040003eb", AGRS = "0x738865301a9b7dd80dc3666dd48cf034ec42bdda";
 const nf = new Intl.NumberFormat("en-US");
