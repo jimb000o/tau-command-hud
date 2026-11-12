@@ -95,6 +95,7 @@ p { margin: 0; }
 button.b { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; background: none; color: var(--text); border: 1px solid var(--hair); border-radius: 6px; padding: 6px 11px; cursor: pointer; }
 button.b:hover:not(:disabled) { color: #000; background: #fff; border-color: #fff; }
 button.b.go { color: #000; background: var(--ok); border-color: var(--ok); }
+button.b.go.next:not(:disabled) { box-shadow: 0 0 0 3px rgba(57,255,138,.35); }
 button.b.go:hover:not(:disabled) { background: #fff; border-color: #fff; }
 button.b.quiet { color: var(--dim); }
 button.b:disabled { opacity: .35; cursor: default; }
@@ -218,7 +219,8 @@ input.in.md, select.in.md { width: auto; max-width: 15em; padding: 3px 6px; disp
 .chips button[aria-pressed=true] { color: #000; background: var(--ok); border-color: var(--ok); }
 .probes { display: grid; gap: 4px; margin-top: 8px; }
 .probes h3 { margin: 0; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
-.probe { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 12px; }
+.probe { display: grid; grid-template-columns: 10px minmax(45%, 1fr) auto; gap: 8px; align-items: center; font-size: 12px; }
+.probe > :nth-child(3) { text-align: right; overflow-wrap: anywhere; }
 .probe em { font-style: normal; color: var(--dim); }
 .probe .no { color: var(--refused); } .probe .yes { color: var(--ok); } .probe .wait { color: var(--sim); }
 .slots { display: inline-flex; align-items: center; gap: 6px; cursor: help; }
@@ -255,6 +257,7 @@ input.in.md, select.in.md { width: auto; max-width: 15em; padding: 3px 6px; disp
 .preset[aria-disabled=true] b { color: var(--dim); }
 .preset:hover, .preset:focus-visible { border-color: rgba(57,255,138,.45); }
 .preset[aria-pressed=true] { border-color: var(--ok); }
+a.preset.words { text-decoration: none; color: var(--ok); border-style: dashed; }
 .preset[aria-pressed=true] b::after { content: " ✓"; color: var(--ok); }
 .preset[aria-disabled=true] { opacity: .6; cursor: default; }
 .preset .not { color: var(--sim); }
@@ -569,7 +572,7 @@ let BACKSET = (() => { try { const b = JSON.parse(store.get(BACK_KEY) || "null")
 const saveBack = () => store.set(BACK_KEY, JSON.stringify(BACKSET));
 function loadBook() {
   try { BOOK = JSON.parse(store.get(BOOK_KEY) || "[]").filter(c => c && c.name && isAddr(c.addr)); } catch (e) { BOOK = []; }
-  if (SIM && store.get(BOOK_KEY) == null) { const f = S.friends(); BOOK = [{ name: "Jack", addr: f[0] }, { name: "Mia", addr: f[1] }, { name: "Lena", addr: f[2] }]; saveBook(); }
+  if (SIM && store.get(BOOK_KEY) == null) { const f = S.friends(); BOOK = [{ name: "Bob", addr: f[0] }, { name: "Carol", addr: f[1] }, { name: "Dave", addr: f[2] }]; saveBook(); }
 }
 function saveBook() { store.set(BOOK_KEY, JSON.stringify(BOOK)); }
 const nameOf = a => { const c = BOOK.find(c => c.addr === a); return c ? c.name : null; };
@@ -1214,6 +1217,9 @@ function takeRulesHash() {
   $("rules").scrollIntoView({ block: "start" });
 }
 window.addEventListener("hashchange", takeRulesHash);
+/* /wallet/#book opens the address book: the rule builder sends a name it does not know here */
+function takeBookHash() { if (location.hash !== "#book") return; $("tabBook").click(); $("tabBook").scrollIntoView({ block: "center" }); }
+window.addEventListener("hashchange", takeBookHash);
 (() => {
   const q = new URLSearchParams(location.search);
   const from = q.get("from");
@@ -1280,7 +1286,7 @@ function renderPresets() {
     return el("button", { class: "preset", type: "button", "aria-pressed": on ? "true" : "false", "aria-disabled": need ? "true" : "false",
       "data-tip": T(p.name) + "\n" + T("Against: " + p.against) + "\n" + (need || T("Not against: " + p.not)), onclick: () => applyPreset(p) },
       el("b", { text: T(p.name) }));
-  }));
+  }), el("a", { class: "preset words", href: "/builder/" + (SIM ? "?mode=sim" : ""), "data-tip": T("In plain words") + "\n" + T("Write what your wallet may do as a sentence. The rule builder turns it into these blocks, checks it and brings it back here to sign."), text: T("In plain words ›") }));
   const on = PRESETS.find(p => p.rule && d.ok && sameRule(d.r, p.rule())) || (BACKSET.on ? PRESETS[4] : null);
   const pid = on ? on.id : "", link = "https://tauhud.com/wallet/?preset=" + pid + "&ref=preset-" + pid;   // the tag counts opens, nothing about who
   /* the chosen card, spelled out: what it does, and in amber what it does not; nothing chosen: the one line every rule shares */
@@ -1932,12 +1938,24 @@ connect();
 loadBook();
 takeLink();
 takeRulesHash();
+takeBookHash();
 loadKey();
 /* Start here's rule step: one ready choice, a limit per payment, unless a rule was carried in or the account already has one */
 if (document.documentElement.classList.contains("focus-rule") && !carried && !$("cCap").checked) { $("cCap").checked = true; $("vCap").value = "1000"; $("cCap").dispatchEvent(new Event("input", { bubbles: true })); }
 loadSlots();
 if (!SIM) setInterval(loadSlots, 60000);
 if (!W.pk) renderAll();
+/* a rule carried in from the rule builder: the next step is on screen and marked. With an account that is the button
+   that signs the rule; without one it is "Make my account", and the sign button follows once the account exists */
+function nextFromBuilder() {
+  const b = $(W.pk ? "btnRule" : "btnNew");
+  $("btnNew").classList.remove("next"); b.classList.add("next");
+  b.scrollIntoView({ block: W.pk ? "center" : "nearest" });
+}
+if (VIA === "builder" && location.hash === "#rules-mine") {
+  setTimeout(nextFromBuilder, 700);
+  $("btnNew").addEventListener("click", () => setTimeout(nextFromBuilder, 400));
+}
 loadTitles();
 setInterval(loadTitles, 120000);
 if (!SIM) setInterval(() => { if (W.pk && !document.hidden) refresh(); }, 30000);

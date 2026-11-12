@@ -343,4 +343,13 @@ TauI18n.add({ strings: {
   "Covers: all chains.": "范围：所有链。",
   "since {x}": "自 {x} 起",
   "Covers: since {x}.": "范围：自 {x} 起。",
+  "The testnet is running: block #{n} came {x1} ago.": "测试网正在运行：区块 #{n} 在 {x1}前产生。",
+  "In the simulation, block #{n} came {x1} ago.": "在模拟中，区块 #{n} 在 {x1}前产生。",
+  "Lately a new block came about every {x1}.": "最近大约每 {x1} 产生一个新区块。",
+  "The last block we saw is #{n}.": "我们看到的最后一个区块是 #{n}。",
+  "No new block for {x1}: the testnet has stalled.": "已 {x1} 没有新区块：测试网停滞了。",
+  "The newest block is #{n}.": "最新区块是 #{n}。",
+  "Waiting for the first block.": "正在等待第一个区块。",
+  "Sample data, not the real chain.": "示例数据，不是真实的链。",
+  "Our node last answered {x1} ago.": "我们的节点上次应答是在 {x1}前。",
 } });

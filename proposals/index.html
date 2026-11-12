@@ -186,6 +186,12 @@ html.fit .panel > .scroll { flex: 1 1 0; min-height: 0; overflow: auto; padding-
 html.fit .tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
 html.fit .lead { font-size: 22px; margin: 0; }
 html.fit .sub { font-size: 12px; margin: 2px 0 0; }
+/* the one-sentence answer above the numbers, for a first-time reader: what is true right now */
+.now { margin: 6px 0 0; color: var(--text); font-size: 13px; font-weight: 500; display: flex; align-items: baseline; gap: 8px; }
+.now::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); transform: translateY(-1px); }
+.now.ok::before { background: var(--ok); box-shadow: 0 0 8px var(--ok); } .now.watch::before, .now.sim::before { background: var(--behind); } .now.bad::before { background: var(--bad); }
+.now:empty { display: none; }
+html.fit .now { margin: 3px 0 0; }
 html.fit header { padding: 4px 0 6px; }
 html.fit .modal .sheet { zoom: var(--z); }
 html.fit .modal .sheet { max-height: calc((100vh - 40px) / var(--z)); }
@@ -253,6 +259,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
   <div class="top">
     <div>
       <p class="lead">Rules change by agreement. Get told when they do.</p>
+      <p class="now" id="nowLine" aria-live="polite"></p>
       <p class="sub">Every rule change on the Tau Testnet Alpha, read from our own node: proposed, agreed, in force or dropped. Each one is posted to Telegram, X and the RSS feed the moment its block arrives.</p>
     </div>
     <div class="follow" id="follow">
@@ -444,6 +451,16 @@ const EVENT = {
   restart: { what: "the simulated chain starts over", why: "At midnight UTC the simulated chain starts again from block 0, as the real alpha testnet did more than once.", watch: "Watch the height reset." }
 };
 let SCHED = [], lastSig = "", seenNews = null;
+/* the answer before the numbers: is a rule change open right now, and how did the earlier ones end? */
+function nowLine(voting, agreed) {
+  const P = D.proposals, n = s => P.filter(p => p.status === s).length;
+  const open = [voting.length === 1 ? "1 rule change is waiting for votes right now." : voting.length ? `${voting.length} rule changes are waiting for votes right now.` : "",
+    agreed.length === 1 ? `1 agreed change takes effect at block #${fmtN(agreed[0].activate_at)}.` : agreed.length ? `${agreed.length} agreed changes are waiting for their block.` : ""].filter(Boolean).join(" ");
+  const past = P.length ? `So far ${n("active")} came into force and ${n("dropped")} ${n("dropped") === 1 ? "was" : "were"} dropped.` : "Nobody has proposed a rule change on this chain yet.";
+  const first = open || "No rule change is open right now.";
+  nowText(SIM ? "sim" : open ? "ok" : "", `${SIM ? "In the simulation: " + first[0].toLowerCase() + first.slice(1) : first} ${past}`);
+}
+function nowText(cls, text) { const p = $("nowLine"); p.className = "now " + cls; if (nowText.text !== text) p.textContent = nowText.text = text; }
 function render() {
   if (hovering) { pending = true; return; }
   pending = false;
@@ -454,6 +471,7 @@ function render() {
   const P = D.proposals;
   const by = s => P.filter(p => p.status === s).sort((a, b) => a.activate_at - b.activate_at);
   const voting = by("voting"), agreed = by("agreed");
+  nowLine(voting, agreed);
   $("openTitle").textContent = SIM ? "Coming up" : "Coming up on the testnet";
   $("openCount").textContent = voting.length + agreed.length ? `(${voting.length + agreed.length})` : "";
   // the simulation announces its programme: special rule changes at fixed times of the day, and the restart at midnight
@@ -778,6 +796,7 @@ async function load() {
     failures++;
     setState("off", "Offline");
     if (!D) {
+      nowText("bad", "The tracker is not reachable right now.");
       $("openList").innerHTML = `<ul class="list"><li class="empty"><b>The tracker is not reachable right now.</b><br>It retries every ${POLL / 1000} s. The Telegram channel and the feed keep posting meanwhile.</li></ul>`;
       $("allList").innerHTML = HOWTO; $("newsList").innerHTML = NEWS_EMPTY;
     }

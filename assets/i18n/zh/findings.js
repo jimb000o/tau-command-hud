@@ -132,4 +132,10 @@ TauI18n.add({ strings: {
   "{n} hours ago": "{n} 小时前",
   "{n} minutes ago": "{n} 分钟前",
   "{x1} partly: fix landed, issue still open": "{x1} 个部分修复：修复已合并，issue 仍未关闭",
+  "{n} bugs listed here.": "这里列出了 {n} 个 bug。",
+  "1 bug listed here.": "这里列出了 1 个 bug。",
+  "GitHub cannot be reached right now, so their status is unknown.": "此刻无法访问 GitHub，因此它们的状态未知。",
+  "{n} of the {m} bugs listed here are still open at IDNI.": "这里列出的 {m} 个 bug 中，有 {n} 个在 IDNI 仍未解决。",
+  "{n} of the {m} bugs listed here is still open at IDNI.": "这里列出的 {m} 个 bug 中，有 {n} 个在 IDNI 仍未解决。",
+  "IDNI has fixed {n}.": "IDNI 已修复 {n} 个。",
 } });

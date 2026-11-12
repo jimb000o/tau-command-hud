@@ -125,4 +125,5 @@ TauI18n.add({ strings: {
   "Rule signed and sent.": "规则已签名并发送。",
   "Meal sent.": "饭已送出。",
   "The simulation makes a block every eight seconds; this card turns green by itself.": "模拟每八秒出一个区块；这张卡片会自己变绿。",
+  "Say it in plain words": "用日常语言说出来",
 } });
