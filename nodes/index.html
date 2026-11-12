@@ -249,7 +249,8 @@ html.fit.wide .col3 > .faq { flex: 1 1 0; }
         <p class="big">Put your name on this board in three steps.</p>
         <ol class="steps">
           <li><div><h3>Rent a small server <small>2 min · about €6 a month</small></h3>
-            <p><b>2 CPU, 4 GB RAM, 40 GB disk</b>, Ubuntu or Debian, x86 or ARM. Any cloud provider works.</p></div></li>
+            <p><b>2 CPU, 4 GB RAM, 40 GB disk</b>, Ubuntu or Debian, x86 or ARM. Any cloud provider works.</p>
+            <p class="note" id="refTip" hidden>Ours runs on a Hetzner CAX11. <a id="refLink" href="https://www.hetzner.com/cloud" target="_blank" rel="noopener sponsored">Rent the same one</a> through our referral link, and Hetzner gives us server credit.</p></div></li>
           <li><div><h3>Paste one command <small>runs by itself · about 1.5 h</small></h3>
             <p>As root on the server. It installs Docker, builds the node and starts it.</p>
             <div class="namerow"><label for="name">Your node’s name</label><input id="name" type="text" value="my-node" maxlength="24" spellcheck="false" autocomplete="off" aria-describedby="nameHelp"></div>
@@ -293,6 +294,7 @@ html.fit.wide .col3 > .faq { flex: 1 1 0; }
 "use strict";
 const $ = id => document.getElementById(id);
 const RELAY = "https://node.tauhud.com";
+const HETZNER_REF = "";   // Hetzner referral link for the server hint in "Run a node"; the hint stays hidden while this is empty
 const SAMPLE = new URLSearchParams(location.search).has("sample");
 const SIM = !SAMPLE && !!(window.TauSim && TauSim.on);   // simulation mode: the same made-up network as every other page (assets/sim.js)
 const T = s => (window.TauI18n ? TauI18n.t(s) : s);
@@ -315,6 +317,7 @@ function span(sec) {
 }
 function ago(sec) { return sec < 90 ? "just now" : `${span(sec)} ago`; }
 function date(ts) { return new Date(ts * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); }
+if (HETZNER_REF) { $("refLink").href = HETZNER_REF; $("refTip").hidden = false; }
 const AGREE = { same: "Same chain", behind: "Catching up", different: "Other chain", ahead: "Ahead of ours", unknown: "Not checked yet" };
 const AGREE_TIP = {
   same: "Its block at its height is the block we have there.",
