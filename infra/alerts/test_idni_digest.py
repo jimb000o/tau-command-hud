@@ -119,7 +119,7 @@ check(tg.startswith("🛠 <b>IDNI testnet progress · 5 Nov</b>") and "<b>Why it
       and "Our node does not run it yet; its code is from 3 Nov." in tg and "github.com/IDNI/tau-testnet/commits/main" in tg,
       "Telegram: the day, the points, why it matters, what our node runs, the links, not affiliated")
 x = alerts.x_post(idg.x_lines(d), foot=idg.X_FOOT, keep=2)
-check(alerts.x_len(x) <= 280 and "http" not in x and x.startswith("🛠 IDNI testnet: Block makers") and x.endswith("#TauNet $AGRS"),
+check(alerts.x_len(x) <= 280 and "http" not in x and x.startswith("🛠 IDNI testnet: Block makers") and x.endswith("#TauNet"),
       "X: no link, under 280, the headline first, the tags last")
 
 bad = dict(GOOD, why="IDNI finally fixed what was broken for 12 days!")

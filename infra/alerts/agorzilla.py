@@ -52,9 +52,9 @@ ENABLED = os.environ.get("AGORZILLA_POSTS", "1") != "0"
 X_OUT = X({k: os.environ.get("AGORZILLA_" + k, "").strip() for k in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET")})
 # the creature: its base picture (portrait WebP, transparent), set once on a dark 16:9 card for X
 X_PICTURE = os.environ.get("AGORZILLA_X_PICTURE", "https://agorzilla.com/assets/agorilla.webp").strip()
-X_DAILY_CAP = int(os.environ.get("AGORZILLA_X_DAILY_CAP", 8))
-X_FOOT = "🦍 A shared creature on Tau Testnet Alpha · test AGRS, no value"
-X_TAG = "#TauNet $AGRS"   # every Agorzilla post on X carries these two, once, at the end
+X_DAILY_CAP = int(os.environ.get("AGORZILLA_X_DAILY_CAP", 2))
+X_FOOT = "Tau Testnet Alpha · test AGRS, no value"
+X_TAG = "#TauNet"   # every Agorzilla post on X carries it, once, at the end ($AGRS dropped 12 Nov 2026: no price feeds)
 SHOTS = os.environ.get("AGORZILLA_SHOTS", "/shots").strip()
 SHOTS_WAIT = float(os.environ.get("AGORZILLA_SHOTS_WAIT", 1500))
 LATE = float(os.environ.get("AGORZILLA_LATE_HOURS", 6)) * 3600   # an evening owed for longer (a restart) is not posted late
@@ -120,7 +120,10 @@ def rule_head(r: dict, latest: dict, was: str | None, html: bool) -> tuple[str, 
     return head, f"The feeders {verb} {b(r['winner'])} ({e(count)})." + (f" From now on: {e(says)}" if says else "")
 
 
-def text(r: dict, latest: dict, was: str | None = None) -> str:
+FOOT_DAYS = 6.5   # the "no value" line once a week, not every evening (11 Nov 2026)
+
+
+def text(r: dict, latest: dict, was: str | None = None, foot: bool = True) -> str:
     """Two or three short lines: what changed, how it grows, what is open tonight."""
     votes = sum(r.get("tally") or [])
     if is_rule(r):
@@ -144,32 +147,36 @@ def text(r: dict, latest: dict, was: str | None = None) -> str:
     lines.append(grow + ".")
     if latest.get("open"):
         lines.append(tonight(latest, html=True) + " agorzilla.com")
-    if votes:
+    if votes and foot:
         lines.append("Test AGRS only, no value; wallets, not people.")
     return "\n".join(lines)
 
 
 def x_text(r: dict, latest: dict, was: str | None = None) -> str:
-    """The evening on X: what changed first, then how it grows and tonight's choice; no link, no HTML."""
+    """The evening on X for people who do not follow along (12 Nov 2026: "Evening 13 · Rose 3 · Green 0 · White 1" was
+    insider talk): the people first (how many wallets fed it), what they decided in words, then tonight's vote;
+    no link, no HTML."""
     if is_rule(r):
         head, body = rule_head(r, latest, was, html=False)
-    elif r.get("winner") and r.get("kept"):
-        head = f"🦍 Evening {r['n'] + 1}: {r['category']} stays {r['winner']}"
-        body = " · ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"])) + ". Not enough wallets wanted a change"
+        later = [tonight(latest, html=False)]
+        return x_post([head, body] + later, foot=X_FOOT, tag=X_TAG)
+    n = r.get("feeders")
+    fed = f"{plural(n, 'wallet', 'wallets')} fed Agorzilla today" if n else "Agorzilla's feeders voted today"
+    part = str(r.get("category") or "look").lower()
+    tally, total = list(r.get("tally") or []), sum(r.get("tally") or [])
+    if r.get("winner") and r.get("kept"):
+        won = tally[r["options"].index(r["winner"])] if r["winner"] in r.get("options", []) else 0
+        head = f"🦍 {fed}. Its {part} stays {r['winner']}: only {total - won} of {plural(total, 'vote', 'votes')} wanted a change."
     elif r.get("winner"):
-        head = f"🦍 Evening {r['n'] + 1}: {r['category']} became {r['winner']}"
-        body = " · ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"])) + (", a tie settled by the state hash" if r.get("tie") else "")
+        won = tally[r["options"].index(r["winner"])] if r["winner"] in r.get("options", []) else 0
+        tie = ", a tie the chain's state settled" if r.get("tie") else ""
+        head = f"🦍 {fed}, and its {part} became {r['winner']} ({won} of {plural(total, 'vote', 'votes')}{tie})."
     else:
-        head, body = f"🦍 Evening {r['n'] + 1}: nobody picked a {r['category'].lower()}, so nothing changed", ""
-    grow = f"It is {latest.get('stage_name', '')}"
+        head = f"🦍 {fed}. Nobody voted on its {part}, so it stays as it was."
+    later = [tonight(latest, html=False)]
     if latest.get("lived") is not None:
-        grow += f", {plural(latest['lived'], 'day', 'days')} lived"
-    if r.get("feeders") is not None:
-        grow += f"; {plural(r['feeders'], 'wallet', 'wallets')} fed it that day"
-    later = [grow + ".", tonight(latest, html=False)]
-    if is_rule(latest.get("open")):
-        later.reverse()   # a rule evening tonight is the news; the growth line goes first when X is short of room
-    return x_post([head, body] + later, foot=X_FOOT, tag=X_TAG)
+        later.append(f"It has lived {plural(latest['lived'], 'day', 'days')} on the testnet, shaped only by the wallets that feed it.")
+    return x_post([head] + later, foot=X_FOOT, tag=X_TAG)
 
 
 def post_x(msg: str, state: dict, now: float | None = None, png: bytes | None = None) -> bool:
@@ -345,6 +352,24 @@ GROW_PROMPT = ("A friendly hand-drawn creature on its rock among plants, as a li
 GROW_WAIT = 30 * 60   # the growth post waits this long for its clip at most, then goes out with the picture as before
 
 
+def kept_picture() -> bytes | None:
+    """An evening that kept the look has no before and after; it shows the creature as it looks now: the newest
+    after-picture, as PNG (11 Nov 2026: kept evenings went out as bare text). None when there is none."""
+    p = newest_shot(0)
+    if not p:
+        return None
+    try:
+        import io
+
+        from PIL import Image
+        out = io.BytesIO()
+        Image.open(p).convert("RGB").save(out, "PNG", optimize=True)
+        return out.getvalue()
+    except Exception as e:  # noqa: BLE001 - the text alone
+        log.info("kept evening: no picture (%s)", e)
+        return None
+
+
 def newest_shot(since: float) -> str | None:
     """The newest evening's after-picture (agorzilla-shots), only when it was taken after `since`: an older one may
     still show the creature before it grew."""
@@ -501,8 +526,11 @@ def step(latest: dict, state: dict, send=post, send_x=post_x, now: float | None 
         png = picture(r)
         if not png and r.get("winner") and not is_rule(r) and r.get("t") and now - r["t"] < SHOTS_WAIT:
             break                      # its photographs are being made; next pass
+        if not png and r.get("kept") and not is_rule(r) and picture is evening_card:
+            png = kept_picture()
         was = known.get(r.get("rule")) if is_rule(r) else None
-        msg = text(r, latest, was)
+        foot = now - state.get("foot_at", 0) >= FOOT_DAYS * 86400
+        msg = text(r, latest, was, foot)
         fails = state.get("fails") if state.get("fails_n") == r["n"] else 0
         if png and fails >= 2:
             png = None                 # the picture did not go through twice: the text alone, so the evening is never stuck
@@ -514,6 +542,8 @@ def step(latest: dict, state: dict, send=post, send_x=post_x, now: float | None 
             else:
                 state["last"] = r["n"]
                 sent.append(msg)
+                if "no value" in msg:
+                    state["foot_at"] = now
         if r["n"] > state["x_last"]:
             state["x_last"] = r["n"]
             if png:

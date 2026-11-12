@@ -54,7 +54,7 @@ check(tg.sent == [], "nothing before its time")
 asyncio.run(w.maybe_plan(at("2026-11-01T10:00:30Z")))
 check(len(tg.sent) == 1 and tg.sent[0][0] == "<b>A</b>" and tg.sent[0][1][0]["inline_keyboard"][0][0]["url"] == "https://tauhud.com/start/",
       "at its time: Telegram with its button")
-check(len(x.sent) == 1 and x.sent[0][0].startswith("Head A\n\nText A.") and x.sent[0][0].endswith(alerts.PLAN_FOOT + " · #TauNet $AGRS"),
+check(len(x.sent) == 1 and x.sent[0][0].startswith("Head A\n\nText A.") and x.sent[0][0].endswith(alerts.PLAN_FOOT + " · #TauNet"),
       "then X, with the source line and the tags")
 asyncio.run(w.maybe_plan(at("2026-11-01T10:01:00Z")))
 check(len(tg.sent) == 2 and tg.sent[1][0] == "<b>B</b>" and len(x.sent) == 1, "one per check; a post without x stays off X")
@@ -76,5 +76,17 @@ for p in real:
 xs = [tuple(p["x"]) for p in real if p.get("x")]
 check(len(xs) == len(set(xs)), "no two X texts alike (X refuses a repeat)")
 
+
+# a spotlight for a page that was in a post within 30 days is skipped (11 Nov 2026: the rules wall twice)
+tgs, xs = Fake("telegram"), Fake("x")
+ws = alerts.Watcher([tgs, xs])
+ws.state.pop("plan", None)
+ws.state["pages"] = {"/rules/": at("2026-11-05T09:00:00Z")}
+sp = [{"id": "spot-rules", "at": "2026-11-11T14:00:00Z", "tg": "<b>Rules</b>", "x": ["Rules"], "link": "/rules/"},
+      {"id": "challenge-x", "at": "2026-11-11T14:00:00Z", "tg": "<b>Challenge</b>", "link": "/rules/"}]
+asyncio.run(ws.maybe_plan(at("2026-11-11T14:01:00Z"), sp))
+check(not any("Rules</b>" in t[0] for t in tgs.sent) and "spot-rules" in ws.state["plan"]["posted"], "the spotlight is skipped")
+asyncio.run(ws.maybe_plan(at("2026-11-11T14:02:00Z")))
+check(any("Challenge" in t[0] for t in tgs.sent), "a post that is not a spotlight still goes out")
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)
