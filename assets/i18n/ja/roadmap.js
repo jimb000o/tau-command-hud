@@ -18,6 +18,10 @@ TauI18n.add({ strings: {
   "Open": "未解決",
   "Partly fixed": "一部修正済み",
   "Fixed": "修正済み",
+  "merged": "マージ済み",
+  "closed": "クローズ",
+  "not planned": "対応予定なし",
+  "open": "オープン",
   "Fix in review": "修正をレビュー中",
   "IDNI’s list": "IDNI のリスト",
   "Status unknown": "状態不明",
@@ -79,7 +83,7 @@ TauI18n.add({ strings: {
   "IDNI work branch, not on main yet, names #{n}": "IDNI の作業ブランチ、まだ main にない、#{n} に言及",
   "our node runs it": "私たちのノードで稼働中",
   "our node does not run it yet": "私たちのノードではまだ稼働していない",
-  "Status from the public GitHub API, refreshed every 10 minutes, and from IDNI’s own git history: a fix on IDNI’s main that names an item’s issue marks it partly fixed by itself. Quotes from IDNI’s monthly videos on the Tau Net YouTube channel. Comments are kept by the same moderator as the troll box.": "状態は公開の GitHub API（10 分ごとに更新）と IDNI 自身の git 履歴から。項目の issue 番号に言及する IDNI の main での修正があれば、その項目は自動で「一部修正」になります。引用は Tau Net の YouTube チャンネルにある IDNI の月例動画から。コメントはトロールボックスと同じモデレーターが管理します。",
+  "Status from the public GitHub API, checked every hour by our server (the chip beside each linked IDNI issue or pull request), and from IDNI’s own git history: a fix on IDNI’s main that names an item’s issue marks it partly fixed by itself. Quotes from IDNI’s monthly videos on the Tau Net YouTube channel. Comments are kept by the same moderator as the troll box.": "状態は公開の GitHub API（私たちのサーバーが 1 時間ごとに確認。リンクされた IDNI の issue やプルリクエストの横のラベル）と IDNI 自身の git 履歴から。項目の issue 番号に言及する IDNI の main での修正があれば、その項目は自動で「一部修正」になります。引用は Tau Net の YouTube チャンネルにある IDNI の月例動画から。コメントはトロールボックスと同じモデレーターが管理します。",
 
   /* relay answers (roadmap.py, chat.py) */
   "At most 600 characters, please.": "600 文字以内でお願いします。",
