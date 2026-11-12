@@ -84,7 +84,7 @@
     if (/\bnext\s+week\b/.test(t)) { const x = new Date(today); x.setDate(x.getDate() + ((8 - x.getDay()) % 7 || 7)); return x; }
     if (/\bnext\s+month\b|\bend\s+of\s+(?:the|this)\s+month\b/.test(t)) return new Date(today.getFullYear(), today.getMonth() + 1, 1);
     if (/\bnext\s+year\b|\bend\s+of\s+(?:the|this)\s+year\b/.test(t)) return new Date(today.getFullYear() + 1, 0, 1);
-    if ((m = /\b(?:in|for|of)\s+(?:the\s+next\s+)?(\d+|a|an|one|two|three|six)\s+(day|week|month|year)s?\b/.exec(t))) {
+    if ((m = /\b(?:in|for|of|within|during)\s+(?:the\s+next\s+)?(\d+|a|an|one|two|three|six)\s+(day|week|month|year)s?\b/.exec(t))) {
       const n = { a: 1, an: 1, one: 1, two: 2, three: 3, six: 6 }[m[1]] || +m[1], x = new Date(today);
       if (m[2] === "day") x.setDate(x.getDate() + n);
       if (m[2] === "week") x.setDate(x.getDate() + 7 * n);
@@ -127,10 +127,10 @@
     allow allowed allows block blocked blocks blocking stop stops stopped refuse refused refuses reject rejected deny denied forbid forbidden halt pause paused suspend
     lock locked locks unlock unlocked unlocks freeze frozen hold held keep kept ever always whatsoever k m thousand million time
     someone somebody anyone anybody everyone everybody else other others who whom whoever address addresses only just
-    before until till after since starting start starts from unless except`);
+    before until till after since starting start starts from unless except apart aside besides excluding exception save within during`);
   const DAYW = set(`sunday monday tuesday wednesday thursday friday saturday sun mon tue tues wed thu thur thurs fri sat
     january february march april june july august september october november december jan feb mar apr may jun jul aug sep sept oct nov dec
-    today tomorrow tonight next coming now later day days week weeks month months year years date end st nd rd th`);
+    today tomorrow tonight next coming now later day days week weeks month months year years date end st nd rd th two three six`);
   const SIGNW = set(`signature signatures second two another extra both guardian authenticator 2fa code app too well signer`);
   const BOOKW = set(`exclusively whitelist allowlist list book contacts people friends known know stranger strangers unknown new`);
   const SIGN_RE = /^(?:co-?sign|countersign|approv|confirm|sign)/;
@@ -171,7 +171,7 @@
     const cs = String(text || "").replace(/\r/g, "").replace(/[’`]/g, "'")
       .replace(/(\d)\.(?=\d)/g, "$1\u0001")   // the dot inside 1.000 or 2.5k is not a sentence end
       .split(/\n|;|\./).map(x => x.replace(/\u0001/g, "."))
-      .flatMap(s => s.split(new RegExp(String.raw`,\s*(?:and\s+then\s+|and\s+|but\s+|then\s+)?(?=${STARTS})|\s+(?:and\s+then|and|but|plus|then)\s+(?=${STARTS})`, "i")))
+      .flatMap(s => s.split(new RegExp(String.raw`(?<!^\s*${EXCEPT_SRC}\b[^,]*),\s*(?:and\s+then\s+|and\s+|but\s+|then\s+)?(?=${STARTS})|\s+(?:and\s+then|and|but|plus|then)\s+(?=${STARTS})`, "i")))   // not after "Except Mia,": the exception belongs to what follows
       .map(s => s.replace(/^[\s,–—-]*(?:and|but|also|plus|then)?\s*/i, "").replace(/[\s,]+$/, "").trim())
       .filter(s => s && /[\p{L}\p{N}]/u.test(s));
     /* "above 1,000, the Guardian co-signs": the amount and who signs belong to one part */
@@ -186,6 +186,7 @@
   const EXCEPT = new RegExp(String.raw`\b${EXCEPT_SRC}\b`);
   const NOBODY = String.raw`(?:nothing|nobody|no\s+one|none|no\s+(?:payments?|transfers?|money)|never|don'?t|do\s+not|${HALT})`;
   const FROZEN = new RegExp(String.raw`\b(?:freeze|frozen|(?:lock|pause|halt|suspend|block|stop)\s+(?:it|everything|(?:the|my|this)\s+(?:account|wallet))|${HALT}\s+(?:(?:all|every|any|my|outgoing)\s+)*(?:everything|all|payments?|transfers?|transactions?|spending|sending|paying))\b|\bnothing\s+(?:leaves|goes\s+out|gets\s+out|may\s+leave|can\s+leave|may\s+go\s+out)\s*$|\bno\s+(?:more\s+)?(?:payments|transfers|transactions|spending)(?:\s+at\s+all)?\s*$`);
+  const DAYISH = String.raw`(?:\d|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|sun|mon|tue|wed|thu|fri|sat)[a-z]*\b|tomorrow|next\s|end\s|start\s|year\s)`;   // how a day begins
   const whole = n => Number.isInteger(n);
   const WHOLE = "Amounts on the testnet are whole numbers of test AGRS. Write the amount without a part after the point, for example 1 or 2.";
   const said = list => list.map(x => "“" + x + "”").join(", ");
@@ -198,7 +199,7 @@
     const done = (kinds, ...items) => { const u = unread(c, ctx, kinds); if (u.length) items[0].unused = said(u); return items.length > 1 ? items : items[0]; };
     const period = /\b(?:per|a|each|every|in\s+(?:a|one))\s+(day|week|month|hour|year)\b|\b(daily|weekly|monthly|hourly|in\s+total|altogether|combined|summed?)\b/.exec(t);
     const co = CO_RE.test(t);
-    const dayWords = /\b(before|until|till|not\s+until|unlock\w*|lock\w*|from|after|starting|since|by|end\s+of)\b/.test(t) && day(t, ctx.now);
+    const dayWords = /\b(before|until|till|not\s+until|unlock\w*|lock\w*|from|after|starting|since|by|end\s+of|(?:in|for|within|during)\s+(?:the\s+next\s+)?(?:\d+|a|an|one|two|three|six)\s+(?:day|week|month|year)s?)\b/.test(t) && day(t, ctx.now);
     const people = () => { let who = addrs(c).map(a => ({ addr: a, name: null })); for (const n of names(c, book)) who.push({ addr: n.addr, name: n.name }); return who.filter((w, i) => isAddr(w.addr) && who.findIndex(x => x.addr === w.addr) === i); };
     const capOf = () => {
       const capM = numAt(t, String.raw`(?:at\s+most|max(?:imum)?(?:\s+of)?|no\s+more\s+than|not\s+more\s+than|never\s+more\s+than|up\s+to|limit(?:ed)?\s+(?:of\s+|to\s+|at\s+|is\s+)?|cap(?:ped)?\s+(?:of\s+|at\s+|is\s+)?|(?:only|just)\s+(?=\d)|<=|≤)`);
@@ -213,7 +214,7 @@
     /* "block payments to strangers" is the wallet's list said the other way round */
     const strangers = new RegExp(String.raw`\b${NOBODY}\b.*\b(?:strangers?|unknown|people\s+i\s+don'?t\s+know|anyone\s+i\s+don'?t\s+know|new\s+addresses)\b`).test(t);
     /* "block everything except Mia", "nothing to anyone but Mia": also the list */
-    const butTo = !co && new RegExp(String.raw`\b${NOBODY}\b.*\b(?:${EXCEPT_SRC}|but)\b`).test(t) && !/\d/.test(t.replace(ADDR, ""));
+    const butTo = !co && (new RegExp(String.raw`\b${NOBODY}\b.*\bbut\b`).test(t) || (new RegExp(String.raw`\b${NOBODY}\b`).test(t) && EXCEPT.test(t))) && !/\d/.test(t.replace(ADDR, ""));
     const unlessSigns = co && /\b(?:unless|except\s+(?:if|when))\b.*\b(?:co-?sign|sign|approv|confirm)\w*/.test(t);
     if (EXCEPT.test(t) && !unlessSigns && !butTo)
       return no("except", "The wallet's four blocks have no exception: a limit, a list or a day counts for every payment. Say it without the exception, or write the rule in Tau by hand; the Playground has an example with an exception (Limit, Bob exempt).");
@@ -259,7 +260,13 @@
     if (dayWords && !/\b(above|over|max|at\s+most|limit|up\s+to)\s+\d/.test(t)) {
       const d = dayWords;
       const ts = Math.floor(d.getTime() / 1000);
-      if (/\b(after|until|till)\b/.test(t) && /\b(only\s+)?(?:allowed|possible|payments?\s+(?:are\s+)?(?:fine|ok))\s+until\b|\bstop\w*\s+(?:on|at|after)\b|\bno\s+more\s+after\b/.test(t))
+      /* which side of the day is closed: "nothing before Friday" and "from Friday" open the wallet on that day; "nothing after
+         Friday" and "payments until Friday" close it on that day, and the wallet has no block for that */
+      const shut = new RegExp(String.raw`\b(?:nothing|no|none|nobody|never|not|don'?t|cannot|can'?t|won'?t|hold|held|keep|kept|${HALT})\b`).test(t);
+      const says = /\b(?:only|just|allow\w*|possible|fine|ok|okay|payments?|pay|send|spend|transfers?|may|can)\b/.test(t);
+      const after = new RegExp(String.raw`\b(?:after|from|since|starting(?:\s+(?:on|from))?|as\s+of|beyond|past)\s+(?:the\s+|on\s+)?${DAYISH}`).test(t);
+      const before = new RegExp(String.raw`\b(?:before|until|till|by|up\s+to)\s+(?:the\s+|on\s+)?${DAYISH}`).test(t);
+      if ((after && before) || (after && shut) || (before && !shut && says) || /\bstop\w*\s+(?:on|at|after)\b|\bno\s+more\s+after\b/.test(t))
         return no("end", "An end date (payments only until a day) is not one of the wallet's blocks; “nothing before a date” is.");
       return done(["from"], { ...item, kind: "from", from: ts, past: d.getTime() <= ctx.now.getTime() });
     }

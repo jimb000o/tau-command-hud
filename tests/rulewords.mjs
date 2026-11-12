@@ -70,6 +70,16 @@ const WORDS = [
   ["lock my savings until 2028", { from: day(2028, 1, 1) }],
   ["nothing before the end of 2027", { from: day(2028, 1, 1) }],
   ["nothing until next month, then at most 100", { cap: 100, from: day(2026, 12, 1) }],
+  /* the exception may come first, and a time span may be said in words */
+  ["Except Mia, block everything", { only: [MIA] }],
+  ["except for Mia, nothing leaves", { only: [MIA] }],
+  ["locked for two weeks", { from: day(2026, 11, 26) }],
+  ["nothing in the next 90 days", { from: day(2027, 2, 10) }],
+  /* a day that opens the wallet: said as "from", "after", or as what is closed before it */
+  ["payments from Friday", { from: day(2026, 11, 13) }],
+  ["only after 1 Dec", { from: day(2026, 12, 1) }],
+  ["from now on nothing before Friday", { from: day(2026, 11, 13) }],
+  ["hold everything till 1 Jan", { from: day(2027, 1, 1) }],
 ];
 for (const [text, want] of WORDS) {
   const p = RW.parse(text, ctx), r = p.rule || {};
@@ -85,7 +95,10 @@ const NO = [["max 100 a day", "period"], ["at most 500 per week", "period"], ["o
   ["at most 1,5 per payment", "whole"], ["at most 1.5 per payment", "whole"], ["above 2.5 the Guardian co-signs", "whole"],
   ["send at most 100 to anyone except Mia", "except"], ["above 1000 the Guardian co-signs except for Mia", "except"],
   ["block all payments to Mia", "blocklist"], ["block everything over 1k unless my brother signs", "co-who"], ["block everything except Bob", "only-who"],
-  ["payments above 1000", "above-what"]];
+  ["payments above 1000", "above-what"],
+  /* a day that closes the wallet is an end date; it is never turned round into "nothing before" */
+  ["no payments after 1 Dec", "end"], ["no more payments after 1 Dec", "end"], ["nothing after Friday", "end"], ["nothing from Friday on", "end"],
+  ["payments only until Friday", "end"], ["pay by Friday", "end"], ["locked after 2028", "end"], ["starting Friday nothing leaves", "end"], ["from Friday until Sunday nothing", "end"]];
 for (const [text, code] of NO) {
   const p = RW.parse(text, ctx);
   check(!p.rule && p.items.length === 1 && p.items[0].kind === "no" && p.items[0].code === code, `“${text}”: wanted no rule (${code}), got ${JSON.stringify(p.items.map(i => [i.kind, i.code]))}`);
