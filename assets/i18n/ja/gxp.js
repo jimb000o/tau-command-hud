@@ -43,7 +43,7 @@ TauI18n.add({ strings: {
   "An independent audit of cryptography and consensus": "暗号と合意形成の独立監査",
   "Where it fits today": "今日使える場面",
   "Rule checker.": "ルールチェッカー。",
-  "Prove offline that written process rules contain no contradiction; the validated system stays the record.": "書かれた工程ルールに矛盾がないことをオフラインで証明します。記録はバリデート済みのシステムに残ります。",
+  "Prove offline that written process rules contain no contradiction; the validated system stays the record. Commercial use outside Tau Net needs a licence from IDNI.": "書かれた工程ルールに矛盾がないことをオフラインで証明します。記録はバリデート済みのシステムに残ります。Tau Net 以外での商用利用には IDNI のライセンスが必要です。",
   "Hash anchoring.": "ハッシュのアンカリング。",
   "Only fingerprints of records on a private network you control.": "記録のフィンガープリントだけを、自分で管理するプライベートネットワークに置きます。",
   "The assessment kit": "評価キット",

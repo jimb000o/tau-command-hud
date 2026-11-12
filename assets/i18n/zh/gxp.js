@@ -43,7 +43,7 @@ TauI18n.add({ strings: {
   "An independent audit of cryptography and consensus": "对密码学和共识的独立审计",
   "Where it fits today": "今天适合做什么",
   "Rule checker.": "规则检查器。",
-  "Prove offline that written process rules contain no contradiction; the validated system stays the record.": "离线证明书面流程规则没有矛盾；记录仍保存在已验证的系统里。",
+  "Prove offline that written process rules contain no contradiction; the validated system stays the record. Commercial use outside Tau Net needs a licence from IDNI.": "离线证明书面流程规则没有矛盾；记录仍保存在已验证的系统里。在 Tau Net 之外商业使用需要 IDNI 的许可。",
   "Hash anchoring.": "哈希锚定。",
   "Only fingerprints of records on a private network you control.": "只把记录的指纹放到你自己控制的私有网络上。",
   "The assessment kit": "评估工具包",
