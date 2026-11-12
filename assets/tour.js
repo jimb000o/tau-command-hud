@@ -151,7 +151,14 @@
   };
   const T = TOURS[PAGE];
   if (!T) { window.TauTour = { has: false, start() {} }; return; }
-  const KEY = "tau-tour-" + PAGE;
+  const KEY = "tau-tour-" + PAGE, SEEN = "tau-tour-seen";
+  /* the offer comes once per visitor, on the first page they open, not once on every page. Whoever answered an offer
+     before this was built (a tau-tour… key of any page, or the HUD's) has had theirs. "Take the tour" stays on every page. */
+  const seen = () => {
+    if (store.get(SEEN) || store.get("tau-tour")) return true;
+    try { for (let k = 0; k < localStorage.length; k++) if (/^tau-tour-/.test(localStorage.key(k) || "")) return true; } catch (e) {}
+    return false;
+  };
 
   const css = document.createElement("style");
   css.textContent = `
@@ -247,9 +254,11 @@
     card.style.setProperty("--ax", Math.min(Math.max(cx - l, 18), cw - 18) / z + "px");
     card.style.setProperty("--ay", Math.min(Math.max(cy - tp, 18), ch - 18) / z + "px");
   }
-  /* first visit: offer this page's tour once */
+  /* first visit to the site: offer this page's tour once. Not to a visitor who arrives in the middle of a task
+     (?from=: a rule carried over from another page) or with a walk a friend sent, which has its own steps */
   function offer() {
-    if (i >= 0 || store.get(KEY) || innerWidth < 900 || /[?&]walk=/.test(location.search) || document.querySelector(".modal:not([hidden]), .tn-modal:not([hidden])")) return;   // a walk a friend sent has its own steps
+    if (i >= 0 || seen() || innerWidth < 900 || /[?&](?:walk|from)=/.test(location.search) || document.querySelector(".modal:not([hidden]), .tn-modal:not([hidden])")) return;
+    store.set(SEEN, "1");
     offered = true; target = null; ring.hidden = true;
     card.classList.remove("anchored", "side-top", "side-bottom", "side-left", "side-right"); card.style.left = card.style.top = ""; card.style.zoom = zoom() === 1 ? "" : String(zoom());
     q(".tt-step").textContent = "New here?"; q("h3").textContent = `A short tour of ${T.name}`;

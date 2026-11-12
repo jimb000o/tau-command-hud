@@ -4214,7 +4214,9 @@ addEventListener("resize", () => { if (tourI >= 0) tourPlace(); });
 addEventListener("scroll", () => { if (tourI >= 0) tourPlace(); }, { passive: true });
 /* first visit: offer the tour once; “Not now” is remembered, as is finishing it */
 function tourOffer() {
-  if (tourI >= 0 || store.get("tau-tour") || innerWidth < 900 || document.body.classList.contains("calm") || document.querySelector(".modal:not([hidden])")) return;
+  if (tourI >= 0 || store.get("tau-tour") || store.get("tau-tour-seen") || innerWidth < 900 || document.body.classList.contains("calm") || document.querySelector(".modal:not([hidden])")) return;
+  try { for (let k = 0; k < localStorage.length; k++) if (/^tau-tour-/.test(localStorage.key(k) || "")) return; } catch (e) {}   // one offer per visitor, on the first page they open (assets/tour.js)
+  store.set("tau-tour-seen", "1");
   tourOffered = true;
   $("tour").classList.remove("top", "anchored", "side-top", "side-bottom", "side-left", "side-right"); $("tour").style.left = $("tour").style.top = ""; TOURPOS.target = null;
   $("tour").hidden = false; $("tourStep").textContent = "New here?"; $("tourTitle").textContent = "How rules change on Tau, in one minute";
