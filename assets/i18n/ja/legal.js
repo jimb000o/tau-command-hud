@@ -18,4 +18,6 @@ TauI18n.add({ strings: {
   "Privacy · Tau HUD": "プライバシー · Tau HUD",
   "Language of the legal text": "法的な文書の言語",
   "In short": "要点",
+  "the level you picked: beginner, intermediate or expert": "選んだレベル：初心者、中級者、上級者",
+  "Simple or Technical view (follows the level)": "シンプル／技術表示（レベルに従います）",
 } });

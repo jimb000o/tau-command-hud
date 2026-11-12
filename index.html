@@ -4155,6 +4155,8 @@ const store = { get: k => { try { return localStorage.getItem(k); } catch { retu
 function setView(v) { document.body.dataset.view = v; $("btnSimple").setAttribute("aria-pressed", v === "simple"); $("btnTech").setAttribute("aria-pressed", v === "tech"); store.set("tau-view", v); if (S.validators.length) renderGov(); const cur = selectedBlock !== null ? S.byHeight.get(selectedBlock) : S.blocks[S.blocks.length - 1]; if (cur) showBlock(cur, selectedBlock !== null); }
 $("btnSimple").onclick = () => setView("simple"); $("btnTech").onclick = () => setView("tech");
 setView(store.get("tau-view") || "simple");
+/* the level switch under the gear (assets/nav.js) is the one control now: Expert is the Technical view, the other levels the Simple one */
+addEventListener("tau-level", e => { if (!e.detail) return; const v = e.detail === "pro" ? "tech" : "simple"; if (document.body.dataset.view !== v) setView(v); });
 /* ---------- glyph rain toggle ---------- */
 function setRain(on) { $("rain").classList.toggle("off", !on); $("btnRain").setAttribute("aria-pressed", String(on)); store.set("tau-rain", on ? "1" : "0"); }
 $("btnRain").onclick = () => setRain($("btnRain").getAttribute("aria-pressed") !== "true");
@@ -4214,7 +4216,9 @@ addEventListener("resize", () => { if (tourI >= 0) tourPlace(); });
 addEventListener("scroll", () => { if (tourI >= 0) tourPlace(); }, { passive: true });
 /* first visit: offer the tour once; “Not now” is remembered, as is finishing it */
 function tourOffer() {
-  if (tourI >= 0 || store.get("tau-tour") || innerWidth < 900 || document.body.classList.contains("calm") || document.querySelector(".modal:not([hidden])")) return;
+  if (tourI >= 0 || store.get("tau-tour") || store.get("tau-tour-seen") || document.documentElement.dataset.level === "pro" || innerWidth < 900 || document.body.classList.contains("calm") || document.querySelector(".modal:not([hidden])")) return;
+  try { for (let k = 0; k < localStorage.length; k++) if (/^tau-tour-/.test(localStorage.key(k) || "")) return; } catch (e) {}   // one offer per visitor, on the first page they open (assets/tour.js)
+  store.set("tau-tour-seen", "1");
   tourOffered = true;
   $("tour").classList.remove("top", "anchored", "side-top", "side-bottom", "side-left", "side-right"); $("tour").style.left = $("tour").style.top = ""; TOURPOS.target = null;
   $("tour").hidden = false; $("tourStep").textContent = "New here?"; $("tourTitle").textContent = "How rules change on Tau, in one minute";

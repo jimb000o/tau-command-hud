@@ -144,5 +144,6 @@ TauI18n.add({ strings: {
   "Demo with play values": "お試し値のデモ",
   "Set (demo). On the real testnet a block would hold the rule now; a play payment waits in step 3.": "設定しました（デモ）。本物のテストネットなら、いまブロックにルールが入ります。手順 3 でお試しの支払いが待っています。",
   "Removed (demo).": "削除しました（デモ）。",
-  "Today by itself: 1 payment, {a} of {b} test AGRS.": "今日の自動署名：1 件、{b} 中 {a} テスト AGRS。"
+  "Today by itself: 1 payment, {a} of {b} test AGRS.": "今日の自動署名：1 件、{b} 中 {a} テスト AGRS。",
+  "2 things it does, 4 limits": "できること 2 つ、限界 4 つ",
 } });

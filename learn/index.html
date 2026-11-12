@@ -182,6 +182,7 @@ button.b { background: none; cursor: pointer; }
 .door button[aria-current="true"] { border-color: var(--ok); background: rgba(57,255,138,.06); }
 .door button[aria-current="true"] div::after { content: attr(data-now); display: block; color: var(--ok); font: 600 10.5px var(--display); letter-spacing: .12em; text-transform: uppercase; margin-top: 3px; }
 .door .keep { color: var(--ok); }
+.door p.site { color: var(--dim); font: 11.5px/1.4 var(--mono); margin: 0; }
 @media (max-width: 700px) { .lvl { min-height: 44px; padding: 0 10px; font-size: 11.5px; } .door .skip { min-height: 44px; } }
 .panel.try h2 { display: flex; align-items: center; gap: 8px; }
 .crib { margin-top: 8px; border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; }
@@ -311,6 +312,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
           <button type="button" data-level="pro"><i>3</i><div>I know logic or Tau already<span>Straight to the box, the real testnet rule and the Playground</span></div></button>
           <button type="button" class="skip" data-level="">Just show me the box</button>
           <button type="button" class="skip keep" id="keepLvl" hidden></button>
+          <p class="site">Your answer also sets your level on the other pages. Change it at any time under the gear, top right.</p>
         </div>
         <div class="ops" role="group" aria-label="Question">
           <button type="button" translate="no" data-op="sat" aria-pressed="true" title="Can this be true?">sat</button>
@@ -415,6 +417,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
         </div>
         <div data-pane="net" hidden>
           <ul class="links">
+            <li><a href="/builder/">Rule builder ›</a><span>Say a wallet rule in plain words and see the Tau rule it becomes.</span></li>
             <li><a href="/playground/">Rule Playground ›</a><span>Write a transfer rule and run the testnet's checks on it, in your browser.</span></li>
             <li><a href="/nomemo/">No Memo ›</a><span>The terminal game where you learn the testnet by playing it.</span></li>
             <li><a href="/start/">Start here ›</a><span>A test wallet and a rule of your own on the real chain.</span></li>
@@ -461,12 +464,14 @@ const store = { get() { try { return JSON.parse(localStorage.getItem(KEY) || "{}
 const OPS = { sat: "Can this be true?", valid: "Is this true in every case?", why: "Which parts contradict each other?", run: "Feed inputs in, step by step, and read the outputs", unsat: "Can this never be true?", realizable: "Can the outputs always answer the inputs?" };
 let op = "sat", busy = false, engineUp = null, lessons = [], cur = 0, lastAnswer = null;
 const LEVELS = { new: "new to formulas", code: "I write code", pro: "logic or Tau" };
+const SITE_OF = { new: "new", code: "mid", pro: "pro" }, LEARN_OF = { new: "new", mid: "code", pro: "pro" };   // the site-wide level under the gear (assets/nav.js) and this page's three doors
 let level = store.get().level || "";   // "", "new", "code" or "pro"; "" = no door answer, the page infers from what is typed
 
 /* ---- the level: door, chip, what each level changes ---- */
 function applyLevel(l, how) {
   level = LEVELS[l] ? l : "";
   const st = store.get(); st.level = level; if (how) st.levelBy = how; store.set(st);
+  if (how === "door" && level && window.TauNav) TauNav.setLevel(SITE_OF[level], "learn");   // the door answers for the whole site
   document.querySelector(".try").classList.remove("doored");
   $("door").hidden = true;
   $("lvl").hidden = false; $("lvl").innerHTML = esc(T("Level") + ": " + (level ? T(LEVELS[level]) : T("not set"))) + "<b>" + esc(T("change")) + "</b>";
@@ -495,6 +500,7 @@ function openDoor() {
   if (chosen) $("door").scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
 $("keepLvl").addEventListener("click", () => { applyLevel(level); });
+addEventListener("tau-level-set", e => { const l = LEARN_OF[e.detail]; if (l && l !== level) applyLevel(l, "site"); });   // the level changed under the gear while this page is open
 /* one tap: the level, and a first question Tau answers at once */
 let full = false;   // true for this visit only: a shared #q= link shows the box even to a beginner
 const FIRST = { new: { op: "sat", spec: "x = 0", says: "That was your first Tau question: can x be 0? Yes. Lesson 1 on the right goes on from here.", lesson: 0 },

@@ -18,4 +18,6 @@ TauI18n.add({ strings: {
   "Privacy · Tau HUD": "隐私 · Tau HUD",
   "Language of the legal text": "法律文本的语言",
   "In short": "简而言之",
+  "the level you picked: beginner, intermediate or expert": "你选择的水平：入门、进阶或专家",
+  "Simple or Technical view (follows the level)": "简洁或技术视图（跟随所选水平）",
 } });

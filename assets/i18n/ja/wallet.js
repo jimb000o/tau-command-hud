@@ -599,4 +599,7 @@ TauI18n.add({ strings: {
   "The rule above does not fit this task yet.": "上のルールはまだこの課題に合っていません。",
   "Back to the Playground": "Playground に戻る",
   "Back to the challenge": "チャレンジに戻る",
+  "In plain words": "普通の言葉で",
+  "In plain words ›": "普通の言葉で ›",
+  "Write what your wallet may do as a sentence. The rule builder turns it into these blocks, checks it and brings it back here to sign.": "ウォレットに許すことを文で書きます。ルールビルダーがそれをこのブロックに変えて確かめ、署名のためにここへ戻します。",
 } });
