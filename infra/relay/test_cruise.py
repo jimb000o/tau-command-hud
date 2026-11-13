@@ -8,6 +8,7 @@ import datetime as dt
 import hashlib
 import json
 import os
+import re
 import stat
 import sys
 import tempfile
@@ -395,8 +396,17 @@ async def chain(cmd: str):
     ops = tx.get("operations", {}).get("1", []) if t == "user_tx" else []
     if t == "user_tx":
         rule = (tx.get("operations") or {}).get("0")
-        if isinstance(rule, str) and any(s in rule for s in ("o5", "o8")) and not any(s in rule for s in ("i12", "i3")):   # admission.py ~391
-            return err("UNSCOPED_USER_RULE")
+        if isinstance(rule, str) and rule:
+            out = set(re.findall(r"o(\d+)\[t\]", rule))
+            if "5" in out:   # since IDNI 13.11 an o5 rule is a per-account policy clause (admission.validate_o5_clause_routing / routed_rule_conflict)
+                if len(out) > 1:   # a clause may write o5 only
+                    return err("MIXED_OUTPUT_RULE")
+                if ops:   # a policy clause and transfers cannot share one tx: the transfers would be judged by the clause being replaced
+                    return err("RULE_WITH_TRANSFERS")
+                if len(re.findall(r"!=|<=|>=|(?<![-<])>|<(?!-)|=", rule)) > 32:   # MAX_CLAUSE_COMPARISONS (rule_offers.py); screen returns default TX_REJECTED
+                    return err("TX_REJECTED")
+            elif "8" in out and not any(s in rule for s in ("i12", "i3")):   # an o8 fee rule without a sender scope (admission.py ~295)
+                return err("UNSCOPED_USER_RULE")
         if "rule_revisions" in tx:
             return err("TX_REJECTED")
         if len(ops) > 64:
@@ -441,8 +451,8 @@ check(s1["ship"] == "pirates" and not P.visits[-1]["note"], "the pirate ship sta
 check(len(tricks) >= 28 and all(e["ok"] is False and e["right"] for e in tricks),
       f"every trick is refused by the chain, each with the answer it should get ({len(tricks)} tricks)")
 check({e["code"] for e in tricks} == {"INSUFFICIENT_FUNDS", "INVALID_SEQUENCE", "TX_EXPIRED", "INVALID_SIGNATURE", "TX_INVALID", "FEE_LIMIT_TOO_LOW", "TX_REJECTED",
-                                      "UNSCOPED_USER_RULE", "NOT_RETRACTABLE_SENDER", "UNKNOWN_RETRACTABLE", "RETRACT_TOO_LATE"}
-      and {e["trick"] for e in tricks} == set(cruise.TRICKS), f"{len(cruise.TRICKS)} tricks, every one refused, eleven different answers")
+                                      "UNSCOPED_USER_RULE", "NOT_RETRACTABLE_SENDER", "UNKNOWN_RETRACTABLE", "RETRACT_TOO_LATE", "RULE_WITH_TRANSFERS", "MIXED_OUTPUT_RULE"}
+      and {e["trick"] for e in tricks} == set(cruise.TRICKS), f"{len(cruise.TRICKS)} tricks, every one refused, thirteen different answers")
 check(all(x is True for x in LOADS) and sum(s1["refused"].values()) == 0, "tricks are no refusals: not for the brakes, not on the load page")
 check(all(c["right"] == c["tried"] > 0 for c in s1["tricks"].values()), "the summary counts each trick: tried, stopped, stopped for the right reason")
 ed = [e for e in tricks if e["trick"] == "edge"]

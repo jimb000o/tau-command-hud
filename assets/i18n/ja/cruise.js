@@ -156,6 +156,9 @@ TauI18n.add({ strings: {
   "tries to take back a booking the chain never had": "チェーンに存在しない予約を取り消そうとする",
   "tries to take back a booking after its release time": "予約の解放時刻を過ぎてから取り消そうとする",
   "allows one test AGRS less fee than the network’s fee rule asks for that very payment": "その支払いにネットワークの手数料ルールが求める額より 1 テスト AGRS 少ない手数料しか認めない",
+  "sends a policy rule and a coin in one payment, which the chain keeps apart": "1回の支払いでポリシールールとコインを一緒に送り、チェーンは両者を分ける",
+  "writes its own policy and the chain’s own fee stream in one rule": "1つのルールで自分のポリシーとチェーン自身の手数料ストリームの両方に書き込む",
+  "offers a policy rule with more comparisons than one clause may carry (over 32)": "1つの節が持てる比較の数（32）を超えるポリシールールを提出する",
   "{a} allowed, the fee rule asks {b}": "{a} を認める、手数料ルールは {b} を求める",
   "with {b} it went through": "{b} を認めると通った",
 } });

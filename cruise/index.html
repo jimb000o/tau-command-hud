@@ -154,7 +154,8 @@ const TRICKS = { overspend: "pays more than the wallet holds", replay: "sends a 
   impostor: "pays from another pirate’s wallet with their own signature", freeride: "allows no fee at all for a payment", stale: "sends a payment whose block height deadline has passed", giant: "pays more than a transfer can carry",
   double: "sends two different payments for the same sequence number at once", poison: "pays several places in one payment, the last more than the wallet holds", cram: "packs more transfers into one payment than it may carry (over 64)", governance: "sends a payment carrying a field only the chain’s own transactions may set",
   taxman: "submits a fee rule that would tax every wallet’s transfers, not only its own", stranger: "tries to take back another pirate’s booking", phantom: "tries to take back a booking the chain never had", late: "tries to take back a booking after its release time",
-  edge: "allows one test AGRS less fee than the network’s fee rule asks for that very payment" };
+  edge: "allows one test AGRS less fee than the network’s fee rule asks for that very payment",
+  selfrule: "sends a policy rule and a coin in one payment, which the chain keeps apart", mixrule: "writes its own policy and the chain’s own fee stream in one rule", bigclause: "offers a policy rule with more comparisons than one clause may carry (over 32)" };
 /* the fee edge: what the rule asks, what the pirate allowed, and the same payment allowing exactly the fee */
 const edgeNote = r => r.trick !== "edge" || r.fee == null ? "" : " · " + F("{a} allowed, the fee rule asks {b}", { a: N(r.fee_limit), b: N(r.fee) })
   + (r.inside && r.inside.ok === true ? " · " + F("with {b} it went through", { b: N(r.inside.fee_limit) }) : "");

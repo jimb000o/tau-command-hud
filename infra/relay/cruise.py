@@ -160,6 +160,10 @@ TAX_RULE = "always ( o8[t]:bv[24] = i1[t]:bv[24] / { 100 }:bv[24] )."   # the "t
 RETRACT_HOLD = 3600        # the "stranger" booking's release is this far out, so it stays open all evening for another pirate to try to take it back
 RETRACT_SOON = 180         # the "late" booking's release is this near, so its own release time passes during the visit
 MAX_PREP = 4               # open bookings a visit keeps for its retract tricks, so it never nears MAX_OPEN_RETRACTABLE_PER_SENDER
+# o5 is each account's own policy clause since IDNI's 13.11 per-account change. These three rules each break one of its new screens.
+O5_ALLOW = "always ( o5[t]:bv[24] = { #x000001 }:bv[24] )."   # a do-nothing policy clause (always allow); the "selfrule" trick sends it together with a coin → RULE_WITH_TRANSFERS
+O5_MIX = "always ( ( o5[t]:bv[24] = { #x000001 }:bv[24] ) && ( o9[t]:bv[24] = { #x000000 }:bv[24] ) )."   # writes the account's own policy o5 AND the chain's fee stream o9 → MIXED_OUTPUT_RULE
+BIG_CLAUSE = "always ( " + " && ".join("( o5[t]:bv[24] = { #x000001 }:bv[24] )" for _ in range(33)) + " )."   # 33 comparisons, one over MAX_CLAUSE_COMPARISONS (32) → refused
 EDGE_MAX = 5000            # the fee edge pays at most this: a step of the fee rule above it is not tried (a pirate's purse is 100,000)
 # the pirates' tricks: what the pirate does, and the node's answers that mean the chain said no for the right reason
 # (tau-testnet commands/sendtx.py; an overspend may also be refused by the transfer rule itself, TX_REJECTED)
@@ -181,6 +185,9 @@ TRICKS = {
     "phantom": (("UNKNOWN_RETRACTABLE",), "tries to take back a booking the chain never had"),
     "late": (("RETRACT_TOO_LATE",), "tries to take back a booking after its release time"),
     "edge": (("FEE_LIMIT_TOO_LOW",), "allows one test AGRS less fee than the network's fee rule asks for that very payment"),
+    "selfrule": (("RULE_WITH_TRANSFERS",), "sends a policy rule and a coin in one payment, which the chain keeps apart"),
+    "mixrule": (("MIXED_OUTPUT_RULE",), "writes its own policy and the chain’s own fee stream in one rule"),
+    "bigclause": (("TX_REJECTED",), "offers a policy rule with more comparisons than one clause may carry (over 32)"),
 }
 CODES = sorted({c for codes, _ in TRICKS.values() for c in codes} | {"TX_INVALID", "INVALID_PARAMS", "TX_REJECTED"})
 
@@ -1074,6 +1081,9 @@ class Cruise:
                   "operations": {"1": [[pk, PLACES[act["to"]], str(act["amount"])]]}, act["field"]: act["value"]}
         elif k == "taxrule":   # a user_tx whose rule (operations "0") writes a shared fee stream without a sender scope
             tx = {"tx_type": "user_tx", **env, "fee_limit": str(fee * 5), "operations": {"0": act["rule"]}}
+        elif k == "o5pay":   # a policy rule (operations "0") AND a transfer in one tx: the chain keeps rule and transfer apart (RULE_WITH_TRANSFERS)
+            tx = {"tx_type": "user_tx", **env, "fee_limit": str(fee * 5),
+                  "operations": {"0": act["rule"], "1": [[pk, PLACES[act["to"]], str(act["amount"])]]}}
         elif k == "retrick":   # a bare retract for the pirates' retract tricks: its own expiry is not capped to any release
             env["expire_at_height"] = tip + 100
             tx = {"tx_type": "retract_transfer", **env, "fee_limit": "0", "retractable_id": act["rid"]}
@@ -1225,6 +1235,12 @@ class Cruise:
                 pay["kind"], pay["field"], pay["value"] = "gov", "rule_revisions", []
             elif trick == "taxman":   # a user rule that would tax every wallet's transfers, not only the sender's own
                 pay["kind"], pay["rule"], entry["amount"] = "taxrule", TAX_RULE, 0
+            elif trick == "selfrule":   # a policy rule (o5) and a coin in one payment: the chain keeps rule and transfer apart
+                pay["kind"], pay["rule"] = "o5pay", O5_ALLOW
+            elif trick == "mixrule":   # one rule that writes the pirate's own policy (o5) and the chain's own fee stream (o9)
+                pay["kind"], pay["rule"], entry["amount"] = "taxrule", O5_MIX, 0
+            elif trick == "bigclause":   # a policy clause with more comparisons than one clause may carry (over 32)
+                pay["kind"], pay["rule"], entry["amount"] = "taxrule", BIG_CLAUSE, 0
             elif trick == "phantom":   # a retract of a booking id the chain never had
                 pay["kind"], pay["rid"], entry["amount"] = "retrick", secrets.token_hex(32), 0
             elif trick == "edge":   # one test AGRS less fee than the fee rule asks for this very payment
