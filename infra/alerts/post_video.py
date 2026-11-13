@@ -1,4 +1,4 @@
-"""Post one short video by hand to the channels the alerts service writes to: Telegram (@tauHUDcom) and X (@TauHUDcom).
+"""Post one short video by hand to the channels the alerts service writes to: Telegram (@tauHUDchat) and X (@TauHUDcom).
 
   docker compose run --rm -v /opt/tau-command-hud:/repo:ro alerts python /repo/infra/alerts/post_video.py \
       /repo/assets/share/<file>.mp4 /repo/assets/share/<file>.json [--dry] [--only telegram|x]

@@ -224,7 +224,6 @@ TauI18n.add({ strings: {
   "on X": "X で",
   "Every rule change from proposal to law, with alerts on Telegram, X and RSS": "提案から施行まで、すべてのルール変更。Telegram、X、RSS で通知",
   "Telegram": "Telegram",
-  "Telegram channel tauHUDcom": "Telegram チャンネル tauHUDcom",
   "The chain core live: blocks, rules and agreement as they happen.": "チェーンコアをライブで：ブロック、ルール、合意をその場で。",
   "This page reads the real testnet through the community relay. Opens the HUD in Live mode.": "このページはコミュニティリレーを通じて実際のテストネットを読んでいます。HUD をライブモードで開きます。",
   "Time": "時刻",
