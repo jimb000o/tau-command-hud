@@ -224,6 +224,10 @@ SITE_DIGEST_HOUR = int(os.environ.get("SITE_DIGEST_HOUR", 16))        # UTC
 SITE_DIGEST_LINES = int(os.environ.get("SITE_DIGEST_LINES", 5))
 SITE_DIGEST_X = os.environ.get("SITE_DIGEST_X", "false").lower() in ("1", "true", "yes")
 SITE_LOG_LINK = f"{SITE}/#updates"
+# Each change is reported once and only while it is news (Kilian, 13 Nov 2026: the digest of that Friday led with changes
+# a week old): the digest names only what was logged since the previous digest time; a change that missed its week (a
+# quiet week, a slot nobody used) is dropped, never carried on, and an old entry seen anew (edited) is not queued.
+SITE_DIGEST_MAX_DAYS = float(os.environ.get("SITE_DIGEST_MAX_DAYS", 7))
 # Posts planned ahead (the month's calendar): assets/posts-plan.json on the site, each sent once at its time on Telegram
 # and X, or within PLAN_WINDOW_HOURS after it (a later restart); after that it is over, never posted late.
 PLAN_ON = os.environ.get("POSTS_PLAN", "true").lower() in ("1", "true", "yes")
@@ -673,8 +677,70 @@ def x_len(s: str) -> int:
 def x_join(lines: list[str]) -> str:
     out = ""
     for i, x in enumerate(lines):
-        out += x if i == 0 else ("\n" if x.startswith("• ") and lines[i - 1].startswith("• ") else "\n\n") + x
+        out += x if i == 0 else ("\n" if i > 1 and x.startswith("• ") and lines[i - 1].startswith("• ") else "\n\n") + x
     return out
+
+
+def air(text):
+    """Exactly one blank line between a post's first line (its headline) and the second, on Telegram and X alike
+    (Kilian, 13 Nov 2026); the rest stays as written. Every channel post and every X post goes through here."""
+    if not isinstance(text, str):
+        return text
+    body = text.lstrip("\n")
+    if "\n" not in body:
+        return text
+    head, rest = body.split("\n", 1)
+    rest = re.sub(r"^(?:[ \t]*\n)+", "", rest)
+    return head + "\n\n" + rest if rest.strip() else head
+
+
+# The official Tau profile on X is tagged where a post is about Tau itself (Kilian, 13 Nov 2026): once per post at most,
+# never where "Tau" only names a Tau rule, Tau HUD or the hashtag, and at most TAU_TAG_PER_DAY posts a day so the
+# profile is not over-tagged. TAU_TAG_X= (empty) switches it off.
+TAU_TAG_X = os.environ.get("TAU_TAG_X", "taulogicai").strip().lstrip("@")
+TAU_TAG_PER_DAY = int(os.environ.get("TAU_TAG_PER_DAY", 2))
+
+
+def about_tau(text: str) -> bool:
+    """Does the post speak of Tau itself (Tau Net, the testnet, the language), not only of a Tau rule or Tau HUD?"""
+    t = re.sub(r"https?://\S+|[#$@]\w+|\b[\w.-]+\.(?:com|ai|org|net|io)\b\S*", " ", plain(text))
+    t = re.sub(r"\bTau(?:[\s-]+(?:HUD|rules?|clauses?|formulas?|specs?|code|programs?|lines?)\b|HUD)", " ", t, flags=re.I)
+    return bool(re.search(r"\bTau\b", t, re.I))
+
+
+TAU_TAG_PATH = os.environ.get("TAU_TAG_PATH", os.path.join(os.path.dirname(os.environ.get("STATE_PATH", "/state/alerts.json")) or "/state",
+                                                            "tau-tag.json"))
+
+
+def tau_tag(text: str, now: float | None = None) -> str:
+    """The X post with @TAU_TAG_X added once at its end, when it is about Tau, fits in 280 and the day has room."""
+    if not TAU_TAG_X or not isinstance(text, str) or ("@" + TAU_TAG_X).lower() in text.lower() or not about_tau(text):
+        return text
+    out = text.rstrip() + " @" + TAU_TAG_X
+    if x_len(out) > 280:
+        return text
+    day = time.strftime("%Y-%m-%d", time.gmtime(now if now is not None else time.time()))
+    try:
+        with open(TAU_TAG_PATH) as f:
+            d = json.load(f)
+    except (OSError, ValueError):
+        d = {}
+    n = d.get("n", 0) if d.get("day") == day else 0
+    if n >= TAU_TAG_PER_DAY:
+        return text
+    try:
+        write_atomic(TAU_TAG_PATH, json.dumps({"day": day, "n": n + 1}))
+    except OSError as e:
+        log.warning("tau tag not noted: %s", e)
+    return out
+
+
+def x_final(text: str, tag: bool = True) -> str:
+    """What every X post sends: the headline set apart by one blank line (when it still fits), and the Tau tag."""
+    t = air(text)
+    if isinstance(t, str) and x_len(t) > 280 >= x_len(text):
+        t = text
+    return tau_tag(t) if tag else t
 
 
 def x_post(lines: list[str], link: str | None = None, keep: int = 1, foot: str = X_REAL, tag: str = X_TAG,
@@ -1459,9 +1525,9 @@ def major_text(m: dict) -> str:
         body = [e(m["text"]), ""] if m.get("text") else []
         for l in m["lines"]:   # one paragraph each, with air between them
             body += [f"• <a href=\"{e(l['link'])}\">{e(l['label'])}</a>: {e(l['text'])}", ""]
-        return "\n".join([SITE_LINE, f"<b>{e(m['title'])}</b>", ""] + body
+        return "\n".join([SITE_LINE, "", f"<b>{e(m['title'])}</b>", ""] + body
                          + [f"<a href=\"{e(SITE_LOG_LINK)}\">Every change in the Updates log</a>"])
-    return "\n".join([SITE_LINE, f"<b>{e(m['title'])}</b>", "", e(m["text"]), "",
+    return "\n".join([SITE_LINE, "", f"<b>{e(m['title'])}</b>", "", e(m["text"]), "",
                       f"<a href=\"{e(m['link'])}\">Open it on {e(link_host(m['link']))}</a>"])
 
 
@@ -1507,8 +1573,8 @@ def major_buttons(m: dict) -> dict:
 
 
 def digest_order(items: list[dict]) -> list[dict]:
-    """What a visitor notices first: changes to the pages before the ones to the bot and the alerts, oldest first."""
-    return sorted(items, key=lambda i: (str(i.get("area", "")).lower() in ("alerts", "bot", "infra", "server"), 0))
+    """What a visitor notices first: changes to the pages before the ones to the bot and the alerts, newest first."""
+    return sorted(reversed(items), key=lambda i: (str(i.get("area", "")).lower() in ("alerts", "bot", "infra", "server"), 0))
 
 
 def digest_text(items: list[dict], lines: int | None = None) -> str:
@@ -1519,7 +1585,7 @@ def digest_text(items: list[dict], lines: int | None = None) -> str:
     items = [i for i in items if not (i["line"].strip().lower() in seen or seen.add(i["line"].strip().lower()))]
     shown, rest = items[:lines], len(items) - lines
     head = f"<b>This week on Tau HUD: {plural(len(items), 'smaller change')}</b>"
-    out = [DIGEST_LINE, head, ""] + [f"• <b>{e(i['area'])}</b>: {e(i['line'])}" for i in shown]
+    out = [DIGEST_LINE, "", head, ""] + [f"• <b>{e(i['area'])}</b>: {e(i['line'])}" for i in shown]
     if rest > 0:
         out.append(f"…and {rest} more in the Updates log.")
     out += ["", f"<a href=\"{e(SITE_LOG_LINK)}\">Read every change in the Updates log</a>"]
@@ -1533,7 +1599,7 @@ def catchup_text(majors: list[dict]) -> str:
     """One post for a backlog of new pages and features: a line and a link each, oldest first."""
     e = html.escape
     since = min((m.get("on") or "" for m in majors), default="")
-    out = [SITE_LINE, f"<b>{plural(len(majors), 'new page or feature', 'new pages and features')} on Tau HUD"
+    out = [SITE_LINE, "", f"<b>{plural(len(majors), 'new page or feature', 'new pages and features')} on Tau HUD"
            + (f" since {e(since)}" if since else "") + "</b>", ""]
     for m in majors:
         t = re.sub(r"^New:\s*", "", m["title"])
@@ -1832,6 +1898,8 @@ class Outlet:
 
 def multipart(fields: dict[str, str], files: dict[str, tuple[str, bytes, str]]) -> tuple[bytes, str]:
     boundary = "tauhud" + secrets.token_hex(12)
+    if "caption" in fields:   # a picture or video post: its caption gets the same air after the headline
+        fields = {**fields, "caption": air(fields["caption"])}
     out = io.BytesIO()
     for k, v in fields.items():
         out.write(f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode())
@@ -2060,6 +2128,18 @@ def ask_buttons() -> dict:
                                  {"text": "🟢 Status", "url": b + "status"}]]}
 
 
+def channel_air(body: bytes) -> bytes:
+    """A channel post's text with one blank line after its headline (air); private notes stay as they are."""
+    try:
+        msg = json.loads(body)
+    except (TypeError, ValueError):
+        return body
+    if not isinstance(msg, dict) or str(msg.get("chat_id")) != str(TELEGRAM_CHAT) or not isinstance(msg.get("text"), str):
+        return body
+    t = air(msg["text"])
+    return body if t == msg["text"] else json.dumps({**msg, "text": t}).encode()
+
+
 class Telegram(Outlet):
     name = "telegram"
 
@@ -2091,6 +2171,8 @@ class Telegram(Outlet):
         return self.call("sendPhoto", body, ctype)
 
     def call(self, method: str, body: bytes, ctype: str) -> tuple[bool, float | None, str]:
+        if method in ("sendMessage", "editMessageText") and ctype == "application/json":
+            body = channel_air(body)
         res = self.call_raw(method, body, ctype)
         note_send(self.name, res[0], res[2])
         if res[0] and method.startswith("send"):
@@ -2174,6 +2256,7 @@ class X(Outlet):
     UPLOAD = "https://api.x.com/2/media/upload"
 
     def send_text(self, text: str, media_id: str | None = None) -> tuple[bool, float | None, str]:
+        text = x_final(text, tag=self.keys is X_KEYS)   # the Tau tag only on @TauHUDcom, not on Agorzilla's own account
         payload = {"text": text, **({"media": {"media_ids": [media_id]}} if media_id else {})}
         req = urllib.request.Request(self.URL, data=json.dumps(payload).encode(),
                                      headers={"Content-Type": "application/json", "Authorization": self.auth_header()})
@@ -3471,6 +3554,10 @@ class Watcher:
                 else:
                     log.info("site updates: major %s is older than %d days, not posted", k, SITE_MAJOR_MAX_AGE_DAYS)
             elif st["primed"]:
+                old = (datetime.fromtimestamp(now, timezone.utc) - timedelta(days=SITE_DIGEST_MAX_DAYS)).strftime("%Y-%m-%d")
+                if str(e.get("on") or "9") < old:   # an old entry edited later: old news, not queued again
+                    log.info("site updates: %s is from %s, older than the digest week, not queued", k, e.get("on"))
+                    continue
                 st["pending"].append({"key": k, "at": round(now), **digest_item(e)})
         # a major still waiting takes the log's wording of now (13 Nov 2026: an article was reworked after its entry was queued)
         fresh = {site_key(e): major_item(e) for e in entries if isinstance(e.get("major"), dict)}
@@ -3547,7 +3634,16 @@ class Watcher:
         and they wait for the next week); Telegram, and X only with SITE_DIGEST_X."""
         st = self.state["site"]
         ds = digest_slot(now)
-        if not st["pending"] or ds is None or now - ds >= SITE_SLOT_HOURS * 3600:
+        if ds is None:
+            return
+        # only the changes since the previous digest time: one that missed its week is dropped, never reported late
+        since = ds - SITE_DIGEST_MAX_DAYS * 86400
+        stale = [i for i in st["pending"] if i.get("at", now) < since]
+        if stale:
+            log.info("site updates: %d smaller changes older than the digest week dropped, not posted", len(stale))
+            st["pending"] = [i for i in st["pending"] if i.get("at", now) >= since]
+            self.save_state()
+        if not st["pending"] or now - ds >= SITE_SLOT_HOURS * 3600:
             return
         if "digest" in self.state.get("quiet_kinds", []) and datetime.fromtimestamp(ds, timezone.utc).isocalendar()[1] % 2:
             return   # nobody opened the weekly digest for weeks: it comes every other week, the changes wait (maybe_clicks)

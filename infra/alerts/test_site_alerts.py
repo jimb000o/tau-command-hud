@@ -300,5 +300,37 @@ ms = [e for e in real if "major" in e]
 check(ms and all(e["major"].get("id") and e["major"].get("title") for e in ms), "every major in assets/updates.json has an id and a title")
 check(len({e["major"]["id"] for e in ms}) == len(ms), "major ids are unique")
 
+# each change once, only while it is news (13 Nov 2026): a change that missed its week is dropped, newest first
+wn = alerts.Watcher([Fake()])
+wn.state["site"] = {"seen": {}, "majors": [], "primed": True, "pending": [
+    {"key": "old", "at": at("2026-11-05", "10:00"), "area": "HUD", "line": "Old news.", "on": "2026-11-05"},
+    {"key": "a", "at": at("2026-11-09", "10:00"), "area": "HUD", "line": "Earlier this week.", "on": "2026-11-09"},
+    {"key": "b", "at": at("2026-11-12", "10:00"), "area": "HUD", "line": "Yesterday.", "on": "2026-11-12"}]}
+run(wn, at("2026-11-13", "16:00"), [])
+sent = wn.outlets[0].sent[-1][0] if wn.outlets[0].sent else ""
+check("Old news" not in sent and "2 smaller changes" in sent and sent.index("Yesterday") < sent.index("Earlier this week"),
+      "the digest names only this week's changes, newest first; older ones are dropped")
+check(wn.state["site"]["pending"] == [], "and never come back")
+wn.take_updates([small("2026-10-30", "Stats", "Stats: an old entry edited today.")], at("2026-11-13", "17:00"))
+check(wn.state["site"]["pending"] == [], "an old entry seen anew (edited) is not queued again")
+dt2 = alerts.digest_text([{"area": "HUD", "line": "One.", "on": "2026-11-13"}])
+check(dt2.split("\n")[1] == "" and dt2.split("\n")[2].startswith("<b>This week"), "one blank line between the headline and the second line")
+
+# every post: exactly one blank line after the headline; the Tau tag on X once, only where the post is about Tau
+check(alerts.air("A\nB\nC") == "A\n\nB\nC" and alerts.air("A\n\n\nB") == "A\n\nB" and alerts.air("A") == "A", "air after the headline")
+check(alerts.x_join(["• A", "• B", "• C"]) == "• A\n\n• B\n• C", "X: a list headline gets air too")
+body = alerts.channel_air(json.dumps({"chat_id": alerts.TELEGRAM_CHAT, "text": "H\nL"}).encode())
+check(json.loads(body)["text"] == "H\n\nL", "channel posts get air")
+check(json.loads(alerts.channel_air(json.dumps({"chat_id": 42, "text": "H\nL"}).encode()))["text"] == "H\nL", "private notes stay as written")
+check(alerts.about_tau("The Tau Net testnet restarted") and not alerts.about_tau("A new Tau rule for your wallet")
+      and not alerts.about_tau("TAU HUD · new on the site\n\nOn tauhud.com #TauNet"), "the tag only where the post is about Tau")
+alerts.TAU_TAG_PATH = os.path.join(tempfile.mkdtemp(), "tau-tag.json")
+alerts.TAU_TAG_PER_DAY = 2
+t1 = alerts.tau_tag("Tau Net testnet restarted. #TauNet", at("2026-11-13", "10:00"))
+check(t1.endswith(" @taulogicai") and alerts.tau_tag(t1, at("2026-11-13", "10:00")) == t1, "tagged once per post")
+alerts.tau_tag("Tau Language news", at("2026-11-13", "11:00"))
+check(alerts.tau_tag("More Tau news", at("2026-11-13", "12:00")) == "More Tau news", "at most two tagged posts a day")
+check(alerts.tau_tag("More Tau news", at("2026-11-14", "12:00")).endswith("@taulogicai"), "a new day, room again")
+
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)

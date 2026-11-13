@@ -463,6 +463,8 @@ def fetch() -> dict:
 
 def post(msg: str, png: bytes | None = None) -> bool:
     """The evening on the channel; with its picture as a photo with the text under it."""
+    from alerts import air
+    msg = air(msg)
     if png:
         from alerts import multipart
         body, ctype = multipart({"chat_id": CHAT, "caption": msg, "parse_mode": "HTML"}, {"photo": ("agorzilla-evening.png", png, "image/png")})
