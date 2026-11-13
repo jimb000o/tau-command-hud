@@ -334,7 +334,7 @@ Rules:
 - Only facts the input shows. Never say IDNI did it because of our report, or because of us; say we reported it and \
 that it is solved now.
 - Thank IDNI plainly, once. No blame, no hype or marketing words, no exclamation marks, no emoji, no price talk.
-- Plain words; no code names, stream names or commit hashes. The network is Tau Net, its test network the Tau Net \
+- Plain words; no code names, stream names or commit hashes; numbers of 1,000 and more with commas (100,000). The network is Tau Net, its test network the Tau Net \
 testnet; Tau Language is the language its rules are written in.
 
 Fields (English only):

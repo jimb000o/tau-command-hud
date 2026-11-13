@@ -229,5 +229,8 @@ check(len(tgo.sent) == 2, "held: not posted")
 asyncio.run(w.maybe_idni(at("2026-11-11T10:10:00Z"), [dict(d, id="chk", end=at("2026-11-11T10:00:00Z"), status="check")], {}))
 check(len(tgo.sent) == 2, "a post held for a look is never sent by itself")
 
+chk = idg.check_text(["New accounts get 100,000 test coins and 64 KiB.", "1,500 blocks"], "faucet_amount: 0 -> 100000, 64 KiB")
+check(chk["unknown_numbers"] == ["1,500"], "100,000 in the post is 100000 in the code; a number the input lacks still holds the post")
+
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)
