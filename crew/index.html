@@ -115,6 +115,9 @@ footer p { margin: 0; }
   .bills { display: none; } .paid .act { margin-top: 0; }
 }
 @media (min-width: 901px) and (max-height: 800px) { .intro p { font-size: 15px; margin-top: 4px; } .opt { padding: 12px 18px; gap: 7px; } .opt h3 { font-size: 19px; } .intro h2 { font-size: 24px; } .tiers li { padding: 7px 12px; } .wrap { gap: 10px; } }
+/* since 13 Nov the page carries the Support tabs (Membership, Costs & donations) under the header: a short laptop screen
+   gives them their row back from the spacing, so the footer stays in view at 1366 x 768 */
+@media (min-width: 1101px) and (max-height: 800px) { .wrap { gap: 6px; } .intro h2 { font-size: 22px; } .intro p { margin-top: 2px; } .opt { padding-top: 10px; padding-bottom: 10px; } }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>

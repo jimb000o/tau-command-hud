@@ -158,6 +158,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 @media (max-width: 520px) { .addrbox { grid-template-columns: minmax(0, 1fr); justify-items: start; } .tot b { font-size: 16px; } }
 @media (max-width: 700px) { .b { min-height: 44px; } .gifts a { padding: 10px 0; } }
 @media (min-width: 900px) and (max-height: 800px) { .sub, #costNote, #fxNote { display: none; } .flow .chart { height: 120px; } #notFine, .thanks span { display: none; } #costBilled { display: none; } .gifts .fx { display: none; } .covtop .gapv { font-size: 30px; } .gifts li:nth-child(n+4) { display: none; } .head b { font-size: 19px; } #costs small { display: none; } #costs li { padding: 6px 0; } .addrbox { grid-template-columns: 112px minmax(0, 1fr); } .qr { width: 112px; height: 112px; } .wallets .b { padding: 0 9px; letter-spacing: .06em; } .wallets { margin-top: 10px; } .not { gap: 3px; font-size: 12px; } .panel { padding: 14px 16px; } }   /* a 1366 × 768 laptop keeps the page on one screen */
+/* since 13 Nov the page carries the Support tabs (Membership, Costs & donations) under the header: on a short laptop
+   screen their row comes out of the spacing and the headline, so the page is no taller than before */
+@media (min-width: 900px) and (max-height: 800px) { .wrap { gap: 4px; } .lead { font-size: 21px; } .crew { margin-top: 4px; } }
 .crew { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 8px 0 0; font-size: 13px; color: var(--text); } .crew[hidden] { display: none; } .crew small { color: var(--dim); font-size: 12px; }
 @media (prefers-reduced-motion: reduce) { .state::before { animation: none; } }
 </style>
