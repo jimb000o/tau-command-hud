@@ -428,6 +428,7 @@ def buttons(bot_name: str) -> dict:
 def howto_text(bot_name: str) -> str:
     return "\n".join([
         "💬 <b>Ask the Tau HUD bot</b>",
+        "",
         "Live answers from the Tau testnet, straight from Tau HUD's own node.",
         "",
         f"Tap a button below, or write to @{e(bot_name)}:",

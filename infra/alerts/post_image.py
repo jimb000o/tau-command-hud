@@ -41,6 +41,7 @@ def x_photo(path: str, text: str) -> str:
         post_video.call("POST", f"{up}/{mid}/append", body, ctype)
     post_video.call("POST", f"{up}/{mid}/finalize")
     out = None
+    text = alerts.x_final(text)
     for i, t in enumerate(x_variants(text)):
         try:
             out = post_video.call("POST", "https://api.x.com/2/tweets", json.dumps({"text": t, "media": {"media_ids": [mid]}}).encode(), "application/json")
