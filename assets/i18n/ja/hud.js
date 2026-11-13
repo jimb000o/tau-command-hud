@@ -2517,4 +2517,9 @@ TauI18n.add({ strings: {
   "The Ship’s Store is open: knitted sweaters, tees, a mug": "船の売店がオープン：ニットセーター、Tシャツ、マグ",
   "Our first merchandise, made to order by Fourthwall. Crew members get 10 or 20 % off. Not affiliated with IDNI.": "初めてのグッズです。Fourthwall が受注生産します。クルー会員は 10% または 20% 引き。IDNI とは無関係です。",
   "Shop: the Tau HUD shop at Fourthwall has its first products. Three knitted Christmas sweaters, five tees that quote real answers of a testnet node, a sticker sheet and a mug, each made to order. Crew members get 10 or 20 % off at checkout. On the HUD, a shop notice now stands where the newspaper clipping was; The Daily Consensus stays in the menu under Read. The news line and the Crew page point to the shop too. Fan merchandise, not affiliated with IDNI.": "ショップ：Fourthwall の Tau HUD ショップに最初の商品が並びました。ニットのクリスマスセーター3種、テストネットのノードの実際の応答を載せたTシャツ5種、ステッカーシート、マグカップ。すべて受注生産です。クルー会員は会計時に 10% または 20% 引きになります。HUD では、新聞の切り抜きがあった場所にショップの案内が入りました。「The Daily Consensus」はメニューの「読む」に残っています。ニュースラインとクルーのページもショップを案内します。ファングッズであり、IDNI とは無関係です。",
+  "Made to order": "受注生産",
+  "Crew: 10–20 % off": "クルー：10〜20% 引き",
+  "Christmas: order early": "クリスマス用はお早めに",
+  "Sold by Fourthwall": "販売：Fourthwall",
+  "A sweater takes 7 to 10 days to knit before it ships. Sold and shipped by Fourthwall. Fan merchandise, not affiliated with IDNI.": "セーターは発送までに編み上げに 7〜10 日かかります。販売と発送は Fourthwall。ファングッズであり、IDNI とは無関係です。",
 } });

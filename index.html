@@ -265,11 +265,23 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .gazad.shop .ga-x { display: none; }
 .gazad.shop .ga-hl { font: 600 clamp(15px, 1.05vw, 21px)/1.15 var(--display); letter-spacing: 0; color: #fff; }
 .gazad.shop .ga-dk { font: 400 12px/1.35 var(--mono); font-style: normal; color: var(--dim); border-bottom: 0; padding-bottom: 0; }
-.gazad.shop .ga-ph { object-fit: contain; object-position: 50% 50%; filter: none; mix-blend-mode: normal; border: 0; image-rendering: pixelated; min-height: 80px; }
+.gazad.shop .ga-ph { display: block; object-fit: contain; object-position: 50% 50%; filter: none; mix-blend-mode: normal; border: 0; min-height: 96px; max-height: 340px; }
 .gazad.shop .ga-tx { columns: 1; text-align: center; hyphens: manual; font: 400 11px/1.4 var(--mono); color: var(--dim); }
 .gazad.shop .ga-tx::first-letter { float: none; font: inherit; margin: 0; }
-.gazad.shop .ga-more { margin-top: auto; align-self: center; border: 1px solid var(--ok); border-radius: 999px; padding: 5px 12px; font: 600 11px/1 var(--display); font-style: normal; letter-spacing: .14em; text-transform: uppercase; color: var(--ok); }
-.gazad.shop:hover .ga-more { text-decoration: none; background: var(--ok); color: #000; }
+.gazad.shop .ga-more { margin-top: auto; align-self: stretch; text-align: center; border: 1px solid var(--ok); border-radius: 999px; padding: 8px 12px; background: var(--ok); font: 700 12px/1 var(--display); font-style: normal; letter-spacing: .14em; text-transform: uppercase; color: #000; }
+.gazad.shop:hover .ga-more { text-decoration: none; background: #fff; border-color: #fff; }
+.gazad.shop .ga-dl { flex-wrap: wrap; justify-content: center; gap: 2px 14px; }
+.gazad.shop .ga-dl i:nth-child(2) { color: var(--ok); }
+/* the shop notice keeps its picture and its button longest: the small print goes first, then the summary, then the row of facts, the picture only before the last size */
+.gazad.shop.c1 .ga-ph, .gazad.shop.c2 .ga-ph, .gazad.shop.c3 .ga-ph { display: block; }
+.gazad.shop.c2 .ga-dk, .gazad.shop.c3 .ga-dl, .gazad.shop.c3 .ga-mo, .gazad.shop.c4 .ga-ad { display: none; }
+/* last size: the sweater stands beside the headline instead of above the button */
+.gazad.shop.c4 .ga-paper { display: grid; grid-template-columns: minmax(0, 34%) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 10px; align-items: center; }
+.gazad.shop.c4 .ga-nm, .gazad.shop.c4 .ga-more { grid-column: 1 / -1; }
+.gazad.shop.c4 .ga-ph { display: block; grid-column: 1; grid-row: 2; width: 100%; height: 100%; min-height: 0; }
+.gazad.shop.c4 .ga-hl { grid-column: 2; grid-row: 2; text-align: left; }
+.gazad.shop.c4 .ga-dk { display: none; } .gazad.shop.c2 .ga-more, .gazad.shop.c3 .ga-more, .gazad.shop.c4 .ga-more { margin-top: auto; }
+.gazad.shop.c2 .ga-paper, .gazad.shop.c3 .ga-paper { justify-content: flex-start; }
 html.i18n-cjk .gazad.shop .ga-nm, html.i18n-cjk .gazad.shop .ga-hl, html.i18n-cjk .gazad.shop .ga-dk, html.i18n-cjk .gazad.shop .ga-tx, html.i18n-cjk .gazad.shop .ga-mo, html.i18n-cjk .gazad.shop .ga-more { font-family: inherit; }
 html.i18n-zh .ga-nm { font: 900 clamp(20px, 1.6vw, 30px)/1.1 "Noto Serif SC", serif; letter-spacing: .14em; }
 html.i18n-zh .ga-hl, html.i18n-zh .ga-mo, html.i18n-zh .ga-dk, html.i18n-zh .ga-tx, html.i18n-zh .ga-more { font-family: "Noto Serif SC", serif; letter-spacing: 0; }
@@ -2823,10 +2835,10 @@ async function loadGazette() {
 }
 /* What the slot shows: the shop notice (SHOP below), in the HUD's own look. ?clip=paper shows the newspaper clipping instead,
    ?clip=shop the shop; set the last line of CLIP to "paper" to give the slot back to the newspaper. */
-const SHOP = { url: "https://tau-hud-shop.fourthwall.com/", photo: "assets/shop/jersey.png",
-  name: "Ship’s store", motto: "supplies for the Tau HUD crew", row: ["3 sweaters", "5 tees", "stickers · mug"],
+const SHOP = { url: "https://tau-hud-shop.fourthwall.com/", photo: "assets/shop/sweater.png",
+  name: "Ship’s store", motto: "supplies for the Tau HUD crew", row: ["Made to order", "Crew: 10–20 % off", new Date() < new Date("2026-12-16") ? "Christmas: order early" : "Sold by Fourthwall"],
   hl: "Knitted for the long wait between blocks", dk: "Christmas sweaters with the pattern knitted in, tees that quote a real node, a sticker sheet and a mug.",
-  tx: "Each piece is made to order. Crew members get 10 or 20 % off at checkout. Sold and shipped by Fourthwall. Fan merchandise, not affiliated with IDNI.",
+  tx: "A sweater takes 7 to 10 days to knit before it ships. Sold and shipped by Fourthwall. Fan merchandise, not affiliated with IDNI.",
   more: "Open the store ›", label: "Open the Tau HUD shop at Fourthwall",
   full: "The Tau HUD shop at Fourthwall: knitted Christmas sweaters, tees, a sticker sheet and a mug, each made to order. Crew members get 10 or 20 % off. Fan merchandise, not affiliated with IDNI. Opens in a new tab." };
 const CLIP = (() => {

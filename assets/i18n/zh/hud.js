@@ -2551,4 +2551,9 @@ TauI18n.add({ strings: {
   "The Ship’s Store is open: knitted sweaters, tees, a mug": "船上商店开张了：针织毛衣、T 恤、马克杯",
   "Our first merchandise, made to order by Fourthwall. Crew members get 10 or 20 % off. Not affiliated with IDNI.": "我们的第一批周边，由 Fourthwall 按订单制作。船员会员可享九折或八折。与 IDNI 无关。",
   "Shop: the Tau HUD shop at Fourthwall has its first products. Three knitted Christmas sweaters, five tees that quote real answers of a testnet node, a sticker sheet and a mug, each made to order. Crew members get 10 or 20 % off at checkout. On the HUD, a shop notice now stands where the newspaper clipping was; The Daily Consensus stays in the menu under Read. The news line and the Crew page point to the shop too. Fan merchandise, not affiliated with IDNI.": "商店：Fourthwall 上的 Tau HUD 商店有了第一批商品。三款针织圣诞毛衣、五款印着测试网节点真实回答的 T 恤、一张贴纸和一只马克杯，每件都按订单制作。船员会员在结账时可享九折或八折。在 HUD 上，原来放报纸剪报的位置现在是商店告示；《共识日报》仍在菜单的“阅读”里。新闻栏和船员页面也指向商店。粉丝周边，与 IDNI 无关。",
+  "Made to order": "按订单制作",
+  "Crew: 10–20 % off": "船员：九折至八折",
+  "Christmas: order early": "圣诞节：请尽早下单",
+  "Sold by Fourthwall": "由 Fourthwall 销售",
+  "A sweater takes 7 to 10 days to knit before it ships. Sold and shipped by Fourthwall. Fan merchandise, not affiliated with IDNI.": "一件毛衣发货前需要 7 到 10 天来编织。由 Fourthwall 销售并发货。粉丝周边，与 IDNI 无关。",
 } });
