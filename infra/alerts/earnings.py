@@ -20,6 +20,7 @@ The API has no profit field, no payout list and no membership payment history, s
   keeps the periods already paid and adds no new one.
 The fees are Fourthwall's published rates as we read them (13 November 2026); the card fee is the higher foreign-card
 rate, so the figure leans low rather than high. Each can be set in .env if Fourthwall's own statement says otherwise.
+Each new order and each new member is told to the owner in the private Telegram chat (up owner), without a name.
 `up earnings` prints every order's numbers next to the share worked out, to compare with the shop's dashboard.
 """
 from __future__ import annotations
@@ -38,7 +39,7 @@ CARD_PCT = float(os.environ.get("EARNINGS_CARD_PCT", "3.9"))      # % of what th
 CARD_FIX = float(os.environ.get("EARNINGS_CARD_FIXED", "0.30"))   # per payment, in the order's currency
 CREW_PCT = float(os.environ.get("EARNINGS_CREW_PCT", "5"))         # Fourthwall's fee on memberships
 SHOP_PCT = float(os.environ.get("EARNINGS_SHOP_PCT", "0"))         # Fourthwall's own cut of product sales, on top of the base cost
-EVERY = 6 * 3600
+EVERY = int(os.environ.get("EARNINGS_EVERY_SECONDS", 900))   # also how soon the owner hears of a new order or member
 REAL = {"ORDER"}
 
 
@@ -178,17 +179,59 @@ def public(shop: list[dict], s: dict, now: float) -> dict:
             "items": items}
 
 
-def run(now: float | None = None) -> tuple[dict, list[dict], int]:
-    """One read of the shop: (public file, the orders with their numbers, new membership periods); writes both files."""
+def _items(o: dict) -> str:
+    out = []
+    for it in o.get("offers") or []:
+        name = str(it.get("name") or (it.get("variant") or {}).get("name") or "an item")[:60]
+        q = it.get("quantity") or 1
+        out.append(f"{name} ×{q}" if str(q) != "1" else name)
+    return ", ".join(out) or "an order"
+
+
+def news(s: dict, orders: list[dict], members: list[dict], tier_names: dict | None = None) -> list[str]:
+    """One line for the owner per order and per member not seen before (no buyer, no e-mail: what was bought, the price,
+    our share). The first read only learns what is there, so nothing old is announced."""
+    seen_o, seen_m = set(s.get("orders_seen") or []), set(s.get("members_seen") or [])
+    out = []
+    for o in orders:
+        oid = str(o.get("id") or "")
+        if not oid or oid in seen_o:
+            continue
+        seen_o.add(oid)
+        x = order_share(o)
+        if x and s.get("primed"):
+            out.append(f"🛒 New order in the Tau HUD shop: {_items(o)}. Paid {x['cur']} {x['total']:.2f} incl. tax and shipping, "
+                       f"our share about {x['cur']} {x['share']:.2f}.")
+    for m in members:
+        mid, sub = str(m.get("id") or ""), m.get("subscription") or {}
+        if not mid or mid in seen_m or str(sub.get("type", "")).upper() != "ACTIVE":
+            continue
+        seen_m.add(mid)
+        if s.get("primed"):
+            v = sub.get("variant") or {}
+            tier = (tier_names or {}).get(v.get("tierId")) or (tier_names or {}).get(str(v.get("tierId"))) or "a tier"
+            n = sum(1 for k in members if str((k.get("subscription") or {}).get("type", "")).upper() == "ACTIVE")
+            out.append(f"⚓ New member in the Tau HUD crew: {tier}, {_cur(v.get('amount'))} {_v(v.get('amount')):.2f} a "
+                       f"{'year' if str(v.get('interval')).upper() == 'ANNUAL' else 'month'} before tax, our share about "
+                       f"{crew_share(_v(v.get('amount'))):.2f}. Active members now: {n}.")
+    s["orders_seen"], s["members_seen"], s["primed"] = sorted(seen_o), sorted(seen_m), True
+    return out
+
+
+def run(now: float | None = None, tier_names: dict | None = None) -> tuple[dict, list[dict], int, list[str]]:
+    """One read of the shop: (public file, the orders with their numbers, new membership periods, lines for the owner);
+    writes both files."""
     now = now or time.time()
     s = load()
-    shop = [x for x in (order_share(o) for o in pages("/order")) if x]
-    added = note_members(s, pages("/memberships/members"), now)
+    orders, members = pages("/order"), pages("/memberships/members")
+    shop = [x for x in (order_share(o) for o in orders) if x]
+    added = note_members(s, members, now)
+    lines = news(s, orders, members, tier_names)
     s["checked"] = now
     write_atomic(STATE_PATH, json.dumps(s, separators=(",", ":")))
     pub = public(shop, s, now)
     write_atomic(PUBLIC_PATH, json.dumps(pub, separators=(",", ":")))
-    return pub, shop, added
+    return pub, shop, added, lines
 
 
 def due(s: dict | None = None, now: float | None = None) -> bool:
