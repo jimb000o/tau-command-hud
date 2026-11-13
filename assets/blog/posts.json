@@ -22,9 +22,9 @@
      "ja": "あなたにとって：Tau HUD は無料のまま、広告もトラッキングもありません。"
     },
     {
-     "en": "For the site: its bills are public, and so is what comes in.",
-     "zh": "对网站：它的账单是公开的，收入也是。",
-     "ja": "サイトにとって：運営費は公開されていて、入ってくるお金も公開です。"
+     "en": "For the site: we show what it costs to run, and what comes in.",
+     "zh": "对网站：我们公开网站的运行费用，以及收到了多少。",
+     "ja": "サイトにとって：運営にかかる費用と、入ってきたお金を公開しています。"
     },
     {
      "en": "Honest: a tee or a membership is a purchase, not a donation. A donation still buys nothing.",
@@ -53,7 +53,7 @@
     "A shop and a monthly way to support Tau HUD",
     "## Why it matters",
     "- Free, no ads, no tracking",
-    "- Every bill is public",
+    "- What it costs, shown openly",
     "- A purchase is not a donation",
     "Tau HUD blog · community project, not affiliated with IDNI"
    ],
