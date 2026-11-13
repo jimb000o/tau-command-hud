@@ -1,7 +1,8 @@
 /* Where a testnet transaction comes from, as far as we know it (tauhud.com's chain core, and any page that wants it).
    Read from the transaction itself and from our relay, never guessed:
      - the sender is one of the accounts the testnet started with (IDNI's genesis), or
-     - the sender is one of our own server wallets (White Rabbit Key's island bot and purses, simulated cruise passengers), or
+     - the sender is one of our own server wallets (White Rabbit Key's island bot and purses, simulated cruise passengers,
+       the three showcase wallets with their personal rules: GET /showcase, named one by one with TauOrigin.name), or
      - the transaction pays an address of an app we know (Agorzilla, Déjà the café cat, White Rabbit Key's council, tills, ballot boxes), or
      - the sender did one of those before (relay GET /wallets/tags, walletdays.py; built from the public blocks only).
    Our own server wallets also come straight from GET /island (wallets, purses) and GET /cruise (wallets).
@@ -69,19 +70,24 @@
     nomemo: ["No Memo", "a player’s move in No Memo, the terminal game on tauhud.com"],
     agorzilla: ["Agorzilla", "a meal or a vote for Agorzilla, the creature on agorzilla.com"],
     deja: ["Déjà the café cat", "food for Déjà, the café cat of Agorzilla’s café"],
+    showcase: ["Tau HUD showcase wallet", "one of Tau HUD’s showcase wallets: a personal rule, and once a day a payment that rule forbids, on purpose"],
   };
   const sim = () => !!(window.TauSim && TauSim.on);
-  let known = new Map(), via = new Map();
+  let known = new Map(), via = new Map(), names = new Map();
   const get = async path => { try { const r = await fetch("https://node.tauhud.com" + path, { cache: "no-store" }); return r.ok ? await r.json() : null; } catch (e) { return null; } };
   const load = async () => {
     if (sim()) return;
     // the relay's record of wallets seen before, plus our own server wallets straight from their lists, so the island bot
     // and the cruise passengers are named even before their first transaction reached a block (or before the relay knows /wallets/tags)
-    const [tags, isle, ship] = await Promise.all([get("/wallets/tags"), get("/island"), get("/cruise")]);
+    const [tags, isle, ship, show] = await Promise.all([get("/wallets/tags"), get("/island"), get("/cruise"), get("/showcase")]);
     const m = new Map(Object.entries((tags && tags.tags) || {}).filter(([, v]) => TAGS[v]));
     const add = (keys, tag) => keys.forEach(k => { if (typeof k === "string" && k) m.set(k.toLowerCase(), tag); });
     if (isle) { add(Object.values(isle.wallets || {}), "bot"); add(Object.values(isle.purses || {}), "bot"); }
     if (ship && ship.wallets) add(Object.values(ship.wallets).flat(), "cruise");
+    // the showcase wallets (relay showcase.py), each with its own name: "Tau HUD's piggy bank" and so on
+    const nm = new Map();
+    if (show && show.wallets) [...Object.values(show.wallets), show.cosigner].forEach(w => { if (w && typeof w.pk === "string" && w.name) { m.set(w.pk.toLowerCase(), "showcase"); nm.set(w.pk.toLowerCase(), String(w.name)); } });
+    if (nm.size) names = nm;
     if (m.size || tags) known = m;
     if (tags && tags.via) via = new Map(Object.entries(tags.via).filter(([, v]) => TAGS[v]));
   };
@@ -93,7 +99,7 @@
     if (!s || sim()) return null;   // the simulation's accounts are made up: no app or owner to name
     if (GENESIS.has(s)) return mk("idni");
     const k = known.get(s);
-    if (k === "bot" || k === "cruise") return mk(k);
+    if (k === "bot" || k === "cruise" || k === "showcase") return mk(k);
     const g = hash && via.get(String(hash).toLowerCase());
     if (g) return mk(g);
     for (const op of Array.isArray(transfers) ? transfers : []) {
@@ -105,7 +111,9 @@
     return k ? mk(k) : null;
   }
   // a short name for a label next to the dot (the chain core), in the page's language
-  const SHORT = { idni: "IDNI", bot: "island bot", cruise: "cruise (sim)", rabbit: "White Rabbit Key", nomemo: "No Memo", agorzilla: "Agorzilla", deja: "Déjà" };
+  const SHORT = { idni: "IDNI", bot: "island bot", cruise: "cruise (sim)", rabbit: "White Rabbit Key", nomemo: "No Memo", agorzilla: "Agorzilla", deja: "Déjà", showcase: "showcase" };
   const label = tag => { const t = SHORT[tag] || tag; return window.TauI18n ? TauI18n.t(t) : t; };
-  window.TauOrigin = { of, label, tags: TAGS, ready: () => first };
+  // a wallet's own name where it has one (the showcase wallets), else null
+  const name = pk => (!sim() && names.get(String(pk || "").toLowerCase())) || null;
+  window.TauOrigin = { of, label, name, tags: TAGS, ready: () => first };
 })();

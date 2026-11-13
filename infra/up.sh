@@ -49,6 +49,9 @@
 #              up services   the relay rebuilt with the code just pulled (tauhud.com/services/ reads it), the node left alone;
 #                            refuses while a cruise ship is due (Wed 15-18, Sat 13-17 German time; up services --now overrides);
 #                            up services status  only what the directory finds now
+#              up showcase   the three showcase wallets (relay/showcase.py): the relay rebuilt alone with the code just pulled
+#                            (the node left alone; not while a cruise ship is due), then each wallet's rule and last daily
+#                            try; up showcase status  only those
 #              up knowledge  Tau today for AI assistants (tauhud.com/facts/, llms.txt): the build pulse rebuilt with the code
 #                            just pulled, Caddy given its two files, then both written at once and what they hold; the
 #                            node left alone, safe any time; up knowledge status  only what they hold now
@@ -409,6 +412,36 @@ d=json.load(urllib.request.urlopen("http://127.0.0.1:8080/services", timeout=20)
 print("services: %s found (co-signers %s, rule givers %s, paid with terms %s, paid by many %s), %s wallets served, blocks since %s" % (t["services"], t["cosign"], t["rules"], t["terms"], t["paid"], t["wallets"], d.get("since")))
 for r in d["services"][:12]: print("  %-10s %s… %s, %s wallets" % (r["app"] or "", r["address"][:12], "+".join(r["kinds"]), r["wallets"]))' 2>&1 || echo "relay /services not answering yet"
   curl -s -o /dev/null -w "          page https://tauhud.com/services/ answers %{http_code}\n" https://tauhud.com/services/ || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# the three showcase wallets (relay/showcase.py): each holds a personal rule and once a day tries a payment its rule
+# forbids, so the HUD's feed shows "Stopped by the sender's own rule". up showcase  the relay rebuilt alone with the code
+# just pulled (the node left alone; not while a cruise ship is due, --now overrides), then the wallets; the rules go on
+# the chain within minutes by themselves. up showcase status  only the wallets, nothing rebuilt
+if [ "${1:-}" = "showcase" ]; then
+  if [ "${2:-}" != "status" ]; then
+    when=$(TZ=Europe/Berlin date +%u%H)
+    case "$when" in 315|316|317|410|411|613|614|615|616)
+      if [ "${2:-}" != "--now" ]; then
+        echo "a cruise ship or the hack replay is due or under way now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
+        echo "try again after the visit, or: up showcase --now"; exit 1
+      fi ;;
+    esac
+    docker compose up -d --build --no-deps relay
+    echo "waiting 20 s for the relay to read the chain…"; sleep 20
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T relay python -c 'import json,time,urllib.request
+d=json.load(urllib.request.urlopen("http://127.0.0.1:8080/showcase", timeout=20))
+if not d.get("ready"): print("showcase: not ready (enabled=%s); see: docker compose logs relay | grep showcase" % d.get("enabled")); raise SystemExit
+for k, w in d["wallets"].items():
+    t = w.get("last_try") or {}
+    print("%-9s %s… %-32s rule %s · try %02d:00 %s" % (k, w["pk"][:10], w["name"], "IN FORCE" if w["in_force"] else "not yet", w["daily_try"]["german_hour"], "(stopped: lock open)" if w["daily_try"]["stopped"] else ""))
+    if t: print("          last try %s: %s · %s" % (time.strftime("%d.%m %H:%M", time.gmtime(t["t"])) + "Z", t["outcome"], t["what"]))
+print("cosigner  %s… %s" % (d["cosigner"]["pk"][:10], d["cosigner"]["name"]))
+for n in d.get("log", [])[-6:]: print("  · %s %s: %s" % (time.strftime("%d.%m %H:%M", time.gmtime(n["t"])) + "Z", n["wallet"], n["note"][:110]))' 2>&1 || echo "relay /showcase not answering yet"
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
