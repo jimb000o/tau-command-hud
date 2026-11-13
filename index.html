@@ -2645,8 +2645,12 @@ const NB = (() => {
     setTimeout(() => dispatchEvent(new Event("resize")), 30);   // the core canvas and the tour card measure again
   }
   function more() { sset(MORE, root.classList.contains("nbmore") ? "" : "1"); apply(); }
-  /* refusals arrive between blocks: counted until the next block, then told with it */
-  function refused(t) { if (/o5/.test(String(t.rejected || ""))) ref.own++; else ref.other++; }
+  /* refusals arrive between blocks: counted until the next block, then told with it. Only fresh ones: the refusals of the last
+     hours that the relay hands over on connect fill the feed with their own age, they did not happen at this block */
+  function refused(t) {
+    const at = Number(t.at); if (Number.isFinite(at) && Date.now() / 1000 - at > 120) return;
+    if (/o5/.test(String(t.rejected || ""))) ref.own++; else ref.other++;
+  }
   /* live: what today held, from the relay's sources count (the line the other levels see as "What is real"), as one sentence:
      players' and visitors' wallets (White Rabbit Key, No Memo, Agorzilla, Tau HUD pages, other wallets) apart from IDNI's and our servers' */
   const USERS = ["rabbit", "nomemo", "agorzilla", "tauhud", "other"];
