@@ -78,6 +78,8 @@
     road:       { t: "Road to mainnet", d: "What we think must be fixed before mainnet, the issues we reported to IDNI, how Tau's code is moving, and whether Tau is ready for pharma (GxP)", i: "⇢", h: "roadmap/" },
     read:       { t: "Read", d: "The Daily Consensus, a newspaper every Monday; the blog from our own logbooks; Tau's story since 2014", i: "❡", h: "gazette/" },
     wrules:     { t: "Wallet rules", d: "Give your wallet a rule: say it in plain words, write it in Tau, take one from others, or try this week's task", i: "✐", h: "builder/" },
+    support:    { t: "Support Tau HUD", d: "Optional: a monthly membership in the Tau HUD crew or a one-off crypto contribution; what the site costs and every donation received, on chain", i: "⚑", h: "crew/" },
+    reuse:      { t: "Use our work", d: "Widgets, badges and a free JSON API, a press kit, and Tau facts with their sources for your AI; free to use", i: "{}", h: "developers/" },
     practise:   { t: "Practise voting", d: "On a practice chain: six missions, a validator seat of your own, and what happens when you change the numbers", i: "★", h: "missions/" },
   };
   /* 12 Nov: 33 doors became 17. Pages that answer the same question share one menu entry (its key here) and a row of tabs
@@ -91,6 +93,10 @@
     wallet:    ["Wallet", [["wallet"], ["card"]]],
     wrules:    ["Wallet rules", [["builder", "In words"], ["playground", "In Tau"], ["rules", "From others"], ["challenge", "This week"]]],
     practise:  ["Practise voting", [["missions"], ["seat"], ["whatif"]]],
+    /* 13 Nov: About had ten entries. Support and Donations answer one question (how to help), Developers, Press kit and
+       Tau facts another (how to reuse what is here); each pair is now one entry with tabs, no address changed */
+    support:   ["Support Tau HUD", [["crew", "Membership"], ["donate", "Costs & donations"]]],
+    reuse:     ["Use our work", [["developers"], ["press", "Press kit"], ["facts", "Facts for AI"]]],
   };
   /* the Rule Playground is two pages in one: its validator seat (#seat) belongs to Practise voting */
   const tabPage = page => (page === "playground" && location.hash === "#seat" ? "seat" : page);
@@ -106,7 +112,7 @@
     { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "services"]], ["The testnet", ["health", "road", "nodes"]]], tab: "≋" },
     { k: "learn", t: "Learn", groups: [["First steps", ["start", "taulang"]], ["Read and watch", ["read", "tau"]]], tab: "▸" },
     { k: "play", t: "Playground", groups: [["Your wallet", ["wallet", "wrules", "guardian"]], ["Practise · simulated", ["practise"]], ["Games on the live testnet", ["rabbit", "nomemo", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
-    { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "crew", "shop", "meta", "legal"]], ["Use our work", ["developers", "press", "facts"]]], tab: "i" },
+    { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "meta", "legal"]], ["Support and reuse", ["support", "shop", "reuse"]]], tab: "i" },
   ];
   SECTIONS.forEach(s => { if (s.groups) s.items = s.groups.flatMap(g => g[1]); });
   const SECTION_OF = { hud: "hud" };
