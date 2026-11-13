@@ -68,6 +68,7 @@
     rabbit:     { t: "White Rabbit Key", d: "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet", i: `<img src="${ROOT}assets/rabbit-key.webp" alt="">`, h: "rabbit/", live: true, play: "rabbit" },
     nomemo:     { t: "No Memo", d: "A terminal game: twelve contracts from the crew of the Black Sequence, each a real transaction from your test wallet; make the chain say no for the right reason", i: "▮", h: "nomemo/", live: true },
     taulang:    { t: "Learn Tau Language", d: "Type a formula and a real Tau engine answers, eight short lessons, then install tau yourself", i: "⌨", h: "learn/" },
+    hearts:     { t: "What you love most", d: "Every heart on Tau HUD is a real testnet transaction; which parts visitors love most, read from the chain", i: "♥", h: "hearts/" },
     facts:      { t: "Tau facts for your AI", d: "What is true about Tau today, each fact with its source in IDNI's code, plus live numbers; point your AI assistant here", i: "¶", h: "facts/" },
     services:   { t: "Services on the testnet", d: "A directory of what runs on the testnet: co-signers, rule givers, apps people pay; found on the chain by itself, live numbers", i: "▦", h: "services/" },
     guardian:   { t: "Guardian", d: "Payments above your own limit wait for a code from your Authenticator app; our Guardian co-signs, never sends", i: "⛨", h: "guardian/" },
@@ -112,7 +113,7 @@
     { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "services"]], ["The testnet", ["health", "road", "nodes"]]], tab: "≋" },
     { k: "learn", t: "Learn", groups: [["First steps", ["start", "taulang"]], ["Read and watch", ["read", "tau"]]], tab: "▸" },
     { k: "play", t: "Playground", groups: [["Your wallet", ["wallet", "wrules", "guardian"]], ["Practise · simulated", ["practise"]], ["Games on the live testnet", ["rabbit", "nomemo", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
-    { k: "about", t: "About", util: true, groups: [["Support and reuse", ["support", "shop", "reuse"]], ["This site", ["about", "share", "meta", "legal"]]], tab: "i" },
+    { k: "about", t: "About", util: true, groups: [["Support and reuse", ["support", "shop", "reuse"]], ["This site", ["about", "share", "meta", "hearts", "legal"]]], tab: "i" },
   ];
   SECTIONS.forEach(s => { if (s.groups) s.items = s.groups.flatMap(g => g[1]); });
   const SECTION_OF = { hud: "hud" };

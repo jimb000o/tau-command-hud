@@ -53,6 +53,7 @@ from load import Load
 from txsources import TxSources, deja as deja_day
 from walletdays import WalletDays
 from chainhist import ChainHistory
+from hearts import Hearts
 from services import Services
 from nodehist import NodeHistory
 from setupfunnel import SetupFunnel
@@ -469,6 +470,10 @@ class Relay:
         self.wallets.retag()
         self.wallets.add_blocks(self.ordered_blocks(), self.sources.sent)
         self.wallets.save(force=True)
+        # the hearts visitors give parts of tauhud.com, each a real test transaction (hearts.py, assets/hearts.js)
+        self.hearts = Hearts()
+        self.hearts.add_blocks(self.ordered_blocks())
+        self.hearts.save(force=True)
         self.wallets_text, self.wallets_at = None, 0.0
         # what every chain held per hour and day, kept across testnet restarts, for /history (chainhist.py)
         self.chainhist = ChainHistory()
@@ -599,6 +604,8 @@ class Relay:
             rewrite = True
         self._save_chain(None if rewrite else fresh)
         self.note_chain()
+        if self.hearts.add_blocks(fresh):
+            self.hearts.save()
         if self.wallets.add_blocks(fresh, self.sources.sent):   # before a restart can drop them: days only grow
             self.wallets.save()
         if self.chainhist.due() or rewrite:
@@ -2177,6 +2184,12 @@ class Relay:
                                ("Cache-Control", f"public, max-age={int(STATS_CACHE_SECONDS)}")])
             code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
             return Response(code.value, code.phrase, headers, body)
+        if path == "/hearts":   # the hearts visitors gave parts of tauhud.com, one per wallet and part (hearts.py)
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=15")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers,
+                            json.dumps(self.hearts.summary(), separators=(",", ":")).encode())
         if path == "/history":   # every chain's hours and days, across testnet restarts (chainhist.py)
             if self.history_text is None or time.monotonic() - self.history_at >= 60:
                 self.history_text = json.dumps(self.chainhist.history(), separators=(",", ":"))
@@ -2382,6 +2395,7 @@ class Relay:
             await stop
             server.close()
         self.visits.save(force=True)
+        self.hearts.save(force=True)
         for t in tasks:
             t.cancel()
 
