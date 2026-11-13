@@ -1007,6 +1007,8 @@
     const q = new URLSearchParams(location.search), ln = (window.TauI18n && TauI18n.lang) || (/^(zh|ja)$/.test(q.get("lang")) ? q.get("lang") : "en");
     const base = `https://${RELAY}/v?p=${encodeURIComponent(page)}`;
     const send = extra => { try { fetch(base + extra, { mode: "no-cors", keepalive: true, credentials: "omit", referrerPolicy: "no-referrer" }).catch(() => {}); } catch (e) {} };
+    /* a page may note one of the fixed marks of infra/relay/visits.py (MARKS), e.g. which shop picture the HUD showed; counted once per visitor and day */
+    const marked = new Set(); window.TauMark = k => { if (/^[a-z-]{1,40}$/.test(k) && !marked.has(k)) { marked.add(k); send("&k=" + k); } };
     send(`&r=${encodeURIComponent(ref)}&s=${encodeURIComponent(q.get("utm_source") || q.get("ref") || "")}&l=${ln}&m=${SIM ? "sim" : "live"}`);
     // seconds the page was visible; sent once, when the page is first hidden or left (the relay keeps only a time step)
     let shown = 0, timed = false;

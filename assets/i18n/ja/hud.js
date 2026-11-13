@@ -2546,4 +2546,5 @@ TauI18n.add({ strings: {
   "A paid membership with no duties, not a donation.": "義務のない有料メンバーシップで、寄付ではありません。",
   "Two ways, both optional. No crypto wallet?": "方法は 2 つ、どちらも任意です。暗号資産のウォレットがない方は：",
   "Or a donation:": "または寄付：",
+  "Shop notice on the HUD: the visitor count now also notes which of the two sweater pictures was shown and whether the notice was clicked, as daily totals per picture and at most once per visitor and day. No cookies, nothing stored in the browser; the privacy page says so.": "HUD のショップ告知：訪問者カウントは、2 枚のセーター画像のどちらが表示されたか、告知がクリックされたかも記録するようになりました。画像ごとの日次合計で、訪問者 1 人につき 1 日 1 回までです。Cookie は使わず、ブラウザには何も保存しません。プライバシーページに記載しています。",
 } });
