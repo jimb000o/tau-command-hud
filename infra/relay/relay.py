@@ -2180,8 +2180,9 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "no-store")])
             return Response(code.value, code.phrase, headers, json.dumps(sim[1], separators=(",", ":")).encode())
-        # GET /showcase: the three showcase wallets, their rules in words, the last daily tries (showcase.py)
-        isl = self.showcase.route(path) if path == "/showcase" else self.nomemo_feedback.route(path, query, ip) if path == "/nomemo/feedback" else self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.hack.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/hack") else self.nomemo.route(path, query) if path.startswith("/nomemo") else self.isle.route(path)
+        # GET /showcase: the showcase wallets, their rules in words, the last daily tries, the rule-sharing stories;
+        # GET /showcase/offer?to=<address>: the rule desk offers that wallet a starter rule (showcase.py)
+        isl = self.showcase.route(path, query, ip) if path.startswith("/showcase") else self.nomemo_feedback.route(path, query, ip) if path == "/nomemo/feedback" else self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.hack.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/hack") else self.nomemo.route(path, query) if path.startswith("/nomemo") else self.isle.route(path)
         if isl is not None:
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, json.dumps(isl, separators=(",", ":")).encode())

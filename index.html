@@ -819,6 +819,7 @@ small { font-size: 11px; }   /* type floor on desktop: nothing under 11px */
 .upd.active { border-left-color: var(--ok); }
 .upd.expired { border-left-color: var(--dim); opacity: .6; }
 .u1, .o1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.o1 em.who { font-style: normal; color: var(--dim); margin-left: 4px; font-size: .92em; }
 .u1 b { font: 600 13px var(--display); letter-spacing: .04em; color: var(--cyan-hi); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .diff { font: 12px var(--mono); color: var(--amber); overflow-wrap: anywhere; }
 .u3 { font-size: 11px; color: var(--dim); }
@@ -3014,12 +3015,13 @@ function renderUpdates() {
     : cur.status === "scheduled" ? `<b>“${esc(cur.title)}”</b> is agreed and becomes law at block #${cur.activateAt}, in ${Math.max(0, cur.activateAt - S.height)} blocks. Nobody has to upgrade anything.`
     : `<b>“${esc(cur.title)}”</b> is collecting agreement: ${cur.votes.size} of ${thr} validators so far. It becomes law at #${cur.activateAt} if enough agree.`;
 }
+const offerWho = a => { const n = window.TauOrigin && TauOrigin.name ? TauOrigin.name(a) : null; return n ? ` <em class="who">${esc(n)}</em>` : ""; };   // a wallet we know by name (the showcase wallets)
 function renderOffers() {
   if (hold("offers", renderOffers)) return;
   const el = $("offers");
   const list = S.offers.slice(-6).reverse();
   el.innerHTML = list.length ? list.map(o => `<div class="offer ${o.status}" data-ex="${exKey(() => explainOffer(o))}" data-detail="${dtKey(() => detailOffer(o))}">
-      <div class="o1"><span>${acct(o.from)}</span><span class="arrow">→</span><span>${acct(o.to)}</span><span class="pill ${o.status}">${o.status}</span></div>
+      <div class="o1"><span>${acct(o.from)}${offerWho(o.from)}</span><span class="arrow">→</span><span>${acct(o.to)}${offerWho(o.to)}</span><span class="pill ${o.status}">${o.status}</span></div>
       <div class="o2"><b>${o.policy.name}</b> · ${esc(o.policy.label)}</div>
       <div class="chk"><i>shape ✓</i><i>reserved ✓</i><i>widths ✓</i><i>compile ✓</i><i class="${o.collides ? "warn" : ""}">${o.collides ? "replaces current rule" : "no collision"}</i></div></div>`).join("")
     : `<div class="empty">No rules shared yet. Anyone can send a Tau rule to another account; the recipient reviews it and accepts or rejects it.</div>`;
@@ -3605,9 +3607,12 @@ function liveMessage(ev) {
       if (now && (!had || had.kind + had.label !== now.kind + now.label)) { S.clauses.set(a, now); changed = true; }
       else if (!c && had && !(had.seenAt && performance.now() - had.seenAt < 90000)) { S.clauses.delete(a); changed = true; }   // an answer sent before a block that just set the rule is older than that block
     }
-    (d.offers || []).forEach(o => {
-      if (!o || !o.offer_id || S.offers.some(x => x.id === o.offer_id)) return;
-      S.offers.push({ id: o.offer_id, from: o.offerer_pubkey, to: o.recipient_pubkey, policy: policyFromText(o.rule_text), status: o.status || "offered", expire: Number(o.expire_at_height) || 0, at: Number(o.created_at_height) || 0, collides: false }); changed = true;
+    // the node answers with incoming and outgoing offers (rule text cut to a 200-character preview); an offer already shown takes the newer status
+    [...(d.offers || []), ...(d.incoming || []), ...(d.outgoing || [])].forEach(o => {
+      if (!o || !o.offer_id) return;
+      const known = S.offers.find(x => x.id === o.offer_id);
+      if (known) { if (o.status && known.status !== o.status) { known.status = o.status; changed = true; } return; }
+      S.offers.push({ id: o.offer_id, from: o.offerer_pubkey, to: o.recipient_pubkey, policy: policyFromText(o.rule_text || o.rule_text_preview), status: o.status || "offered", expire: Number(o.expire_at_height) || 0, at: Number(o.created_at_height) || Number(o.expire_at_height) || 0, collides: false }); changed = true;
     });
     if (changed) { S.offers.sort((x, y) => (x.at || 0) - (y.at || 0)); if (S.offers.length > 200) S.offers.splice(0, S.offers.length - 200); renderClauses(); renderOffers(); readouts(); }
     return;

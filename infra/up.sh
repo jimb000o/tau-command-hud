@@ -418,7 +418,8 @@ for r in d["services"][:12]: print("  %-10s %s… %s, %s wallets" % (r["app"] or
   exit 0
 fi
 # the three showcase wallets (relay/showcase.py): each holds a personal rule and once a day tries a payment its rule
-# forbids, so the HUD's feed shows "Stopped by the sender's own rule". up showcase  the relay rebuilt alone with the code
+# forbids, so the HUD's feed shows "Stopped by the sender's own rule"; and rule sharing: three daily stories (12-14 German
+# time: offer accepted, offer declined, offer left to expire) and the rule desk's starter offers to visitors' wallets. up showcase  the relay rebuilt alone with the code
 # just pulled (the node left alone; not while a cruise ship is due, --now overrides), then the wallets; the rules go on
 # the chain within minutes by themselves. up showcase status  only the wallets, nothing rebuilt
 if [ "${1:-}" = "showcase" ]; then
@@ -443,6 +444,10 @@ for k, w in d["wallets"].items():
     print("%-9s %s… %-32s rule %s · try %02d:00 %s" % (k, w["pk"][:10], w["name"], "IN FORCE" if w["in_force"] else "not yet", w["daily_try"]["german_hour"], "(stopped: lock open)" if w["daily_try"]["stopped"] else ""))
     if t: print("          last try %s: %s · %s" % (time.strftime("%d.%m %H:%M", time.gmtime(t["t"])) + "Z", t["outcome"], t["what"]))
 print("cosigner  %s… %s" % (d["cosigner"]["pk"][:10], d["cosigner"]["name"]))
+for k, w in (d.get("sharers") or {}).items(): print("%-9s %s… %s" % (k, w["pk"][:10], w["name"]))
+for k, x in (d.get("stories") or {}).items(): print("story %-8s %02d:00 %s: %s" % (k, x["german_hour"], x.get("day") or "not yet", x.get("result") or "-"))
+k = d.get("desk") or {}
+if k: print("rule desk: %s starter offers today of %s, %s waiting" % (k.get("today"), k.get("per_day"), k.get("waiting")))
 for n in d.get("log", [])[-6:]: print("  · %s %s: %s" % (time.strftime("%d.%m %H:%M", time.gmtime(n["t"])) + "Z", n["wallet"], n["note"][:110]))' 2>&1 || echo "relay /showcase not answering yet"
   echo "---------------- to here --------------------------------------"
   exit 0

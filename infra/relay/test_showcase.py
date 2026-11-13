@@ -36,7 +36,7 @@ class Clock:
 class Node:
     """Takes a rule into force at once; refuses a transfer its sender's rule forbids, the way tau-testnet words it."""
     def __init__(self, obey=True):
-        self.clauses, self.seq, self.sent, self.obey = {}, {}, [], obey
+        self.clauses, self.seq, self.sent, self.obey, self.offers = {}, {}, [], obey, {}
 
     async def ask(self, cmd):
         verb, _, rest = cmd.partition(" ")
@@ -45,11 +45,29 @@ class Node:
         if verb == "getruleoffers":
             pk = rest.split()[0]
             c = self.clauses.get(pk)
-            return {"status": "ok", "data": {"accepted_clauses": [{"target_stream": "o5", "clause_body": c}] if c else [], "offers": []}}
+            inc = [{k: v for k, v in o.items() if k != "rule_text"} for o in self.offers.values() if o["recipient_pubkey"] == pk]
+            return {"status": "ok", "data": {"accepted_clauses": [{"target_stream": "o5", "clause_body": c}] if c else [], "incoming": inc}}
+        if verb == "getruleoffer":
+            return {"status": "ok", "data": self.offers.get(rest.strip())}
         if verb == "sendtx":
             tx = json.loads(rest)
             self.sent.append(tx)
-            pk, ops = tx["sender_pubkey"], tx["operations"]
+            pk = tx["sender_pubkey"]
+            if tx["tx_type"] == "rule_offer":
+                oid = "o%d" % len(self.offers)
+                self.offers[oid] = {"offer_id": oid, "offerer_pubkey": pk, "recipient_pubkey": tx["recipient_pubkey"], "rule_text": tx["rule_text"],
+                                    "expire_at_height": tx["expire_at_height"], "status": "offered"}
+                return {"status": "ok", "data": {"ok": True, "tx_hash": "x%d" % len(self.sent)}}
+            if tx["tx_type"] == "rule_offer_accept":
+                o = self.offers[tx["offer_id"]]
+                assert o["recipient_pubkey"] == pk and o["rule_text"] == tx["rule_text"]
+                o["status"] = "accepted"
+                self.clauses[pk] = tx["rule_text"]
+                return {"status": "ok", "data": {"ok": True, "tx_hash": "a%d" % len(self.sent)}}
+            if tx["tx_type"] == "rule_offer_reject":
+                self.offers[tx["offer_id"]]["status"] = "rejected"
+                return {"status": "ok", "data": {"ok": True, "tx_hash": "j%d" % len(self.sent)}}
+            ops = tx["operations"]
             if "0" in ops:
                 self.clauses[pk] = ops["0"]
                 self.seq[pk] = self.seq.get(pk, 0) + 1
@@ -76,7 +94,7 @@ tmp = tempfile.mkdtemp()
 DAY = dt.date(2026, 11, 14)
 clock = Clock(cruise.berlin_t(DAY, 9))
 sc = showcase.Showcase(keys_path=os.path.join(tmp, "k"), state_path=os.path.join(tmp, "s.json"), clock=clock, enabled=True)
-check(sc.ready and len(sc.pk) == 4 and len(set(sc.pk.values())) == 4, "four fresh keys: three wallets and the co-signer")
+check(sc.ready and len(sc.pk) == 7 and len(set(sc.pk.values())) == 7, "seven fresh keys: three wallets, the co-signer, the apprentice, the stranger, the rule desk")
 check(oct(os.stat(os.path.join(tmp, "k")).st_mode & 0o777) == "0o600", "the keys file is readable by its owner only")
 refused = []
 sc.on_refused = refused.append
@@ -100,13 +118,13 @@ for r in (pig, four, feed):
 
 node = Node()
 asyncio.run(run(sc, node, clock, cruise.berlin_t(DAY, 10)))
-rules = [t for t in node.sent if "0" in t["operations"]]
+rules = [t for t in node.sent if "0" in t.get("operations", {})]
 check(len(rules) == 3 and all(sc.w(n).get("in_force") for n in showcase.WALLETS), "the three rules are set and seen in force")
-check(not any("1" in t["operations"] for t in node.sent), "no try before its German hour")
+check(not any("1" in t.get("operations", {}) for t in node.sent), "no try before its German hour")
 check(all(t["fee_limit"] == "50" and t["signature"] for t in node.sent), "signed, fee limit five times the base fee")
 
 asyncio.run(run(sc, node, clock, cruise.berlin_t(DAY, 20)))
-tries = [t for t in node.sent if "1" in t["operations"]]
+tries = [t for t in node.sent if "1" in t.get("operations", {})]
 check(len(tries) == 3, "one try per wallet on the day")
 check([sc.pk.get(n) for n in ("piggy", "foureyes", "feeding")] == [t["sender_pubkey"] for t in tries], "at 11, 15 and 19 German time, in that order")
 check(tries[1]["operations"]["1"][0][2] == "250" and tries[2]["operations"]["1"][0][1] == sc.pk["piggy"],
@@ -116,14 +134,14 @@ check(len(refused) == 3 and all(e["reason"].startswith("o5 = 0") and e["left"] a
 check(all(sc.w(n)["last"]["outcome"] == "stopped" for n in showcase.WALLETS), "/showcase shows each last try as stopped")
 
 asyncio.run(run(sc, node, clock, cruise.berlin_t(DAY, 23)))
-check(len([t for t in node.sent if "1" in t["operations"]]) == 3, "no second try the same day")
+check(len([t for t in node.sent if "1" in t.get("operations", {})]) == 3, "no second try the same day")
 
 # a testnet restart: the node forgets everything, the relay calls recheck(); the rules come back, the next day's tries follow
 node.clauses.clear()
 node.seq.clear()
 sc.recheck()
 asyncio.run(run(sc, node, clock, cruise.berlin_t(DAY + dt.timedelta(days=1), 10)))
-check(len([t for t in node.sent if "0" in t["operations"]]) == 6, "after a restart the three rules are set again")
+check(len([t for t in node.sent if "0" in t.get("operations", {})]) == 6, "after a restart the three rules are set again")
 asyncio.run(run(sc, node, clock, cruise.berlin_t(DAY + dt.timedelta(days=1), 20)))
 check(len(refused) == 6, "and the next day's three tries are refused again")
 
@@ -132,7 +150,49 @@ sc2 = showcase.Showcase(keys_path=os.path.join(tmp, "k"), state_path=os.path.joi
 check(sc2.pk == sc.pk and sc2.w("piggy").get("tried") == (DAY + dt.timedelta(days=1)).isoformat(), "keys and the day's tries survive a relay restart")
 snap = sc2.snapshot()
 check(snap["wallets"]["feeding"]["name"] == "Tau HUD's Agorzilla feeding fund" and snap["cosigner"]["pk"] == sc.pk["cosigner"]
-      and "sk" not in json.dumps(snap), "GET /showcase: names, rules in words, the co-signer, never a secret key")
+      and not any(k["sk"] in json.dumps(snap) for k in json.load(open(os.path.join(tmp, "k"))).values()), "GET /showcase: names, rules in words, the co-signer, never a secret key")
+
+# rule sharing: the day's three stories ran between 12 and 14 German time (on DAY and the day after)
+offers = list(node.offers.values())
+by = {}
+for o in offers:
+    by.setdefault((o["offerer_pubkey"], o["recipient_pubkey"]), o)   # the first day's
+g = by.get((sc.pk["piggy"], sc.pk["apprentice"]))
+check(g and g["status"] == "accepted" and node.clauses.get(sc.pk["apprentice"]) == sc.rule("piggy"),
+      "gift: the piggy bank offers its rule, the apprentice accepts it and holds it as its own")
+sm = by.get((sc.pk["stranger"], sc.pk["foureyes"]))
+check(sm and sm["status"] == "rejected" and node.clauses.get(sc.pk["foureyes"]) == sc.rule("foureyes"),
+      "scam: the stranger's pay-only-me rule is declined, the four-eyes wallet keeps its own rule")
+ig = by.get((sc.pk["stranger"], sc.pk["feeding"]))
+check(ig and ig["status"] == "offered" and ig["expire_at_height"] == 50 + showcase.IGNORED_WINDOW, "ignored: an offer nobody answers, open for 15 blocks")
+check([o["status"] for o in offers if o["offerer_pubkey"] == sc.pk["piggy"]] == ["accepted", "accepted"], "one gift a day, two days, both accepted")
+check(sc.review(sc.story_rule("scam"), sc.pk["stranger"]) and not sc.review(sc.rule("feeding"), sc.pk["stranger"]),
+      "the review catches a rule that pays only its offerer, not a whitelist naming someone else")
+check(all(t["tx_type"] != "rule_offer" or t["expire_at_height"] - 50 in (showcase.OFFER_WINDOW, showcase.IGNORED_WINDOW) for t in node.sent),
+      "an offer's expiry is its height deadline")
+
+# the desk: a visitor's wallet asks, gets one starter offer; limits per wallet, per address and per day
+vis = "ab" * 48
+a = sc.ask_offer(vis, "1.2.3.4")
+check(a["ok"] and a.get("queued") and sc.ask_offer(vis, "1.2.3.4").get("already"), "a visitor's wallet asks once; asking again changes nothing")
+check(not sc.ask_offer("xyz", "1.2.3.4")["ok"] and not sc.ask_offer(sc.pk["piggy"], "1.2.3.4")["ok"], "no offer to a bad address or to our own wallets")
+for i in range(3):
+    sc.ask_offer("%096x" % (i + 1), "5.6.7.8")
+check(not sc.ask_offer("%096x" % 9, "5.6.7.8")["ok"], "three a day from one address")
+n = len(node.sent)
+asyncio.run(run(sc, node, clock, clock.t + 600))
+desk = [t for t in node.sent[n:] if t["tx_type"] == "rule_offer" and t["sender_pubkey"] == sc.pk["desk"]]
+check(len(desk) == 4 and desk[0]["recipient_pubkey"] == vis and desk[0]["rule_text"] == sc.starter_rule()
+      and desk[0]["expire_at_height"] == 50 + showcase.VISITOR_WINDOW, "the desk sends the four starter offers: at most 1,000 per payment, open ~1000 blocks")
+check("sharers" in sc.snapshot() and sc.snapshot()["stories"]["scam"]["result"] == "rejected", "GET /showcase shows the sharing wallets and the stories")
+check(sc.route("/showcase/offer", "to=" + "cd" * 48, "9.9.9.9")["ok"], "GET /showcase/offer?to=… asks the desk")
+
+# old keys file with four keys: the sharing wallets are added, the old ones kept
+tmp3 = tempfile.mkdtemp()
+old = {k: v for k, v in json.load(open(os.path.join(tmp, "k"))).items() if k in ("piggy", "foureyes", "feeding", "cosigner")}
+json.dump(old, open(os.path.join(tmp3, "k"), "w"))
+sc3 = showcase.Showcase(keys_path=os.path.join(tmp3, "k"), state_path=os.path.join(tmp3, "s.json"), clock=clock, enabled=True)
+check(sc3.ready and sc3.pk["piggy"] == sc.pk["piggy"] and len(json.load(open(os.path.join(tmp3, "k")))) == 7, "an older keys file gets the three new keys, the old ones stay")
 
 # a node that takes a forbidden payment: a finding, not retried, nothing to the feed
 tmp2 = tempfile.mkdtemp()
@@ -149,7 +209,7 @@ check(not out and all(bad.w(n)["last"]["outcome"] == "took" for n in showcase.WA
 clock2.t = cruise.berlin_t(dt.date(2027, 1, 2), 9)
 n = len(loose.sent)
 asyncio.run(run(bad, loose, clock2, cruise.berlin_t(dt.date(2027, 1, 2), 23)))
-late = [t["sender_pubkey"] for t in loose.sent[n:] if "1" in t["operations"]]
+late = [t["sender_pubkey"] for t in loose.sent[n:] if "1" in t.get("operations", {})]
 check(bad.pk["piggy"] not in late and len(late) == 2, "after New Year the piggy bank no longer tries; the other two do")
 
 print("all ok" if not failed else f"{failed} FAILED")
