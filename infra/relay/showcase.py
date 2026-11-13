@@ -35,6 +35,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import secrets
 import time
 
@@ -63,6 +64,26 @@ WALLETS = {
     "feeding": {"name": "Tau HUD's Agorzilla feeding fund", "at": 19, "to": "piggy", "amount": 5},
 }
 COSIGNER = {"name": "Tau HUD's co-signer"}
+# rule sharing (tau-testnet README "Rule sharing": rule_offer, rule_offer_accept, rule_offer_reject; all three pay fees):
+# three daily stories between our own wallets, and a desk that offers a visitor's wallet a starter rule when asked
+SHARERS = {
+    "apprentice": {"name": "Tau HUD's apprentice"},
+    "stranger": {"name": "Tau HUD's stranger"},
+    "desk": {"name": "Tau HUD's rule desk"},
+}
+KEYS = (*WALLETS, "cosigner", *SHARERS)
+STORIES = {   # German hour, in this order each day
+    "gift": 12,      # the piggy bank offers its rule to the apprentice, who reads it and accepts: offered -> accepted
+    "scam": 13,      # the stranger offers the four-eyes wallet a rule that would let it pay only the stranger: rejected
+    "ignored": 14,   # the stranger offers the feeding fund a rule nobody answers: it expires after IGNORED_WINDOW blocks
+}
+OFFER_WINDOW = 100      # blocks an offer of ours stays open
+IGNORED_WINDOW = 15     # blocks the unanswered offer lives (about 12 minutes at ~48 s a block)
+VISITOR_WINDOW = 1000   # blocks a visitor has to answer the starter rule (about half a day)
+STORY_GIVE_UP = 45 * 60
+STARTER_MAX = 1000      # the starter rule a visitor's wallet is offered: at most this much per payment
+DESK_PER_DAY = 40       # starter offers a day, all visitors together
+DESK_PER_IP = 3         # per address a day
 
 
 def berlin_t(day: dt.date, hour: int) -> int:
@@ -86,10 +107,33 @@ def norm(body: str) -> str:
     return "".join(str(body or "").split()).lower()
 
 
-def make_keys(path: str) -> dict:
+def signing_bytes(tx: dict) -> bytes:
+    """The node's preimage (tau-testnet consensus/tx_signing.py signing_message_bytes) for the kinds sent here."""
+    t = tx.get("tx_type", "user_tx")
+    d = {k: tx[k] for k in ("sender_pubkey", "sequence_number", "expiration_time", "fee_limit")}
+    d["tx_type"] = t
+    if tx.get("expire_at_height") is not None:
+        d["expire_at_height"] = tx["expire_at_height"]
+    if t == "user_tx":
+        d["operations"] = tx.get("operations", {})
+    elif t == "rule_offer":
+        d.update(recipient_pubkey=tx.get("recipient_pubkey"), rule_text=tx.get("rule_text"))
+    elif t == "rule_offer_accept":
+        d.update(offer_id=tx.get("offer_id"), rule_text=tx.get("rule_text"))
+    elif t == "rule_offer_reject":
+        d["offer_id"] = tx.get("offer_id")
+    else:
+        raise ValueError(t)
+    return json.dumps(d, sort_keys=True, separators=(",", ":")).encode()
+
+
+def make_keys(path: str, keys: dict | None = None) -> dict:
+    """Every key of KEYS that `keys` does not have yet, made and written with the others (0600)."""
     from py_ecc.bls import G2Basic
-    keys = {}
-    for name in (*WALLETS, "cosigner"):
+    keys = dict(keys or {})
+    for name in KEYS:
+        if name in keys:
+            continue
         sk = G2Basic.KeyGen(secrets.token_bytes(32))
         sk = sk if isinstance(sk, int) else int.from_bytes(bytes(sk), "big")
         keys[name] = {"sk": sk.to_bytes(32, "big").hex(), "pk": G2Basic.SkToPk(sk).hex()}
@@ -119,7 +163,9 @@ class Showcase:
         self.last_send = 0.0
         self.last_look = 0.0
         self.hold_until = 0.0
-        self.st: dict = {"wallets": {}, "log": []}
+        self.st: dict = {"wallets": {}, "log": [], "stories": {}, "desk": {"day": "", "n": 0, "ips": {}, "to": {}}}
+        self.queue: list[dict] = []   # visitors' wallets waiting for the desk's starter offer
+        self.last_story_look = 0.0
         self.load_state()
         if not self.enabled:
             return
@@ -128,8 +174,8 @@ class Showcase:
                 if os.path.exists(self.keys_path):
                     with open(self.keys_path) as f:
                         keys = json.load(f)
-                else:
-                    keys = make_keys(self.keys_path)
+                if not keys or any(n not in keys for n in KEYS):   # the sharing wallets came later: added, the old keys kept
+                    keys = make_keys(self.keys_path, keys)
             self.use_keys(keys)
         except Exception as exc:   # the relay keeps working without it
             log.warning("showcase off: %r", exc)
@@ -139,7 +185,7 @@ class Showcase:
         self.sk = {n: int(k["sk"], 16) for n, k in keys.items()}
         self.pk = {n: k["pk"].lower() for n, k in keys.items()}
         self.who = {pk: "showcase" for pk in self.pk.values()}
-        self.ready = all(n in self.pk for n in (*WALLETS, "cosigner"))
+        self.ready = all(n in self.pk for n in KEYS)
         if self.ready and self.on_ready:
             try:
                 self.on_ready()
@@ -152,7 +198,11 @@ class Showcase:
             with open(self.state_path) as f:
                 st = json.load(f)
             if isinstance(st, dict) and isinstance(st.get("wallets"), dict):
-                self.st = {"wallets": st["wallets"], "log": [x for x in st.get("log") or [] if isinstance(x, dict)][-LOG_KEEP:]}
+                self.st.update(wallets=st["wallets"], log=[x for x in st.get("log") or [] if isinstance(x, dict)][-LOG_KEEP:])
+                if isinstance(st.get("stories"), dict):
+                    self.st["stories"] = st["stories"]
+                if isinstance(st.get("desk"), dict):
+                    self.st["desk"] = {**self.st["desk"], **st["desk"]}
         except (OSError, ValueError, TypeError):
             pass
 
@@ -239,19 +289,27 @@ class Showcase:
 
     # ---------- the transactions ----------
     def build(self, name: str, seq: int, tip: int, fee: int, rule: str | None = None, to: str | None = None,
-              amount: int = 0) -> dict:
+              amount: int = 0, kind: str = "user_tx", offer_id: str | None = None, window: int = OFFER_WINDOW) -> dict:
         from py_ecc.bls import G2Basic
-        from cruise import signing_bytes
         pk = self.pk[name]
         now = int(self.clock())
-        ops = {"0": rule} if rule is not None else {"1": [[pk, to, str(amount)]]}
-        tx = {"tx_type": "user_tx", "sender_pubkey": pk, "sequence_number": seq, "expiration_time": now + 600,
-              "expire_at_height": tip + 1000, "fee_limit": str(fee * 5), "operations": ops}
+        tx = {"tx_type": kind, "sender_pubkey": pk, "sequence_number": seq, "expiration_time": now + 600,
+              "expire_at_height": tip + 1000, "fee_limit": str(fee * 5)}
+        if kind == "user_tx":
+            tx["operations"] = {"0": rule} if rule is not None else {"1": [[pk, to, str(amount)]]}
+        elif kind == "rule_offer":   # the offer's own expiry is the transaction's height deadline (one field, signed)
+            tx.update(recipient_pubkey=to, rule_text=rule, expire_at_height=tip + window)
+        elif kind == "rule_offer_accept":   # the accepted text repeated verbatim
+            tx.update(offer_id=offer_id, rule_text=rule)
+        elif kind == "rule_offer_reject":
+            tx.update(offer_id=offer_id)
+        else:
+            raise ValueError(kind)
         tx["signature"] = G2Basic.Sign(self.sk[name], hashlib.sha256(signing_bytes(tx)).digest()).hex()
         return tx
 
     async def send(self, name: str, ask, gov, **kw):
-        """(answer or None, the transaction)."""
+        """(answer or None, the transaction); None, None when the node could not even say the sequence."""
         import asyncio
         from island import base_fee
         st = await ask(f"getsequence {self.pk[name]}")
@@ -359,7 +417,145 @@ class Showcase:
             sent = await self.try_forbidden(name, ask, gov, day)
             self.save_state()
             return sent
+        # 4. a visitor asked the desk for a starter rule
+        if self.queue:
+            sent = await self.desk_step(ask, gov)
+            self.save_state()
+            return sent
+        # 5. the day's rule-sharing stories
+        sent = await self.story_step(ask, gov, now, day)
+        self.save_state()
+        return bool(sent)
+
+    # ---------- rule sharing ----------
+    PARTS = {"gift": ("piggy", "apprentice"), "scam": ("stranger", "foureyes"), "ignored": ("stranger", "feeding")}
+
+    def story_rule(self, story: str) -> str:
+        if story == "gift":
+            return self.rule("piggy")
+        if story == "scam":   # looks like a whitelist, names only the one who offers it
+            return f"always ( (i4[t]:bv[384] = {{ #x{self.pk['stranger']} }}:bv[384]) ? {ALLOW} : {BLOCK} )."
+        return f"always ( (i1[t]:bv[24] > {{ #x{50:06x} }}:bv[24]) ? {BLOCK} : {ALLOW} )."
+
+    def story_words(self, story: str) -> str:
+        return {"gift": "Tau HUD's piggy bank offers Tau HUD's apprentice its own rule (nothing leaves before New Year); the apprentice reads it and accepts",
+                "scam": "Tau HUD's stranger offers Tau HUD's four-eyes wallet a rule that would let it pay only the stranger; the four-eyes wallet reads it and declines",
+                "ignored": "Tau HUD's stranger offers Tau HUD's Agorzilla feeding fund a rule nobody asked for; nobody answers and it expires"}[story]
+
+    @staticmethod
+    def starter_rule() -> str:
+        return f"always ( (i1[t]:bv[24] > {{ #x{STARTER_MAX:06x} }}:bv[24]) ? {BLOCK} : {ALLOW} )."
+
+    @staticmethod
+    def review(text: str, offerer: str) -> str | None:
+        """Why an offered rule must be declined, or None: read the way a careful owner reads it. A rule whose one allowed
+        recipient is the wallet offering it hands that wallet everything the account holds."""
+        m = re.search(r"i4\[t\]:bv\[384\]\s*=\s*\{\s*#x([0-9a-fA-F]+)", text or "")
+        if m and m.group(1).lower() == str(offerer).lower():
+            return "it would let this wallet pay only the wallet that offers it"
+        return None
+
+    async def story_step(self, ask, gov, now: float, day: str):
+        for story, hour in STORIES.items():
+            s = self.st["stories"].setdefault(story, {})
+            offerer, to = self.PARTS[story]
+            if s.get("day") != day:
+                if now < berlin_t(berlin_day(now), hour) or not self.w(to).get("in_force") and to in WALLETS:
+                    continue
+                res, tx = await self.send(offerer, ask, gov, kind="rule_offer", to=self.pk[to], rule=self.story_rule(story),
+                                          window=IGNORED_WINDOW if story == "ignored" else OFFER_WINDOW)
+                if tx is None or res is None:
+                    return tx is not None
+                ok = self.took(res)
+                self.st["stories"][story] = {"day": day, "t": int(now), "expire": tx["expire_at_height"],
+                                             "phase": "wait" if ok and story != "ignored" else "done",
+                                             "result": ("offered" if ok else "the node refused the offer")}
+                self.note(offerer, ("offered: " if ok else "offer refused: ") + self.story_words(story) + ("" if ok else " · " + self.said(res)))
+                self.on_tx and self.on_tx(ok)
+                return True
+            if s.get("phase") != "wait":
+                continue
+            if now - s.get("t", now) > STORY_GIVE_UP:
+                s.update(phase="done", result="the offer never showed up in a block in time")
+                self.note(to, "gave up waiting for the offer: " + story)
+                continue
+            if now - self.last_story_look < 30:
+                return False
+            self.last_story_look = now
+            r = await ask(f"getruleoffers {self.pk[to]} in")
+            d = (r or {}).get("data") or {}
+            mine = [x for x in d.get("incoming") or [] if isinstance(x, dict)
+                    and str(x.get("offerer_pubkey", "")).lower() == self.pk[offerer]
+                    and int(x.get("expire_at_height") or -1) == int(s.get("expire") or -2)]
+            o = next((x for x in mine if x.get("status") == "offered"), mine[0] if mine else None)
+            if not o:
+                return False
+            if o.get("status") != "offered":
+                s.update(phase="done", result=str(o.get("status")))
+                continue
+            s["offer_id"] = o.get("offer_id")
+            if story == "gift":
+                res, tx = await self.send(to, ask, gov, kind="rule_offer_accept", offer_id=o.get("offer_id"), rule=self.story_rule(story))
+                what = "accepted the rule Tau HUD's piggy bank offered"
+            else:
+                full = await ask(f"getruleoffer {o.get('offer_id')}")
+                text = ((full or {}).get("data") or {}).get("rule_text") or ""
+                why = self.review(text, self.pk[offerer])
+                if not why:
+                    s.update(phase="done", result="nothing wrong found; left open")
+                    continue
+                res, tx = await self.send(to, ask, gov, kind="rule_offer_reject", offer_id=o.get("offer_id"))
+                what = "declined the rule Tau HUD's stranger offered: " + why
+            if tx is None or res is None:
+                return tx is not None
+            ok = self.took(res)
+            s.update(phase="done", result=("accepted" if story == "gift" else "rejected") if ok else "answer refused: " + self.said(res))
+            self.note(to, what if ok else "the node refused the answer: " + self.said(res))
+            self.on_tx and self.on_tx(ok)
+            return True
         return False
+
+    # ---------- the desk: a starter rule offered to a visitor's wallet that asks for it ----------
+    def ask_offer(self, to: str, ip: str = "") -> dict:
+        to = str(to or "").strip().lower().removeprefix("0x")
+        if not re.fullmatch(r"[0-9a-f]{96}", to):
+            return {"ok": False, "error": "an address is 96 hex characters"}
+        if not self.ready or not self.enabled:
+            return {"ok": False, "error": "the rule desk is closed right now"}
+        if to in self.pk.values():
+            return {"ok": False, "error": "that is one of our own wallets"}
+        day = berlin_day(self.clock()).isoformat()
+        desk = self.st["desk"]
+        if desk.get("day") != day:
+            desk.update(day=day, n=0, ips={}, to={})
+        info = {"ok": True, "rule": f"at most {STARTER_MAX:,} test AGRS per payment", "rule_text": self.starter_rule(),
+                "from": self.pk["desk"], "open_blocks": VISITOR_WINDOW}
+        if desk["to"].get(to) or any(q["to"] == to for q in self.queue):
+            return {**info, "already": True}
+        if desk["ips"].get(ip, 0) >= DESK_PER_IP or desk["n"] >= DESK_PER_DAY or len(self.queue) >= 20:
+            return {"ok": False, "error": "the rule desk has given out enough offers today; try again tomorrow"}
+        desk["ips"][ip] = desk["ips"].get(ip, 0) + 1
+        desk["n"] += 1
+        desk["to"][to] = int(self.clock())
+        self.queue.append({"to": to, "t": int(self.clock())})
+        self.save_state()
+        return {**info, "queued": True}
+
+    async def desk_step(self, ask, gov) -> bool:
+        q = self.queue[0]
+        res, tx = await self.send("desk", ask, gov, kind="rule_offer", to=q["to"], rule=self.starter_rule(), window=VISITOR_WINDOW)
+        if tx is None:
+            return False
+        if res is None:
+            q["tries"] = q.get("tries", 0) + 1
+            if q["tries"] >= 3:
+                self.queue.pop(0)
+            return True
+        self.queue.pop(0)
+        ok = self.took(res)
+        self.note("desk", ("offered a starter rule to " if ok else "the node refused the starter offer to ") + q["to"][:10] + "…" + ("" if ok else ": " + self.said(res)))
+        self.on_tx and self.on_tx(ok)
+        return True
 
     # ---------- GET /showcase ----------
     def snapshot(self) -> dict:
@@ -375,8 +571,19 @@ class Showcase:
                          "last_try": w.get("last")}
         return {"enabled": self.enabled, "ready": True, "wallets": out,
                 "cosigner": {"pk": self.pk["cosigner"], "name": COSIGNER["name"]},
+                "sharers": {k: {"pk": self.pk[k], "name": v["name"]} for k, v in SHARERS.items()},
+                "stories": {k: {"german_hour": h, "what": self.story_words(k), **{x: y for x, y in (self.st["stories"].get(k) or {}).items() if x in ("day", "result", "offer_id")}}
+                            for k, h in STORIES.items()},
+                "desk": {"rule": f"at most {STARTER_MAX:,} test AGRS per payment", "today": self.st["desk"].get("n", 0), "per_day": DESK_PER_DAY, "waiting": len(self.queue)},
                 "piggy_until": piggy_until(),
                 "log": [{k: v for k, v in x.items() if k != "answer"} for x in self.st["log"][-20:]]}
 
-    def route(self, path: str) -> dict | None:
-        return self.snapshot() if path == "/showcase" else None
+    def route(self, path: str, query: str = "", ip: str = "") -> dict | None:
+        """GET /showcase; GET /showcase/offer?to=<address>: the rule desk offers that wallet a starter rule (the owner
+        accepts or declines it in their own wallet)."""
+        if path == "/showcase":
+            return self.snapshot()
+        if path == "/showcase/offer":
+            from urllib.parse import parse_qs
+            return self.ask_offer((parse_qs(query or "").get("to") or [""])[0], ip)
+        return None

@@ -704,4 +704,13 @@ TauI18n.add({ strings: {
   "Step 1 first: make your account on the left. Then you choose your rule here.": "先完成第 1 步：在左边创建你的账户。然后在这里选择你的规则。",
   "Step 2 of 3: tap the card that says what your rule should do.": "第 2 步（共 3 步）：点一张卡片，选出你的规则要做什么。",
   "Step 3 of 3: check the test payments, then sign your rule.": "第 3 步（共 3 步）：看一看测试付款，然后签署你的规则。",
+  "Tau HUD’s rule desk offers you a starter rule": "Tau HUD 的规则服务台给你提供一条入门规则",
+  "Want a rule offered to you?": "想让别人给你提供一条规则吗？",
+  "Ask Tau HUD": "问 Tau HUD",
+  "Ask Tau HUD’s rule desk": "询问 Tau HUD 的规则服务台",
+  "It offers your wallet a starter rule: at most 1,000 test AGRS per payment.": "它会给你的钱包提供一条入门规则：每笔付款最多 1,000 测试 AGRS。",
+  "Nothing changes until you read it and accept it here.": "在你阅读并在这里接受之前，什么都不会改变。",
+  "Tau HUD’s rule desk offers your wallet a starter rule through rule sharing: at most 1,000 test AGRS per payment. It shows up here after the next block or two; you read it, then accept or decline it.": "Tau HUD 的规则服务台通过规则共享给你的钱包提供一条入门规则：每笔付款最多 1,000 测试 AGRS。它会在一两个区块后出现在这里；你先阅读，再接受或拒绝。",
+  "Asking Tau HUD’s rule desk…": "正在询问 Tau HUD 的规则服务台…",
+  "Asked. The offer arrives with the next block or two.": "已询问。提议会在一两个区块后到达。",
 } });

@@ -704,4 +704,13 @@ TauI18n.add({ strings: {
   "Step 1 first: make your account on the left. Then you choose your rule here.": "まずステップ1：左でアカウントを作ってください。そのあと、ここでルールを選びます。",
   "Step 2 of 3: tap the card that says what your rule should do.": "ステップ 2/3：ルールにさせたいことのカードをタップしてください。",
   "Step 3 of 3: check the test payments, then sign your rule.": "ステップ 3/3：テスト支払いを確かめてから、ルールに署名してください。",
+  "Tau HUD’s rule desk offers you a starter rule": "Tau HUD のルール窓口が入門ルールを提案しています",
+  "Want a rule offered to you?": "ルールを提案してほしいですか？",
+  "Ask Tau HUD": "Tau HUD に頼む",
+  "Ask Tau HUD’s rule desk": "Tau HUD のルール窓口に頼む",
+  "It offers your wallet a starter rule: at most 1,000 test AGRS per payment.": "あなたのウォレットに入門ルールを提案します：1 回の支払いは最大 1,000 テスト AGRS。",
+  "Nothing changes until you read it and accept it here.": "あなたがここで読んで受け入れるまで、何も変わりません。",
+  "Tau HUD’s rule desk offers your wallet a starter rule through rule sharing: at most 1,000 test AGRS per payment. It shows up here after the next block or two; you read it, then accept or decline it.": "Tau HUD のルール窓口が、ルール共有を使ってあなたのウォレットに入門ルールを提案します：1 回の支払いは最大 1,000 テスト AGRS。1〜2 ブロック後にここに届きます。読んでから、受け入れるか断ってください。",
+  "Asking Tau HUD’s rule desk…": "Tau HUD のルール窓口に問い合わせ中…",
+  "Asked. The offer arrives with the next block or two.": "依頼しました。提案は 1〜2 ブロック後に届きます。",
 } });
