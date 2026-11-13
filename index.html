@@ -3363,7 +3363,8 @@ function setMode(mode, status) {
   $("hint").className = "hint" + (!simUI && status === "Offline" ? " err" : "");
 }
 $("btnSim").onclick = () => { if (window.TauSim) { TauSim.set("sim"); return; } store.set("tau-mode", "sim"); LIVE.auto = false; liveStop(); setMode("sim"); simStart(); presenceOpen(); };
-$("btnLive").onclick = () => { if (window.TauSim && TauSim.on) { TauSim.set("live"); return; } store.set("tau-mode", "live"); LIVE.auto = false; simStop(); liveStop(); S.simfeed = false; liveConnect(); };
+/* already reading the live chain: a second click opens Status, where the health score its hover names is explained in full */
+$("btnLive").onclick = () => { if (!isSim() && S.mode === "live") { location.href = "status/"; return; } if (window.TauSim && TauSim.on) { TauSim.set("live"); return; } store.set("tau-mode", "live"); LIVE.auto = false; simStop(); liveStop(); S.simfeed = false; liveConnect(); };
 $("btnConnect").onclick = () => { store.set("tau-mode", "live"); LIVE.auto = false; simStop(); liveConnect(); };
 
 /* =====================================================================
@@ -4139,7 +4140,7 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
     if (!lines.length) head.classList.add("solo");
     ovl.append(head); if (lines.length) ovl.append(document.createTextNode(lines.join("\n")));
   };
-  const show = (el, x, y) => { cur = el; shownAt = Date.now(); const fn = el.dataset.ex === "live" ? () => LIVE_TIP : el.dataset.ex === "agz" ? agzTip : el.dataset.ex && EX.get(el.dataset.ex); setOvl(viewText((el.dataset.health ? health(el.dataset.health) : "") + (fn ? fn() : (el.dataset.full || el.getAttribute("title") || el.textContent.trim()))), !!el.closest(".core, #btnLive, #agz")); ovl.hidden = false; place(x, y); };
+  const show = (el, x, y) => { cur = el; shownAt = Date.now(); const fn = el.dataset.ex === "live" ? () => LIVE_TIP + (!isSim() && S.mode === "live" ? "\nClick: opens Status, the testnet health in full." : "") : el.dataset.ex === "agz" ? agzTip : el.dataset.ex && EX.get(el.dataset.ex); setOvl(viewText((el.dataset.health ? health(el.dataset.health) : "") + (fn ? fn() : (el.dataset.full || el.getAttribute("title") || el.textContent.trim()))), !!el.closest(".core, #btnLive, #agz")); ovl.hidden = false; place(x, y); };
   const hide = () => { cur = null; ovl.hidden = true; };
   document.addEventListener("mouseover", e => { const el = find(e.target); if (el) show(el, e.clientX, e.clientY); else if (cur && !touch) hide(); });
   document.addEventListener("mousemove", e => { if (cur) place(e.clientX, e.clientY); });
