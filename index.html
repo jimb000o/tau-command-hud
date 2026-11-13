@@ -1133,6 +1133,59 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   html.hudfull .hfs-x { display: grid; place-items: center; position: fixed; z-index: 60; top: max(8px, env(safe-area-inset-top, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--hair); background: rgba(12,12,14,.72); color: #fff; font: 600 17px/1 var(--display); padding: 0; cursor: pointer; backdrop-filter: blur(6px); opacity: .55; }
   html.hudfull .hfs-x:active, html.hudfull .hfs-x:focus-visible { opacity: 1; }
 }
+/* beginner view (level "Beginner" under the gear, html.nb): four panels in plain words on one screen, a head line that says what this is and
+   what to do next, one sentence per block; the other panels come back with "More details" (html.nbmore, this tab only) */
+.nbhead, .nbsay, .nb-on, .tx .top em.pl { display: none; }
+html.nb .nb-on { display: revert; }
+html.nb .nb-off, html.nb #coreSub, html.nb #feedSub, html.nb .tx .fee, html.nb .readout span i { display: none; }
+html.nb .tx .top em.pl { display: inline; } html.nb .tx .top em:not(.pl) { display: none; }
+html.nb .tx .top em.pl { text-transform: none; letter-spacing: .02em; font-size: 12px; }
+html.nb body:not(.calm) .wrap { display: flex; flex-direction: column; }
+html.nb body:not(.calm) .wrap > .grid { flex: 1 1 auto; }
+html.nb body:not(.calm) .nbhead { display: grid; }
+html.nb:not(.nbmore) body:not(.calm) .thesis { display: none; }
+html.nb:not(.nbmore) .grid > .a-eng, html.nb:not(.nbmore) .grid > .a-chain, html.nb:not(.nbmore) .grid > .a-off, html.nb:not(.nbmore) .grid > .a-val { display: none; }
+html.nb:not(.nbmore) body .grid { grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); grid-template-areas: "core feed pol upd"; }
+html.nb .panel h2 .nb-on { text-transform: none; letter-spacing: .06em; font-size: 14px; }
+.nbhead { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: center; padding: 10px 16px; border: 1px solid var(--line); border-radius: 6px; background: linear-gradient(90deg, rgba(57,255,138,.07), rgba(16,16,18,.6) 55%); position: relative; }
+.nbhead::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 2px; background: var(--ok); border-radius: 2px; }
+.nb-tag { margin: 0; font: 400 clamp(15px, 1.1vw, 20px)/1.35 var(--display); color: #fff; text-wrap: balance; }
+.nb-now { margin: 4px 0 0; font: 13px/1.4 var(--mono); color: var(--dim); display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-height: 18px; }
+.nb-now b { color: var(--ok); font-weight: 600; }
+.nb-now b::after { content: ":"; }
+#nbNowText { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-width: 0; }
+.nb-now .ago { color: var(--dim); font-size: 12px; }
+.nb-now .it + .it::before { content: "· "; color: var(--dim); }
+.nb-now .it { color: var(--text); } .nb-now .it.no { color: var(--refused); }
+.nb-now .sim { display: none; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: #ffb13b; border: 1px solid rgba(255,177,59,.6); border-radius: 3px; padding: 0 4px; }
+body[data-mode="sim"] .nb-now .sim { display: inline; }
+.nb-simt { color: #ffb13b; } body[data-mode="sim"] .nb-live, body:not([data-mode="sim"]) .nb-simt { display: none; }
+.nb-do { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
+.nb-b { display: inline-flex; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 44px; padding: 6px 14px; border: 1px solid var(--hair); border-radius: 6px; background: rgba(255,255,255,.03); color: #fff; font: 600 13px var(--display); letter-spacing: .04em; text-decoration: none; cursor: pointer; text-align: left; }
+.nb-b small { font: 400 11px var(--mono); color: var(--dim); letter-spacing: 0; }
+.nb-b:hover, .nb-b:focus-visible { border-color: var(--ok); color: var(--ok); }
+.nb-b.go { border-color: rgba(57,255,138,.7); background: rgba(57,255,138,.1); }
+.nb-more { justify-self: end; background: none; border: 0; color: var(--dim); font: 12px var(--mono); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; min-height: 32px; padding: 0 4px; }
+.nb-more:hover, .nb-more:focus-visible { color: var(--ok); }
+.nbsay { margin: 6px 0 0; font: 13px/1.45 var(--mono); color: var(--text); flex: 0 0 auto; }
+html.nb .nbsay { display: block; }
+.nbsay span { display: block; } .nbsay span.dim { color: var(--dim); font-size: 12px; }
+@media (min-width: 1101px) {
+  html.nb:not(.nbmore), html.nb:not(.nbmore) body { height: 100%; }
+  html.nb:not(.nbmore) body:not(.calm) .wrap { height: 100%; }
+  html.nb:not(.nbmore) body:not(.calm) .wrap > .grid { flex: 1 1 0; min-height: 0; }
+  html.nb:not(.nbmore) .grid .scroll { max-height: none; }
+  html.nb:not(.nbmore) .grid .core canvas { width: auto; height: 100%; max-width: 100%; max-height: 100%; }
+  html.nb:not(.nbmore) .grid > .panel { overflow: hidden; }
+}
+@media (max-width: 1100px) {
+  html.nb:not(.nbmore) body .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "core feed" "pol upd"; }
+  .nbhead { grid-template-columns: minmax(0, 1fr); } .nb-do { justify-content: flex-start; } .nb-more { justify-self: start; }
+}
+@media (max-width: 720px) {
+  html.nb:not(.nbmore) body .grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "core" "feed" "pol" "upd"; }
+  .nbhead { padding: 10px 12px; } .nb-b { flex: 1 1 140px; }
+}
 </style>
 
 <canvas id="rain" aria-hidden="true"></canvas>
@@ -1212,6 +1265,18 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     <div class="tick" id="tick" translate="no" aria-label="News line: live facts, updates and pointers"><span class="tk-lab"><i></i><b>News</b></span><div class="tk-view"><div class="tk-track"></div></div></div>
   </section>
 
+  <section class="nbhead" id="nbHead" aria-label="Start here">
+    <div class="nb-main">
+      <p class="nb-tag">Tau Net is a blockchain where wallets can put rules on their own money, and the chain’s own rules change only when its validators agree. <span class="nb-live">This is its test chain, live.</span><span class="nb-simt">What you see now is a simulation of its test chain; Live node at the top shows the real one.</span></p>
+      <p class="nb-now" id="nbNow" aria-live="polite"><span class="sim">Simulation</span><span id="nbNowText">Waiting for the next block…</span></p>
+    </div>
+    <div class="nb-do">
+      <button class="nb-b" type="button" id="nbTour">Show me around<small>1 minute, 6 steps</small></button>
+      <a class="nb-b go" id="nbFirst" href="start/">Write your first rule<small>about 2 minutes, no sign-up</small></a>
+      <a class="nb-b" href="rabbit/">Play<small>a game on the live chain</small></a>
+      <button class="nb-more" type="button" id="nbMore" aria-pressed="false">More details</button>
+    </div>
+  </section>
   <main class="grid">
     <article class="panel a-eng">
       <h2>Block check by rules <small id="engineBlk">block —</small><button class="info" type="button" aria-label="What is this?" data-tip="Every block is judged by a Tau logic program, not by hard-coded Python. The host feeds inputs (i6 height, i7 time, i8 proposer, i10 signature check) and the active spec answers on output streams: o6 says whether the block is valid, o7 whether the proposer may propose, o9 the fee. The spec shown below is the real one that is live.">i</button></h2>
@@ -1224,29 +1289,30 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     </article>
 
     <article class="panel a-core core-panel">
-      <h2>Chain core <small id="coreSub">next proposer —</small><button class="info" type="button" aria-label="What is this?" data-tip="The ring of diamonds is the validator set; the bright one is proposing the next block. The ringed dots on the middle ring are accounts that run their own Tau rules. The dots orbiting the core are transactions waiting in the mempool. The arc shows how close an open rule change is to the agreement it needs. Lines to the core: a rule account’s line turns green when its rule just let a transfer pass, white when it just refused one, grey while idle; the green line from a validator is the proposer sealing a block, and at each seal every validator’s line lights briefly as all rules flow into the block.">i</button></h2>
+      <h2><span class="nb-off">Chain core </span><span class="nb-on">The chain right now</span> <small id="coreSub">next proposer —</small><button class="info" type="button" aria-label="What is this?" data-tip="The ring of diamonds is the validator set; the bright one is proposing the next block. The ringed dots on the middle ring are accounts that run their own Tau rules. The dots orbiting the core are transactions waiting in the mempool. The arc shows how close an open rule change is to the agreement it needs. Lines to the core: a rule account’s line turns green when its rule just let a transfer pass, white when it just refused one, grey while idle; the green line from a validator is the proposer sealing a block, and at each seal every validator’s line lights briefly as all rules flow into the block.">i</button></h2>
       <div class="mynode" id="myNode" hidden></div>
       <div class="core">
         <div id="coreFoot" aria-hidden="true"></div>
         <div class="simmark" aria-hidden="true">Simulation</div>
         <canvas id="core" width="1120" height="1120" aria-label="Animated view of validators, their agreement on rule changes, accounts with their own Tau rules, the mempool and block production"></canvas>
         <div class="readout">
-          <div id="rHw" data-health="height"><b id="rH">0</b><span>Height<i id="rHs"></i></span></div>
+          <div id="rHw" data-health="height"><b id="rH">0</b><span><span class="nb-off">Height</span><span class="nb-on">Blocks so far</span><i id="rHs"></i></span></div>
           <div id="rMw" data-health="mempool"><b id="rM">0</b><span>Waiting<i id="rMs"></i></span></div>
           <div id="rTw" data-health="pace"><b id="rT">—</b><span id="rTs">Block pace</span></div>
-          <div id="rRw"><b id="rR">0</b><span>User rules<i id="rRs"></i></span></div>
+          <div id="rRw"><b id="rR">0</b><span><span class="nb-off">User rules</span><span class="nb-on">Wallets with a rule</span><i id="rRs"></i></span></div>
         </div>
       </div>
+      <p class="nbsay" id="nbCore" aria-live="off"></p>
     </article>
 
     <article class="panel a-feed">
-      <h2>Transactions <small id="feedSub">waiting → sealed</small><button class="rejchip" id="feedRej" type="button" aria-pressed="false" data-full="What Tau refused at the door, each with its reason: a transfer the sender’s own rule said no to, too little balance, a used sequence number, a fee below the base fee, a rule or a proposed spec that does not compile. Click to show only these.">0 refused</button><button class="info" type="button" aria-label="What is this?" data-tip="Transactions as they are admitted and later sealed into blocks. Grey: transfers. Green: rule work (an account deploying, offering, accepting or rejecting a Tau rule). White: governance (proposals and votes). Red with ✕: refused, usually because the sender’s own rule (o5) blocked it, which applies even to whoever holds the key. Amounts are in AGRS (testnet balances, no real value).">i</button></h2>
+      <h2><span class="nb-off">Transactions </span><span class="nb-on">What is happening</span> <small id="feedSub">waiting → sealed</small><button class="rejchip" id="feedRej" type="button" aria-pressed="false" data-full="What Tau refused at the door, each with its reason: a transfer the sender’s own rule said no to, too little balance, a used sequence number, a fee below the base fee, a rule or a proposed spec that does not compile. Click to show only these.">0 refused</button><button class="info" type="button" aria-label="What is this?" data-tip="Transactions as they are admitted and later sealed into blocks. Grey: transfers. Green: rule work (an account deploying, offering, accepting or rejecting a Tau rule). White: governance (proposals and votes). Red with ✕: refused, usually because the sender’s own rule (o5) blocked it, which applies even to whoever holds the key. Amounts are in AGRS (testnet balances, no real value).">i</button></h2>
       <div class="feed scroll" id="feed"></div>
     </article>
 
     <article class="panel a-pol" id="polCard">
-      <h2>Personal money rules <small id="clauseCount">0 accounts</small><button class="info" type="button" aria-label="What is this?" data-tip="Each account can program its own money: spending limits, recipient whitelists, time-locks, co-signature above a threshold. The node combines all accepted rules into one composite rule per stream, with a guarded branch per account and “allow” for everyone else. The network enforces it on every transfer.">i</button></h2>
-      <p class="sub">each account programs its own money · the node folds every rule into one spec</p>
+      <h2><span class="nb-off">Personal money rules </span><span class="nb-on">Rules on their own money</span> <small id="clauseCount">0 accounts</small><button class="info" type="button" aria-label="What is this?" data-tip="Each account can program its own money: spending limits, recipient whitelists, time-locks, co-signature above a threshold. The node combines all accepted rules into one composite rule per stream, with a guarded branch per account and “allow” for everyone else. The network enforces it on every transfer.">i</button></h2>
+      <p class="sub nb-off">each account programs its own money · the node folds every rule into one spec</p><p class="sub nb-on">Any wallet can give itself a rule. Every node checks each payment it sends against that rule, whoever holds the key.</p>
       <div class="scroll">
         <div class="clauses" id="clauses"></div>
         <pre class="rule composite" id="composite"></pre>
@@ -1255,8 +1321,8 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     </article>
 
     <article class="panel a-upd">
-      <h2>Rule changes by agreement <small id="govCount">0 open</small><button class="info" type="button" aria-label="What is this?" data-tip="Validators can propose a change to the consensus rules or validator set. The proposal is compiled in isolation first; one that does not compile is refused at the door. It activates only after a quorum agrees and only at a future height, never in the same block. There is no admin key that can skip this.">i</button></h2>
-      <p class="sub">proposed → checked → agreed → scheduled → active</p>
+      <h2><span class="nb-off">Rule changes by agreement </span><span class="nb-on">Votes on the chain’s rules</span> <small id="govCount">0 open</small><button class="info" type="button" aria-label="What is this?" data-tip="Validators can propose a change to the consensus rules or validator set. The proposal is compiled in isolation first; one that does not compile is refused at the door. It activates only after a quorum agrees and only at a future height, never in the same block. There is no admin key that can skip this.">i</button></h2>
+      <p class="sub nb-off">proposed → checked → agreed → scheduled → active</p><p class="sub nb-on">A change to the chain’s rules is proposed, checked, voted on, and only then becomes law.</p>
       <div class="contrast" aria-label="How a rule changes: other chains versus Tau">
         <div class="hd">How a rule changes <span>what each chain has to do</span></div>
         <div class="crow"><span class="who">Other chains<em>months, if ever</em></span><div class="track">
@@ -2490,6 +2556,90 @@ const TYPE_LABEL = {
   rule_offer_reject: "✕ rule rejected", consensus_rule_update: "§ rule change proposed", consensus_rule_vote: "☑ vote",
   retractable_transfer: "↺ retractable transfer", retract_transfer: "↩ transfer pulled back", approval_request: "⏳ approval request", transfer_vote: "✍ approval signed",
 };
+/* ---------- beginner view (html.nb, level "Beginner" under the gear) ----------
+   What a card is, in words (the feed's em.pl); one sentence per block in the head line; the core's numbers with their meaning.
+   "More details" brings every panel back for this tab (sessionStorage), the level itself stays the visitor's choice under the gear. */
+const PLAIN_LABEL = {
+  user_tx: "Payment", retractable_transfer: "Payment that can be pulled back", retract_transfer: "Payment pulled back",
+  rule_deploy: "A wallet gave itself a rule", rule_offer: "A rule offered to another wallet", rule_offer_accept: "Offered rule accepted", rule_offer_reject: "Offered rule declined",
+  consensus_rule_update: "Proposal to change the chain’s rules", consensus_rule_vote: "Vote on a rule change",
+  approval_request: "Payment waiting for a co-signer", transfer_vote: "Co-signer signed",
+};
+function plainLabel(t) {
+  if (t.rejected) return /o5/.test(String(t.rejected)) ? "✕ Stopped by the sender’s own rule" : "✕ Refused";
+  if (testChange(t)) return "Test change, no effect";
+  return PLAIN_LABEL[t.type] || "Transaction";
+}
+const NB = (() => {
+  const MORE = "tauhud-hud-more", root = document.documentElement;
+  let ref = { own: 0, other: 0 }, lastAt = 0, lastN = null;
+  const sget = k => { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, sset = (k, v) => { try { if (v) sessionStorage.setItem(k, v); else sessionStorage.removeItem(k); } catch (e) {} };
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+  const plural = (n, one, many) => n === 1 ? one : many.replace("{n}", fmt(n));
+  function apply(level) {
+    const on = (level || root.dataset.level) === "new";
+    root.classList.toggle("nb", on);
+    root.classList.toggle("nbmore", on && sget(MORE) === "1");
+    const b = document.getElementById("nbMore");
+    if (b) { const more = root.classList.contains("nbmore"); b.textContent = more ? "Fewer details" : "More details"; b.setAttribute("aria-pressed", String(more)); }
+    if (on) core();
+    setTimeout(() => dispatchEvent(new Event("resize")), 30);   // the core canvas and the tour card measure again
+  }
+  function more() { sset(MORE, root.classList.contains("nbmore") ? "" : "1"); apply(); }
+  /* refusals arrive between blocks: counted until the next block, then told with it */
+  function refused(t) { if (/o5/.test(String(t.rejected || ""))) ref.own++; else ref.other++; }
+  function block(b) {
+    const k = { pay: 0, rule: 0, share: 0, prop: 0, vote: 0, other: 0 };
+    (b.txs || []).forEach(t => {
+      const y = t.type;
+      if (y === "user_tx" || y === "retractable_transfer" || y === "transfer_vote") k.pay++;
+      else if (y === "rule_deploy") k.rule++;
+      else if (/^rule_offer/.test(y)) k.share++;
+      else if (y === "consensus_rule_update") k.prop++;
+      else if (y === "consensus_rule_vote") k.vote++;
+      else k.other++;
+    });
+    const items = [];
+    if (k.pay) items.push(["", plural(k.pay, "1 payment went through", "{n} payments went through")]);
+    if (k.rule) items.push(["", plural(k.rule, "1 wallet gave itself a rule", "{n} wallets gave themselves a rule")]);
+    if (k.share) items.push(["", plural(k.share, "1 rule passed between wallets", "{n} rules passed between wallets")]);
+    if (k.prop) items.push(["", plural(k.prop, "1 proposal to change the chain’s rules", "{n} proposals to change the chain’s rules")]);
+    if (k.vote) items.push(["", plural(k.vote, "1 vote on a rule change", "{n} votes on rule changes")]);
+    if (k.other) items.push(["", plural(k.other, "1 other transaction", "{n} other transactions")]);
+    if (ref.own) items.push(["no", plural(ref.own, "1 payment was stopped by its sender’s own rule", "{n} payments were stopped by their senders’ own rules")]);
+    if (ref.other) items.push(["no", plural(ref.other, "1 transaction was refused", "{n} transactions were refused")]);
+    if (!items.length) items.push(["", "an empty block: nothing was waiting"]);
+    ref = { own: 0, other: 0 }; lastAt = Date.now(); lastN = b.n;
+    const box = document.getElementById("nbNowText"); if (!box) return;
+    box.replaceChildren(el("b", "", `Block #${fmt(b.n)}`), ...items.map(([c, t]) => el("span", "it" + (c ? " " + c : ""), t)), el("span", "ago", ""));
+    ago();
+  }
+  function ago() {
+    const a = document.querySelector("#nbNowText .ago"); if (!a || lastN == null) return;
+    const s = Math.round((Date.now() - lastAt) / 1000), t = s < 3 ? "just now" : s < 90 ? `${s} s ago` : `${Math.round(s / 60)} min ago`;
+    if (a.textContent !== t) a.textContent = t;
+  }
+  setInterval(() => { if (root.classList.contains("nb")) ago(); }, 1000);
+  /* the core's four numbers, each with what it means */
+  function core() {
+    const box = document.getElementById("nbCore"); if (!box || !root.classList.contains("nb")) return;
+    const pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null, w = memState().W, r = S.clauses.size;
+    const lines = [
+      pace != null ? (pace < 90 ? `A new block about every ${Math.max(1, Math.round(pace))} seconds; each one seals the transactions that are waiting.` : `A new block about every ${Math.round(pace / 60)} minutes; each one seals the transactions that are waiting.`) : "Waiting for the first blocks to measure the pace.",
+      !w ? "Nothing is waiting right now." : plural(w, "1 transaction is waiting for the next block.", "{n} transactions are waiting for the next block."),
+      !r ? "No wallet has its own rule right now." : plural(r, "1 wallet has given itself a rule.", "{n} wallets have given themselves a rule."),
+    ];
+    const key = lines.join("|") + S.fee; if (box.dataset.k === key) return; box.dataset.k = key;
+    box.replaceChildren(...lines.map(t => el("span", "", t)), el("span", "dim", `Every transaction costs ${fmt(S.fee)} test AGRS. Test AGRS have no value.`));
+  }
+  addEventListener("tau-level", e => apply(e.detail));
+  addEventListener("DOMContentLoaded", () => {
+    const b = document.getElementById("nbMore"); if (b) b.onclick = more;
+    const t = document.getElementById("nbTour"); if (t) t.onclick = () => tourShow(0);
+    apply();
+  });
+  return { apply, refused, block, core };
+})();
 /* a live panel never re-renders while the pointer rests on it; the pending render runs on mouseleave */
 const HOLD = new Map();
 function hold(id, fn) {
@@ -2516,11 +2666,11 @@ function txCard(t) {
   const body = txBody(t);
   const txid = S.mode === "live" && t.id && !t.rejected ? `<a class="acct" href="explorer/?tx=${encodeURIComponent(t.id)}" title="Open this transaction in the explorer">${short(t.id)}</a>` : short(t.id);
   if (t.at == null) { t.at = Date.now() / 1000; if (!t.ageKind) t.ageKind = S.mode === "live" ? "seen" : "sim"; }
-  d.innerHTML = `<div class="top"><em>${esc(label)}</em><span><span class="age"></span> · <span class="txid">${txid} · </span>${t.feeCap ? "fee ≤ " : "fee "}${t.fee ?? "—"}</span></div><div class="mid">${body}</div>`;
+  d.innerHTML = `<div class="top"><em>${esc(label)}</em><em class="pl">${esc(plainLabel(t))}</em><span><span class="age"></span><span class="fee"> · <span class="txid">${txid} · </span>${t.feeCap ? "fee ≤ " : "fee "}${t.fee ?? "—"}</span></span></div><div class="mid">${body}</div>`;
   setAge(d, t.at, t.ageKind || (t.block != null ? "sealed" : "seen"), t.block);
   if (S.mode === "live" && !t.rejected && Number.isFinite(t.block)) sealMark(d, t.block);   // first seen in its block: sealed, never a ghost
   d.dataset.ex = exKey(() => explainTx(t)); d.dataset.detail = dtKey(() => detailTx(t));
-  if (t.rejected) { bounce(t); S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
+  if (t.rejected) { NB.refused(t); bounce(t); S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
   const feed = $("feed");
   if (feed.matches(":hover")) { feedHold.push(d); return d; }
   placeCard(feed, d);
@@ -2766,6 +2916,7 @@ function readouts() {
   $("chipRev").textContent = "rev " + S.specRev;
   { const m = S.mode === "live" ? S.eligMode || "" : "validator_set", c = CONS_CHIP[m], n = S.validators.length;
     $("consL").textContent = c ? c[0] + (n ? ` · ${n} validator${n === 1 ? "" : "s"}` : "") : "—"; $("consS").textContent = c ? c[1] + (n ? ` · ${n}` : "") : "—"; }
+  NB.core();
   $("coreSub").textContent = S.validators.length ? "next proposer " + (TECH() ? short(S.validators[(S.proposerIdx + 1) % S.validators.length]) : "V" + ((S.proposerIdx + 1) % S.validators.length + 1)) : "—";
 }
 
@@ -2992,7 +3143,7 @@ function ingestBlock(b, live) {
   addBlockCard(b); markMined(b.txs.map(x => x.id)); markBeat();
   if (selectedBlock === null || !S.byHeight.has(selectedBlock)) showBlock(b, false);
   renderStatePanel();
-  runVerdict(b, live); renderGov(); renderRuleWorld(); readouts();
+  runVerdict(b, live); renderGov(); renderRuleWorld(); readouts(); NB.block(b);
   log(`Added block #${b.n} · ${b.txs.length} tx · proposer ${short(b.proposer)} · state ${short(b.state)}`, "ok");
 }
 
@@ -4299,8 +4450,20 @@ const TOUR = [
   [".a-pol", "Your own money gets the same treatment", "Every account can write its own Tau rule: a spending limit, a whitelist, a time lock, a co-signature. It binds the account, not the app, so every payment is checked against it, whichever wallet signs. Refused transfers show up with a ✕."],
   ["#btnPlayground", "Try it yourself", "In the playground you write a transfer rule and run the testnet’s own checks on it, or take a simulated validator seat and vote a rule change into law. That is the whole idea of Tau, in your hands."],
 ];
+/* the beginner view shows four panels: its own six steps over what is on screen */
+const NB_TOUR = [
+  ["#nbHead", "What you are looking at", "Tau Net is a blockchain where wallets can put rules on their own money, and the chain’s own rules change only by agreement. This page reads its test chain live. Test coins (AGRS) have no value, so nothing here can be lost."],
+  [".a-core", "The chain right now", "Every few seconds a new block seals the transactions that are waiting. The outer ring are the validators, who seal the blocks; the inner ring are wallets with their own rule. The sentence below says the numbers in words."],
+  [".a-feed", "What is happening", "Each card is one transaction: a payment, a new rule, a vote. A red card was refused, often because the sender’s own rule said no."],
+  [".a-pol", "Rules on their own money", "Any wallet can give itself a rule, for example “nothing above 1,000 AGRS leaves”. Every node checks each payment against it, so not even the person holding the key can break it."],
+  [".a-upd", "Votes on the chain’s rules", "Even the rules of the chain itself can change, but only when enough validators agree. On other chains that takes a fork and new software; on Tau it is a transaction and a vote."],
+  ["#nbFirst", "Now you", "Write your first rule on a test wallet your browser makes for you. About two minutes, no sign-up. Then watch the chain enforce it."],
+];
+const NB_ON = () => document.documentElement.classList.contains("nb") && !document.documentElement.classList.contains("nbmore");
+const tourList = () => NB_ON() ? NB_TOUR : TOUR;
 let tourI = -1, tourOffered = false;
 function tourShow(i, from) {
+  const TOUR = tourList();
   document.querySelectorAll(".spot").forEach(p => p.classList.remove("spot"));
   if (i < 0 || i >= TOUR.length) {
     if (tourI >= 0 || tourOffered) store.set("tau-tour", i >= TOUR.length ? "done" : "dismissed");
@@ -4313,7 +4476,7 @@ function tourShow(i, from) {
   $("tourStep").textContent = `Step ${i + 1} of ${TOUR.length}`; $("tourTitle").textContent = title; $("tourText").textContent = text;
   $("tourBar").firstElementChild.style.width = `${(i + 1) / TOUR.length * 100}%`;
   $("tourBack").textContent = "Back"; $("tourBack").disabled = i === 0; $("tourNext").textContent = i === TOUR.length - 1 ? "Done" : "Next";
-  $("tourLink").hidden = i !== TOUR.length - 1; $("tourGive").hidden = i !== TOUR.length - 1;
+  $("tourLink").hidden = i !== TOUR.length - 1; $("tourLink").href = TOUR === NB_TOUR ? "start/" : "playground/"; $("tourLink").textContent = TOUR === NB_TOUR ? "Write your first rule ›" : "Open the playground ›"; $("tourGive").hidden = i !== TOUR.length - 1;
   tourPlace();
   if (from !== "key") $("tourNext").focus({ preventScroll: true });
 }
@@ -4343,7 +4506,7 @@ addEventListener("resize", () => { if (tourI >= 0) tourPlace(); });
 addEventListener("scroll", () => { if (tourI >= 0) tourPlace(); }, { passive: true });
 /* first visit: offer the tour once; “Not now” is remembered, as is finishing it */
 function tourOffer() {
-  if (tourI >= 0 || store.get("tau-tour") || store.get("tau-tour-seen") || document.documentElement.dataset.level === "pro" || innerWidth < 900 || document.body.classList.contains("calm") || document.querySelector(".modal:not([hidden])")) return;
+  if (tourI >= 0 || NB_ON() || store.get("tau-tour") || store.get("tau-tour-seen") || document.documentElement.dataset.level === "pro" || innerWidth < 900 || document.body.classList.contains("calm") || document.querySelector(".modal:not([hidden])")) return;
   try { for (let k = 0; k < localStorage.length; k++) if (/^tau-tour-/.test(localStorage.key(k) || "")) return; } catch (e) {}   // one offer per visitor, on the first page they open (assets/tour.js)
   store.set("tau-tour-seen", "1");
   tourOffered = true;
