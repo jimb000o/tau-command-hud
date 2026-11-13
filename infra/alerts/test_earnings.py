@@ -57,6 +57,8 @@ check("@" not in text and "o1" not in text and '"M"' not in text, "the public fi
 kinds = {(i["on"], i["kind"]) for i in pub["items"]}
 check(("2026-11-14", "shop") in kinds and ("2026-11-13", "crew") in kinds and ("2026-12-13", "crew") in kinds, "shop and crew per day")
 
+check("members" not in pub and earnings.public([s], st, now, earnings.active([member, gone]))["members"] == 1, "the public file counts active members only")
+
 ns = {}
 check(earnings.news(ns, [order], [member]) == [], "the first read only learns what is there")
 o2 = dict(order, id="o2", offers=[{"name": "No Memo tee", "quantity": 1, "variant": {"unitCost": M(11.75)}}])
