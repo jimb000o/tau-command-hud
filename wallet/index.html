@@ -1342,9 +1342,9 @@ function renderVote() {
   const box = $("props"), g = W.gov;
   if (TAB !== "vote") return;
   const open = (g && g.pending_updates) || [];
-  if (!open.length) { box.replaceChildren(el("div", { class: "empty" }, el("b", { text: T("Nothing open right now.") }), " ", T(SIM ? "The simulation proposes a rule change every hour at 20 past." : "Testnet proposals are rare and agreed within minutes. Telegram @tauHUDcom posts each new one at once."),
+  if (!open.length) { box.replaceChildren(el("div", { class: "empty" }, el("b", { text: T("Nothing open right now.") }), " ", T(SIM ? "The simulation proposes a rule change every hour at 20 past." : "Testnet proposals are rare and agreed within minutes. Our Telegram group posts each new one at once."),
     SIM ? null : el("span", { class: "row", style: "margin-top:8px" }, el("button", { class: "b", type: "button", text: T("Practise in the simulation"), onclick: () => toOtherMode("sim") }),
-      el("a", { class: "b quiet", href: "https://t.me/tauHUDcom", target: "_blank", rel: "noopener", style: "text-decoration:none;display:inline-flex;align-items:center", text: T("Tell me on Telegram") })))); return; }
+      el("a", { class: "b quiet", href: "https://tauhud.com/telegram/", target: "_blank", rel: "noopener", style: "text-decoration:none;display:inline-flex;align-items:center", text: T("Tell me on Telegram") })))); return; }
   if (!open.some(u => u.update_id === PICK)) PICK = open[0].update_id;
   box.replaceChildren(...open.slice(0, 4).map(u => {
     const yes = (g.votes || []).filter(v => v.update_id === u.update_id).length;

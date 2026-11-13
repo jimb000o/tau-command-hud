@@ -342,7 +342,7 @@ def render(r: dict, site: str = "https://tauhud.com") -> bytes:
     d.line(B(40, 620, W - 40, 620), fill=LINE, width=S)
     host = site.split("//", 1)[-1]
     d.text((sc(40), sc(634)), host, font=_font("Sora.ttf", sc(16), 700), fill=WHITE)
-    right = "Read from our own node · t.me/tauHUDcom"
+    right = "Read from our own node · tauhud.com/telegram"
     d.text((sc(W - 40) - d.textlength(right, font=f_small), sc(637)), right, font=f_small, fill=DIM)
 
     out = io.BytesIO()

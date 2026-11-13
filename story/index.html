@@ -349,7 +349,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
         `<path d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51" fill="none" stroke="${OK}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${L}" stroke-dashoffset="${L * (1 - dr)}" filter="url(#glow)"/></g>`;
       g += txt(CX, 480, "tauhud.com", { size: 40, w: 700, o: ease(seg(s, 2, 3)) });
       g += txt(CX, 524, "live testnet · playground · alerts", { size: 16, c: DIM, mono: true, o: ease(seg(s, 2.6, 3.6)) });
-      g += txt(CX, 562, "Telegram: t.me/tauHUDcom", { size: 18, w: 600, c: OK, o: ease(seg(s, 3.4, 4.4)) });
+      g += txt(CX, 562, "Telegram: tauhud.com/telegram", { size: 18, w: 600, c: OK, o: ease(seg(s, 3.4, 4.4)) });
       return g;
     },
   ];
@@ -384,7 +384,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
     const sec = document.createElement("section"); sec.className = "step"; sec.id = "step-" + (i + 1); sec.dataset.i = i;
     sec.innerHTML = textHtml(st, i) +
       (i === 0 ? '<span class="hint"><i></i>Scroll</span>' : "") +
-      (st.end ? `<div class="cta"><a class="btn primary" href="../">Watch it live</a><a class="btn" href="../playground/#seat">Vote in the Playground</a><a class="btn" href="https://t.me/tauHUDcom" target="_blank" rel="noopener">${TG}Telegram alerts</a><a class="btn" href="https://x.com/TauHUDcom" target="_blank" rel="noopener">X @TauHUDcom</a></div>
+      (st.end ? `<div class="cta"><a class="btn primary" href="../">Watch it live</a><a class="btn" href="../playground/#seat">Vote in the Playground</a><a class="btn" href="https://tauhud.com/telegram/" target="_blank" rel="noopener">${TG}Telegram alerts</a><a class="btn" href="https://x.com/TauHUDcom" target="_blank" rel="noopener">X @TauHUDcom</a></div>
         <button class="btn replay" type="button" id="replay">Play again from the top</button>
         <p class="note">The example (base fee 1 → 2 AGRS, block #5,028) is made up. The steps are how Tau Testnet Alpha handles every rule change today; the <a href="../proposals/">Proposals</a> page lists the real ones.</p>` : "");
     stepsEl.append(sec);

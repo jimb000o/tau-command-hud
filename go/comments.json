@@ -12,8 +12,8 @@
     "hint": "The text is copied for you. In the Tau group, paste with Ctrl+V and send."
   },
   "launch-tg-own": {
-    "label": "Our channel @tauHUDcom: launch post",
-    "url": "https://t.me/tauHUDcom",
+    "label": "Our Telegram group: launch post",
+    "url": "https://tauhud.com/telegram/",
     "text": "Tau HUD is now out in the wild 👋\nEvery page has a Share button with its own preview picture. If a page helped you get Tau, send it to one friend who'd like it.\ntauhud.com",
     "button": "Copy and open Telegram",
     "hint": "The text is copied for you. In the channel, paste with Ctrl+V and send."

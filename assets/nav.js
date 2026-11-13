@@ -4,7 +4,7 @@
    anything missing is generated as a link to the HUD. */
 (() => {
   "use strict";
-  const TELEGRAM = "https://t.me/tauHUDcom", XCOM = "https://x.com/TauHUDcom", RSS = "https://node.tauhud.com/feed.xml", AGZX = "https://x.com/Agorzilla";
+  const TELEGRAM = "https://tauhud.com/telegram/", XCOM = "https://x.com/TauHUDcom", RSS = "https://node.tauhud.com/feed.xml", AGZX = "https://x.com/Agorzilla";
   const LATEST = "v30.4"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
@@ -123,7 +123,7 @@
   const TIPS = {
     state: "Every rule in force right now: spec revision, fee, agreement threshold, validators, agreed changes, personal rules.",
     feedback: "What would you like to see, what is broken, and what changed lately: the feedback form and the update log, right here. Ideas with the most agreement get built first.",
-    telegram: "Join @tauHUDcom on Telegram: every new proposal, agreement, activation and chain restart the moment it happens, a weekly recap picture, every HUD update. Questions (height, proposals, your transaction or address): write to @tauhud_alerts_bot. Opens Telegram.",
+    telegram: "Join our Telegram group: every new proposal, agreement, activation and chain restart the moment it happens, a weekly recap picture, every HUD update. Questions (height, proposals, your transaction or address): write to @tauhud_alerts_bot. Opens Telegram.",
     alerts: "Follow the chain: every rule change, chain restart and new node as it happens, on Telegram, X or RSS. No account on this site needed.",
     updates: "What changed on this page and when, built from your feedback. Also where to leave feedback.",
     gear: "Settings: your level, node address and Connect, background rain.",
@@ -264,7 +264,7 @@
     /* the same markup as the HUD's own overlay, so both look alike; the feedback form opens a pre-filled GitHub issue, as on the public HUD */
     m.innerHTML = `<div class="tn-sheet" role="dialog" aria-modal="true" aria-labelledby="tnUpdTitle"><button class="tn-close" type="button" aria-label="Close">✕</button>
       <section class="tn-community">
-      <p class="tn-tgstrip"><a href="${TELEGRAM}" target="_blank" rel="noopener">Telegram @tauHUDcom ↗</a> sends every rule change, chain restart, a weekly recap and each HUD update to your phone, so you do not need to check this page; <a href="${XCOM}" target="_blank" rel="noopener">X @TauHUDcom ↗</a> posts them to your timeline. Ask <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot ↗</a> for the height, proposals, your transaction or address.</p>
+      <p class="tn-tgstrip"><a href="${TELEGRAM}" target="_blank" rel="noopener">Our Telegram group ↗</a> sends every rule change, chain restart, a weekly recap and each HUD update to your phone, so you do not need to check this page; <a href="${XCOM}" target="_blank" rel="noopener">X @TauHUDcom ↗</a> posts them to your timeline. Ask <a href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener">@tauhud_alerts_bot ↗</a> for the height, proposals, your transaction or address.</p>
       <div class="tn-col">
       <article class="tn-panel tn-fb">
         <h2 id="tnUpdTitle">Your feedback <small>shapes the next version</small><button class="tn-info" type="button" aria-label="What is this?" data-tip="Tell us what you would like to see. Ideas with the most agreement get built first, which is rather in the spirit of the thing.">i</button></h2>
@@ -879,7 +879,7 @@
     const tg = el("div", "ni-wrap tn-alerts"), tgb = el("button", "pill tg", `${PLANE}${XLOGO}<span class="lg" translate="no">${FOLLOW[LNG] || "Follow the chain"}</span><span class="sh" translate="no">${FOLLOW_SH[LNG] || "Follow"}</span>`), tgm = el("div", "menu tn-alm");
     tgb.type = "button"; tgb.setAttribute("aria-haspopup", "true"); tgb.setAttribute("aria-expanded", "false"); tgb.setAttribute("aria-label", "Follow the chain: Telegram, X or RSS"); tip(tgb, TIPS.alerts);
     tgm.hidden = true; tgm.setAttribute("role", "menu"); tgm.setAttribute("aria-label", "Follow the chain");
-    [[TELEGRAM, PLANE, "Telegram @tauHUDcom", "To your phone the moment it happens: rule changes, restarts, new nodes, a weekly recap"],
+    [[TELEGRAM, PLANE, "Telegram group", "To your phone the moment it happens: rule changes, restarts, new nodes, a weekly recap"],
      [XCOM, XLOGO, "X @TauHUDcom", "In your timeline: real rule changes, new nodes, Testnet today and the Monday recap"],
      [RSS, RSSI, "RSS feed", "Every rule change in your feed reader"],
      [AGZX, `<img src="${ROOT}${agzPic}" alt="">`, "Agorzilla on X", "The creature the testnet feeds: each evening's change and every growth stage"]].forEach(([h, ic, t, d]) => {
@@ -960,7 +960,7 @@
       sec.groups.forEach(([h, keys]) => { sh.append(el("h5", "", esc(h))); keys.forEach(k => sh.append(item(k, page, isHud))); if (sec.k === "learn" && keys.includes("tour") && !isHud) sh.append(pageTour()); });
       if (sec.k === "learn" && window.TauI18n) { const I = window.TauI18n, NAME = { en: ["English", "Read this site in English"], zh: ["中文", "阅读中文版 · Read this site in Chinese"], ja: ["日本語", "日本語で読む · Read this site in Japanese"] };
         for (const other of Object.keys(NAME).filter(c => c !== I.lang)) { const l = el("a", "mi", `<span class="ic">文</span><b>${NAME[other][0]}</b><span>${NAME[other][1]}</span>`); l.href = "#"; l.setAttribute("translate", "no"); l.addEventListener("click", e => { e.preventDefault(); I.set(other); }); sh.append(l); } }
-      if (sec.k === "learn") { const t = el("a", "mi", `<span class="ic">➤</span><b>Telegram alerts <span class="ext">↗</span></b><span>@tauHUDcom: every rule change and chain restart as it happens, a weekly recap, HUD updates</span>`); t.href = TELEGRAM; t.target = "_blank"; t.rel = "noopener"; sh.append(t);
+      if (sec.k === "learn") { const t = el("a", "mi", `<span class="ic">➤</span><b>Telegram alerts <span class="ext">↗</span></b><span>Our group: every rule change and chain restart as it happens, a weekly recap, HUD updates</span>`); t.href = TELEGRAM; t.target = "_blank"; t.rel = "noopener"; sh.append(t);
         const x = el("a", "mi", `<span class="ic">${XLOGO}</span><b>X @TauHUDcom <span class="ext">↗</span></b><span>Real rule changes, new nodes, Testnet today and the Monday recap in your timeline</span>`); x.href = XCOM; x.target = "_blank"; x.rel = "noopener"; sh.append(x); }
       bg.addEventListener("click", closeAll);
       b.addEventListener("click", () => { const open = sh.hidden; closeAll(); if (open) { bg.hidden = sh.hidden = false; b.setAttribute("aria-expanded", "true"); openEl = sh; } });
@@ -1039,7 +1039,7 @@
     const host = f.querySelector("p:last-of-type") || f; as.forEach(a => host.append(" · ", a));
     const sh = el("a", "tn-foot", "Share"); sh.href = "#share"; sh.addEventListener("click", e => { e.preventDefault(); openShare(); }); host.append(" · ", sh);
     /* socials as their own group at the end of the line, with their marks, so they read as a way to follow along and not as one more link */
-    f.querySelectorAll('a[href*="t.me/tauHUDcom"], a[href*="x.com/TauHUDcom"]').forEach(a => { if (a.previousSibling && a.previousSibling.nodeType === 3) a.previousSibling.textContent = a.previousSibling.textContent.replace(/\s*·\s*$/, " "); a.remove(); });
+    f.querySelectorAll('a[href*="tauhud.com/telegram"], a[href*="x.com/TauHUDcom"]').forEach(a => { if (a.previousSibling && a.previousSibling.nodeType === 3) a.previousSibling.textContent = a.previousSibling.textContent.replace(/\s*·\s*$/, " "); a.remove(); });
     const so = el("span", "tn-social", `<span class="tn-sol">Follow</span>`);
     [[TELEGRAM, PLANE, "Telegram"], [XCOM, XLOGO, "X"], [AGZX, `<img src="${ROOT}${agzPic}" alt="">`, "Agorzilla"]].forEach(([h, ic, t]) => { const a = el("a", "tn-soc", `${ic}<span>${esc(t)}</span>`); a.href = h; a.target = "_blank"; a.rel = "noopener"; so.append(a); });
     host.append(" ", so);

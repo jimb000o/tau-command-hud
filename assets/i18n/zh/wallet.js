@@ -129,7 +129,7 @@ TauI18n.add({ strings: {
   "Rule change": "规则变更",
   "Nothing open right now.": "目前没有待投票的提案。",
   "The simulation proposes a rule change every hour at 20 past.": "模拟每小时第 20 分钟提出一项规则变更。",
-  "Testnet proposals are rare and agreed within minutes. Telegram @tauHUDcom posts each new one at once.": "测试网提案很少，而且几分钟内就会通过。Telegram @tauHUDcom 会立即发布每一个新提案。",
+  "Testnet proposals are rare and agreed within minutes. Our Telegram group posts each new one at once.": "测试网提案很少，而且几分钟内就会通过。Telegram 群组 会立即发布每一个新提案。",
   "{h} · {a} of {b} yes votes · takes effect at #{c}": "{h} · {a}/{b} 张赞成票 · 在 #{c} 生效",
   "checked by the chain on every payment you make": "链会检查你的每一笔付款",
   "Make your account first; then you can give it a rule.": "请先创建账户；然后就可以给它设规则。",

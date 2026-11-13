@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Telegram · Tau HUD</title>
+<meta name="description" content="Tau HUD's Telegram group: chain news from the bot and a chat for everyone.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#09090a">
+<!-- Every "Telegram" link on tauhud.com points here, never straight at a t.me name (13 November 2026: a stranger took
+     t.me/tauhudcom the moment the channel let it go). The real group is whatever the posting service posts to: its
+     TELEGRAM_CHAT_ID, published in node.tauhud.com/proposals.json as channels.telegram (`up telegram @name` sets it).
+     A link that is still the old t.me/tauHUDcom is never followed. -->
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #09090a; color: #d8d8d8;
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 440px; padding: 24px 16px; }
+  h1 { font-size: 18px; margin: 0 0 8px; color: #fff; }
+  a { color: #b9ffd6; }
+  .go { display: inline-block; margin-top: 12px; padding: 12px 18px; border: 1px solid #b9ffd6; border-radius: 8px;
+        text-decoration: none; min-height: 20px; }
+  .muted { color: #8a8a8a; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tau HUD on Telegram</h1>
+  <p id="msg">Looking up our group…</p>
+  <p id="alt" class="muted">Meanwhile: <a href="https://x.com/TauHUDcom" rel="noopener">X @TauHUDcom</a> · <a href="https://node.tauhud.com/feed.xml">RSS feed</a> · <a href="/">tauhud.com</a></p>
+</main>
+<script>
+(async () => {
+  const msg = document.getElementById("msg");
+  const bad = u => !u || !/^https:\/\/t\.me\/[A-Za-z0-9_]{5,}\/?$/.test(u) || /^https:\/\/t\.me\/tauhudcom\/?$/i.test(u);
+  let url = null;
+  try {
+    const ctl = new AbortController(); setTimeout(() => ctl.abort(), 6000);
+    const r = await fetch("https://node.tauhud.com/proposals.json", { cache: "no-store", signal: ctl.signal });
+    url = ((await r.json()).channels || {}).telegram || null;
+  } catch (e) { url = null; }
+  if (bad(url)) {
+    msg.textContent = "Our Telegram group is moving to a new address. It will be linked here in a moment; until then, follow along on X or the RSS feed.";
+    return;
+  }
+  msg.replaceChildren("Chain news from the bot and a chat for everyone, in one group.");
+  const a = document.createElement("a"); a.className = "go"; a.href = url; a.rel = "noopener";
+  a.textContent = "Open the group: " + url.replace("https://", "");
+  msg.after(a);
+  location.replace(url);
+})();
+</script>
+</body>
+</html>
