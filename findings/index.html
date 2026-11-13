@@ -288,6 +288,31 @@ const CACHE_KEY = "tauhud-findings-v3", CACHE_MS = 10 * 60 * 1000;
 // Issues we filed with IDNI. Add a new one here; title and status come from GitHub.
 const FINDINGS = [
   {
+    n: 111, title: "[bug] o5 co-signer clause with 10 guards per author crashes the engine worker (stack overflow in pinned tau-lang c3ea334)",
+    brief: "A long co-signer rule crashed the Tau engine's worker; the payment stayed pending.",
+    idniBrief: "rules are now judged one account at a time; the engine is unchanged and we have not measured again.",
+    idniText: "On 12 November IDNI changed how personal rules run: each account's rule is built and judged on its own, with at most 32 comparisons, so the shape that crashed (two accounts' rules in one shared rule) no longer exists. The engine version is unchanged and we have not measured again. The issue is still open.",
+    found: "With two accounts each holding a co-signer rule of ten conditions, the worker that runs the Tau engine crashed while the block was built: a stack overflow in the engine version the testnet pins. The node itself kept running and held the payment back. With a bigger stack the same block went through.",
+    impact: "One long personal rule could hold up its author's payments, and a rule with a few more conditions already took longer than the node's 60-second budget.",
+    ours: "We measured it on our server with IDNI's own test helpers and the engine the testnet runs, and named the engine fix that probably covers it plus a stopgap.",
+  },
+  {
+    n: 108, title: "New addresses refused at admission once a node has interned 254 addresses (no capacity retry at bv[8])",
+    brief: "After 254 different addresses our node refused every payment to or from a new wallet.",
+    found: "Our node keeps a short number for every address it has seen. At 254 addresses the 8-bit numbers ran out, and from then on it refused every payment that involved a wallet it had not seen before. Payments between known wallets still went through, and a restart did not help.",
+    impact: "A busy node would stop taking new users without saying why. We also asked whether a node at the limit and one below it could disagree about a block.",
+    ours: "Our test traffic with about 180 test wallets reached the limit early. Our node works around it until IDNI's fix arrives; IDNI's new chain started the count again from zero.",
+  },
+  {
+    n: 106, title: "Wallet: two legacy o5 templates block every transfer of their author once converted to clause form",
+    brief: "Two of IDNI's wallet rule templates would block all of their author's payments.",
+    idni: "done", idniBrief: "IDNI rewrote every rule template as a complete rule on 12 November.",
+    idniText: "On 12 November IDNI rewrote every rule template of its web wallet as a complete rule that says block or allow in every case (23e7a11), and its documentation now explains that an open answer counts as block. The issue is still open.",
+    found: "A personal rule that only says when to block leaves the answer open in every other case, and the Tau engine then answers 0, which means block. Two templates in IDNI's web wallet had that shape once converted the way the wallet itself described, so every payment of their author was blocked, not only the intended ones.",
+    impact: "Someone trying a spending limit from the template would find all of their payments refused. Only the author was affected, and they could replace the rule.",
+    ours: "We checked it offline on the engine the testnet runs, with the exact template text. Our Learn page has a lesson on the same trap.",
+  },
+  {
     n: 88, kind: "fix", title: "test: run the two complex time-rule tests again on real Tau",
     brief: "Two tests IDNI had switched off pass on real Tau; this switches them back on.",
     found: "Two tests of time-based rules (a temporary spending limit and a co-signer vault that opens after a date) were switched off in IDNI's checks. On real Tau they pass, and so do IDNI's probes for fees that are a share of the amount.",
@@ -305,9 +330,11 @@ const FINDINGS = [
   {
     n: 85, kind: "request", title: "Testnet Alpha: could one of the two o5 policy slots be freed for community testing?",
     brief: "Not a bug: only two accounts on the whole testnet can hold a personal rule.",
+    idni: "done", idniBrief: "since 12 November every account can hold its own rule.",
+    idniText: "On 12 November IDNI replaced the two places with one rule per account: each account's rule is judged on its own, only for that account's payments, and nothing limits how many accounts hold one (0905c19, b2476d9). The testnet restarted on that code. The issue is still open.",
     found: "Not a bug: the testnet allows two personal rules at a time, a limit IDNI measured, and two genesis accounts hold both places. We asked whether one place could be freed for testers.",
     impact: "Without a free place nobody else can try spending limits or co-signer rules on the live chain.",
-    ours: "The wallet says when both places are taken and offers the simulation; a freed place would rotate between testers on our side.",
+    ours: "Until then the wallet said when both places were taken and offered the simulation; a freed place would have rotated between testers on our side.",
   },
   {
     n: 84, kind: "request", title: "Testnet Alpha: could you run a consensus mode switch on the live chain?",
@@ -417,6 +444,9 @@ async function fetchIssues() {
 function sampleIssues() {
   const d = n => new Date(Date.now() - n * 3600e3).toISOString();
   return {
+    111: { title: FINDINGS.find(f => f.n === 111).title, state: "open", comments: 0, created_at: d(0.01), updated_at: d(0.01), labels: [] },
+    108: { title: FINDINGS.find(f => f.n === 108).title, state: "open", comments: 0, created_at: d(0.015), updated_at: d(0.015), labels: [] },
+    106: { title: FINDINGS.find(f => f.n === 106).title, state: "open", comments: 0, created_at: d(0.018), updated_at: d(0.018), labels: [] },
     88: { title: FINDINGS.find(f => f.n === 88).title, state: "open", comments: 0, created_at: d(0.02), updated_at: d(0.02), labels: [] },
     86: { title: FINDINGS.find(f => f.n === 86).title, state: "open", comments: 0, created_at: d(0.05), updated_at: d(0.05), labels: [] },
     85: { title: FINDINGS.find(f => f.n === 85).title, state: "open", comments: 0, created_at: d(0.4), updated_at: d(0.4), labels: [] },
@@ -431,6 +461,7 @@ function sampleIssues() {
 }
 function status(i, f) {
   if (f && f.kind === "fix") return !i ? ["unknown", "Status unknown"] : i.state === "open" ? ["open", "Under review"] : i.merged_at ? ["fixed", "Merged"] : ["closed", "Closed"];
+  if (f && f.idni === "done" && (!i || i.state === "open")) return ["fixed", f.kind === "request" ? "Done" : "Fixed"];
   if (!i) return f && f.idni === "partly" ? ["partly", "Partly fixed"] : ["unknown", "Status unknown"];
   if (i.state === "open") return f && f.idni === "partly" ? ["partly", "Partly fixed"] : ["open", "Open"];
   return i.state_reason === "not_planned" ? ["closed", "Closed, not planned"] : ["fixed", f && f.kind === "request" ? "Done" : "Fixed"];

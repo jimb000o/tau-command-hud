@@ -41,6 +41,7 @@ HOUR = int(os.environ.get("IDNI_DIGEST_HOUR", 10))                 # UTC: 11:00 
 FIRST_DAYS = int(os.environ.get("IDNI_DIGEST_FIRST_DAYS", 3))      # the first window reaches back this many days
 LANG_ALONE = os.environ.get("IDNI_DIGEST_LANG_ALONE", "false").lower() in ("1", "true", "yes")   # tau-lang alone is a post
 LATE = float(os.environ.get("IDNI_DIGEST_LATE_HOURS", 3)) * 3600   # a window not posted by then stays unposted
+PUSHED_LATE_DAYS = int(os.environ.get("IDNI_DIGEST_PUSHED_LATE_DAYS", 7))   # how far back a commit pushed late is still taken
 KEEP_DAYS = 21
 VERSION = 1
 LANG = "IDNI/tau-lang"
@@ -130,16 +131,40 @@ def is_candidate(path: str, c: dict) -> bool:
     return not (names and all(dp.QUIET_FILE.search(f) for f in names))
 
 
-def gather(paths: dict, branches: dict, start: int, end: int, pin: str | None, news: dict) -> dict:
+def covered(st: dict) -> set:
+    """Every change an earlier post already read."""
+    return {s for it in st.get("items") or [] for s in it.get("shas") or []}
+
+
+def late_from(st: dict, start: int) -> int:
+    """Where commits pushed late may come from: a commit's time is when it was written, not when it reached main, so
+    work written days earlier and pushed at once lands in windows that are already closed. Before the first post
+    there is nothing to make up for."""
+    starts = [it["start"] for it in st.get("items") or [] if it.get("start")]
+    return max(start - PUSHED_LATE_DAYS * 86400, min(starts)) if starts else start
+
+
+def gather(paths: dict, branches: dict, start: int, end: int, pin: str | None, news: dict,
+           done: set | None = None, late: int | None = None) -> dict:
     """The window's changes: `changes` the news writer counted as news (with its headline), `pending` not judged yet,
-    `house` the rest by title, `lang` tau-lang's own changes by title."""
+    `house` the rest by title, `lang` tau-lang's own changes by title. With `done` (the changes earlier posts read)
+    and `late` (a time before `start`), a change written between `late` and `start` that no post has read yet joins
+    this window: it reached main after its own window had closed. Housekeeping from back then stays out."""
     tn = paths.get(dp.TESTNET)
     out = {"changes": [], "pending": [], "house": [], "lang": []}
     if not tn:
         return out
     by_sha = {s: it for it in news.get("items") or [] for s in it.get("shas") or []}
     seen = news.get("seen") or {}
-    for c in first_parent(tn, branches.get(dp.TESTNET) or "main", start, end):
+    done = done or set()
+    for c in first_parent(tn, branches.get(dp.TESTNET) or "main", late if late is not None else start, end):
+        if c["sha"] in done:
+            continue
+        if c["ts"] < start:   # written before this window, pushed after the last post: only real changes come along
+            if c["sha"] in by_sha or (c["sha"] not in seen and is_candidate(tn, c)):
+                c["late"] = True
+            else:
+                continue
         if c["sha"] in by_sha:
             it = by_sha[c["sha"]]
             c.update(headline=it["headline"]["en"], tip=it["tip"]["en"], kind=it.get("kind"),
@@ -207,6 +232,10 @@ def prompt_of(g: dict, paths: dict, start: int, end: int) -> str:
     parts = [f"Window: {a:%Y-%m-%d %H:%M} to {b:%Y-%m-%d %H:%M} UTC. Merged into {dp.TESTNET} main, oldest first:"]
     for c in g["changes"] + g["pending"]:
         parts.append(dp.commit_context(dp.TESTNET, tn, c["sha"], limit=6000))
+        if c.get("late"):
+            w = datetime.fromtimestamp(c["ts"], timezone.utc)
+            parts.append(f"This change was written on {w:%Y-%m-%d} before the window and reached main after our last post, "
+                         "so it belongs in this one.")
         if c.get("headline"):
             parts.append(f"Our news line shows: {c['headline']} ({c['tip']})")
     if g["house"]:
@@ -303,7 +332,7 @@ def step(paths: dict, branches: dict, pin: str | None, now: int) -> dict:
         status.update(next_at=slot + 86400, state="sent by hand within 12 h: the next slot takes it on")
     elif last < slot:
         news = dp.load_headlines()
-        g = gather(paths, branches, last, slot, pin, news)
+        g = gather(paths, branches, last, slot, pin, news, covered(st), late_from(st, last))
         if g["pending"] and now - slot < 2 * 3600:
             status["state"] = "waiting for the news writer"
         elif now - st.get("failed_at", 0) < 1800:
@@ -415,7 +444,7 @@ def cli(argv: list[str]) -> int:
     if not dp.NEWS_AI_KEY:
         print("no key (NEWS_AI_KEY or CHAT_AI_KEY in infra/.env): no IDNI posts")
         return 1
-    g = gather(paths, branches, last, now, pin, dp.load_headlines())
+    g = gather(paths, branches, last, now, pin, dp.load_headlines(), covered(st), late_from(st, last))
     pin_ts = int(dp.git(paths[dp.TESTNET], "log", "-1", "--format=%ct", pin)) if pin else None
     d = write(g, paths, last, now, pin_ts, now)
     print(f"  {len(d['shas'])} changes, {d['house']} housekeeping, {d['lang']} tau-lang")
