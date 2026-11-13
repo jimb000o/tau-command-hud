@@ -51,6 +51,7 @@
     tau:        { t: "What is Tau?", d: "tau.net, the project behind the testnet", i: "τ", h: "https://tau.net", ext: true },
     donate:     { t: "Donations", d: "What the site costs each month and every donation received, on chain; voluntary, nothing in return", i: "♡", h: "donate/" },
     crew:       { t: "Support", d: "Optional: a paid monthly membership in the Tau HUD crew, or a one-off crypto contribution", i: "⚑", h: "crew/" },
+    shop:       { t: "Shop", d: "Knitted Christmas sweaters, tees, a sticker sheet and a mug, made to order at Fourthwall. Fan merchandise", i: "▣", h: "https://tau-hud-shop.fourthwall.com/", ext: true },
     legal:      { t: "Privacy", d: "Privacy notice: exactly what this site processes (no cookies, no tracking)", i: "§", h: "legal/" },
     about:      { t: "About Tau HUD", d: "Who built this page, sources, how to support it", i: "i", h: "#about", act: "about" },
     share:      { t: "Share this page", d: "Copy the link, or post it on X, Telegram, Reddit or Hacker News", i: "↗", h: "#share", act: "share" },
@@ -105,7 +106,7 @@
     { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "services"]], ["The testnet", ["health", "road", "nodes"]]], tab: "≋" },
     { k: "learn", t: "Learn", groups: [["First steps", ["start", "taulang"]], ["Read and watch", ["read", "tau"]]], tab: "▸" },
     { k: "play", t: "Playground", groups: [["Your wallet", ["wallet", "wrules", "guardian"]], ["Practise · simulated", ["practise"]], ["Games on the live testnet", ["rabbit", "nomemo", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
-    { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "crew", "meta", "legal"]], ["Use our work", ["developers", "press", "facts"]]], tab: "i" },
+    { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "donate", "crew", "shop", "meta", "legal"]], ["Use our work", ["developers", "press", "facts"]]], tab: "i" },
   ];
   SECTIONS.forEach(s => { if (s.groups) s.items = s.groups.flatMap(g => g[1]); });
   const SECTION_OF = { hud: "hud" };
@@ -218,7 +219,7 @@
     Chronicle: "chronicle/", Story: "story/", Newspaper: "gazette/", Gazette: "gazette/", "Daily Consensus": "gazette/", Blog: "blog/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/",
     Wallet: "wallet/", Guardian: "guardian/", "Rule builder": "builder/", "Rules wall": "rules/", "Rule challenge": "challenge/", Missions: "missions/", Vote: "vote/", "Start here": "start/", Learn: "learn/",
     Findings: "findings/", Roadmap: "roadmap/", Status: "status/", Stats: "stats/", "Testnet stats": "stats/", "Testnet load": "load/", "Build pulse": "devpulse/", "In numbers": "meta/", Services: "services/",
-    Developers: "developers/", Press: "press/", "Press films": "press/", Privacy: "legal/", Donations: "donate/", Crew: "crew/", Chinese: "?lang=zh", Japanese: "?lang=ja", "Guided tour": "?tour=1",
+    Developers: "developers/", Press: "press/", "Press films": "press/", Privacy: "legal/", Donations: "donate/", Crew: "crew/", Shop: "https://tau-hud-shop.fourthwall.com/", Chinese: "?lang=zh", Japanese: "?lang=ja", "Guided tour": "?tour=1",
     "White Rabbit Key": "rabbit/", "Rabbit Key": "rabbit/", "No Memo": "nomemo/", Cruise: "cruise/", Agorzilla: "https://agorzilla.com", Telegram: TELEGRAM, HUD: "" };
   const logRel = l => typeof l !== "string" || !l.trim() ? null : /^https?:\/\//.test(l) ? l : l.replace(/^\//, "");
   const logLink = e => { const tag = String(e && e.tag || ""), area = /^v\d/i.test(tag) ? "" : tag in LOGPAGE ? LOGPAGE[tag] : null;

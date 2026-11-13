@@ -10,7 +10,6 @@ TauI18n.add({ strings: {
   "a month": "每月",
   "10 % off products in the shop": "商店商品 9 折",
   "20 % off products in the shop": "商店商品 8 折",
-  "The shop has no products yet, so the discount cannot be used at the moment. Today a membership mainly funds the site.": "商店目前还没有商品，所以折扣暂时无法使用。现在的会员主要是为网站提供资金。",
   "Prices include 19 % German VAT; the shop shows your country's price before you pay. Renews every month until you cancel.": "价格含 19% 德国增值税；商店会在付款前显示你所在国家的价格。每月自动续期，直到你取消。",
   "Become a member at Fourthwall \u203a": "在 Fourthwall 成为会员 ›",
   "Cancelling.": "取消。",
@@ -37,4 +36,6 @@ TauI18n.add({ strings: {
   "Domains": "域名",
   "X account": "X 账号",
   "Both levels also get the ship log: a members-only post every Monday on the week on the testnet and Tau HUD, written by the server.": "两个等级还会收到航海日志：每周一一篇仅限会员的帖子，讲测试网和 Tau HUD 这一周的情况，由服务器写成。",
+  "See the shop ›": "去商店看看 ›",
+  "The shop is open: knitted sweaters, tees, stickers and a mug. The discount comes off at checkout.": "商店已开张：针织毛衣、T 恤、贴纸和马克杯。折扣在结账时自动扣除。",
 } });

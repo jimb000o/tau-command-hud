@@ -11,6 +11,12 @@
   ],
   "headlines": [
     {
+      "text": "The Ship’s Store is open: knitted sweaters, tees, a mug",
+      "href": "https://tau-hud-shop.fourthwall.com/",
+      "tip": "Our first merchandise, made to order by Fourthwall. Crew members get 10 or 20 % off. Not affiliated with IDNI.",
+      "since": "2026-11-13"
+    },
+    {
       "text": "Tau chess engine vs Claude Opus 5.5: 13 won, 5 drawn, 2 lost",
       "href": "https://chess.taumorrow.com/",
       "until": "2026-11-07T00:00:00Z",

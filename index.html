@@ -254,6 +254,35 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .gazad.c4 .ga-dk, .gazad.c5 .ga-dk, .gazad.c5 .ga-dl { display: none; }
 .gazad.c4 .ga-hl, .gazad.c5 .ga-hl { font-size: 15px; }
 .gazad.c5 .ga-paper { justify-content: center; } .gazad.c5 .ga-mo, .gazad.c5 .ga-x, .gazad.c5 .ga-ph, .gazad.c5 .ga-tx { display: none; }
+/* the same slot can hold the shop notice instead (CLIP in the script): a panel in the HUD's own look, no newsprint */
+.ga-ad { display: none; }
+.gazad.shop .ga-paper { --ink: #fff; --ink2: var(--dim); background: rgba(255,255,255,.025); border: 1px solid var(--hair); border-left: 2px solid var(--ok); box-shadow: none; transform: none; clip-path: none; gap: 7px; padding: 12px 14px; color: #fff; transition: background .2s, border-color .2s; }
+.gazad.shop:hover .ga-paper, .gazad.shop:focus-visible .ga-paper { transform: none; box-shadow: none; background: rgba(255,255,255,.05); border-color: var(--ok); }
+.gazad.shop .ga-ad { display: block; position: absolute; top: 8px; right: 10px; font: 600 9.5px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+.gazad.shop .ga-nm { font: 600 12px/1 var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--ok); white-space: nowrap; }
+.gazad.shop .ga-mo { font: 400 11px/1.2 var(--mono); color: var(--dim); margin-top: -2px; }
+.gazad.shop .ga-dl { border: 0; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); padding: 4px 2px; font: 400 10px/1.2 var(--mono); letter-spacing: .04em; text-transform: none; color: var(--dim); }
+.gazad.shop .ga-x { display: none; }
+.gazad.shop .ga-hl { font: 600 clamp(15px, 1.05vw, 21px)/1.15 var(--display); letter-spacing: 0; color: #fff; }
+.gazad.shop .ga-dk { font: 400 12px/1.35 var(--mono); font-style: normal; color: var(--dim); border-bottom: 0; padding-bottom: 0; }
+.gazad.shop .ga-ph { display: block; object-fit: contain; object-position: 50% 50%; filter: none; mix-blend-mode: normal; border: 0; min-height: 96px; max-height: 340px; }
+.gazad.shop .ga-tx { columns: 1; text-align: center; hyphens: manual; font: 400 11px/1.4 var(--mono); color: var(--dim); }
+.gazad.shop .ga-tx::first-letter { float: none; font: inherit; margin: 0; }
+.gazad.shop .ga-more { margin-top: auto; align-self: stretch; text-align: center; border: 1px solid var(--ok); border-radius: 999px; padding: 8px 12px; background: var(--ok); font: 700 12px/1 var(--display); font-style: normal; letter-spacing: .14em; text-transform: uppercase; color: #000; }
+.gazad.shop:hover .ga-more { text-decoration: none; background: #fff; border-color: #fff; }
+.gazad.shop .ga-dl { flex-wrap: wrap; justify-content: center; gap: 2px 14px; }
+.gazad.shop .ga-dl i:nth-child(2) { color: var(--ok); }
+/* the shop notice keeps its picture and its button longest: the small print goes first, then the summary, then the row of facts, the picture only before the last size */
+.gazad.shop.c1 .ga-ph, .gazad.shop.c2 .ga-ph, .gazad.shop.c3 .ga-ph { display: block; }
+.gazad.shop.c2 .ga-dk, .gazad.shop.c3 .ga-dl, .gazad.shop.c3 .ga-mo, .gazad.shop.c4 .ga-ad { display: none; }
+/* last size: the sweater stands beside the headline instead of above the button */
+.gazad.shop.c4 .ga-paper { display: grid; grid-template-columns: minmax(0, 34%) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 10px; align-items: center; }
+.gazad.shop.c4 .ga-nm, .gazad.shop.c4 .ga-more { grid-column: 1 / -1; }
+.gazad.shop.c4 .ga-ph { display: block; grid-column: 1; grid-row: 2; width: 100%; height: 100%; min-height: 0; }
+.gazad.shop.c4 .ga-hl { grid-column: 2; grid-row: 2; text-align: left; }
+.gazad.shop.c4 .ga-dk { display: none; } .gazad.shop.c2 .ga-more, .gazad.shop.c3 .ga-more, .gazad.shop.c4 .ga-more { margin-top: auto; }
+.gazad.shop.c2 .ga-paper, .gazad.shop.c3 .ga-paper { justify-content: flex-start; }
+html.i18n-cjk .gazad.shop .ga-nm, html.i18n-cjk .gazad.shop .ga-hl, html.i18n-cjk .gazad.shop .ga-dk, html.i18n-cjk .gazad.shop .ga-tx, html.i18n-cjk .gazad.shop .ga-mo, html.i18n-cjk .gazad.shop .ga-more { font-family: inherit; }
 html.i18n-zh .ga-nm { font: 900 clamp(20px, 1.6vw, 30px)/1.1 "Noto Serif SC", serif; letter-spacing: .14em; }
 html.i18n-zh .ga-hl, html.i18n-zh .ga-mo, html.i18n-zh .ga-dk, html.i18n-zh .ga-tx, html.i18n-zh .ga-more { font-family: "Noto Serif SC", serif; letter-spacing: 0; }
 html.i18n-zh .ga-tx { text-align: left; }
@@ -1251,15 +1280,16 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
         <div class="scroll" id="statePanel"></div>
         <a class="gazad" id="gazAd" href="gazette/" aria-label="Read the latest edition of The Daily Consensus" data-full="The Daily Consensus: the testnet told as a 1920s newspaper. Front page, the road from Zennet, how a hard fork works, letters to the editor. Opens the latest edition.">
           <span class="ga-paper">
-            <span class="ga-nm">The Daily Consensus</span>
-            <span class="ga-mo">Where the rules change by agreement</span>
-            <span class="ga-dl"><i>Vol. XIII</i><i id="gazNo">No. —</i><i id="gazDate"></i></span>
-            <span class="ga-x">Extra</span>
+            <span class="ga-ad" id="gazAdTag">Shop</span>
+            <span class="ga-nm" id="gazNm">The Daily Consensus</span>
+            <span class="ga-mo" id="gazMo">Where the rules change by agreement</span>
+            <span class="ga-dl"><i id="gazVol">Vol. XIII</i><i id="gazNo">No. —</i><i id="gazDate"></i></span>
+            <span class="ga-x" id="gazX">Extra</span>
             <span class="ga-hl" id="gazHl">Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys</span>
             <span class="ga-dk" id="gazDk">Consensus moves from a fixed list of validators to stake and back again, and not a single machine is reinstalled.</span>
-            <img class="ga-ph" src="gazette/img/hud-core.jpg" width="700" height="574" alt="" loading="lazy" decoding="async">
+            <img class="ga-ph" id="gazPh" src="gazette/img/hud-core.jpg" width="700" height="574" alt="" loading="lazy" decoding="async">
             <span class="ga-tx" id="gazTx">Every blockchain has a rulebook. On most of them it is carved into the software itself, and changing a single line means a hard fork: new software, shipped to every machine, installed by every operator, with the ever-present danger that some refuse and the chain splits in two.</span>
-            <span class="ga-more">Continued in the newspaper ›</span>
+            <span class="ga-more" id="gazMore">Continued in the newspaper ›</span>
           </span>
         </a>
         <button class="more" type="button" id="btnState3">Full chain state</button>
@@ -2803,7 +2833,29 @@ async function loadGazette() {
   try { const r = await fetch("https://node.tauhud.com/recap/gazette/latest.json", { cache: "no-cache" }); if (r.ok) { const j = await r.json(); if (j && typeof j.headline === "string") GAZ.ed = j; } } catch (e) {}
   renderGazAd();
 }
+/* What the slot shows: the shop notice (SHOP below), in the HUD's own look. ?clip=paper shows the newspaper clipping instead,
+   ?clip=shop the shop; set the last line of CLIP to "paper" to give the slot back to the newspaper. */
+const SHOP = { url: "https://tau-hud-shop.fourthwall.com/", photo: "assets/shop/sweater.png",
+  name: "Ship’s store", motto: "supplies for the Tau HUD crew", row: ["Made to order", "Crew: 10–20 % off", new Date() < new Date("2026-12-16") ? "Christmas: order early" : "Sold by Fourthwall"],
+  hl: "Knitted for the long wait between blocks", dk: "Christmas sweaters with the pattern knitted in, tees that quote a real node, a sticker sheet and a mug.",
+  tx: "A sweater takes 7 to 10 days to knit before it ships. Sold and shipped by Fourthwall. Fan merchandise, not affiliated with IDNI.",
+  more: "Open the store ›", label: "Open the Tau HUD shop at Fourthwall",
+  full: "The Tau HUD shop at Fourthwall: knitted Christmas sweaters, tees, a sticker sheet and a mug, each made to order. Crew members get 10 or 20 % off. Fan merchandise, not affiliated with IDNI. Opens in a new tab." };
+const CLIP = (() => {
+  const want = new URLSearchParams(location.search).get("clip"); if (want === "shop" || want === "paper") return want;
+  return "shop";
+})();
+function renderShopAd() {
+  const a = $("gazAd"); a.classList.add("shop"); a.href = SHOP.url; a.target = "_blank"; a.rel = "noopener";
+  a.setAttribute("aria-label", SHOP.label); a.dataset.full = SHOP.full;
+  $("gazNm").textContent = SHOP.name; $("gazMo").textContent = SHOP.motto;
+  $("gazVol").textContent = SHOP.row[0]; $("gazNo").textContent = SHOP.row[1]; $("gazDate").textContent = SHOP.row[2];
+  $("gazHl").textContent = SHOP.hl; $("gazDk").textContent = SHOP.dk; $("gazTx").textContent = SHOP.tx; $("gazMore").textContent = SHOP.more;
+  if (!$("gazPh").src.endsWith(SHOP.photo)) { $("gazPh").src = SHOP.photo; $("gazPh").addEventListener("load", fitGazAd, { once: true }); }
+  fitGazAd();
+}
 function renderGazAd() {
+  if (CLIP === "shop") return renderShopAd();
   const ed = GAZ.ed || {}, zh = document.documentElement.classList.contains("i18n-zh"), ja = document.documentElement.classList.contains("i18n-ja");
   const hl = (zh && ed.headline_zh) || (ja && ed.headline_ja) || ed.headline || "Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys";
   const no = ed.number != null ? Number(ed.number) : S.height || null;
@@ -2828,7 +2880,7 @@ function renderStatePanel() {
   const active = S.updates.filter(u => u.status === "active"), open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled");
   $("statePanel").innerHTML = `<div class="big2"><div data-full="${KV_TIP["Spec revision"] || ""}"><b>${S.specRev}</b><span>spec revision</span></div><div data-full="${KV_TIP["Base fee"] || ""}"><b>${S.fee}</b><span>AGRS base fee</span></div></div>
     <p class="sent"><b>${thr} of ${N}</b> validators change a rule · <b>${S.ruleBudget}</b> rule txs per block · <b>${S.clauses.size}</b> account${S.clauses.size === 1 ? "" : "s"} with own rules · <b>${open.length}</b> open proposal${open.length === 1 ? "" : "s"} · ${active.length ? `<b>${active.length}</b> agreed change${active.length === 1 ? "" : "s"}${Number.isFinite(Number(active[active.length - 1].activeAt)) ? `, last at #${active[active.length - 1].activeAt}` : ""}` : "no agreed change yet"}</p>`;
-  if (!GAZ.ed && $("gazNo")) $("gazNo").textContent = document.documentElement.classList.contains("i18n-zh") || document.documentElement.classList.contains("i18n-ja") ? `第 ${S.height ? fmt(S.height) : "—"} ${document.documentElement.classList.contains("i18n-ja") ? "号" : "期"}` : S.height ? `No. ${fmt(S.height)}` : "No. —";   // the paper numbers its issues by block height
+  if (CLIP !== "shop" && !GAZ.ed && $("gazNo")) $("gazNo").textContent = document.documentElement.classList.contains("i18n-zh") || document.documentElement.classList.contains("i18n-ja") ? `第 ${S.height ? fmt(S.height) : "—"} ${document.documentElement.classList.contains("i18n-ja") ? "号" : "期"}` : S.height ? `No. ${fmt(S.height)}` : "No. —";   // the paper numbers its issues by block height
   fitGazAd();
 }
 function showState() {
