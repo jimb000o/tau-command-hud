@@ -69,8 +69,19 @@ def tiers() -> list[dict]:
 
 
 def posts(limit: int = 3) -> list[dict]:
-    d = _req("GET", f"/memberships/posts?state=All&limit={limit}&page=0")
-    return (d or {}).get("posts", []) if isinstance(d, dict) else []
+    d = _req("GET", "/memberships/posts?state=All")
+    return ((d or {}).get("posts", []) if isinstance(d, dict) else [])[:limit]
+
+
+def error_text(exc: Exception) -> str:
+    """An API error with what Fourthwall said about it (the body of a 4xx names the field), never the credentials."""
+    body = ""
+    if isinstance(exc, urllib.error.HTTPError):
+        try:
+            body = exc.read().decode("utf-8", "replace")[:400]
+        except Exception:
+            body = ""
+    return f"{exc}" + (f" · {body}" if body else "")
 
 
 def members(ts: list[dict]) -> int | None:
