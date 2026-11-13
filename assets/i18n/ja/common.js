@@ -140,6 +140,7 @@ TauI18n.add({ strings: {
   "offline": "オフライン",
   "One minute, eight steps: how rules change by agreement": "1 分、8 ステップ：ルールが合意によって変わる仕組み",
   "online": "オンライン",
+  "Click: opens Status, the testnet health in full.": "クリック：ステータスページが開き、テストネットの健全性を詳しく見られます。",
   "Opens the HUD in Live mode.": "HUD をライブモードで開きます。",
   "Pages": "ページ",
   "Pages and tools": "ページとツール",

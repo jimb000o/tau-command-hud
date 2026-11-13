@@ -5,6 +5,7 @@ TauI18n.add({ strings: {
   "No article yet.": "まだ記事はありません。",
   "All articles": "すべての記事",
   "Cruise ship": "クルーズ船",
+  "News": "ニュース",
   "Learnings": "学び",
   "Why it matters": "なぜ大事か",
   "Every number comes from our public logbooks:": "数字はすべて公開ログブックから：",

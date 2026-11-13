@@ -10,6 +10,7 @@
 Run: python test_knowledge.py   (needs git)
 """
 import json
+import re
 import os
 import subprocess
 import sys
@@ -47,12 +48,12 @@ for f in facts["facts"]:
     for _, url in f["src"]:
         for repo, ref in facts["checked_against"].items():
             if url.startswith(f"https://github.com/{repo}/"):
-                if f"/{ref['sha']}/" not in url:
-                    pinned.append(f["id"])
+                if f"/{ref['sha']}/" not in url and not re.search(r"/(?:blob|tree)/[0-9a-f]{40}/", url):
+                    pinned.append(f["id"])   # the checked commit, or a later full commit the fact was read at anew
                 p = kn.src_file(url, repo)
                 if p and p not in facts["files"].get(repo, []):
                     unwatched.append(f"{f['id']}: {p}")
-check(not pinned, f"every IDNI source is pinned to the checked commit {pinned or ''}")
+check(not pinned, f"every IDNI source is pinned to a full commit {pinned or ''}")
 check(not unwatched, f"every source file is watched for changes {unwatched or ''}")
 check(all(not any(w in f["en"].lower() for w in ("soon", "will launch", "moon", "price")) for f in facts["facts"]),
       "no promises or prices in the facts")
@@ -69,25 +70,31 @@ def git(*a, cwd=src):
 
 
 git("init", "-q", "-b", "main")
-for f in ("README.md", "docs/retractable.md", "consensus/approvals.py"):
+for f in ("README.md", "docs/retractable.md", "docs/approvals.md"):
     os.makedirs(os.path.join(src, os.path.dirname(f)), exist_ok=True)
     open(os.path.join(src, f), "w").write("v1\n")
 git("add", "-A")
 git("commit", "-q", "-m", "start")
 base = git("rev-parse", "HEAD")
-open(os.path.join(src, "consensus/approvals.py"), "w").write("MAX_TIER_AUTHORS = 3\n")
-git("commit", "-qam", "feat(approvals): three tier authors")
+open(os.path.join(src, "docs/approvals.md"), "w").write("v2\n")
+git("commit", "-qam", "docs(approvals): new limits")
 bare = os.path.join(TMP, "clone.git")
 git("clone", "-q", "--bare", src, bare, cwd=TMP)
 
 local = json.loads(json.dumps(facts))
 local["checked_against"] = {"IDNI/tau-testnet": {"sha": base, "date": "2026-11-05"}}
-local["files"] = {"IDNI/tau-testnet": ["README.md", "docs/retractable.md", "consensus/approvals.py"]}
+local["files"] = {"IDNI/tau-testnet": ["README.md", "docs/retractable.md", "docs/approvals.md"]}
 for f in local["facts"]:
     f["src"] = [[lab, url.replace(facts["checked_against"]["IDNI/tau-testnet"]["sha"], base)] for lab, url in f["src"]]
 st = kn.facts_state(local, {"IDNI/tau-testnet": bare}, {"IDNI/tau-testnet": "main"})
-check(st["changed"]["IDNI/tau-testnet"] == {"consensus/approvals.py": 1}, f"the changed IDNI file is found: {st['changed']}")
-check(set(st["stale"]) == {"o5-slots"}, f"only the fact read from that file is marked: {sorted(st['stale'])}")
+check(st["changed"]["IDNI/tau-testnet"] == {"docs/approvals.md": 1}, f"the changed IDNI file is found: {st['changed']}")
+check(set(st["stale"]) == {"approvals"}, f"only the fact read from that file is marked, not one read at its own later commit: {sorted(st['stale'])}")
+later = json.loads(json.dumps(local))
+for f in later["facts"]:
+    if f["id"] == "o5-slots":
+        f["src"] = [[lab, url.split("/blob/")[0] + "/blob/" + base + "/" + url.split("/blob/")[1].split("/", 1)[1]] for lab, url in f["src"]]
+st2 = kn.facts_state(later, {"IDNI/tau-testnet": bare}, {"IDNI/tau-testnet": "main"})
+check(set(st2["stale"]) == {"approvals", "o5-slots"}, f"a fact at its own commit is marked when the file changed after it: {sorted(st2['stale'])}")
 
 # ---------- the file ----------
 NOW = 1793980800   # 2026-11-07 00:00 UTC
@@ -111,7 +118,7 @@ check("[aaaaaaa](https://github.com/IDNI/tau-testnet/commit/" + "a" * 40 + ")" i
 check("too old to list" not in m, "commits older than 14 days are left out")
 check("Fallback miner can respawn its evaluator" in m and "Commits: [aaaaaaa]" in m, "the posted progress with its commits")
 check(m.count("Source: [") == len(local["facts"]), "every fact with its source")
-check("**Check again:** IDNI changed tau-testnet/consensus/approvals.py" in m, "the changed fact says so")
+check("**Check again:** IDNI changed tau-testnet/docs/approvals.md" in m, "the changed fact says so")
 check("not affiliated with IDNI" in m, "says it is not affiliated with IDNI")
 d2 = kn.build(pulse, {}, NOW, None, [], local)
 m2 = kn.md(d2)

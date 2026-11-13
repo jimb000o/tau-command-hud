@@ -167,6 +167,32 @@ last = idg.load()["items"][-1]
 check(not asked and last["title"] == "Previewed title" and last["end"] == at("2026-11-10T10:00:00Z") and "draft" not in idg.load(),
       "the previewed text goes out as it was shown, no new model call")
 
+# a change written before the last post but pushed after it (its own window had closed) joins the next post;
+# housekeeping from back then and changes earlier posts already read stay out
+f5 = commit("consensus/rules.py", "feat(rules): judge each payment by its sender's own rule", at("2026-11-09T22:00:00Z"))
+t5 = commit("tests/test_rules.py", "test: per-account rules", at("2026-11-09T23:00:00Z"))
+subprocess.run(["git", "-C", path, "fetch", "-q", SRC, "+refs/heads/*:refs/heads/*"], check=True)
+with open(dp.HEADLINES) as fh:
+    hl = json.load(fh)
+hl["seen"].update({f3: 1, f4: 1, f5: 1, t5: 1})
+hl["items"].append({"id": f5, "shas": [f5], "ts": at("2026-11-09T22:00:00Z"), "kind": "feature",
+                    "headline": {"en": "Every account can hold its own rule", "zh": "z", "ja": "j"},
+                    "tip": {"en": "Each payment is judged by its sender's rule.", "zh": "z", "ja": "j"}})
+dp.write_atomic(dp.HEADLINES, json.dumps(hl))
+check(idg.late_from(idg.load(), at("2026-11-10T10:00:00Z")) == at("2026-11-04T00:00:00Z")
+      and idg.late_from({"items": []}, at("2026-11-10T10:00:00Z")) == at("2026-11-10T10:00:00Z"),
+      "late commits are looked for back to the first post at most, and not at all before it")
+asked.clear()
+s = idg.step(paths, branches, pin, at("2026-11-11T10:20:00Z"))
+last = idg.load()["items"][-1]
+check(s["state"] == "ready" and last["shas"] == [f5] and last["start"] == at("2026-11-10T10:00:00Z") and len(asked) == 1
+      and "reached main after our last post" in asked[0] and "judge each payment" in asked[0]
+      and "fix(sync)" not in asked[0] and "steadier test" not in asked[0] and "test: per-account" not in asked[0],
+      "pushed late: the change joins the next post; read changes and housekeeping from back then stay out")
+asked.clear()
+s = idg.step(paths, branches, pin, at("2026-11-12T10:20:00Z"))
+check(s["state"] == "quiet" and not asked, "and it is read once")
+
 # ---------- the alerts service posts it ----------
 
 
@@ -202,6 +228,9 @@ asyncio.run(w.maybe_idni(at("2026-11-10T10:10:00Z"), [dict(d, id="h", end=at("20
 check(len(tgo.sent) == 2, "held: not posted")
 asyncio.run(w.maybe_idni(at("2026-11-11T10:10:00Z"), [dict(d, id="chk", end=at("2026-11-11T10:00:00Z"), status="check")], {}))
 check(len(tgo.sent) == 2, "a post held for a look is never sent by itself")
+
+chk = idg.check_text(["New accounts get 100,000 test coins and 64 KiB.", "1,500 blocks"], "faucet_amount: 0 -> 100000, 64 KiB")
+check(chk["unknown_numbers"] == ["1,500"], "100,000 in the post is 100000 in the code; a number the input lacks still holds the post")
 
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)

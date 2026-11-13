@@ -47,9 +47,8 @@ After the arrival every booking is looked up on the chain and written to the log
 or "refunded" (retracted to the passenger). Only the sender can retract (tau-testnet docs/retractable.md), so this is no
 arbiter between two parties: the passenger's own wallet, kept on our server, takes the money back. A refund that is not
 in a block before the arrival is too late, and the till is paid: the logbook says so.
-Never: votes, rule changes, rule offers or co-signed payments (they would take one of the testnet's two places for a
-personal rule, which belong to real visitors: slotlease.py), the players' board, Déjà or Agorzilla, payouts, and the
-places of Ama and Tano.
+Never: votes, rule changes, rule offers or co-signed payments (personal rules are for real visitors to try; the
+simulated passengers stay plain payers), the players' board, Déjà or Agorzilla, payouts, and the places of Ama and Tano.
 
 Pace and brakes, so a ship never floods the testnet:
 - at most RATE transactions a minute, and only in the island bot's free slots (island.py run: the rivals' moves and the

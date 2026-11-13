@@ -127,7 +127,7 @@
       { s: "#sign", t: "Before you sign", x: "The amount and the recipient in large type, then what your rule says, the fee and whether there is a way back. If your rule would stop it, nothing is sent." },
       { s: "#build", go: "#ruleTabs button[data-rtab=mine]", t: "Give your account a rule", x: "Tick the blocks you want: only to people in your book, a limit per payment, a date before which nothing leaves, a co-signer for larger payments. The chain checks it on every payment, whichever wallet signs it." },
       { s: "#probes", t: "Test it before you sign", x: "Example payments run against the rule on the screen: to a friend, to a lookalike, to someone new and a large one. You see what goes through before anything is signed." },
-      { s: "#slots", t: "Two rule places", x: "Tau Testnet Alpha holds personal rules for 2 accounts at a time. This shows how many are taken and whether one is yours." },
+      { s: "#slots", t: "A rule for every account", x: "Every account on Tau Testnet Alpha may hold its own personal rule. This shows how many accounts have one now and whether yours is one of them." },
       { s: "#activity", t: "What waits for you", x: "Rules offered to you, with the node's own check, requests to co-sign, payments you can still take back and everything you sent. On a first visit it shows the first steps." },
     ] },
     vote: { name: "Vote for real", intro: "Vote on the real testnet yourself, after practising the same commands here first.", steps: [

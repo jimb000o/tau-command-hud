@@ -43,7 +43,6 @@ from simpredict import SimPredict
 from simprops import SimProps
 from simvotes import SimVotes, name_of
 from simwallet import SimWallet
-from slotlease import SlotLease
 from cruise import Cruise
 from hackweek import HackWeek
 from island import Island
@@ -168,20 +167,16 @@ LOOKUPS = {
     # the node's own conflict report for a rule offered to you, before you accept it (advisory, node-local)
     "getruleconflict": lambda a: len(a) == 1 and len(a[0]) == 64 and HEX.match(a[0]),
 }
-# /rules: who holds one of the testnet's personal-rule (o5) places. The node caps
-# them at 2 chain-wide (consensus/approvals.py MAX_TIER_AUTHORS) and has no
-# command that lists them, so the relay takes the candidates from the blocks it
-# keeps (senders of an o5 rule, acceptors of an offer) and asks the node for each.
+# /rules: which accounts hold a personal (o5) rule now. Since IDNI main 5ad1bb7 every account may hold one ("Nothing
+# limits how many accounts hold a clause", docs/approvals.md); before that only 2 could. The node has no command that
+# lists them, so the relay takes the candidates from the blocks it keeps (senders of an o5 rule, acceptors of an offer)
+# and asks the node for each, at most RULES_MAX_CHECKS of them.
 RULES_POLL = _env_float("RULES_POLL_SECONDS", 300)
-RULE_PLACES = _env_int("RULE_PLACES", 2)
 RULES_MAX_CHECKS = _env_int("RULES_MAX_CHECKS", 40)
 NEUTRAL_O5 = "(o5[t]:bv[24]={#x000001}:bv[24])"
 # /rulewall: every personal rule in the kept blocks, for the rules wall on tauhud.com/rules/
 RULEWALL_MAX = _env_int("RULEWALL_MAX", 200)
 RULEWALL_MAX_TEXT = 4000
-# Fair turns on those places (slotlease.py): the wallet leaves a pre-signed neutral clause here and the relay sends it
-# when the holder's turn is over. One switch turns it off on the server without a rebuild (docker compose up -d).
-SLOTLEASE_ENABLED = os.environ.get("SLOTLEASE_ENABLED", "1") not in ("0", "false", "no", "")
 CACHED = ("getmempool", "getgovernance", "gettaustate")
 FROM_MEMORY = CACHED + ("getblocks", "getblockrange", "presence")   # answered without the node: CHAIN_* budget
 # The wallet's write door. The visitor's browser builds and signs the
@@ -403,7 +398,6 @@ class Relay:
         self.simvotes = SimVotes()   # visitor votes for the simulation (simvotes.py)
         self.simprops = SimProps(self.simvotes)   # rule changes visitors propose to the simulation (simprops.py)
         self.simwallet = SimWallet()   # the testnet wallet's transactions in simulation mode (simwallet.py)
-        self.lease = SlotLease(places=RULE_PLACES)   # fair turns on the personal-rule places (slotlease.py)
         self.island = Island()   # White Rabbit Key: the rival candidates' moves as test transactions (island.py)
         # The island bot and the cruise ships send through their own connection to the node, so a send the node takes
         # long to answer (up to UPSTREAM_TIMEOUT) never holds the visitors' connection: pages keep loading meanwhile.
@@ -1082,30 +1076,9 @@ class Relay:
                 if str(c.get("target_stream")) in ("5", "o5") and re.sub(r"\s+", "", str(c.get("clause_body") or "")) not in (NEUTRAL_O5, NEUTRAL_O5[1:-1]):
                     holders.append(a)
                     break
-        self.rules_text = json.dumps({"places": RULE_PLACES, "taken": min(len(holders), RULE_PLACES), "holders": holders,
+        self.rules_text = json.dumps({"holders": holders, "taken": len(holders), "limit": None,
+                                      "checked": min(len(self.rule_candidates()), RULES_MAX_CHECKS),
                                       "checked_at": round(time.time())}, separators=(",", ":"))
-        self.lease.set_holders(holders)
-        if SLOTLEASE_ENABLED:
-            await self.end_turns()
-
-    async def end_turns(self):
-        """Send the pre-signed removal of each holder whose turn is over: checked first, one at a time, after poll_rules."""
-        for addr, raw in self.lease.due():
-            chk = await self.upstream.request(f"checktx {raw}")
-            if not chk or chk.get("status") != "ok" or (chk.get("data") or {}).get("ok") is False:
-                why = str(((chk or {}).get("error") or {}).get("message") or "node not reachable")
-                if chk is not None:
-                    self.lease.sent(addr, False, "stale: " + why)
-                log.info("turn over for %s…: removal not sent (%s)", addr[:12], why[:80])
-                continue
-            res = await self.upstream.request(f"sendtx {raw}")
-            ok = bool(res) and res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False
-            why = "" if ok else str(((res or {}).get("error") or {}).get("message") or "node not reachable")
-            if res is not None:
-                self.lease.sent(addr, ok, why)
-            if ok:
-                self.sources.note((res.get("data") or {}).get("tx_hash"), "", "relay")
-            log.info("turn over for %s…: removal %s %s", addr[:12], "sent" if ok else "refused", ((res or {}).get("data") or {}).get("tx_hash") or why[:80])
 
     @staticmethod
     def _tx_summary(t: dict) -> dict:
@@ -1424,8 +1397,8 @@ class Relay:
             ok, data = self.island.accept_pay(args[0].lower(), args[1], ip)
             return envelope_ok(cmd, data) if ok else envelope_error(cmd, data, "FORBIDDEN" if "off" in data else "INVALID_PARAMS")
 
-        if cmd == "leasetx":
-            return await self.lease_deposit(message[len(parts[0]):].strip(), ip)
+        if cmd == "leasetx":   # the fair turns on the two rule places, retired with the limit (IDNI main 5ad1bb7)
+            return envelope_error("leasetx", "Every account may hold a rule now; there are no turns to keep.", "FORBIDDEN")
 
         if cmd == "via":   # the Tau HUD page that led this visitor to the wallet, kept with the hashes it sends
             if len(args) != 1 or not VIA.match(args[0]):
@@ -1518,24 +1491,6 @@ class Relay:
         err.update(message=NEW_WALLET_MESSAGE, node_message=err.get("message"), reason="new_wallet", issue=NEW_WALLET_ISSUE)
         return {**msg, "error": err}
 
-    async def lease_deposit(self, raw: str, ip: str) -> str:
-        """Keep a pre-signed neutral clause for the holder's turn (slotlease.py), once the node has checked it."""
-        if not SLOTLEASE_ENABLED:
-            return envelope_error("leasetx", "Turns on the rule places are switched off on this relay.", "FORBIDDEN")
-        tx, why = self.lease.check(raw)
-        if tx is None:
-            return envelope_error("leasetx", why, "INVALID_PARAMS")
-        mine = self.tx_per_ip.setdefault(ip, TokenBucket(TX_IP_BURST, TX_IP_REFILL))
-        if not mine.take() or not self.tx_bucket.take():
-            return envelope_error("leasetx", "Too many transactions from here; wait a minute.", "RATE_LIMITED")
-        chk = await self.upstream.request(f"checktx {raw}")
-        if chk is None:
-            return envelope_error("leasetx", "Node is not reachable right now.", "UPSTREAM_DOWN")
-        if chk.get("status") != "ok" or (chk.get("data") or {}).get("ok") is False:
-            return json.dumps({"status": "error", "command": "leasetx", "error": (chk.get("error") or {"message": "refused by the node"})}, separators=(",", ":"))
-        return json.dumps({"status": "ok", "command": "leasetx", "data": self.lease.deposit(raw, tx)}, separators=(",", ":"))
-
-    # ---------- community nodes ----------
     def report(self, args: list[str], ip: str) -> str:
         fields = dict(a.split("=", 1) for a in args if "=" in a)
         if (len(fields) != len(args) or any(k not in REPORT_FIELDS or not REPORT_FIELDS[k].match(v) for k, v in fields.items())
@@ -2268,12 +2223,9 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "public, max-age=30")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.peers_json().encode())
-        lease = self.lease.route(path, query, ip) if path.startswith("/lease") else None
-        if lease is not None:
+        if path in ("/lease", "/lease/wait", "/lease/leave"):   # retired: a page from before 5ad1bb7 still asks, and hears "off"
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
-            body = dict(lease[1], enabled=SLOTLEASE_ENABLED)
-            code = HTTPStatus(lease[0])
-            return Response(code.value, code.phrase, headers, json.dumps(body, separators=(",", ":")).encode())
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, b'{"enabled":false,"retired":true}')
         if path == "/rulewall":
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),
@@ -2285,7 +2237,7 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "public, max-age=60")])
             code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
-            body = (self.rules_text or '{"error":"relay is still reading the rule places"}').encode()
+            body = (self.rules_text or '{"error":"relay is still reading who holds a rule"}').encode()
             return Response(code.value, code.phrase, headers, body)
         if path == "/community":
             headers = Headers([("Content-Type", "application/json"),

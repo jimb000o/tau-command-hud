@@ -5,8 +5,9 @@
    part that is not understood or not possible on the testnet is said, never guessed.
 
    What a personal rule can read on Tau Testnet Alpha (IDNI/tau-testnet consensus/admission.py _screen_clause_domains):
-   only the one payment being checked, at [t]: amount i1, recipient i4, block time i5, co-signature slots i18 to i25.
-   No earlier step, so no total per day; no balance (i2). The wallet's blocks: only to (up to 5 addresses), at most
+   only the one payment being checked, at [t]: amount i1, recipient i4, block time i5, co-signature slots i18 to i25,
+   and since IDNI main 5ad1bb7 also the balance at the block before (i2), which this builder does not write yet.
+   No earlier step, so no total per day. The wallet's blocks: only to (up to 5 addresses), at most
    N per payment, nothing before a date, above N one co-signer signs. Tested by tests/rulewords.mjs. */
 (function (root) {
   "use strict";
@@ -224,7 +225,7 @@
     if (/\b(week\s*days?|weekends?|working\s+days|office\s+hours|business\s+hours|at\s+night|by\s+day|o'?clock|\d{1,2}\s*(?:am|pm)|\d{1,2}:\d{2})\b/.test(t) || /\bbetween\s+\d{1,2}\s+and\s+\d{1,2}\b(?!\s*(?:k|000|,))/.test(t))
       return no("clock", "Hours and weekdays need arithmetic on the block time. The wallet's blocks have no such block yet; a date is possible.");
     if (/\b(balance|keep\s+at\s+least|minimum|leave\s+at\s+least|never\s+below|savings\s+of)\b/.test(t))
-      return no("balance", "The testnet does not let a personal rule read the balance (i2), so no rule can keep a minimum.");
+      return no("balance", "This builder does not write balance rules yet. The testnet allows them since November 2026 (a rule may read the balance, i2): write one in the Playground.");
     /* "block payments to strangers" is the wallet's list said the other way round */
     const strangers = new RegExp(String.raw`\b${NOBODY}\b.*\b(?:strangers?|unknown|people\s+i\s+don'?t\s+know|anyone\s+i\s+don'?t\s+know|new\s+addresses)\b`).test(t) || (tr && nobody && /\bstrangers\b/.test(t));
     /* "block everything except Mia", "nothing to anyone but Mia": also the list */

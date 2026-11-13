@@ -5,6 +5,7 @@ TauI18n.add({ strings: {
   "No article yet.": "还没有文章。",
   "All articles": "所有文章",
   "Cruise ship": "游轮",
+  "News": "快讯",
   "Learnings": "经验",
   "Why it matters": "为什么重要",
   "Every number comes from our public logbooks:": "每个数字都来自我们公开的日志：",

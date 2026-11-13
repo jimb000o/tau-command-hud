@@ -650,6 +650,12 @@ def build(now: int | None = None, trackers: dict | None = None, digest: bool = F
             pass
         except Exception as e:  # noqa: BLE001
             log.warning("digest: %s", e)
+        try:   # what a testnet restart brought, for the restart post (restart_brief.py; alerts.py posts it)
+            import restart_brief
+            if digest:
+                restart_brief.step(data["restarts"], paths.get(TESTNET), tn["branch"], load_headlines(), now)
+        except Exception as e:  # noqa: BLE001
+            log.warning("restart brief: %s", e)
         try:
             full = (tn.get("runs") or {}).get("sha")
             data["refs"] = refs_state(TESTNET, paths[TESTNET], tn["branch"], now, full if full and len(full) == 40 else None)
@@ -670,6 +676,13 @@ def main():
     if len(sys.argv) >= 2 and sys.argv[1] == "--digest":   # up idni: the day's IDNI post by hand (idni_digest.py)
         import idni_digest
         sys.exit(idni_digest.cli(sys.argv[2:]))
+    if len(sys.argv) >= 2 and sys.argv[1] == "--fixed":   # up idni fixed: what is marked solved, the post, the mode
+        import fixwatch
+        sys.exit(fixwatch.cli(sys.argv[2:]))
+    if len(sys.argv) >= 2 and sys.argv[1] == "--restart":   # up idni restart: what the newest restart's post would say now
+        import restart_brief
+        path = sync(TESTNET)
+        sys.exit(restart_brief.cli(restarts(), path, default_branch(path), load_headlines(), int(time.time())))
     if len(sys.argv) == 3 and sys.argv[1] == "--once":
         now = int(time.time())
         data = build(now, {r: tracker(r, now) for r in REPOS})
@@ -677,6 +690,7 @@ def main():
         print(f"wrote {sys.argv[2]}: {', '.join(r['repo'] for r in data['repos'])}")
         return
     trackers, api_at, links = {}, 0.0, None
+    last_restart = newest_restart()
     while True:
         started = time.time()
         try:
@@ -692,6 +706,13 @@ def main():
             data = build(int(started), trackers, digest=True)
             if links and isinstance(data.get("refs"), dict):
                 data["refs"]["states"] = links
+            try:   # reported by us, solved by IDNI (fixwatch.py): the Findings and Roadmap pages, a note, the post
+                import fixwatch
+                fx = fixwatch.step(data.get("news") or [], links, os.path.join(CLONES, TESTNET.replace("/", "__") + ".git"), int(started))
+                if isinstance(data.get("refs"), dict):
+                    data["refs"]["fixed"] = fx
+            except Exception as e:  # noqa: BLE001 - never stops the pulse
+                log.warning("fixwatch: %s", e)
             if data["repos"]:
                 write_atomic(PUBLIC_PATH, json.dumps(data, separators=(",", ":")))
                 try:   # Tau today for AI assistants and tauhud.com/facts/ (knowledge.py): facts, live numbers, IDNI's work
@@ -704,7 +725,23 @@ def main():
                          "ok" if sy.get("ok") else json.dumps(sy)[:300])
         except Exception as e:  # noqa: BLE001
             log.warning("pass failed: %s", e)
-        time.sleep(max(60.0, EVERY - (time.time() - started)))
+        nap(started, last_restart)
+        last_restart = newest_restart()
+
+
+def newest_restart() -> int:
+    return max((int(r.get("at") or 0) for r in restarts()), default=0)
+
+
+def nap(started: float, known: int) -> None:
+    """Sleep until the next pass, but wake within a minute when the relay reports a testnet restart newer than `known`:
+    the restart post waits for what the new chain brings (restart_brief.py)."""
+    while time.time() - started < EVERY - 60:
+        time.sleep(60)
+        if newest_restart() > known:
+            log.info("a testnet restart: a pass now")
+            return
+    time.sleep(max(0.0, EVERY - (time.time() - started)))
 
 
 if __name__ == "__main__":

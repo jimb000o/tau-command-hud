@@ -633,7 +633,7 @@
       document.querySelectorAll("[data-livedot]").forEach(d => {
         if (SIM) { d.className = "dot none"; return; }
         d.className = "dot " + (wait ? "none" : !up ? "off" : good ? "" : "behind");
-        const a = d.closest("a, button"); if (a) a.dataset.tnt = (wait ? "Checking the community node…" : !up ? (CHAIN.stale ? "Red: no answer from the relay for over a minute." : health === "down" ? `Red: the testnet is down (${hlabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : stalled ? `Amber: connected, but no new blocks right now; the testnet has stalled${st.health && st.health.score != null ? ` (health ${st.health.score} of 100)` : ""}.` : degraded ? `Amber: ${hlabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}.` : "Green: the community node is online and follows the real testnet chain.") + (a.tagName === "A" ? " Opens the HUD in Live mode." : "");
+        const a = d.closest("a, button"); if (a) a.dataset.tnt = (wait ? "Checking the community node…" : !up ? (CHAIN.stale ? "Red: no answer from the relay for over a minute." : health === "down" ? `Red: the testnet is down (${hlabel || "health score"}).` : "Red: the community node is offline, the relay is not answering.") : stalled ? `Amber: connected, but no new blocks right now; the testnet has stalled${st.health && st.health.score != null ? ` (health ${st.health.score} of 100)` : ""}.` : degraded ? `Amber: ${hlabel || "the testnet health score is degraded"}.` : !synced ? "Amber: the community node is online but not synced with the real chain yet." : catching ? `Amber: the node is catching up, verified to #${fmt(st.canonical_height)} of ${fmt(st.tip_height)}.` : "Green: the community node is online and follows the real testnet chain.") + (a.tagName === "A" ? " Opens the HUD in Live mode." : a.closest(".tn-src") && !ON_STATUS() ? " Click: opens Status, the testnet health in full." : "");
       });
       renderPlay();
       const n = CHAIN.online; onB.textContent = n == null ? "—" : String(n); onDot.className = "dot " + (n == null ? "none" : n > 0 ? "" : "off"); onChip.classList.toggle("live", n != null && n > 0);
@@ -763,13 +763,15 @@
   }
 
   /* ---------- row 2 controls on subpages: the HUD's source toggle, view switch and gear, with the same look ---------- */
+  const ON_STATUS = () => /\/status\/?$/.test(location.pathname);
   function subControls(tip) {
     const src = el("div", "seg tn-src"); src.setAttribute("role", "group"); src.setAttribute("aria-label", "Data source");
     const live = el("button", "", '<span class="dot none" data-livedot></span>Live node'); live.type = "button"; live.setAttribute("aria-pressed", String(!SIM)); tip(live, TIPS.live);
     const sim = el("button", "", "Simulation"); sim.type = "button"; sim.setAttribute("aria-pressed", String(SIM)); tip(sim, TIPS.sim);
     // the choice is remembered for every page (tau-mode, the HUD reads it too); this page reloads with the other source
     const go = m => { if (window.TauSim) TauSim.set(m); else { store.set("tau-mode", m); location.href = ROOT + "?mode=" + m; } };
-    live.addEventListener("click", () => { if (SIM) go("live"); }); sim.addEventListener("click", () => { if (!SIM) go("sim"); });
+    // already live: the second click opens Status, where the health score this button's hover names is explained in full
+    live.addEventListener("click", () => { if (SIM) go("live"); else if (!ON_STATUS()) location.href = ROOT + "status/"; }); sim.addEventListener("click", () => { if (!SIM) go("sim"); });
     src.append(live, sim);
     const gear = el("div", "gearbody", `<h4>Node</h4><div class="row"><code>wss://${RELAY}</code><span class="hint">Community relay in front of a Tau testnet node run for this site. To read your own node, open the HUD and put its address under the gear there.</span></div><h4>Look</h4><div class="row"></div>`);
     const row = gear.querySelector(".row:last-child");

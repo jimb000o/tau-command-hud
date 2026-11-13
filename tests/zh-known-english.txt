@@ -31,7 +31,7 @@ Carol
 Dave
 HTML
 HunterMinerCrafter
-IDNI/tau-testnet @ {n}d{n}e{n}
+IDNI/tau-testnet @ {n}ad{n}bb{n}
 IDNI/tau-testnet#{n}
 Kudo Sara
 Kurosawa

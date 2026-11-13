@@ -176,8 +176,9 @@ footer p { margin: 0; }
     ["strained", "/load/"], ["吃紧", "/load/"], ["逼迫", "/load/"],
   ];
   /* a link the text writes itself: only to our own pages */
-  const okHref = u => /^\/[\w\/-]*(\?[\w=&;.-]*)?$/.test(u) || /^https:\/\/(node\.)?tauhud\.com(\/[\w\/?=&;.-]*)?$/.test(u);
+  const okHref = u => /^\/[\w\/-]*(\?[\w=&;.-]*)?(#[\w-]+)?$/.test(u) || /^https:\/\/(node\.)?tauhud\.com(\/[\w\/?=&;.-]*)?$/.test(u);
   let linked = new Set();
+  const KIND = { cruise: "Cruise ship", news: "News" };   /* the label above an article; anything else is Learnings */
   const place = h => {
     for (const [name, href] of PLACES) {
       if (linked.has(href + name) || linked.has(href)) continue;
@@ -233,7 +234,7 @@ footer p { margin: 0; }
 
   function list(posts) {
     $("none").hidden = posts.length > 0;
-    $("posts").innerHTML = posts.map(p => `<li><a href="?p=${encodeURIComponent(p.id)}">${p.image ? `<span class="thumb">${img(p.image, pick(p.image_alt) || pick(p.title), "")}</span>` : ""}<span class="txt"><span class="meta"><b>${esc(T(p.kind === "cruise" ? "Cruise ship" : "Learnings"))}</b> · ${esc(date(p.on))} · ${esc(mins(p))}</span><h2 translate="no">${esc(pick(p.title))}</h2><p translate="no">${esc(pick(p.dek))}</p></span></a></li>`).join("");
+    $("posts").innerHTML = posts.map(p => `<li><a href="?p=${encodeURIComponent(p.id)}">${p.image ? `<span class="thumb">${img(p.image, pick(p.image_alt) || pick(p.title), "")}</span>` : ""}<span class="txt"><span class="meta"><b>${esc(T(KIND[p.kind] || "Learnings"))}</b> · ${esc(date(p.on))} · ${esc(mins(p))}</span><h2 translate="no">${esc(pick(p.title))}</h2><p translate="no">${esc(pick(p.dek))}</p></span></a></li>`).join("");
   }
 
   /* pictures only from the site itself or our server */
@@ -262,7 +263,7 @@ footer p { margin: 0; }
     document.title = pick(p.title) + " · Tau HUD Blog";
     const why = (p.why || []).map(w => `<li>${md(pick(w), mark).replace(/^<p>|<\/p>$/g, "")}</li>`).join("");
     const src = (p.sources || []).map(s => `<a href="${esc(s)}" target="_blank" rel="noopener">${esc(s.replace(/^https:\/\//, ""))}</a>`).join(" · ");
-    $("art").innerHTML = `<span class="meta"><b>${esc(T(p.kind === "cruise" ? "Cruise ship" : "Learnings"))}</b> · ${esc(date(p.on))} · ${esc(mins(p))}</span>
+    $("art").innerHTML = `<span class="meta"><b>${esc(T(KIND[p.kind] || "Learnings"))}</b> · ${esc(date(p.on))} · ${esc(mins(p))}</span>
       <h2 class="t">${esc(pick(p.title))}</h2><p class="dek">${esc(pick(p.dek))}</p>
       ${p.intro ? md(pick(p.intro), mark) : ""}
       ${p.image ? `<figure class="hero">${img(p.image, pick(p.image_alt) || pick(p.title), "hero")}</figure>` : ""}

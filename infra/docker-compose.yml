@@ -58,7 +58,6 @@ services:
       MAX_PER_IP: ${MAX_PER_IP:-96}   # sockets per address; every open page holds 2 to 4 (2026-10-30: 32 was hit by one visitor with many tabs)
       TAU_GOVERNANCE_OPEN_ADMISSION: ${TAU_NETWORK_OPEN_GOVERNANCE:-false}  # what the network admits now (pages, vote counting); see the node comment above
       VISITS_KEY: ${VISITS_KEY:-}   # key of the visitor numbers report; empty: made once in /data/visits.key
-      SLOTLEASE_ENABLED: ${SLOTLEASE_ENABLED:-1}   # fair turns on the rule places (relay/slotlease.py); 0 switches them off
       CHAT_ENABLED: ${CHAT_ENABLED:-1}   # the troll box on the HUD (relay/chat.py); 0 closes the room
       CHAT_KEY: ${CHAT_KEY:-}   # key of the troll box admin page /chat/admin; empty: made once in /data/chat.key
       CHAT_BLOCK_WORDS: ${CHAT_BLOCK_WORDS:-}   # extra words the troll box refuses, comma separated
@@ -350,6 +349,8 @@ services:
       # note to the owner (the chat `up owner` set, in /state/owner.json), never the channel
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
+      # fixwatch.py: everything IDNI solved of what we reported goes into one post; this long after the newest one
+      FIXWATCH_GROUP_MINUTES: ${FIXWATCH_GROUP_MINUTES:-120}
     volumes:
       - alerts_state:/state     # the clones, in /state/devpulse; digests.json (the daily IDNI post)
       - alerts_public:/public   # devpulse.json, served by Caddy
@@ -358,6 +359,7 @@ services:
       - ./node/patches:/pins/patches:ro   # tried on each new upstream main: do our node patches still apply?
       - ../facts:/facts:ro   # the hand-checked facts for Tau today (knowledge.py, tauhud.com/facts/); a folder, so a pull reaches it
       - ../roadmap:/roadmap:ro   # the Road to mainnet page: which IDNI issues and pull requests it links (roadmap_watch.py)
+      - ../findings:/findings:ro   # our reports to IDNI (fixwatch.py): which ones IDNI's changes solve, for the pages, a note and a post
     depends_on: [relay]
     mem_limit: 256m
     restart: unless-stopped
