@@ -472,6 +472,7 @@ TauI18n.add({ strings: {
   "Update log": "更新ログ",
   "built from your feedback": "皆さんのフィードバックから",
   "Keep it running": "運営を支える",
+  "Crew": "クルー",
   "Tau HUD crew": "Tau HUD クルー",
   "A paid monthly membership in our external shop; a purchase, not a donation": "外部ショップの月額有料メンバーシップ。寄付ではなく購入です",
   "Donations": "寄付",

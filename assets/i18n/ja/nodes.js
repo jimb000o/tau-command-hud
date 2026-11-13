@@ -1,5 +1,6 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Keep our node online: the Tau HUD crew": "ノードを動かし続ける：Tau HUD クルー",
   "Ours runs on a Hetzner CAX11.": "私たちのノードは Hetzner CAX11 で動いています。",
   "Rent the same one": "同じサーバーを借りる",
   "through our referral link, and Hetzner gives us server credit.": "：私たちの紹介リンク経由で借りると、Hetzner から私たちにサーバークレジットが付きます。",

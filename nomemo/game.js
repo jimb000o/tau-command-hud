@@ -2334,7 +2334,7 @@
     ["Story", [["jobs", "the twelve contracts"], ["take <n>", "take one"], ["run", "build, sign, send"], ["back", "retract a payment"], ["drop", "put it back"], ["claim [n]", "the chapter’s share"], ["chapter <n>", "the chapter’s card"]]],
     ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["probe · name · final", "intel contracts"], ["why [topic]", "what just happened"], ["archive · history", "your record"]]],
     ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail · mail <n>", "letters; some bring special orders"], ["crew", "who is who"], ["scan · blocks · dry", "gear for rank"]]],
-    ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"]]],
+    ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"], ["upkeep", "who pays the node"]]],
     ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · reboot · clear", "reboot: dial the node again"], ["scene · transmission on|off", "the cabin; the crew on screen"]]],
   ];
   function help() {
@@ -2528,6 +2528,7 @@
     if (c === "rule" || c === "rules" || (c === "explain" && /^rules?$/.test(args[0] || ""))) return ruleCmd();
     if (c === "findings") return findings();
     if (c === "crew") return crewList();
+    if (c === "upkeep") return say("sys", T("This terminal dials node.tauhud.com, a community node with a monthly bill. The Tau HUD crew is a paid membership that carries part of it:"), link("/crew/?ref=nomemo", "tauhud.com/crew"));
     if (c === "feedback" || c === "fb") return feedback(s.slice(s.search(/\s/) < 0 ? s.length : s.search(/\s/)).trim());
     if (c === "clear" || c === "cls") return clearScreen();
     if (c === "wallet") { window.open("/wallet/" + lang(), "_blank", "noopener"); return; }

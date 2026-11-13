@@ -112,6 +112,7 @@ import findings
 import firsts
 import gazette
 import ai_meter
+import crewlog
 import idni_digest
 import recap
 import rulefacts
@@ -3998,6 +3999,32 @@ class Watcher:
                 log.warning("recap post to %s failed (%s)", o.name, err)
             self.save_state()
 
+    # ---------- the crew's ship log (crewlog.py): members-only, once a week after the recap ----------
+    async def maybe_crewlog(self):
+        """Post the week's ship log to the Tau HUD crew once the recap of the week is drawn (CREWLOG_ENABLED and the
+        Fourthwall API user in .env); at most 3 tries a week, then it waits for the next week."""
+        if not (crewlog.ON and crewlog.enabled()):
+            return
+        st = self.state.get("recap") or {}
+        if "r" not in st or time.time() - st.get("slot", 0) > 24 * 3600:
+            return
+        cl = self.state.setdefault("crewlog", {})
+        if cl.get("slot") == st["slot"] and (cl.get("id") or cl.get("tries", 0) >= 3 or cl.get("pause_until", 0) > time.time()):
+            return
+        if cl.get("slot") != st["slot"]:
+            cl.clear()
+            cl["slot"] = st["slot"]
+        r = st["r"]
+        try:
+            title, desc, _ = await asyncio.to_thread(crewlog.gather, r, recap.lines(r, SITE), recap.period(r), SITE, paper_out(r))
+            cl["id"] = await asyncio.to_thread(crewlog.post, title, desc, time.time()) or "posted"
+            log.info("crew ship log posted (%s)", cl["id"])
+        except Exception as exc:  # retried in 30 minutes
+            cl["tries"] = cl.get("tries", 0) + 1
+            cl["pause_until"] = time.time() + 1800
+            log.warning("crew ship log failed: %r", exc)
+        self.save_state()
+
     async def run(self):
         while True:
             try:
@@ -4012,6 +4039,7 @@ class Watcher:
                             self.process()
                         await self.deliver()
                         await self.maybe_recap()
+                        await self.maybe_crewlog()
                         await self.maybe_print()
                         await self.maybe_gazette()
                         await self.maybe_challenge()
@@ -4335,10 +4363,47 @@ def recap_cli(post: bool) -> int:
     return code
 
 
+def crewlog_cli(send: bool) -> int:
+    """The crew's ship log of the 7 days up to now: checks the Fourthwall API user (tiers, the newest posts as stored),
+    prints the post; send=True posts it now, members only."""
+    print(f"crew:    weekly post {'ON' if crewlog.ON else 'off'} (CREWLOG_ENABLED in .env), API user {'set' if crewlog.enabled() else 'NOT set (FOURTHWALL_API_USER / FOURTHWALL_API_PASS in .env)'}")
+    if crewlog.enabled():
+        try:
+            for t in crewlog.tiers():
+                print(f"tier:    {t['name']} (id {t['id']}, {t['status'] or 'status ?'}): {t['members'] if t['members'] is not None else '?'} members")
+            for p in crewlog.posts():
+                print(f"post:    {p.get('id')} {p.get('liveAt', '')} “{p.get('title', '')}” stored as: {str(p.get('description', ''))[:160]!r}")
+        except Exception as exc:
+            print(f"crew:    the Fourthwall API answered with an error: {exc}")
+            return 1
+    w = Watcher()
+    try:
+        r = w.recap_numbers(time.time())
+    except Exception as exc:
+        print(f"crew:    no recap numbers ({exc})")
+        return 1
+    title, desc, crew = crewlog.gather(r, recap.lines(r, SITE), recap.period(r), SITE, paper_out(r))
+    print(f"--- {title} (members only)\n" + re.sub(r"<br>|</p>", "\n", desc).replace("<p>", "").replace("<strong>", "").replace("</strong>", ""))
+    if not send:
+        print("--- dry run: nothing posted. Post this one now: up crewlog send · weekly by itself: up crewlog on")
+        return 0
+    if not crewlog.enabled():
+        return 1
+    try:
+        pid = crewlog.post(title, desc, time.time())
+    except Exception as exc:
+        print(f"crew:    posting FAILED: {exc}")
+        return 1
+    print(f"crew:    posted, members only (post {pid})")
+    return 0
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     if "--test" in sys.argv:
         sys.exit(send_test())
+    if "--crewlog" in sys.argv:
+        sys.exit(crewlog_cli("send" in sys.argv))
     if "--check" in sys.argv:
         sys.exit(check_channels())
     if "--x-test" in sys.argv:
