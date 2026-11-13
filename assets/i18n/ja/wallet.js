@@ -129,7 +129,7 @@ TauI18n.add({ strings: {
   "Rule change": "ルール変更",
   "Nothing open right now.": "いま未決のものはありません。",
   "The simulation proposes a rule change every hour at 20 past.": "シミュレーションは毎時 20 分にルール変更を提案します。",
-  "Testnet proposals are rare and agreed within minutes. Telegram @tauHUDcom posts each new one at once.": "テストネットの提案はまれで、数分以内に合意されます。Telegram @tauHUDcom が新しいものをすぐに投稿します。",
+  "Testnet proposals are rare and agreed within minutes. Our Telegram group posts each new one at once.": "テストネットの提案はまれで、数分以内に合意されます。Telegram グループ が新しいものをすぐに投稿します。",
   "{h} · {a} of {b} yes votes · takes effect at #{c}": "{h} · 賛成 {b} 票中 {a} 票 · #{c} で有効",
   "checked by the chain on every payment you make": "あなたのすべての支払いでチェーンが検証",
   "Make your account first; then you can give it a rule.": "まずアカウントを作ってください。その後、ルールを与えられます。",
