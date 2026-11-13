@@ -1075,7 +1075,7 @@
   {
     "tag": "HUD",
     "on": "2026-10-29",
-    "html": "Header: \"Telegram alerts\" is now \"Get alerts\". It opens the three ways to hear about every rule change, chain restart and new node: Telegram @tauHUDcom on your phone, X @TauHUDcom in your timeline, or the RSS feed. X is also linked in every footer, next to Telegram in the Updates panel, on Proposals, at the end of the Story and on Vote."
+    "html": "Header: \"Telegram alerts\" is now \"Get alerts\". It opens the three ways to hear about every rule change, chain restart and new node: Telegram @tauHUDchat on your phone, X @TauHUDcom in your timeline, or the RSS feed. X is also linked in every footer, next to Telegram in the Updates panel, on Proposals, at the end of the Story and on Vote."
   },
   {
     "tag": "HUD",

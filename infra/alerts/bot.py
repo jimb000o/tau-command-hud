@@ -1,6 +1,6 @@
 """Ask the bot: the Tau HUD Telegram bot answers questions about the testnet.
 
-The bot that posts alerts to @tauHUDcom (alerts.py) also answers people who
+The bot that posts alerts to @tauHUDchat (alerts.py) also answers people who
 write to it. It long-polls Telegram (getUpdates, no webhook, no open port) and
 answers from the same sources the pages use:
 
@@ -55,7 +55,7 @@ import tickerwatch
 log = logging.getLogger("tau-bot")
 
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
-CHANNEL = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDcom").strip()  # where the alerts go: a channel, or a group with topics
+CHANNEL = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDchat").strip()  # where the alerts go: a channel, or a group with topics
 API = os.environ.get("TELEGRAM_API", "https://api.telegram.org").rstrip("/")
 RELAY_URL = os.environ.get("RELAY_URL", "ws://relay:8080")
 RELAY_HTTP = os.environ.get("RELAY_HTTP", "http://relay:8080").rstrip("/")
