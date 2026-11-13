@@ -173,11 +173,11 @@
   /* a personal transfer rule (stream o5), as accounts deploy or offer them */
   function randomRule(owner) {
     const r = R(), hex16 = v => "#x" + v.toString(16).padStart(16, "0");
-    if (r < 0.45) { const lim = pick(R, [500, 1000, 2500, 4000]); return { name: "Spending limit", text: `o5[t] = i2[t] <= { ${hex16(lim)} }:bv[64]`, blocks: amt => amt > lim }; }
+    if (r < 0.45) { const lim = pick(R, [500, 1000, 2500, 4000]); return { name: "Spending limit", text: `o5[t] = i1[t] <= { ${hex16(lim)} }:bv[64]`, blocks: amt => amt > lim }; }
     if (r < 0.7) { const to = pick(R, ACCOUNTS.filter(a => a !== owner)); return { name: "Recipient whitelist", text: `o5[t] = (i4[t]:bv[384] = { #x${to} }:bv[384])`, blocks: (amt, t) => t !== to }; }
     if (r < 0.85) { const h = B.length + 4 + ((R() * 40) | 0); return { name: "Locked until a block", text: `o5[t] = (i6[t]:bv[64] >= { ${h} }:bv[64])`, blocks: () => B.length < h }; }
     const lim = pick(R, [2000, 3000]), who = pick(R, ACCOUNTS.filter(a => a !== owner));
-    return { name: "Co-signature", text: `o5[t] = (i2[t] <= { ${hex16(lim)} }:bv[64]) || (i18[t]:bv[384] = { #x${who} }:bv[384])`, blocks: amt => amt > lim };
+    return { name: "Co-signature", text: `o5[t] = (i1[t] <= { ${hex16(lim)} }:bv[64]) || (i18[t]:bv[384] = { #x${who} }:bv[384])`, blocks: amt => amt > lim };
   }
   /* a rule change: an ordinary one picks its kind at random; a special one (want: the day's programme) is told what to be and gets everyone's vote */
   function proposal(n, rules, want) {
