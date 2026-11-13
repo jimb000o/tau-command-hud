@@ -140,7 +140,8 @@ start); fixes and internal work at most in one point.
 - Say what works now, not that anyone gained power. Write "again", "no longer" or "now" only when the input says how it \
 was before.
 - Credit IDNI plainly ("IDNI restarted the testnet with ..."). Never blame or criticise anyone.
-- Plain words. No code names, file names, stream names, flags, commit hashes or version numbers; no names of people.
+- Plain words. No code names, file names, stream names, flags, commit hashes or version numbers; no names of people. \
+Write numbers of 1,000 and more with commas (100,000 test coins, not 100000).
 - Names: the network is Tau Net and its test network is the Tau Net testnet (Tau Testnet Alpha); never call the \
 network just "Tau". Tau Language is the language rules are written in, and the Tau engine checks them.
 - No hype or marketing words (huge, major, game-changing, finally, exciting, breakthrough), no price talk, no \

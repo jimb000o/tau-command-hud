@@ -46,7 +46,12 @@ KEEP_DAYS = 21
 VERSION = 1
 LANG = "IDNI/tau-lang"
 SITE = os.environ.get("SITE_URL", "https://tauhud.com").rstrip("/")
-NUM = re.compile(r"\d+(?:[.,]\d+)?")
+NUM = re.compile(r"\d{1,3}(?:,\d{3})+(?![\d,])|\d+(?:[.,]\d+)?")
+
+
+def plain_num(n: str) -> str:
+    """100,000 and 100000 are one number (the posts write the first, IDNI's code the second)."""
+    return n.replace(",", "") if re.fullmatch(r"\d{1,3}(?:,\d{3})+", n) else n
 BLAME = re.compile(r"\b(IDNI|Tau|the testnet|the chain|the team|developers?)(['’]s)?\s+(is |was |were |had )?"
                    r"(at fault|to blame|fault|failed|broke|broken|unreliable|unstable|buggy|careless|let us down|sloppy)\b", re.I)
 HYPE = re.compile(r"\b(huge|exciting|revolutionary|game[- ]chang\w*|moon|pump|finally|incredible|massive|breakthrough|"
@@ -202,7 +207,8 @@ Never link a change to a past outage, stall or incident unless the commit messag
 - Credit IDNI's work plainly ("IDNI merged", "the testnet now ..."). Never blame or criticise anyone, never call \
 anything broken or careless; a fix is progress, say what it makes work.
 - Plain words. No code names, file names, function names, stream names, flags, package names, commit hashes or \
-version numbers; no names of people. Issue or pull request numbers only if they help, at most one.
+version numbers; no names of people. Issue or pull request numbers only if they help, at most one. Write numbers \
+of 1,000 and more with commas (100,000).
 - Names: the network is Tau Net and its test network is the Tau Net testnet (Tau Testnet Alpha); never call the \
 network just "Tau". Tau Language is the language rules are written in, and the Tau engine checks them.
 - No hype or marketing words (huge, major, game-changing, finally, exciting, breakthrough), no price talk, no \
@@ -214,6 +220,9 @@ uses it yet exactly as the input says.
 - post: false when nothing in the window would matter to someone using the testnet or running a node.
 - x: true only when the window holds a change people beyond the community would care about (a fix to how blocks are \
 made or checked, safety, a new capability, nodes joining or syncing); false for small or internal days.
+- article: true only for big news that deserves its own blog article going deeper: a new capability every user can \
+try, or a change to what users or node runners can do (for example every account can now hold its own personal \
+rule). False for fixes, performance, tests and most days; a few times a month at most.
 
 Fields (English only):
 - title: a news headline, at most 80 characters, subject and verb, present tense, sentence case, no date.
@@ -224,7 +233,7 @@ several commits for one purpose make one point.
 - reason: a few words why you chose post/x as you did (not published).
 
 Answer with JSON only, no other text:
-{"post":true,"x":true,"title":"","points":[""],"why":"","x_text":"","reason":""}"""
+{"post":true,"x":true,"article":false,"title":"","points":[""],"why":"","x_text":"","reason":""}"""
 
 
 def prompt_of(g: dict, paths: dict, start: int, end: int) -> str:
@@ -272,9 +281,9 @@ def line(v, cap: int) -> str:
 
 def check_text(texts: list[str], prompt: str) -> dict:
     """Numbers the input does not hold, and blame or hype wording: either holds the post back for a look."""
-    known = set(NUM.findall(prompt)) | {"1", "2", "3", "4"}
+    known = {plain_num(n) for n in NUM.findall(prompt)} | {"1", "2", "3", "4"}
     joined = " ".join(texts)
-    unknown = sorted({n for n in NUM.findall(joined) if n not in known})
+    unknown = sorted({n for n in NUM.findall(joined) if plain_num(n) not in known})
     words = sorted({m.group(0) for m in HYPE.finditer(joined)} | {m.group(0) for m in BLAME.finditer(joined)})
     return {"unknown_numbers": unknown, "wording": words}
 
@@ -293,7 +302,7 @@ def write(g: dict, paths: dict, start: int, end: int, pin_ts: int | None, now: i
     out = (ask_ or ask)(prompt)
     pts = [p for p in (line(x, 200) for x in (out.get("points") or [])[:4]) if p]
     d.update(title=line(out.get("title"), 100), points=pts, why=line(out.get("why"), 240),
-             x_text=line(out.get("x_text"), 240), x=bool(out.get("x")), reason=line(out.get("reason"), 300),
+             x_text=line(out.get("x_text"), 240), x=bool(out.get("x")), article=bool(out.get("article")), reason=line(out.get("reason"), 300),
              model=dp.NEWS_AI_MODEL)
     if not out.get("post"):
         return {**d, "status": "skip"}

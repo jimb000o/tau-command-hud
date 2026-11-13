@@ -1130,6 +1130,11 @@ def main(argv: list[str]) -> int:
             except Exception as e:  # noqa: BLE001
                 log.warning("idni report: %s", e)
             try:
+                import news_article   # big IDNI news (the daily IDNI post marks it): a draft that goes deeper, as a ship's article
+                news_article.tick()
+            except Exception as e:  # noqa: BLE001
+                log.warning("news article: %s", e)
+            try:
                 site_pictures()
                 tick()
                 auto_publish()
