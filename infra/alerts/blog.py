@@ -872,6 +872,8 @@ def auto_publish(now: float | None = None) -> str | None:
         chk = a.get("check") or {}
         if not a or chk.get("unknown_numbers") or chk.get("hype"):
             continue   # waits for a look and up blog publish (--force)
+        if not too_late_to_post(a, now) and gap_left(now):
+            return None   # the channels posted lately: the article and its post wait for the room (alerts.POST_GAP_MINUTES)
         publish_cli(did, False, False)
         log.info("draft %s published by itself after %.0f h", did, (now - at) / 3600)
         return did
@@ -897,6 +899,12 @@ def too_late_to_post(a: dict, now: float) -> float | None:
         return None
     hours = (now - t0) / 3600
     return hours if hours > POST_MAX_HOURS else None
+
+
+def gap_left(now: float | None = None) -> float:
+    """Seconds until Telegram and X have had POST_GAP_MINUTES without a post (alerts.post_gap_left)."""
+    import alerts
+    return alerts.post_gap_left(("telegram", "x"), now)
 
 
 def auto_note(st: dict, did: str, a: dict) -> str:

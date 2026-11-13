@@ -195,6 +195,8 @@ def handle(run: dict, snap: dict, st: dict, now: float) -> str | None:
         save(st)
         return None
     if res in ("held", "missed"):
+        if blog.gap_left(now):   # the channels posted lately: the post waits for the room (alerts.POST_GAP_MINUTES)
+            return None
         t = texts(run, snap)
         pic = picture(t["card"], "/tmp/hack.jpg")
         st["done"][rid] = {"at": round(now), "result": res, "said": "posting"}
