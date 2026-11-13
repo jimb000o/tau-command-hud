@@ -26,9 +26,8 @@ updates = [{"tag": "Blog", "on": "2026-11-08", "html": "old week"},
 costs = {"items": [{"amount": 6, "cur": "EUR"}, {"amount": 200, "cur": "USD"}, {"amount": 19.34, "cur": "EUR"}, {"amount": None, "cur": "USD"}]}
 title, d = crewlog.compose(r, ["1,234 blocks, one every 30 s", "5 transactions <from> 3 accounts"], "9–15 Nov 2026", updates, costs, 4)
 check(title == "Ship log · 9–15 Nov 2026", "title names the week")
-check("old week" not in d and "Crew: the paid membership has its own page." in d and "Agorzilla &amp; friends" in d, "only this week's log entries, tags stripped, text escaped")
-check('href="https://tauhud.com/crew/"' in d and 'href="https://agorzilla.com"' in d, "each entry links to its page")
-check(d.index("Agorzilla") < d.index("Crew:"), "newest first")
+check("old week" not in d and "Crew: the paid" not in d and "Agorzilla &amp; friends" in d, "only this week's log entries, the money pages left out, text escaped")
+check('href="https://agorzilla.com"' in d, "each entry links to its page")
 check("&lt;from&gt;" in d, "the recap lines are escaped")
 check("€25.34" in d and "$200.00" in d, "bills summed per currency, unknown amounts left out, no exchange rate")
 check("one of 4 in the crew" in d, "the crew counted, no names")
