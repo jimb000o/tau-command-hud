@@ -9,6 +9,12 @@
 # Two fresh keys per run (the faucet funds a new account on its first transaction; test AGRS only). The keys and the
 # result are kept in /data/keyholder-demo.json (the node's volume). At the end the rule is removed with the neutral
 # clause. The last lines are one JSON object: copy them into the chat.
+#
+# Every step waits until its transaction is CONFIRMED in a block (gettxstatus), not merely accepted: the sequence number
+# the node reports counts waiting transactions too, so it cannot tell "in force" from "queued".
+#
+# Look back at an earlier run instead (which of the account's transactions are in the last 120 blocks):
+#   cd /opt/tau-command-hud/infra && docker compose exec -T -e INSPECT=<account> tau-node python - < node/tools/keyholder_demo.py
 import json
 import os
 import re
@@ -77,23 +83,57 @@ def balance(pk):
     return num(pk, "balance", "balance")
 
 
-def landed(pk, before, minutes=6):
+def status(h):
+    _, out, _ = cli("rpc", "gettxstatus " + h)
+    d = data(out)
+    return (find(d, "status") or "unknown"), d
+
+
+def confirm(h, minutes=6):
+    """Wait until tx `h` is in a block; returns (status, block number or None, details)."""
     end = time.time() + minutes * 60
+    st, d = "unknown", {}
     while time.time() < end:
-        s = seq(pk)
-        if s is not None and s > before:
-            return True
-        time.sleep(6)
-    say(f"  ! gave up after {minutes} min waiting for the transaction to land")
-    return False
+        st, d = status(h)
+        if st == "confirmed":
+            return st, find(d, "block_number"), d
+        if st in ("rejected", "evicted", "expired"):
+            return st, None, d
+        time.sleep(5)
+    say(f"  ! still '{st}' after {minutes} min")
+    return st, None, d
 
 
-def head():
-    _, out, _ = cli("blocks", "--limit", "1")
-    v = find(data(out), "block_number")
-    if v is None:
-        v = find(data(out), "height")
-    return v
+def send(args):
+    code, out, err = cli("tx", "send", *args, "--fee", FEE)
+    text = (out + "\n" + err).strip()
+    d = data(out)
+    resp = find(d, "response")
+    resp = resp if isinstance(resp, dict) else d
+    refused = bool(code) or resp.get("ok") is False or find(resp, "status") == "error"
+    msg = find(resp, "message") or text
+    h = find(resp, "tx_hash")
+    if not h:
+        m = HEX64.search(text)
+        h = m.group() if m else None
+    return refused, str(msg)[:600], h
+
+
+def inspect(pk):
+    _, out, _ = cli("rpc", "getblocks 120")
+    blocks = find(data(out), "blocks") or []
+    rows = []
+    for b in blocks:
+        n = find(b.get("header", b), "block_number")
+        for i, tx in enumerate(b.get("transactions") or []):
+            if not isinstance(tx, dict) or str(tx.get("sender_pubkey", "")).lower() != pk.lower():
+                continue
+            ops = tx.get("operations") or {}
+            ids = b.get("tx_ids") or []
+            rows.append({"block": n, "tx": ids[i] if i < len(ids) else None, "seq": tx.get("sequence_number"),
+                         "type": tx.get("tx_type"), "rule": bool(ops.get("0")),
+                         "transfers": [op[2] if isinstance(op, (list, tuple)) and len(op) > 2 else op for op in ops.get("1", [])]})
+    print(json.dumps({"account": pk, "balance": balance(pk), "blocks_scanned": len(blocks), "in_blocks": rows}, separators=(",", ":")))
 
 
 def newkey():
@@ -106,69 +146,69 @@ def newkey():
 
 
 def pay(k, to, amount):
-    code, out, err = cli("tx", "send", "--privkey", k["priv"], "--to", to, "--amount", str(amount), "--fee", FEE)
-    text = (out + "\n" + err).strip()
-    resp = find(data(out), "response") or data(out)
-    refused = bool(code) or (isinstance(resp, dict) and resp.get("ok") is False)
-    msg = (find(resp, "message") if isinstance(resp, dict) else None) or text
-    h = find(resp, "tx_hash") if isinstance(resp, dict) else None
-    if not h:
-        m = HEX64.search(text)
-        h = m.group() if m else None
-    return refused, str(msg)[:600], h
+    return send(["--privkey", k["priv"], "--to", to, "--amount", str(amount)])
 
 
 def set_rule(k, text):
     with tempfile.NamedTemporaryFile("w", suffix=".tau", delete=False) as f:
         f.write(text)
-    before = seq(k["pub"]) or 0
-    code, out, err = cli("tx", "send", "--privkey", k["priv"], "--rule-file", f.name, "--fee", FEE)
+    refused, msg, h = send(["--privkey", k["priv"], "--rule-file", f.name])
     os.unlink(f.name)
-    if code:
-        say("  ! the node refused the rule: " + (out + err).strip()[-300:])
-        return False
-    return landed(k["pub"], before)
+    if refused or not h:
+        say("  ! the node refused the rule: " + msg[-300:])
+        return None
+    st, blk, _ = confirm(h)
+    return blk if st == "confirmed" else None
 
 
 def main():
+    if os.environ.get("INSPECT"):
+        return inspect(os.environ["INSPECT"].strip())
     res = {"started": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "limit": LIMIT, "rule": RULE, "signer": "IDNI tau-testnet CLI"}
     a, b = newkey(), newkey()
     res["account"], res["receiver"] = a["pub"], b["pub"]
     say(f"account {a['pub'][:12]}…  receiver {b['pub'][:12]}…  (fresh test keys)")
 
     say("1/4 a first payment of 10 AGRS (the faucet funds the new account)")
-    s0 = seq(a["pub"])
     refused, msg, h = pay(a, b["pub"], 10)
-    if refused or not landed(a["pub"], s0 if s0 is not None else -1):
-        say("  ! the first payment did not land: " + msg)
+    st, blk, _ = confirm(h) if h and not refused else ("refused", None, {})
+    if st != "confirmed":
+        say(f"  ! the first payment is not in a block ({st}): " + msg)
         return finish(res, False)
-    res["first"] = {"tx": h, "block": head()}
-    say(f"  landed, balance now {balance(a['pub'])}")
+    res["first"] = {"tx": h, "block": blk}
+    say(f"  in block {blk}, balance now {balance(a['pub'])}")
 
     say(f"2/4 the account writes itself a rule: nothing above {LIMIT:,} AGRS leaves")
-    if not set_rule(a, RULE):
+    blk = set_rule(a, RULE)
+    if blk is None:
         return finish(res, False)
-    res["rule_block"] = head()
-    say(f"  rule in force (about block {res['rule_block']})")
+    res["rule_block"] = blk
+    say(f"  rule in block {blk}, so in force from now on")
 
     say("3/4 the same key signs a payment of 5,000 AGRS")
     bal0 = balance(a["pub"])
     refused, msg, h = pay(a, b["pub"], 5000)
-    res["big"] = {"amount": 5000, "refused": refused, "node_said": msg, "balance_before": bal0}
-    say("  " + ("REFUSED by the node: " if refused else "went through (unexpected!): ") + msg[:300])
-    time.sleep(20)
-    res["big"]["balance_after"] = balance(a["pub"])
+    big = {"amount": 5000, "tx": h, "balance_before": bal0, "node_said": msg}
+    if refused:
+        big["outcome"] = "refused at admission"
+        say("  REFUSED by the node: " + msg[:300])
+    else:
+        say("  accepted into the queue (unexpected), watching what the block does with it")
+        st, blk, d = confirm(h, minutes=3)
+        big["outcome"], big["block"], big["status"] = ("in a block" if st == "confirmed" else st), blk, d
+        say(f"  outcome: {big['outcome']}")
+    big["balance_after"] = balance(a["pub"])
+    res["big"] = big
 
     say("4/4 and a payment of 500 AGRS, inside the rule")
-    before = seq(a["pub"]) or 0
     refused2, msg2, h2 = pay(a, b["pub"], 500)
-    ok2 = not refused2 and landed(a["pub"], before)
-    res["small"] = {"amount": 500, "landed": ok2, "tx": h2, "block": head() if ok2 else None, "node_said": None if ok2 else msg2}
-    say("  " + ("went through" if ok2 else "did not go through: " + msg2[:300]))
+    st2, blk2, _ = confirm(h2) if h2 and not refused2 else ("refused", None, {})
+    res["small"] = {"amount": 500, "tx": h2, "block": blk2, "status": st2, "node_said": None if st2 == "confirmed" else msg2}
+    say(f"  {st2}" + (f" in block {blk2}" if blk2 else ": " + msg2[:300]))
 
     say("cleanup: the neutral clause removes the rule")
-    res["removed"] = set_rule(a, NEUTRAL)
-    finish(res, refused and ok2 and "own policy" in msg)
+    res["removed_block"] = set_rule(a, NEUTRAL)
+    finish(res, big.get("outcome") == "refused at admission" and "own policy" in big["node_said"] and st2 == "confirmed")
 
 
 def finish(res, proven):
