@@ -1,5 +1,6 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Support: the About panel on every page now names both ways to help in one place, a crypto donation or a paid monthly membership that can be cancelled any time and comes with no duties. The Support page says the same more plainly and shows a sample of the members’ weekly ship log. A short line on what the site costs each month appears at a few natural ends: the end of the tour, a finished White Rabbit Key campaign, the last Learn lesson. The Daily Consensus has a new classified. Nothing was added to any first view, and every page stays free.": "支持：每个页面的“关于”面板现在把两种帮助方式放在一处：加密货币捐赠，或可随时取消、没有任何义务的付费月度会员。支持页面把同样的内容说得更直白，并展示一份会员每周航海日志的样本。在几个自然的结束处会出现一行短短的说明，讲网站每月的花费：导览结束时、一场 White Rabbit Key 竞选结束后、最后一节 Learn 课程之后。《共识日报》多了一则新的分类广告。任何页面的首屏都没有新增内容，所有页面仍然免费。",
   "Donations: the page now counts what the shop and the crew bring in, beside the donations. Only our share counts: what buyers and members paid, less Fourthwall's costs for each product, its fees and the tax. Our server works it out from the shop's data every 15 minutes and publishes it summed per day, with no names. The green line then reads “came in”, and its tip splits donations from shop and crew.": "捐赠：页面现在在捐赠之外，也计入商店和船员会员带来的收入。只计算我们的分成：买家和会员支付的金额，减去 Fourthwall 每件商品的成本、手续费和税。我们的服务器每 15 分钟根据商店数据计算一次，按天汇总公布，不含任何姓名。绿色线随之显示为“进账”，提示中把捐赠与商店和船员分开列出。",
   "Live node: a click on it while you already watch the live chain now opens Status, the page with the testnet health score its hover shows, on the HUD and on every other page. From the simulation the same button still switches to the live chain.": "实时节点：当你已经在看实时链时，点击它现在会打开状态页，也就是它悬停提示中那个测试网健康分的详细页面，在 HUD 和其他每个页面上都是如此。在模拟模式下，这个按钮仍然切换到实时链。",
   "Personal rules for every wallet: IDNI lifted the testnet's limit of two accounts with a rule, so the wallet, the Guardian and Start here drop the two rule places and the waiting line. Freeze now reads the amount, because a rule that only says “block” is refused; the wallet checks the node's new limits before you sign, and the Playground checks the new rule shape and lets a rule read your balance.": "人人都能有个人规则：IDNI 取消了测试网“最多 2 个账户有规则”的限制，所以钱包、守护者和“从这里开始”不再显示两个规则名额和排队。“冻结”现在会读取金额，因为只写“拦下”的规则会被拒绝；钱包会在你签名前检查节点的新限制，Playground 会检查新的规则写法，并允许规则读取你的余额。",
@@ -2570,5 +2571,13 @@ TauI18n.add({ strings: {
   "Every account on the Tau Net testnet can now have its own payment rule": "Tau Net 测试网上的每个账户现在都可以有自己的付款规则",
   "Shop notice on the HUD: it now shows at every screen size. Where its place under Rules in force now is off screen or too small, it moves into Personal money rules or Rule sharing, and on phones it brings its own height. “Crew: 10–20 % off” opens the Crew page, the rest opens the store. Until Christmas the picture is one of two sweaters, the rabbit or the Tau rule, picked by chance on each page view.": "HUD 上的商店告示：现在在任何屏幕尺寸下都会显示。当它在“当前生效的规则”下方的位置不在屏幕内或太小时，它会移到“个人资金规则”或“规则共享”面板里；在手机上它自带高度。“船员：九折至八折”打开船员页面，其余部分打开商店。圣诞节之前，图片是两件毛衣之一，兔子或 Tau 规则，每次打开页面时随机选择。",
   "Opens the Crew page: what the Tau HUD crew is and how the 10 or 20 % shop discount works.": "打开船员页面：Tau HUD 船员是什么，以及九折或八折的商店折扣如何使用。",
-  "IDNI changed personal rules on 12 November: every account can now hold its own. What a rule gives you, where it stops, and where to try one.": "IDNI 在 11 月 12 日改变了个人规则：现在每个账户都可以持有自己的规则。规则能给你带来什么、它的边界在哪里，以及在哪里可以试。"
+  "IDNI changed personal rules on 12 November: every account can now hold its own. What a rule gives you, where it stops, and where to try one.": "IDNI 在 11 月 12 日改变了个人规则：现在每个账户都可以持有自己的规则。规则能给你带来什么、它的边界在哪里，以及在哪里可以试。",
+  "Support Tau HUD": "支持 Tau HUD",
+  "optional": "可选",
+  "No crypto wallet?": "没有加密钱包？",
+  "Support Tau HUD ›": "支持 Tau HUD ›",
+  "Support monthly from €4.17, cancel any time ›": "每月 €4.17 起按月支持，可随时取消 ›",
+  "A paid membership with no duties, not a donation.": "这是付费会员，没有任何义务，不是捐赠。",
+  "Two ways, both optional. No crypto wallet?": "两种方式，都出于自愿。没有加密钱包？",
+  "Or a donation:": "或者捐赠：",
 } });

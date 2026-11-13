@@ -730,11 +730,16 @@ def recap_x(r: dict) -> str:
                   f"{SITE}/gazette/", keep=2)
 
 
+def crew_tail() -> str:
+    """The last link of the Monday recap while the crew's weekly ship log is on: where the full week is (members only)."""
+    return f" · <a href=\"{SITE}/crew/\">Members get the full ship log</a>" if crewlog.ON and crewlog.enabled() else ""
+
+
 def recap_caption(r: dict) -> str:
     """The Monday post on Telegram (a photo caption, at most 1024 characters): the new edition, then the week in numbers."""
     e = paper_out(r)
     if not e:
-        return recap.caption_html(r, SITE)
+        return recap.caption_html(r, SITE, crew_tail())
     q = html.escape
     teaser = (e.get("teaser") or {}).get("en") or ""
     for n in (2, 1, 0):
@@ -742,7 +747,7 @@ def recap_caption(r: dict) -> str:
                 + (f"{q(sentences(teaser, n))}\n" if n else "")
                 + f"\n<a href=\"{SITE}/gazette/\">Read this week's edition</a>\n\n"
                 + f"📊 <b>The week on the testnet</b> · {q(recap.period(r))}\n" + "\n".join("• " + q(x) for x in recap.lines(r, SITE)[:3])
-                + f"\n\n<a href=\"{SITE}/stats/\">Stats</a> · <a href=\"{SITE}/proposals/\">Rule changes</a>")
+                + f"\n\n<a href=\"{SITE}/stats/\">Stats</a> · <a href=\"{SITE}/proposals/\">Rule changes</a>{crew_tail()}")
         if len(re.sub(r"<[^>]+>", "", text)) <= 1000:
             return text
     return text

@@ -94,4 +94,5 @@ TauI18n.add({ strings: {
   "A card is read from the live testnet only: what you do on the practice chain never shows up here.": "カードは本物のテストネットからだけ読み取ります。練習用チェーンでしたことはここには出ません。",
   "That is not an address: it has {n} characters, an address has 96 (0 to 9 and a to f).": "これはアドレスではありません。{n} 文字ですが、アドレスは 96 文字です（0〜9 と a〜f）。",
   "Paste an address first: 96 characters, 0 to 9 and a to f.": "先にアドレスを貼り付けてください：96 文字、0〜9 と a〜f。",
+  "Support Tau HUD ›": "Tau HUD をサポート ›",
 } });

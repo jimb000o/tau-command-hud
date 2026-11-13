@@ -94,4 +94,5 @@ TauI18n.add({ strings: {
   "A card is read from the live testnet only: what you do on the practice chain never shows up here.": "卡片只从真实测试网读取：你在练习链上做的事不会出现在这里。",
   "That is not an address: it has {n} characters, an address has 96 (0 to 9 and a to f).": "这不是一个地址：它有 {n} 个字符，而地址有 96 个（0 到 9 和 a 到 f）。",
   "Paste an address first: 96 characters, 0 to 9 and a to f.": "请先粘贴一个地址：96 个字符，0 到 9 和 a 到 f。",
+  "Support Tau HUD ›": "支持 Tau HUD ›",
 } });

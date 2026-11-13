@@ -75,6 +75,14 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .terms { margin: 0; padding: 0 0 0 18px; list-style: none; border-left: 1px solid var(--line); display: grid; gap: 6px; font-size: 13.5px; color: var(--dim); }
 .terms b { color: var(--text); font-weight: 600; }
 .terms a { color: var(--text); }
+.lk { background: none; border: 0; padding: 0; font: inherit; color: var(--ok); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+dialog.log { width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow: auto; background: #0b0f0d; color: var(--text); border: 1px solid var(--ok); border-radius: 10px; padding: 18px 20px; }
+dialog.log::backdrop { background: rgba(0,0,0,.7); }
+dialog.log .x { position: absolute; top: 8px; right: 10px; min-width: 44px; min-height: 44px; background: none; border: 0; color: var(--dim); font-size: 16px; cursor: pointer; }
+dialog.log .k { margin: 0 0 8px; }
+dialog.log .post { border: 1px solid var(--hair); border-radius: 8px; padding: 12px 14px; font-size: 14px; line-height: 1.5; }
+dialog.log .post h3 { margin: 0 0 6px; font-size: 17px; color: #fff; } dialog.log .post p { margin: 8px 0 0; } dialog.log .post b { color: #fff; }
+dialog.log .fine { margin: 10px 0 0; font-size: 12.5px; color: var(--dim); }
 .bills { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; font-size: 13.5px; color: var(--dim); border-top: 1px solid var(--line); padding-top: 10px; }
 .bills b { color: var(--text); font-weight: 600; }
 .bills span { min-width: 0; overflow-wrap: anywhere; }
@@ -101,22 +109,34 @@ footer p { margin: 0; }
     <p>Tau HUD is free to use. Optional support helps fund the site and the work behind it: the community node, the server, and the tools the pages are built with.</p>
     <p class="none">There are two ways to help, and neither is required. Every page stays open without paying and without an account.</p>
   </div>
+  <dialog class="log" id="logDlg" aria-labelledby="logH">
+    <button type="button" class="x" id="logClose" aria-label="Close">✕</button>
+    <p class="k">A sample of the ship log</p>
+    <div class="post" translate="no" lang="en">
+      <h3 id="logH">Ship log · 6–13 Nov 2026</h3>
+      <p>The week of 6–13 Nov 2026 on Tau Testnet Alpha and on Tau HUD, in one place. Written by the server from the chain and the site's own log, nothing by hand.</p>
+      <p><b>The testnet this week</b><br>• 9,182 blocks, one every 62 s<br>• 10,962 transactions from 224 accounts<br>• Rule changes: none this week<br>• Chain restarts: 1<br>• Community nodes: 1 (1 new)</p>
+      <p><b>New on Tau HUD</b><br>• Rule Playground: a warning for long co-signer rules …<br>• Learn Tau Language: a new lesson for logic people, “Only what the rule forces” …<br>• and the week's other changes, each with its link</p>
+      <p><b>What it costs</b><br>The monthly bills are €25.34 + $431.09 (server, tools, domains).</p>
+    </div>
+    <p class="fine">The numbers are those of the week 6–13 Nov 2026 as our server read them on 13 Nov. The log is written in English. Nothing in it is secret: it gathers in one place what the testnet and the site did that week.</p>
+  </dialog>
   <main class="opts">
     <section class="opt paid" aria-labelledby="hPaid">
       <p class="k">Option 1 · monthly · paid</p>
-      <h3 id="hPaid">Join the Tau HUD crew</h3>
+      <h3 id="hPaid">Support monthly, cancel any time</h3>
       <div class="cols"><div>
-      <p>A paid monthly membership in our shop at Fourthwall. Two levels:</p>
+      <p>A paid monthly membership in our Fourthwall shop: the Tau HUD crew. No duties. Two levels:</p>
       <ul class="tiers">
         <li><b translate="no">Deckhand</b><span class="pr" id="pDeck">€4.17 <small>a month</small></span><span class="ben">10 % off products in the shop</span></li>
         <li><b translate="no">Navigator</b><span class="pr" id="pNav">€10.71 <small>a month</small></span><span class="ben">20 % off products in the shop</span></li>
       </ul>
-      <p class="ben2">Both levels also get the ship log: a members-only post every Monday on the week on the testnet and Tau HUD, written by the server.</p>
-      <p class="ben2">The shop is open: knitted sweaters, tees, stickers and a mug. The discount comes off at checkout. <a href="https://tau-hud-shop.fourthwall.com/" target="_blank" rel="noopener">See the shop ›</a></p>
+      <p class="ben2">Both levels also get the ship log, a members-only post every Monday on the week on the testnet and Tau HUD. <button type="button" class="lk" id="logOpen">Read a sample ›</button></p>
       <p class="paidnote">Prices include 19 % German VAT; the shop shows your country's price before you pay. Renews every month until you cancel.</p>
       <div class="act"><a class="b go" id="shop" href="https://tau-hud-shop.fourthwall.com/supporters/pricing" target="_blank" rel="noopener">Become a member at Fourthwall ›</a></div>
       </div>
       <ul class="terms">
+        <li><span><b>The shop.</b> <span>The shop is open, and the discount comes off at checkout.</span> <a href="https://tau-hud-shop.fourthwall.com/" target="_blank" rel="noopener">See the shop ›</a></span></li>
         <li><span><b>Cancelling.</b> Cancel any time in your account in the shop; access runs to the end of the month you paid for. In the EU, EEA and UK you can withdraw from a new membership within 14 days.</span></li>
         <li><span><b>Who sells it.</b> Fourthwall, Inc. is the seller and takes the payment. The person who runs Tau HUD provides the benefits, receives the membership income and can see the membership in the shop's dashboard.</span></li>
         <li><span><a href="https://fourthwall.com/legal/merchandise-terms-of-service" target="_blank" rel="noopener">Fourthwall's terms for buyers</a> · <a href="https://fourthwall.com/privacy-policy" target="_blank" rel="noopener">Fourthwall's privacy policy</a> · <a href="../legal/#shop-en">our privacy notice</a></span></li>
@@ -152,6 +172,11 @@ fetch("../assets/costs.json", { cache: "no-store" }).then(r => r.json()).then(C 
   $("billsLine").hidden = false;
 }).catch(() => {});
 })();
+
+/* a sample of the ship log, opened over the page */
+(() => { const d = document.getElementById("logDlg"), o = document.getElementById("logOpen"); if (!d || !o || !d.showModal) { if (o) o.hidden = true; return; }
+  o.addEventListener("click", () => d.showModal()); document.getElementById("logClose").addEventListener("click", () => d.close());
+  d.addEventListener("click", e => { if (e.target === d) d.close(); }); })();
 </script>
 </body>
 </html>
