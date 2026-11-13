@@ -1375,7 +1375,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
         <p class="small" id="copyMsg2" aria-live="polite">Check the address against this page before sending; never trust a copy of it from elsewhere.</p>
       </article>
       </div>
-      <article class="panel">
+      <article class="panel" id="updLog">
         <h2>Update log <small>built from your feedback</small><button class="info" type="button" aria-label="What is this?" data-tip="What changed and when, newest first. The green number is the site version: it goes up one step with every release on any page, and a new page or big feature starts the next whole number. The name beside it says which part of the site changed and opens it. Before v17.54 only the HUD had numbers.">i</button></h2>
         <div class="effort" id="effortUpd" hidden data-ex="effort"><div><b data-n="commits">—</b><span>changes</span></div><div><b data-n="days">—</b><span>days</span></div><div><b data-n="releases">—</b><span>releases</span></div><em data-n="since"></em></div>
         <p class="loglegend"><i class="ver"></i>Site version, one step per release · <i></i>Part of the site that changed (the name opens it) · Newest first</p>
@@ -4041,7 +4041,13 @@ requestAnimationFrame(draw);
 })();
 
 const openModal = id => { const m = $(id); m.hidden = false; const f = m.querySelector("textarea, input, button.close"); if (f) f.focus(); };
-const closeModals = () => document.querySelectorAll(".modal").forEach(m => m.hidden = true);
+const closeModals = () => { document.querySelectorAll(".modal").forEach(m => m.hidden = true); try { if (location.hash === "#updates") history.replaceState(null, "", location.pathname + location.search); } catch (e) {} };
+/* the /#updates link: the same overlay, scrolled to the Update log (no focus on the feedback box, so no phone keyboard); #updates stays in the address while it is open, so a reload shows it again, and closing drops it */
+function showLog() {
+  const m = $("mFeedback"), log = $("updLog"); m.hidden = false;
+  const c = m.querySelector("button.close"); if (c) c.focus({ preventScroll: true });
+  const go = () => log.scrollIntoView({ block: "start" }); go(); requestAnimationFrame(go); setTimeout(go, 400);
+}
 document.querySelectorAll("[data-open]").forEach(b => b.addEventListener("click", () => openModal(b.dataset.open)));
 document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", closeModals));
 document.querySelectorAll("[data-focus]").forEach(b => b.addEventListener("click", () => setTimeout(() => $(b.dataset.focus).scrollIntoView({ block: "start" }), 50)));
@@ -4379,17 +4385,24 @@ function doorProof() {
 setInterval(doorProof, 1000); doorProof();
 document.querySelectorAll(".doors a, .doors .gm a").forEach(a => a.addEventListener("click", () => leaveCalm(true)));
 $("btnState").onclick = $("chipCons").onclick = $("btnState2").onclick = $("btnState3").onclick = showState;
-document.addEventListener("tau-nav", e => { const act = { tour: () => tourShow(0), about: () => openModal("mAbout"), donate: () => { openModal("mAbout"); setTimeout(() => $("donate").scrollIntoView({ block: "start" }), 50); }, updates: () => openModal("mFeedback"), state: showState }[e.detail]; if (act) act(); });
-/* links from the subpages land here: /#chain-state, /#updates, /#about, /?tour=1 */
-addEventListener("DOMContentLoaded", () => {
+document.addEventListener("tau-nav", e => { const act = { tour: () => tourShow(0), about: () => openModal("mAbout"), donate: () => { openModal("mAbout"); setTimeout(() => $("donate").scrollIntoView({ block: "start" }), 50); }, updates: showLog, state: showState }[e.detail]; if (act) act(); });
+/* links from the subpages, posts and mails land here: /#chain-state, /#updates, /#about, /#donate, /?tour=1; also when the page is already open */
+const LINK_ACT = { "chain-state": "state", updates: "updates", about: "about", donate: "donate" };
+const fromLink = (first) => {
   const q = new URLSearchParams(location.search), h = location.hash.replace("#", "");
-  const act = q.get("tour") ? "tour" : { "chain-state": "state", updates: "updates", about: "about", donate: "donate" }[h];
-  const mode = q.get("mode");
-  if (mode === "sim" || mode === "live") { try { history.replaceState(null, "", location.pathname); } catch (e) {} setTimeout(() => $(mode === "sim" ? "btnSim" : "btnLive").click(), 300); }
+  const act = first && q.get("tour") ? "tour" : LINK_ACT[h];
   if (!act) return;
-  try { history.replaceState(null, "", location.pathname); } catch (e) {}
-  setTimeout(() => { if (act === "tour") { tourOffered = true; $("tourOffer") && ($("tourOffer").hidden = true); } document.dispatchEvent(new CustomEvent("tau-nav", { detail: act })); }, 500);
+  if (act !== "updates") try { const u = new URL(location.href); u.hash = ""; if (act === "tour") u.searchParams.delete("tour"); history.replaceState(null, "", u.pathname + u.search); } catch (e) {}
+  const go = () => { if (act === "tour") { tourOffered = true; $("tourOffer") && ($("tourOffer").hidden = true); } document.dispatchEvent(new CustomEvent("tau-nav", { detail: act })); };
+  if (first) setTimeout(go, 500); else go();
+};
+addEventListener("DOMContentLoaded", () => {
+  const mode = new URLSearchParams(location.search).get("mode");
+  if (mode === "sim" || mode === "live") { setTimeout(() => $(mode === "sim" ? "btnSim" : "btnLive").click(), 300); }
+  fromLink(true);
+  if (mode === "sim" || mode === "live") { try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) {} }
 });
+addEventListener("hashchange", () => fromLink(false));
 $("statePanelCard").addEventListener("click", e => { if (!e.target.closest(".info, .gazad")) showState(); }); $("statePanelCard").style.cursor = "pointer";
 $("feedRej").onclick = () => { const on = $("feedRej").getAttribute("aria-pressed") !== "true"; $("feedRej").setAttribute("aria-pressed", String(on)); $("feed").classList.toggle("only-rej", on); };
 $("chainSub").onclick = () => { selectedBlock = null; ribbonReset(); const last = S.blocks[S.blocks.length - 1]; if (last) showBlock(last, false); }; $("chainSub").style.cursor = "pointer";
