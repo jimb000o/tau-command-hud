@@ -126,6 +126,36 @@ ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; gr
 .done .chainrow i.me { border-color: var(--ok); border-style: solid; background: rgba(57,255,138,.18); box-shadow: 0 0 18px rgba(57,255,138,.4); animation: none; }
 .chainrow em { position: absolute; left: 50%; top: calc(100% + 6px); transform: translateX(-50%); font: 11px var(--mono); color: var(--dim); font-style: normal; white-space: nowrap; }
 .done .chainrow em { color: var(--ok); }
+/* the real blocks: the newest three with their numbers, and the one that comes next with a countdown; a new block lights up as it arrives */
+.chainrow i:not(.me) em { font-size: 10px; top: auto; bottom: calc(100% + 6px); opacity: .8; }
+.chainrow i.me em { text-align: center; line-height: 1.35; }
+.chainrow i.me em b { display: block; color: var(--text); font-weight: 600; }
+.waiting .chainrow i.me em b { color: var(--sim); }
+.chainrow.tick i:nth-child(3) { animation: arrive .9s ease-out; }
+@keyframes arrive { from { border-color: var(--ok); background: rgba(57,255,138,.35); box-shadow: 0 0 16px rgba(57,255,138,.5); } }
+.step.tick { animation: sealpulse 1.8s ease-out; }
+@keyframes sealpulse { from { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok), 0 0 60px -8px rgba(57,255,138,.7); } }
+/* a transaction's way into a block, step by step: signed here, taken by the node, the next block counting down, sealed */
+ol.jr { list-style: none; margin: 0 0 2px; padding: 0; display: grid; gap: 1px; font-size: 11.5px; line-height: 1.45; }
+ol.jr li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 6px; align-items: baseline; color: var(--dim); }
+ol.jr li::before { content: "○"; text-align: center; }
+ol.jr li.done { color: var(--text); } ol.jr li.done::before { content: "✓"; color: var(--ok); font-weight: 700; }
+ol.jr li.now { color: var(--sim); font-weight: 600; } ol.jr li.now::before { content: "●"; animation: blink 1.2s infinite; }
+ol.jr li.sealed { color: var(--ok); font-weight: 600; }
+/* Agorzilla's meal sealed while you watch: the card celebrates */
+.feastmsg { position: absolute; left: 12px; right: 12px; top: 58px; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; pointer-events: none; opacity: 0; }
+.feastmsg b { font: 700 22px/1.2 var(--display); color: var(--ok); text-shadow: 0 0 22px rgba(57,255,138,.6); }
+.feastmsg span { font: 12px var(--mono); color: var(--text); background: rgba(9,9,10,.8); border-radius: 6px; padding: 2px 8px; }
+.step.feast { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok), 0 0 70px -10px rgba(57,255,138,.65); }
+.step.feast .feastmsg { animation: feastin 7s ease-out both; }
+.step.feast > p { animation: hidefor 7s step-end both; }
+@keyframes hidefor { 0% { visibility: hidden; } 100% { visibility: visible; } }
+@keyframes feastin { 0% { opacity: 0; transform: translateY(10px) scale(.9); } 8%, 82% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+.step.feast .creature { animation: chomp .42s ease-in-out 4; filter: drop-shadow(0 0 26px rgba(57,255,138,.55)); }
+@keyframes chomp { 50% { transform: translateY(-10px) scale(1.07, .95); } }
+.spark { position: absolute; left: 50%; top: 50%; z-index: 2; color: var(--ok); font-style: normal; font-size: 14px; pointer-events: none; animation: spark 1.6s cubic-bezier(.15,.7,.3,1) both; text-shadow: 0 0 8px rgba(57,255,138,.8); }
+@keyframes spark { from { transform: translate(-50%, -50%) scale(.4); opacity: 1; } to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .step.feast .creature, .spark, .chainrow.tick i, ol.jr li.now::before { animation: none; } .spark { display: none; } .step.feast .feastmsg { animation: none; opacity: 1; } }
 .creature { height: min(150px, 100%); max-width: 70%; object-fit: contain; filter: drop-shadow(0 10px 22px rgba(0,0,0,.7)) grayscale(.3); transition: filter .6s, transform .6s; }
 .agzpic { position: relative; display: block; aspect-ratio: 760 / 1140; } .agzpic img { display: block; width: 100%; height: 100%; }
 .done .creature { filter: drop-shadow(0 10px 22px rgba(57,255,138,.25)); transform: translateY(-4px); }
@@ -164,6 +194,10 @@ html.fit .wrap { zoom: var(--z); height: var(--fitH); padding: 6px 0 8px; gap: 1
 html.fit #tip { zoom: var(--z); }
 html.fit ol.steps { flex: 1 1 0; min-height: 0; }
 html.fit .step { overflow: hidden; }
+html.fit .vis { flex: 1 1 0; min-height: 64px; }   /* the picture gives way when a card has more to say (the way into a block, the end) */
+html.fit .step.waiting > p, html.fit .step.feast > p { display: none; }   /* while a transaction is on its way the card shows its way, not the explanation */
+html.fit .finale.all .facts { display: none; } html.fit .finale.all { grid-template-columns: minmax(0, 1fr); }
+html.fit .keycard { max-height: 100%; aspect-ratio: auto; height: min(144px, 100%); }
 @media (max-width: 700px) {
   .b { min-height: 44px; flex: 1 1 auto; }
   .step .when { display: none; }
@@ -214,7 +248,7 @@ html.fit .step { overflow: hidden; }
     <li class="step" id="s3">
       <div class="top"><span class="num" aria-hidden="true"></span><h2>Watch it sealed</h2><span class="when">the next block</span></div>
       <p>A block takes your rule in. From then on it is part of the chain’s state, and the Explorer shows it like any other transaction.</p>
-      <div class="vis" aria-hidden="true"><div class="chainrow"><i></i><i></i><i></i><i class="me"><em id="blockNo">next block</em></i></div></div>
+      <div class="vis" aria-hidden="true"><div class="chainrow" id="row3"><i><em></em></i><i><em></em></i><i><em></em></i><i class="me"><em id="blockNo">next block</em></i></div></div>
       <div class="acts"><a class="b go" id="go3" href="/explorer/" aria-disabled="true">See it in the Explorer</a></div>
       <div class="say" id="say3"><span>Waiting for step 2.</span></div>
     </li>
@@ -222,6 +256,7 @@ html.fit .step { overflow: hidden; }
       <div class="top"><span class="num" aria-hidden="true"></span><h2>Feed Agorzilla</h2><span class="when">5 test AGRS</span></div>
       <p>One creature the whole testnet feeds. Each meal is a payment, and every evening the wallets that fed it <b>vote on how it changes</b>.</p>
       <div class="vis" aria-hidden="true"><span class="creature agzpic" data-agz-look><img class="agz-fur" src="../assets/agorzilla.webp" alt=""><i class="agz-pl"></i></span></div>
+      <div class="feastmsg" id="feastMsg" aria-live="polite"></div>
       <div class="acts"><a class="b go" id="go4" href="/wallet/?from=start">Feed it from my wallet</a><a class="b" href="https://agorzilla.com" target="_blank" rel="noopener">Meet it first ↗</a></div>
       <div class="say" id="say4"><span>Agorzilla lives on the real testnet.</span></div>
     </li>
@@ -298,9 +333,13 @@ function connect() {
   let ws;
   try { ws = new WebSocket(NODE); } catch (e) { return offline(); }
   S.ws = ws;
-  ws.onopen = () => { S.retry = 5000; ws.send("hello version=1"); setState("ok", "Live", "Live\nConnected to node.tauhud.com.\nThis page reads Tau Testnet Alpha."); follow(); };
+  ws.onopen = () => { S.retry = 5000; ws.send("hello version=1"); ws.send("getblocks 12"); setState("ok", "Live", "Live\nConnected to node.tauhud.com.\nThis page reads Tau Testnet Alpha."); follow(); };
   ws.onmessage = ev => {
     let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; }
+    if (m.command === "getblocks" && m.status === "ok" && m.data) {   // the newest blocks, then each new one as the relay sees it sealed
+      if (noteBlocks(m.data.blocks, m.data.reset, !!m.data.pushed)) { render(); checkOpen(); if (m.data.pushed) follow(); }
+      return;
+    }
     if (m.command !== "gettxstatus") return;
     const q = waiting.get("tx"); if (q && q.length) q.shift()(m);
   };
@@ -338,6 +377,94 @@ async function loadPlaces() {
   render();
 }
 
+/* ---------- the chain's pulse: the newest blocks, so a card shows which block comes next and about when ---------- */
+const CH = { blocks: [], gap: null, skew: null, tickAt: 0 };   // blocks: [{n, ts, ids}] oldest first; gap: the usual seconds between two blocks
+function noteBlocks(list, reset, pushed) {
+  if (reset) CH.blocks = [];
+  const have = new Set(CH.blocks.map(b => b.n));
+  let added = false;
+  for (const b of list || []) {
+    const h = (b && b.header) || {}, n = Number(h.block_number), t = Number(h.timestamp);
+    if (!n || !t || have.has(n)) continue;
+    CH.blocks.push({ n, ts: t > 1e12 ? t / 1000 : t, ids: new Set((b.tx_ids || []).map(x => String(x).toLowerCase())) });
+    have.add(n); added = true;
+  }
+  if (!added) return false;
+  CH.blocks.sort((a, b) => a.n - b.n); CH.blocks = CH.blocks.slice(-12);
+  const gaps = [];
+  for (let i = 1; i < CH.blocks.length; i++) if (CH.blocks[i].n === CH.blocks[i - 1].n + 1) { const g = CH.blocks[i].ts - CH.blocks[i - 1].ts; if (g > 0 && g < 900) gaps.push(g); }
+  if (gaps.length) { gaps.sort((a, b) => a - b); CH.gap = gaps[gaps.length >> 1]; }
+  if (pushed) {   // the block just arrived: how far this browser's clock is from the chain's (the smallest gap seen, so polling delays drop out)
+    const d = Date.now() / 1000 - CH.blocks[CH.blocks.length - 1].ts;
+    CH.skew = CH.skew == null ? d : Math.min(CH.skew, d); CH.tickAt = Date.now();
+  }
+  /* one of ours in a new block: sealed now, without waiting for the next status check */
+  for (const x of [S.live.find(isRule), S.live.find(isMeal)]) {
+    if (!x || !x.hash) continue;
+    const b = CH.blocks.find(b => b.ids.has(String(x.hash).toLowerCase()));
+    if (b) S.status.set(x.hash, { status: "in", block: b.n });
+  }
+  return true;
+}
+function simPulse() {
+  const h = TauSim.head(); if (!h) return;
+  if (CH.blocks.length && CH.blocks[CH.blocks.length - 1].n !== h) CH.tickAt = Date.now();
+  CH.blocks = [h - 2, h - 1, h].filter(n => n > 0).map(n => ({ n, ts: TauSim.ts(n), ids: new Set() })); CH.gap = TauSim.pace || 8; CH.skew = 0;
+}
+/* seconds until the next block is due (below 0: it is late), null before the first block is known */
+function dueIn() {
+  const last = CH.blocks[CH.blocks.length - 1]; if (!last) return null;
+  return Math.round(last.ts + (CH.skew || 0) + (CH.gap || (SIM ? 8 : 60)) - Date.now() / 1000);
+}
+function dueText() {
+  const s = dueIn(), gap = CH.gap || (SIM ? 8 : 60);
+  if (s == null) return T("next block soon");
+  if (s > 0) return F("next block in about {n} s", { n: s });
+  return T(s > -2 * gap ? "next block any moment now" : "the chain is slower than usual just now");
+}
+const blockNo = n => n == null ? "" : "#" + Number(n).toLocaleString("de-DE");
+/* step 3's row: the newest three blocks, and the next one (yours while your rule waits) */
+function paintRow() {
+  const r = rule(), row = $("row3"), boxes = row.querySelectorAll("i:not(.me) em"), sealedAt = r && sealed(r) ? r.status.block : null;
+  const last = CH.blocks.length ? CH.blocks[CH.blocks.length - 1].n : null;
+  const past = sealedAt != null ? [sealedAt - 3, sealedAt - 2, sealedAt - 1] : last != null ? [last - 2, last - 1, last] : [null, null, null];
+  boxes.forEach((e, i) => { e.textContent = past[i] > 0 ? blockNo(past[i]) : ""; });
+  const me = $("blockNo");
+  if (sealedAt != null) me.replaceChildren(el("b", { text: blockNo(sealedAt) }), T("your rule"));
+  else if (r && r.status.status !== "out") me.replaceChildren(el("b", { text: last != null ? blockNo(last + 1) : T("next block") }), dueShort());
+  else me.replaceChildren(el("b", { text: last != null ? blockNo(last + 1) : T("next block") }), last != null ? dueShort() : "");
+  if (CH.tickAt && Date.now() - CH.tickAt < 1500 && row.dataset.tick !== String(CH.tickAt)) { row.dataset.tick = String(CH.tickAt); row.classList.remove("tick"); void row.offsetWidth; row.classList.add("tick"); }
+}
+function dueShort() { const s = dueIn(); return s == null ? "" : s > 0 ? F("in ~{n} s", { n: s }) : T("any moment"); }
+/* a transaction's way into a block, for steps 3 and 4 */
+function journey(x) {
+  const inb = sealed(x), took = inb || x.status.status === "queued" || x.status.status === "in";
+  const li = (cls, text) => el("li", { class: cls, text });
+  return el("ol", { class: "jr" },
+    li("done", T("Signed in your browser")),
+    li(took ? "done" : "now", T(took ? "The node took it and passed it on" : "Handing it to the node…")),
+    inb ? null : li(took ? "now cd" : "", dueText()),
+    inb ? li("done sealed", x.status.block != null ? F("Sealed in block {n}", { n: blockNo(x.status.block) }) : T("Sealed in a block")) : li("", T("Sealed in a block")));
+}
+/* once a second: the countdowns move, nothing else is redrawn */
+function tickClock() {
+  if (SIM) simPulse();
+  paintRow();
+  document.querySelectorAll("ol.jr li.cd").forEach(e => { e.textContent = dueText(); });
+}
+/* Agorzilla's meal sealed while the page is open: a moment to celebrate */
+function feast(n) {
+  const c = $("s4"), vis = c.querySelector(".vis");
+  $("feastMsg").replaceChildren(el("b", { text: T("Agorzilla ate your meal!") }), el("span", { text: n != null ? F("Sealed in block {n}. Every node of the testnet holds it now.", { n: blockNo(n) }) : T("Sealed in a block. Every node of the testnet holds it now.") }));
+  c.classList.remove("feast"); void c.offsetWidth; c.classList.add("feast");
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) for (let i = 0; i < 28; i++) {
+    const a = Math.random() * Math.PI * 2, d = 50 + Math.random() * 110, sp = el("i", { class: "spark", text: ["✦", "•", "✧", "♦"][i % 4] });
+    sp.style.setProperty("--dx", Math.round(Math.cos(a) * d) + "px"); sp.style.setProperty("--dy", Math.round(Math.sin(a) * d - 24) + "px"); sp.style.animationDelay = (Math.random() * .3).toFixed(2) + "s";
+    vis.append(sp); setTimeout(() => sp.remove(), 2200);
+  }
+  clearTimeout(feast.t); feast.t = setTimeout(() => c.classList.remove("feast"), 7200);
+}
+
 /* ---------- the four cards ---------- */
 function say(n, ...kids) { $("say" + n).replaceChildren(...kids.map(k => typeof k === "string" ? el("span", { text: k }) : k)); }
 function render() {
@@ -359,7 +486,13 @@ function render() {
   $("print").replaceChildren(...bars.slice(0, 8).map(hgt => el("i", { style: "height:" + hgt + "px" })));
   $("kAddr").textContent = S.pk ? short(S.pk) : T("no key yet");
   $("s3").classList.toggle("waiting", !!r && !sealed(r) && r.status.status !== "out");
-  $("blockNo").textContent = r && sealed(r) && r.status.block != null ? "#" + r.status.block : T("next block");
+  $("s4").classList.toggle("waiting", !!m && !sealed(m) && m.status.status !== "out");
+  paintRow();
+  /* sealed while you watch: step 3 lights up, step 4 celebrates (not for a meal that was already in a block when the page opened) */
+  const ms = !!m && sealed(m), rs = !!r && sealed(r);
+  if (S.mealWas === false && ms && Date.now() - (m.at || 0) < 15 * 60000) feast(m.status.block);
+  if (S.ruleWas === false && rs) { const c = $("s3"); c.classList.remove("tick"); void c.offsetWidth; c.classList.add("tick"); }
+  S.mealWas = ms; S.ruleWas = rs;
 
   /* 1: the wallet */
   $("go1").href = "/wallet/?from=start" + sim + lang;
@@ -384,14 +517,14 @@ function render() {
   if (r && sealed(r)) {
     g3.setAttribute("aria-disabled", "false");
     g3.href = r.sim ? "/explorer/?mode=sim" + (r.hash ? "&q=" + r.hash : "") : "/explorer/?q=" + (r.hash || S.pk);
-    say(3, el("b", { class: "ok", text: r.status.block != null ? F("Sealed in block #{n}.", { n: r.status.block }) : T("Sealed in a block.") }), T(r.sim ? "On the simulation. Every node there now checks your payments against it." : "Every node of the testnet now checks your payments against it."));
+    say(3, el("b", { class: "ok", text: r.status.block != null ? F("Sealed in block #{n}.", { n: Number(r.status.block).toLocaleString("de-DE") }) : T("Sealed in a block.") }), T(r.sim ? "On the simulation. Every node there now checks your payments against it." : "Every node of the testnet now checks your payments against it."));
   } else if (r && r.status.status === "out") {
     g3.setAttribute("aria-disabled", "true");
     say(3, el("b", { text: T("The node did not take this one.") }), T("Open the wallet: Activity says why, and you can sign it again."));
   } else if (r) {
     g3.setAttribute("aria-disabled", r.hash ? "false" : "true"); g3.href = "/explorer/?" + (r.sim ? "mode=sim&" : "") + "q=" + (r.hash || "");
     g3.textContent = T("See it in the Explorer");
-    say(3, el("b", { class: "wait", text: T("On its way to a block…") }), T(r.sim ? "The simulation makes a block every eight seconds; this card turns green by itself." : "The testnet makes a block about every minute; this card turns green by itself."));
+    say(3, journey(r), T("This card turns green the moment a block takes your rule in."));
   } else { g3.setAttribute("aria-disabled", "true"); say(3, T("Waiting for step 2.")); }
 
   /* 4: a meal, always on the real testnet */
@@ -399,7 +532,7 @@ function render() {
   $("go4").setAttribute("aria-disabled", S.pk ? "false" : "true");
   if (m && sealed(m)) say(4, el("b", { class: "ok", text: T("Agorzilla had your meal.") }), el("span", null, T("Tonight’s vote is open on") + " ", el("a", { href: "https://agorzilla.com", target: "_blank", rel: "noopener", text: "agorzilla.com ↗" })));
   else if (m && m.status.status === "out") say(4, el("b", { text: T("The node did not take this meal.") }), T("Open the wallet: Activity says why."));
-  else if (m) say(4, el("b", { class: "wait", text: T("Your meal is on its way…") }), T("It counts once a block takes it in."));
+  else if (m) say(4, journey(m), T("Stay here: Agorzilla eats the moment a block takes your meal in."));
   else say(4, T("Agorzilla lives on the real testnet."), T(S.pk ? "The wallet fills in the payment; you check it and sign." : "Make your wallet first."));
 
   /* the end */
@@ -465,7 +598,7 @@ function checkOpen() {
   if (!drawer || drawer.was) return;
   if (doneNow()[drawer.idx]) {
     const o = drawer; o.was = true; o.d.classList.add("ok");
-    o.d.append(el("div", { class: "doneflash" }, el("i", { text: "✓" }), el("span", { text: T(["Your wallet is ready.", "Rule signed and sent.", "", "Meal sent."][o.idx]) })));
+    o.d.append(el("div", { class: "doneflash" }, el("i", { text: "✓" }), el("span", { text: T(["Your wallet is ready.", "Rule signed and sent.", "", "Meal sent. Watch it reach Agorzilla."][o.idx]) })));
     setTimeout(() => { if (drawer === o) closeStep(); }, 1600);
   }
 }
@@ -514,7 +647,8 @@ addEventListener("storage", e => { if (e.key && e.key.startsWith("tauhud-wallet"
 addEventListener("pageshow", () => { render(); follow(); });
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { render(); follow(); loadPlaces(); } });
 setInterval(() => { if (!document.hidden) follow(); }, 20000);
-if (SIM) { let seen = TauSim.head(); setInterval(() => { const h = TauSim.head(); if (h !== seen) { seen = h; render(); checkOpen(); } }, 1000); }
+if (SIM) { simPulse(); let seen = TauSim.head(); setInterval(() => { const h = TauSim.head(); if (h !== seen) { seen = h; simPulse(); render(); checkOpen(); } }, 1000); }
+setInterval(() => { if (!document.hidden) tickClock(); }, 1000);
 setInterval(() => { if (!document.hidden) loadPlaces(); }, 120000);
 </script>
 </body>
