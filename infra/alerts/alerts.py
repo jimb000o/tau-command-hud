@@ -4022,7 +4022,7 @@ class Watcher:
         except Exception as exc:  # retried in 30 minutes
             cl["tries"] = cl.get("tries", 0) + 1
             cl["pause_until"] = time.time() + 1800
-            log.warning("crew ship log failed: %r", exc)
+            log.warning("crew ship log failed: %s", crewlog.error_text(exc))
         self.save_state()
 
     async def run(self):
@@ -4372,11 +4372,14 @@ def crewlog_cli(send: bool) -> int:
             for t in crewlog.tiers():
                 print(f"tier:    {t['name']} (id {t['id']}, {t['status'] or 'status ?'}): {t['members'] if t['members'] is not None else '?'} members")
                 print(f"         monthly {', '.join(f'{c} {v}' for c, v in (t.get('monthly') or {}).items()) or '?'} (as stored, before tax) · {str(t.get('description') or '')[:300]!r}")
+        except Exception as exc:
+            print(f"crew:    the Fourthwall API answered with an error: {crewlog.error_text(exc)}")
+            return 1
+        try:   # the newest posts as stored: only a look at how Fourthwall keeps the text, the draft does not need it
             for p in crewlog.posts():
                 print(f"post:    {p.get('id')} {p.get('liveAt', '')} “{p.get('title', '')}” stored as: {str(p.get('description', ''))[:160]!r}")
         except Exception as exc:
-            print(f"crew:    the Fourthwall API answered with an error: {exc}")
-            return 1
+            print(f"post:    the list of posts could not be read ({crewlog.error_text(exc)})")
     w = Watcher()
     try:
         r = w.recap_numbers(time.time())
@@ -4394,7 +4397,7 @@ def crewlog_cli(send: bool) -> int:
     try:
         pid = crewlog.post(title, desc, time.time())
     except Exception as exc:
-        print(f"crew:    posting FAILED: {exc}")
+        print(f"crew:    posting FAILED: {crewlog.error_text(exc)}")
         return 1
     print(f"crew:    posted, members only (post {pid})")
     return 0
