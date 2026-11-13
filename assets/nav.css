@@ -111,10 +111,10 @@ header.trail .dot.none { background: var(--tn-dim); box-shadow: none; animation:
 header.trail .chip.sim b { color: #ffb13b; }
 header.trail .dot.sim { background: #ffb13b; box-shadow: 0 0 8px #ffb13b; }
 /* one dot per pill: the light pills carry their own .dot; the value pills get a quiet one that follows the mode light
-   (green live, amber simulation or behind, red offline, grey while connecting). Page styles for their own .chip never add a second. */
+   (green while live, amber in the simulation, red offline, grey while connecting; the testnet's health shows on the Live light only). Page styles for their own .chip never add a second. */
 header.trail .chip::before { content: none; }
 header.trail .chip.v:not(#tnMode)::before { content: ""; display: inline-block; flex: none; width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; background: var(--tn-ok); box-shadow: 0 0 6px var(--tn-ok); }
-header.trail .chips:has(#tnMode .dot.sim, #tnMode .dot.behind) .chip.v:not(#tnMode)::before { background: #ffb13b; box-shadow: 0 0 6px #ffb13b; }
+header.trail .chips:has(#tnMode .dot.sim) .chip.v:not(#tnMode)::before { background: #ffb13b; box-shadow: 0 0 6px #ffb13b; }
 header.trail .chips:has(#tnMode .dot.off) .chip.v:not(#tnMode)::before { background: #ff4d6d; box-shadow: 0 0 6px #ff4d6d; }
 header.trail .chips:has(#tnMode .dot.none) .chip.v:not(#tnMode)::before { background: var(--tn-dim); box-shadow: none; opacity: .6; }
 header.trail .chip .st { text-decoration: none; font: 600 11px var(--tn-font); letter-spacing: .1em; color: #ffb13b; margin-left: 6px; }

@@ -150,7 +150,10 @@ X_KEYS = {k: os.environ.get(k, "").strip() for k in ("X_API_KEY", "X_API_SECRET"
 # Findings (findings.py) go to X only for real-chain incidents (no blocks reaching us, no peers, a reorg, a busy stretch),
 # at most FINDINGS_X_DAILY_CAP a day.
 X_LINKS = os.environ.get("X_LINKS", "false").lower() in ("1", "true", "yes")
-X_DAILY_CAP = int(os.environ.get("X_DAILY_CAP", 2))   # 12 Nov 2026: the day's best only, not 8 automatic posts
+X_DAILY_CAP = int(os.environ.get("X_DAILY_CAP", 5))   # 13 Nov 2026: up to 5 a day (12 Nov: 2), POST_GAP_MINUTES apart
+# the site's news (new pages and features) carry their link on X ($0.20 instead of $0.015): X shows the page's own preview
+# card, so the post goes without an uploaded picture (X refuses a picture and a link together). X_SITE_LINK=false: as before.
+X_SITE_LINK = os.environ.get("X_SITE_LINK", "true").lower() in ("1", "true", "yes")
 X_MONTHLY_CAP = int(os.environ.get("X_MONTHLY_CAP", 240))
 X_RESERVE = int(os.environ.get("X_RESERVE", 1))
 X_SIM = os.environ.get("X_SIM", "false").lower() in ("1", "true", "yes")
@@ -1470,18 +1473,18 @@ def link_host(link: str) -> str:
 
 def major_x(m: dict) -> str:
     if m.get("lines"):  # a round-up: the title and one short line per change, as many as fit
-        return x_post([m["title"]] + [f"• {l['x']}" for l in m["lines"]], m["link"], foot=X_SITE_NOTE)
+        return x_post([m["title"]] + [f"• {l['x']}" for l in m["lines"]], m["link"], foot=X_SITE_NOTE, with_link=X_SITE_LINK or None)
     if m.get("x_lines"):   # the log's own X text ("x": ["…", "…"]), as written, paragraph by paragraph
-        return x_post(m["x_lines"], m["link"], foot=X_SITE_NOTE)
+        return x_post(m["x_lines"], m["link"], foot=X_SITE_NOTE, with_link=X_SITE_LINK or None)
     t = re.sub(r"^New:\s*", "", m["title"])
-    return x_post([f"New on Tau HUD: {t[:1].upper() + t[1:]}", m["text"]], m["link"], foot=X_SITE_NOTE)
+    return x_post([f"New on Tau HUD: {t[:1].upper() + t[1:]}", m["text"]], m["link"], foot=X_SITE_NOTE, with_link=X_SITE_LINK or None)
 
 
 def catchup_x(majors: list[dict]) -> str:
     """One X post for a backlog: the new pages by name, as many as fit."""
     names = [re.sub(r"^New:\s*", "", m["title"]) for m in majors]
     head = f"{plural(len(majors), 'new page or feature', 'new pages and features')} on Tau HUD"
-    return x_post([head] + [f"• {n[:1].upper() + n[1:]}" for n in names], SITE_LOG_LINK, foot=X_SITE_NOTE)
+    return x_post([head] + [f"• {n[:1].upper() + n[1:]}" for n in names], SITE_LOG_LINK, foot=X_SITE_NOTE, with_link=X_SITE_LINK or None)
 
 
 def digest_slot(t: float) -> float | None:
@@ -3534,7 +3537,7 @@ class Watcher:
                 text_x = major_x(for_x[0]) if len(for_x) == 1 else catchup_x(for_x)
                 st["x_done"] = (st["x_done"] + [m["key"] for m in for_x])[-60:]
                 self.save_state()
-                pic = next((p for p in (post_picture(m.get("image"), m.get("link")) for m in for_x) if p), None)
+                pic = None if X_SITE_LINK else next((p for p in (post_picture(m.get("image"), m.get("link")) for m in for_x) if p), None)
                 await self.post_x(text_x, "site " + ", ".join(m["key"] for m in for_x), now, pic)
             self.save_state()
             return

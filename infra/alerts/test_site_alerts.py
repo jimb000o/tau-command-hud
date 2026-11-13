@@ -48,6 +48,7 @@ def at(day: str, hm: str) -> float:
     return datetime.strptime(f"{day} {hm}", "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc).timestamp()
 
 
+alerts.X_SITE_LINK = False   # the link-free posts (X_SITE_LINK=false); the link itself: test_x_alerts.py
 alerts.Watcher.fetch_updates = lambda self: None  # no network in the test: entries are handed in
 
 
