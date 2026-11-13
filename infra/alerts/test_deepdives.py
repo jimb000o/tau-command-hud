@@ -159,6 +159,18 @@ open(os.path.join(alerts.BLOG_IMG, "2026-11-13-personal-rules-for-everyone-hero.
 check(wa.article_ready({"key": "major:blog-y", "link": art}, t0)
       and alerts.post_picture(None, art).startswith(alerts.NODE_PUBLIC + "/blog/img/2026-11-13-personal-rules-for-everyone-hero.jpg?v="),
       "the article on the site: its post goes at once, with the article's own picture")
+sent, keep_call, keep_fetch = [], alerts.Telegram.call, alerts.Watcher.fetch_updates
+alerts.Telegram.call = lambda self, method, body, ctype: (sent.append((method, json.loads(body))), (True, None, ""))[1]
+alerts.Watcher.fetch_updates = lambda self: [{"tag": "Blog", "on": "2026-11-13", "html": "Blog: x.", "major": {
+    "id": "blog-personal-rules-for-everyone", "title": "Every account can have its own rule", "text": "IDNI changed personal rules.",
+    "link": "/blog/?p=2026-11-13-personal-rules-for-everyone", "image": "/assets/shots/blog-personal-rules-for-everyone.png"}}]
+rc = alerts.repic_cli(["https://t.me/tauHUDcom/812", "blog-personal-rules-for-everyone"])
+check(rc == 0 and sent and sent[0][0] == "editMessageText" and sent[0][1]["message_id"] == 812
+      and "/blog/img/2026-11-13-personal-rules-for-everyone-hero.jpg" in sent[0][1]["link_preview_options"]["url"]
+      and "Every account can have its own rule" in sent[0][1]["text"] and sent[0][1]["reply_markup"]["inline_keyboard"],
+      "up idni repic: the post on Telegram gets the article's picture in place, same text and buttons")
+check(alerts.repic_cli(["812", "no-such-major"]) == 2 and len(sent) == 1, "an unknown major: nothing changed")
+alerts.Telegram.call, alerts.Watcher.fetch_updates = keep_call, keep_fetch
 
 
 # one post a day about Tau HUD itself: after a site update the closer look waits a day; on the poll day the poll is the post

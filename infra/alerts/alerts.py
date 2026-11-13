@@ -4504,8 +4504,35 @@ def crewlog_cli(send: bool) -> int:
     return 0
 
 
+def repic_cli(args: list[str]) -> int:
+    """A site-update post already on Telegram gets its right picture, in place, no new post: up idni repic <the post's
+    t.me link or number> <the major's id in assets/updates.json>. 13 Nov 2026: the personal-rules article went out with
+    the blog list's picture (post_picture now gives an article its own). X cannot be edited."""
+    num = re.search(r"(\d+)\s*$", args[0]) if args else None
+    want = args[1] if len(args) > 1 else ""
+    e = next((x for x in (Watcher([]).fetch_updates() or []) if isinstance(x.get("major"), dict) and x["major"].get("id") == want), None)
+    if not num or not e:
+        print("usage: up idni repic <https://t.me/<channel>/<number>> <major id from assets/updates.json>"
+              + ("" if not num else f"\n(no major named {want!r} in the site's update log)"))
+        return 2
+    m = major_item(e)
+    pic = post_picture(m.get("image"), m.get("link"))
+    if not pic:
+        print("no right picture for it yet (an article: up blog pictures first, once the article is on the site); nothing changed")
+        return 1
+    text, buttons = major_text(m), major_buttons(m)
+    text, buttons = tag_links(text, buttons, tg_kind(text))
+    msg = {"chat_id": TELEGRAM_CHAT, "message_id": int(num.group(1)), "text": text, "parse_mode": "HTML",
+           "link_preview_options": {"url": pic, "prefer_large_media": True, "show_above_text": True}, "reply_markup": buttons}
+    ok, _, err = Telegram().call("editMessageText", json.dumps(msg).encode(), "application/json")
+    print(f"telegram post {num.group(1)}: picture is now {pic}" if ok else f"telegram said no: {err}")
+    return 0 if ok else 1
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    if "--repic" in sys.argv:
+        sys.exit(repic_cli(sys.argv[sys.argv.index("--repic") + 1:]))
     if "--test" in sys.argv:
         sys.exit(send_test())
     if "--crewlog" in sys.argv:
