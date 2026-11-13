@@ -1170,13 +1170,32 @@ body[data-mode="sim"] .nb-now .sim { display: inline; }
 .nbsay { margin: 6px 0 0; font: 13px/1.45 var(--mono); color: var(--text); flex: 0 0 auto; }
 html.nb .nbsay { display: block; }
 .nbsay span { display: block; } .nbsay span.dim { color: var(--dim); font-size: 12px; }
+/* round 2: the core's numbers and sentences first and the drawing smaller; names instead of hashes; rules in words; the chips that need
+   the protocol hidden (one sentence says what today held); the shop notice in the votes column, a single line while a vote runs */
+html.nb .core-panel > h2 { order: -3; }
+html.nb .core-panel > .nbsay { order: -1; margin: 0 0 8px; font-size: 14px; }
+html.nb .core { grid-template-rows: auto minmax(0, 1fr); }
+html.nb .core .readout { order: -1; }
+html.nb .core-panel .mynode { display: none; }
+html.nb:not(.nbmore) .grid .core canvas { max-width: min(100%, 360px); }
+.tx .midp, .clause .pl, .nb-today { display: none; }
+html.nb .tx .mid { display: none; } html.nb .tx .midp { display: block; font-size: 12px; overflow-wrap: anywhere; } html.nb .tx .midp b { color: var(--cyan-hi); font-weight: 600; }
+html.nb .tx .sl .gh { display: none; }
+html.nb .tx.sealed.listed { border-left-color: rgba(57,255,138,.45); box-shadow: none; } html.nb .tx.sealed.listed .sl { color: var(--ok); }
+html.nb .clause { grid-template-columns: 12px minmax(0, 1fr); align-items: start; } html.nb .clause i { margin-top: 3px; }
+html.nb .clause > span:not(.pl) { display: none; }
+html.nb .clause span.pl { display: block; white-space: normal; color: var(--text); font-size: 12px; line-height: 1.4; }
+html.nb .clause span.pl b { display: block; font-weight: 600; color: #fff; } html.nb .clause span.pl b::first-letter { text-transform: uppercase; }
+html.nb #chipCons, html.nb #chipNet, html.nb #chipHeight, html.nb #btnState, html.nb #chipFeeWrap, html.nb #realLine { display: none !important; }
+html.nb .nb-today:not(:empty) { display: block; margin: 2px 0 0; font: 12px/1.4 var(--mono); color: var(--dim); }
+.a-upd.has-gaz > .updates { flex: 0 1 auto; }
 @media (min-width: 1101px) {
   /* html.wide sets its own height and zoom (--z): 100% there would be scaled past the bottom of the screen */
   html.nb:not(.nbmore):not(.wide), html.nb:not(.nbmore):not(.wide) body { height: 100%; }
   html.nb:not(.nbmore):not(.wide) body:not(.calm) .wrap { height: 100%; }
   html.nb:not(.nbmore) body:not(.calm) .wrap > .grid { flex: 1 1 0; min-height: 0; }
   html.nb:not(.nbmore) .grid .scroll { max-height: none; }
-  html.nb:not(.nbmore) .grid .core canvas { width: auto; height: 100%; max-width: 100%; max-height: 100%; }
+  html.nb:not(.nbmore) .grid .core canvas { width: auto; height: 100%; max-width: 100%; max-height: min(100%, 420px); align-self: center; }
   html.nb:not(.nbmore) .grid > .panel { overflow: hidden; }
 }
 @media (max-width: 1100px) {
@@ -1269,6 +1288,7 @@ html.nb .nbsay { display: block; }
   <section class="nbhead" id="nbHead" aria-label="Start here">
     <div class="nb-main">
       <p class="nb-tag">Tau Net is a blockchain where wallets can put rules on their own money, and the chain’s own rules change only when its validators agree. <span class="nb-live">This is its test chain, live.</span><span class="nb-simt">What you see now is a simulation of its test chain; Live node at the top shows the real one.</span></p>
+      <p class="nb-today" id="nbToday"></p>
       <p class="nb-now" id="nbNow" aria-live="polite"><span class="sim">Simulation</span><span id="nbNowText">Waiting for the next block…</span></p>
     </div>
     <div class="nb-do">
@@ -1680,7 +1700,7 @@ function sealMark(el, h) {
 function ghostMark(el, on) {
   if (el.classList.contains("listed") === on) return;
   el.classList.toggle("listed", on); el.title = on ? "Ghost transaction: already in a block, still listed by the node (known bug, IDNI #81)" : "";
-  const sl = el.querySelector(".sl"); if (sl) sl.textContent = `${on ? "ghost " : ""}✓ #${el.dataset.h}`;
+  const sl = el.querySelector(".sl"); if (sl) sl.innerHTML = `${on ? '<i class="gh">ghost </i>' : ""}✓ #${esc(el.dataset.h)}`;
 }
 /* the relay compares the listed transactions with the whole chain it keeps (/health-score): how many are in fact sealed,
    and how long the oldest really waiting one has waited since the relay first saw it, not since this page opened */
@@ -2566,6 +2586,35 @@ const PLAIN_LABEL = {
   consensus_rule_update: "Proposal to change the chain’s rules", consensus_rule_vote: "Vote on a rule change",
   approval_request: "Payment waiting for a co-signer", transfer_vote: "Co-signer signed",
 };
+/* who a wallet is, in words: names we know from the chain (assets/origins.js), else "a wallet"; never a hash */
+const NB_TAG = { idni: "an IDNI genesis wallet", bot: "our island bot", cruise: "a simulated cruise passenger", rabbit: "a White Rabbit Key player", nomemo: "a No Memo player", agorzilla: "an Agorzilla player" };
+const NB_BOX = { agorzilla: "Agorzilla", deja: "Déjà the café cat", rabbit: "White Rabbit Key" };
+function nbWho(a) {
+  const h = String(a || "").toLowerCase(); if (!h) return "a wallet";
+  if (h === String(myNodeKey() || "").toLowerCase()) return "your node";
+  try { const k = JSON.parse(localStorage.getItem("tauhud-wallet-key") || "null"); if (k && k.pk && String(k.pk).toLowerCase() === h) return "your wallet"; } catch (e) {}
+  const O = window.TauOrigin; if (!O) return "a wallet";
+  const box = O.of("0", [[null, h]]); if (box && NB_BOX[box.tag]) return NB_BOX[box.tag];
+  const o = O.of(h, [], ""); return (o && NB_TAG[o.tag]) || "a wallet";
+}
+const nbSpan = a => `<span>${esc(nbWho(a))}</span>`;
+function plainBody(t) {
+  if (t.transfers && t.transfers.length) return t.transfers.map(([f, to, a]) => `${nbSpan(f)} → ${nbSpan(to)} <b>${fmt(a)} AGRS</b>`).join(" · ");
+  return (t.rejected ? nbSpan(t.sender) : `<span>sent by ${esc(nbWho(t.sender))}</span>`) + (t.rejected ? ` · <span>${esc(String(t.rejected).replace(/^refused( at the door)?\s*·\s*/i, "") || "the rules said no")}</span>` : "");
+}
+/* a wallet's own rule as one plain sentence (the policy labels carry the numbers) */
+function nbRule(p) {
+  const n = (/above ([\d.,]+)/.exec(p.label || "") || [])[1], h = (/block #([\d.,]+)/.exec(p.label || "") || [])[1], tm = (/until (\d\d:\d\d(:\d\d)?)/.exec(p.label || "") || [])[1];
+  switch (p.kind) {
+    case "limit": return n ? `may send at most ${n} AGRS per payment` : "has a spending limit";
+    case "whitelist": return "may only pay one chosen wallet";
+    case "timelock": return tm ? `cannot send anything until ${tm}` : "cannot send anything for now";
+    case "heightlock": return h ? `cannot send anything before block #${h}` : "cannot send anything for now";
+    case "cosign": return n ? `needs a second signature above ${n} AGRS` : "needs a second signature";
+    case "approval": return n ? `needs an approval above ${n} AGRS` : "needs an approval";
+    default: return "has its own rule for its money";
+  }
+}
 function plainLabel(t) {
   if (t.rejected) return /o5/.test(String(t.rejected)) ? "✕ Stopped by the sender’s own rule" : "✕ Refused";
   if (testChange(t)) return "Test change, no effect";
@@ -2589,7 +2638,25 @@ const NB = (() => {
   function more() { sset(MORE, root.classList.contains("nbmore") ? "" : "1"); apply(); }
   /* refusals arrive between blocks: counted until the next block, then told with it */
   function refused(t) { if (/o5/.test(String(t.rejected || ""))) ref.own++; else ref.other++; }
+  /* live: what today held, from the relay's sources count (the line the other levels see as "What is real"), as one sentence:
+     players' and visitors' wallets (White Rabbit Key, No Memo, Agorzilla, Tau HUD pages, other wallets) apart from IDNI's and our servers' */
+  const USERS = ["rabbit", "nomemo", "agorzilla", "tauhud", "other"];
+  let todayAt = 0;
+  async function today() {
+    const box = document.getElementById("nbToday"); if (!box) return;
+    if (S.mode !== "live") { box.textContent = ""; return; }
+    if (Date.now() - todayAt < 300000) return; todayAt = Date.now();
+    try {
+      const r = await fetch("https://node.tauhud.com/api/v1/sources", { cache: "no-store" }); if (!r.ok) return;
+      const j = await r.json(), d = j && j.days && j.days[new Date().toISOString().slice(0, 10)]; if (!d) return;
+      const n = Object.values(d).reduce((a, v) => a + (v && v[0] || 0), 0), u = USERS.reduce((a, g) => a + ((d[g] || [0])[0] || 0), 0);
+      if (S.mode !== "live" || !n) return;
+      box.textContent = u === 1 ? `Today so far: ${fmt(n)} transactions on the testnet, 1 of them from a player’s or visitor’s wallet; the rest from IDNI’s starting wallets and our own servers.`
+        : `Today so far: ${fmt(n)} transactions on the testnet, ${fmt(u)} of them from players’ and visitors’ wallets; the rest from IDNI’s starting wallets and our own servers.`;
+    } catch (e) {}
+  }
   function block(b) {
+    if (root.classList.contains("nb")) { today(); if (!root.classList.contains("nbmore")) fitGazAd(); }
     const k = { pay: 0, rule: 0, share: 0, prop: 0, vote: 0, other: 0 };
     (b.txs || []).forEach(t => {
       const y = t.type;
@@ -2667,7 +2734,7 @@ function txCard(t) {
   const body = txBody(t);
   const txid = S.mode === "live" && t.id && !t.rejected ? `<a class="acct" href="explorer/?tx=${encodeURIComponent(t.id)}" title="Open this transaction in the explorer">${short(t.id)}</a>` : short(t.id);
   if (t.at == null) { t.at = Date.now() / 1000; if (!t.ageKind) t.ageKind = S.mode === "live" ? "seen" : "sim"; }
-  d.innerHTML = `<div class="top"><em>${esc(label)}</em><em class="pl">${esc(plainLabel(t))}</em><span><span class="age"></span><span class="fee"> · <span class="txid">${txid} · </span>${t.feeCap ? "fee ≤ " : "fee "}${t.fee ?? "—"}</span></span></div><div class="mid">${body}</div>`;
+  d.innerHTML = `<div class="top"><em>${esc(label)}</em><em class="pl">${esc(plainLabel(t))}</em><span><span class="age"></span><span class="fee"> · <span class="txid">${txid} · </span>${t.feeCap ? "fee ≤ " : "fee "}${t.fee ?? "—"}</span></span></div><div class="mid">${body}</div><div class="midp">${plainBody(t)}</div>`;
   setAge(d, t.at, t.ageKind || (t.block != null ? "sealed" : "seen"), t.block);
   if (S.mode === "live" && !t.rejected && Number.isFinite(t.block)) sealMark(d, t.block);   // first seen in its block: sealed, never a ghost
   d.dataset.ex = exKey(() => explainTx(t)); d.dataset.detail = dtKey(() => detailTx(t));
@@ -2840,7 +2907,7 @@ function renderClauses() {
     return `<div class="ap ${a.status}" data-full="${esc(TIP[a.status] || "")}"><i></i><span>${acct(a.from)} → ${acct(a.to)} <b>${fmt(a.amount)} AGRS</b></span><span>${LBL[a.status] || a.status}</span></div>`;
   }).join("")}</div>` : "";
   $("clauses").innerHTML = (entries.length ? entries.slice(0, 8).map(([acc, p]) =>
-    `<div class="clause${p.lastRefused && ruleState(p).hot ? " refused" : ""}" data-ex="${exKey(() => explainClause(acc, p) + (p.lastRefused && ruleState(p).hot ? "\nJust refused a transfer from this account." : ""))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${acct(acc)}${isGenesis(acc) ? ` <em class="gen">genesis</em>` : ""}</span><span>${p.name}</span></div>`).join("")
+    `<div class="clause${p.lastRefused && ruleState(p).hot ? " refused" : ""}" data-ex="${exKey(() => explainClause(acc, p) + (p.lastRefused && ruleState(p).hot ? "\nJust refused a transfer from this account." : ""))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${acct(acc)}${isGenesis(acc) ? ` <em class="gen">genesis</em>` : ""}</span><span>${p.name}</span><span class="pl"><b>${esc(nbWho(acc))}</b>${esc(nbRule(p))}</span></div>`).join("")
     : `<div class="empty">No personal rules yet. Each account can program its own transfer policy in Tau.</div>`) + appr;
   // The node composes all accepted clauses into ONE rule per stream (README · Rule sharing)
   const branches = entries.slice(0, 3).map(([acc, p]) => `(i12[t]:bv[384] = { #x${acc.slice(0, 8)}… }:bv[384]) ? ( ${esc(p.body)} )`);
@@ -2997,16 +3064,20 @@ function mountGazAd(host) {
   const a = $("gazAd"), home = $("statePanelCard"), pol = $("polCard"), off = $("offCard");
   if (a.parentElement !== host) { if (host === home) home.insertBefore(a, $("btnState3")); else host.append(a); }
   pol.classList.toggle("has-gaz", host === pol); if (off) off.classList.toggle("has-gaz", host === off);
+  const upd = document.querySelector(".a-upd"); if (upd) upd.classList.toggle("has-gaz", host === upd);
 }
 function fitGazAd() {
   const a = $("gazAd"), home = $("statePanelCard"), pol = $("polCard"), off = $("offCard"); if (!a || !home || !pol) return;
   // its home first while that is in view; else, or when it does not fit there, the panel that has the room
   const away = home.getBoundingClientRect().top > innerHeight - 160;
-  const hosts = (away ? [pol, off, home] : [home, pol, off]).filter(h => h && h.offsetParent !== null);
+  // the beginner view: the votes column has the room (live, a vote is rare); while one runs the notice is its smallest size
+  const nb = NB_ON(), busy = nb && S.updates.some(u => u.status === "voting" || u.status === "scheduled");
+  const hosts = (nb ? [document.querySelector(".a-upd")] : away ? [pol, off, home] : [home, pol, off]).filter(h => h && h.offsetParent !== null);
   const paper = a.firstElementChild, over = () => paper.scrollHeight > paper.clientHeight + 1 || paper.clientHeight < 96;
   for (const host of hosts) {
     mountGazAd(host);
     a.hidden = false; a.classList.remove("c1", "c2", "c3", "c4", "c5");
+    if (busy) a.classList.add("c5");
     let fits = !over();
     for (const c of ["c1", "c2", "c3", "c4", "c5"]) { if (fits) break; a.classList.add(c); fits = !over(); }
     if (fits) { if (a.classList.contains("shop")) shopMark("shop-" + SHOPAD + "-show"); return; }
@@ -3083,7 +3154,7 @@ function renderGazAd() {
 }
 addEventListener("DOMContentLoaded", () => {
   loadGazette(); setInterval(loadGazette, 600000);
-  if ("ResizeObserver" in window) { const ro = new ResizeObserver(() => fitGazAd()); ro.observe($("statePanelCard")); ro.observe($("polCard")); if ($("offCard")) ro.observe($("offCard")); }
+  if ("ResizeObserver" in window) { const ro = new ResizeObserver(() => fitGazAd()); ro.observe($("statePanelCard")); ro.observe($("polCard")); if ($("offCard")) ro.observe($("offCard")); const up = document.querySelector(".a-upd"); if (up) ro.observe(up); }
   // the lists beside the notice fill in later and change how much room is left
   if ("MutationObserver" in window) { let t = 0; const mo = new MutationObserver(() => { clearTimeout(t); t = setTimeout(fitGazAd, 120); }); for (const id of ["clauses", "composite", "offers"]) if ($(id)) mo.observe($(id), { childList: true, subtree: true, characterData: true }); }
   addEventListener("resize", () => fitGazAd());
@@ -3404,7 +3475,7 @@ function liveMessage(ev) {
     return;
   }
   if (msg.command === "gettxstatus") {   // the reason for a refusal the relay listed without one
-    const t = DROP.cards.get(d.tx_hash); if (t && d.status === "rejected" && d.reason) { t.rejected = d.reason; const el = $("tx_" + t.id.slice(0, 16)); if (el) el.querySelector(".mid").textContent = (t.sender ? short(t.sender) + " · " : "") + d.reason; if (/o5/.test(d.reason) && S.clauses.has(t.sender)) { t.policy = S.clauses.get(t.sender); t.policy.lastCheck = performance.now(); t.policy.lastRefused = true; } }
+    const t = DROP.cards.get(d.tx_hash); if (t && d.status === "rejected" && d.reason) { t.rejected = d.reason; const el = $("tx_" + t.id.slice(0, 16)); if (el) { el.querySelector(".mid").textContent = (t.sender ? short(t.sender) + " · " : "") + d.reason; const pm = el.querySelector(".midp"); if (pm) pm.innerHTML = plainBody(t); } if (/o5/.test(d.reason) && S.clauses.has(t.sender)) { t.policy = S.clauses.get(t.sender); t.policy.lastCheck = performance.now(); t.policy.lastRefused = true; } }
     return;
   }
   if (msg.command === "getblocks") {
@@ -4460,7 +4531,7 @@ const NB_TOUR = [
   [".a-upd", "Votes on the chain’s rules", "Even the rules of the chain itself can change, but only when enough validators agree. On other chains that takes a fork and new software; on Tau it is a transaction and a vote."],
   ["#nbFirst", "Now you", "Write your first rule on a test wallet your browser makes for you. About two minutes, no sign-up. Then watch the chain enforce it."],
 ];
-const NB_ON = () => document.documentElement.classList.contains("nb") && !document.documentElement.classList.contains("nbmore");
+function NB_ON() { return document.documentElement.classList.contains("nb") && !document.documentElement.classList.contains("nbmore"); }
 const tourList = () => NB_ON() ? NB_TOUR : TOUR;
 let tourI = -1, tourOffered = false;
 function tourShow(i, from) {
