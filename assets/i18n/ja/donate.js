@@ -139,4 +139,11 @@ TauI18n.add({ strings: {
   "spent {v}": "費用 {v}",
   "donated {v}": "寄付 {v}",
   "due by {d}": "{d} までの支払い予定",
+  "came in {v}": "入金 {v}",
+  "came in": "入金",
+  "shop and crew so far {v}": "ショップとクルーの累計 {v}",
+  "of the costs since {d} not covered by donations, the shop and the crew": "{d} 以降の費用のうち、寄付・ショップ・クルーで賄えていない分",
+  "{p} covered: {v} donated + {e} our share of the shop and the crew, of {w} spent": "{p} を賄えています：支出 {w} のうち、寄付 {v} ＋ ショップとクルーからの当方の取り分 {e}",
+  "Shop and crew count only our share: what members and buyers paid, less Fourthwall's costs and fees and the tax. Estimated by our server from the shop's data.": "ショップとクルーは当方の取り分だけを数えます。会員と購入者が支払った額から、Fourthwall の原価と手数料、税金を引いたものです。ショップのデータからサーバーが見積もっています。",
+  "This month: {g} came in of about {c} it costs": "今月：費用約 {c} に対し入金 {g}",
 } });

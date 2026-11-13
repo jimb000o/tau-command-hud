@@ -499,6 +499,18 @@ if [ "${1:-}" = "crewlog" ]; then
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
+# our share of the shop's sales and the crew's memberships (alerts/earnings.py), drawn on tauhud.com/donate/; the node left
+# alone, safe any time: up earnings  the service rebuilt with the code just pulled, Caddy given earnings.json, the shop
+# read now: each order's numbers beside the share worked out (compare with the shop's dashboard), memberships counted
+if [ "${1:-}" = "earnings" ]; then
+  docker compose up -d --build --no-deps alerts >/dev/null 2>&1 || docker compose up -d --build --no-deps alerts
+  docker compose up -d --no-deps --force-recreate caddy >/dev/null 2>&1 || true
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T alerts python alerts.py --earnings 2>&1 | grep -v " INFO " || true
+  curl -s -o /dev/null -w "         https://node.tauhud.com/earnings.json answers %{http_code}\n" https://node.tauhud.com/earnings.json || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 if [ "${1:-}" = "cost" ] || [ "${1:-}" = "costs" ]; then
   if [ "${2:-}" = "mail" ]; then
     [ -t 0 ] || { echo "needs a terminal: ssh -t root@node.tauhud.com \"cd /opt/tau-command-hud && sh infra/up.sh cost mail\""; exit 2; }
@@ -767,4 +779,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up cost, up crewlog, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up cost, up crewlog, up earnings, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"

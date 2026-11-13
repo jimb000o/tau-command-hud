@@ -139,4 +139,11 @@ TauI18n.add({ strings: {
   "spent {v}": "花费 {v}",
   "donated {v}": "捐赠 {v}",
   "due by {d}": "截至 {d} 应付",
+  "came in {v}": "进账 {v}",
+  "came in": "进账",
+  "shop and crew so far {v}": "商店与船员累计 {v}",
+  "of the costs since {d} not covered by donations, the shop and the crew": "自 {d} 起的花费中未被捐赠、商店和船员会员覆盖的部分",
+  "{p} covered: {v} donated + {e} our share of the shop and the crew, of {w} spent": "已覆盖 {p}：花费 {w}，捐赠 {v}，加上我们在商店和船员会员中的分成 {e}",
+  "Shop and crew count only our share: what members and buyers paid, less Fourthwall's costs and fees and the tax. Estimated by our server from the shop's data.": "商店和船员会员只计算我们的分成：会员和买家支付的金额，减去 Fourthwall 的成本、手续费和税。由我们的服务器根据商店数据估算。",
+  "This month: {g} came in of about {c} it costs": "本月：进账 {g}，花费约 {c}",
 } });
