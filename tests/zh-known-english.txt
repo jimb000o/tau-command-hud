@@ -151,3 +151,6 @@ NO MEMO
 peek
 trace
 claim [n]
+# the crew tiers on /crew/ keep the shop's names
+Deckhand
+Navigator

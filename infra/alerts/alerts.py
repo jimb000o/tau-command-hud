@@ -4371,6 +4371,7 @@ def crewlog_cli(send: bool) -> int:
         try:
             for t in crewlog.tiers():
                 print(f"tier:    {t['name']} (id {t['id']}, {t['status'] or 'status ?'}): {t['members'] if t['members'] is not None else '?'} members")
+                print(f"         monthly {', '.join(f'{c} {v}' for c, v in (t.get('monthly') or {}).items()) or '?'} (as stored, before tax) · {str(t.get('description') or '')[:300]!r}")
             for p in crewlog.posts():
                 print(f"post:    {p.get('id')} {p.get('liveAt', '')} “{p.get('title', '')}” stored as: {str(p.get('description', ''))[:160]!r}")
         except Exception as exc:
