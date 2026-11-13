@@ -4384,7 +4384,8 @@ def crewlog_cli(send: bool) -> int:
         print(f"crew:    no recap numbers ({exc})")
         return 1
     title, desc, crew = crewlog.gather(r, recap.lines(r, SITE), recap.period(r), SITE, paper_out(r))
-    print(f"--- {title} (members only)\n" + re.sub(r"<br>|</p>", "\n", desc).replace("<p>", "").replace("<strong>", "").replace("</strong>", ""))
+    shown = re.sub(r'<a href="([^"]+)">([^<]*)</a>', r"\2 (\1)", re.sub(r"<br>|</p>", "\n", desc))
+    print(f"--- {title} (members only)\n" + html.unescape(re.sub(r"<[^>]+>", "", shown)))
     if not send:
         print("--- dry run: nothing posted. Post this one now: up crewlog send · weekly by itself: up crewlog on")
         return 0
