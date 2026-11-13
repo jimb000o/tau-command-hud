@@ -114,6 +114,7 @@ import gazette
 import ai_meter
 import crewlog
 import idni_digest
+import restart_brief
 import recap
 import rulefacts
 import tickerwatch
@@ -495,7 +496,7 @@ def eta_txt(blocks_left: int, pace: float | None) -> str:
     return f" (~{round(s / 86400)} days)"
 
 
-RESTART_HEADLINE = "The Tau testnet restarted"
+RESTART_HEADLINE = "The Tau Net testnet restarted"
 # What a restart means for a reader's own test wallet, only what the chain itself makes true: the key lives in the
 # browser and still signs; balance and rules lived on the old chain, which is gone.
 RESTART_FOR_YOU = ("For you: a test wallet made on Tau HUD keeps its key in your browser and can sign again on the new chain, "
@@ -605,7 +606,7 @@ def telegram_text(item: dict) -> str:
     if item.get("why"):
         warn = "⚠️ " if item.get("severity") in ("halt", "unsafe") else ""
         out += ["", f"<b>{e(item.get('why_title', 'Why it matters'))}</b>", warn + e(item["why"])]
-    if len(item["what"]) > 1:  # one change is already the headline
+    if len(item["what"]) > 1 or (item["kind"] == "restart" and item["what"]):  # one change is already the headline (not a restart's)
         out += ["", f"<b>{e(item.get('what_title', 'What changes'))}</b>"] + [f"• {e(w)}" for w in item["what"]]
     mean = item.get("meaning")
     if mean:  # exact, not sampled: the same reading as the box on /proposals/
@@ -695,9 +696,10 @@ def x_post(lines: list[str], link: str | None = None, keep: int = 1, foot: str =
 
 
 def x_text(item: dict) -> str:
-    """A rule change on the real chain: the line that says so, the headline, then why it matters as far as it fits."""
+    """A rule change on the real chain: the line that says so, the headline, then why it matters as far as it fits; a
+    restart with its brief: what the new chain brings (restart_brief.py)."""
     icon = ICONS.get(item["kind"], "•")
-    return x_post([f"{icon} {item['headline']}", item.get("why") or item.get("body")], item.get("link"))
+    return x_post([f"{icon} {item['headline']}", item.get("x_line") or item.get("why") or item.get("body")], item.get("link"))
 
 
 def paper_out(r: dict) -> dict | None:
@@ -1012,7 +1014,8 @@ def today_numbers(stats: dict | None, items: list[dict], props: list[dict], onli
     senders = {x for r in rows for x in r[f["senders"]]} if "senders" in f else set()
     recent = [it for it in items if start <= (it.get("seen") or 0) < end and not it.get("folded")]
     practice = {it.get("id") for it in recent if is_practice(it)}
-    events = grouped([it["headline"] for it in reversed(recent) if not is_practice(it) and it["kind"] in ("agreed", "active", "dropped", "restart")])
+    events = grouped([RESTART_HEADLINE if it["kind"] == "restart" else it["headline"]   # a restart post's own title says what came with it
+                      for it in reversed(recent) if not is_practice(it) and it["kind"] in ("agreed", "active", "dropped", "restart")])
     by_id = {p.get("id"): p for p in props}
     proposers = [by_id[i]["proposer"] for i in practice if i in by_id and by_id[i].get("proposer")]
     head = (stats or {}).get("head") or 0
@@ -2559,6 +2562,8 @@ class Watcher:
                     continue
                 if it["kind"] == "proposed" and it.get("thr") == 1 and time.time() - it["seen"] < PROPOSED_HOLD:
                     break  # wait: it may be agreed in a moment; keep the order of posts
+                if it["kind"] == "restart" and not self.restart_ready(it):
+                    break  # wait for what the new chain brings (restart_brief.py), at most RESTART_BRIEF_WAIT_MINUTES
                 if o.name == "x" and not self.x_room():
                     it["posted"][o.name] = "skip"  # over the caps: Telegram, the feed and the page still have it
                     log.info("x: over the daily or monthly cap, left out: %s", it["headline"])
@@ -2578,6 +2583,23 @@ class Watcher:
                     break
                 self.save_state()
                 await asyncio.sleep(3)  # Telegram allows ~20 posts a minute per channel
+
+    def restart_ready(self, it: dict, now: float | None = None, brief: dict | None = None) -> bool:
+        """A restart post goes out once devpulse has written what the new chain brings (restart_brief.py), with it in
+        the post; after RESTART_BRIEF_WAIT_MINUTES without one, or once one outlet has posted it, as it is."""
+        if it.get("brief") or any(v == "ok" for v in it["posted"].values()):
+            return True
+        now = now if now is not None else time.time()
+        b = restart_brief.for_restart(it["seen"], brief)
+        if b is None and now - it["seen"] < restart_brief.WAIT:
+            return False
+        it["brief"] = (b or {}).get("status") or "none"
+        if b:
+            it.update(restart_brief.apply(it, b))
+            self.dirty_public = True
+        log.info("restart post: %s", it["headline"] if it["brief"] == "ready" else f"short ({it['brief']})")
+        self.save_state()
+        return True
 
     # ---------- X: a few posts a day, paid per post ----------
     def x_on(self):

@@ -203,6 +203,8 @@ Never link a change to a past outage, stall or incident unless the commit messag
 anything broken or careless; a fix is progress, say what it makes work.
 - Plain words. No code names, file names, function names, stream names, flags, package names, commit hashes or \
 version numbers; no names of people. Issue or pull request numbers only if they help, at most one.
+- Names: the network is Tau Net and its test network is the Tau Net testnet (Tau Testnet Alpha); never call the \
+network just "Tau". Tau Language is the language rules are written in, and the Tau engine checks them.
 - No hype or marketing words (huge, major, game-changing, finally, exciting, breakthrough), no price talk, no \
 exclamation marks, no emoji.
 - Tests, CI and docs: mention them at most in passing in one point ("more of the test suite now runs in a fixed order"), \
