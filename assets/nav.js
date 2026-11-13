@@ -112,7 +112,7 @@
     { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "services"]], ["The testnet", ["health", "road", "nodes"]]], tab: "≋" },
     { k: "learn", t: "Learn", groups: [["First steps", ["start", "taulang"]], ["Read and watch", ["read", "tau"]]], tab: "▸" },
     { k: "play", t: "Playground", groups: [["Your wallet", ["wallet", "wrules", "guardian"]], ["Practise · simulated", ["practise"]], ["Games on the live testnet", ["rabbit", "nomemo", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
-    { k: "about", t: "About", util: true, groups: [["This site", ["about", "share", "meta", "legal"]], ["Support and reuse", ["support", "shop", "reuse"]]], tab: "i" },
+    { k: "about", t: "About", util: true, groups: [["Support and reuse", ["support", "shop", "reuse"]], ["This site", ["about", "share", "meta", "legal"]]], tab: "i" },
   ];
   SECTIONS.forEach(s => { if (s.groups) s.items = s.groups.flatMap(g => g[1]); });
   const SECTION_OF = { hud: "hud" };
