@@ -1896,14 +1896,18 @@ const o5Neutral = text => { const f = String(text || "").replace(/\s+/g, "").rep
 function policyFromText(text) {
   const s = String(text || "").trim(), num = h => /^#?x?[0-9a-f]+$/i.test(h) && /[a-f]|^#?x/i.test(h) ? parseInt(h.replace(/^#?x/i, ""), 16) : Number(h);
   const who = /i18\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]{8,})/.exec(s), to = /i4\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]{8,})/.exec(s);
-  const amt = /i[12]\[t\][^<>]*[<>]=?\s*\{\s*(#x[0-9a-fA-F]+|\d+)/.exec(s), hgt = /i6\[t\][^<>]*[<>]=?\s*\{\s*(\d+)/.exec(s), ts = /i5\[t\][^<>]*[<>]=?\s*\{\s*(\d+)/.exec(s);
+  const amt = /i1\[t\][^<>]*[<>]=?\s*\{\s*(#x[0-9a-fA-F]+|\d+)/.exec(s), fl = /i2\[t\][^<>]*<\s*\{\s*(#x[0-9a-fA-F]+|\d+)/.exec(s), hgt = /i6\[t\][^<>]*[<>]=?\s*\{\s*(\d+)/.exec(s), ts = /i5\[t\][^<>]*[<>]=?\s*\{\s*(\d+)/.exec(s);
   let p;
   if (who && amt) p = POLICIES.cosign(num(amt[1]), who[1]);
+  else if (to) { p = POLICIES.whitelist(to[1]); if (amt) p.cap = num(amt[1]); }   // a whitelist may cap each payment too
   else if (amt) p = POLICIES.limit(num(amt[1]));
-  else if (to) p = POLICIES.whitelist(to[1]);
   else if (hgt) p = POLICIES.heightlock(Number(hgt[1]));
   else if (ts) p = POLICIES.timelock(Number(ts[1]));
+  else if (fl && !/i1\[t\]/.test(s)) p = { kind: "custom", name: "Balance floor", label: `blocks every transfer while the balance is below ${fmt(num(fl[1]))} AGRS`, blocks: () => false };
   else p = { kind: "custom", name: "Own rule", label: s.length > 72 ? s.slice(0, 69) + "…" : s || "a rule on stream o5", blocks: () => false };
+  // a balance floor (i2 = balance at the parent block) on top of another rule: below it the way is closed
+  if (fl && p.kind !== "custom") { p.floor = num(fl[1]); p.label += ` · below ${fmt(p.floor)} AGRS balance: ${p.kind === "cosign" ? "every payment needs the co-signer" : "nothing leaves"}`; }
+  if (p.cap && p.kind === "whitelist") p.label += ` · at most ${fmt(p.cap)} AGRS each`;
   p.body = s || p.body; return p;
 }
 /* ---------- user policy templates (o5), as documented in WALLET_USAGE.md ---------- */
@@ -2545,7 +2549,10 @@ const policyMeaning = p => !p ? "No own rule: every transfer is allowed." : ({
   custom: `Own rule on stream o5: ${p.label}. The node answers it on every transfer; 0 means refused, whoever holds the key.`,
 }[p.kind] || p.label);
 /* whose rule it is: an account's own rule binds only that account, so the hover names the wallet first */
-const ruleWhose = (a, p) => `Own rule of wallet ${short(a)}${isGenesis(a) ? " (IDNI genesis)" : ""}: ${p.label}.`;
+const ruleWhose = (a, p) => {   // with what we know about the wallet beyond the rule's text: its name, purpose, who runs it (assets/origins.js)
+  const O = window.TauOrigin, nm = O && O.name ? O.name(a) : null, ab = O && O.about ? O.about(a) : null;
+  return (nm ? `Own rule of ${nm}: ${p.label}.` : `Own rule of wallet ${short(a)}${isGenesis(a) ? " (IDNI genesis)" : ""}: ${p.label}.`) + (ab ? "\n" + ab.join("\n") : "");
+};
 const proposalMeaning = u => ({
   fee: `Every transaction would cost ${u.value} AGRS instead of ${S.fee}; the fee rule (o9) in the consensus spec changes.`,
   validator: `A new validator ${short(u.value)} joins the set that seals blocks and votes; the agreement threshold is recomputed from the larger set.`,
@@ -2588,7 +2595,8 @@ function explainOffer(o) {
 }
 const isGenesis = a => { const o = window.TauOrigin && TauOrigin.of(a); return !!o && o.tag === "idni"; };   // assets/origins.js, the same list the account page uses
 function explainClause(acc, p) {
-  return `${isGenesis(acc) ? "IDNI genesis account, one of the 11 the testnet started with. " : ""}${policyMeaning(p)}\nChecked on every transfer, at admission and again in the block. Binds the account, not the key.`;
+  const ab = window.TauOrigin && TauOrigin.about ? TauOrigin.about(acc) : null;
+  return `${isGenesis(acc) && !ab ? "IDNI genesis account, one of the 11 the testnet started with. " : ""}${policyMeaning(p)}${ab ? "\n" + ab.join("\n") : ""}\nChecked on every transfer, at admission and again in the block. Binds the account, not the key.`;
 }
 function explainBlock(b) {
   if (!b.n) return "Genesis: the starting state, spec revision 1, no transactions.";
@@ -2656,10 +2664,10 @@ function nbRule(p) {
   const n = (/above ([\d.,]+)/.exec(p.label || "") || [])[1], h = (/block #([\d.,]+)/.exec(p.label || "") || [])[1], tm = (/until ((\d{1,2} \w+ \d{4}, )?\d\d:\d\d(:\d\d)?)/.exec(p.label || "") || [])[1];
   switch (p.kind) {
     case "limit": return n ? `may send at most ${n} AGRS per payment` : "has a spending limit";
-    case "whitelist": { const w = p.to && nbWho(p.to); return w && w !== "a wallet" ? `may only pay ${w}` : "may only pay one chosen wallet"; }
+    case "whitelist": { const w = p.to && nbWho(p.to); return (w && w !== "a wallet" ? `may only pay ${w}` : "may only pay one chosen wallet") + (p.cap ? `, at most ${fmt(p.cap)} AGRS a payment` : "") + (p.floor ? `, nothing once it holds less than ${fmt(p.floor)} AGRS` : ""); }
     case "timelock": return tm ? `cannot send anything until ${tm}` : "cannot send anything for now";
     case "heightlock": return h ? `cannot send anything before block #${h}` : "cannot send anything for now";
-    case "cosign": return n ? `needs a second signature above ${n} AGRS` : "needs a second signature";
+    case "cosign": return (n ? `needs a second signature above ${n} AGRS` : "needs a second signature") + (p.floor ? `, and for every payment once it holds less than ${fmt(p.floor)} AGRS` : "");
     case "approval": return n ? `needs an approval above ${n} AGRS` : "needs an approval";
     default: return "has its own rule for its money";
   }
