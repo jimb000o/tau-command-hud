@@ -272,7 +272,17 @@ async def main():
 
         # the alerts channel and old questions: never answered
         await nothing_for("/height", chat_id=-100123, ctype="channel", username="tauHUDcom")
-        await nothing_for("/height", chat_id=-100123, ctype="supergroup", username="tauHUDcom")
+        # Tau HUD's own group with topics (tgnews.py): a command in its Chat topic is answered in that topic
+        with TG["lock"]:
+            TG["updates"].append({"update_id": TG["next"], "message": {
+                "message_id": 900, "date": int(time.time()), "text": "/height", "is_topic_message": True, "message_thread_id": 3,
+                "chat": {"id": -100124, "type": "supergroup", "username": "tauHUDcom", "is_forum": True},
+                "from": {"id": 55, "is_bot": False}}})
+            TG["next"] += 1
+        n = len(TG["sent"])
+        await until(lambda: len(TG["sent"]) > n, "group topic answer")
+        r = TG["sent"][n]
+        assert r["chat_id"] == -100124 and r["message_thread_id"] == 3 and "Block #372" in r["text"], r
         await nothing_for("/height", date=time.time() - 3600)
 
         # per person: 5 questions in a row, then one notice, then quiet
