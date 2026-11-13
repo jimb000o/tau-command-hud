@@ -34,9 +34,61 @@ def font(size: int, weight: int = 600, mono: bool = False):
     return ImageFont.load_default(size)
 
 
+# A character the font has no glyph for (Sora has no arrows) is drawn from JetBrains Mono at the same size, else with
+# a plain stand-in: never the empty box (13 Nov 2026: the stat "2 → all" showed as "2 ▯ all" on an article's picture).
+STAND_IN = {"→": "->", "←": "<-", "≈": "~", "✓": "+", "✗": "x", "\u2009": " ", "\u202f": " "}
+_GLYPHS: dict = {}
+
+
+def has_glyph(f, ch: str) -> bool:
+    """True when the font draws `ch` as itself, not as its missing-glyph box."""
+    k = (getattr(f, "path", None), getattr(f, "size", None), ch)
+    if k not in _GLYPHS:
+        try:
+            a, b = f.getmask(ch), f.getmask("\U000F0000")   # a private-use character no font here has
+            _GLYPHS[k] = ch.isspace() or not (a.size == b.size and bytes(a) == bytes(b))
+        except Exception:  # noqa: BLE001 - the default bitmap font: assume it draws what it gets
+            _GLYPHS[k] = True
+    return _GLYPHS[k]
+
+
+class Draw(ImageDraw.ImageDraw):
+    """ImageDraw whose text() never draws a missing-glyph box: those characters come from the other font of ours."""
+
+    def text(self, xy, text, fill=None, font=None, anchor=None, *args, **kw):
+        if not isinstance(text, str) or not hasattr(font, "getmask") or all(has_glyph(font, c) for c in set(text)):
+            return super().text(xy, text, fill, font, anchor, *args, **kw)
+        other = ImageFont.truetype(font.path.replace("Sora.ttf", "JetBrainsMono.ttf"), font.size) \
+            if str(getattr(font, "path", "")).endswith("Sora.ttf") else None
+        runs: list[list] = []
+        for c in text:
+            f, c2 = (font, c) if has_glyph(font, c) else ((other, c) if other and has_glyph(other, c) else (font, STAND_IN.get(c, "")))
+            if runs and runs[-1][0] is f:
+                runs[-1][1] += c2
+            else:
+                runs.append([f, c2])
+        x, y = xy
+        base = y + font.getmetrics()[0] if not anchor else y   # one baseline for both fonts
+        a = anchor or "ls"
+        for f, run in runs:
+            if run:
+                super().text((x, base), run, fill, f, a, *args, **kw)
+                x += self.textlength(run, font=f)
+        return None
+
+    def textlength(self, text, font=None, *args, **kw):
+        if isinstance(text, str) and hasattr(font, "getmask") and not all(has_glyph(font, c) for c in set(text)):
+            text = "".join(c if has_glyph(font, c) else STAND_IN.get(c, "-") for c in text)
+        return super().textlength(text, font, *args, **kw)
+
+
+def draw(im) -> Draw:
+    return Draw(im)
+
+
 def frame(title: str, sub: str = "") -> tuple[Image.Image, ImageDraw.ImageDraw]:
     im = Image.new("RGB", (W, H), BG)
-    d = ImageDraw.Draw(im)
+    d = draw(im)
     for x in range(0, W, 96):
         d.line([(x, 0), (x, H)], fill=(16, 16, 18))
     for y in range(0, H, 96):
@@ -109,7 +161,7 @@ def hero(art: str, ships: str, card: list[str], ship: str, out: str, stats: list
     if not stats and not host:
         return out
     pic = Image.open(out).convert("RGBA")
-    d = ImageDraw.Draw(pic)
+    d = draw(pic)
     # where the card ends: the first dark row under its top-left corner
     card_bottom = 470
     for y in range(90, 700, 4):
@@ -130,7 +182,7 @@ def hero(art: str, ships: str, card: list[str], ship: str, out: str, stats: list
             d.text((x + bust.width / 2 - tw / 2, 18 + h - 1), tag, font=ft, fill=(235, 235, 238, 255))
     if stats:
         over = Image.new("RGBA", pic.size)
-        od = ImageDraw.Draw(over)
+        od = draw(over)
         tiles = stats[:4]
         tw, th, gap = 214, 150, 14
         x0, y0 = 56, max(card_bottom + 24, H - 56 - 2 * th - gap)
@@ -155,17 +207,17 @@ def desk_hero(card: list[str], out: str, stats: list | None = None, kicker: str 
     as tiles on the right, a row of blocks along the foot (the last one lit) so a picture shared alone still reads as
     the testnet. Island art stays with the island's and the ships' own articles."""
     im = Image.new("RGBA", (W, H), BG + (255,))
-    d = ImageDraw.Draw(im)
+    d = draw(im)
     for x in range(0, W, 64):
         d.line([(x, 0), (x, H)], fill=(15, 15, 17))
     for y in range(0, H, 64):
         d.line([(0, y), (W, y)], fill=(15, 15, 17))
     glow = Image.new("RGBA", (W, H))
-    gd = ImageDraw.Draw(glow)
+    gd = draw(glow)
     for r in range(520, 0, -20):   # a faint green light from the upper left, the site's one accent
         gd.ellipse([180 - r, 120 - r, 180 + r, 120 + r], fill=(57, 255, 138, max(0, 7 - r // 80)))
     im = Image.alpha_composite(im, glow)
-    d = ImageDraw.Draw(im)
+    d = draw(im)
     lines = [str(c) for c in (card or []) if c]
     foot = lines.pop() if lines and "not affiliated" in lines[-1] else "Tau HUD blog · community project, not affiliated with IDNI"
     title = lines.pop(0) if lines else ""
