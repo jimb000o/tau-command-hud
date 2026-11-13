@@ -2770,4 +2770,9 @@ TauI18n.add({ strings: {
   "How is this different from other chains? ›": "ほかのチェーンとどう違う？ ›",
   "Hide the comparison ‹": "比較を隠す ‹",
   "HUD for beginners: payments among IDNI’s starting wallets and our own servers fold into one line, players’ and visitors’ transactions stand out; each rule says what it stops; the votes panel says what was decided last; the next block counts down; a shorter line on top; on a phone a shorter page and a small chat button.": "初心者向け HUD：IDNI の初期ウォレットと私たち自身のサーバーの間の支払いは1行にまとめ、プレイヤーと訪問者の取引を目立たせます。各ルールは何を止めるかを示し、投票パネルは前回の決定を伝え、次のブロックをカウントダウンします。上部は短い1文に、スマホではページが短くなりチャットボタンが小さくなりました。",
+  "Rule: {x}": "ルール：{x}",
+  "This wallet {x}.": "このウォレットは{x}。",
+  "Address {h}": "アドレス {h}",
+  "Terms: {x}": "条件：{x}",
+  "Personal money rules: wallets we know show their name at every level (Tau HUD’s showcase wallets, IDNI genesis, players); Expert adds the address. Hovering a rule in the chain core’s rule ring opens with the wallet’s name, its rule in plain words, what it stops and what we know about it.": "個人のお金のルール：私たちが知っているウォレットは、どのレベルでも名前で表示されます（Tau HUD のショーケースウォレット、IDNI ジェネシス、プレイヤー）。エキスパートではアドレスも表示します。チェーンコアのルールリングでルールにカーソルを合わせると、ウォレットの名前、ルールのやさしい説明、何を止めるか、そして私たちが知っていることが最初に表示されます。",
 } });

@@ -2805,4 +2805,9 @@ TauI18n.add({ strings: {
   "How is this different from other chains? ›": "这和其他链有什么不同？›",
   "Hide the comparison ‹": "隐藏对比 ‹",
   "HUD for beginners: payments among IDNI’s starting wallets and our own servers fold into one line, players’ and visitors’ transactions stand out; each rule says what it stops; the votes panel says what was decided last; the next block counts down; a shorter line on top; on a phone a shorter page and a small chat button.": "新手版 HUD：IDNI 的初始钱包和我们自己的服务器之间的付款合并为一行，玩家和访客的交易会突出显示；每条规则都说明它阻止什么；投票面板说明上一次的决定；下一个区块会倒计时；顶部是一句更短的话；在手机上页面更短，聊天按钮更小。",
+  "Rule: {x}": "规则：{x}",
+  "This wallet {x}.": "这个钱包{x}。",
+  "Address {h}": "地址 {h}",
+  "Terms: {x}": "条款：{x}",
+  "Personal money rules: wallets we know show their name at every level (Tau HUD’s showcase wallets, IDNI genesis, players); Expert adds the address. Hovering a rule in the chain core’s rule ring opens with the wallet’s name, its rule in plain words, what it stops and what we know about it.": "个人资金规则：我们认识的钱包在每个级别都显示名字（Tau HUD 的展示钱包、IDNI 创世钱包、玩家）；专家级另外显示地址。将鼠标悬停在链核心规则环中的一条规则上，会先显示钱包的名字、用通俗话说明它的规则、它阻止什么，以及我们对它的了解。",
 } });
