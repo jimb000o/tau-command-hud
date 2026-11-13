@@ -79,6 +79,9 @@
     foureyes: ["Purpose: shows a second signature. Small payments go through; above 100 AGRS Tau HUD’s co-signer must sign as well, and once the balance is below 90,000 for every payment, so many small payments cannot empty it.", RUN],
     feeding: ["Purpose: shows a whitelist. This money can only go to Agorzilla’s bowl, at most 20 AGRS a meal, and nothing once the balance is below 90,000, so many small payments cannot empty it.", RUN],
     cosigner: ["The second signature the four-eyes wallet needs. Run by tauhud.com’s server; it never sends."],
+    apprentice: ["Purpose: shows a shared rule taken over. Every day Tau HUD’s piggy bank offers it its own rule, and it reads the rule and accepts it.", "Run by tauhud.com’s server with test AGRS."],
+    stranger: ["Purpose: shows why you read a rule before you accept it. Every day it offers Tau HUD’s four-eyes wallet a rule that would let it pay only the stranger, and the offer is declined.", "Run by tauhud.com’s server with test AGRS."],
+    desk: ["Offers a starter rule (at most 1,000 test AGRS per payment) to a visitor’s wallet that asks for it on the wallet page. The owner reads it and accepts or declines it there.", "Run by tauhud.com’s server with test AGRS."],
   };
   const TAG_ABOUT = {
     idni: "One of the 11 accounts the testnet started with, set up by IDNI.",
@@ -102,7 +105,7 @@
     if (ship && ship.wallets) add(Object.values(ship.wallets).flat(), "cruise");
     // the showcase wallets (relay showcase.py), each with its own name: "Tau HUD's piggy bank" and so on
     const nm = new Map(), rl = new Map();
-    if (show && show.wallets) [...Object.entries(show.wallets), ["cosigner", show.cosigner]].forEach(([role, w]) => { if (w && typeof w.pk === "string" && w.name) { m.set(w.pk.toLowerCase(), "showcase"); nm.set(w.pk.toLowerCase(), String(w.name)); rl.set(w.pk.toLowerCase(), role); } });
+    if (show && show.wallets) [...Object.entries(show.wallets), ["cosigner", show.cosigner], ...Object.entries(show.sharers || {})].forEach(([role, w]) => { if (w && typeof w.pk === "string" && w.name) { m.set(w.pk.toLowerCase(), "showcase"); nm.set(w.pk.toLowerCase(), String(w.name)); rl.set(w.pk.toLowerCase(), role); } });
     if (nm.size) { names = nm; roles = rl; }
     if (m.size || tags) known = m;
     if (tags && tags.via) via = new Map(Object.entries(tags.via).filter(([, v]) => TAGS[v]));

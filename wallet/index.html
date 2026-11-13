@@ -1791,6 +1791,15 @@ function conflictView(c) {
       (l.status === "ok" ? "✓ " : "· ") + (l.layer === "registry_collision" ? T(l.status === "ok" ? "you have no rule yet, nothing is replaced" : "accepting replaces the rule you have now") : T(LAYER[l.layer] || l.layer)))),
     el("span", { class: "dim", text: T("A clean check is not proof: read the rule before you accept.") }));
 }
+async function askDesk() {
+  $("actAside").textContent = T("Asking Tau HUD’s rule desk…");
+  try {
+    const r = await fetch(RELAY + "/showcase/offer?to=" + encodeURIComponent(W.pk), { cache: "no-store" }), d = await r.json();
+    if (d && d.ok) { store.set("tauhud-wallet-desk", String(d.from || "").toLowerCase()); store.set(`tauhud-wallet-desk-asked-${W.pk}`, String(Date.now())); $("actAside").textContent = T("Asked. The offer arrives with the next block or two."); }
+    else $("actAside").textContent = (d && d.error) || T("No answer from the node; try again.");
+  } catch (e) { $("actAside").textContent = T("No answer from the node; try again."); }
+  renderActivity();
+}
 async function answerRequest(q, yes) {
   const r = await submit(base("transfer_vote", { request_id: q.request_id, approve: yes }), yes ? F("Co-signed {n} test AGRS from {x}", { n: fmt(q.amount), x: tag(q.sender_pubkey) }) : F("Declined to co-sign for {x}", { x: tag(q.sender_pubkey) }), "vote");
   $("actAside").textContent = r.ok ? "" : r.why;
@@ -1818,11 +1827,19 @@ function inboxItems() {
   for (const o of inc) {
     const rr = readRule(o.rule_text || o.rule_text_preview || ""), c = CONF.get(o.offer_id);
     items.push(el("div", { class: "item ask" }, el("span", { class: "dot ok" }),
-      el("span", { class: "t", text: F("{x} offers you a rule", { x: tag(o.offerer_pubkey) }) }),
+      el("span", { class: "t", text: String(o.offerer_pubkey || "").toLowerCase() === store.get("tauhud-wallet-desk") ? T("Tau HUD’s rule desk offers you a starter rule") : F("{x} offers you a rule", { x: tag(o.offerer_pubkey) }) }),
       el("span", { class: "acts" }, el("button", { class: "b quiet", type: "button", text: T("Check"), "data-tip": T("Check it") + "\n" + T("The node compares it with what you have.") + "\n" + T("Free; nothing is signed."), onclick: () => checkOffer(o) }),
         el("button", { class: "b", type: "button", text: T("Accept"), onclick: () => answerOffer(o, true) }), el("button", { class: "b quiet", type: "button", text: T("Decline"), onclick: () => answerOffer(o, false) }), bookBtn(o.offerer_pubkey)),
       el("span", { class: "m", text: (rr ? describe(rr).join(" ") : T("A rule for your own payments.")) + " " + (o.invite ? T("A simulated member asks you into a Pakt.") : "") + (h != null && o.expire_at_height ? " " + F("Open until block #{a}.", { a: o.expire_at_height }) : "") }),
       c ? conflictView(c) : null));
+  }
+  /* no rule yet and nothing offered: Tau HUD's rule desk (relay showcase.py) offers a starter rule on request; you still read it and accept or decline it above */
+  const asked = store.get(`tauhud-wallet-desk-asked-${W.pk}`);
+  if (!SIM && W.pk && !myRule() && !inc.length && (!asked || Date.now() - Number(asked) > 36e5)) {
+    items.push(el("div", { class: "item" }, el("span", { class: "dot ok" }),
+      el("span", { class: "t", text: T("Want a rule offered to you?") }),
+      el("span", { class: "acts" }, el("button", { class: "b", type: "button", text: T("Ask Tau HUD"), "data-tip": T("Ask Tau HUD’s rule desk") + "\n" + T("It offers your wallet a starter rule: at most 1,000 test AGRS per payment.") + "\n" + T("Nothing changes until you read it and accept it here."), onclick: askDesk })),
+      el("span", { class: "m", text: T("Tau HUD’s rule desk offers your wallet a starter rule through rule sharing: at most 1,000 test AGRS per payment. It shows up here after the next block or two; you read it, then accept or decline it.") })));
   }
   for (const q of ((W.reqs && W.reqs.incoming) || []).filter(q => q.status === "pending")) {
     items.push(el("div", { class: "item ask keep" }, el("span", { class: "dot ok" }),
