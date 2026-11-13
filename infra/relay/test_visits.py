@@ -122,5 +122,15 @@ ch = json.loads(v.route("/visits/channel", "", "1.1.1.1", H)[2])
 today = list(ch["days"])[-1]
 check(ch["days"][today].get("deepdive") == 1 and "newsletter" not in json.dumps(ch), "channel opens: tg- tags only, by kind")
 
+# marks: which shop picture the HUD showed and whether it was clicked; fixed list, once per visitor and day, only after the page itself
+hit("p=hud&l=en&m=live", ip="8.8.1.1")
+hit("p=hud&k=shop-rabbit-show", ip="8.8.1.1")
+hit("p=hud&k=shop-rabbit-show", ip="8.8.1.1")
+hit("p=hud&k=shop-rabbit-click", ip="8.8.1.1")
+hit("p=hud&k=anything-else", ip="8.8.1.1")
+hit("p=hud&k=shop-rule-show", ip="8.8.7.7")   # no page view from this address
+mk = v.report(1)["days"][today].get("marks", {})
+check(mk == {"shop-rabbit-show": 1, "shop-rabbit-click": 1}, "marks: fixed list, once per visitor, only with a page view")
+
 print("\nall ok" if not failed else f"\n{failed} failed")
 sys.exit(1 if failed else 0)

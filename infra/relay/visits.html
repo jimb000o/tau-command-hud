@@ -62,7 +62,7 @@
   <div class="panel"><h2>Pages</h2><table id="pages"></table></div>
   <div class="panel"><h2>Came from</h2><table id="refs"></table><h2 style="margin-top:14px">Link tags (?ref= or utm_source)</h2><table id="sources"></table></div>
   <div class="panel"><h2>Next page</h2><table id="flows"></table></div>
-  <div class="panel"><h2>Language</h2><table id="lang"></table><h2 style="margin-top:14px">View</h2><table id="mode"></table></div>
+  <div class="panel"><h2>Language</h2><table id="lang"></table><h2 style="margin-top:14px">View</h2><table id="mode"></table><h2 style="margin-top:14px">Shop notice on the HUD</h2><table id="shopad"></table></div>
   <div class="panel"><h2>Screen</h2><table id="screen"></table></div>
   <div class="panel"><h2>Hour of day (UTC)</h2><div id="hours"></div></div>
 </section>
@@ -140,6 +140,8 @@ function render() {
   simple($("sources"), sum(days, "sources"), "Tag", 8);
   simple($("flows"), sum(days, "flows"), "From → to", 15, k => k.split(">").map(p => p === "hud" ? "HUD" : "/" + p + "/").join(" → "));
   simple($("lang"), sum(days, "lang"), "Language", 4, k => k === "zh" ? "Chinese" : "English");
+  { const m = sum(days, "marks"), row = (n, k) => [m[`shop-${k}-show`] || 0, n, fmt(m[`shop-${k}-show`] || 0), fmt(m[`shop-${k}-click`] || 0), pct(m[`shop-${k}-click`] || 0, m[`shop-${k}-show`] || 0)];
+    table($("shopad"), [row("Rabbit sweater", "rabbit"), row("Rule sweater", "rule"), [0, "Crew line", "", fmt(m["shop-crew-click"] || 0), ""]], ["Picture", "shown to", "clicked by", "rate"]); }
   simple($("mode"), sum(days, "mode"), "Shown", 4, k => k === "live" ? "Live testnet" : "Simulation");
   const order = ["phone", "tablet", "laptop", "desktop", "wide", "?"], names = { phone: "Phone (< 700 px)", tablet: "Tablet (700–1279)", laptop: "Laptop (1280–1599)", desktop: "Desktop (1600–2399)", wide: "Wide (2400+)", "?": "Unknown" };
   const sc = sum(days, "screen");
