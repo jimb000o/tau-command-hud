@@ -2291,10 +2291,39 @@ def live_shot(link: str | None) -> str | None:
     return f"{NODE_PUBLIC}/pageshots/{name}.jpg?v={re.sub(r'[^0-9]', '', str(e.get('at')))[:12]}"
 
 
+BLOG_IMG = os.path.join(PUBLIC_DIR, "blog", "img")   # the blog service's hero pictures (blog.py), node.tauhud.com/blog/img/
+# a post about one blog article waits this long for the article's own picture, then goes without a picture
+ARTICLE_WAIT_HOURS = float(os.environ.get("ARTICLE_PICTURE_WAIT_HOURS", 24))
+
+
+def article_id(link: str | None) -> str | None:
+    """The blog article a link opens (tauhud.com/blog/?p=<id>), or None."""
+    u = urllib.parse.urlsplit(str(link or ""))
+    if u.netloc and u.netloc.split(":")[0] not in ("tauhud.com", "www.tauhud.com"):
+        return None
+    if u.path.strip("/") != "blog":
+        return None
+    p = (urllib.parse.parse_qs(u.query).get("p") or [""])[0]
+    return p if re.fullmatch(r"[\w-]{1,120}", p) else None
+
+
+def article_picture(aid: str) -> str | None:
+    """The article's own hero picture, once the blog service made it: it does so only after the article is on the site."""
+    path = os.path.join(BLOG_IMG, aid + "-hero.jpg")
+    if not os.path.exists(path):
+        return None
+    return f"{NODE_PUBLIC}/blog/img/{aid}-hero.jpg?v={int(os.path.getmtime(path))}"
+
+
 def post_picture(image: str | None, link: str | None) -> str | None:
     """The picture a post about a Tau HUD page carries: the page's checked live picture; a screenshot or preview picture
     from the repo (assets/shots/, assets/og/, made without live data) never, then the post goes without one.
-    Other pictures (paintings, blog pictures, cards) as they are."""
+    Other pictures (paintings, blog pictures, cards) as they are. A post about one blog article carries that article's
+    own picture or none: never the blog list's (13 Nov 2026: the personal-rules article went out with the list's picture,
+    another article on it, because the site did not have the new one yet)."""
+    aid = article_id(link)
+    if aid:
+        return article_picture(aid)
     shot = live_shot(link)
     if shot:
         return shot
@@ -3465,6 +3494,8 @@ class Watcher:
             # one post per slot: a single new page or feature on its own, several together, so none waits for another day
             batch = list(st["majors"])
             shown = 1 if len(batch) == 1 else catchup_text(batch).count("\n• ")
+            if shown == 1 and not self.article_ready(st["majors"][0], now):
+                return
             if tg_due:
                 m = batch[0]
                 sent = await self.site_send(tg, major_text(m), major_buttons(m), now, post_picture(m.get("image"), m.get("link"))) if shown == 1 else \
@@ -3517,6 +3548,18 @@ class Watcher:
                 self.save_state()
                 await self.post_x(digest_x(items), "site digest", now, spare=True)
         self.save_state()
+
+    def article_ready(self, m: dict, now: float) -> bool:
+        """A post about one blog article waits until the article is on the site, which its own picture shows (the blog
+        service makes it from the site's article list), at most ARTICLE_WAIT_HOURS; then it goes without a picture."""
+        aid = article_id(m.get("link"))
+        if not aid or article_picture(aid):
+            return True
+        if "waiting" not in m:
+            m["waiting"] = round(now)
+            log.info("site updates: %s waits for the article %s to be on the site", m.get("key"), aid)
+            self.save_state()
+        return now - m["waiting"] >= ARTICLE_WAIT_HOURS * 3600
 
     async def site_send(self, tg: list, text: str, buttons: dict, now: float, picture: str | None = None) -> bool:
         st = self.state["site"]

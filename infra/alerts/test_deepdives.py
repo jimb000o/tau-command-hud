@@ -138,6 +138,28 @@ check(alerts.post_picture("https://tauhud.com/assets/shots/status.png", "https:/
 check(alerts.live_shot("https://tauhud.com/") and alerts.live_shot("https://chess.taumorrow.com") is None, "the front page has one, another site none")
 check(alerts.post_picture("https://node.tauhud.com/blog/img/x.jpg", "/blog/") == "https://node.tauhud.com/blog/img/x.jpg", "other pictures stay")
 
+# a post about one blog article: that article's own picture once it is on the site, never the blog list's
+art = "https://tauhud.com/blog/?p=2026-11-13-personal-rules-for-everyone"
+with open(os.path.join(shots, "index.json"), "w") as f:
+    json.dump({"rules": {"path": "/rules/", "at": "2026-11-12T06:00:00Z", "ok": True}, "status": {"ok": False, "why": "mode chip not green"},
+               "hud": {"path": "/", "at": "2026-11-12T06:00:00Z", "ok": True}, "blog": {"path": "/blog/", "at": "2026-11-12T06:00:00Z", "ok": True}}, f)
+open(os.path.join(shots, "blog.jpg"), "wb").close()
+check(alerts.article_id(art) == "2026-11-13-personal-rules-for-everyone" and alerts.article_id("/blog/?p=a-b") == "a-b"
+      and alerts.article_id("/blog/") is None and alerts.article_id("https://chess.taumorrow.com/blog/?p=x") is None, "the article a link opens")
+check(alerts.post_picture("https://tauhud.com/assets/shots/blog-personal-rules-for-everyone.png", art) is None
+      and alerts.post_picture(None, "/blog/").startswith(alerts.NODE_PUBLIC + "/pageshots/blog.jpg"),
+      "the article not on the site yet: no picture, not the blog list's (the list itself keeps its picture)")
+wa = alerts.Watcher([])
+ma = {"key": "major:blog-x", "link": art}
+t0 = at("2026-11-13T10:30:00Z")
+check(not wa.article_ready(ma, t0) and not wa.article_ready(ma, t0 + 3600) and wa.article_ready(ma, t0 + alerts.ARTICLE_WAIT_HOURS * 3600),
+      "its post waits for the article, at most ARTICLE_WAIT_HOURS, then goes without a picture")
+os.makedirs(alerts.BLOG_IMG, exist_ok=True)
+open(os.path.join(alerts.BLOG_IMG, "2026-11-13-personal-rules-for-everyone-hero.jpg"), "wb").close()
+check(wa.article_ready({"key": "major:blog-y", "link": art}, t0)
+      and alerts.post_picture(None, art).startswith(alerts.NODE_PUBLIC + "/blog/img/2026-11-13-personal-rules-for-everyone-hero.jpg?v="),
+      "the article on the site: its post goes at once, with the article's own picture")
+
 
 # one post a day about Tau HUD itself: after a site update the closer look waits a day; on the poll day the poll is the post
 tg5, x5 = Fake("telegram"), Fake("x")
