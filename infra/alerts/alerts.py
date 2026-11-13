@@ -4128,14 +4128,21 @@ class Watcher:
         self.save_state()
 
     async def maybe_earnings(self):
-        """Our share of the shop's sales and the crew's memberships, for tauhud.com/donate/: read every 6 hours once the
-        Fourthwall API user is in .env (earnings.py)."""
+        """Our share of the shop's sales and the crew's memberships, for tauhud.com/donate/: read every 15 minutes once the
+        Fourthwall API user is in .env (earnings.py); each new order and each new member is told to the owner privately."""
         if not crewlog.enabled() or not earnings.due():
             return
         try:
-            pub, _, added = await asyncio.to_thread(earnings.run)
-            log.info("earnings: %d day rows, %d new membership periods", len(pub["items"]), added)
-        except Exception as exc:  # tried again on the next pass after 6 hours
+            names = {}
+            try:
+                names = {t["id"]: t["name"] for t in await asyncio.to_thread(crewlog.tiers)}
+            except Exception:
+                pass
+            pub, _, added, lines = await asyncio.to_thread(earnings.run, None, names)
+            log.info("earnings: %d day rows, %d new membership periods, %d new orders or members", len(pub["items"]), added, len(lines))
+            for line in lines:
+                self.tell_owner(html.escape(line))
+        except Exception as exc:  # tried again on the next pass, 15 minutes later
             log.warning("earnings failed: %s", crewlog.error_text(exc))
             try:
                 s = earnings.load(); s["checked"] = time.time(); earnings.write_atomic(earnings.STATE_PATH, json.dumps(s))
@@ -4532,7 +4539,11 @@ def earnings_cli() -> int:
     print(f"fees:    card {earnings.CARD_PCT} % + {earnings.CARD_FIX:.2f} per payment, memberships {earnings.CREW_PCT} %, "
           f"shop cut {earnings.SHOP_PCT} % on top of the base cost (EARNINGS_* in .env to change)")
     try:
-        pub, shop, added = earnings.run()
+        try:
+            names = {t["id"]: t["name"] for t in crewlog.tiers()}
+        except Exception:
+            names = {}
+        pub, shop, added, lines = earnings.run(None, names)
     except Exception as exc:
         print(f"earnings: the Fourthwall API answered with an error: {crewlog.error_text(exc)}")
         return 1
@@ -4544,6 +4555,9 @@ def earnings_cli() -> int:
     s = earnings.load()
     n = sum(len(v) for v in (s.get("crew") or {}).values())
     print(f"crew:    {n} membership periods counted, {added} new now")
+    w = Watcher() if lines else None
+    for line in lines:
+        print(f"new:     {line} · your private Telegram chat: {'sent' if w.tell_owner(html.escape(line)) else 'NOT sent (up owner)'}")
     sums = {}
     for i in pub["items"]:
         k = (i["kind"], i["cur"]); sums[k] = sums.get(k, 0) + i["amount"]

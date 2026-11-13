@@ -57,4 +57,13 @@ check("@" not in text and "o1" not in text and '"M"' not in text, "the public fi
 kinds = {(i["on"], i["kind"]) for i in pub["items"]}
 check(("2026-11-14", "shop") in kinds and ("2026-11-13", "crew") in kinds and ("2026-12-13", "crew") in kinds, "shop and crew per day")
 
+ns = {}
+check(earnings.news(ns, [order], [member]) == [], "the first read only learns what is there")
+o2 = dict(order, id="o2", offers=[{"name": "No Memo tee", "quantity": 1, "variant": {"unitCost": M(11.75)}}])
+m2 = dict(member, id=8, subscription={"type": "ACTIVE", "variant": {"tierId": 51606, "interval": "MONTHLY", "amount": M(9)}})
+lines = earnings.news(ns, [order, o2], [member, m2], {51606: "Navigator"})
+check(len(lines) == 2 and "No Memo tee" in lines[0] and "Navigator" in lines[1] and "Active members now: 2" in lines[1], f"one line per new order and member: {lines}")
+check(not any("@" in x for x in lines), "no e-mail address in the owner's note")
+check(earnings.news(ns, [order, o2], [member, m2]) == [], "nothing told twice")
+
 sys.exit(1 if fails else 0)
