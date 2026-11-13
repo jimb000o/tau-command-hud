@@ -2967,15 +2967,6 @@
   {"tag": "Learn", "on": "2026-11-12", "link": "/facts/", "html": "Tau facts for your AI: the two files the page offers, tau-today.md and tau-today.json, open again. Since the Tau engine door for the Learn page came in on 9 November, the server sent them to that door by mistake, and it answered “not found”."},
   {"tag": "Donations", "on": "2026-11-12", "link": "/donate/", "html": "Donations: no crypto wallet? A new line under the headline leads to the Tau HUD crew, a monthly membership in our shop with a discount on everything there. Unlike a donation, it is a purchase; the Ethereum address stays as it is."},
   {"tag": "Donations", "on": "2026-11-12", "link": "/donate/", "html": "Donations: the way to the Tau HUD crew is now a green button under the headline. The line beside it says that it is a paid monthly membership in our external shop, billed until you cancel. It was a grey line that was easy to miss."},
-  {"tag": "Crew", "on": "2026-11-13", "link": "/crew/", "html": "Crew: the paid membership has its own page. It says in plain words that it is a monthly purchase sold by Fourthwall, runs until cancelled, and that the person behind Tau HUD earns from it. Donations stay apart on their page, with nothing in return. The visitor counter now reads link tags only from a fixed list, so a tag can never name a person."}
-  },
-  {
-  {"tag": "Donations", "on": "2026-11-12", "link": "/donate/", "html": "Donations: no crypto wallet? A new line under the headline leads to the Tau HUD crew, a monthly membership in our shop (from €3.50 a month plus tax) with a discount on everything there. Unlike a donation, it is a purchase; the Ethereum address stays as it is."},
-  {"tag": "Donations", "on": "2026-11-12", "link": "/donate/", "html": "Donations: the way to the Tau HUD crew is now a green button under the headline. The line beside it says that it is a paid monthly membership in our external shop, billed until you cancel. It was a grey line that was easy to miss."},
-  {
-    "tag": "Privacy",
-    "on": "2026-11-13",
-    "link": "/legal/",
-    "html": "Privacy notice: a new section on memberships in our external shop at Fourthwall, linked from Crew and Donate, kept apart from donations. The visit counting is described more exactly: which source tags from links are counted (only a fixed list) and which details the page reads for it."
-  }
+  {"tag": "Crew", "on": "2026-11-13", "link": "/crew/", "html": "Crew: the paid membership has its own page. It says in plain words that it is a monthly purchase sold by Fourthwall, runs until cancelled, and that the person behind Tau HUD earns from it. Donations stay apart on their page, with nothing in return. The visitor counter now reads link tags only from a fixed list, so a tag can never name a person."},
+  {"tag": "Privacy", "on": "2026-11-13", "link": "/legal/", "html": "Privacy notice: a new section on memberships in our external shop at Fourthwall, linked from Crew and Donate, kept apart from donations. The visit counting is described more exactly: which source tags from links are counted (only a fixed list) and which details the page reads for it."}
 ]
