@@ -344,6 +344,131 @@ html.lap .wrap > .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr)
   .main > .col { display: contents; }
   #acct { order: 1; } #act { order: 2; } #rules { order: 3; } #activity { order: 4; }
 }
+/* ---------- the three wallets: Beginner (wl-new), Intermediate (wl-mid), Expert (wl-pro), from the site's level ---------- */
+.introR { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.lvl { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.lvl .lbl { font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); margin-right: 4px; }
+.lvl button { font: 600 11px var(--display); letter-spacing: .06em; background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; cursor: pointer; }
+.lvl button:hover { color: #fff; border-color: var(--hair); }
+.lvl button[aria-pressed=true] { color: #000; background: var(--ok); border-color: var(--ok); }
+.lvl button.back { border-style: dashed; color: var(--text); }
+/* Beginner: the guide */
+#coach h2 { color: #fff; font-size: 12px; }
+#coach .what { color: var(--dim); font-size: 12px; line-height: 1.5; }
+.cchal { margin-top: 8px; border: 1px solid rgba(57,255,138,.35); border-radius: 6px; padding: 7px 10px; display: grid; gap: 2px; font-size: 12px; color: var(--dim); }
+.cchal b { color: var(--ok); font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; }
+.cchal .fit { color: var(--ok); } .cchal .sim { color: var(--sim); }
+.csteps { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; counter-reset: none; }
+.csteps li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: start; color: var(--dim); font-size: 12px; }
+.csteps li i { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--hair); display: grid; place-items: center; font: 600 12px var(--display); font-style: normal; color: var(--dim); }
+.csteps li b { display: block; color: var(--text); font: 600 14px/1.3 var(--display); }
+.csteps li.now i { border-color: var(--ok); color: var(--ok); box-shadow: 0 0 0 3px rgba(57,255,138,.18); }
+.csteps li.now b { color: #fff; }
+.csteps li.done i { background: var(--ok); border-color: var(--ok); color: #000; }
+.csteps li.done b { color: var(--dim); font-weight: 500; }
+.cdone { margin-top: 8px; color: var(--ok); font-size: 12px; }
+.cmore { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--dim); }
+.cmore button { background: none; border: 1px solid var(--line); border-radius: 999px; color: var(--text); font: 12px var(--mono); padding: 3px 10px; cursor: pointer; }
+.cmore button:hover { border-color: var(--hair); color: #fff; }
+/* Beginner: four cards */
+.bhead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 14px; margin: 2px 0 8px; }
+.bpick h3 { margin: 0; font: 600 18px/1.25 var(--display); color: #fff; }
+html.wl-new #rMine { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); column-gap: 16px; align-items: start; }
+html.wl-new #rMine > *, html.wl-new #bPick > * { grid-column: 1 / -1; }
+html.wl-new #bPick { display: contents; }
+html.wl-new #rMine > #bPick > #bSay { grid-column: 1; }
+html.wl-new #rMine > #probesBox { grid-column: 2; margin-top: 10px; }
+html.wl-new #lnkAcct, html.wl-new #lnkTg, html.wl-new #btnPayMe, html.wl-new #lnkCard { display: none !important; }
+.bcards { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.bcard { border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; display: grid; gap: 6px; align-content: start; background: rgba(5,5,6,.6); }
+.bcard.on { border-color: var(--ok); background: rgba(57,255,138,.05); }
+.bcard.bad { border-color: var(--sim); }
+.btog { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 4px 10px; align-items: center; text-align: left; background: none; border: 0; padding: 0; color: var(--text); cursor: pointer; font: inherit; }
+.btog b { font: 600 15px/1.25 var(--display); color: #fff; }
+.btog .bx { width: 22px; height: 22px; border-radius: 5px; border: 1.5px solid var(--hair); display: grid; place-items: center; font-style: normal; font-weight: 700; color: #000; }
+.bcard.on .bx { background: var(--ok); border-color: var(--ok); }
+.btog .bfit { grid-column: 2; font-size: 11px; color: var(--ok); }
+.bctls { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 12px; color: var(--dim); }
+.bctl { display: inline-flex; align-items: center; gap: 6px; }
+.bctl input.in { width: 7.5em; padding: 4px 7px; }
+.bctl input[type=date].in { width: auto; }
+.bctl select.in { width: auto; max-width: 12em; padding: 4px 7px; }
+.bchips { display: flex; flex-wrap: wrap; gap: 4px; }
+.bchips button { font: 12px var(--mono); background: none; color: var(--dim); border: 1px solid var(--hair); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.bchips button[aria-pressed=true] { color: #000; background: var(--ok); border-color: var(--ok); }
+.bchips button.add { border-style: dashed; color: var(--text); }
+.bkeep { display: grid; gap: 1px; font-size: 11px; line-height: 1.4; color: var(--dim); }
+.bkeep .not { color: var(--sim); opacity: .85; display: none; }
+.bcard.on .bkeep .not { display: block; }
+.bsay { margin-top: 10px; border-left: 2px solid var(--hair); padding: 4px 0 4px 12px; display: grid; gap: 2px; font-size: 13px; color: var(--text); }
+.bsay b { color: var(--dim); font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; }
+.bsay.ok { border-left-color: var(--ok); }
+.bsay.ok span { font: 500 15px/1.35 var(--display); color: #fff; }
+.bsay.ok span.next { font: 12px var(--mono); color: var(--ok); }
+.bsay.fix { border-left-color: var(--sim); color: var(--sim); }
+.bwords { color: var(--dim); font-size: 12px; }
+html.wl-new #btnRule { padding: 10px 20px; font-size: 13px; }
+html.wl-new #probesBox summary { color: var(--text); }
+/* Beginner layout: the guide and the account on the left, the rule large on the right; nothing else until asked for */
+html.wl-new #act, html.wl-new #activity, html.wl-new #ruleTabs, html.wl-new #presets, html.wl-new #preshare, html.wl-new #build, html.wl-new #draftTau,
+html.wl-new #slots, html.wl-new #btnFreeze, html.wl-new #btnRuleOff, html.wl-new #chalBox, html.wl-new .kpis, html.wl-new #jump { display: none !important; }
+html.wl-new:not(.tau-sim) #sourceLine { display: none; }
+html.wl-new .main > .col { display: contents; }
+html.wl-new #rules > h2, html.wl-new #ruleNow.nokey { display: none; }
+html.wl-new .bpick h3 { margin-top: 0; }
+html.wl-new.wl-nokey #acct { display: none; }
+.csteps li .row { margin-top: 6px; }
+@media (min-width: 701px) {
+  html.wl-new .wrap > .main.main { grid-template-columns: minmax(0, .9fr) minmax(0, 1.7fr); grid-template-areas: "coach rules" "acct rules"; grid-template-rows: auto minmax(0, 1fr); align-items: start; }
+  html.wl-new #coach { grid-area: coach; } html.wl-new #acct { grid-area: acct; } html.wl-new #rules { grid-area: rules; align-self: stretch; }
+  html.fit.wl-new #coach, html.fit.wl-new #acct, html.fit.wl-new #rules { min-height: 0; max-height: 100%; overflow: auto; }
+  /* Expert: the rule gets the widest column */
+  html.wl-pro .wrap > .main.main { grid-template-columns: minmax(0, .9fr) minmax(0, .95fr) minmax(0, 1.5fr); }
+}
+@media (max-width: 700px) {
+  html.wl-new #coach { order: 0; } html.wl-new #rules { order: 1; } html.wl-new #acct { order: 2; }
+  .bcards { grid-template-columns: minmax(0, 1fr); }
+  .introR { align-items: flex-start; }
+  html.wl-new #rMine { grid-template-columns: minmax(0, 1fr); }
+  html.wl-new #rMine > #probesBox { grid-column: 1; }
+  .btog { min-height: 44px; }
+  .bchips button, .cmore button, .lvl button { min-height: 44px; padding: 3px 12px; }
+  .bctl input.in, .bctl select.in { min-height: 44px; }
+}
+/* Intermediate: each test payment now and after signing */
+.probe.cmp { grid-template-columns: 10px minmax(0, 1fr) auto 4.2em; }
+.probe.cmp.head { color: var(--dim); font: 600 11px var(--display); letter-spacing: .08em; }
+.probe.cmp.head > :nth-child(3) { text-align: right; }
+.probe .was { font-size: 11px; color: var(--dim); text-align: right; }
+.probe .was.no { color: rgba(229,72,77,.75); } .probe .was.yes { color: rgba(57,255,138,.7); } .probe .was.wait { color: rgba(255,177,59,.75); }
+/* Expert: the clause */
+html.wl-pro #presets, html.wl-pro #preshare, html.wl-pro #probesBox, html.wl-pro #draftTau { display: none !important; }
+html.wl-pro .build { gap: 3px; }
+html.wl-pro .blk { padding: 2px 9px; }
+html.wl-pro .blk .sub2 { display: none; }
+.xpane { margin-top: 8px; border: 1px solid var(--hair); border-radius: 8px; padding: 8px 10px; background: #050506; display: grid; gap: 6px; }
+.xhead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.xhead h3 { margin: 0; font: 600 11px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.xhead .xsrc { color: var(--dim); font-size: 11px; margin-right: auto; }
+.xhead button.b { padding: 3px 8px; }
+#xText { font: 12px/1.5 var(--mono); color: #c8f5d8; resize: vertical; min-height: 6.6em; white-space: pre-wrap; word-break: break-all; }
+.xmeter { display: flex; flex-wrap: wrap; gap: 3px 12px; font-size: 11px; }
+.xmeter .ok { color: var(--ok); } .xmeter .no { color: var(--refused); }
+.xback { font-size: 12px; color: var(--dim); }
+.xback b { color: var(--text); font-weight: 600; }
+.xback .fit { color: var(--ok); }
+.xback:empty { display: none; }
+table.xt, table.xs { width: 100%; border-collapse: collapse; font-size: 11px; }
+table.xt th { text-align: left; font: 600 11px var(--display); letter-spacing: .08em; color: var(--dim); border-bottom: 1px solid var(--line); padding: 2px 6px 3px 0; }
+table.xt td { padding: 2px 6px 2px 0; color: var(--text); border-bottom: 1px solid rgba(255,255,255,.04); overflow-wrap: anywhere; }
+table.xt td.n { font-variant-numeric: tabular-nums; text-align: right; padding-right: 10px; }
+table.xt td.yes { color: var(--ok); font-weight: 700; } table.xt td.no { color: var(--refused); font-weight: 700; }
+table.xt tr.off td { background: rgba(255,177,59,.08); }
+table.xs td { padding: 2px 8px 2px 0; vertical-align: top; color: var(--dim); }
+table.xs td:first-child { color: #fff; white-space: nowrap; } table.xs td:nth-child(2) { color: #c8c8d0; white-space: nowrap; }
+.xeng { font-size: 12px; color: var(--dim); align-self: center; flex: 1 1 200px; }
+.xeng.ok { color: var(--ok); } .xeng.no { color: var(--refused); }
+#xTx pre { max-height: 9em; }
 /* focus: one step of Start here, inside its page; everything but that step's panel is out of the way */
 html.focus body { background: transparent; background-image: none; padding: 0; height: auto; overflow: auto; }
 html.focus header, html.focus .tnav, html.focus .tabbar, html.focus .tnav-spacer, html.focus .intro, html.focus .testnet, html.focus .jump, html.focus footer,
@@ -376,10 +501,13 @@ html.focus-feed #signFacts { display: none; }
       <p class="lead">An account with its own rules. <a class="backhud" id="backHud" href="/" hidden></a></p>
       <p class="sub" id="sourceLine">On Tau an account is more than a balance: it can carry rules its own payments must pass, accept rules another account offers, and vote on the rules of the whole chain. This wallet lives in your browser and talks to Tau Testnet Alpha.</p>
     </div>
+    <div class="introR">
+    <div class="lvl" id="lvlSeg" role="group" aria-label="How the wallet looks"></div>
     <div class="kpis" aria-label="Key numbers">
       <span class="kpi" id="kRule" data-tip="Your rule&#10;What your own payments must pass.&#10;Set it on the right; the chain checks it on every payment."><b id="tRule">–</b>rule on this account</span>
       <span class="kpi" id="kWait" data-tip="Waiting for you&#10;Requests to co-sign and rules offered to you.&#10;They are listed under Activity."><b id="tWait">–</b>waiting for you</span>
       <span class="kpi" id="kBack" data-tip="Undo-able payments&#10;Payments you can still take back.&#10;Each one is released to its recipient at the block you chose."><b id="tBack">–</b>you can take back</span>
+    </div>
     </div>
   </div>
   <div class="testnet" role="note"><b>TESTNET ONLY</b><span>test AGRS have no value; nothing here is bought or sold</span><span>your key stays in this browser, never on our server</span><span>never reuse this key for anything of value</span><span>not the official Tau wallet</span></div>
@@ -388,6 +516,7 @@ html.focus-feed #signFacts { display: none; }
   </nav>
   <main class="main">
     <div class="col">
+      <section class="panel fix" id="coach" aria-label="Your first rule" hidden></section>
       <section class="panel fix" id="acct" aria-label="Your account">
         <div class="tabs" role="tablist" id="acctTabs">
           <button type="button" role="tab" aria-selected="true" data-atab="acct" data-tip="Your account&#10;Your address, balance and key.">Your account</button>
@@ -497,6 +626,7 @@ html.focus-feed #signFacts { display: none; }
         <div id="rMine">
           <div class="rule" id="ruleNow"></div>
           <div class="chal" id="chalBox" hidden aria-live="polite"></div>
+          <div class="bpick" id="bPick" hidden></div>
 <div class="presets" id="presets" role="group" aria-label="Ready-made rules"></div>
           <div class="preshare" id="preshare"></div>
           <div class="build" id="build">
@@ -507,6 +637,7 @@ html.focus-feed #signFacts { display: none; }
           </div>
           <details class="tau" id="probesBox" open><summary id="probesSum">Test payments against this rule</summary><div class="probes" id="probes"></div></details>
           <details class="tau" id="draftTau"><summary>The rule in Tau</summary><pre id="draftText" translate="no"></pre></details>
+          <div class="xpane" id="xPane" hidden></div>
           <div class="row"><button class="b go" type="button" id="btnRule" disabled>Sign this rule</button><button class="b" type="button" id="btnFreeze">Freeze</button><button class="b quiet" type="button" id="btnRuleOff" hidden>Remove my rule</button></div>
           <div class="why2" id="ruleWhy"></div>
           <div class="result" id="ruleRes"></div>
@@ -1342,6 +1473,14 @@ function ruleDraft() {
 ["cOnly", "cCap", "cFrom", "cCo", "vCap", "vFrom", "vCoAbove", "vCoWho"].forEach(id => $(id).addEventListener("input", () => { renderRule(); renderShare(); }));
 /* test payments: what the rule on the screen would do, before anything is signed */
 function probes(r) {
+  const list = probeCases(r);
+  return [el("h3", { text: T("Test payments against this rule") }), ...list.map(([label, p]) => {
+    const j = judge(r, p), cls = j.why.length ? "no" : j.co ? "wait" : "yes";
+    return el("div", { class: "probe" }, el("span", { class: "dot " + (cls === "no" ? "" : cls === "wait" ? "sim" : "ok") }), el("em", { text: label }),
+      el("span", { class: cls, text: j.why.length ? FX("stopped: {x}", {}, { x: whyText(j) }) : j.co ? T("waits for a co-signature") : T("goes through") }));
+  })];
+}
+function probeCases(r) {
   const friend = BOOK[0], other = "f0" + S.hash("someone new" + (W.pk || "")).slice(0, 62) + S.hash("x" + (W.pk || ""));
   const list = [];
   if (friend) list.push([F("100 test AGRS to {x}", { x: friend.name }), { to: friend.addr, amount: 100 }]);
@@ -1349,18 +1488,14 @@ function probes(r) {
   list.push([T("100 test AGRS to someone new"), { to: other.slice(0, 96), amount: 100 }]);
   const big = Math.max(20000, ((r && r.cap) || 0) + 1, ((r && r.co && r.co.limit) || 0) + 1);
   list.push([FX("{n} test AGRS to {x}", { n: fmt(big) }, { x: friend ? friend.name : T("someone new") }), { to: friend ? friend.addr : other.slice(0, 96), amount: big }]);
-  return [el("h3", { text: T("Test payments against this rule") }), ...list.map(([label, p]) => {
-    const j = judge(r, p), cls = j.why.length ? "no" : j.co ? "wait" : "yes";
-    return el("div", { class: "probe" }, el("span", { class: "dot " + (cls === "no" ? "" : cls === "wait" ? "sim" : "ok") }), el("em", { text: label }),
-      el("span", { class: cls, text: j.why.length ? FX("stopped: {x}", {}, { x: whyText(j) }) : j.co ? T("waits for a co-signature") : T("goes through") }));
-  })];
+  return list;
 }
 /* this week's rule challenge (gazette.py on our node): the task above the builder, and whether the rule being built fits it.
    Answers are read from the live testnet only, so in the simulation the box says so instead of a tick. */
 var CHAL = null;
 var CHAL_FITS = { ceiling: r => r.cap != null, friends: r => r.only.length >= 1 && r.only.length <= 3, twokeys: r => !!r.co,
   until: r => r.from != null && r.from > Date.now() / 1000, both: r => [r.only.length > 0, r.cap != null, r.from != null, !!r.co].filter(Boolean).length >= 2 };
-fetch(RELAY + "/recap/gazette/challenge.json", { cache: "no-store" }).then(x => x.ok ? x.json() : null).then(j => { CHAL = j && j.now && j.now.ends * 1000 > Date.now() ? j.now : null; renderChal(ruleDraft()); }).catch(() => {});
+fetch(RELAY + "/recap/gazette/challenge.json", { cache: "no-store" }).then(x => x.ok ? x.json() : null).then(j => { CHAL = j && j.now && j.now.ends * 1000 > Date.now() ? j.now : null; renderRule(); }).catch(() => {});
 function renderChal(d) {
   const box = $("chalBox"); if (!box) return;
   if (!CHAL) { box.hidden = true; return; }
@@ -1411,6 +1546,7 @@ function renderRule() {
   $("ruleWhy").className = "why2" + (W.pk && d.bad.length ? " fix" : "");
   $("ruleWhy").replaceChildren(...why);
   renderPresets();
+  renderLevel(d, r);
   fitRules();
 }
 /* on one screen the test payments fold into their line rather than make the panel scroll; opened by hand, they stay open */
@@ -1426,7 +1562,10 @@ async function sendRule(text, label, res) {
   res.className = "result " + (r.ok ? "ok" : "no");
   res.textContent = r.ok ? T("Sent. The rule is in force from the block that takes it in.") : r.why;
 }
-$("btnRule").onclick = () => { const d = ruleDraft(); if (d.ok) sendRule(d.text, T("Rule: ") + describe(d.r).join(" "), $("ruleRes")); };
+$("btnRule").onclick = () => {
+  if (LV === "pro" && XHAND) { const t = xText(), rr = xReadable(t); if (t) sendRule(t, T("Rule: ") + (rr ? describe(rr).join(" ") : T("a clause written by hand")), $("ruleRes")); return; }
+  const d = ruleDraft(); if (d.ok) sendRule(d.text, T("Rule: ") + describe(d.r).join(" "), $("ruleRes"));
+};
 $("btnFreeze").onclick = () => { const r = myRule(); if (r && r.freeze) sendRule(NEUTRAL, T("Unfrozen"), $("ruleRes")); else sendRule(FREEZE, T("Account frozen: nothing leaves"), $("ruleRes")); };
 $("btnRuleOff").onclick = () => sendRule(NEUTRAL, T("Rule removed"), $("ruleRes"));
 
@@ -1849,6 +1988,276 @@ document.addEventListener("mousemove", e => {
 });
 document.addEventListener("mouseleave", () => { tip.hidden = true; });
 
+/* ---------- three wallets in one: the site's level (Beginner, Intermediate, Expert under the gear) decides how this page looks ----------
+   Beginner: a guide on the left with three steps, four big cards instead of check boxes, the rule in plain sentences, one button;
+     Send, Split, Vote, Share, Pakt and Freeze stay out of the way until "Show the whole wallet" (this tab only).
+   Intermediate (also before a level is picked): the blocks, ready-made rules, Share and Pakt, and the test payments now and after signing.
+   Expert: the clause itself, editable, checked against the node's limits while you type, the streams it may read, a table of test
+   payments answered by this page and by the testnet's own engine (POST /check, as on /builder/), and the transaction before it is signed.
+   The blocks stay the one source of a built rule: the beginner's cards only tick and fill them. Start here's steps (?focus=) keep their own look. */
+const FULL_KEY = "tauhud-wallet-full";
+let FULL = (() => { try { return sessionStorage.getItem(FULL_KEY) === "1"; } catch (e) { return false; } })();
+const siteLevel = () => document.documentElement.dataset.level || (window.TauNav && TauNav.level ? TauNav.level() : store.get("tau-level")) || "";
+let LV = "mid", ACCT_OPEN = false;   // ACCT_OPEN: a beginner without a key opened the account panel (a key they have, or the address book)
+function applyLevel() {
+  const l = siteLevel(), root = document.documentElement, was = LV;
+  LV = root.classList.contains("focus") ? "" : l === "pro" ? "pro" : l === "new" && !FULL ? "new" : "mid";
+  ["new", "mid", "pro"].forEach(k => root.classList.toggle("wl-" + k, LV === k));
+  $("coach").hidden = LV !== "new"; $("bPick").hidden = LV !== "new"; $("xPane").hidden = LV !== "pro";
+  if (LV === "new" && RTAB !== "mine") document.querySelector('#ruleTabs [data-rtab="mine"]').click();
+  if (LV === "new" && TAB !== "send") $("tabSend").click();
+  if (was !== LV) { probesFolded = false; $("probesBox").open = true; }
+  renderLvlSeg();
+  renderRule();
+  fitLog();
+}
+addEventListener("tau-level", applyLevel);
+const LVNAMES = { new: "Beginner", mid: "Intermediate", pro: "Expert" };
+function renderLvlSeg() {
+  const l = siteLevel(), seg = $("lvlSeg");
+  if (document.documentElement.classList.contains("focus")) { seg.hidden = true; return; }
+  seg.replaceChildren(...[el("span", { class: "lbl", text: T("Wallet for") }), ...Object.keys(LVNAMES).map(k => el("button", { type: "button", "aria-pressed": String(k === (l || "mid") && !(k === "new" && FULL)),
+    "data-tip": T(LVNAMES[k]) + "\n" + T({ new: "A guide, four cards and one button: your first rule in three steps.", mid: "The blocks, ready-made rules, Share and Pakt; test payments now and after signing.", pro: "The clause itself: edit it, count it against the node's limits, ask the engine." }[k]) + "\n" + T("The same level as under the gear: every page follows it."),
+    onclick: () => { setFull(false); if (window.TauNav && TauNav.setLevel) TauNav.setLevel(k, "gear"); else { store.set("tau-level", k); document.documentElement.dataset.level = k; applyLevel(); } } }, T(LVNAMES[k]))),
+    l === "new" && FULL ? el("button", { type: "button", class: "back", onclick: () => setFull(false), text: "‹ " + T("Guided view") }) : null].filter(Boolean));
+}
+function setFull(on, go) {
+  FULL = !!on; try { if (on) sessionStorage.setItem(FULL_KEY, "1"); else sessionStorage.removeItem(FULL_KEY); } catch (e) {}
+  applyLevel();
+  if (go === "send") { $("tabSend").click(); $("act").scrollIntoView({ block: "nearest" }); }
+  if (go === "book") { $("tabBook").click(); $("acct").scrollIntoView({ block: "nearest" }); }
+  if (go === "activity") $("activity").scrollIntoView({ block: "nearest" });
+}
+const sameText = (a, b) => !!a && !!b && a.replace(/\s+/g, "") === b.replace(/\s+/g, "");
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const chalText = x => { const L = window.TauI18n ? TauI18n.lang : "en"; return (x && (x[L] || x.en)) || ""; };
+
+/* ---- Beginner: the guide on the left ---- */
+function renderCoach(d, r) {
+  if (LV !== "new") return;
+  const sent = W.log.find(x => x.kind === "rule" && x.status === "queued"), signedNow = !!r && !r.freeze && (!d.ok || sameText(d.text, r.text));
+  const steps = [
+    [!!W.pk, "Make your account", W.pk ? "Done. The key stays in this browser." : "One click. A new key is drawn in this browser and stays here."],
+    [d.ok || signedNow, "Choose what your rule does", "Tap one card or more on the right."],
+    [signedNow, "Sign it", sent ? "Sent. It is in force from the block that takes it in." : "One button. From the next block on, the chain checks your payments against it."],
+  ];
+  const now = steps.findIndex(s => !s[0]);
+  const fit = CHAL && CHAL_FITS[CHAL.id], fits = fit && d.ok && fit(d.r);
+  $("coach").replaceChildren(...[
+    el("h2", { text: T("Your first rule") }),
+    el("p", { class: "what", text: T("A rule is a promise your account makes: the chain itself checks every payment you send and stops the ones that break it.") }),
+    CHAL ? el("div", { class: "cchal" }, el("b", { text: T("This week's challenge") }), el("span", { text: chalText(CHAL.title) + " · " + chalText(CHAL.task) }),
+      SIM ? el("span", { class: "sim", text: T("Answers count only on the live testnet: a rule signed in the simulation is not read.") })
+        : fits ? el("span", { class: "fit", text: "✓ " + T("Your rule fits it. Once a block seals it, it shows on the challenge page.") }) : null) : null,
+    el("ol", { class: "csteps" }, ...steps.map(([ok, t, x], i) => el("li", { class: ok ? "done" : i === now ? "now" : "" },
+      el("i", { text: ok ? "✓" : String(i + 1) }), el("span", null, el("b", { text: T(t) }), el("span", { text: T(x) }),
+        i === 0 && !W.pk ? el("span", { class: "row" }, el("button", { class: "b go", type: "button", onclick: () => $("btnNew").click(), text: T("Make my account") }),
+          el("button", { class: "b", type: "button", onclick: () => { ACCT_OPEN = true; applyLevel(); $("btnImport").click(); }, text: T("Use a key I have") })) : null)))),
+    now === -1 ? el("p", { class: "cdone", text: T(r && r.freeze ? "Your account is frozen: nothing leaves it." : "Done: your rule is in force. Try it: send a payment it should stop, and watch the chain refuse it.") }) : null,
+    el("div", { class: "cmore" },
+      el("button", { type: "button", onclick: () => setFull(true, "send"), text: T("Send test AGRS") }),
+      el("button", { type: "button", onclick: () => { ACCT_OPEN = true; applyLevel(); $("tabBook").click(); $("acct").scrollIntoView({ block: "nearest" }); }, text: T("Address book") }),
+      el("button", { type: "button", onclick: () => setFull(true, "activity"), text: T("Activity") }),
+      el("button", { type: "button", onclick: () => setFull(true), text: T("Show the whole wallet") }))].filter(Boolean));
+}
+
+/* ---- Beginner: four cards, each one block of the rule ---- */
+const CARDS = [
+  { k: "cap", box: "cCap", t: "Limit each payment", p: "shield", fits: ["ceiling"] },
+  { k: "only", box: "cOnly", t: "Only people I know", p: "people", fits: ["friends"] },
+  { k: "from", box: "cFrom", t: "Lock it until a date", p: "savings", fits: ["until"] },
+  { k: "co", box: "cCo", t: "A second signature", p: "second", fits: ["twokeys"] },
+];
+let cardsBuilt = false;
+function poke(id) { $(id).dispatchEvent(new Event("input", { bubbles: true })); }
+function cardOn(c, on) {
+  $(c.box).checked = on;
+  if (c.k === "only") { ONLY.clear(); if (on) BOOK.filter(x => x.addr !== W.pk).slice(0, 3).forEach(x => ONLY.add(x.addr)); }
+  if (c.k === "from" && on && !$("vFrom").value) $("vFrom").value = ymd(new Date(inDays(90) * 1000));
+  if (c.k === "co" && on && !$("vCoWho").value) { const w = BOOK.find(x => x.addr !== W.pk); if (w) { $("vCoWho").dataset.want = w.addr; $("vCoWho").value = w.addr; } }
+  keepDraft = true;
+  renderRule(); renderShare();
+}
+function buildCards() {
+  cardsBuilt = true;
+  const mk = c => {
+    const pre = PRESETS.find(p => p.id === c.p), ctl = [];
+    if (c.k === "cap") ctl.push(el("label", { class: "bctl" }, el("span", { text: T("Highest payment") }), el("input", { class: "in", id: "bCap", type: "number", min: "1", step: "1", inputmode: "numeric" }), el("span", { text: T("test AGRS") })));
+    if (c.k === "from") ctl.push(el("label", { class: "bctl" }, el("span", { text: T("Locked until") }), el("input", { class: "in", id: "bFrom", type: "date" })));
+    if (c.k === "co") ctl.push(el("label", { class: "bctl" }, el("span", { text: T("Above") }), el("input", { class: "in", id: "bCoAbove", type: "number", min: "1", step: "1", inputmode: "numeric" }), el("span", { text: T("test AGRS") })),
+      el("label", { class: "bctl" }, el("span", { text: T("also signs:") }), el("select", { class: "in", id: "bCoWho" })));
+    if (c.k === "only") ctl.push(el("div", { class: "bchips", id: "bOnly" }));
+    return el("div", { class: "bcard", id: "bc-" + c.k, "data-tip": T(c.t) + "\n" + T("Against: " + pre.against) + "\n" + T("Not against: " + pre.not) },
+      el("button", { type: "button", class: "btog", "aria-pressed": "false", onclick: () => cardOn(c, !$(c.box).checked) },
+        el("i", { class: "bx", "aria-hidden": "true" }), el("b", { text: T(c.t) }), el("span", { class: "bfit", hidden: "", text: T("Fits this week's challenge") })),
+      el("div", { class: "bctls" }, ...ctl),
+      el("div", { class: "bkeep" }, el("span", { text: T("Against: " + pre.against) }), el("span", { class: "not", text: T("Not against: " + pre.not) })),
+      el("div", { class: "fixit", id: "bfx-" + c.k }));
+  };
+  $("bPick").replaceChildren(el("div", { class: "bhead" }, el("h3", { text: T("What should your rule do?") }),
+    el("a", { class: "bwords", href: "/builder/" + (SIM ? "?mode=sim" : ""), text: T("Or say it in a sentence: the rule builder ›") })),
+    el("div", { class: "bcards" }, ...CARDS.map(mk)), el("div", { class: "bsay", id: "bSay" }));
+  /* the card's own fields write into the blocks, so signing, sharing and the test payments read one rule */
+  [["bCap", "vCap", "cCap"], ["bFrom", "vFrom", "cFrom"], ["bCoAbove", "vCoAbove", "cCo"], ["bCoWho", "vCoWho", "cCo"]].forEach(([b, v, c]) => $(b).addEventListener("input", () => {
+    $(v).value = $(b).value; if (b === "bCoWho") $(v).dataset.want = $(b).value; $(c).checked = true; keepDraft = true; poke(v); }));
+}
+function renderCards(d) {
+  if (LV !== "new") return;
+  if (!cardsBuilt) buildCards();
+  const sync = (b, v) => { if (document.activeElement !== $(b)) $(b).value = $(v).value; };
+  sync("bCap", "vCap"); sync("bFrom", "vFrom"); sync("bCoAbove", "vCoAbove");
+  const others = BOOK.filter(c => c.addr !== W.pk);
+  $("bCoWho").replaceChildren(el("option", { value: "", text: T("pick a name") }), ...others.map(c => el("option", { value: c.addr, translate: "no", text: c.name })));
+  $("bCoWho").value = $("vCoWho").value;
+  $("bOnly").replaceChildren(...(others.length ? others.slice(0, 8).map(c => el("button", { type: "button", "aria-pressed": ONLY.has(c.addr) ? "true" : "false", translate: "no", text: c.name,
+    onclick: () => { if (ONLY.has(c.addr)) ONLY.delete(c.addr); else if (ONLY.size < MAX_ONLY) ONLY.add(c.addr); $("cOnly").checked = ONLY.size > 0; keepDraft = true; renderRule(); renderShare(); } }))
+    : [el("button", { type: "button", class: "add", onclick: () => { ACCT_OPEN = true; applyLevel(); $("tabBook").click(); $("acct").scrollIntoView({ block: "nearest" }); $("bName").focus(); }, text: T("+ Put a name in your address book") })]));
+  CARDS.forEach(c => {
+    const on = $(c.box).checked, card = $("bc-" + c.k);
+    card.classList.toggle("on", on); card.classList.toggle("bad", !!d.at[c.k]);
+    card.querySelector(".btog").setAttribute("aria-pressed", String(on));
+    card.querySelector(".bx").textContent = on ? "✓" : "";
+    card.querySelector(".bfit").hidden = !(CHAL && !SIM && (c.fits.includes(CHAL.id) || CHAL.id === "both"));
+    if (CHAL && CHAL.id === "both") card.querySelector(".bfit").textContent = T("Pick two for this week's challenge");
+    $("bfx-" + c.k).replaceChildren(...(d.at[c.k] ? ["↳ " + d.at[c.k]] : []), ...(c.k === "co" && d.at.co && !others.length ? [" ", el("button", { type: "button", class: "b quiet", onclick: () => { ACCT_OPEN = true; applyLevel(); $("tabBook").click(); $("acct").scrollIntoView({ block: "nearest" }); $("bName").focus(); }, text: T("+ Put a name in your address book") })] : []));
+  });
+  const say = $("bSay");
+  if (d.bad.length) say.replaceChildren(el("b", { text: T("Almost:") }), " ", d.bad.join(T("; ")));
+  else if (d.ok) say.replaceChildren(...[el("b", { text: T("Your rule, in plain words:") }), ...describe(d.r).map(t => el("span", { text: t })),
+    !W.pk ? el("span", { class: "next", text: T("Next: make your account on the left, then sign.") }) : null].filter(Boolean));
+  else say.replaceChildren(el("span", { class: "dim", text: T("Tap a card. You can pick more than one; a payment is stopped if any of them says no.") }));
+  say.className = "bsay" + (d.bad.length ? " fix" : d.ok ? " ok" : "");
+}
+
+/* ---- Intermediate: each test payment now (the rule in force) and after signing (the rule on screen) ---- */
+function compareProbes(d, r) {
+  if (LV !== "mid" || !r || !d.ok || sameText(d.text, r.text) || r.unknown) return;
+  const rows = [...$("probes").querySelectorAll(".probe")], cases = probeCases(d.r);
+  if (rows.length !== cases.length) return;
+  rows.forEach((row, i) => { const j = judge(r, cases[i][1]); row.classList.add("cmp");
+    row.append(el("span", { class: "was " + (j.why.length ? "no" : j.co ? "wait" : "yes"), "data-tip": T("With the rule in force now") + "\n" + (j.why.length ? FX("stopped: {x}", {}, { x: whyText(j) }) : j.co ? T("waits for a co-signature") : T("goes through")),
+      text: T("now") + " " + (j.why.length ? "✗" : j.co ? "…" : "✓") })); });
+  const h = $("probes").querySelector("h3"); if (!h) $("probes").prepend(el("div", { class: "probe cmp head" }, el("span"), el("em", { text: T("Payment") }), el("span", { text: T("after signing") }), el("span", { class: "was", text: T("now") })));
+}
+
+/* ---- Expert: the clause ---- */
+let XHAND = false, xBuilt = false;
+const X = { state: "idle", res: null, forText: null, signed: false, seq: 0 };
+function xText() { return XHAND ? $("xText").value.trim() : (ruleDraft().text || ""); }
+function xChecks(text) {
+  const body = String(text || "").replace(/#(?![bx])[^\n]*/gi, ""), lim = clauseLimits(text);
+  const reads = [...new Set(body.match(/\bi\d+(?=\s*\[)/g) || [])].sort((a, b) => a.slice(1) - b.slice(1)), writes = [...new Set(body.match(/\bo\d+(?=\s*\[)/g) || [])];
+  const banned = reads.filter(x => /^i1[2-5]$/.test(x)), past = /\b[io]\d+\s*\[\s*(t\s*-\s*\d+|\d+)\s*\]/.test(body);
+  return { reads, writes, lim, list: [
+    [/^\s*always\s*\([\s\S]*\)\s*\.\s*$/.test(body), "one always ( … ). unit"],
+    [writes.length === 1 && writes[0] === "o5", "writes o5 only"],
+    [reads.length > 0, "reads an input"],
+    [!banned.length, banned.length ? FX("names {x}", {}, { x: banned.join(", ") }) : "no i12, no i13 to i15"],
+    [!past, "reads [t] only"],
+    [lim.comparisons <= CLAUSE_MAX.comparisons, `${lim.comparisons}/32 ` + T("comparisons")],
+    [lim.depth <= CLAUSE_MAX.depth, `${lim.depth}/32 ` + T("bracket depth")],
+    [lim.bytes <= CLAUSE_MAX.bytes, `${fmt(lim.bytes)}/8,192 ` + T("bytes")],
+  ] };
+}
+/* a hand-written clause is judged here only when the blocks read it back to the very same text; otherwise only the engine answers */
+function xReadable(text) { const r = readRule(text); return r && !r.unknown && (r.freeze || sameText(buildRule(r), text)) ? r : null; }
+function xCases(r, text) {
+  const friend = BOOK.find(c => c.addr !== W.pk), other = "f0" + S.hash("someone new" + (W.pk || "")).slice(0, 62) + S.hash("x" + (W.pk || "")).slice(0, 32), now = Math.floor(Date.now() / 1000);
+  const slots = [...new Map([...String(text).matchAll(/i(1[89]|2[0-5])\s*\[t\]\s*:\s*bv\[384\]\s*=\s*\{\s*#x([0-9a-f]{96})/gi)].map(m => [Number(m[1]), m[2].toLowerCase()])).entries()];
+  const big = Math.max(20000, ((r && r.cap) || 0) + 1, ((r && r.co && r.co.limit) || 0) + 1);
+  const to = friend ? friend.addr : other.slice(0, 96), toName = friend ? friend.name : T("someone new");
+  const list = [
+    { label: friend ? friend.name : T("someone new"), to, amount: 100, ts: now },
+    friend ? { label: FX("lookalike of {x}", {}, { x: friend.name }), to: lookalikeOf(friend.addr), amount: 100, ts: now } : null,
+    friend ? { label: T("someone new"), to: other.slice(0, 96), amount: 100, ts: now } : null,
+    { label: toName, to, amount: big, ts: now },
+    slots.length ? { label: toName + " · " + T("co-signed"), to, amount: big, ts: now, signed: slots } : null,
+    r && r.from ? { label: toName + " · " + dayOf(r.from + 86400), to, amount: 100, ts: r.from + 86400 } : null,
+  ].filter(Boolean);
+  return list.slice(0, 8);
+}
+function buildX() {
+  xBuilt = true;
+  const ta = el("textarea", { class: "in", id: "xText", rows: "6", spellcheck: "false", autocomplete: "off", translate: "no", "aria-label": T("The clause"),
+    placeholder: "always ( (i1[t]:bv[24] > { #x0003e8 }:bv[24]) ? " + BLOCK + " : " + ALLOW + " )." });
+  ta.addEventListener("input", () => { XHAND = true; X.forText = null; X.state = "idle"; renderRule(); });
+  $("xPane").replaceChildren(
+    el("div", { class: "xhead" }, el("h3", { text: T("Clause") + " · o5" }), el("span", { class: "xsrc", id: "xSrc" }),
+      el("button", { type: "button", class: "b quiet", id: "xReset", onclick: () => { XHAND = false; X.state = "idle"; renderRule(); }, text: T("Back to the blocks") }),
+      el("button", { type: "button", class: "b quiet", id: "xCopy", onclick: e => { navigator.clipboard && navigator.clipboard.writeText(xText()).then(() => { e.target.textContent = T("Copied"); setTimeout(() => { e.target.textContent = T("Copy"); }, 1500); }).catch(() => {}); }, text: T("Copy") })),
+    ta,
+    el("div", { class: "xmeter", id: "xMeter" }),
+    el("div", { class: "xback", id: "xBack" }),
+    el("div", { class: "xtable", id: "xTable" }),
+    el("div", { class: "row" }, el("button", { type: "button", class: "b", id: "xAsk", onclick: askX, text: T("Ask the engine") }), el("span", { class: "xeng", id: "xEng" })),
+    el("details", { class: "tau", id: "xStreams" }, el("summary", { text: T("Streams a clause may read") }), el("table", { class: "xs" }, ...[
+      ["o5", "bv[24]", "the answer: 0 stops the payment, 1 lets it through"], ["i1", "bv[24]", "amount"], ["i2", "", "the sender's balance at the parent block"],
+      ["i3 / i4", "bv[384]", "sender / recipient address"], ["i5", "bv[64]", "block time, in seconds"], ["i18–i25", "bv[384]", "co-signature slots: the approver's address once they signed, 0 before; written only by the node"],
+      ["i26+", "", "custom inputs"], ["i12, i13–i15", "", "not in a clause: the node adds the sender guard itself"],
+    ].map(([s, w, t]) => el("tr", null, el("td", { translate: "no", text: s }), el("td", { translate: "no", text: w }), el("td", { text: T(t) }))))),
+    el("details", { class: "tau", id: "xTx" }, el("summary", { text: T("The transaction, before it is signed") }), el("pre", { id: "xTxt", translate: "no" })));
+  if (!SIM) fetch(RELAY + "/check/health", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => { X.signed = !!(j && j.signed); X.up = !!j; renderX(); }).catch(() => { X.up = false; renderX(); });
+}
+function renderX() {
+  if (LV !== "pro" || !xBuilt) return;
+  const text = xText(), ta = $("xText");
+  if (!XHAND && document.activeElement !== ta) ta.value = text;
+  const c = xChecks(text), r = myRule();
+  $("xSrc").textContent = T(XHAND ? "written by hand" : "built from the blocks above");
+  $("xReset").hidden = !XHAND;
+  $("xMeter").replaceChildren(...(text ? c.list.map(([ok, t]) => el("span", { class: ok ? "ok" : "no", text: (ok ? "✓ " : "✗ ") + T(t) })) : [el("span", { class: "dim", text: T("Tick a block above, or write the clause here.") })]),
+    ...(text && c.reads.length ? [el("span", { class: "dim", translate: "no", text: T("reads") + " " + c.reads.join(" ") })] : []));
+  $("xTable").hidden = !text; $("xAsk").parentElement.hidden = !text;
+  const rr = text ? xReadable(text) : null;
+  $("xBack").replaceChildren(...(!text ? [] : rr ? [el("b", { text: T("Reads as:") }), " ", describe(rr).join(" ")] : [el("b", { text: T("Hand-written:") }), " ", T("the blocks cannot show this clause, so only the engine answers the test payments.")]),
+    ...(r && text && sameText(text, r.text) ? [el("span", { class: "fit", text: "  ✓ " + T("this is the rule in force") })] : []));
+  const cases = xCases(rr, text), runs = X.forText === text && X.res && X.res.tests || [];
+  $("xTable").replaceChildren(el("table", { class: "xt" }, el("tr", null, ...["i1", "i4", "i18+", T("this page"), T("engine")].map(h => el("th", { text: h }))),
+    ...cases.map((k, i) => { const j = rr ? judge(rr, { to: k.to, amount: k.amount, ts: k.ts, signed: new Set((k.signed || []).map(s => s[1])) }) : null, run = runs[i];
+      const mine = !j ? "—" : j.why.length || j.co ? "0" : "1", eng = !run ? "—" : run.ok && run.o5 != null ? String(run.o5) : "✗";
+      return el("tr", { class: run && j && String(run.o5) !== mine ? "off" : "" }, el("td", { class: "n", text: fmt(k.amount) }), el("td", { translate: "no", text: k.label }), el("td", { text: k.signed ? k.signed.map(s => "i" + s[0]).join(" ") : "0" }),
+        el("td", { class: mine === "1" ? "yes" : mine === "0" ? "no" : "", text: mine }), el("td", { class: eng === "1" ? "yes" : eng === "0" ? "no" : "", text: eng })); })));
+  const eng = $("xEng");
+  eng.className = "xeng" + (X.state === "done" && X.res && X.res.accepted ? " ok" : X.state === "done" ? " no" : "");
+  eng.textContent = SIM ? T("The engine answers rules for the live testnet; in the simulation only this page judges.")
+    : X.state === "wait" ? T("Asking the engine…") : X.state === "done" && X.res ? (X.res.accepted ? T("The engine takes the clause; o5 for each payment is in the table.") : F("The engine refuses it: {x}", { x: String(X.res.reason || X.res.stage || "").slice(0, 160) }))
+    : X.state === "off" ? T("The engine is not reachable right now.") : X.up === false ? T("The engine is not reachable right now.") : T("The engine runs the clause on the testnet's own Tau, with these payments.");
+  $("xAsk").disabled = SIM || !text || X.state === "wait";
+  $("xTxt").textContent = text ? JSON.stringify(base("user_tx", { operations: { "0": text } }), null, 1) : "";
+  /* hand-written: the sign button signs the text in the box; the node dry-runs it first (checktx) and says why it refuses */
+  if (XHAND) {
+    const okLocal = !!text && c.list.every(x => x[0]), same = r && sameText(text, r.text);
+    $("btnRule").disabled = !W.pk || !okLocal || same;
+    $("ruleWhy").className = "why2" + (text && !okLocal ? " fix" : "");
+    $("ruleWhy").replaceChildren(...(W.pk && text && !okLocal ? [el("b", { text: T("Not ready to sign:") }), " ", c.list.filter(x => !x[0]).map(x => T(x[1])).join(T("; "))] : []));
+  }
+}
+async function askX() {
+  const text = xText(); if (!text || SIM) return;
+  const rr = xReadable(text), cases = xCases(rr, text), seq = ++X.seq, sender = W.pk || "db".repeat(48);
+  X.state = "wait"; X.res = null; X.forText = text; renderX();
+  try {
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 60000);
+    const res = await fetch(RELAY + "/check", { method: "POST", headers: { "Content-Type": "application/json" }, signal: ctl.signal,
+      body: JSON.stringify({ rule: text, sender, tests: cases.filter(k => !k.signed || X.signed).map(k => ({ amount: k.amount, time: k.ts, from: sender, to: k.to,
+        ...(k.signed ? { signed: Array.from({ length: 8 }, (_, i) => (k.signed.find(s => s[0] === 18 + i) || [0, ""])[1]) } : {}) })) }) });
+    clearTimeout(timer);
+    const j = await res.json().catch(() => ({}));
+    if (seq !== X.seq) return;
+    if (j.accepted == null) { X.state = "off"; X.res = null; }
+    else { X.state = "done"; if (j.tests && !X.signed) { const t = [], it = j.tests[Symbol.iterator](); cases.forEach(k => t.push(k.signed ? null : it.next().value)); j.tests = t; } X.res = j; }
+  } catch (e) { if (seq === X.seq) X.state = "off"; }
+  renderX();
+}
+function renderLevel(d, r) {
+  $("probesBox").hidden = LV === "new" && !d.ok;   // a beginner sees test payments once there is a rule to test
+  $("ruleNow").classList.toggle("nokey", !W.pk || (W.clause !== undefined && !r));   // a beginner sees this line once a rule is in force
+  document.documentElement.classList.toggle("wl-nokey", !W.pk && !ACCT_OPEN);
+  if (LV === "new") { renderCoach(d, r); renderCards(d); }
+  if (LV === "mid") compareProbes(d, r);
+  if (LV === "pro") { if (!xBuilt) buildX(); renderX(); }
+}
+
 /* ---------- one screen ---------- */
 function fit() {
   const w = innerWidth, h = innerHeight, root = document.documentElement;
@@ -1882,6 +2291,7 @@ takeBookHash();
 loadKey();
 /* Start here's rule step: one ready choice, a limit per payment, unless a rule was carried in or the account already has one */
 if (document.documentElement.classList.contains("focus-rule") && !carried && !$("cCap").checked) { $("cCap").checked = true; $("vCap").value = "1000"; $("cCap").dispatchEvent(new Event("input", { bubbles: true })); }
+applyLevel();
 loadSlots();
 if (!SIM) setInterval(loadSlots, 60000);
 if (!W.pk) renderAll();
