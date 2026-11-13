@@ -1171,8 +1171,9 @@ body[data-mode="sim"] .nb-now .sim { display: inline; }
 html.nb .nbsay { display: block; }
 .nbsay span { display: block; } .nbsay span.dim { color: var(--dim); font-size: 12px; }
 @media (min-width: 1101px) {
-  html.nb:not(.nbmore), html.nb:not(.nbmore) body { height: 100%; }
-  html.nb:not(.nbmore) body:not(.calm) .wrap { height: 100%; }
+  /* html.wide sets its own height and zoom (--z): 100% there would be scaled past the bottom of the screen */
+  html.nb:not(.nbmore):not(.wide), html.nb:not(.nbmore):not(.wide) body { height: 100%; }
+  html.nb:not(.nbmore):not(.wide) body:not(.calm) .wrap { height: 100%; }
   html.nb:not(.nbmore) body:not(.calm) .wrap > .grid { flex: 1 1 0; min-height: 0; }
   html.nb:not(.nbmore) .grid .scroll { max-height: none; }
   html.nb:not(.nbmore) .grid .core canvas { width: auto; height: 100%; max-width: 100%; max-height: 100%; }
