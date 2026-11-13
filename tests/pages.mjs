@@ -26,7 +26,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "tests", "out");
 const SETTLE = +(process.env.SETTLE_MS || 4000);   // the pages build in steps (sim chain, dictionaries, first fetches)
 const SKIP = new Set(["assets", "go", "infra", "kit", "tests", "node_modules", "embed"]);   // embed is a widget, checked on its own below
-const LAYOUT = ["hud-calm", "account", "start", "rules", "builder", "chronicle", "explorer", "findings", "roadmap", "gazette", "history", "hud", "missions", "nodes", "playground", "proposals", "stats", "load", "status", "vote", "wallet", "whatif", "developers", "devpulse", "rabbit", "cruise", "services", "facts", "nomemo", "learn", "gxp"];
+const LAYOUT = ["hud-calm", "hud-new", "account", "start", "rules", "builder", "chronicle", "explorer", "findings", "roadmap", "gazette", "history", "hud", "missions", "nodes", "playground", "proposals", "stats", "load", "status", "vote", "wallet", "whatif", "developers", "devpulse", "rabbit", "cruise", "services", "facts", "nomemo", "learn", "gxp"];
 const SCREENS = [[2560, 1440], [2000, 1125]];
 const CLOCK = new Date(process.env.CLOCK || "2026-10-28T10:24:00Z");
 
@@ -53,7 +53,7 @@ for (const d of await readdir(ROOT, { withFileTypes: true })) {
   try { await stat(join(ROOT, d.name, "index.html")); dirs.push(d.name); } catch (e) {}
 }
 const only = process.argv.slice(2);
-const pages = [["hud", "?full=1"], ["hud-calm", "?calm=1"], ...dirs.sort().map(d => [d, d + "/"]), ["embed", "embed/?h=320"], ["story-zh", "story/zh/"]]   // the HUD twice: the dashboard, and the door a first visit sees
+const pages = [["hud", "?full=1"], ["hud-calm", "?calm=1"], ["hud-new", "?full=1"], ...dirs.sort().map(d => [d, d + "/"]), ["embed", "embed/?h=320"], ["story-zh", "story/zh/"]]   // the HUD three times: the dashboard, the door a first visit sees, and the Beginner level (tau-level "new")
   .filter(([n]) => !only.length || only.includes(n));
 
 /* console noise that is not a bug: refused network requests are the point of this run */
@@ -67,6 +67,7 @@ async function visit(name, path, { mode, lang, w = 1600, h = 900, layout = false
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, locale: lang === "zh" ? "zh-CN" : "en-US", timezoneId: "UTC" });
   await ctx.route(u => !u.href.startsWith(BASE), r => r.abort("internetdisconnected"));
   await ctx.routeWebSocket(() => true, ws => ws.close());   // the relay's socket: offline, never the real chain
+  if (name === "hud-new") await ctx.addInitScript(() => { try { localStorage.setItem("tau-level", "new"); } catch (e) {} });   // the Beginner level under the gear
   const page = await ctx.newPage();
   await page.clock.install({ time: CLOCK });
   const run = `${mode}${lang === "zh" ? " zh" : ""}${layout ? ` ${w}×${h}` : ""}`;
@@ -109,6 +110,7 @@ async function visitZhAgain(name, path, mode) {
   const ctx = await browser.newContext({ viewport: { width: 1600, height: 900 }, locale: "zh-CN", timezoneId: "UTC" });
   await ctx.route(u => !u.href.startsWith(BASE), r => r.abort("internetdisconnected"));
   await ctx.routeWebSocket(() => true, ws => ws.close());
+  if (name === "hud-new") await ctx.addInitScript(() => { try { localStorage.setItem("tau-level", "new"); } catch (e) {} });   // the Beginner level under the gear
   const page = await ctx.newPage();
   await page.clock.install({ time: CLOCK });
   const q = new URLSearchParams(path.includes("?") ? path.split("?")[1] : "");
