@@ -472,6 +472,8 @@ TauI18n.add({ strings: {
   "Update log": "更新ログ",
   "built from your feedback": "皆さんのフィードバックから",
   "Keep it running": "運営を支える",
+  "Tau HUD crew": "Tau HUD クルー",
+  "A paid monthly membership in our external shop; a purchase, not a donation": "外部ショップの月額有料メンバーシップ。寄付ではなく購入です",
   "Donations": "寄付",
   "voluntary, nothing in return": "任意、見返りなし",
   "Tau HUD is an independent community project, built by one person in their free time. The address and the QR code are the same as in About. A donation is a voluntary gift: nothing is promised or owed in return.": "Tau HUD は独立したコミュニティプロジェクトで、1 人が空き時間に作っています。アドレスと QR コードは「概要」と同じです。寄付は任意の贈り物で、見返りとして約束されるもの、負うものは何もありません。",

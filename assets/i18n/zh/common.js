@@ -481,6 +481,8 @@ TauI18n.add({ strings: {
   "Update log": "更新日志",
   "built from your feedback": "根据你的反馈打造",
   "Keep it running": "让它继续运行",
+  "Tau HUD crew": "Tau HUD 船员",
+  "A paid monthly membership in our external shop; a purchase, not a donation": "我们外部商店里按月付费的会员；是购买，不是捐赠",
   "Donations": "捐赠",
   "voluntary, nothing in return": "自愿，无任何回报",
   "Tau HUD is an independent community project, built by one person in their free time. The address and the QR code are the same as in About. A donation is a voluntary gift: nothing is promised or owed in return.": "Tau HUD 是一个独立的社区项目，由一个人利用业余时间制作。地址和二维码与“关于”中的相同。捐赠是自愿的馈赠：不承诺任何回报，也不欠任何回报。",
