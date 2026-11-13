@@ -457,8 +457,19 @@ x_line() {
 # the crew's ship log (alerts/crewlog.py), a members-only post in the Tau HUD crew on Fourthwall, the node left alone:
 # up crewlog  the posting service rebuilt with the code just pulled, the API user checked (tiers, members, the newest
 # posts as stored) and this week's post printed, nothing posted; up crewlog send  posts it now; up crewlog on / off
-# posts one every Monday after the weekly recap by itself, or stops that (CREWLOG_ENABLED in .env)
+# posts one every Monday after the weekly recap by itself, or stops that (CREWLOG_ENABLED in .env); up crewlog key  asks for
+# the shop's API user once (ssh -t) and writes it to .env
 if [ "${1:-}" = "crewlog" ]; then
+  if [ "${2:-}" = "key" ]; then
+    [ -t 0 ] || { echo "needs a terminal: ssh -t root@node.tauhud.com \"cd /opt/tau-command-hud && sh infra/up.sh crewlog key\""; exit 2; }
+    printf "Fourthwall API username (Settings, For developers, Open API): "; read -r U
+    printf "Fourthwall API password (nothing shows while typing): "
+    stty -echo; read -r P; stty echo; echo
+    [ -n "$U" ] && [ -n "$P" ] || { echo "nothing written"; exit 2; }
+    touch .env; sed -i '/^FOURTHWALL_API_USER=/d; /^FOURTHWALL_API_PASS=/d' .env; [ -s .env ] && [ -n "$(tail -c1 .env)" ] && echo >> .env
+    printf 'FOURTHWALL_API_USER=%s\nFOURTHWALL_API_PASS=%s\n' "$U" "$P" >> .env; chmod 600 .env
+    echo "written to infra/.env"
+  fi
   case "${2:-}" in
     on|off) touch .env; sed -i '/^CREWLOG_ENABLED=/d' .env; [ -s .env ] && [ -n "$(tail -c1 .env)" ] && echo >> .env
             printf 'CREWLOG_ENABLED=%s\n' "$([ "$2" = on ] && echo true || echo false)" >> .env; chmod 600 .env ;;
