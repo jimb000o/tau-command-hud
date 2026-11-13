@@ -2,7 +2,7 @@
 
 Every page's header (assets/nav.js) sends one GET /v when it opens and, if the page stayed visible for 30 seconds,
 one more with e=1. The relay keeps only counts per UTC day: views, visitors and engaged views per page, where people
-came from (the other site's host name, a ?ref= / utm_source tag, or the previous Tau HUD page), language, sim or live
+came from (the other site's host name, a ?ref= / utm_source tag from a fixed list, or the previous Tau HUD page), language, sim or live
 view and hour of day (screen class only from requests that still carry w=; the pages no longer send it). When the page
 is left or hidden, one more GET with t=<seconds the page was visible> adds one to a time step per page (under 10 s,
 10-30 s, 30 s-1 min, 1-3 min, 3-10 min, longer); the seconds themselves are not kept.
@@ -54,6 +54,20 @@ MAX_KEYS = {"views": 150, "refs": 300, "sources": 100, "flows": 400}   # distinc
 PAGE = re.compile(r"^[a-z0-9][a-z0-9/_-]{0,47}$")
 HOST = re.compile(r"^[a-z0-9.-]{1,80}\.[a-z]{2,24}$")
 TAG = re.compile(r"^[a-z0-9._-]{1,40}$")
+# Only these link tags are counted (13 November 2026); any other ?ref= / utm_source value is dropped unread, so a tag
+# can never carry a name or an id of a person. A new tag starts counting when it is added here.
+FIXED_TAGS = {"friend", "telegram", "x", "youtube", "github", "reddit", "hn", "nomemo", "agorzilla", "rabbit", "nodes",
+              "donate", "crew", "blog", "learn", "wallet", "builder", "gxp", "book", "shop"}
+TG_KINDS = {"costs", "today", "recap", "deepdive", "site", "digest", "island", "challenge", "firsts", "nodes", "restart",
+            "health", "idni", "blog", "gazette", "rabbit", "chain", "post"}   # ref=tg-<kind>: the kinds in infra/alerts/alerts.py (TG_KINDS, and "post" for the rest)
+PRESET_IDS = {"shield", "people", "savings", "second", "back"}   # ref=preset-<id>: the ready-made rules in wallet/index.html (PRESETS)
+
+
+def tag_ok(tag: str) -> bool:
+    """True for a tag from the fixed list: a plain one, tg-<kind> of the channel's posts, or preset-<id> of a ready-made rule."""
+    if not TAG.match(tag):
+        return False
+    return tag in FIXED_TAGS or (tag[:3] == "tg-" and tag[3:] in TG_KINDS) or (tag[:7] == "preset-" and tag[7:] in PRESET_IDS)
 BOT = re.compile(r"bot|crawl|spider|slurp|headless|preview|fetch|curl|wget|python|httpx|go-http|java/|monitor|lighthouse|pingdom|facebookexternalhit|embedly", re.I)
 OWN_HOSTS = {"": ("tauhud.com", "www.tauhud.com", "jimb000o.github.io"), "agorzilla": ("agorzilla.com", "www.agorzilla.com")}
 SITES = ("agorzilla",)   # other sites we run: a page named like the site, or below it, is counted for that site
@@ -236,7 +250,7 @@ class Visits:
                 elif not ref:
                     _bump(t["refs"], "(direct)", MAX_KEYS["refs"])
             tag = q.get("s", "").lower()
-            if TAG.match(tag):
+            if tag_ok(tag):
                 _bump(t["sources"], tag, MAX_KEYS["sources"])
         if not self.dirty_since:
             self.dirty_since = self.clock()
