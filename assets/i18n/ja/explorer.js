@@ -338,4 +338,5 @@ TauI18n.add({ strings: {
   "Block #{n}": "ブロック #{n}",
   "The newest blocks": "最新のブロック",
   "Block {n}": "ブロック {n}",
+  "Every node checked this block against the Tau rules before adding it. Set your level to Expert under the gear for its hashes and the raw data.": "すべてのノードが、このブロックを追加する前に Tau のルールで検証しました。ハッシュや生データを見るには、歯車でレベルを「上級者」にしてください。",
 } });

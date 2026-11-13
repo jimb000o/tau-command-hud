@@ -143,6 +143,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .tip em { color: var(--dim); font-style: normal; }
 
 .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 10px; }
+/* a laptop screen (the page scrolls there): the buttons that move through the chain sit above the timeline, so Play is on the first screen */
+@media (min-width: 701px) { html:not(.wide) #pTl { display: flex; flex-direction: column; } html:not(.wide) #pTl > h2 { order: -2; } html:not(.wide) #pTl > .controls { order: -1; margin: 0 0 10px; } }
+.legend .raw { margin-left: auto; } .legend .raw a { color: var(--dim); }
 .btn { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; border-radius: 999px; padding: 7px 13px; cursor: pointer; border: 1px solid var(--hair); background: transparent; color: #fff; white-space: nowrap; }
 .btn.primary { background: #fff; color: #000; border-color: #fff; min-width: 82px; }
 .btn.primary:hover { background: var(--ok); border-color: var(--ok); }
@@ -337,6 +340,7 @@ html.wide .src { max-width: none; columns: 2; column-gap: 40px; }
       <span><i class="l-agreed"></i>agreed, waiting for its block</span>
       <span><i class="l-active"></i>in force</span>
       <span><i class="l-exp"></i>too few votes, dropped</span>
+      <span class="raw"><a href="https://node.tauhud.com/proposals.json" target="_blank" rel="noopener">Raw data (JSON)</a></span>
     </div>
   </section>
 
@@ -397,6 +401,7 @@ html.wide .src { max-width: none; columns: 2; column-gap: 40px; }
 </div>
 
 <script src="vendor/blake3.umd.min.js"></script>
+<script src="../assets/rulefacts.js"></script>
 <script src="../assets/rulediff.js"></script>
 <script>
 "use strict";

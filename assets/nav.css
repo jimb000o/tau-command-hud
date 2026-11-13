@@ -32,6 +32,12 @@
 .mi b .ext { color: var(--tn-dim); font-weight: 400; }
 .mi > span:last-child { font: 400 12px/1.45 var(--tn-font); color: var(--tn-dim); }
 .mi.soon { cursor: default; opacity: .5; }
+/* the pages inside one menu entry, named under it (Read: The Daily Consensus, Blog, Chronicle) */
+.msub { display: flex; flex-wrap: wrap; gap: 6px; margin: -4px 0 6px 50px; }
+.msub .ms { font: 500 12px var(--tn-font); color: #d6d6dc; text-decoration: none; padding: 3px 10px; border: 1px solid var(--tn-hair); border-radius: 999px; white-space: nowrap; }
+.msub .ms:hover, .msub .ms:focus-visible { color: #fff; border-color: #fff; background: rgba(255,255,255,.05); }
+.msub .ms.here { color: var(--tn-ok); border-color: var(--tn-ok); }
+@media (max-width: 700px) { .tsheet .msub { margin-left: 44px; gap: 8px; } .tsheet .msub .ms { min-height: 44px; display: inline-flex; align-items: center; padding: 0 14px; } }
 .mi.soon:hover { background: transparent; }
 .mi.soon b::after { content: "soon"; margin-left: 8px; font: 500 11px var(--tn-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--tn-dim); }
 .mi.here .ic { border-color: var(--tn-ok); box-shadow: 0 0 8px rgba(57,255,138,.45); }
@@ -58,6 +64,11 @@
 .mi .ic svg { width: 13px; height: 13px; fill: currentColor; }
 .mi .ic img { width: 18px; height: auto; display: block; }
 .tnav .pill.fbk { background: #fff; border-color: #fff; color: #000; font-weight: 700; }   /* the most visible thing in the header, still monochrome */
+/* laptops: the menu and the tools on one line instead of two. Up to 1365 px wide Follow and Feedback say one word;
+   up to 1129 px they are their icons (the hover and the screen reader keep the words) */
+.tnav .pill.tg .sh, .tnav .pill.fbk .sh { display: none; }
+@media (min-width: 701px) and (max-width: 1365px) { .tnav .pill.tg .lg, .tnav .pill.fbk .lg { display: none; } .tnav .pill.tg .sh, .tnav .pill.fbk .sh { display: inline; } }
+@media (min-width: 701px) and (max-width: 1129px) { .tnav .pill.tg .sh, .tnav .pill.fbk .sh { display: none; } .tnav .pill.tg, .tnav .pill.fbk { padding-left: 11px; padding-right: 11px; } .tnav-r { gap: 8px; } }
 .tnav .pill.fbk svg { width: 13px; height: 13px; fill: currentColor; flex: none; }
 .tnav .pill.fbk:hover, .tnav .pill.fbk:focus-visible { background: #d6d6dc; border-color: #d6d6dc; color: #000; }
 .tnav .tl { display: inline-block; font: 500 12px var(--tn-font); letter-spacing: .09em; text-transform: uppercase; color: #a3a3ad; white-space: nowrap; cursor: pointer; text-decoration: none; background: transparent; border: 0; padding: 6px 2px; }
@@ -237,6 +248,8 @@ body[data-view="simple"] .vp { display: block; }
 .tn-changes summary { cursor: pointer; list-style: none; color: #fff; font-weight: 600; line-height: 1.4; } .tn-changes summary::-webkit-details-marker { display: none; }
 .tn-changes summary::after { content: " ›"; color: var(--u-dim); font-weight: 400; } .tn-changes details[open] summary::after { content: " ‹"; }
 .tn-changes details p { margin: 4px 0 0; color: var(--u-dim); line-height: 1.5; } .tn-changes .one { color: #fff; font-weight: 600; line-height: 1.4; }
+.tn-changes a.one { display: block; text-decoration: none; } .tn-changes a.one::after { content: " ›"; color: var(--u-dim); font-weight: 400; } .tn-changes a.one:hover { text-decoration: underline; }
+.tn-changes details p a { color: var(--u-ok); text-decoration: none; } .tn-changes details p a:hover { text-decoration: underline; } .tn-changes details p a.go { display: inline-block; white-space: nowrap; font-weight: 600; }
 @media (max-width: 1100px) { .tn-community { grid-template-columns: minmax(0, 1fr); } .tn-panel h2 { flex-wrap: wrap; row-gap: 2px; } .tn-panel h2 small { white-space: normal; flex: 1 1 140px; line-height: 1.35; } }
 @media (max-width: 700px) { .tn-modal { padding: 8px; } .tn-tgstrip { padding-right: 44px; } .tn-changes { max-height: none; overflow: visible; padding-right: 0; } .tn-btn { font-size: 11px; padding: 8px 12px; min-height: 36px; } }
 @media (max-width: 520px) { .tn-donate { grid-template-columns: minmax(0, 1fr); justify-items: start; } }
@@ -306,7 +319,7 @@ header.trail .unoff.q:hover, header.rail > button.chip.unoff.unoff:hover { color
 .tn-onair button:hover { color: #fff; }
 .tn-onair a.blk { color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
 .tn-onair a.blk:hover { color: var(--tn-ok, #39ff8a); }
-@media (max-width: 1365px) { .tnav .pill.tn-radiob .lbl { display: none; } .tnav .pill.tn-radiob { padding-left: 10px; padding-right: 10px; } }   /* the icon alone; the hover says what it is */
+@media (max-width: 1499px) { .tnav .pill.tn-radiob .lbl { display: none; } .tnav .pill.tn-radiob { padding-left: 10px; padding-right: 10px; } }   /* the icon alone; the hover says what it is */
 @media (max-width: 700px), (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
   .tnav .pill.tn-radiob { padding: 0; width: 44px; justify-content: center; }
   .tn-onair { left: 12px; right: 12px; max-width: none; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); flex-wrap: wrap; }
@@ -323,10 +336,11 @@ header.trail .unoff.q:hover, header.rail > button.chip.unoff.unoff:hover { color
 /* Testnet health tabs (Stats · Testnet load · Status) under the nav row */
 .tn-tabs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 2px 0 0; font: 500 11px var(--tn-font); letter-spacing: .1em; text-transform: uppercase; }
 .tn-tabs .lbl { color: var(--tn-dim); margin-right: 4px; }
-.tn-tabs .tab { color: var(--tn-dim); text-decoration: none; padding: 5px 12px; min-height: 28px; display: inline-flex; align-items: center; border: 1px solid var(--tn-hair); border-radius: 999px; }
+.tn-tabs .tab { color: var(--tn-dim); text-decoration: none; padding: 3px 11px; min-height: 24px; box-sizing: border-box; display: inline-flex; align-items: center; border: 1px solid var(--tn-hair); border-radius: 999px; }
 .tn-tabs .tab:hover { color: #fff; border-color: #fff; }
 .tn-tabs .tab.here { color: var(--tn-ok); border-color: var(--tn-ok); }
-@media (max-width: 700px) { .tn-tabs { gap: 6px; } .tn-tabs .tab { min-height: 44px; padding: 0 14px; } }
+/* phones: one row that moves sideways instead of two or three rows of tabs before the page starts */
+@media (max-width: 700px) { .tn-tabs { gap: 6px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-right: -12px; padding-right: 12px; } .tn-tabs::-webkit-scrollbar { display: none; } .tn-tabs .lbl { display: none; } .tn-tabs .tab { min-height: 44px; padding: 0 14px; white-space: nowrap; flex: none; } }
 /* "what is real": today's transactions by sender, one quiet line */
 .tn-real { color: var(--tn-dim); font: 500 11px/1.5 var(--tn-mono); }
 p.tn-real { margin: 4px 0 0; padding: 4px 12px; border: 1px solid var(--tn-hair); border-radius: 4px; }
@@ -348,3 +362,45 @@ span.tn-real { display: block; margin-top: 4px; }
   summary { padding-top: 12px; padding-bottom: 12px; }
   input[type=checkbox], input[type=radio] { min-width: 22px; min-height: 22px; }
 }
+/* About in place on the subpages (nav.js openAbout): the HUD's own About text, styled like the HUD's About window */
+.tn-about .tn-sheet { width: min(1760px, 100%); padding: 28px 32px; background: #0e0e11; border: 1px solid var(--u-hair); border-radius: 10px; }
+.tn-about .tn-close { top: 10px; right: 10px; }
+.tn-about h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 20px; padding-right: 44px; font: 600 13px var(--u-display); letter-spacing: .24em; text-transform: uppercase; color: #fff; }
+.tn-about .mark { width: 40px; height: 40px; flex: 0 0 auto; display: block; }
+.tn-about .mark circle { fill: none; stroke: #fff; stroke-opacity: .45; stroke-width: 3.5; }
+.tn-about .mark .pulse { fill: none; stroke: var(--u-ok); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.tn-about .unofficial { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 28px; padding: 8px 16px; border: 1px solid rgba(255,255,255,.45); border-radius: 6px; background: rgba(255,255,255,.06); font: 600 12px var(--u-display); letter-spacing: .14em; text-transform: uppercase; color: #fff; }
+.tn-about .unofficial span { flex: 1 1 320px; min-width: 0; font: 12px var(--u-mono); letter-spacing: 0; text-transform: none; color: var(--u-text); }
+.tn-about .about-cols { column-gap: 56px; column-rule: 1px solid var(--u-line); }
+.tn-about .about-cols > section { break-inside: avoid; -webkit-column-break-inside: avoid; display: block; margin: 0 0 24px; }
+.tn-about .about-cols > section:last-child { margin-bottom: 0; }
+@media (min-width: 1500px) { .tn-about .about-cols { column-count: 3; } }
+@media (min-width: 1000px) and (max-width: 1499px) { .tn-about .about-cols { column-count: 2; } }
+.tn-about h3 { margin: 12px 0 8px; font: 600 12px var(--u-display); letter-spacing: .2em; text-transform: uppercase; color: #fff; }
+.tn-about section > h3:first-child { margin-top: 0; }
+.tn-about p { margin: 0 0 8px; font-size: 13px; line-height: 1.55; max-width: 80ch; }
+.tn-about a, .tn-about code { color: var(--u-cyan); }
+.tn-about .small { color: var(--u-dim); font-size: 12px; }
+.tn-about .thanks { color: var(--u-text); } .tn-about .thanks a { color: var(--u-ok); }
+.tn-about .tgbox { padding: 16px 24px; border: 1px solid rgba(57,255,138,.5); border-radius: 8px; background: rgba(57,255,138,.04); }
+.tn-about .tgbox h3 { color: var(--u-ok); }
+.tn-about .tgbox ul { margin: 0 0 12px; padding-left: 16px; font-size: 13px; line-height: 1.5; }
+.tn-about .tgbox li { margin: 0 0 6px; } .tn-about .tgbox li b { color: #fff; font-weight: 600; }
+.tn-about .tgjoins { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.tn-about .tgjoin { display: inline-flex; align-items: center; min-height: 32px; font: 600 11px var(--u-display); letter-spacing: .1em; text-transform: uppercase; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--u-ok); color: var(--u-ok); text-decoration: none; }
+.tn-about .tgjoin:hover { background: var(--u-ok); color: #000; }
+.tn-about .prov span { font: 11px var(--u-mono); color: var(--u-dim); }
+.tn-about .prov i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; border: 1px solid var(--u-dim); }
+.tn-about .prov i.seen { background: var(--u-ok); border-color: var(--u-ok); box-shadow: 0 0 6px var(--u-ok); }
+.tn-about .donate { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 16px; align-items: center; margin: 12px 0; }
+.tn-about .donate .qr { width: 132px; height: 132px; border-radius: 6px; display: block; }
+.tn-about .addr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 12px; border: 1px solid var(--u-hair); border-radius: 6px; background: rgba(0,0,0,.35); }
+.tn-about .addr code { flex: 1 1 260px; min-width: 0; font: 400 13px var(--u-mono); color: var(--u-ok); overflow-wrap: anywhere; user-select: all; }
+.tn-about .addr button { min-height: 32px; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--u-hair); background: transparent; color: #fff; font: 600 11px var(--u-display); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
+.tn-about .addr button:hover { border-color: #fff; }
+@media (max-width: 700px) { .tn-about .tn-sheet { padding: 20px 16px; } .tn-about .tgbox { padding: 12px 14px; } .tn-about .tgjoin, .tn-about .addr button { min-height: 44px; } }
+@media (max-width: 520px) { .tn-about .donate { grid-template-columns: minmax(0, 1fr); justify-items: start; } }
+/* one calm line where a visit ends well (TauNav.support in nav.js): what the site costs, and the way to Support */
+.tn-support { margin: 10px 0 0; font: 400 12.5px/1.5 var(--mono, ui-monospace, monospace); color: var(--u-dim, #9aa5a0); }
+.tn-support a { color: var(--ok, #39ff8a); white-space: nowrap; }
+.tn-piece { display: flex; align-items: center; gap: 10px; text-align: left; } .tn-piece img { flex: none; width: 66px; height: auto; border-radius: 4px; } .tn-piece span { min-width: 0; }

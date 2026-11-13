@@ -1,0 +1,587 @@
+{
+ "about": "Answers of the real Tau engine (tau-lang c3ea334, the testnet's pin) to rules we wrote ourselves, run on the community node on 11 November 2026 through the tau-lang Python binding, one interpreter per case. `engine` is the value the engine gave for the watched output; where a rule leaves that output open it gave 0 every time. tests/rulefacts.mjs checks assets/rulefacts.js against every answer here.",
+ "cases": [
+  {
+   "id": "total-limit",
+   "watch": "o5",
+   "rule": "always ( ((i12[t]:bv[8] = { #x01 }:bv[8]) ? ( (i1[t]:bv[24] > {5000}:bv[24]) ? (o5[t]:bv[24] = {#x000000}:bv[24]) : (o5[t]:bv[24] = {#x000001}:bv[24]) ) : (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+   "probes": [
+    {
+     "name": "author 100",
+     "in": {
+      "i12": "1",
+      "i1": "100"
+     },
+     "engine": 1
+    },
+    {
+     "name": "author 5000",
+     "in": {
+      "i12": "1",
+      "i1": "5000"
+     },
+     "engine": 1
+    },
+    {
+     "name": "author 5001",
+     "in": {
+      "i12": "1",
+      "i1": "5001"
+     },
+     "engine": 0
+    },
+    {
+     "name": "other 6000",
+     "in": {
+      "i12": "2",
+      "i1": "6000"
+     },
+     "engine": 1
+    },
+    {
+     "name": "author 100 again",
+     "in": {
+      "i12": "1",
+      "i1": "100"
+     },
+     "engine": 1
+    }
+   ]
+  },
+  {
+   "id": "known-implication-guard",
+   "watch": "o5",
+   "rule": "always ( (o1[t]:bv[24] = i1[t]:bv[24]) && ((i12[t]:bv[8] = { #x01 }:bv[8]) -> (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+   "probes": [
+    {
+     "name": "author 100",
+     "in": {
+      "i12": "1",
+      "i1": "100"
+     },
+     "engine": 1
+    },
+    {
+     "name": "other 100",
+     "in": {
+      "i12": "2",
+      "i1": "100"
+     },
+     "engine": 0
+    }
+   ]
+  },
+  {
+   "id": "partial-limit",
+   "watch": "o5",
+   "rule": "always ( ((i12[t]:bv[8] = { #x01 }:bv[8]) ? ( (i1[t]:bv[24] > {5000}:bv[24]) -> o5[t]:bv[24] = {#x000000}:bv[24] ) : (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+   "probes": [
+    {
+     "name": "author 100",
+     "in": {
+      "i12": "1",
+      "i1": "100"
+     },
+     "engine": 0
+    },
+    {
+     "name": "author 6000",
+     "in": {
+      "i12": "1",
+      "i1": "6000"
+     },
+     "engine": 0
+    },
+    {
+     "name": "author 100 after block",
+     "in": {
+      "i12": "1",
+      "i1": "100"
+     },
+     "engine": 0
+    },
+    {
+     "name": "other 100",
+     "in": {
+      "i12": "2",
+      "i1": "100"
+     },
+     "engine": 1
+    },
+    {
+     "name": "author 100 after other",
+     "in": {
+      "i12": "1",
+      "i1": "100"
+     },
+     "engine": 0
+    },
+    {
+     "name": "author 4999",
+     "in": {
+      "i12": "1",
+      "i1": "4999"
+     },
+     "engine": 0
+    }
+   ]
+  },
+  {
+   "id": "partial-limit-other-first",
+   "watch": "o5",
+   "rule": "always ( ((i12[t]:bv[8] = { #x01 }:bv[8]) ? ( (i1[t]:bv[24] > {5000}:bv[24]) -> o5[t]:bv[24] = {#x000000}:bv[24] ) : (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+   "probes": [
+    {
+     "name": "other 100",
+     "in": {
+      "i12": "2",
+      "i1": "100"
+     },
+     "engine": 1
+    },
+    {
+     "name": "author 100",
+     "in": {
+      "i12": "1",
+      "i1": "100"
+     },
+     "engine": 0
+    },
+    {
+     "name": "author 100 again",
+     "in": {
+      "i12": "1",
+      "i1": "100"
+     },
+     "engine": 0
+    }
+   ]
+  },
+  {
+   "id": "partial-limit-fresh-2",
+   "watch": "o5",
+   "rule": "always ( ((i12[t]:bv[8] = { #x01 }:bv[8]) ? ( (i1[t]:bv[24] > {5000}:bv[24]) -> o5[t]:bv[24] = {#x000000}:bv[24] ) : (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+   "probes": [
+    {
+     "name": "author 100",
+     "in": {
+      "i12": "1",
+      "i1": "100"
+     },
+     "engine": 0
+    }
+   ]
+  },
+  {
+   "id": "partial-limit-fresh-3",
+   "watch": "o5",
+   "rule": "always ( ((i12[t]:bv[8] = { #x01 }:bv[8]) ? ( (i1[t]:bv[24] > {5000}:bv[24]) -> o5[t]:bv[24] = {#x000000}:bv[24] ) : (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+   "probes": [
+    {
+     "name": "author 100",
+     "in": {
+      "i12": "1",
+      "i1": "100"
+     },
+     "engine": 0
+    }
+   ]
+  },
+  {
+   "id": "partial-limit-one-spec",
+   "watch": "o5",
+   "rule": "always ( (o1[t]:bv[24] = i1[t]:bv[24]) && ((i12[t]:bv[8] = { #x01 }:bv[8]) ? ( (i1[t]:bv[24] > {5000}:bv[24]) -> o5[t]:bv[24] = {#x000000}:bv[24] ) : (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+   "probes": [
+    {
+     "name": "author 100",
+     "in": {
+      "i12": "1",
+      "i1": "100"
+     },
+     "engine": 0
+    },
+    {
+     "name": "author 6000",
+     "in": {
+      "i12": "1",
+      "i1": "6000"
+     },
+     "engine": 0
+    },
+    {
+     "name": "author 100 after block",
+     "in": {
+      "i12": "1",
+      "i1": "100"
+     },
+     "engine": 0
+    },
+    {
+     "name": "other 100",
+     "in": {
+      "i12": "2",
+      "i1": "100"
+     },
+     "engine": 1
+    }
+   ]
+  },
+  {
+   "id": "partial-limit-alone",
+   "watch": "o5",
+   "rule": "always ( ((i12[t]:bv[8] = { #x01 }:bv[8]) ? ( (i1[t]:bv[24] > {5000}:bv[24]) -> o5[t]:bv[24] = {#x000000}:bv[24] ) : (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+   "probes": [
+    {
+     "name": "author 100",
+     "in": {
+      "i12": "1",
+      "i1": "100"
+     },
+     "engine": 0
+    },
+    {
+     "name": "author 6000",
+     "in": {
+      "i12": "1",
+      "i1": "6000"
+     },
+     "engine": 0
+    }
+   ]
+  },
+  {
+   "id": "partial-time",
+   "watch": "o5",
+   "rule": "always ( ((i12[t]:bv[8] = { #x01 }:bv[8]) ? ( (i5[t]:bv[64] < {1704067200}:bv[64]) -> o5[t]:bv[24] = {#x000000}:bv[24] ) : (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+   "probes": [
+    {
+     "name": "author before",
+     "in": {
+      "i12": "1",
+      "i5": "1704067100",
+      "i1": "100"
+     },
+     "engine": 0
+    },
+    {
+     "name": "author after",
+     "in": {
+      "i12": "1",
+      "i5": "1704067300",
+      "i1": "100"
+     },
+     "engine": 0
+    },
+    {
+     "name": "other after",
+     "in": {
+      "i12": "2",
+      "i5": "1704067300",
+      "i1": "100"
+     },
+     "engine": 1
+    }
+   ]
+  },
+  {
+   "id": "total-time",
+   "watch": "o5",
+   "rule": "always ( ((i12[t]:bv[8] = { #x01 }:bv[8]) ? ( (i5[t]:bv[64] < {1704067200}:bv[64]) ? (o5[t]:bv[24] = {#x000000}:bv[24]) : (o5[t]:bv[24] = {#x000001}:bv[24]) ) : (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+   "probes": [
+    {
+     "name": "author before",
+     "in": {
+      "i12": "1",
+      "i5": "1704067100",
+      "i1": "100"
+     },
+     "engine": 0
+    },
+    {
+     "name": "author after",
+     "in": {
+      "i12": "1",
+      "i5": "1704067300",
+      "i1": "100"
+     },
+     "engine": 1
+    }
+   ]
+  },
+  {
+   "id": "partial-allow",
+   "watch": "o5",
+   "rule": "always ( ((i12[t]:bv[8] = { #x01 }:bv[8]) ? ( (i1[t]:bv[24] < {100}:bv[24]) -> o5[t]:bv[24] = {#x000001}:bv[24] ) : (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+   "probes": [
+    {
+     "name": "author 50",
+     "in": {
+      "i12": "1",
+      "i1": "50"
+     },
+     "engine": 1
+    },
+    {
+     "name": "author 500",
+     "in": {
+      "i12": "1",
+      "i1": "500"
+     },
+     "engine": 0
+    }
+   ]
+  },
+  {
+   "id": "two-authors",
+   "watch": "o5",
+   "rule": "always ( ((i12[t]:bv[8] = { #x01 }:bv[8]) ? ( (i1[t]:bv[24] > {5000}:bv[24]) -> o5[t]:bv[24] = {#x000000}:bv[24] ) : ((i12[t]:bv[8] = { #x02 }:bv[8]) ? ( (i1[t]:bv[24] > {5000}:bv[24]) ? (o5[t]:bv[24] = {#x000000}:bv[24]) : (o5[t]:bv[24] = {#x000001}:bv[24]) ) : (o5[t]:bv[24] = { #x000001 }:bv[24]))) ).",
+   "probes": [
+    {
+     "name": "author1 100",
+     "in": {
+      "i12": "1",
+      "i1": "100"
+     },
+     "engine": 0
+    },
+    {
+     "name": "author2 100",
+     "in": {
+      "i12": "2",
+      "i1": "100"
+     },
+     "engine": 1
+    },
+    {
+     "name": "author2 6000",
+     "in": {
+      "i12": "2",
+      "i1": "6000"
+     },
+     "engine": 0
+    },
+    {
+     "name": "third 100",
+     "in": {
+      "i12": "3",
+      "i1": "100"
+     },
+     "engine": 1
+    }
+   ]
+  },
+  {
+   "id": "fee-two-guards",
+   "watch": "o8",
+   "rule": "always ( ( (i12[t]:bv[8] = { #x01 }:bv[8]) -> (o8[t]:bv[24] = { #x000005 }:bv[24]) ) && ( (i12[t]:bv[8] = { #x02 }:bv[8]) -> (o8[t]:bv[24] = { #x000007 }:bv[24]) ) ).",
+   "probes": [
+    {
+     "name": "sender1",
+     "in": {
+      "i12": "1",
+      "i1": "100"
+     },
+     "engine": 5
+    },
+    {
+     "name": "sender2",
+     "in": {
+      "i12": "2",
+      "i1": "100"
+     },
+     "engine": 7
+    },
+    {
+     "name": "sender3",
+     "in": {
+      "i12": "3",
+      "i1": "100"
+     },
+     "engine": 0
+    }
+   ]
+  },
+  {
+   "id": "notation divide",
+   "watch": "o30",
+   "rule": "always ( o30[t]:bv[8] = i30[t]:bv[8] / i31[t]:bv[8] ).",
+   "probes": [
+    {
+     "name": "7/2",
+     "in": {
+      "i30": "7",
+      "i31": "2"
+     },
+     "engine": 3
+    },
+    {
+     "name": "7/0",
+     "in": {
+      "i30": "7",
+      "i31": "0"
+     },
+     "engine": 255
+    }
+   ]
+  },
+  {
+   "id": "notation modulo",
+   "watch": "o30",
+   "rule": "always ( o30[t]:bv[8] = i30[t]:bv[8] % i31[t]:bv[8] ).",
+   "probes": [
+    {
+     "name": "7%2",
+     "in": {
+      "i30": "7",
+      "i31": "2"
+     },
+     "engine": 1
+    },
+    {
+     "name": "7%0",
+     "in": {
+      "i30": "7",
+      "i31": "0"
+     },
+     "engine": 7
+    }
+   ]
+  },
+  {
+   "id": "notation add-wrap",
+   "watch": "o30",
+   "rule": "always ( o30[t]:bv[8] = i30[t]:bv[8] + i31[t]:bv[8] ).",
+   "probes": [
+    {
+     "name": "200+100",
+     "in": {
+      "i30": "200",
+      "i31": "100"
+     },
+     "engine": 44
+    }
+   ]
+  },
+  {
+   "id": "notation subtract",
+   "watch": "o30",
+   "rule": "always ( o30[t]:bv[8] = i30[t]:bv[8] - i31[t]:bv[8] ).",
+   "probes": [
+    {
+     "name": "5-7",
+     "in": {
+      "i30": "5",
+      "i31": "7"
+     },
+     "engine": 254
+    }
+   ]
+  },
+  {
+   "id": "notation complement",
+   "watch": "o30",
+   "rule": "always ( o30[t]:bv[8] = i30[t]:bv[8]' ).",
+   "probes": [
+    {
+     "name": "5",
+     "in": {
+      "i30": "5"
+     },
+     "engine": 250
+    }
+   ]
+  },
+  {
+   "id": "notation shift",
+   "watch": "o30",
+   "rule": "always ( o30[t]:bv[8] = (i30[t]:bv[8] << i31[t]:bv[8]) ).",
+   "probes": [
+    {
+     "name": "3<<2",
+     "in": {
+      "i30": "3",
+      "i31": "2"
+     },
+     "engine": 12
+    },
+    {
+     "name": "3<<9",
+     "in": {
+      "i30": "3",
+      "i31": "9"
+     },
+     "engine": 0
+    }
+   ]
+  },
+  {
+   "id": "notation unsigned",
+   "watch": "o30",
+   "rule": "always ( (i30[t]:bv[8] > i31[t]:bv[8]) ? (o30[t]:bv[8] = { 1 }:bv[8]) : (o30[t]:bv[8] = { 0 }:bv[8]) ).",
+   "probes": [
+    {
+     "name": "200>100",
+     "in": {
+      "i30": "200",
+      "i31": "100"
+     },
+     "engine": 1
+    },
+    {
+     "name": "100>200",
+     "in": {
+      "i30": "100",
+      "i31": "200"
+     },
+     "engine": 0
+    }
+   ]
+  },
+  {
+   "id": "notation precedence",
+   "watch": "o30",
+   "rule": "always ( o30[t]:bv[8] = i30[t]:bv[8] + i31[t]:bv[8] & { 3 }:bv[8] ).",
+   "probes": [
+    {
+     "name": "4+7&3",
+     "in": {
+      "i30": "4",
+      "i31": "7"
+     },
+     "engine": 7
+    }
+   ]
+  },
+  {
+   "id": "partial-limit-384",
+   "watch": "o5",
+   "rule": "always ( ((i12[t]:bv[384] = { #xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa }:bv[384]) ? ( (i1[t]:bv[24] > {5000}:bv[24]) -> o5[t]:bv[24] = {#x000000}:bv[24] ) : (o5[t]:bv[24] = { #x000001 }:bv[24])) ).",
+   "probes": [
+    {
+     "name": "author 100",
+     "in": {
+      "i12": "#xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "i1": "100"
+     },
+     "engine": 0
+    },
+    {
+     "name": "author 6000",
+     "in": {
+      "i12": "#xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "i1": "6000"
+     },
+     "engine": 0
+    },
+    {
+     "name": "other 100",
+     "in": {
+      "i12": "#xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "i1": "100"
+     },
+     "engine": 1
+    }
+   ]
+  }
+ ]
+}

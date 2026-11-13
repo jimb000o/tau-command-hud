@@ -338,4 +338,5 @@ TauI18n.add({ strings: {
   "Block #{n}": "区块 #{n}",
   "The newest blocks": "最新的区块",
   "Block {n}": "区块 {n}",
+  "Every node checked this block against the Tau rules before adding it. Set your level to Expert under the gear for its hashes and the raw data.": "每个节点在添加这个区块之前都按 Tau 规则检查过它。在齿轮里把你的水平设为“专家”，即可查看它的哈希和原始数据。",
 } });

@@ -127,7 +127,7 @@
       { s: "#sign", t: "Before you sign", x: "The amount and the recipient in large type, then what your rule says, the fee and whether there is a way back. If your rule would stop it, nothing is sent." },
       { s: "#build", go: "#ruleTabs button[data-rtab=mine]", t: "Give your account a rule", x: "Tick the blocks you want: only to people in your book, a limit per payment, a date before which nothing leaves, a co-signer for larger payments. The chain checks it on every payment, whichever wallet signs it." },
       { s: "#probes", t: "Test it before you sign", x: "Example payments run against the rule on the screen: to a friend, to a lookalike, to someone new and a large one. You see what goes through before anything is signed." },
-      { s: "#slots", t: "Two rule places", x: "Tau Testnet Alpha holds personal rules for 2 accounts at a time. This shows how many are taken and whether one is yours." },
+      { s: "#slots", t: "A rule for every account", x: "Every account on Tau Testnet Alpha may hold its own personal rule. This shows how many accounts have one now and whether yours is one of them." },
       { s: "#activity", t: "What waits for you", x: "Rules offered to you, with the node's own check, requests to co-sign, payments you can still take back and everything you sent. On a first visit it shows the first steps." },
     ] },
     vote: { name: "Vote for real", intro: "Vote on the real testnet yourself, after practising the same commands here first.", steps: [
@@ -151,7 +151,14 @@
   };
   const T = TOURS[PAGE];
   if (!T) { window.TauTour = { has: false, start() {} }; return; }
-  const KEY = "tau-tour-" + PAGE;
+  const KEY = "tau-tour-" + PAGE, SEEN = "tau-tour-seen";
+  /* the offer comes once per visitor, on the first page they open, not once on every page. Whoever answered an offer
+     before this was built (a tau-tour… key of any page, or the HUD's) has had theirs. "Take the tour" stays on every page. */
+  const seen = () => {
+    if (store.get(SEEN) || store.get("tau-tour")) return true;
+    try { for (let k = 0; k < localStorage.length; k++) if (/^tau-tour-/.test(localStorage.key(k) || "")) return true; } catch (e) {}
+    return false;
+  };
 
   const css = document.createElement("style");
   css.textContent = `
@@ -247,9 +254,11 @@
     card.style.setProperty("--ax", Math.min(Math.max(cx - l, 18), cw - 18) / z + "px");
     card.style.setProperty("--ay", Math.min(Math.max(cy - tp, 18), ch - 18) / z + "px");
   }
-  /* first visit: offer this page's tour once */
+  /* first visit to the site: offer this page's tour once. Not to a visitor who arrives in the middle of a task
+     (?from=: a rule carried over from another page) or with a walk a friend sent, which has its own steps */
   function offer() {
-    if (i >= 0 || store.get(KEY) || innerWidth < 900 || /[?&]walk=/.test(location.search) || document.querySelector(".modal:not([hidden]), .tn-modal:not([hidden])")) return;   // a walk a friend sent has its own steps
+    if (i >= 0 || seen() || document.documentElement.dataset.level === "pro" || innerWidth < 900 || /[?&](?:walk|from)=/.test(location.search) || document.querySelector(".modal:not([hidden]), .tn-modal:not([hidden])")) return;
+    store.set(SEEN, "1");
     offered = true; target = null; ring.hidden = true;
     card.classList.remove("anchored", "side-top", "side-bottom", "side-left", "side-right"); card.style.left = card.style.top = ""; card.style.zoom = zoom() === 1 ? "" : String(zoom());
     q(".tt-step").textContent = "New here?"; q("h3").textContent = `A short tour of ${T.name}`;

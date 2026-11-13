@@ -61,6 +61,8 @@ def x_video(path: str, text: str, keys: dict | None = None) -> str:
     if info and info.get("state") == "failed":
         raise RuntimeError(f"x: video processing failed {info}")
     out = call("POST", "https://api.x.com/2/tweets", json.dumps({"text": text, "media": {"media_ids": [mid]}}).encode(), "application/json", keys=keys)
+    if keys is None:   # @TauHUDcom: for the room between posts (alerts.POST_GAP_MINUTES)
+        alerts.note_public_post("x")
     return str((out.get("data") or {}).get("id"))
 
 

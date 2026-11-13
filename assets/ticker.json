@@ -1,15 +1,19 @@
 {
-  "_how": "The HUD news line (assets/ticker.js). headlines: short news lines (at most about 60 characters, no technical detail) about what is new on the testnet and the site, newest and most important first; every headline carries since (the day it went on the line, YYYY-MM-DD) and leaves the line days (below, 14) days later, or keep: true for a standing pointer that stays (use it sparingly: the line is for news); a headline with until (an ISO time in UTC) leaves the line at that time; mode live shows a headline only on the real chain, mode sim only in the simulation, no mode in both; mark ghost puts the chain core's ghost symbol in front and the live ghost count in the text; tip: the short hover text with more context (at most about 140 characters, two lines); picks: our X posts worth reposting, {text, href} with href the post's x.com address; invites: Telegram and X. New features also come in by themselves from the \"major\" entries of assets/updates.json and leave days after their day, unless their id is in stay; so do new blog articles, by their own title as the title story that opens the line; the next cruise ship comes in three days before it calls. infra/alerts/tickerwatch.py warns the owner privately when nothing new came onto the line for a week. move: per language, left (text enters on the right, the usual way) or right. Every text needs its zh and ja translation in assets/i18n/zh/hud.js and ja/hud.js, or it is left out on those pages. idni: news headlines about what IDNI lands on tau-testnet main come in by themselves for a week (node.tauhud.com/devpulse.json, written per merge by a language model in en, zh and ja); keyed by the first 7 letters of one of its commits, {text, tip} replaces one (zh and ja in hud.js), {skip: true} leaves it out.",
+  "_how": "The HUD news line (assets/ticker.js). headlines: short news lines (at most about 60 characters, no technical detail) about what is new on the testnet and the site, newest and most important first; every headline carries since (the day it went on the line, YYYY-MM-DD) and leaves the line days (below, 14) days later, or keep: true for a standing pointer that stays (use it sparingly: the line is for news); a headline with until (an ISO time in UTC) leaves the line at that time; mode live shows a headline only on the real chain, mode sim only in the simulation, no mode in both; mark ghost puts the chain core's ghost symbol in front and the live ghost count in the text; tip: the short hover text with more context (at most about 140 characters, two lines); picks: our X posts worth reposting, {text, href} with href the post's x.com address; invites: Telegram and X. New features also come in by themselves from the \"major\" entries of assets/updates.json and leave days after their day, unless their id is in stay; the top story (the one most important piece of news on the line, chosen by assets/ticker.js topStory: news about the testnet itself counts three days newer than news about the site, then the newest wins) is green and opens every round; so do new blog articles, by their own title as the title story that opens the line; the next cruise ship comes in three days before it calls. infra/alerts/tickerwatch.py warns the owner privately when nothing new came onto the line for a week. move: per language, left (text enters on the right, the usual way) or right. Every text needs its zh and ja translation in assets/i18n/zh/hud.js and ja/hud.js, or it is left out on those pages. idni: news headlines about what IDNI lands on tau-testnet main come in by themselves for a week (node.tauhud.com/devpulse.json, written per merge by a language model in en, zh and ja); keyed by the first 7 letters of one of its commits, {text, tip} replaces one (zh and ja in hud.js), {skip: true} leaves it out.",
   "move": {
     "en": "left",
     "zh": "left",
     "ja": "left"
   },
   "days": 14,
-  "stay": [
-    "rico-lagoon"
-  ],
+  "stay": [],
   "headlines": [
+    {
+      "text": "The Ship’s Store is open: knitted sweaters, tees, a mug",
+      "href": "https://tau-hud-shop.fourthwall.com/",
+      "tip": "Our first merchandise, made to order by Fourthwall. Crew members get 10 or 20 % off. Not affiliated with IDNI.",
+      "since": "2026-11-13"
+    },
     {
       "text": "Tau chess engine vs Claude Opus 5.5: 13 won, 5 drawn, 2 lost",
       "href": "https://chess.taumorrow.com/",

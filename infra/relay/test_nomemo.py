@@ -147,5 +147,48 @@ T[0] += 7 * 86400
 pay(THIRD, "t-next")
 b = m.route("/nomemo")["board"]
 check(dict(b["week_top"]).get(nomemo.short(THIRD)) == 1, "a new week starts from zero")
+# ---------- our node has no room for a new wallet (IDNI tau-testnet #108): a wallet it knows lends the drop ----------
+class FullNode(Node):
+    """Takes only wallets it knows; a fresh one gets ADMISSION_UNAVAILABLE until the fix."""
+    def __init__(self, known):
+        super().__init__()
+        self.known, self.fixed, self.refused = set(known), False, 0
+
+    async def ask(self, cmd):
+        c, *args = cmd.split(" ", 1)
+        if c == "sendtx" and not self.fixed and json.loads(args[0])["sender_pubkey"] not in self.known:
+            self.refused += 1
+            return {"status": "error", "error": {"code": "ADMISSION_UNAVAILABLE", "message": "Transaction validation is temporarily unavailable; please resubmit."}}
+        return await super().ask(cmd)
+
+
+LSK = [7_000_001, 7_000_002]
+LPK = [G2Basic.SkToPk(k).hex() for k in LSK]
+m2 = nomemo.NoMemo(keys_path=os.path.join(d, "k2"), state_path=os.path.join(d, "s2.json"), clock=clock, enabled=True, tracer=True, keys=KEYS)
+m2.lenders = lambda: [("queen-0", LSK[0], LPK[0]), ("queen-1", LSK[1], LPK[1])]
+n2 = FullNode(known={KEYS["drop"]["pk"], KEYS["shadow"]["pk"], *LPK})
+n2.balance[LPK[0]] = nomemo.LEND   # too little to lend and keep LEND_KEEP
+check(asyncio.run(m2.fill_drop(n2.ask, gov)) is True and n2.refused == 1, "our node refuses the bank's fresh wallet as new to it")
+lent = n2.sent[-1]
+check(lent["sender_pubkey"] == LPK[1] and lent["operations"]["1"][0][1:] == [m2.pk["drop"], str(nomemo.LEND)] and m2.topup.get("lent_by") == "queen-1",
+      "so a wallet the node knows lends the drop instead, one that keeps enough after the loan")
+check(LPK[1] not in m2.who and m2.route("/nomemo")["fresh_wallets"].startswith("our node cannot"),
+      "the lender stays a simulated passenger's wallet, and GET /nomemo says why the drop is lent to")
+m2.topup = None
+T[0] += 60
+check(asyncio.run(m2.fill_drop(n2.ask, gov)) is True and n2.refused == 1, "within the hour no fresh wallet is tried again: the next fill is a loan too")
+T[0] += nomemo.FRESH_WAIT
+n2.fixed = True
+m2.topup = None
+check(asyncio.run(m2.fill_drop(n2.ask, gov)) is True and n2.sent[-1]["sender_pubkey"] == m2.pk["bank"] and n2.sent[-1]["operations"]["1"][0][2] == str(nomemo.TOPUP)
+      and m2.route("/nomemo")["fresh_wallets"] == "taken",
+      "an hour later a fresh wallet is tried again: once the node takes it, the bank fills the drop as before, nothing to switch")
+m3 = nomemo.NoMemo(keys_path=os.path.join(d, "k3"), state_path=os.path.join(d, "s3.json"), clock=clock, enabled=True, tracer=True, keys=KEYS)
+m3.lenders = lambda: []
+n3 = FullNode(known={KEYS["drop"]["pk"], KEYS["shadow"]["pk"]})
+check(asyncio.run(m3.fill_drop(n3.ask, gov)) is False and n3.refused == 1 and m3.fill_wait_until > T[0], "no wallet can lend: the drop waits")
+check(asyncio.run(m3.fill_drop(n3.ask, gov)) is False and n3.refused == 1 and n3.sent == [],
+      "and nothing is sent meanwhile: no refused transaction every 20 seconds")
+
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)

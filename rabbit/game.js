@@ -1532,7 +1532,7 @@
       phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : phase === "wait" ? "waiting" : phase === "land" ? "landing" : "ashore",
       t0: phase === "approach" ? now + 90 : phase === "wait" ? now - 120 : phase === "land" ? now - 240 : now - 1800,
       end: phase === "gone" || phase === "cut" ? now : phase === "turn" ? now + 90 : now + 3600, passengers: 20, ashore: 0, at: {},
-      sent: { pay: 38, bill: 0, book: 0, cancel: 0 }, refused: 0, tricks: { tried: 13, stopped: 13, by: { overspend: 2, replay: 2, expired: 1, forged: 1, impostor: 1, freeride: 1, giant: 1, double: 1, poison: 1, cram: 1, governance: 1 } }, kinds: ["pay", "trick"], preview: true };
+      sent: { pay: 38, bill: 0, book: 0, cancel: 0 }, refused: 0, tricks: { tried: 17, stopped: 17, by: { overspend: 2, replay: 2, expired: 1, forged: 1, impostor: 1, freeride: 1, giant: 1, double: 1, poison: 1, cram: 1, governance: 1, taxman: 1, stranger: 1, phantom: 1, late: 1 } }, kinds: ["pay", "trick"], preview: true };
     return { ship: k, name: q ? "Queen Mempool" : "MS Dry Run", style: q ? "liner" : "expedition",
       phase: phase === "approach" || phase === "gone" ? phase : phase === "cut" ? "gone" : phase === "turn" ? "boarding" : phase === "wait" ? "waiting" : phase === "land" ? "landing" : "ashore",
       why, t0: phase === "approach" ? now + 90 : phase === "wait" ? now - 120 : phase === "land" ? now - 240 : now - 1800,
@@ -2221,6 +2221,8 @@
       Object.keys(CANDS).forEach(c => acts.append(chainBtn(c, F("Vote {x}", { x: nm(c) }), F("Key ballot: {x}", { x: nm(c) }))));
       acts.append(ballotEl(), isleVerdict());
       bank(); acts.append(el("p", { class: "cv-note", text: Fd("Your savings: {n} coins. They carry over to your next campaign and buy things the island keeps: a roof for the school, a lamp for the lighthouse, a stone in Tano’s circle.", { n: savings().coins }) }));
+      if (window.TauNav && TauNav.piece) acts.append(TauNav.piece("rabbit", "rabbit", "The White Rabbit also comes knitted: a Christmas sweater that says “Follow the rabbit to the next block.”"));   // the rabbit they just played, as a piece
+      if (window.TauNav && TauNav.support) acts.append(TauNav.support("rabbit"));   // the campaign is over: one calm line on what the site costs
       const again = FREE || !G.week || G.week !== weekId();
       acts.append(btn(again ? T("Play again") : T("Next campaign on Monday"), () => { store.del(KEY); G = null; closeCard(); start(); }, { go: true, off: !again, sub: again ? null : Fd("the week is played; a new one begins {x}", { x: countIn() }) }), btn(T("Read the Book"), () => openCard("book", PLACE.book)), btn(T("The players’ board"), () => openBoard()), btn(T("The special edition"), () => { G.over.read = false; closeCard(true); ending(); }));
       box.append(acts);

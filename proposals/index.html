@@ -186,6 +186,12 @@ html.fit .panel > .scroll { flex: 1 1 0; min-height: 0; overflow: auto; padding-
 html.fit .tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
 html.fit .lead { font-size: 22px; margin: 0; }
 html.fit .sub { font-size: 12px; margin: 2px 0 0; }
+/* the one-sentence answer above the numbers, for a first-time reader: what is true right now */
+.now { margin: 6px 0 0; color: var(--text); font-size: 13px; font-weight: 500; display: flex; align-items: baseline; gap: 8px; }
+.now::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); transform: translateY(-1px); }
+.now.ok::before { background: var(--ok); box-shadow: 0 0 8px var(--ok); } .now.watch::before, .now.sim::before { background: var(--behind); } .now.bad::before { background: var(--bad); }
+.now:empty { display: none; }
+html.fit .now { margin: 3px 0 0; }
 html.fit header { padding: 4px 0 6px; }
 html.fit .modal .sheet { zoom: var(--z); }
 html.fit .modal .sheet { max-height: calc((100vh - 40px) / var(--z)); }
@@ -237,6 +243,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
 <script src="../assets/predict.js" defer></script>
+<script src="../assets/rulefacts.js"></script>
 <script src="../assets/rulediff.js"></script>
 </head>
 <body>
@@ -252,6 +259,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
   <div class="top">
     <div>
       <p class="lead">Rules change by agreement. Get told when they do.</p>
+      <p class="now" id="nowLine" aria-live="polite"></p>
       <p class="sub">Every rule change on the Tau Testnet Alpha, read from our own node: proposed, agreed, in force or dropped. Each one is posted to Telegram, X and the RSS feed the moment its block arrives.</p>
     </div>
     <div class="follow" id="follow">
@@ -383,15 +391,21 @@ function ruleDiff(p) {
   if (!window.RuleDiff) return "";
   return RuleDiff.html(RuleDiff.specAt(p.proposed_at, D.proposals.map(asRd)), p.revisions, { at: p.proposed_at, patch: !!p.patch });
 }
-/* behaviour check: does the new text decide anything differently from the rules it replaces? (sampled, assets/rulediff.js) */
+/* behaviour check: does the new text decide anything differently from the rules it replaces? Read for every case by
+   assets/rulefacts.js where it can (exact: true), else sampled on random inputs (assets/rulediff.js) */
 function effOf(p) {
   if (!window.RuleDiff || !p.revisions.length || p.patch) return null;
-  if (p._e === undefined) p._e = RuleDiff.effect(RuleDiff.specAt(p.proposed_at, D.proposals.map(asRd)), p.revisions);
+  if (p._e === undefined) {
+    const spec = RuleDiff.specAt(p.proposed_at, D.proposals.map(asRd)), m = RuleDiff.meaning(spec, p.revisions);
+    p._e = m && m.ok ? { same: m.same, exact: true } : RuleDiff.effect(spec, p.revisions);
+  }
   return p._e;
 }
 const TEST_TIP = "Checked on 400 random inputs: the new text decides exactly like the rules in force. The extra part is a maths fact that is always true, so nothing changes.";
+const TEST_TIP_EXACT = "Read for every case: the new text gives the same answer as the rules in force, so nothing changes.";
+const tipOf = p => (effOf(p) || {}).exact ? TEST_TIP_EXACT : TEST_TIP;
 const isTest = p => (effOf(p) || {}).same === true;
-const diffTag = p => { const d = diffOf(p); return (d ? ` · <span class="nw">rule text ${d.same ? "unchanged" : RuleDiff.summary(d)}</span>` : "") + (isTest(p) && (p.explain || {}).severity !== "none" ? ` · <span class="nw testch" title="${esc(TEST_TIP)}">test change · behaviour stays the same</span>` : ""); };
+const diffTag = p => { const d = diffOf(p); return (d ? ` · <span class="nw">rule text ${d.same ? "unchanged" : RuleDiff.summary(d)}</span>` : "") + (isTest(p) && (p.explain || {}).severity !== "none" ? ` · <span class="nw testch" title="${esc(tipOf(p))}">test change · behaviour stays the same</span>` : ""); };
 /* when a block is expected: from the real block pace, as a date in UTC and a countdown, like the simulation's programme */
 function inTime(s) {
   const m = Math.ceil(s / 60);
@@ -437,6 +451,16 @@ const EVENT = {
   restart: { what: "the simulated chain starts over", why: "At midnight UTC the simulated chain starts again from block 0, as the real alpha testnet did more than once.", watch: "Watch the height reset." }
 };
 let SCHED = [], lastSig = "", seenNews = null;
+/* the answer before the numbers: is a rule change open right now, and how did the earlier ones end? */
+function nowLine(voting, agreed) {
+  const P = D.proposals, n = s => P.filter(p => p.status === s).length;
+  const open = [voting.length === 1 ? "1 rule change is waiting for votes right now." : voting.length ? `${voting.length} rule changes are waiting for votes right now.` : "",
+    agreed.length === 1 ? `1 agreed change takes effect at block #${fmtN(agreed[0].activate_at)}.` : agreed.length ? `${agreed.length} agreed changes are waiting for their block.` : ""].filter(Boolean).join(" ");
+  const past = P.length ? `So far ${n("active")} came into force and ${n("dropped")} ${n("dropped") === 1 ? "was" : "were"} dropped.` : "Nobody has proposed a rule change on this chain yet.";
+  const first = open || "No rule change is open right now.";
+  nowText(SIM ? "sim" : open ? "ok" : "", `${SIM ? "In the simulation: " + first[0].toLowerCase() + first.slice(1) : first} ${past}`);
+}
+function nowText(cls, text) { const p = $("nowLine"); p.className = "now " + cls; if (nowText.text !== text) p.textContent = nowText.text = text; }
 function render() {
   if (hovering) { pending = true; return; }
   pending = false;
@@ -447,6 +471,7 @@ function render() {
   const P = D.proposals;
   const by = s => P.filter(p => p.status === s).sort((a, b) => a.activate_at - b.activate_at);
   const voting = by("voting"), agreed = by("agreed");
+  nowLine(voting, agreed);
   $("openTitle").textContent = SIM ? "Coming up" : "Coming up on the testnet";
   $("openCount").textContent = voting.length + agreed.length ? `(${voting.length + agreed.length})` : "";
   // the simulation announces its programme: special rule changes at fixed times of the day, and the restart at midnight
@@ -642,7 +667,7 @@ function openDetail(p, push) {
   $("dBody").innerHTML = `<div class="dcols"><div>${explainHtml(p)}<h3>Timeline</h3><ul class="steps">${steps.map(([c, t]) => `<li class="${c}">${t}</li>`).join("")}</ul>
     <h3>Update id</h3><p class="note" style="overflow-wrap:anywhere;margin:0">${esc(p.id)}${p.dups.length ? ` · proposed again at #${p.dups.join(", #")} (ignored, same id)` : ""}</p>
     <p class="note">Open any block number to see it in <a href="/history/#${p.proposed_at}">Time travel</a>. Votes count once per account while the change is open.</p></div><div>
-    ${isTest(p) ? `<p class="note"><b>Test change: behaviour stays the same.</b> ${esc(TEST_TIP)}</p>` : ""}${ruleDiff(p)}${p.revisions.length ? `<details class="raw"><summary>Rule text as sent (${p.revisions.length === 1 ? "1 revision" : p.revisions.length + " revisions"})</summary>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}</details>` : ""}
+    ${isTest(p) && !effOf(p).exact ? `<p class="note"><b>Test change: behaviour stays the same.</b> ${esc(TEST_TIP)}</p>` : ""}${ruleDiff(p)}${p.revisions.length ? `<details class="raw"><summary>Rule text as sent (${p.revisions.length === 1 ? "1 revision" : p.revisions.length + " revisions"})</summary>${p.revisions.map(r => `<pre class="code">${esc(r)}</pre>`).join("")}</details>` : ""}
     ${p.patch ? `<h3>Settings it ${p.status === "active" ? "changed" : "would change"}</h3><pre class="code">${esc(JSON.stringify(p.patch, null, 2))}</pre>` : ""}
 </div></div>`;
   // a link whose preview on X and Telegram shows a picture of this proposal (infra/share)
@@ -739,7 +764,7 @@ function sample() {
       revisions: ["always (o9[t]:bv[24] = { #x000014 }:bv[24])"], votes: [{ h: 4152, voter: V, counted: true, approve: true }],
       explain: ex("Base fee 10 → 20 AGRS", [{ topic: "Base fee per transaction", text: "10 → 20 AGRS" }], "Every transaction would cost 20 AGRS instead of 10.") }),
     P(4, { status: "voting", proposed_at: 4198, activate_at: 9198,
-      revisions: ["# ONE PROPOSER\nalways (\n    o7[t]:bv[16] = (i8[t]:bv[384] = { #x" + V + " }:bv[384]) ? { 1 }:bv[16] : { 0 }:bv[16] &&\n    o10[t]:bv[16] = i15[t]:bv[16]\n)"],
+      revisions: ["# ONE PROPOSER\nalways (\n    o6[t]:bv[16] = i10[t]:bv[16] &&\n    ((i8[t]:bv[384] = { #x" + V + " }:bv[384]) ?\n        o7[t]:bv[16] = { 1 }:bv[16] :\n        o7[t]:bv[16] = { 0 }:bv[16]) &&\n    o10[t]:bv[16] = i15[t]:bv[16]\n)"],
       explain: ex("Only one validator may make blocks + New definition of o10", [{ topic: "Who may make blocks", text: "only validator a1fe40…7d2b" }, { topic: "Output o10", text: "depends on the eligibility mode" }], "Block making would rest with a single validator. Others could no longer add blocks.") }),
     P(5, { status: "dropped", proposed_at: 1200, activate_at: 3200, expired_at: 3200, revisions: [], patch: { validator_additions: ["b7c2" + "0".repeat(92)] },
       explain: ex("Admit validator b7c200…0000", [{ topic: "Validators", text: "add b7c200…0000" }], "More parties would make blocks and vote on rule changes.") }),
@@ -771,6 +796,7 @@ async function load() {
     failures++;
     setState("off", "Offline");
     if (!D) {
+      nowText("bad", "The tracker is not reachable right now.");
       $("openList").innerHTML = `<ul class="list"><li class="empty"><b>The tracker is not reachable right now.</b><br>It retries every ${POLL / 1000} s. The Telegram channel and the feed keep posting meanwhile.</li></ul>`;
       $("allList").innerHTML = HOWTO; $("newsList").innerHTML = NEWS_EMPTY;
     }

@@ -68,18 +68,23 @@ cap = alerts.recap_caption(week)
 check(texts["paper"].startswith("📰 The Daily Consensus No. 2 is out\n\n“A vote of the users becomes law”"), "Monday on X: the paper first")
 check(cap.startswith("📰 <b>THE DAILY CONSENSUS · No. 2 is out</b>") and "/gazette/" in cap and "• 12 transactions" in cap
       and len(re.sub(r"<[^>]+>", "", cap)) <= 1024, "Monday on Telegram: the paper, its link, the week, within a photo caption")
+check("/crew/" not in cap, "no ship log link while the crew's weekly log is off")
+alerts.crewlog.ON, alerts.crewlog.USER, alerts.crewlog.PASS = True, "u", "p"
+cap2 = alerts.recap_caption(week)
+check("/crew/\">Members get the full ship log</a>" in cap2 and len(re.sub(r"<[^>]+>", "", cap2)) <= 1024, "with the weekly ship log on: one last link to it")
+alerts.crewlog.ON, alerts.crewlog.USER, alerts.crewlog.PASS = False, "", ""
 for k, t in texts.items():
     check(alerts.x_len(t) <= 280, f"{k}: {alerts.x_len(t)} of 280 as X counts it")
     check("http" not in t and "tauhud.com/" not in t, f"{k}: no link (a link costs $0.20 instead of $0.015)")
-    check(t.endswith("#TauNet $AGRS") and re.findall(r"#[A-Za-z]\w*", t) == ["#TauNet"] and t.count("$AGRS") == 1, f"{k}: ends with #TauNet $AGRS, once, no other tags")
+    check(t.endswith("#TauNet") and re.findall(r"#[A-Za-z]\w*", t) == ["#TauNet"] and "$AGRS" not in t, f"{k}: ends with #TauNet, once, no other tags, no cashtag")
     check("\n\n" in t and not t.startswith(alerts.X_REAL), f"{k}: headline first, parts apart")
 check(texts["rule"].startswith("✅ Users agreed: the base fee goes from 20 to 30\n\n"), "rule: headline first, then a blank line")
-check(texts["rule"].endswith(alerts.X_REAL + " · #TauNet $AGRS"), "rule: closes with where it comes from and the hashtag")
+check(texts["rule"].endswith(alerts.X_REAL + " · #TauNet"), "rule: closes with where it comes from and the hashtag")
 check("10,800 blocks, one every 8 seconds, 12 transactions\n\nWhy it matters: A rule change on Tau is proposed, voted on and in force, no fork, no restart." in texts["today"], "today: the numbers in one line, then the meaning; a long event line goes before the numbers do")
 check("…" not in texts["rule"].split("\n")[2] or texts["rule"].count(".") >= 1, "rule: why shortened by sentences")
 check(texts["sim"].startswith(alerts.X_SIM_LINE), "sim: marked as simulation first")
 check(alerts.X_SITE_NOTE in texts["major"], "major: says it is a website update, not testnet news")
-check(texts["sim"].endswith(alerts.X_SIM_FOOT + " · #TauNet $AGRS"), "sim: marked as simulation last too")
+check(texts["sim"].endswith(alerts.X_SIM_FOOT + " · #TauNet"), "sim: marked as simulation last too")
 check(alerts.item_picture({"kind": "agreed", "id": "ab12cd34ef"}).endswith("/og/proposal/ab12cd34ef.png"), "rule change: its own card")
 check(alerts.item_picture({"kind": "restart", "id": None}).endswith("/og/hud.png"), "restart: the live overview")
 check(alerts.x_len("🧪 a https://example.com/very/long/path") == 2 + 3 + 23, "x_len: emoji 2, link 23")
@@ -92,7 +97,7 @@ check(alerts.major_picture(alerts.major_item({"on": "x", "html": "x", "major": {
 
 alerts.X_LINKS = True
 t = alerts.x_text({"kind": "agreed", "headline": "h", "why": "w", "link": "https://tauhud.com/proposals/"})
-check(t.endswith("https://tauhud.com/proposals/ · #TauNet $AGRS"), "X_LINKS=true puts the link back")
+check(t.endswith("https://tauhud.com/proposals/ · #TauNet"), "X_LINKS=true puts the link back")
 alerts.X_LINKS = False
 
 

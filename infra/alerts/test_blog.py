@@ -16,7 +16,7 @@ from PIL import Image  # noqa: E402
 Image.new("RGB", (1600, 900), (40, 120, 160)).save(os.path.join(ART, "isle.jpg"))
 json.dump({"scenes": {"island": "isle.jpg"}}, open(os.path.join(ART, "index.json"), "w"))
 SHIPS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "rabbit", "art", "ships")
-os.environ.update(BLOG_ART=ART, BLOG_SHIPS=SHIPS, PUBLIC_DIR=TMP, BLOG_STATE=os.path.join(TMP, "state.json"), NEWS_AI_KEY="test", CHAT_AI_KEY="",
+os.environ.update(BLOG_ART=ART, BLOG_SHIPS=SHIPS, PUBLIC_DIR=TMP, BLOG_STATE=os.path.join(TMP, "state.json"), NEWS_AI_KEY="test", CHAT_AI_KEY="", BLOG_POST_MAX_HOURS="0",
                   TELEGRAM_BOT_TOKEN="", X_API_KEY="")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import blog  # noqa: E402
@@ -107,9 +107,37 @@ try:
     check(False, "two 400s stop with the API's reason")
 except RuntimeError as e:
     check("no shaped answers here" in str(e) and "400" in str(e), "two 400s stop with the API's reason")
+# 11 November 2026: thinking and the article share max_tokens; an answer cut off there read as broken JSON, twice
+cut = json.dumps(answer)[:200]
+answers = [{"content": [{"type": "text", "text": cut}], "stop_reason": "max_tokens", "usage": {}},
+           {"content": [{"type": "text", "text": json.dumps(answer)}], "stop_reason": "end_turn", "usage": {}}]
+sent_bodies.clear()
+check(blog.ask_ai(f) == answer and [b["max_tokens"] for b in sent_bodies] == [blog.ROOM, blog.ROOM_MAX] and blog.ROOM >= 16000,
+      "an answer cut off at max_tokens is asked once more with more room, not read as broken JSON")
+answers = [{"content": [{"type": "text", "text": cut}], "stop_reason": "max_tokens", "usage": {}},
+           {"content": [{"type": "text", "text": cut}], "stop_reason": "max_tokens", "usage": {}}]
+try:
+    blog.ask_ai(f)
+    check(False, "cut off with the most room too: it says so")
+except RuntimeError as e:
+    check("did not fit" in str(e) and not answers, "cut off with the most room too: it says so, after two asks")
+answers = [{"content": [], "stop_reason": "refusal", "stop_details": {"type": "refusal", "category": "cyber"}, "usage": {}}]
+try:
+    blog.ask_ai(f)
+    check(False, "a refusal says so")
+except RuntimeError as e:
+    check("declined" in str(e) and "cyber" in str(e) and not answers, "a refusal says so, nothing asked again")
 
 card = blog.card_of({"line": "x", "why": []}, "Queen Mempool stays its full 90 minutes; our node slowed down")
-check(card[0] == "Queen Mempool stays its full 90 minutes; our node slowed", f"a long title is cut at a word on the card {card[0]!r}")
+check(card[0] == "Queen Mempool stays its full 90 minutes", f"a long title keeps its whole first clause on the card {card[0]!r}")
+check(blog.card_title("MS Dry Run stays 90 minutes as our node runs out of wallet room") == "MS Dry Run stays 90 minutes"
+      and blog.card_title("Queen Mempool stays all 90 minutes after MS Dry Run left early") == "Queen Mempool stays all 90 minutes",
+      "the two titles the picture cut at a word (11 and 7 November) keep a whole clause instead")
+check(blog.card_title("MS Dry Run stays its full 90 minutes with 222 stops accepted") == "MS Dry Run stays its full 90 minutes with 222 stops accepted",
+      "a title that fits stays whole")
+long1 = "Supercalifragilistic expialidocious testnet ship visit stays ninety minutes"
+check(blog.card_title(long1) == "Supercalifragilistic expialidocious testnet ship visit stays", f"no clause to keep: cut at a word {blog.card_title(long1)!r}")
+check("title: at most 60 characters" in blog.SYSTEM, "the model is asked for a title the picture can hold")
 
 # a draft, then publish: by hand only, and the marked one needs --force
 blog.site_ids = lambda: set()
@@ -137,7 +165,16 @@ tg_part, x_part = ann.split("--- x ---")[0], ann.split("--- x ---")[1].split("--
 check("<b>In numbers</b>" in tg_part and f"• {f['simulated passengers']} simulated passengers" in tg_part
       and f"• {f['accepted in all']} transactions accepted by the node" in tg_part and "<b>Why it matters</b>" in tg_part and "/blog/?p=" in tg_part,
       f"the announcement carries the logbook's numbers and the link {tg_part}")
-check("http" not in x_part and "Tau HUD blog" in x_part and __import__("alerts").x_len(x_part.strip()) <= 280, f"the X copy names the blog without a link {x_part}")
+check(f"/blog/a/{did}.html" in x_part and x_part.count("http") == 1 and "Tau HUD blog" in x_part and __import__("alerts").x_len(x_part.strip()) <= 280,
+      f"the X copy carries the share page's link, once, and fits {x_part}")
+check("as the link's card, $0.20" in ann, "the dry run says the picture comes as the card and what the post costs")
+blog.X_BLOG_LINK = False
+buf = io.StringIO()
+with contextlib.redirect_stdout(buf):
+    blog.announce(p[0], dry=True)
+x_old = buf.getvalue().split("--- x ---")[1].split("--- picture")[0]
+check("http" not in x_old and "Tau HUD blog" in x_old, f"X_BLOG_LINK=false: the X copy without a link, as before {x_old}")
+blog.X_BLOG_LINK = True
 nums = blog.numbers_of({"simulated passengers": 40, "accepted in all": 122, "refused in all": 0, "sends our node did not answer in time (not refusals)": 8,
                         "of those, reached the chain after all": 5, "left early": {"minutes in port": 61, "why": "the node refused 5 of the last 20"}})
 check(nums == ["40 simulated passengers, every stop a real transaction", "122 transactions accepted by the node, none refused",
@@ -167,7 +204,7 @@ qsum = {"id": Q, "ship": "queen", "name": "Queen Mempool", "t0": T0 + 3 * 86400,
 qlog.append({"t": T0 + 3 * 86400 + 5400, "visit": Q, "kind": "visit over", "summary": qsum})
 qlog.append({"t": T0 + 3 * 86400 + 5500, "visit": Q, "kind": "bookings checked", "checked": 0, "not_released": []})
 qf = blog.facts_of(qlog[::-1], [])
-check(qf["minutes in port"] == 90 and "bookings checked after the visit" not in qf, "a ship that stayed: 90 minutes, and no line for bookings that were never made")
+check(qf["minutes in port"] == 90 and blog.IN_PORT not in qf, "a ship that stayed: 90 minutes, and no line for bookings that were never made")
 blog.get = lambda path: ({"entries": log, "visits": [Q, V]} if f"visit={V}" in path else {"entries": qlog, "visits": [Q, V]}) if path.startswith("/cruise/log") else {}
 bf = blog.before_facts(Q, [Q, V], [], None)
 qf = blog.compare_with(qf, bf)
@@ -220,6 +257,141 @@ blog.write_json(blog.STATE, st0)
 blog.write_json(os.path.join(TMP, "blog", "drafts", "old-1.json"), {"id": "old", "check": {}})
 check(blog.auto_publish(T0 + 10 * 86400) is None, "an old draft is never published by itself")
 blog.AUTO_PUBLISH_HOURS = 0
+
+# a late publish goes on the blog without a post (12 November 2026: the pirates' article of Tuesday 10 November went out
+# on X on Thursday night, after a redraft and auto-publish switched back on)
+blog.POST_MAX_HOURS = 30
+TP = 1794333600   # Tuesday 10 November 2026, 19:00 German time
+old_draft = {"id": "2026-11-10-pirates-learnings", "visit": "2026-11-10-pirates", "facts": {"timetable time": "19:00"}}
+check(blog.call_time(old_draft) == TP, "a draft without t0: its call time from the visit's day and timetable time")
+check(blog.call_time({"t0": TP + 60}) == TP + 60, "a draft with t0: that time")
+check(blog.too_late_to_post(old_draft, TP + 28.5 * 3600) is None, "the usual way (drafted after the check, 24 h wait) still posts")
+check(round(blog.too_late_to_post(old_draft, TP + 51 * 3600)) == 51, "two days later: too late to post")
+blog.AUTO_PUBLISH_HOURS = 24
+check("without a post" in blog.auto_note({"drafted_at": {"x": TP + 30 * 3600}}, "x", dict(old_draft, check={})),
+      "the up block says a late draft goes out without a post")
+check("without a post" not in blog.auto_note({"drafted_at": {"x": TP + 2 * 3600}}, "x", dict(old_draft, check={})),
+      "and a timely one with its post")
+blog.AUTO_PUBLISH_HOURS = 0
+LD = "2026-11-10-pirates-learnings"
+stl = blog.state()
+stl["drafts"][LD] = LD + "-1"
+blog.write_json(blog.STATE, stl)
+blog.write_json(os.path.join(TMP, "blog", "drafts", LD + "-1.json"), dict(old_draft, title=three("t"), dek=three("d"), why=[three("w")], check={}))
+told = []
+real_announce = blog.announce
+blog.announce = lambda a, dry: told.append(a["id"])
+check(blog.publish_cli(LD, dry=False, force=False, now=TP + 51 * 3600) == 0 and not told
+      and any(p.get("id") == LD for p in blog.posts()["posts"]) and LD not in blog.state().get("announced", []),
+      "published two days late: on the blog, no post on Telegram or X")
+check(blog.publish_cli(LD, dry=False, force=False, post_late=True, now=TP + 51 * 3600) == 0 and told == [LD],
+      "--post posts a late one by hand")
+blog.announce = real_announce
+blog.unpublish_cli(LD)
+blog.POST_MAX_HOURS = 0
+
+# ---------- our node had no room for new wallets (IDNI tau-testnet #108; MS Dry Run, 11 November 2026) ----------
+T11 = 1794409200   # Wednesday 11 November 2026, 16:00 German time
+V11 = "2026-11-11-dryrun"
+AU = '{"code":"ADMISSION_UNAVAILABLE","message":"Transaction validation is temporarily unavailable; please resubmit."}'
+nlog = [{"t": T11, "visit": V11, "ship": "dryrun", "kind": "landed", "verdict": "calm", "plan": 232, "trial": []}]
+for i in range(222):
+    nlog.append({"t": T11 + 30 + i * 20, "visit": V11, "kind": "pay", "p": 40 + i % 30, "ok": True, "seq": 3, "verdict": "calm", "height": 7100 + i // 4})
+# as it was logged that day: two passengers' first sends were still waiting (sequence 1), their later ones at 0
+for i, (p, seq, k) in enumerate([(7, 1, "book"), (7, 1, "pay"), (25, 1, "pay"), (7, 0, "pay"), (25, 0, "pay"), (7, 0, "pay"),
+                                 (25, 0, "pay"), (7, 0, "pay"), (25, 0, "pay")]):
+    nlog.append({"t": T11 + 759 + i * 300, "visit": V11, "kind": k, "p": p, "ok": False, "seq": seq, "err": AU, "verdict": "calm"})
+nlog.append({"t": T11 + 3600, "visit": V11, "kind": "cancel", "p": 7, "ok": None, "note": "nothing to withdraw: the booking is not open", "verdict": "calm"})
+nlog.append({"t": T11 + 5500, "visit": V11, "kind": "visit over", "summary": {"id": V11, "name": "MS Dry Run", "t0": T11, "landed": True,
+             "passengers": 40, "sent": {"pay": 217, "book": 4, "cancel": 1}, "refused": {"pay": 8, "book": 1}, "skipped": 1}})
+nlog.append({"t": T11 + 5600, "visit": V11, "ship": "dryrun", "kind": "bookings checked", "checked": 4, "not_released": []})
+nf = blog.facts_of(nlog[::-1], [])
+nw = nf.get(blog.NEW_WALLET_FACT) or {}
+check(nf["refused in all"] == 0 and not nf.get("refused by the node") and not nf.get("refusal answers"),
+      "the nine answers of 11 November are no refusals: our node had no room for two new wallets")
+check(nw.get("passengers") == 2 and nw.get("their sends the node could not take or the ship left out") == 9 and "#108" in nw.get("why", "")
+      and "254" in nw.get("why", "") and "counted them as refusals" in nw.get("how this call handled them", ""),
+      "they are counted apart: two passengers, nine sends, why, and how that call still handled them")
+check("neither a yes nor a refusal" in nw.get("the node's answer", "") and "never write that every answer was a yes" in blog.SYSTEM,
+      "their answer was neither a yes nor a refusal, so the article may not say every answer was a yes (the first redraft did)")
+check(nf.get("why stops were skipped, as logged") == {"nothing to withdraw: the booking is not open (its booking was one of the sends our node "
+                                                       "could not take)": 1} and nf.get("stops skipped") == 1,
+      "the skipped stop comes with the logbook's reason, and why its booking was not open")
+ip = nf.get(blog.IN_PORT) or {}
+check((ip.get("made"), ip.get("withdrawn by their passenger during the call"), ip.get("paid out to the place by the chain at their time"),
+       ip.get("still open after their time (the chain had not paid them out)")) == (4, 1, 3, 0)
+      and ("3/3", "bookings in port paid out") in blog_pics.visit_stats(nf),
+      "bookings made in port: 4 made, 1 withdrawn, 3 paid out, and the picture says 3/3, not 4/4")
+check("never compare the count of one with the other" in blog.SYSTEM and "bookings ahead" in blog.SYSTEM,
+      "the article may not set the bookings ahead against the bookings made in port (the second redraft did: 4 against 5)")
+nm = blog.meaning_of(nf)
+check(nw.get(blog.NEW_WALLET_SAID) == 9 and nm.get("share of the node's answers that were a yes") == "96%"
+      and nm.get("share of the node's answers that were temporarily unavailable (new wallets: neither a yes nor a refusal)") == "4%",
+      f"222 yes of 231 answers is 96%, not 100%: the nine temporarily unavailable count as answers {nm}")
+nn = blog.numbers_of(nf)
+check(any(x.endswith("none refused") for x in nn) and any("no room for the new wallets of 2 passengers (9 sends)" in x and "IDNI #108" in x for x in nn),
+      "the visit in numbers: none refused, and one line on the two new wallets")
+check(not blog.unknown_numbers("Our node had no room for the new wallets of 2 passengers: it keeps 254 wallet addresses (IDNI tau-testnet issue #108, "
+                                "11 November 2026); 9 sends.", nf), "the article may name 254, #108 and the date: they are in the facts")
+# since the ship leaves such a passenger out (relay/cruise.py), the logbook says so itself
+slog = [e for e in nlog if e.get("ok") is not False and e.get("kind") != "visit over"]
+slog += [{"t": T11 + 800, "visit": V11, "kind": "pay", "p": 7, "ok": None, "new_wallet": True, "code": "ADMISSION_UNAVAILABLE", "err": AU, "seq": 0},
+         {"t": T11 + 1400, "visit": V11, "kind": "pay", "p": 7, "ok": None, "new_wallet": True, "note": "left out"},
+         {"t": T11 - 3 * 86400, "visit": V11, "kind": "book ahead", "p": 9, "ok": None, "new_wallet": True},
+         {"t": T11 + 5500, "visit": V11, "kind": "visit over", "summary": {"id": V11, "name": "MS Dry Run", "t0": T11, "landed": True, "passengers": 40,
+                                                                           "sent": {"pay": 222}, "refused": {}, "skipped": 0, "left_out": {"passengers": 1, "stops": 2}}}]
+sf = blog.facts_of(slog, [])
+sw = sf.get(blog.NEW_WALLET_FACT) or {}
+check(sf["refused in all"] == 0 and sw.get("passengers") == 2 and sw.get("their sends the node could not take or the ship left out") == 3
+      and "left out" in sw.get("how this call handled them", ""), "logged the new way: counted apart the same, with how the ship left them out")
+check(sw.get(blog.NEW_WALLET_SAID) == 1, "the new way, only the send the node answered counts as its answer: the left-out stop and the booking ahead do not")
+check(sf["bookings ahead in escrow"].get("not booked: wallets new to our node, which had no room for them") == 1
+      and sf["bookings ahead in escrow"]["refused by the node"] == 0, "a booking ahead from a new wallet: not booked, not refused")
+# a wallet the chain knows that gets the same answer is a refusal as before
+klog = nlog[:1] + [{"t": T11 + 60, "visit": V11, "kind": "pay", "p": 5, "ok": False, "seq": 7, "err": AU, "verdict": "calm"}]
+kf = blog.facts_of(klog, [])
+check(kf["refused in all"] == 1 and not kf.get(blog.NEW_WALLET_FACT) and kf.get("refusal answers"), "the same answer to a wallet with transactions in blocks stays a refusal")
+check(blog.NEW_WALLET_FACT not in blog.facts_of(log[::-1], inc), "a visit without new wallets says nothing of them")
+
+# the picture holds the title on one line: a title cut at a word when it was drafted keeps a whole clause when made anew,
+# and a draft waiting to go out gets its picture made anew once, like the articles already out
+import io  # noqa: E402
+seen, own = [], (blog_pics.hero, blog_pics.desk_hero, blog.urllib.request.urlopen, blog.posts)
+blog_pics.hero = lambda art, ships, card, ship, out, stats=None, host="rico": seen.append(list(card)) or out
+blog_pics.desk_hero = lambda card, out, stats=None, kicker="": seen.append(list(card)) or out
+blog.urllib.request.urlopen = lambda *a, **k: io.BytesIO(b'{"posts": []}')
+blog.posts = lambda: {"posts": []}
+d11 = {"id": "2026-11-11-dryrun-learnings", "kind": "cruise", "visit": V11, "facts": nf,
+       "title": {"en": "MS Dry Run stays 90 minutes as our node runs out of wallet room"},
+       "card": ["MS Dry Run stays 90 minutes as our node runs out of wallet", "Chain refused nothing", "Tau HUD blog"]}
+blog.write_json(os.path.join(TMP, "blog", "drafts", "d11-tok.json"), d11)
+blog.write_json(blog.STATE, {"drafts": {d11["id"]: "d11-tok"}})
+n1, n2 = blog.site_pictures(), blog.site_pictures()
+check(n1 == 1 and n2 == 0 and seen and seen[0][:2] == ["MS Dry Run stays 90 minutes", "Chain refused nothing"],
+      f"a waiting draft's picture is made anew once, its title a whole clause, not '...runs out of wallet' {seen}")
+blog.make_hero({"id": "2026-11-12-news", "kind": "news", "title": {"en": "A title much longer than the line its hand-made card shows on the picture"},
+                "card": ["Hand-made line", "Tau HUD blog"]}, None)
+check(seen[-1][0] == "Hand-made line", "a hand-made first line that is not the title stays as it is")
+blog_pics.hero, blog_pics.desk_hero, blog.urllib.request.urlopen, blog.posts = own
+
+# every tile label fits the tile in two lines of the tile's type (a third ran over the tile's edge on 11 November)
+from PIL import ImageDraw  # noqa: E402
+od = ImageDraw.Draw(Image.new("RGB", (400, 200)))
+labels = {lab for fs in (nf, f, fq, {"minutes in port": 34, "the ship before": {"minutes in port": 90},
+          "refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)": 8, "refused in all": 9})
+          for _, lab in blog_pics.visit_stats(fs)}
+lines = lambda lab, size: len(blog_pics.wrap(od, lab, blog_pics.font(size, 500), 214 - 36))   # as blog_pics.hero sets a tile: 21, else 18
+wide = [lab for lab in labels if lines(lab, 21) > 2 and lines(lab, 18) > 2]
+check(not wide and "bookings in port paid out" in labels, f"every tile label fits in two lines {wide}")
+
+# a character the font lacks (Sora has no arrows) comes from the other font, never as the missing-glyph box
+from PIL import Image as _I, ImageDraw as _D  # noqa: E402
+_f = blog_pics.font(76, 700)
+_a, _b = _I.new("RGB", (200, 100)), _I.new("RGB", (200, 100))
+blog_pics.draw(_a).text((10, 10), "→", font=_f, fill=(255, 255, 255))
+_D.Draw(_b).text((10, 10), "→", font=_f, fill=(255, 255, 255))
+check(not blog_pics.has_glyph(_f, "→") and blog_pics.has_glyph(_f, "2") and _a.getbbox() and _a.tobytes() != _b.tobytes(),
+      "2 → all on a hero: the arrow drawn from JetBrains Mono, not the box")
 
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)

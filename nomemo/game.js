@@ -952,6 +952,12 @@
     say("ok", F("Contract {n} settled. Standing: {r}.", { n: num(c), r: rank() }));
     if (Object.keys(S.done).length === 1 && !again) { say("sys", T("First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right.")); youAre(); }
     say("learn", T(c.learn));
+    /* one quiet line at a good moment, each once: the refusal you just earned is also on a tee; after the third contract, who pays the node */
+    if (!again) {
+      const tee = (c.want || []).find(x => ["INSUFFICIENT_FUNDS", "INVALID_SIGNATURE", "TX_EXPIRED", "FEE_LIMIT_TOO_LOW"].includes(x));
+      if (tee && !settle.tee) { settle.tee = true; say("sys", T("{x} is the chain doing its job. That answer is also printed on a tee:").replace("{x}", tee), link("https://tau-hud-shop.fourthwall.com/?utm_source=tauhud&utm_medium=nomemo", T("the Tau HUD shop"))); }
+      else if (Object.keys(S.done).length === 3) say("sys", T("Three contracts settled. The node this terminal dials has a monthly bill. Nobody has to, but whoever wants can carry a part of it:"), link("/crew/?ref=nomemo", "tauhud.com/crew"));
+    }
     if (c.id === "mark") tutAt("done1");
     if (chapterDone(CH[0]) && chapterOf(c).n === 1) tutAt("chap1");
     if (again) { chips(); return; }
@@ -1475,6 +1481,7 @@
     bool: ["Boolean functions", "In Tau a Boolean function is built with & (and), | (or), ' (not, written after) and ^ (exclusive or); ' binds first, then &, then ^, then |. Over the two values 0 and 1 a function is just its table; Tau works the same way over much bigger Boolean algebras."],
     rule: ["Tau Language", "The chain’s rules are a Tau specification. In (o9[t]:bv[24] = {#x00000a}:bv[24]), o9[t] is output stream 9 at every step t, :bv[24] makes it a bitvector 24 bits wide, and {#x00000a} is a constant written in hex: 10. Learn to write such lines yourself: tauhud.com/learn/."],
     order: ["Order of checks", "A payment wrong in two ways is refused for one of them: the node answers with the first check it fails. Which check comes first is the node’s own order; its answer shows it."],
+    guard: ["Personal rules", "A wallet can carry a rule of its own, written in Tau, and the chain checks each of its payments against it: o5 = 1 lets the payment through, 0 stops it, and i1 is the amount. Where the rule says nothing, the engine answers 0, so a rule that only says when to block blocks everything."],
   };
   const CODE_TOPIC = { FEE_LIMIT_TOO_LOW: "fee", TX_EXPIRED: "height", INVALID_SEQUENCE: "seq", INVALID_SIGNATURE: "sig", TX_INVALID: "payer", INVALID_PARAMS: "width", INSUFFICIENT_FUNDS: "funds", TX_REJECTED: "funds" };
   const PAYS = { 1: 1, 2: 2, 3: 3, 4: 5 };
@@ -1482,7 +1489,7 @@
   const THEMES = [
     { k: "fee", who: "qm", name: "Fee week", topics: ["fee", "funds", "width"], text: "This week is fee week. Contracts about the fee, empty pockets and amount widths come more often and pay double. Learn what the base fee is, where the chain keeps it, and what a fee limit really promises." },
     { k: "deadline", who: "look", name: "Deadline week", topics: ["height", "clock"], text: "This week is deadline week. Contracts about block heights and expiry times come more often and pay double. Two clocks guard every payment; learn to tell them apart." },
-    { k: "tau", who: "bosun", name: "Tau week", topics: ["rule", "bool"], text: "This week is Tau week. Contracts about the chain’s rule and Boolean functions come more often and pay double. The rules of this chain are written in Tau; read them, then write your own." },
+    { k: "tau", who: "bosun", name: "Tau week", topics: ["rule", "bool", "guard"], text: "This week is Tau week. Contracts about the chain’s rule and Boolean functions come more often and pay double. The rules of this chain are written in Tau; read them, then write your own." },
     { k: "mask", who: "bosun", name: "Disguise week", topics: ["sig", "payer", "seq"], text: "This week is disguise week. Contracts about signatures, payers and sequence numbers come more often and pay double. Learn what the chain checks to know a payment is really yours." },
     { k: "eyes", who: "look", name: "Sharp eyes week", topics: ["addr", "order"], text: "This week is sharp eyes week. Contracts about addresses and the order of the node’s checks come more often and pay double. Read the middle of an address, and know which check comes first." },
   ];
@@ -1560,6 +1567,17 @@
       mk: j => { const P = [[["fee", 0], ["payer", "drop"]], [["signer", "other"], ["expiry", "past"]], [["seq", "old"], ["fee", 0]], [["height", "past"], ["signer", "other"]], [["amount", GIANT], ["expiry", "past"]], [["payer", "drop"], ["seq", "old"]]][rnd(6)]; j.lock = P; } },
     { k: "r-blind", t: 4, who: "bosun", topic: null, want: null, name: "Blind order", brief: "Make the chain answer {x}. No hint from me this time.", hint: null,
       mk: j => { const C = ["FEE_LIMIT_TOO_LOW", "INVALID_SIGNATURE", "INVALID_SEQUENCE", "TX_EXPIRED", "INSUFFICIENT_FUNDS"][rnd(5)]; j.code = C; j.want = [C]; j.topic = CODE_TOPIC[C]; } },
+    /* intel contracts: a wallet guarded by a personal rule nobody has shown you. Each probe is one transfer the real Tau
+       engine on our server judges with that rule (intelAsk below); nothing goes to the chain. m = the probes that pay a
+       point more; lead: the Lookout gives one number of the rule, so a window or hole is found by thinking, not sweeping */
+    { k: "i-cap", t: 2, who: "look", topic: "guard", intel: true, want: null, ok: () => intelUp(), name: "The locked purse", brief: "A wallet guarded by a rule nobody has shown us. It lets transfers through up to some amount, or from some amount up: a round hundred, 20,000 at most. Find which and where with probe <amount>, then name cap <n> or name floor <n>. {m} probes or fewer pays a point more.", hint: "probe 0 first: a cap lets 0 through, a floor does not. Then halve: probe 10000, then the middle of what is left",
+      mk: j => { j.seed = seedHex(); j.m = 9; j.trace = 50; } },
+    { k: "i-edge", t: 2, who: "qm", topic: "guard", intel: true, final: true, want: null, ok: () => intelUp(), name: "One shot", brief: "A guard that lets transfers through up to some amount, a round hundred, 20,000 at most. Find the edge, the last amount that passes. Probe as often as you like, then final <amount>: one shot, and a miss loses the contract. {m} probes or fewer pays a point more.", hint: "halve the range: probe 10000, then the middle of what is left. The edge passes, and one more does not",
+      mk: j => { j.seed = seedHex(); j.m = 9; j.trace = 50; } },
+    { k: "i-band", t: 3, who: "bosun", topic: "guard", intel: true, lead: true, want: null, ok: () => intelUp(), name: "Window or hole", brief: "This guard lets only a window of amounts through, or everything but a hole: 500 to 5,000 wide, between round hundreds up to 20,000. The Lookout made out one of its numbers. Probe for the rest, then name band <from> <to> or name hole <from> <to>. {m} probes or fewer pays a point more.", hint: "probe the Lookout’s number: a window lets it through, a hole does not. The other end is 500 to 5,000 above it; halve towards it",
+      mk: j => { j.seed = seedHex(); j.m = 8; j.trace = 60; } },
+    { k: "i-blind", t: 4, who: "bosun", topic: "guard", intel: true, lead: true, want: null, ok: () => intelUp(), name: "The blind guard", brief: "A guard, and little to go on: a cap, a floor, a window, a hole, or a rule that lets nothing through. The Lookout made out one number in it. Probe, think, then name it. Mind what a rule leaves unsaid. {m} probes or fewer pays a point more. No hint from me.", hint: null,
+      mk: j => { j.seed = seedHex(); j.m = 10; j.trace = 60; } },
   ];
   const kindOf = j => { const b = KINDS.find(x => x.k === j.k); return b && b.heist && j.hs != null ? KINDS.find(x => x.k === b.heist[j.hs]) : b; };
   const heistOf = j => { const b = KINDS.find(x => x.k === j.k); return b && b.heist ? b : null; };
@@ -1577,8 +1595,9 @@
   const TRY = { "r-fee": "set fee 0", "r-sig": "set signer other", "r-height": "set height past", "r-funds": "status", "p-seq": "peek getsequence me", "p-race": "set height +{m}",
     "r-clock": "set expiry past", "r-payer": "set payer drop", "r-seq": "set seq old", "r-width": "what width", "p-hex": "status", "p-fee": "peek getgovernance", "p-doors": "status", "r-self": "set to me", "p-nokey": "what curve",
     "r-fee9": "peek getgovernance", "p-tight": "peek getgovernance", "p-last": "history", "predict": "what order",
-    "p-bits": "rule", "p-stream": "rule", "p-ones": "what #b", "p-top": "what top", "p-spec": "what stream", "p-table": "what and", "p-table3": "what and" };
-  const tryCmd = j => { const k = j && kindOf(j).k; return k && TRY[k] ? fill0(TRY[k], { m: j.m }) : null; };
+    "p-bits": "rule", "p-stream": "rule", "p-ones": "what #b", "p-top": "what top", "p-spec": "what stream", "p-table": "what and", "p-table3": "what and",
+    "i-cap": "probe 0", "i-edge": "probe 10000", "i-band": "probe {lead}" };
+  const tryCmd = j => { const k = j && kindOf(j).k; if (!k || !TRY[k]) return null; const v = { m: j.m }; if (j.lead != null) v.lead = j.lead; const c = fill0(TRY[k], v); return c.includes("{") ? null : c; };
   const hintLine = j => { const kd = kindOf(j), go = tryCmd(j); say("learn", F("Hint: {x}", { x: fill(kd.hint, j) }), go ? btn(go, go) : null); };
   const LOCK_TEXT = { fee: "fee limit 0", payer: "the drop named as payer", signer: "a stranger’s signing key", expiry: "an expiry time in the past", seq: "a used sequence number", height: "a height deadline behind the tip", amount: "an amount of 2^24" };
   const inboxOpen = () => chapterDone(CH[0]);
@@ -1698,6 +1717,7 @@
     if (heistOf(j)) say("sys", F("A heist: {n} parts, one trace. Part {a} now: {t}.", { n: heistOf(j).heist.length, a: (j.hs || 0) + 1, t: kindOf(j).name }));
     if (kindOf(j).table) { say("sys", T("This one is answered in Tau, not with a payment: type tau and a term in x and y (and z). This terminal checks it against every row."), btn("what and", "what and")); tableShow(j); }
     else if (kindOf(j).tau) say("sys", T("This one is answered in Tau, not with a payment: type tau and your line. The Tau checker on our server runs it."), btn("what tau", "what tau"));
+    else if (kindOf(j).intel) intelStart(j);
     else { say("sys", T("Your draft is a plain payment of 1 test AGRS to the drop. Change it with set, look at it with tx, send it with send."));
     draftShow(); }
     if (j.hinted && kindOf(j).hint) hintLine(j);
@@ -1717,6 +1737,7 @@
     S.jobStep = false; save(); hintLine(j); chips();
   }
   function draftShow() {
+    { const ij = intelJob(); if (ij) { intelShow(ij); return; } }
     const d = S.draft; if (!d) { say("sys", T("No draft: accept a contract from the inbox first.")); return; }
     const j = curJob(), locked = new Set(((j && j.lock) || []).map(x => x[0]));
     const L = k => (locked.has(k) ? " 🔒" : "");
@@ -1734,6 +1755,7 @@
   }
   function setDraft(args) {
     const d = S.draft, j = curJob(); if (!d || !j) { say("sys", T("No draft: accept a contract from the inbox first.")); return; }
+    if (kindOf(j).intel) { say("sys", T("This one has no draft: probe <amount> asks the guard."), btn("probes", "probes")); return; }
     const [f, v] = args;
     if (j.lock && j.lock.some(x => x[0] === f)) { say("warn", F("{x} is locked in this contract: it is one of the two faults.", { x: f })); return; }
     const n = v != null && /^\d+$/.test(v) ? parseInt(v, 10) : null;
@@ -1762,6 +1784,7 @@
     const j = curJob(), d = S.draft; if (!j || !d) { say("sys", T("No contract from the inbox taken. Type inbox.")); return; }
     if (RUN.busy) { say("warn", T("Already under way.")); return; }
     if (kindOf(j).tau) { say("sys", T("This one is answered in Tau: tau <your line>."), btn("what tau", "what tau")); return; }
+    if (kindOf(j).intel) { say("sys", kindOf(j).final ? T("This one is answered with probes, not with a payment: probe <amount>, then final <amount>.") : T("This one is answered with probes, not with a payment: probe <amount>, then name what the guard does."), btn("probes", "probes")); return; }
     if (!B) { say("no", T("This browser cannot sign (no BLS library loaded).")); return; }
     if (!SIM && CHAIN.ok === false) { say("no", T("The node is out of reach; nothing was sent. Try again in a minute, or switch to the simulation in the header."), btn("reboot", "reboot")); return; }
     if (j.k === "predict" && !S.pred) { say("sys", T("Predict first: predict <CODE>. Then send."), btn("predict TX_INVALID", "predict TX_INVALID")); return; }
@@ -1953,6 +1976,7 @@
     [["width", "amount width", "24 bits", "2^24"], "Amount width", "An amount is 24 bits wide here: 16,777,215 at most. 2^24 = 16,777,216 is not even read: TX_INVALID or INVALID_PARAMS."],
     [["order", "order of checks", "first check"], "Order of checks", "A payment wrong in two ways is refused for one of them: the node answers with the first check it fails. Which check comes first is the node’s own order; its answer shows it."],
     [["testnet", "tau", "chain"], "Tau Testnet Alpha", "IDNI’s public test chain. Its coins have no value; it is there to be tested. This game is one way to test it, together with every other player."],
+    [["guard", "guards", "intel", "probe", "probes", "personal rule", "open answer"], "Guards and probes", "An intel contract hides a wallet’s personal rule: a line of Tau the chain checks each of that wallet’s payments against. A probe asks the real Tau engine on our server whether the rule lets a transfer of that amount through (o5 = 1) or blocks it (o5 = 0); nothing goes to the chain. Where a rule says nothing, the engine answers 0: blocked."],
     [["recurring", "standing order", "subscription", "percent", "percentage"], "Standing orders and percent", "Tau Testnet Alpha has no standing orders yet: a rule can let a payment through or stop it, never start one. The nearest thing is the way back turned around: timed payments that pay themselves out at a set block or time, up to 16 open per wallet and 90 days ahead, each yours to take back until then. A percentage works only as a fee on your own payments, worked out from the amount; it goes to whoever seals the block."],
   ];
   /* rule: the chain's rules, taken apart token by token */
@@ -2068,7 +2092,202 @@
       say("no", T("That is not one of the shapes we know. It may still be right Tau; try it in your own REPL, or when the checker is up."));
     } finally { RUN.busy = false; chips(); }
   }
-  const TAUWORDS = ["Boolean functions", "Tau Language", "Streams", "Bitvectors", "Constants", "The top", "G and F", "Two kinds of and/or", "sat and the REPL"];
+  /* ---------- intel contracts (KINDS i-…): a wallet guarded by a personal rule nobody has shown you ----------
+     The rule is dealt on our server from the contract's seed and a secret kept there (infra/checker/intel.py), so it is not
+     in this page. Each probe is one transfer the real Tau engine on the server judges with it (POST /tau/intel), the engine
+     /learn uses; nothing goes to the chain. The answer is what the guard does, compared amount by amount: a rule that says
+     "above 4,000" is named floor 4,100. Asked once a visit whether the server has the contracts (GET /tau/health) */
+  let INTEL = null, REVEAL = 0;
+  function intelUp() {
+    if (SIM) return false;
+    if (INTEL === null) {
+      INTEL = "asking";
+      fetch(RELAY + "/tau/health", { cache: "no-store" }).then(r => (r.ok ? r.json() : null))
+        .then(h => { INTEL = !!(h && Array.isArray(h.intel) && h.intel.includes("i-blind")); }).catch(() => { INTEL = false; });
+    }
+    return INTEL === true;
+  }
+  const seedHex = () => Array.from(crypto.getRandomValues(new Uint8Array(8)), b => b.toString(16).padStart(2, "0")).join("");
+  const amountOf = s => { const m = /^(\d{1,8})(k?)$/.exec(String(s == null ? "" : s).toLowerCase().replace(/[\s,_']/g, "")); if (!m) return null; const n = +m[1] * (m[2] ? 1000 : 1); return n < GIANT ? n : null; };
+  const b64 = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");   // as /learn/ reads #q=
+  const intelJob = () => { const j = curJob(); return j && kindOf(j).intel ? j : null; };
+  function intelNone(what) { say("sys", F("{x} belongs to the intel contracts: accept one from the inbox.", { x: what }), btn("inbox", "inbox")); }
+  function intelSim() {
+    if (!SIM) return false;
+    say("sys", T("The intel contracts ask the Tau checker on our server, which the simulation does not reach. Switch to the live node in the header."));
+    return true;
+  }
+  async function intelAsk(j, body) {
+    try {
+      const r = await fetch(RELAY + "/tau/intel", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ case: j.k, seed: j.seed, ...body }), cache: "no-store" });
+      const x = await r.json().catch(() => null);
+      if (r.status === 429) return { ok: false, wait: Number((x && x.retry_after) || r.headers.get("Retry-After")) || 30 };
+      return x || { ok: false, error: "HTTP " + r.status };
+    } catch (e) { return null; }
+  }
+  /* an answer from the checker: false (and why, on the screen) when there is none to use. A new round there (the server's
+     secret changed, so every rule was dealt anew) clears the contract's probes: they were about another rule. A probe's
+     answer is about the new rule and stays; a name or a shot made from the old probes does not count (keep false) */
+  function intelOk(j, r, keep = true) {
+    if (!r) { say("no", T("The Tau checker on our server is not answering. Nothing was counted; try again in a minute.")); return false; }
+    if (r.wait) { say("warn", F("The checker asks for a pause: too many questions from this address. Try again in {n} s.", { n: r.wait })); return false; }
+    if (!r.ok) { say("no", F("The checker could not judge it: {x}", { x: String(r.error || "no answer").slice(0, 200) })); return false; }
+    if (r.round && j.round && r.round !== j.round) {
+      j.probes = []; j.wrong = 0; j.lead = null;
+      say("warn", T("The guard has a new rule since your last probe: our server dealt the rules anew. Your probes are cleared; start again."));
+      if (kindOf(j).lead) setTimeout(() => intelLead(j), 0);
+      if (!keep) { j.round = r.round; save(); return false; }
+    }
+    if (r.round) j.round = r.round;
+    save(); return true;
+  }
+  /* the Lookout's number: the rule's first amount, for the window, the hole and the blind guard */
+  async function intelLead(j) {
+    if (SIM || j.lead != null) return;
+    const r = await intelAsk(j, { lead: true });
+    if (!intelOk(j, r) || r.lead == null) return;
+    j.lead = r.lead; save();
+    if (S.job === j.n) { crew("look", F("One number in the guard’s rule I could make out: {n}. Where it sits is yours to find.", { n: fmt(r.lead) }), "calm"); chips(); }
+  }
+  function intelStart(j) {
+    const kd = kindOf(j);
+    say("sys", T("This one is answered with probes, not with a payment. probe <amount> asks the guard whether it lets a transfer of that amount through; the real Tau engine on our server judges it with the hidden rule. Nothing goes to the chain."));
+    say("sys", kd.final ? T("When you know the edge, final <amount> is your one shot: the last amount that passes. A miss loses the contract.")
+      : T("When you know it, name says what the guard does: name cap <n>, floor <n>, band <a> <b>, hole <a> <b> or none. Three wrong names lose the contract."), btn("what probe", "what probe"));
+    if (kd.lead) intelLead(j);
+  }
+  /* what the probes said so far, in one line: sorted by amount, ✓ passes, ✗ blocked */
+  function intelSeen(j) {
+    const p = j.probes || [];
+    if (!p.length) { say("sys", F("No probes yet; {m} or fewer pays a point more.", { m: j.m })); return; }
+    say("sys", F("Probes so far ({n}; {m} or fewer pays a point more):", { n: p.length, m: j.m }) + " " + p.map(([a, ok]) => fmt(a) + (ok ? " ✓" : " ✗")).join(" · "));
+  }
+  function intelShow(j) {
+    const kd = kindOf(j);
+    if (j.lead != null) say("sys", F("The lookout’s number: {n}", { n: fmt(j.lead) }));
+    intelSeen(j);
+    say("sys", kd.final ? T("probe <amount> asks the guard · final <amount> is your one shot at the edge · reveal gives up")
+      : T("probe <amount> asks the guard · name cap|floor <n>, band|hole <a> <b> or none · reveal gives up"));
+    if (kd.lead && j.lead == null) intelLead(j);
+  }
+  async function probeCmd(arg) {
+    const j = intelJob(); if (!j) { intelNone("probe"); return; }
+    if (!arg) { intelShow(j); return; }
+    const n = amountOf(arg);
+    if (n == null) { say("warn", T("probe <amount>: a whole number from 0 to 16,777,215.")); return; }
+    const had = (j.probes || []).find(p => p[0] === n);
+    if (had) { say("sys", had[1] ? F("{n} was probed already: it passes.", { n: fmt(n) }) : F("{n} was probed already: it is blocked.", { n: fmt(n) })); intelSeen(j); return; }
+    if (intelSim()) return;
+    if (RUN.busy) { say("warn", T("Already under way.")); return; }
+    RUN.busy = true; chips();
+    try {
+      say("step", F("probing the guard: a transfer of {n}", { n: fmt(n) }));
+      const r = await intelAsk(j, { probe: n });
+      if (!intelOk(j, r)) return;
+      j.probes = [...(j.probes || []), [n, !!r.pass]].sort((a, b) => a[0] - b[0]); save();
+      if (r.pass) snd.ok(); else snd.no();
+      say(r.pass ? "ok" : "warn", r.pass ? F("{n} passes: o5 = 1.", { n: fmt(n) }) : F("{n} is blocked: o5 = 0.", { n: fmt(n) }));
+      intelSeen(j);
+    } finally { RUN.busy = false; chips(); }
+  }
+  /* name: what the guard lets through. above and below are said as the floor or cap they are */
+  const NAMEWORDS = { cap: "cap", floor: "floor", band: "band", window: "band", hole: "hole", none: "none", nothing: "none", above: "above", below: "below" };
+  function guessOf(args) {
+    const kind = NAMEWORDS[args[0]], nums = args.slice(1).join(" ").replace(/[,_']/g, "").split(/\s*(?:\.\.|–|-|\bto\b|\s)\s*/).filter(Boolean).map(amountOf);
+    if (!kind || nums.some(n => n == null)) return null;
+    if (kind === "none") return nums.length ? null : { kind: "none" };
+    if (kind === "above") return nums.length === 1 && nums[0] < GIANT - 1 ? { kind: "floor", a: nums[0] + 1 } : null;
+    if (kind === "below") return nums.length === 1 && nums[0] > 0 ? { kind: "cap", a: nums[0] - 1 } : null;
+    if (kind === "band" || kind === "hole") return nums.length === 2 && nums[0] <= nums[1] ? { kind, a: nums[0], b: nums[1] } : null;
+    return nums.length === 1 ? { kind, a: nums[0] } : null;
+  }
+  const guessWords = g => (g.kind === "none" ? T("it lets nothing through") : g.kind === "cap" ? F("it lets through every amount up to {a}", { a: fmt(g.a) })
+    : g.kind === "floor" ? F("it lets through every amount from {a} up", { a: fmt(g.a) }) : g.kind === "band" ? F("it lets through only the amounts from {a} to {b}", { a: fmt(g.a), b: fmt(g.b) })
+    : F("it lets through everything but the amounts from {a} to {b}", { a: fmt(g.a), b: fmt(g.b) }));
+  async function nameCmd(args) {
+    const j = intelJob(); if (!j) { intelNone("name"); return; }
+    if (kindOf(j).final) { say("sys", T("This contract is answered in one shot: final <amount>, the last amount that passes."), btn("final", "final")); return; }
+    const g = args.length ? guessOf(args) : null;
+    if (!g) {
+      say("sys", T("name says what the guard lets through:"));
+      cols([["name cap <n>", T("every amount up to n")], ["name floor <n>", T("every amount from n up")], ["name band <a> <b>", T("from a to b, and nothing else")],
+        ["name hole <a> <b>", T("everything but a to b")], ["name none", T("nothing at all")]]);
+      say("sys", F("Three wrong names lose the contract; {n} so far.", { n: j.wrong || 0 }));
+      return;
+    }
+    if (intelSim()) return;
+    if (RUN.busy) { say("warn", T("Already under way.")); return; }
+    RUN.busy = true; chips();
+    try {
+      say("step", F("naming the guard: {x}", { x: guessWords(g) }));
+      const r = await intelAsk(j, { name: g });
+      if (!intelOk(j, r, false)) return;
+      if (r.right) { say("ok", F("Right, the guard’s rule: {x}.", { x: guessWords(g) })); intelWin(j, r); return; }
+      j.wrong = (j.wrong || 0) + 1; save(); flash("bad"); snd.no(); mood(j.who, "sour");
+      if (j.wrong >= 3) {
+        say("no", T("Three wrong names: the guard is closed to you. Its rule:"));
+        const v = await intelAsk(j, { reveal: true }); if (v && v.ok) intelRule(j, v);
+        jobMiss(j); return;
+      }
+      say("no", F("Wrong: the guard’s rule is not “{x}”. Wrong names: {n} of 3.", { x: guessWords(g), n: j.wrong }));
+      heatAdd(8);
+    } finally { RUN.busy = false; chips(); }
+  }
+  async function finalCmd(arg) {
+    const j = intelJob(); if (!j) { intelNone("final"); return; }
+    if (!kindOf(j).final) { say("sys", T("final belongs to the contract One shot. Here name says what the guard does."), btn("name", "name")); return; }
+    const n = arg ? amountOf(arg) : null;
+    if (n == null || n >= GIANT - 1) { say("sys", T("final <amount>: your one shot at the edge, the last amount the guard lets through. A miss loses the contract.")); intelSeen(j); return; }
+    if (intelSim()) return;
+    if (RUN.busy) { say("warn", T("Already under way.")); return; }
+    RUN.busy = true; chips();
+    try {
+      say("step", F("one shot: {a} must pass and {b} must not", { a: fmt(n), b: fmt(n + 1) }));
+      const r = await intelAsk(j, { final: n });
+      if (!intelOk(j, r, false)) return;
+      if (r.edge) { say("ok", F("{a} passes and {b} is blocked: that is the edge.", { a: fmt(n), b: fmt(n + 1) })); intelWin(j, r); return; }
+      flash("bad"); snd.no();
+      say("no", r.pass ? F("{a} passes, and so does {b}: the edge lies higher. The shot missed.", { a: fmt(n), b: fmt(n + 1) }) : F("{a} is blocked already: the edge lies lower. The shot missed.", { a: fmt(n) }));
+      intelRule(j, r); jobMiss(j);
+    } finally { RUN.busy = false; chips(); }
+  }
+  async function revealCmd() {
+    const j = intelJob(); if (!j) { intelNone("reveal"); return; }
+    if (REVEAL !== j.n) { REVEAL = j.n; say("warn", T("reveal gives the contract up and shows the guard’s rule. Type reveal again to do it."), btn("reveal", "reveal")); return; }
+    REVEAL = 0;
+    if (intelSim()) return;
+    if (RUN.busy) { say("warn", T("Already under way.")); return; }
+    RUN.busy = true; chips();
+    try {
+      const r = await intelAsk(j, { reveal: true });
+      if (!intelOk(j, r)) return;
+      say("sys", T("Given up. The guard’s rule:")); intelRule(j, r); jobMiss(j);
+    } finally { RUN.busy = false; chips(); }
+  }
+  /* the rule, once named, shot at or given up: its Tau, what it does in words, and a link that runs it at its edges on /learn/ */
+  function intelRule(j, r) {
+    if (!r || !r.rule) return;
+    const d = r.dealt || {}, a = d.a, b = d.b;
+    say("sys", T("The guard’s rule, in Tau:"), code(r.rule));
+    const words = {
+      cap: () => F("It lets through every amount up to {a}.", { a: fmt(a) }),
+      floor: () => F("It lets through every amount from {a} up.", { a: fmt(a) }),
+      band: () => F("It lets through the amounts from {a} to {b}, and nothing else.", { a: fmt(a), b: fmt(b) }),
+      hole: () => F("It lets through everything but the amounts from {a} to {b}.", { a: fmt(a), b: fmt(b) }),
+      none: () => F("It only says when to block: above {a}. At {a} and below it says nothing, and where a rule says nothing the engine answers 0. So nothing passes at all.", { a: fmt(a) }),
+      above: () => F("It only says when to let through: above {a}. At {a} and below it says nothing, and where a rule says nothing the engine answers 0: blocked. So it is a floor at {b}.", { a: fmt(a), b: fmt(a + 1) }),
+    }[d.kind];
+    if (words) say("learn", words());
+    const at = { cap: [a, a + 1], floor: [a - 1, a], band: [a - 1, a, b, b + 1], hole: [a - 1, a, b, b + 1], none: [0, a, a + 1], above: [a, a + 1] }[d.kind];
+    if (at) say("sys", T("Run it yourself, at its edges:"), link("/learn/" + lang() + "#q=" + b64(JSON.stringify({ op: "run", spec: r.rule, in: "i1 = " + at.filter(x => x >= 0).join(", ") })), T("on the Learn page")));
+  }
+  function intelWin(j, r) {
+    const n = (j.probes || []).length, more = n <= j.m;
+    intelRule(j, r);
+    say(more ? "ok" : "sys", more ? F("{n} probes, {m} or fewer: a point more.", { n, m: j.m }) : F("{n} probes; {m} or fewer would have paid a point more.", { n, m: j.m }));
+    jobWin(j, { intel: (r.dealt && r.dealt.kind) || "edge", probes: n }, more ? -1 : 0);
+  }
+  const TAUWORDS = ["Boolean functions", "Tau Language", "Streams", "Bitvectors", "Constants", "The top", "G and F", "Two kinds of and/or", "sat and the REPL", "Guards and probes"];
   function what(term) {
     const t = term.trim().toLowerCase().replace(/^(is|a|an|the)\s+/, "").replace(/[?.!]+$/, "");
     const w = WORDS.find(x => x[0].includes(t)) || WORDS.find(x => x[0].some(k => t.includes(k)));
@@ -2119,9 +2338,9 @@
   /* help: every command on one screen, in groups side by side; a click on a command types it */
   const HELP = [
     ["Story", [["jobs", "the twelve contracts"], ["take <n>", "take one"], ["run", "build, sign, send"], ["back", "retract a payment"], ["drop", "put it back"], ["claim [n]", "the chapter’s share"], ["chapter <n>", "the chapter’s card"]]],
-    ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["why [topic]", "what just happened"], ["archive · history", "your record"]]],
+    ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["probe · name · final", "intel contracts"], ["why [topic]", "what just happened"], ["archive · history", "your record"]]],
     ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail · mail <n>", "letters; some bring special orders"], ["crew", "who is who"], ["scan · blocks · dry", "gear for rank"]]],
-    ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"]]],
+    ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"], ["upkeep", "who pays the node"]]],
     ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · reboot · clear", "reboot: dial the node again"], ["scene · transmission on|off", "the cabin; the crew on screen"]]],
   ];
   function help() {
@@ -2187,7 +2406,7 @@
   }
   async function dryCmd() {
     if (!has("dry")) return gearLocked("dry");
-    const j = curJob(); if (!j || !S.draft || kindOf(j).tau) { say("sys", T("dry checks the draft of a taken contract: accept one, set it up, then dry.")); return; }
+    const j = curJob(); if (!j || !S.draft || kindOf(j).tau || kindOf(j).intel) { say("sys", T("dry checks the draft of a taken contract: accept one, set it up, then dry.")); return; }
     if (SIM) { say("sys", T("The practice node has no dry run. On the live node, dry asks the node’s own checktx.")); return; }
     if (!j.dried) { j.dried = true; save(); say("sys", T("A dry run makes this contract pay 1 point less.")); }
     RUN.dry = true; try { await jobSend(); } finally { RUN.dry = false; }
@@ -2263,6 +2482,7 @@
   function exec(line) {
     const s = line.trim(); if (!s) return; cmdLine(s); snd.wake(); snd.enter();
     const [c, ...args] = s.toLowerCase().split(/\s+/);
+    if (c !== "reveal") REVEAL = 0;   // giving up an intel contract takes reveal twice in a row
     if (S.job && /^(set|peek|status|history|hist|what|predict)$/.test(c) && !S.jobStep) { S.jobStep = true; save(); setTimeout(chips, 0); }
     if (c === "help" || c === "?") return help();
     if (c === "jobs" || c === "contracts" || c === "board" && args[0] === "jobs") { for (const ch of CH) { say("sys", F("Chapter {n}: {x}", { n: ch.n, x: ch.name }) + (chapterOpen(ch) ? "" : " · " + T("locked"))); cols(ch.ids.map(id => byId(id)).map(x => [String(num(x)).padStart(2, " ") + (S.done[x.id] ? " ✓" : S.taken === x.id ? " ●" : "  "), T(x.name) + " · " + T(x.task)])); } const nx = CONTRACTS.find(y => !S.done[y.id]); return say("sys", T("take <n> takes one."), nx ? btn(F("take {n}", { n: num(nx) }), "take " + num(nx)) : null); }
@@ -2280,6 +2500,11 @@
     if (c === "reset") { if (S.draft && curJob()) { const j = curJob(); S.draft = DRAFT0(); if (j.lock) for (const [f, v] of j.lock) S.draft[f] = v; save(); return draftShow(); } return say("sys", T("No draft: accept a contract from the inbox first.")); }
     if (c === "send") return S.job ? jobSend() : say("sys", T("No contract from the inbox taken. Type inbox."));
     if (c === "predict") return predict(args[0]);
+    if (c === "probe") return probeCmd(args.join(" "));
+    if (c === "probes") return intelJob() ? intelShow(intelJob()) : intelNone("probes");
+    if (c === "name") return nameCmd(args);
+    if (c === "final") return finalCmd(args.join(" "));
+    if (c === "reveal") return revealCmd();
     if (c === "hint") return hintJob();
     if (c === "why" || c === "learn") return why(args[0]);
     if (c === "archive") return archiveList();
@@ -2309,6 +2534,7 @@
     if (c === "rule" || c === "rules" || (c === "explain" && /^rules?$/.test(args[0] || ""))) return ruleCmd();
     if (c === "findings") return findings();
     if (c === "crew") return crewList();
+    if (c === "upkeep") return say("sys", T("This terminal dials node.tauhud.com, a community node with a monthly bill. The Tau HUD crew is a paid membership that carries part of it:"), link("/crew/?ref=nomemo", "tauhud.com/crew"));
     if (c === "feedback" || c === "fb") return feedback(s.slice(s.search(/\s/) < 0 ? s.length : s.search(/\s/)).trim());
     if (c === "clear" || c === "cls") return clearScreen();
     if (c === "wallet") { window.open("/wallet/" + lang(), "_blank", "noopener"); return; }
@@ -2359,6 +2585,7 @@
   }
   function jobGo() {
     const j = curJob(), go = tryCmd(j);
+    if (j && kindOf(j).intel) return !(j.probes || []).length && go && j.hinted ? [go, go, true] : ["probe …", "probe", true];
     if (j && j.hinted && go && !S.jobStep) return [go, go, true];
     if (j && !j.hinted && kindOf(j).hint && S.jobMiss) return ["hint", "hint", true];
     return ["send", "send", true];
@@ -2379,6 +2606,7 @@
     if (OP.list) say("sys", T("An op is open: type go to send the next trick."), nextChip());
     else if (c && RUN.ret && c.id === "wayback") say("sys", T("Your payment waits in escrow: type back to take it back before the release."), nextChip());
     else if (c) say("sys", F("Contract {n} is yours: type run to carry it out.", { n: num(c) }), nextChip());
+    else if (intelJob()) say("sys", F("{x} is yours: probe <amount> asks the guard; probes lists what it said.", { x: jname(curJob()) }), btn("probes", "probes"), nextChip());
     else if (curJob()) say("sys", F("{x} is yours: tx shows the draft, set changes it, send sends it.", { x: jname(curJob()) }), btn("tx", "tx"), nextChip());
     else if (claimable) say("sys", F("Chapter {n} is done: type claim, and the drop pays the crew’s share back.", { n: claimable.n }), nextChip());
     else if (next) say("sys", F("Take the next contract: take {n}. Then run.", { n: num(next) }), nextChip());
@@ -2394,6 +2622,7 @@
     const list = [["help", "help"]];
     if (OP.list) { if (!RUN.busy) list.push(["go", "go", true]); }
     else if (S.taken) { if (RUN.ret && S.taken === "wayback") list.push(["back", "back", true]); else if (!RUN.busy) list.push(["run", "run", true]); }
+    else if (intelJob()) { const j = intelJob(), kd = kindOf(j); if (!RUN.busy) list.push(jobGo()); if ((j.probes || []).length) list.push(["probes", "probes"]); list.push(kd.final ? ["final …", "final"] : ["name …", "name"]); if (!j.hinted && kd.hint) list.push(["hint", "hint"]); }
     else if (S.job) { if (!RUN.busy) list.push(jobGo()); if (jobGo()[1] !== "send") list.push(["send", "send"]); list.push(["tx", "tx"]); if (curJob() && curJob().k === "predict" && !S.pred) list.push(["predict …", "predict"]); if (curJob() && !curJob().hinted) list.push(["hint", "hint"]); }
     else if (claimable) list.push([T("claim"), "claim", true]);
     else if (next) list.push([F("take {n}", { n: num(next) }), "take " + num(next), true]);
@@ -2427,7 +2656,7 @@
     else { say("sys", F("{n} of {m} contracts settled before. Standing: {r}.", { n: done, m: CONTRACTS.length, r: rank() })); crew("qm", "Back aboard. The board remembers you; so does the chain.", "calm"); }
     if (S.taken === "wayback" && S.ret && S.ret.release > now() + 30) { RUN.ret = S.ret; crew("bosun", F("Your 50 test AGRS still wait in escrow ({h}), release at {t}. Type back.", { h: short(S.ret.id), t: clock(S.ret.release) })); }
     else if (S.taken) { const c = byId(S.taken); if (c && c.id !== "wayback") say("sys", F("Contract {n} is still yours: {t}. Type run.", { n: num(c), t: c.name }), btn("run", "run")); else { S.taken = null; S.deadline = null; S.ret = null; save(); } }
-    if (S.job) { const j = curJob(); if (j) say("sys", F("{x} is still yours: {t}. tx shows the draft, send sends it.", { x: jname(j), t: heistOf(j) ? heistOf(j).name : kindOf(j).name }), btn("tx", "tx"), btn("send", "send")); else { S.job = null; S.draft = null; S.deadline = null; save(); } }
+    if (S.job) { const j = curJob(); if (j && kindOf(j).intel) say("sys", F("{x} is still yours: {t}. probe <amount> asks the guard.", { x: jname(j), t: kindOf(j).name }), btn("probes", "probes")); else if (j) say("sys", F("{x} is still yours: {t}. tx shows the draft, send sends it.", { x: jname(j), t: heistOf(j) ? heistOf(j).name : kindOf(j).name }), btn("tx", "tx"), btn("send", "send")); else { S.job = null; S.draft = null; S.deadline = null; save(); } }
     const claimable = CH.find(ch => chapterDone(ch) && !S.chap[ch.n]);
     if (claimable) say("sys", F("Chapter {n} is done and its share unclaimed.", { n: claimable.n }), btn("claim", "claim"));
     else if (!done) say("sys", T("New here? The tutorial plays the first contracts with you. Or type help, or click:"), btn("tutorial", "tutorial"), btn("take 1", "take 1"), el("span", { class: "cur" }));

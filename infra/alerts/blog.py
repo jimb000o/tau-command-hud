@@ -7,7 +7,8 @@ IDNI (idni_report.py).
                                       checked) gets one draft; nothing is published
   python blog.py drafts               the drafts waiting, with the address to read each one
   python blog.py draft <visit-id>     write the draft of that visit (anew, if there is one)
-  python blog.py publish <id> [--dry] put the draft on the blog and post it once to Telegram and X (--dry: show only)
+  python blog.py publish <id> [--dry] put the draft on the blog and post it once to Telegram and X (--dry: show only;
+                                      a call older than BLOG_POST_MAX_HOURS is not posted, --post posts it anyway)
   python blog.py unpublish <id>       take a published article off the blog again (the posts stay)
   python blog.py pictures             make the hero pictures and link-preview pages of all articles anew
 
@@ -48,13 +49,34 @@ SHIPS = os.environ.get("BLOG_SHIPS", "/ships")  # the painted ships (rabbit/art/
 IMG = os.path.join(PUBLIC, "img")               # hero pictures and charts, node.tauhud.com/blog/img/
 SHARE = os.path.join(PUBLIC, "a")               # one small page per article for link previews, node.tauhud.com/blog/a/<id>.html
 EVERY = 600
-PICS_VERSION = 3   # raise when the hero picture changes: every article's picture is made anew once (2: numbers and Rico, 3: one story on refusals)
+PICS_VERSION = 5   # raise when the hero picture changes: every article's picture is made anew once (2: numbers and Rico, 3: one story on refusals, 4: a whole clause of the title, 5: tile labels in two lines)
+DESK_VERSION = 2   # the same for the heroes without island art (blog_pics.desk_hero): IDNI news, Q&As, testnet learnings
 CHECK_WAIT = 3 * 3600      # a visit whose bookings were never checked is drafted this long after it ended
 RETRY_AFTER = 2 * 3600
 # a draft whose check is clean (every number in the facts, no hype or blame words) goes on the blog by itself this many
 # hours after it was written, with its one post; 0 (the default) keeps publishing by hand: up blog publish <id>
+# The article's X post carries its link (11 November 2026): the share page, whose card on X shows the hero picture,
+# title and summary. One post with a link costs $0.20 instead of $0.015 (a few articles a month); X refuses a post with
+# an uploaded picture AND a link (403, 3 November), so it goes without upload, and on a refusal once more the old way.
+X_BLOG_LINK = os.environ.get("X_BLOG_LINK", "true").lower() in ("1", "true", "yes")
 AUTO_PUBLISH_HOURS = float(os.environ.get("BLOG_AUTO_PUBLISH_HOURS", "0") or 0)
+# The article's one post on Telegram and X goes out only while its call is news: at most this many hours after the call
+# began. A later publish (a draft written anew, auto-publish switched back on, a draft left waiting) puts the article on
+# the blog without a post; on 12 November 2026 two articles went out on X one and two days after their calls, after the
+# ship's own posts had told those calls already. 0 = no limit; `up blog publish <id> --post` posts a late one by hand.
+POST_MAX_HOURS = float(os.environ.get("BLOG_POST_MAX_HOURS", "30") or 0)
 KINDS = ("pay", "bill", "book", "cancel")
+# Our node keeps at most 254 wallet addresses; with all of them in use it answers ADMISSION_UNAVAILABLE to every
+# transaction with a wallet it has not seen before (IDNI tau-testnet #108, since 11 November 2026). The ships log such a
+# passenger as "new_wallet" and leave it out (relay/cruise.py NEW_WALLET_CODE); before, the answer was logged as a refusal.
+NEW_WALLET = "ADMISSION_UNAVAILABLE"
+NEW_WALLET_FACT = "passengers our node could not take (new wallets, not refusals)"
+NEW_WALLET_SAID = "of those, sent and answered so by our node"   # the rest were left out unsent; counts among the node's answers
+IN_PORT = "bookings made in port (not the bookings ahead)"   # blog_pics.visit_stats reads it for its tile
+NEW_WALLET_WHY = ("our node answered ADMISSION_UNAVAILABLE (\"temporarily unavailable\"): it keeps at most 254 wallet addresses and "
+                  "all of them are in use, so it cannot take a wallet it has not seen before, while wallets it already knows work "
+                  "as before. Sending again does not help. It is not a refusal by the chain's rules. We reported it as IDNI "
+                  "tau-testnet issue #108 on 11 November 2026, and it ends by itself once our node takes new wallets again")
 LANGS = ("en", "zh", "ja")
 ID_RE = re.compile(r"^[a-z0-9-]{3,60}$")
 
@@ -74,6 +96,12 @@ You get a list of facts counted from the ship's public logbook. Rules:
 must appear in the facts. When the facts do not show why something happened, say plainly that we do not know yet.
 - "Our node" and "our relay" are Tau HUD's own, not IDNI's. Never blame the testnet or IDNI for something the facts \
 show on our side. "No answer from the node" is not a refusal; a refusal is the node saying no.
+- "Passengers our node could not take" are not refusals either: our node had no room for their new wallets (the facts \
+say why and that it is reported). Write it as our node's limit, never as the chain refusing them, and name no culprit. \
+Their sends got neither a yes nor a refusal, so when there are any, never write that every answer was a yes.
+- Two sets of bookings can appear and they are not the same: "bookings ahead in escrow" (fares paid days before to \
+the ship's till) and "bookings made in port" (paid to a place on the island at their time). Say which one you mean, \
+and never compare the count of one with the other.
 - Who reads this: the Tau community and the IDNI team, and both should be glad to read it. Choose and frame what you \
 tell so each sees what it gains: for the community what works and what they can try, for IDNI what a community node \
 under real traffic shows them and what held up on their testnet. Stay honest: say what went wrong on our side and own \
@@ -95,7 +123,7 @@ write "sends without an answer, counted as refusals by the old rule", never "the
 - Never write a line for a thing that did not happen or was not tried (no "0 bookings were checked" on a day without \
 bookings); leave it out.
 - Length: 300 to 500 English words in body.
-- title: at most 70 characters, a real headline with subject and verb that reads well aloud. dek: one sentence, at \
+- title: at most 60 characters (the picture prints it on one line), a real headline with subject and verb that reads well aloud. dek: one sentence, at \
 most 160 characters, that adds to the title rather than repeating it.
 - why: two or three lines, each at most 160 characters, that say at a glance why this visit matters: one for the Tau \
 community, one for IDNI (what a community node under steady everyday traffic shows them), optionally one for everyone.
@@ -107,7 +135,9 @@ our node) and the blog links them to their pages by itself.
 - When the facts have "pirate tricks": the ship is a pirate ship whose made-up pirates try, on purpose, what the \
 chain must refuse. A refused trick is good news: the chain did its job. Say which tricks were refused and with which \
 answer, in plain words (paying more than the wallet holds, sending the same payment twice, a payment whose time ran \
-out, a payment signed with the wrong key). Never call a refused trick a failure or a problem.
+out, a payment signed with the wrong key). Never call a refused trick a failure or a problem. When they have a \
+"fee edge", tell both sides with its numbers: how many payments allowing one test AGRS less than the fee the network's \
+fee rule asks were refused, and how many of the same payments allowing exactly that fee went through.
 - When the facts have "the ship changed for its next call": tell each change in the section "What is still open" as \
 "The ship changed <what> from <from> to <to> because <because>." Nothing else changed by itself; do not suggest more.
 - zh: Simplified Chinese, ja: Japanese, same meaning and the same numbers; keep Tau, IDNI, AGRS, White Rabbit Key and \
@@ -150,6 +180,12 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
     left = next((e for e in rows if e.get("kind") == "left"), None)
     checked = next((e for e in rows if e.get("kind") == "bookings checked"), None)
     sends = [e for e in rows if e.get("kind") in KINDS]
+    # new wallets our node could not take (NEW_WALLET): logged so since this rule; before, as refusals: a passenger whose
+    # sequence was 0 at such an answer had no transaction in a block, so every such answer it got that visit was the limit
+    new_p = {e.get("p") for e in sends if e.get("ok") is False and NEW_WALLET in str(e.get("err") or "") and e.get("seq") == 0}
+    nw_old = [e for e in sends if e.get("ok") is False and NEW_WALLET in str(e.get("err") or "") and e.get("p") in new_p]
+    nw_ids = {id(e) for e in nw_old}
+    nw = nw_old + [e for e in rows if e.get("new_wallet")]
     answered = [e for e in sends if e.get("ok") is not None]
     later = [e for e in rows if e.get("kind") == "unanswered checked"]
     f: dict = {"ship": s.get("name") or (landed or {}).get("ship"), "visit": s.get("id") or (rows[0].get("visit") if rows else None),
@@ -174,8 +210,12 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
         f["minutes in port"] = 90   # the whole planned call
     f["sent and accepted"] = {k: v for k, v in (s.get("sent") or {}).items() if v} or \
         dict(Counter(e["kind"] for e in sends if e.get("ok") is True))
-    f["refused by the node"] = {k: v for k, v in (s.get("refused") or {}).items() if v} or \
+    refused = {k: v for k, v in (s.get("refused") or {}).items() if v} or \
         dict(Counter(e["kind"] for e in sends if e.get("ok") is False))
+    for e in nw_old:
+        if refused.get(e["kind"]):
+            refused[e["kind"]] -= 1
+    f["refused by the node"] = {k: v for k, v in refused.items() if v}
     f["accepted in all"] = sum(f["sent and accepted"].values())
     f["refused in all"] = sum(f["refused by the node"].values())
     unanswered = [e for e in sends if e.get("ok") is None and "no answer" in str(e.get("note") or "")]
@@ -187,11 +227,26 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
             f["of those, reached the chain after all"] = sum(1 for e in later if e.get("took"))
     if silent:
         f["refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)"] = len(silent)
-    reasons = Counter(re.sub(r"[0-9a-f]{16,}", "…", str(e.get("err")))[:120] for e in sends if e.get("ok") is False and e.get("err"))
+    reasons = Counter(re.sub(r"[0-9a-f]{16,}", "…", str(e.get("err")))[:120] for e in sends
+                      if e.get("ok") is False and e.get("err") and id(e) not in nw_ids)
     if reasons:
         f["refusal answers"] = dict(reasons.most_common(5))
+    if nw:
+        f[NEW_WALLET_FACT] = {"passengers": len({e.get("p") for e in nw}), "their sends the node could not take or the ship left out": len(nw),
+                              "the node's answer": "temporarily unavailable (ADMISSION_UNAVAILABLE): neither a yes nor a refusal",
+                              NEW_WALLET_SAID: sum(1 for e in nw if e.get("kind") in KINDS and (e.get("ok") is False or e.get("code") or e.get("err"))),
+                              "why": NEW_WALLET_WHY,
+                              "how this call handled them": "the rule of the time counted them as refusals and sent each of their stops"
+                              if nw_old else "each was left out for the rest of the call after the first answer, and is tried again on the next call"}
     if s.get("skipped") is not None:
         f["stops skipped"] = s.get("skipped")
+    nw_books = {e.get("p") for e in nw if e.get("kind") == "book"}   # a withdrawal finds nothing when its booking was not taken
+    skips = Counter(str(e["note"]) + (" (its booking was one of the sends our node could not take)"
+                                      if e.get("kind") == "cancel" and e.get("p") in nw_books else "")
+                    for e in sends if e.get("ok") is None and e.get("note") and not e.get("new_wallet")
+                    and "no answer" not in str(e["note"]))   # unanswered sends have their own fact
+    if skips:
+        f["why stops were skipped, as logged"] = dict(skips.most_common(5))
     f["sends logged"] = len(sends)
     v = Counter(e.get("verdict") for e in sends if e.get("verdict"))
     if v:
@@ -231,14 +286,21 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
                               "arrival time; only the sender can take one back, so there is no third party who decides",
              "booked": sum(1 for e in ahead if e["kind"] == "book ahead" and e.get("ok") is True),
              "refused by the node": sum(1 for e in ahead if e["kind"] == "book ahead" and e.get("ok") is False),
+             "not booked: wallets new to our node, which had no room for them": sum(1 for e in ahead if e["kind"] == "book ahead" and e.get("new_wallet")),
              "taken back before the arrival": sum(1 for e in ahead if e["kind"] == "refund" and e.get("ok") is True)}
         if off:
             g["call called off before the arrival"] = off.get("note")
         g["how they ended on the chain"] = (settled or {}).get("result") or "not looked up yet when this was written"
+        g = {k: v for k, v in g.items() if v or not k.startswith("not booked")}
         f["bookings ahead in escrow"] = g
     if checked and checked.get("checked"):   # a day without bookings has nothing to check, and the article says nothing of it
-        f["bookings checked after the visit"] = checked.get("checked")
-        f["bookings the chain had not paid out"] = len(checked.get("not_released") or [])
+        made, stuck = checked["checked"], len(checked.get("not_released") or [])
+        back = min(made, (f.get("sent and accepted") or {}).get("cancel") or 0)   # a withdrawn booking is not paid out
+        f[IN_PORT] = {"what they are": "retractable transfers made during the call to a place on the island (a dive, a treatment), "
+                                       "paid to the place by the chain at their time",
+                      "made": made, "withdrawn by their passenger during the call": back,
+                      "paid out to the place by the chain at their time": max(0, made - back - stuck),
+                      "still open after their time (the chain had not paid them out)": stuck}
     if s.get("tried"):
         f["new kinds now count as tried"] = {k: bool(x) for k, x in s["tried"].items()}
     mine = [i for i in incidents if i.get("visit") == f["visit"]]
@@ -252,7 +314,8 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
     f["the ship's brakes"] = {"at most transactions a minute": 12,
                               "it leaves when the node refuses": "5 of the last 20 passenger transactions",
                               "strained testnet": "half pace", "stalled testnet": "it leaves at once",
-                              "our node does not answer a send within 20 seconds": "no refusal: the ship waits 30 seconds, then half pace for 10 minutes"}
+                              "our node does not answer a send within 20 seconds": "no refusal: the ship waits 30 seconds, then half pace for 10 minutes",
+                              "our node cannot take a passenger's new wallet": "no refusal: that passenger is left out for the rest of the call"}
     f["answered sends"] = len(answered)
     tricks = [e for e in rows if e.get("kind") == "trick" and (e.get("ok") is not None or e.get("held"))]
     if tricks or s.get("tricks"):   # the pirates (since 7 November 2026): what the chain is meant to refuse
@@ -275,6 +338,11 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
         codes = Counter(e.get("code") for e in tricks if e.get("ok") is False and e.get("code"))
         if codes:
             t["the chain's answers"] = dict(codes)
+        edge = [e for e in tricks if e.get("trick") == "edge" and e.get("ok") is False and isinstance(e.get("inside"), dict)]
+        if edge:   # the fee edge (relay/cruise.py): both sides of the fee the network's fee rule asks for one payment
+            t["fee edge"] = {"fee the network's fee rule asks for the payment": sorted({e["fee"] for e in edge if e.get("fee") is not None}),
+                             "allowing one test AGRS less: refused": sum(1 for e in edge if e.get("right")),
+                             "the same payment allowing exactly that fee: went through": sum(1 for e in edge if e["inside"].get("ok") is True)}
         f["pirate tricks"] = {k: v for k, v in t.items() if v or k == "tried"}
         f["what a trick is"] = ("a pirate sends on purpose what the chain must refuse; a refused trick is the chain working, "
                                 "not a failure, and it never counts as a refusal for the ship's brakes")
@@ -294,11 +362,15 @@ def meaning_of(f: dict) -> dict:
     acc, ref = f.get("accepted in all") or 0, f.get("refused in all") or 0
     old = f.get("refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)") or 0
     una = (f.get("sends our node did not answer in time (not refusals)") or 0) + old
-    answered = acc + ref - old
+    said = (f.get(NEW_WALLET_FACT) or {}).get(NEW_WALLET_SAID) or 0   # temporarily unavailable: an answer, but no yes
+    answered = acc + ref - old + said
     if plan:
         m["share of the planned stops that went through"] = f"{round(100 * acc / plan)}%"
     if answered:
         m["share of the node's answers that were a yes"] = f"{round(100 * acc / answered)}%"
+        if said:
+            m["share of the node's answers that were temporarily unavailable (new wallets: neither a yes nor a refusal)"] = \
+                f"{round(100 * said / answered)}%"
     if una and f.get("sends logged"):
         m["share of sends our node did not answer in time"] = f"{round(100 * una / f['sends logged'])}%"
     t = f.get("our node's answer time to a send, seconds") or {}
@@ -416,23 +488,39 @@ ARTICLE_SHAPE = _obj({   # the API shapes the answer by this schema, so no quote
     "card": _obj({"line": {"type": "string"}, "why": {"type": "array", "items": {"type": "string"}, "description": "up to 3 short lines"}})})
 
 
-def ask_ai(facts: dict, tries: int = 2, shaped: bool = True) -> dict:
+# The model's thinking and the article (three languages) share max_tokens. On 11 November 2026 the facts of the MS Dry Run
+# needed more than 8000: the answer was cut off twice and read as broken JSON. An answer cut at ROOM is asked once more
+# with ROOM_MAX (only what is written is billed).
+ROOM = 16000
+ROOM_MAX = 32000
+
+
+def ask_ai(facts: dict, tries: int = 2, shaped: bool = True, room: int = ROOM) -> dict:
     prompt = "Facts counted from the logbook of one cruise ship visit (JSON):\n\n" + json.dumps(facts, ensure_ascii=False, indent=1)
-    body = {"model": AI_MODEL, "max_tokens": 8000, "system": SYSTEM, "messages": [{"role": "user", "content": prompt}]}
+    body = {"model": AI_MODEL, "max_tokens": room, "system": SYSTEM, "messages": [{"role": "user", "content": prompt}]}
     if shaped:
         body["output_config"] = {"format": {"type": "json_schema", "schema": ARTICLE_SHAPE}}
     req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=json.dumps(body).encode(), headers={
         "x-api-key": AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=300) as r:
+        with urllib.request.urlopen(req, timeout=300 if room <= ROOM else 900) as r:
             j = urllib_json(r)
     except urllib.error.HTTPError as e:
         reason = e.read().decode("utf-8", "replace")[:600]
         log.warning("the API answered %s for model %s: %s", e.code, AI_MODEL, reason)
         if e.code == 400 and shaped:   # the model does not take the shaped answer: ask the plain way, the JSON in the text
-            return ask_ai(facts, tries, shaped=False)
+            return ask_ai(facts, tries, shaped=False, room=room)
         raise RuntimeError(f"the API answered {e.code} for model {AI_MODEL}: {reason}") from None
     ai_meter.meter("blog", AI_MODEL, j.get("usage"))
+    stop = j.get("stop_reason")
+    if stop == "refusal":
+        raise RuntimeError(f"the model declined to write this article ({(j.get('stop_details') or {}).get('category') or 'no reason given'})")
+    if stop == "max_tokens":
+        if room < ROOM_MAX:
+            log.warning("the model's answer was cut off at %d tokens (its thinking counts too): asking once more with room for %d",
+                        room, ROOM_MAX)
+            return ask_ai(facts, tries, shaped, ROOM_MAX)
+        raise RuntimeError(f"the model's answer did not fit in {room} tokens")
     text = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
     m = re.search(r"\{.*\}", text, re.S)
     try:
@@ -442,7 +530,7 @@ def ask_ai(facts: dict, tries: int = 2, shaped: bool = True) -> dict:
     except ValueError as e:
         if tries > 1:
             log.warning("the model's answer was not valid JSON (%s): asking once more", e)
-            return ask_ai(facts, tries - 1, shaped)
+            return ask_ai(facts, tries - 1, shaped, room)
         raise
 
 
@@ -482,13 +570,29 @@ def article(facts: dict, out: dict, now: float) -> dict:
             "card": card_of(out.get("card"), title["en"]), "written": int(now), "model": AI_MODEL}
 
 
+CARD_TITLE = 60   # characters of the title the picture holds on its one title line (cruise_pic.card)
+CLAUSE_BREAKS = (": ", "; ", ", ", " as ", " after ", " while ", " but ", " with ", " and ", " because ", " when ", " once ", " until ")
+
+
+def card_title(title: str, n: int = CARD_TITLE) -> str:
+    """The title as the picture can hold it: whole when it fits, else up to the last clause that fits, so the picture
+    says a whole thing ("Queen Mempool stays all 90 minutes", not "... after MS Dry Run left"), else cut at a word."""
+    t = " ".join(str(title or "").split())
+    if len(t) <= n:
+        return t
+    cut = max(t.rfind(sep, 0, n + 1) for sep in CLAUSE_BREAKS)
+    if cut >= n // 3:
+        return t[:cut].rstrip(" ,;:")
+    return t[:n + 1].rsplit(" ", 1)[0].rstrip(" ,;:")   # a word that ends right at the limit stays
+
+
 def card_of(c, title: str) -> list[str]:
     """The lines on the hero picture: title, the point, "Why it matters" and up to three short points, the footer."""
     c = c if isinstance(c, dict) else {}
     def short(t, n):   # cut at a word, never in the middle of one
         t = " ".join(str(t or "").split())
         return t if len(t) <= n else t[:n].rsplit(" ", 1)[0].rstrip(" ,;:")
-    lines = [short(title, 60)]
+    lines = [card_title(title)]
     if c.get("line"):
         lines.append(short(c["line"], 64))
     why = [short(w, 56) for w in (c.get("why") or [])[:3] if w]
@@ -505,16 +609,56 @@ def ship_of(a: dict) -> str:
     return "liner" if "queen" in name.lower() or a.get("ship") == "liner" else "expedition"
 
 
+def island_story(a: dict) -> bool:
+    """Only the island's and the ships' own articles get the island's painting (with the ship and Rico) as hero; an
+    article about IDNI news, a Q&A or what the testnet taught us gets the site's own look (blog_pics.desk_hero)."""
+    return a.get("kind") == "cruise" or bool(a.get("visit") or a.get("ship") or (a.get("facts") or {}).get("ship"))
+
+
+def pics_version(a: dict):
+    return PICS_VERSION if island_story(a) else f"desk-{DESK_VERSION}"
+
+
+def kicker(a: dict) -> str:
+    """The small line above the title on a desk hero: the article's kind and day, or its own `kicker`."""
+    if a.get("kicker"):
+        return str(a["kicker"])
+    label = {"learnings": "Learnings", "news": "News"}.get(a.get("kind") or "", "Tau HUD blog")
+    try:
+        day = dt.date.fromisoformat(str(a.get("on")))
+        return f"{label} · {day.day} {day.strftime('%B %Y')}"
+    except ValueError:
+        return label
+
+
+def make_hero(a: dict, stats: list | None) -> bool:
+    """The article's hero picture at IMG/<id>-hero.jpg: the island's painting for island and ship stories (only where
+    the paintings are), the site's own look for every other article. True when it was made."""
+    import blog_pics
+    os.makedirs(IMG, exist_ok=True)
+    out = os.path.join(IMG, a["id"] + "-hero.jpg")
+    card = list(a["card"])
+    t = " ".join(str((a.get("title") or {}).get("en") or "").split()) if isinstance(a.get("title"), dict) else ""
+    if card and t and card[0] != t and t.startswith(card[0]):   # a title cut at a word when it was drafted: a whole clause now
+        card[0] = card_title(t)
+    if island_story(a):
+        if not os.path.exists(os.path.join(ART, "index.json")):
+            return False
+        blog_pics.hero(ART, SHIPS, card, ship_of(a), out, stats=stats)
+    else:
+        blog_pics.desk_hero(card, out, stats=stats, kicker=kicker(a))
+    return True
+
+
 def pictures(a: dict) -> dict:
     """The hero picture (the island's painting with the ship and the card, made only where the paintings are) and
     the charts of the visit's numbers; the article gets their addresses. Without paintings, no hero and no error."""
     import blog_pics
     os.makedirs(IMG, exist_ok=True)
-    if a.get("card") and os.path.exists(os.path.join(ART, "index.json")):
+    if a.get("card"):
         try:
-            blog_pics.hero(ART, SHIPS, a["card"], ship_of(a), os.path.join(IMG, a["id"] + "-hero.jpg"),
-                           stats=blog_pics.visit_stats(a.get("facts") or {}))
-            a["image"] = f"{NODE}/blog/img/{a['id']}-hero.jpg"
+            if make_hero(a, blog_pics.visit_stats(a.get("facts") or {})):
+                a["image"] = f"{NODE}/blog/img/{a['id']}-hero.jpg"
         except Exception as e:  # noqa: BLE001 - an article without its picture beats no article
             log.warning("hero for %s: %s", a["id"], e)
     if a.get("facts"):
@@ -559,22 +703,34 @@ def site_pictures(force: bool = False) -> int:
         if not a.get("id") or not ID_RE.match(a["id"]):
             continue
         st = state()
-        old = st.setdefault("pics", {}).get(a["id"]) != PICS_VERSION
+        old = st.setdefault("pics", {}).get(a["id"]) != pics_version(a)
         if force or old or not os.path.exists(os.path.join(SHARE, a["id"] + ".html")) or (a.get("card") and not os.path.exists(os.path.join(IMG, a["id"] + "-hero.jpg"))):
-            if a.get("card") and os.path.exists(os.path.join(ART, "index.json")):
+            if a.get("card"):
                 import blog_pics
                 try:
-                    os.makedirs(IMG, exist_ok=True)
-                    blog_pics.hero(ART, SHIPS, a["card"], ship_of(a), os.path.join(IMG, a["id"] + "-hero.jpg"),
-                                   stats=a.get("stats") or blog_pics.visit_stats(a.get("facts") or {}))
+                    make_hero(a, a.get("stats") or blog_pics.visit_stats(a.get("facts") or {}))
                 except Exception as e:  # noqa: BLE001
                     log.warning("hero for %s: %s", a["id"], e)
             share_page(a)
             if a.get("card") and os.path.exists(os.path.join(IMG, a["id"] + "-hero.jpg")):
                 st = state()
-                st.setdefault("pics", {})[a["id"]] = PICS_VERSION
+                st.setdefault("pics", {})[a["id"]] = pics_version(a)
                 write_json(STATE, st)
             n += 1
+    live = {a.get("id") for a in site + posts()["posts"]}
+    for did, name in list((state().get("drafts") or {}).items()):   # a draft goes out with the picture it has: made anew the same way
+        a = read_json(os.path.join(PUBLIC, "drafts", str(name) + ".json"), {})
+        if did in live or not a.get("card") or not a.get("id") or not (force or state().get("pics", {}).get(did) != pics_version(a)):
+            continue
+        import blog_pics
+        try:
+            if make_hero(a, a.get("stats") or blog_pics.visit_stats(a.get("facts") or {})):
+                st = state()
+                st.setdefault("pics", {})[did] = pics_version(a)
+                write_json(STATE, st)
+                n += 1
+        except Exception as e:  # noqa: BLE001
+            log.warning("hero for draft %s: %s", did, e)
     return n
 
 
@@ -633,6 +789,11 @@ def write_draft(vid: str, now: float | None = None) -> str:
     facts = compare_with(facts_of(entries, inc, cr), before_facts(vid, log_.get("visits") or [], inc, cr))
     facts["what the numbers mean"] = meaning_of(facts)
     a = pictures(article(facts, ask_ai(facts), now))
+    over = next((e for e in entries if e.get("kind") == "visit over"), None) or {}
+    landed = next((e for e in entries if e.get("kind") == "landed"), None) or {}
+    t0 = (over.get("summary") or {}).get("t0") or landed.get("t")
+    if t0:
+        a["t0"] = int(t0)   # when the call began: the post's window (POST_MAX_HOURS) counts from here
     st = state()
     name = st["drafts"].get(a["id"]) or f"{a['id']}-{secrets.token_hex(4)}"
     st["drafts"][a["id"]], st["drafted"][vid] = name, a["id"]
@@ -711,10 +872,39 @@ def auto_publish(now: float | None = None) -> str | None:
         chk = a.get("check") or {}
         if not a or chk.get("unknown_numbers") or chk.get("hype"):
             continue   # waits for a look and up blog publish (--force)
+        if not too_late_to_post(a, now) and gap_left(now):
+            return None   # the channels posted lately: the article and its post wait for the room (alerts.POST_GAP_MINUTES)
         publish_cli(did, False, False)
         log.info("draft %s published by itself after %.0f h", did, (now - at) / 3600)
         return did
     return None
+
+
+def call_time(a: dict) -> float | None:
+    """When the article's call began: its t0, or (drafts written before t0 was kept) the visit's day and timetable time."""
+    if a.get("t0"):
+        return float(a["t0"])
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})-", str(a.get("visit") or a.get("id") or ""))
+    if not m:
+        return None
+    hm = re.match(r"^(\d{1,2}):(\d{2})$", str((a.get("facts") or {}).get("timetable time") or ""))
+    h, mi = (int(hm.group(1)), int(hm.group(2))) if hm else (0, 0)
+    return dt.datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), h, mi, tzinfo=TZ or dt.timezone.utc).timestamp()
+
+
+def too_late_to_post(a: dict, now: float) -> float | None:
+    """The hours since the call when that is more than POST_MAX_HOURS (the article then goes out without a post), else None."""
+    t0 = call_time(a)
+    if POST_MAX_HOURS <= 0 or t0 is None:
+        return None
+    hours = (now - t0) / 3600
+    return hours if hours > POST_MAX_HOURS else None
+
+
+def gap_left(now: float | None = None) -> float:
+    """Seconds until Telegram and X have had POST_GAP_MINUTES without a post (alerts.post_gap_left)."""
+    import alerts
+    return alerts.post_gap_left(("telegram", "x"), now)
 
 
 def auto_note(st: dict, did: str, a: dict) -> str:
@@ -725,7 +915,9 @@ def auto_note(st: dict, did: str, a: dict) -> str:
         return "never by itself: written before drafts published themselves, only by hand"
     if chk.get("unknown_numbers") or chk.get("hype"):
         return "never by itself: the check marked numbers or wording (up blog publish --force after a read)"
-    return f"by itself on {day(at + AUTO_PUBLISH_HOURS * 3600)} {clock(at + AUTO_PUBLISH_HOURS * 3600)}, unless published by hand before"
+    when = at + AUTO_PUBLISH_HOURS * 3600
+    quiet = " (without a post on Telegram and X: by then the call is too old)" if too_late_to_post(a, when) else ""
+    return f"by itself on {day(when)} {clock(when)}{quiet}, unless published by hand before"
 
 
 def drafts_cli() -> int:
@@ -774,6 +966,11 @@ def numbers_of(f: dict) -> list[str]:
     acc, ref = f.get("accepted in all"), (f.get("refused in all") or 0) - old
     if acc is not None:
         out.append(f"{acc} transactions accepted by the node" + (f", {ref} refused" if ref > 0 else ", none refused"))
+    nw = f.get(NEW_WALLET_FACT)
+    if nw:
+        n = nw["passengers"]
+        out.append(f"our node had no room for the new wallet{'s' if n != 1 else ''} of {n} passenger{'s' if n != 1 else ''} "
+                   f"({nw['their sends the node could not take or the ship left out']} sends): not refusals, reported as IDNI #108")
     if old:
         out.append(f"{old} got no answer from our node in time, and the ship counted them as refusals")
     tr = f.get("pirate tricks") or {}
@@ -800,31 +997,45 @@ def numbers_of(f: dict) -> list[str]:
 
 
 def announce(a: dict, dry: bool) -> None:
-    """The one post per article, on Telegram with the link and on X without (a link makes an X post 13 times dearer):
-    the headline, the visit in numbers from the logbook, why it matters, the link."""
+    """The one post per article, on Telegram and X with the link (on X the share page, whose card shows the picture;
+    X_BLOG_LINK=false posts X the old way, picture without link): the headline, the visit in numbers from the logbook,
+    why it matters, the link."""
     import alerts
     link = f"{SITE}/blog/?p={a['id']}"
     nums = numbers_of(a.get("facts") or {})
     parts = [f"📝 <b>{alerts.html.escape(a['title']['en'])}</b>", alerts.html.escape(a["dek"]["en"])]
     if nums:
-        parts.append("<b>In numbers</b>\n" + "\n".join("• " + alerts.html.escape(n) for n in nums))
-    parts += ["<b>Why it matters</b>\n" + "\n".join("• " + alerts.html.escape(w["en"]) for w in a["why"]),
+        parts.append("<b>In numbers</b>\n" + "\n\n".join("• " + alerts.html.escape(n) for n in nums))
+    # short paragraphs with air between them (Kilian, 13 Nov 2026), on Telegram as on X
+    parts += ["<b>Why it matters</b>\n" + "\n\n".join("• " + alerts.html.escape(w["en"]) for w in a["why"]),
               f'<a href="{link}">Read it on the Tau HUD blog</a>']
     tg = "\n\n".join(parts)
-    x = alerts.x_post([a["title"]["en"], a.get("x") or a["dek"]["en"], "The whole story is on the Tau HUD blog."], foot="📝 Tau HUD blog", keep=2)
+    lines = [a["title"]["en"], a.get("x") or a["dek"]["en"], "The whole story is on the Tau HUD blog."]
+    plain = alerts.x_post(lines, foot="📝 Tau HUD blog", keep=2, with_link=False)
+    card = share_page(a) if X_BLOG_LINK and not dry else f"{NODE}/blog/a/{a['id']}.html"
+    x = alerts.x_post(lines, card, foot="📝 Tau HUD blog", keep=2, with_link=True) if X_BLOG_LINK else plain
     pic = a.get("image") and (SITE + a["image"] if a["image"].startswith("/") else a["image"])
     if dry:
-        print("--- telegram ---\n" + tg + "\n--- x ---\n" + x + f"\n--- picture: {pic or 'none'}")
+        print("--- telegram ---\n" + tg + "\n--- x ---\n" + x + f"\n--- picture: {pic or 'none'}"
+              + (" (on X as the link's card, $0.20)" if X_BLOG_LINK else " ($0.015)"))
         return
     for out, text in ((alerts.Telegram(), tg), (alerts.X(), x)):
         if not out.enabled():
             print(f"{out.name}: not set up, not posted")
             continue
-        ok, _, err = out.send_text(text, picture=pic) if out.name == "telegram" else out.send_with_picture(text, pic)
+        if out.name == "telegram":
+            ok, _, err = out.send_text(text, picture=pic)
+        elif X_BLOG_LINK:
+            ok, _, err = out.send_text(text)
+            if not ok:   # refused with the link: the picture and the text without it, as before
+                print(f"x: with the link not posted ({err}), now without it")
+                ok, _, err = out.send_with_picture(plain, pic)
+        else:
+            ok, _, err = out.send_with_picture(text, pic)
         print(f"{out.name}: {'posted' if ok else 'not posted: ' + err}")
 
 
-def publish_cli(did: str, dry: bool, force: bool) -> int:
+def publish_cli(did: str, dry: bool, force: bool, post_late: bool = False, now: float | None = None) -> int:
     st = state()
     if did not in st["drafts"]:
         print(f"no draft {did}; waiting: {', '.join(st['drafts']) or 'none'}")
@@ -848,6 +1059,11 @@ def publish_cli(did: str, dry: bool, force: bool) -> int:
         print(f"published: {SITE}/blog/?p={did}  (link preview: {share_page(a)})")
     if did in st.setdefault("announced", []):
         print("already posted to Telegram and X once: not posted again")
+        return 0
+    late = too_late_to_post(a, now or time.time())
+    if late and not post_late:
+        print(f"not posted to Telegram and X: the call was {late:.0f} h ago (more than BLOG_POST_MAX_HOURS={POST_MAX_HOURS:g}), "
+              f"its news went out with the call; to post it all the same: up blog publish {did} --post")
         return 0
     announce(a, dry)
     if not dry:
@@ -883,7 +1099,7 @@ def main(argv: list[str]) -> int:
         print(f"draft {did} written")
         return drafts_cli()
     if cmd == "publish" and args and ID_RE.match(args[0]):
-        return publish_cli(args[0], "--dry" in argv, "--force" in argv)
+        return publish_cli(args[0], "--dry" in argv, "--force" in argv, "--post" in argv)
     if cmd == "unpublish" and args and ID_RE.match(args[0]):
         return unpublish_cli(args[0])
     if cmd == "pictures":
@@ -914,6 +1130,11 @@ def main(argv: list[str]) -> int:
                 idni_report.step()
             except Exception as e:  # noqa: BLE001
                 log.warning("idni report: %s", e)
+            try:
+                import news_article   # big IDNI news (the daily IDNI post marks it): a draft that goes deeper, as a ship's article
+                news_article.tick()
+            except Exception as e:  # noqa: BLE001
+                log.warning("news article: %s", e)
             try:
                 site_pictures()
                 tick()

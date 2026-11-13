@@ -324,6 +324,32 @@ check(all(isinstance(e.get("ms"), int) for e in sends5 if e.get("ok") is not Non
 check(C5.brief(T[0])["now"]["brake"] in ("slow", "none") and (T[0] >= C5.slow_until or C5.brief(T[0])["now"]["brake"] == "slow"),
       "the pages see the node-slow brake as 'slow', never as the strained 'half'")
 
+# ---------- the fee edge: the network's fee rule, read exactly (rulefacts.py, the reading the pages use) ----------
+GEN = ("always ( (o6[t]:bv[8] = { #x01 }:bv[8]) && (o7[t]:bv[8] = { #x01 }:bv[8]) &&\n    o9[t]:bv[24] = { #x00000a }:bv[24]\n)."
+       "  # genesis: the fee term inside the one always block")
+check(cruise.fee_edge({"consensus_rules": GEN}, 8) == {"amount": 8, "fee": 10, "step": None, "rule": "always ( o9[t]:bv[24] = { #x00000a }:bv[24] )."},
+      "the genesis rules: a flat fee of 10, the payment as planned")
+check(cruise.fee_edge(gov(), 8)["fee"] == 10, "the short form the tests use reads the same")
+STEP = "always ( (i1[t]:bv[24] > { 1000 }:bv[24]) ? o9[t]:bv[24] = { 20 }:bv[24] : o9[t]:bv[24] = { 10 }:bv[24] )."
+e_ = cruise.fee_edge({"consensus_rules": STEP}, 8)
+check(e_ and (e_["amount"], e_["fee"], e_["step"]) == (1001, 20, [1000, 1001]), f"a fee that steps up above 1,000: the payment sits right above the step, 1,001 at 20 ({e_})")
+check(cruise.fee_edge({"consensus_rules": STEP.replace("1000", "9000")}, 8)["amount"] == 8, f"a step above {cruise.EDGE_MAX:,}: not tried, the payment as planned (10)")
+check(cruise.fee_edge({"consensus_rules": GEN + "\nalways ( o9[t]:bv[24] = { 25 }:bv[24] )."}, 8)["fee"] == 25,
+      "the revisions of a rule change after it: the later o9 wins")
+check(cruise.fee_edge({"consensus_rules": "always ( o9[t]:bv[24] = i1[t]:bv[24] / { 100 }:bv[24] )."}, 2550) is not None
+      and cruise.fee_edge({"consensus_rules": "always ( o9[t]:bv[24] = i1[t]:bv[24] / { 100 }:bv[24] )."}, 2550)["fee"] == 25,
+      "a fee computed from the amount: answered for that amount, 1% of 2,550 is 25")
+for why, rules in (("no fee rule in the node's answer", "always ( o7[t]:bv[8] = { #x01 }:bv[8] )."),
+                   ("a fee that depends on the balance", "always ( (i2[t]:bv[24] > { 50 }:bv[24]) ? o9[t]:bv[24] = { 20 }:bv[24] : o9[t]:bv[24] = { 10 }:bv[24] )."),
+                   ("a fee the rule leaves open", "always ( o9[t]:bv[24] > { 5 }:bv[24] )."),
+                   ("no fee at all", "always ( o9[t]:bv[24] = { 0 }:bv[24] )."),
+                   ("a fee of 1% of 8, which is 0", "always ( o9[t]:bv[24] = i1[t]:bv[24] / { 100 }:bv[24] )."),
+                   ("text that is no rule", "always ( o9[t]:bv[24] = = )."), ("nothing", "")):
+    check(cruise.fee_edge({"consensus_rules": rules}, 8) is None, f"no edge to try: {why}")
+check(cruise.asked_fee({"status": "error", "error": {"code": "FEE_LIMIT_TOO_LOW", "details": {"required_fee": 12}}}) == 12
+      and cruise.asked_fee({"error": "FEE_LIMIT_TOO_LOW: required estimated fee 30, fee_limit 9"}) == 30 and cruise.asked_fee({"ok": False}) is None,
+      "the fee the node names in its refusal, as details or in its words")
+
 # ---------- Black Sequence, Tuesday 18:00: pirates whose tricks the chain must refuse ----------
 TUE = next(t for t, k in cruise.calls_near(WED + 7 * 86400) if k == "pirates")
 check(cruise.berlin_day(TUE).weekday() == 1 and (TUE - cruise.berlin_t(cruise.berlin_day(TUE), 0)) == 18 * 3600, "the pirates call on Tuesday at 18:00")
@@ -339,7 +365,7 @@ check(len(cruise.plan("pirates", TUE, set(), {"trick"}, {k: 1 for k in cruise.TR
 check(C.next_call(TUE - 3600)[1] == "pirates" and C.next_call(TUE - 3600, surprise=False)[1] == "dryrun",
       "the pirates come unannounced: the next call named to pages and posts is the one after them")
 
-CH = {"seq": {}, "hole": False, "sent": [], "ret": {}}
+CH = {"seq": {}, "hole": False, "sent": [], "ret": {}, "dear": 0}
 
 
 async def chain(cmd: str):
@@ -359,7 +385,7 @@ async def chain(cmd: str):
     tx = json.loads(rest)
     pk, t = tx["sender_pubkey"], tx["tx_type"]
     rid = hashlib.sha256(rest.encode()).hexdigest()
-    err = lambda c: {"status": "error", "error": {"code": c, "message": c.lower()}}  # noqa: E731
+    err = lambda c, **x: {"status": "error", "error": {"code": c, "message": c.lower(), **({"details": x} if x else {})}}  # noqa: E731
     if tx["expiration_time"] < T[0] or tx["expire_at_height"] <= 901:
         return err("TX_EXPIRED")
     if tx["sequence_number"] != CH["seq"].get(pk, 0):
@@ -379,8 +405,9 @@ async def chain(cmd: str):
             return err("TX_INVALID")
         if any(int(x[2]) > (1 << 24) - 1 for x in ops):
             return err("TX_INVALID")
-        if int(tx["fee_limit"]) < 1:
-            return err("FEE_LIMIT_TOO_LOW")
+        need = (10 + CH["dear"]) * max(1, len(ops))   # the fee rule's 10 a transfer (gov below); "dear": a node that asks more
+        if int(tx["fee_limit"]) < need:   # sendtx.py ~1415: checked after the transfer dry run, before the funds
+            return err("FEE_LIMIT_TOO_LOW", required_fee=need, fee_limit=int(tx["fee_limit"]))
         if sum(int(x[2]) for x in ops) > 100000 and not (CH["hole"] and len(ops) <= 1):   # the modelled hole only lets a single-transfer overspend slip
             return err("INSUFFICIENT_FUNDS")
     elif t == "retractable_transfer":   # a booking: kept, in a block at once for the test, listed by getretractables
@@ -418,6 +445,14 @@ check({e["code"] for e in tricks} == {"INSUFFICIENT_FUNDS", "INVALID_SEQUENCE", 
       and {e["trick"] for e in tricks} == set(cruise.TRICKS), f"{len(cruise.TRICKS)} tricks, every one refused, eleven different answers")
 check(all(x is True for x in LOADS) and sum(s1["refused"].values()) == 0, "tricks are no refusals: not for the brakes, not on the load page")
 check(all(c["right"] == c["tried"] > 0 for c in s1["tricks"].values()), "the summary counts each trick: tried, stopped, stopped for the right reason")
+ed = [e for e in tricks if e["trick"] == "edge"]
+check(ed and all(e["fee"] == 10 and e["fee_limit"] == 9 and e["tx"]["fee_limit"] == "9" and e["asked"] == 10 and e["amount"] == 8 for e in ed),
+      "the fee edge: a payment of 8 allowing 9 of fee, one less than the rule's 10, refused; the node names 10 too")
+inside = [x for x in CH["sent"] if x["sender_pubkey"] in {e["from"] for e in ed} and x["fee_limit"] == "10"]
+check(all(e["inside"]["ok"] is True and e["inside"]["fee_limit"] == 10 and e["inside"]["hash"] for e in ed) and len(inside) >= len(ed)
+      and all(x["sequence_number"] == e["seq"] for e, x in zip(ed, inside)),
+      "and right after it the same payment allowing exactly 10 goes through, at the same sequence number")
+check(all("went through" in e["note"] and not e.get("odd") for e in ed), "the logbook says both sides of the edge")
 check(s1["per_min"] == cruise.RATE and [c for c in s1["changed"] if c["what"] != "stops planned a minute"] == [],
       "a clean first visit at full pace changes nothing but the plan's measure of our node")
 
@@ -506,6 +541,25 @@ with open(P.released_path, "w") as f:
     json.dump([s3["id"]], f)
 check(any(e.get("through") for e in P.route("/cruise/log", "n=2000")["entries"]), "up cruise release <visit>: then the logbook shows it in full")
 
+# a node that asks more than the fee rule: the payment allowing exactly the rule's fee is refused too ("odd"), held back like a finding
+CH["dear"], CH["hole"] = 1, False
+vo = {"id": "2026-12-01-pirates", "ship": "pirates", "skipped": 0, "acts": [], "done": set(), "left_out": []}
+asyncio.run(P.send_trick(vo, {"i": 7, "p": 3, "kind": "trick", "trick": "edge", "to": "market", "amount": 8}, chain, gov, "calm"))
+eo = P.logbook[-1]
+check(eo["trick"] == "edge" and eo["right"] and eo["odd"] and eo["inside"]["code"] == "FEE_LIMIT_TOO_LOW" and eo["inside"]["asked"] == 11
+      and vo["tricks"]["edge"]["odd"] == 1 and "may be our reading" in eo["note"],
+      "a node that asks 11 where the rule says 10: the payment allowing exactly 10 is refused too, an odd edge")
+check(P.held()["entries"][0] == eo and P.held()["incidents"][0]["kind"] == "edge refused" and P.held()["incidents"][0]["fee_rule"],
+      "held back and reported privately, like a trick that got through")
+pub = P.route("/cruise/log", "n=2000&visit=2026-12-01-pirates")["entries"]
+check(pub and all(e.get("held") and "inside" not in e and "odd" not in e for e in pub) and P.route("/cruise/incidents")["incidents"][0].get("held"),
+      "the public logbook and incidents show only that something is held back")
+check(P.public({"id": vo["id"], "tricks": vo["tricks"]})["tricks"]["edge"] == {"held": True} and "edge" not in P.tricks_seen(vo)["by"],
+      "nor do the visit's summary and the island's count of refused tricks")
+t_ = P.tune_after({**vo, "landed": True, "left": None, "refused": {}, "trial": []}, {"unanswered": 0})
+check(P.tune["pirates"]["calm"]["edge"] == 0 and not any("edge" in c["what"] for c in t_), "an odd edge is no calm visit: it keeps coming as often")
+CH["dear"] = 0
+
 # our node slow: the next visit goes one a minute slower, a clean one after it one faster again
 P.tune["pirates"]["rate"] = cruise.RATE
 s_ = {"unanswered": cruise.TUNE_UNANSWERED, "half": 4}
@@ -553,6 +607,126 @@ async def spin():
 
 asyncio.run(spin())
 check(1 <= len(calls) <= 2, f"with no moves waiting, the island bot asks the ship, one slot every {island.SPACING} s ({len(calls)})")
+
+# ---------- a withdrawal that runs late is not sent: the chain would refuse it, and that is no refusal ----------
+n0, r0 = len(sent), len(retracts)
+relt = int(T[0]) + 600
+pk9 = C.pk["dryrun-9"]
+OPEN.setdefault(pk9, []).append({"retractable_id": "cd" * 32, "recipient_pubkey": island.PLACES["dive"], "amount": 24, "release_at_time": relt, "status": "open"})
+vv = {"id": "2026-11-11-dryrun", "ship": "dryrun", "skipped": 0, "sent": {k: 0 for k in cruise.KINDS}, "refused": {k: 0 for k in cruise.KINDS}}
+T[0] = relt - cruise.CANCEL_LATEST + 1
+asyncio.run(C.send(vv, {"i": 900, "p": 9, "kind": "cancel", "to": "dive", "amount": 24, "rel": relt, "t": T[0]}, ask, gov, "calm"))
+check(len(sent) == n0 and len(retracts) == r0 and vv["skipped"] == 1 and not any(vv["refused"].values()), "a withdrawal later than three minutes before the booking's time is skipped, not sent, not a refusal")
+T[0] = relt - cruise.CANCEL_LATEST - 30
+asyncio.run(C.send(vv, {"i": 901, "p": 9, "kind": "cancel", "to": "dive", "amount": 24, "rel": relt, "t": T[0]}, ask, gov, "calm"))
+check(len(retracts) == r0 + 1 and retracts[-1]["retractable_id"] == "cd" * 32, "one in time still goes out")
+
+# ---------- our node has no room for a new wallet (IDNI tau-testnet #108, 11 November 2026): left out, no refusal ----------
+NEWW = {C.pk[f"queen-{p}"] for p in (11, 13)} | {C.pk["dryrun-3"]}
+BUSY = {C.pk["queen-14"]}
+FIXED = [False]
+FULL = {"refused": 0, "sent": []}
+
+
+async def full(cmd: str):
+    name, _, rest = cmd.partition(" ")
+    rest = rest.split()[0] if name != "sendtx" and rest else rest
+    if name == "getsequence":
+        return {"status": "ok", "data": {"sequence_number": 0 if rest in NEWW else 5, "tip_height": 9000}}
+    if name == "getbalance":
+        return {"status": "ok", "data": {"balance": 0 if rest in NEWW and not FIXED[0] else 99000}}
+    if name == "getretractables":
+        return {"status": "ok", "data": {"retractables": []}}
+    if name == "sendtx":
+        tx = json.loads(rest)
+        if (tx["sender_pubkey"] in NEWW and not FIXED[0]) or tx["sender_pubkey"] in BUSY:
+            FULL["refused"] += 1
+            return {"status": "error", "error": {"code": "ADMISSION_UNAVAILABLE", "message": "Transaction validation is temporarily unavailable; please resubmit."}}
+        FULL["sent"].append(tx)
+        return {"status": "ok", "data": {"ok": True, "tx_hash": hashlib.sha256(rest.encode()).hexdigest()}}
+    return None
+
+
+def visit6(vid):
+    return {"id": vid, "ship": "queen", "skipped": 0, "sent": {k: 0 for k in cruise.KINDS}, "refused": {k: 0 for k in cruise.KINDS}, "allowed": []}
+
+
+def stop6(i, p):
+    return {"i": i, "p": p, "kind": "pay", "to": "bar", "amount": 5, "t": T[0]}
+
+
+v6 = visit6("2026-11-14-queen")
+asyncio.run(C.send(v6, stop6(1000, 12), full, gov, "calm"))
+check(v6["sent"]["pay"] == 1 and v6.get("last_ok"), "a passenger the node knows pays as before")
+asyncio.run(C.send(v6, stop6(1001, 11), full, gov, "calm"))
+e6 = C.logbook[-1]
+check(v6.get("left_out") == [11] and not any(v6["refused"].values()) and e6.get("new_wallet") is True and e6.get("ok") is None
+      and e6.get("code") == "ADMISSION_UNAVAILABLE" and "resubmit" in e6.get("err", "") and "#108" in e6.get("note", ""),
+      "a new wallet our node has no room for: the passenger is left out, logged with the node's answer, no refusal")
+r6 = FULL["refused"]
+asyncio.run(C.send(v6, stop6(1002, 11), full, gov, "calm"))
+check(v6["left_out_stops"] == 2 and FULL["refused"] == r6 and C.logbook[-1].get("new_wallet") and "tx" not in C.logbook[-1],
+      "its next stop is not sent at all, and counted with the left-out stops")
+asyncio.run(C.send(v6, stop6(1003, 14), full, gov, "calm"))
+check(v6["refused"]["pay"] == 1 and 14 not in v6["left_out"], "a wallet the chain knows (balance above 0) with that answer is a refusal, as before")
+v6["last_ok"] = T[0] - cruise.NEW_WALLET_OK - 1
+asyncio.run(C.send(v6, stop6(1004, 13), full, gov, "calm"))
+check(v6["refused"]["pay"] == 2 and 13 not in v6["left_out"], "nothing taken lately: the same answer counts as a refusal, so the brakes see a node in trouble")
+FIXED[0] = True
+v7 = visit6("2026-11-21-queen")
+asyncio.run(C.send(v7, stop6(1100, 11), full, gov, "calm"))
+check(v7["sent"]["pay"] == 1 and not v7.get("left_out"), "the next visit tries again: once the node takes new wallets, the passenger sails, nothing to switch")
+FIXED[0] = False
+v8 = {**visit6("2026-11-28-queen"), "last_ok": int(T[0])}
+TX8 = {"status": "error", "error": {"code": "ADMISSION_UNAVAILABLE", "message": "Transaction validation is temporarily unavailable; please resubmit."}}
+RULE8 = {"status": "error", "error": {"code": "ADMISSION_UNAVAILABLE", "message": "Rule validation is temporarily unavailable; please resubmit."}}
+check(asyncio.run(C.new_wallet(v8, C.pk["queen-11"], TX8, full)) is True and asyncio.run(C.new_wallet(v8, C.pk["queen-11"], RULE8, full)) is False,
+      "only the node's words for a transaction it could not check mean a new wallet; the same code for a rule stays a refusal")
+
+# bookings ahead: a new wallet is "not booked", not refused
+eb = {"id": "2026-11-18-dryrun", "ship": "dryrun", "t0": int(T[0]) + 3 * 86400, "till": C.till["dryrun"]}
+bb = {"p": 3, "amount": 10, "status": "planned"}
+asyncio.run(C.send_escrow(eb, bb, "book ahead", full, gov, T[0]))
+check(bb["status"] == "not booked" and "#108" in bb.get("note", "") and C.logbook[-1].get("new_wallet") and C.logbook[-1].get("ok") is None,
+      "a booking ahead from a new wallet: not booked, with why, no refusal")
+
+# a whole call of the Queen with eight passengers new to the node: she stays, they are left out, no refusals
+C6 = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s6"), "log_path": os.path.join(d, "l6"), "incidents_path": os.path.join(d, "i6")}, clock=clock,
+                   enabled=True, verdict=lambda: "calm", background=False)
+NEWW |= {C6.pk[f"queen-{p}"] for p in range(30, 36)}   # with 11 and 13 above: eight new wallets
+BUSY.clear()
+QT = next(t for t, k in cruise.calls_near(T[0] + 86400) if k == "queen" and t > T[0] + 86400)
+T[0] = QT - 25 * 60
+
+
+async def whole_call():
+    while T[0] < QT + (cruise.VISIT_MIN + 5) * 60:
+        await C6.step(full, gov)
+        T[0] += 1
+
+# the fake node checks no signature, and a pure-Python BLS signature for each of the call's sends would take most of the
+# 300 s every test file gets in CI: unsigned here only (the signatures themselves are checked above)
+OWN_SIGN = G2Basic.__dict__.get("Sign")   # py_ecc keeps Sign on a base class; set here, it is taken away again after
+G2Basic.Sign = staticmethod(lambda sk, msg: bytes(96))
+try:
+    asyncio.run(whole_call())
+finally:
+    if OWN_SIGN is None:
+        del G2Basic.Sign
+    else:
+        G2Basic.Sign = OWN_SIGN
+check(len(G2Basic.Sign(1, b"x")) == 96 and G2Basic.Sign(1, b"x") != bytes(96), "real signatures again after the whole call")
+s6 = next(v for v in C6.visits if v["ship"] == "queen")
+lo6 = [e for e in C6.logbook if e.get("new_wallet")]
+check(not s6.get("note") and sum(s6["refused"].values()) <= 2 and (s6.get("left_out") or {}).get("passengers", 0) >= 7,
+      f"a whole call with eight new wallets: no brake, {sum(s6['refused'].values())} refusals (only before the first send went through), "
+      f"{(s6.get('left_out') or {}).get('passengers')} passengers left out")
+check(len({e["p"] for e in lo6}) == s6["left_out"]["passengers"] and s6["left_out"]["stops"] == len(lo6), "the summary counts the passengers and their stops as logged")
+check(C6.lenders(QT) == [] and C6.lenders(QT + 2 * 3600) == [], "No Memo borrows from no passenger near a call")
+far = QT + 2 * 86400
+L6 = C6.lenders(far)
+check(len(L6) == 120 and L6[0][0] == "queen-0" and L6[0][2] == C6.pk["queen-0"] and L6[0][1] == C6.sk["queen-0"],
+      "far from every call the Queen's 120 passengers may lend No Memo's drop")
 
 print()
 print("all good" if not failed else f"{failed} failed")

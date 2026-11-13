@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/i18n.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Support Tau HUD</title>
+<meta name="description" content="Tau HUD is free to use. Optional support helps fund the site and the work behind it: a monthly membership in the Tau HUD crew, or a one-off crypto contribution.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Support">
+<meta property="og:description" content="Tau HUD is free to use. Optional support helps fund the site and the work behind it.">
+<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:url" content="https://tauhud.com/crew/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent. Two options side by side, clearly apart:
+   the paid membership (sold by Fourthwall) and a one-off crypto contribution (nothing in return). Larger type than the
+   data pages: this page is read, not scanned. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.10); --hair: rgba(255,255,255,.22);
+  --ok: #39ff8a; --dim: #a9a9b3; --text: #f0f0f2;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 14.5px/1.6 var(--display);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(57,255,138,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 14px; max-width: 1680px; }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.intro h2 { margin: 2px 0 0; font: 600 clamp(24px, 3vw, 34px)/1.2 var(--display); color: #fff; }
+.intro p { margin: 6px 0 0; font-size: 16px; color: var(--text); max-width: 78ch; }
+.intro .none { color: var(--dim); font-size: 14px; }
+.opts { display: grid; gap: 16px; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: stretch; }
+.paid .cols { display: grid; gap: 10px 22px; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); align-items: start; }
+.paid .cols > div { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.opt { background: rgba(16,16,18,.9); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.opt.paid { border-color: rgba(57,255,138,.45); }
+.opt .k { margin: 0; font: 600 11.5px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ok); }
+.opt.free .k { color: var(--dim); }
+.opt h3 { margin: 0; font: 600 21px/1.3 var(--display); color: #fff; }
+.opt p { margin: 0; }
+.tiers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 2px 0 0; padding: 0; list-style: none; }
+.tiers li { border: 1px solid var(--hair); border-radius: 8px; padding: 10px 12px; }
+.tiers b { display: block; font-size: 15.5px; color: #fff; }
+.tiers .pr { font: 600 19px var(--display); color: var(--ok); font-variant-numeric: tabular-nums; }
+.tiers .pr small { font-size: 13px; color: var(--dim); font-weight: 400; }
+.tiers .ben { display: block; font-size: 13.5px; color: var(--text); }
+.ben2 { font-size: 13.5px; color: var(--text); }
+.warn { font-size: 13.5px; color: #ffd28a; }
+.act { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 2px; }
+.b { font: 600 13px var(--display); letter-spacing: .06em; background: none; color: var(--text); border: 1px solid var(--hair); border-radius: 8px; padding: 0 16px; min-height: 44px; cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; }
+.b.go { background: var(--ok); border-color: var(--ok); color: #04170b; }
+.b.go:hover { background: #6dffaa; border-color: #6dffaa; }
+.b:not(.go):hover { border-color: #fff; }
+.paidnote { font-size: 13.5px; color: var(--text); }
+.terms { margin: 0; padding: 0 0 0 18px; list-style: none; border-left: 1px solid var(--line); display: grid; gap: 6px; font-size: 13.5px; color: var(--dim); }
+.terms b { color: var(--text); font-weight: 600; }
+.terms a { color: var(--text); }
+.lk { background: none; border: 0; padding: 0; font: inherit; color: var(--ok); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+dialog.log { width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow: auto; background: #0b0f0d; color: var(--text); border: 1px solid var(--ok); border-radius: 10px; padding: 18px 20px; }
+dialog.log::backdrop { background: rgba(0,0,0,.7); }
+dialog.log .x { position: absolute; top: 8px; right: 10px; min-width: 44px; min-height: 44px; background: none; border: 0; color: var(--dim); font-size: 16px; cursor: pointer; }
+dialog.log .k { margin: 0 0 8px; }
+dialog.log .post { border: 1px solid var(--hair); border-radius: 8px; padding: 12px 14px; font-size: 14px; line-height: 1.5; }
+dialog.log .post h3 { margin: 0 0 6px; font-size: 17px; color: #fff; } dialog.log .post p { margin: 8px 0 0; } dialog.log .post b { color: #fff; }
+dialog.log .fine { margin: 10px 0 0; font-size: 12.5px; color: var(--dim); }
+.opt.shop { flex-direction: row; gap: 22px; align-items: center; }
+.shop .sh { flex: 0 1 34%; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.shop .k { color: var(--dim); }
+.pcs { flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.pc { display: flex; flex-direction: column; gap: 2px; text-decoration: none; border: 1px solid var(--line); border-radius: 8px; padding: 10px 10px 8px; background: rgba(255,255,255,.03); min-width: 0; }
+.pc:hover, .pc:focus-visible { border-color: var(--ok); background: rgba(57,255,138,.06); }
+.pc img { width: 100%; height: auto; aspect-ratio: 660 / 570; object-fit: contain; border-radius: 4px; margin-bottom: 4px; }
+.pc b { font: 600 13px/1.3 var(--display); color: #fff; overflow-wrap: anywhere; }
+.pc span { font-size: 12px; line-height: 1.35; color: var(--dim); }
+.bills { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; font-size: 13.5px; color: var(--dim); border-top: 1px solid var(--line); padding-top: 10px; }
+.bills b { color: var(--text); font-weight: 600; }
+.bills span { min-width: 0; overflow-wrap: anywhere; }
+.bills a { color: var(--text); }
+footer { color: var(--dim); font-size: 13px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer p { margin: 0; }
+[hidden] { display: none !important; }
+@media (max-width: 1200px) { .paid .cols { grid-template-columns: minmax(0, 1fr); } .terms { padding: 10px 0 0; border-left: 0; border-top: 1px solid var(--line); } }
+@media (max-width: 1100px) { .opt.shop { flex-direction: column; align-items: stretch; } .shop .sh { flex: none; } }
+@media (max-width: 900px) { .opts { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 700px) { .pcs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 420px) { .pcs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { body { font-size: 15px; } .tiers { grid-template-columns: minmax(0, 1fr); } .opt { padding: 16px; } .b { width: 100%; justify-content: center; } }
+@media (min-width: 1101px) and (min-height: 801px) and (max-height: 1100px) { .shop .paidnote { display: none; } .opt.shop { padding-top: 14px; padding-bottom: 14px; } }
+/* a short screen: the shop is one slim row (pictures and names), so all three options stay in view */
+@media (min-width: 1101px) and (max-height: 800px) {
+  .opt.shop { padding: 8px 18px; gap: 16px; } .shop .sh { flex-basis: 30%; gap: 4px; } .shop .sh > p:not(.k), .pc span { display: none; }
+  .shop .sh { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 14px; } .shop .sh .k { flex: 1 1 100%; }
+  .shop .act { margin: 0; } .shop .b { min-height: 34px; padding: 0 12px; } .shop h3 { font-size: 17px; }
+  .pc { flex-direction: row; align-items: center; gap: 8px; padding: 5px 8px; } .pc img { width: 46px; flex: none; margin: 0; } .pc b { font-size: 11.5px; overflow-wrap: normal; word-break: normal; } .pcs { gap: 8px; }
+  .bills { display: none; } .paid .act { margin-top: 0; }
+}
+@media (min-width: 901px) and (max-height: 800px) { .intro p { font-size: 15px; margin-top: 4px; } .opt { padding: 12px 18px; gap: 7px; } .opt h3 { font-size: 19px; } .intro h2 { font-size: 24px; } .tiers li { padding: 7px 12px; } .wrap { gap: 10px; } }
+</style>
+<link rel="stylesheet" href="../assets/nav.css">
+<script src="../assets/nav.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Support</span></a>
+  </header>
+  <nav class="tnav" data-page="crew" aria-label="Pages and tools"></nav>
+  <div class="intro">
+    <h2>Support Tau HUD</h2>
+    <p>Tau HUD is free to use. Optional support helps fund the site and the work behind it: the community node, the server, and the tools the pages are built with.</p>
+    <p class="none">There are three ways to help, and none is required. Every page stays open without paying and without an account.</p>
+  </div>
+  <dialog class="log" id="logDlg" aria-labelledby="logH">
+    <button type="button" class="x" id="logClose" aria-label="Close">✕</button>
+    <p class="k">A sample of the ship log</p>
+    <div class="post" translate="no" lang="en">
+      <h3 id="logH">Ship log · 6–13 Nov 2026</h3>
+      <p>The week of 6–13 Nov 2026 on Tau Testnet Alpha and on Tau HUD, in one place. Written by the server from the chain and the site's own log, nothing by hand.</p>
+      <p><b>The testnet this week</b><br>• 9,182 blocks, one every 62 s<br>• 10,962 transactions from 224 accounts<br>• Rule changes: none this week<br>• Chain restarts: 1<br>• Community nodes: 1 (1 new)</p>
+      <p><b>New on Tau HUD</b><br>• Rule Playground: a warning for long co-signer rules …<br>• Learn Tau Language: a new lesson for logic people, “Only what the rule forces” …<br>• and the week's other changes, each with its link</p>
+      <p><b>What it costs</b><br>The monthly bills are €25.34 + $431.09 (server, tools, domains).</p>
+    </div>
+    <p class="fine">The numbers are those of the week 6–13 Nov 2026 as our server read them on 13 Nov. The log is written in English. Nothing in it is secret: it gathers in one place what the testnet and the site did that week.</p>
+  </dialog>
+  <main class="opts">
+    <section class="opt paid" aria-labelledby="hPaid">
+      <p class="k">Option 1 · monthly · paid</p>
+      <h3 id="hPaid">Support monthly, cancel any time</h3>
+      <div class="cols"><div>
+      <p>A paid monthly membership in our Fourthwall shop: the Tau HUD crew. No duties. Two levels:</p>
+      <ul class="tiers">
+        <li><b translate="no">Deckhand</b><span class="pr" id="pDeck">€4.17 <small>a month</small></span><span class="ben">10 % off products in the shop</span></li>
+        <li><b translate="no">Navigator</b><span class="pr" id="pNav">€10.71 <small>a month</small></span><span class="ben">20 % off products in the shop</span></li>
+      </ul>
+      <p class="ben2">Both levels also get the ship log, a members-only post every Monday on the week on the testnet and Tau HUD. <button type="button" class="lk" id="logOpen">Read a sample ›</button></p>
+      <p class="paidnote">Prices include 19 % German VAT; the shop shows your country's price before you pay. Renews every month until you cancel.</p>
+      <div class="act"><a class="b go" id="shop" href="https://tau-hud-shop.fourthwall.com/supporters/pricing" target="_blank" rel="noopener">Become a member at Fourthwall ›</a></div>
+      </div>
+      <ul class="terms">
+        <li><span><b>Cancelling.</b> Cancel any time in your account in the shop; access runs to the end of the month you paid for. In the EU, EEA and UK you can withdraw from a new membership within 14 days.</span></li>
+        <li><span><b>Who sells it.</b> Fourthwall, Inc. is the seller and takes the payment. The person who runs Tau HUD provides the benefits, receives the membership income and can see the membership in the shop's dashboard.</span></li>
+        <li><span><a href="https://fourthwall.com/legal/merchandise-terms-of-service" target="_blank" rel="noopener">Fourthwall's terms for buyers</a> · <a href="https://fourthwall.com/privacy-policy" target="_blank" rel="noopener">Fourthwall's privacy policy</a> · <a href="../legal/#shop-en">our privacy notice</a></span></li>
+      </ul>
+      </div>
+    </section>
+    <section class="opt free" aria-labelledby="hFree">
+      <p class="k">Option 2 · one-off · voluntary</p>
+      <h3 id="hFree">Send a crypto contribution</h3>
+      <p>Any amount of ETH or AGRS on Ethereum, sent straight to our address. It is a voluntary contribution: no membership, no benefits, nothing owed in return.</p>
+      <p class="paidnote">Tau HUD is a private project, not a charity, so a contribution is not tax deductible. The donations page shows every one received, with its transaction.</p>
+      <div class="act"><a class="b" href="../donate/">Address and every contribution ›</a></div>
+    </section>
+  </main>
+  <section class="opt shop" aria-labelledby="hShop">
+    <div class="sh">
+      <p class="k">Option 3 · the shop · made to order</p>
+      <h3 id="hShop">Wear the testnet</h3>
+      <p>Sweaters with the pattern knitted in, tees that quote a real answer of a testnet node, a mug and a sticker sheet. Part of each price reaches the site. Crew members get 10 or 20 % off at checkout.</p>
+      <p class="paidnote">Sold, made and shipped by Fourthwall. Fan merchandise, not affiliated with IDNI.</p>
+      <div class="act"><a class="b" href="https://tau-hud-shop.fourthwall.com/?utm_source=tauhud&utm_medium=crew" target="_blank" rel="noopener">Open the shop ›</a></div>
+    </div>
+    <div class="pcs">
+      <a class="pc" href="https://tau-hud-shop.fourthwall.com/products/always-o1-t-i1-t?utm_source=tauhud&utm_medium=crew" target="_blank" rel="noopener"><img src="../assets/shop/sweater-rule.png" alt="" loading="lazy" width="660" height="570"><b>Tau rule sweater</b><span>A real rule in Tau Language, knitted in</span></a>
+      <a class="pc" href="https://tau-hud-shop.fourthwall.com/products/follow-the-rabbit-to-the-next-block?utm_source=tauhud&utm_medium=crew" target="_blank" rel="noopener"><img src="../assets/shop/sweater.png" alt="" loading="lazy" width="660" height="570"><b>White Rabbit sweater</b><span>Follow the rabbit to the next block</span></a>
+      <a class="pc" href="https://tau-hud-shop.fourthwall.com/products/insufficient-funds-tee?utm_source=tauhud&utm_medium=crew" target="_blank" rel="noopener"><img src="../assets/shop/tee-funds.webp" alt="" loading="lazy" width="660" height="570"><b>Node answer tee</b><span>INSUFFICIENT_FUNDS: a real answer from a real node</span></a>
+      <a class="pc" href="https://tau-hud-shop.fourthwall.com/products/no-memo-tee?utm_source=tauhud&utm_medium=crew" target="_blank" rel="noopener"><img src="../assets/shop/tee-nomemo.webp" alt="" loading="lazy" width="660" height="570"><b>No Memo tee</b><span>tx = from, to, amount. No memo.</span></a>
+      <a class="pc" href="https://tau-hud-shop.fourthwall.com/products/waiting-for-the-next-block-mug?utm_source=tauhud&utm_medium=crew" target="_blank" rel="noopener"><img src="../assets/shop/mug.webp" alt="" loading="lazy" width="660" height="570"><b>Next Block mug</b><span>Waiting for the Next Block</span></a>
+      <a class="pc" href="https://tau-hud-shop.fourthwall.com/products/testnet-sticker-pack?utm_source=tauhud&utm_medium=crew" target="_blank" rel="noopener"><img src="../assets/shop/stickers.webp" alt="" loading="lazy" width="660" height="570"><b>Sticker sheet</b><span>Seven stickers from the testnet</span></a>
+    </div>
+  </section>
+  <p class="bills" id="billsLine" hidden><b>What support pays for, each month:</b> <span id="billItems"></span> <a href="../donate/">all bills ›</a></p>
+  <footer>
+    <p><span>Tau HUD is a community project, not affiliated with IDNI.</span> <a href="../legal/">Privacy</a></p>
+  </footer>
+</div>
+<script>
+"use strict";
+(() => {
+const $ = id => document.getElementById(id);
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const SIGN = { EUR: "€", USD: "$" };
+const money = (v, c) => (SIGN[c] || c + " ") + v.toLocaleString("en-GB", { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 });
+fetch("../assets/costs.json", { cache: "no-store" }).then(r => r.json()).then(C => {
+  const items = (C.items || []).filter(i => typeof i.amount === "number");
+  if (!items.length) return;
+  const sums = {};
+  items.forEach(i => { sums[i.cur] = (sums[i.cur] || 0) + i.amount; });
+  $("billItems").textContent = items.map(i => T(i.t) + " " + money(i.amount, i.cur)).join(" · ") + " = " + Object.keys(sums).sort().map(c => money(sums[c], c)).join(" + ");
+  $("billsLine").hidden = false;
+}).catch(() => {});
+})();
+
+/* a sample of the ship log, opened over the page */
+(() => { const d = document.getElementById("logDlg"), o = document.getElementById("logOpen"); if (!d || !o || !d.showModal) { if (o) o.hidden = true; return; }
+  o.addEventListener("click", () => d.showModal()); document.getElementById("logClose").addEventListener("click", () => d.close());
+  d.addEventListener("click", e => { if (e.target === d) d.close(); }); })();
+</script>
+</body>
+</html>

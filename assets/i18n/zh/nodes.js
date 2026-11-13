@@ -1,5 +1,9 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Keep our node online: the Tau HUD crew": "让我们的节点保持在线：Tau HUD 船员",
+  "Ours runs on a Hetzner CAX11.": "我们的节点运行在一台 Hetzner CAX11 上。",
+  "Rent the same one": "租一台同样的",
+  "through our referral link, and Hetzner gives us server credit.": "，通过我们的推荐链接租用，Hetzner 会给我们服务器抵用额度。",
   "then every node follows and checks the chain, which is what the testnet needs most now.": "在此之前，每个节点都在跟随并检查这条链，这正是测试网现在最需要的。",
   "A chain you follow, not seal.": "一条你跟随、而非封块的链。",
   "Validator seats are decided on chain by the validators in place; today that is IDNI alone (one validator in the genesis). Running a node is the first step, the seat is their decision.": "验证者席位由现有验证者在链上决定；今天只有 IDNI（创世区块中只有一个验证者）。运行节点是第一步，席位由他们决定。",

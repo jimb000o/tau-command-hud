@@ -1,5 +1,9 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Keep our node online: the Tau HUD crew": "ノードを動かし続ける：Tau HUD クルー",
+  "Ours runs on a Hetzner CAX11.": "私たちのノードは Hetzner CAX11 で動いています。",
+  "Rent the same one": "同じサーバーを借りる",
+  "through our referral link, and Hetzner gives us server credit.": "：私たちの紹介リンク経由で借りると、Hetzner から私たちにサーバークレジットが付きます。",
   "then every node follows and checks the chain, which is what the testnet needs most now.": "それまでは、すべてのノードがチェーンを追って検証します。それが今のテストネットに最も必要なことです。",
   "A chain you follow, not seal.": "あなたが追うチェーン、封じるのではなく。",
   "Validator seats are decided on chain by the validators in place; today that is IDNI alone (one validator in the genesis). Running a node is the first step, the seat is their decision.": "バリデーター席は現在のバリデーターがチェーン上で決めます。今日はそれは IDNI だけです（ジェネシスにバリデーターは 1 人）。ノードを動かすのが第一歩で、席は彼らの判断です。",

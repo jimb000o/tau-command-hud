@@ -1,35 +1,61 @@
 {
- "about": "Running costs as billed, each in the currency of its bill; amount null = bill not in yet, not shown. items: monthly. oneoff: single purchases with their date (YYYY-MM-DD), newest first. Time is never priced. Payments read from receipts by the server (node.tauhud.com/costs-paid.json, infra/alerts/receipts.py) are added on /donate/; the same payment in both is shown once. Read by /donate/, the About window and the Updates panel.",
+ "about": "Running costs as billed, each in the currency of its bill; amount null = bill not in yet, named in one 'Bills not in yet' row and left out of every sum. items: monthly; since = first month counted on the chart of /donate/ (YYYY-MM-DD, the bill repeats on that day each month; null = not on the chart). oneoff: single purchases with their date (YYYY-MM-DD), newest first. Time is never priced. Payments read from receipts by the server (node.tauhud.com/costs-paid.json, infra/alerts/receipts.py) are added on /donate/; the same payment in both is shown once. Read by /donate/, the About window and the Updates panel. n: short product name for that row.",
  "items": [
   {
    "t": "Server",
+   "n": "Hetzner",
    "d": "Hetzner CAX11 at node.tauhud.com: the community node, the relay, alerts and bots",
    "amount": 6,
-   "cur": "EUR"
+   "cur": "EUR",
+   "since": "2026-10-30"
   },
   {
    "t": "AI assistant",
-   "d": "Claude Max plan (20x), the AI tool the site is built and run with. Its weekly limit for the most advanced models has at times been used up in about half a week.",
+   "n": "Claude Max",
+   "d": "Claude Max plan (20x), the AI tool the site is built and run with",
    "amount": 200,
-   "cur": "USD"
+   "cur": "USD",
+   "since": "2026-10-30"
+  },
+  {
+   "t": "Coding assistant",
+   "n": "Codex",
+   "d": "Codex on the ChatGPT Pro plan with 20x the usage of Plus, a second AI tool the site's code and art are made with",
+   "amount": 200,
+   "cur": "USD",
+   "since": "2026-11-11"
+  },
+  {
+   "t": "Image editing",
+   "n": "Photoshop",
+   "d": "Adobe Photoshop, for finishing the painted art",
+   "amount": 19.34,
+   "cur": "EUR",
+   "since": "2026-11-11"
   },
   {
    "t": "Voices",
-   "d": "ElevenLabs Starter plan, for the voices of the Daily Consensus café; to be cancelled once the voices are made",
-   "amount": null,
-   "cur": "USD"
+   "n": "ElevenLabs",
+   "d": "ElevenLabs Creator plan, for the voices on the site; $22 plus tax",
+   "amount": 26.18,
+   "cur": "USD",
+   "since": "2026-11-30"
   },
   {
    "t": "Domains",
-   "d": "tauhud.com and agorzilla.com",
-   "amount": null,
-   "cur": "EUR"
+   "n": "tauhud.com, agorzilla.com",
+   "d": "tauhud.com and agorzilla.com, $11.48 a year each, shown per month",
+   "amount": 1.91,
+   "cur": "USD",
+   "since": "2026-10-30"
   },
   {
    "t": "X account",
-   "d": "the bot that posts rule changes on X",
-   "amount": null,
-   "cur": "USD"
+   "n": "X API",
+   "d": "the bot that posts on X, paid per post ($0.015, $0.20 with a link); an estimate from the posts sent, not a bill",
+   "amount": 3,
+   "cur": "USD",
+   "since": "2026-10-30"
   }
  ],
  "oneoff": [

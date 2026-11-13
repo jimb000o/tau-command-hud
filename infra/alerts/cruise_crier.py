@@ -150,6 +150,11 @@ def last_lines(f: dict | None) -> tuple[str, str, str]:
     tg = f"On her last call, {date}, our node accepted {acc} of her passengers' transactions" + (f", {ref} were refused" if ref > 0 else " and refused none")
     if una:
         tg += f"; {una} got no answer from our node in time"
+    nw = f.get(blog.NEW_WALLET_FACT) or {}   # new wallets our node had no room for (IDNI tau-testnet #108): no refusals
+    if nw.get("passengers"):
+        n, k = nw["passengers"], nw.get("their sends the node could not take or the ship left out") or 0
+        tg += (f"; our node could not take {k} send{'s' if k != 1 else ''} from {n} passenger{'s' if n != 1 else ''} whose "
+               f"wallet{'s were' if n != 1 else ' was'} new to it (it had no room for new wallet addresses)")
     tg += "."
     left = f.get("left early")
     if isinstance(left, dict) and left.get("minutes in port") is not None:
@@ -172,7 +177,24 @@ def changed_line(f: dict) -> str:
     return " Since then she changed " + "; ".join(f"{c['what']} from {c['from']} to {c['to']}, because {c['because']}" for c in ch) + "."
 
 
-def texts(ship: str, t0: float, last: dict | None) -> dict:
+def ahead_line(n: int, hh: str) -> str:
+    """One sentence on the fares booked ahead of the call that wait in escrow on the chain (relay /cruise "escrow")."""
+    if n < 1:
+        return ""
+    who = "One passenger paid the fare" if n == 1 else f"{n} passengers paid their fare"
+    return (f"{who} days ahead. It waits in escrow on the chain, and at {hh}:00 the chain hands it to the ship by itself, "
+            "with nobody pressing a button.")
+
+
+def booked_ahead(cruise: dict | None, t0: float) -> int:
+    """Fares still in escrow for the call arriving at t0; 0 when there are none or the call was called off."""
+    for e in (cruise or {}).get("escrow") or []:
+        if isinstance(e, dict) and e.get("arrival") == int(t0) and not e.get("called_off"):
+            return int((e.get("count") or {}).get("in escrow") or 0)
+    return 0
+
+
+def texts(ship: str, t0: float, last: dict | None, ahead: int = 0) -> dict:
     """The announcement written from the timetable and the last call: Telegram (HTML), X (no link), the picture's card."""
     import alerts
     s = SHIPS[ship]
@@ -181,7 +203,7 @@ def texts(ship: str, t0: float, last: dict | None) -> dict:
     tg_last, card_last, x_last = last_lines(last)
     tg = "\n\n".join([
         f"{s['emoji']} <b>{html.escape(s['head'].format(**fill), quote=False)}</b>",
-        html.escape(s["story"].format(**fill), quote=False),
+        html.escape(" ".join(x for x in (s["story"].format(**fill), ahead_line(ahead, fill["hh"])) if x), quote=False),
         html.escape(tg_last, quote=False),
         "Honest note: the passengers are made up. Their transactions are real, on Tau Testnet Alpha: never more than 12 "
         "a minute, fewer when the node is slow, and she only lands when the testnet is calm. Every transaction goes into "
@@ -268,7 +290,12 @@ def compose(ship: str, t0: int) -> dict:
         except Exception as e:  # noqa: BLE001 - without the logbook the post says nothing about the last call
             log.warning("last call of %s not read: %s", ship, e)
             last = None
-        t = texts(ship, t0, last)
+        try:
+            ahead = booked_ahead(blog.get("/cruise"), t0)
+        except Exception as e:  # noqa: BLE001 - without the relay's answer the post leaves the bookings ahead out
+            log.warning("bookings ahead of %s not read: %s", ship, e)
+            ahead = 0
+        t = texts(ship, t0, last, ahead)
     return t
 
 
@@ -421,6 +448,8 @@ IDNI_REPO = "IDNI/tau-testnet"
 def held_text(e: dict, inc: dict | None) -> str:
     """The private message about a pirate trick the chain took, with a ready issue for IDNI."""
     import urllib.parse
+    if e.get("trick") == "edge":
+        return edge_text(e)
     what = e.get("what") or e.get("trick")
     tx = json.dumps(e.get("tx") or {}, indent=1)[:2500]
     title = f"Testnet accepted a transaction it should refuse: a payment that {what}"
@@ -436,6 +465,45 @@ def held_text(e: dict, inc: dict | None) -> str:
         "Nothing about it is public: the logbook shows only 'held back', no post goes out, the blog waits.",
         "Tell IDNI first. Their issues are public; a private note in the Tau Telegram may be the better first step.",
         f"Ready issue (public once you submit it):\n{url}",
+        f"Private advisory instead: https://github.com/{IDNI_REPO}/security/advisories/new",
+        "When it may be public, show it in the logbook and let the blog write the visit:",
+        UP.format(f"cruise release {e.get('visit')}")])
+
+
+def edge_text(e: dict) -> str:
+    """The private message about the pirates' fee edge (relay/cruise.py): a payment allowing one test AGRS less than the
+    fee the network's fee rule asks went through, or ("odd") the same payment allowing exactly that fee was refused for
+    its fee. Both rest on our reading of the rule, so the message says to check that first."""
+    import urllib.parse
+    fee, amount, sent, rule = e.get("fee"), e.get("amount"), e.get("fee_limit"), e.get("fee_rule") or "?"
+    ins = e.get("inside") or {}
+    asked = ins.get("asked")
+    if e.get("odd"):
+        tx, hash_ = ins.get("tx") or {}, None
+        title = f"Testnet asks a higher fee than its fee rule sets: a payment of {amount} allowing the rule's fee of {fee} is refused"
+        lead = (f"⚠ Fee edge on {e.get('visit')}: a pirate's payment of {amount} test AGRS allowing exactly the fee the network's fee "
+                f"rule asks for it as we read it ({fee}) was refused as FEE_LIMIT_TOO_LOW" + (f"; the node asks {asked}." if asked is not None else "."))
+        fact = (f"refused a user_tx of {amount} with fee_limit {fee} as FEE_LIMIT_TOO_LOW" + (f" (required {asked})" if asked is not None else "")
+                + f", although the consensus fee rule (o9) gives a fee of {fee} for that amount:")
+    else:
+        tx, hash_ = e.get("tx") or {}, e.get("hash")
+        title = f"Testnet accepted a payment whose fee limit ({sent}) is below the fee its fee rule sets ({fee})"
+        lead = (f"⚠ Fee edge on {e.get('visit')}: a pirate's payment of {amount} test AGRS allowing {sent} of fee went through, although "
+                f"the network's fee rule asks {fee} for it as we read it (tx {str(hash_ or '?')[:16]}…).")
+        fact = f"accepted a user_tx of {amount} with fee_limit {sent}, although the consensus fee rule (o9) gives a fee of {fee} for that amount:"
+    body = "\n".join([
+        "While testing Tau Testnet Alpha with simulated wallets (a community dashboard, not affiliated with IDNI), our node " + fact,
+        "", "```", rule, "```",
+        "", f"- when: {blog.day(e['t'])} {blog.clock(e['t'])} German time, chain height about {e.get('height', '?')}",
+        f"- tx hash: {hash_}" if hash_ else "- refused, so no tx hash", "", "Signed transaction as sent:", "```json", json.dumps(tx, indent=1)[:2500], "```",
+        "", "We have not published this. Happy to help reproduce it."])
+    url = f"https://github.com/{IDNI_REPO}/issues/new?" + urllib.parse.urlencode({"title": title, "body": body})
+    return "\n".join([
+        lead,
+        "Check first: the fee is our reading of that rule (the same reading as the Playground's rule X-ray). If the reading is wrong, this is no finding.",
+        f"The fee rule as read: {rule}",
+        "Nothing about it is public: the logbook shows only 'held back', no post goes out, the blog waits.",
+        f"Ready issue, once you are sure (public once you submit it):\n{url}",
         f"Private advisory instead: https://github.com/{IDNI_REPO}/security/advisories/new",
         "When it may be public, show it in the logbook and let the blog write the visit:",
         UP.format(f"cruise release {e.get('visit')}")])

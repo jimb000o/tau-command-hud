@@ -90,4 +90,9 @@ TauI18n.add({ strings: {
   "Tau HUD and this card are free, built in spare time.": "Tau HUD とこのカードは無料で、空き時間に作っています。",
   "Donations are voluntary ›": "寄付は任意です ›",
   "Favourite on White Rabbit Key": "White Rabbit Key のお気に入り",
+  "You are in the simulation.": "いまシミュレーション中です。",
+  "A card is read from the live testnet only: what you do on the practice chain never shows up here.": "カードは本物のテストネットからだけ読み取ります。練習用チェーンでしたことはここには出ません。",
+  "That is not an address: it has {n} characters, an address has 96 (0 to 9 and a to f).": "これはアドレスではありません。{n} 文字ですが、アドレスは 96 文字です（0〜9 と a〜f）。",
+  "Paste an address first: 96 characters, 0 to 9 and a to f.": "先にアドレスを貼り付けてください：96 文字、0〜9 と a〜f。",
+  "Support Tau HUD ›": "Tau HUD をサポート ›",
 } });

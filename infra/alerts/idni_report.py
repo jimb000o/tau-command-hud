@@ -182,7 +182,8 @@ def facts(raw: dict, t0: float, t1: float) -> dict:
             "reached later": v.get("of those, reached the chain after all") or 0,
             "answers": v.get("refusal answers") or {}, "time": v.get("our node's answer time to a send, seconds"),
             "left": v.get("left early"), "incidents": len(v.get("incidents") or []),
-            "heights": v.get("block heights"), "over": any(e.get("kind") == "visit over" for e in entries)})
+            "heights": v.get("block heights"), "over": any(e.get("kind") == "visit over" for e in entries),
+            "new wallets": v.get(blog.NEW_WALLET_FACT)})
     p = raw.get("pulse") or {}
     y = p.get("sync") or {}
     if y:
@@ -301,6 +302,10 @@ def body(f: dict, short: int = 0) -> str:
             if not v["over"]:
                 line += " (still under way)"
             L.append(line + f" ([logbook]({blog.NODE}/cruise/log?visit={v['id']}))")
+            nw = v.get("new wallets")
+            if nw:
+                L.append(f"  - {nw['their sends the node could not take or the ship left out']} sends from {nw['passengers']} passengers whose wallets "
+                         "were new to our node got `ADMISSION_UNAVAILABLE`: our node is at its 254-address limit (#108); not counted as refused")
             if short < 1:
                 for err, k in list(v["answers"].items())[:3]:
                     L.append(f"  - refused {k}x: `{err[:110]}`")

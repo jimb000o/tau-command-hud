@@ -141,7 +141,7 @@ html.fit .side { min-height: 0; overflow: auto; }
     <div class="kpis" aria-label="Key numbers">
       <span class="kpi" data-tip="Different rules written so far, each counted once however many accounts took it."><b id="kRules">–</b>rules</span>
       <span class="kpi" data-tip="Accounts that gave themselves one of these rules, or accepted one offered to them."><b id="kWallets">–</b>wallets with a rule</span>
-      <span class="kpi hot" id="kLive" data-tip="The testnet holds personal rules for 2 accounts at a time. These rules are in force right now."><b id="kNow">–</b>in force now</span>
+      <span class="kpi hot" id="kLive" data-tip="Every account on the testnet may hold its own personal rule. These rules are in force right now."><b id="kNow">–</b>in force now</span>
     </div>
   </div>
   <main class="main">
@@ -155,15 +155,15 @@ html.fit .side { min-height: 0; overflow: auto; }
         <ul class="facts">
           <li><span><b>Take it.</b> “Take this rule” fills your wallet with the same rule. You sign it, and from the next block every node checks your payments against it.</span></li>
           <li><span><b>Counted from the chain.</b> Each account that runs the same rule adds a dot. Nobody can add one without signing.</span></li>
-          <li><span><b>Two places at a time.</b> When both are taken the wallet puts you in a fair line, or you take the rule on the simulation.</span></li>
+          <li><span><b>Room for everyone.</b> Every account on the testnet may hold its own rule; nobody waits for a place.</span></li>
           <li><span><b>Change it first.</b> The wallet shows the rule in its builder; adjust the limit or the names before you sign.</span></li>
         </ul>
-        <a class="b go" href="/wallet/?from=rules#rules-mine">Write your own rule</a>
+        <div class="acts"><a class="b go" href="/wallet/?from=rules#rules-mine">Write your own rule</a><a class="b" href="/builder/">Say it in plain words</a></div>
       </section>
     </div>
   </main>
   <footer>
-    <p>Read from the blocks our node at <a href="https://node.tauhud.com/rulewall" target="_blank" rel="noopener">node.tauhud.com</a> keeps; nothing is sent until you sign in the wallet. Test AGRS have no value. · <a href="/start/">Start here</a> · <a href="/wallet/">Wallet</a> · <a href="/playground/">Playground</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BRules%20wall%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+    <p>Read from the blocks our node at <a href="https://node.tauhud.com/rulewall" target="_blank" rel="noopener">node.tauhud.com</a> keeps; nothing is sent until you sign in the wallet. Test AGRS have no value. · <a href="https://node.tauhud.com/rulewall" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="/start/">Start here</a> · <a href="/wallet/">Wallet</a> · <a href="/playground/">Playground</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BRules%20wall%5D%20" target="_blank" rel="noopener">Feedback</a></p>
   </footer>
 </div>
 <div id="tip" hidden></div>
@@ -272,7 +272,7 @@ async function load() {
 }
 function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = T(text); s.dataset.tip = tipText; }
 
-/* a holder runs this rule right now: its newest rule is this one, and the node lists it on a rule place */
+/* a holder runs this rule right now: its newest rule is this one, and the node lists it as that account's clause */
 function inForce(r) { return !SIM && r.users.some(u => W.holders.has(u) && newest.get(u) === r); }
 let newest = new Map();
 function render() {

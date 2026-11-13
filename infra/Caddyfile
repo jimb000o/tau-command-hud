@@ -9,8 +9,10 @@
 		}
 		reverse_proxy checker:8090
 	}
-	# Tau Language questions from tauhud.com/learn (checker/tau_sandbox.py).
-	handle /tau* {
+	# Tau Language questions from tauhud.com/learn (checker/tau_sandbox.py): /tau, /tau/intel, /tau/health. Not /tau*,
+	# which also caught /tau-today.md and /tau-today.json below and answered them 404 from the checker.
+	@tau path /tau /tau/*
+	handle @tau {
 		request_body {
 			max_size 16KB
 		}
@@ -23,7 +25,7 @@
 	# (alerts/knowledge.py: sourced facts, live numbers, IDNI's latest work; read by tauhud.com/facts/ and llms.txt), and the
 	# island painting the game shows now, as the posts carry it (alerts/island_pic.py: /island/today.jpg, /island/crier.jpg), and the island alive with its mask, and Kling's
 	# drafts to look at (alerts/kling.py, kling_island.py: /kling/island.json, /kling/*.mp4, /kling/drafts/*).
-	@alerts path /proposals.json /feed.xml /recap/* /donations.json /costs-paid.json /devpulse.json /blog/posts.json /blog/drafts/* /blog/img/* /blog/a/* /idni-report/* /tau-today.md /tau-today.json /island/* /kling/*
+	@alerts path /proposals.json /feed.xml /recap/* /donations.json /costs-paid.json /earnings.json /devpulse.json /blog/posts.json /blog/drafts/* /blog/img/* /blog/a/* /idni-report/* /tau-today.md /tau-today.json /island/* /kling/* /pageshots/*
 	handle @alerts {
 		root * /srv/alerts
 		header Access-Control-Allow-Origin *

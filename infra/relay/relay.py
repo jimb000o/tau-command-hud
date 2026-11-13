@@ -43,7 +43,6 @@ from simpredict import SimPredict
 from simprops import SimProps
 from simvotes import SimVotes, name_of
 from simwallet import SimWallet
-from slotlease import SlotLease
 from cruise import Cruise
 from hackweek import HackWeek
 from island import Island
@@ -57,6 +56,7 @@ from chainhist import ChainHistory
 from services import Services
 from nodehist import NodeHistory
 from setupfunnel import SetupFunnel
+import knownnodes
 from visits import OWN_HOSTS, SITES, Visits
 
 log = logging.getLogger("tau-relay")
@@ -167,20 +167,16 @@ LOOKUPS = {
     # the node's own conflict report for a rule offered to you, before you accept it (advisory, node-local)
     "getruleconflict": lambda a: len(a) == 1 and len(a[0]) == 64 and HEX.match(a[0]),
 }
-# /rules: who holds one of the testnet's personal-rule (o5) places. The node caps
-# them at 2 chain-wide (consensus/approvals.py MAX_TIER_AUTHORS) and has no
-# command that lists them, so the relay takes the candidates from the blocks it
-# keeps (senders of an o5 rule, acceptors of an offer) and asks the node for each.
+# /rules: which accounts hold a personal (o5) rule now. Since IDNI main 5ad1bb7 every account may hold one ("Nothing
+# limits how many accounts hold a clause", docs/approvals.md); before that only 2 could. The node has no command that
+# lists them, so the relay takes the candidates from the blocks it keeps (senders of an o5 rule, acceptors of an offer)
+# and asks the node for each, at most RULES_MAX_CHECKS of them.
 RULES_POLL = _env_float("RULES_POLL_SECONDS", 300)
-RULE_PLACES = _env_int("RULE_PLACES", 2)
 RULES_MAX_CHECKS = _env_int("RULES_MAX_CHECKS", 40)
 NEUTRAL_O5 = "(o5[t]:bv[24]={#x000001}:bv[24])"
 # /rulewall: every personal rule in the kept blocks, for the rules wall on tauhud.com/rules/
 RULEWALL_MAX = _env_int("RULEWALL_MAX", 200)
 RULEWALL_MAX_TEXT = 4000
-# Fair turns on those places (slotlease.py): the wallet leaves a pre-signed neutral clause here and the relay sends it
-# when the holder's turn is over. One switch turns it off on the server without a rebuild (docker compose up -d).
-SLOTLEASE_ENABLED = os.environ.get("SLOTLEASE_ENABLED", "1") not in ("0", "false", "no", "")
 CACHED = ("getmempool", "getgovernance", "gettaustate")
 FROM_MEMORY = CACHED + ("getblocks", "getblockrange", "presence")   # answered without the node: CHAIN_* budget
 # The wallet's write door. The visitor's browser builds and signs the
@@ -190,6 +186,19 @@ FROM_MEMORY = CACHED + ("getblocks", "getblockrange", "presence")   # answered w
 # in the list). Both commands share one bucket per address and one for everyone,
 # because the relay holds ONE upstream connection and checktx is a heavy call.
 WALLET_COMMANDS = ("sendtx", "checktx")
+# Our node keeps at most 254 wallet addresses; with all of them in use it answers ADMISSION_UNAVAILABLE ("temporarily
+# unavailable; please resubmit") to every transaction with a wallet it has not seen before (IDNI tau-testnet #108, since
+# 11 November 2026). Sending again never helps. So when a visitor's transaction gets that answer, one of its wallets
+# holds nothing on the chain yet, and the node took another transaction through this relay in the last NEW_WALLET_OK
+# seconds, the answer says why instead (explain_new_wallet). Once the node takes new wallets again (IDNI's fix, which the
+# node's auto-follow brings in by itself), that answer stops coming and the visitor never sees this text.
+NEW_WALLET_CODE = "ADMISSION_UNAVAILABLE"
+NEW_WALLET_TEXT = "Transaction validation is temporarily unavailable"   # the node's words for it; a rule it cannot check says "Rule validation …"
+NEW_WALLET_OK = 30 * 60
+NEW_WALLET_ISSUE = "https://github.com/IDNI/tau-testnet/issues/108"
+NEW_WALLET_MESSAGE = ("Our node can't take this yet: it has a wallet our node has not seen before, and right now our node "
+                      "has no room for new wallet addresses (it keeps 254, all in use; IDNI tau-testnet issue #108). "
+                      "Wallets it already knows still work. Nothing was sent.")
 VIA = re.compile(r"^[a-z0-9-]{1,24}(/[a-z]{2})?$")   # a page name: start, rules, card, hud, story/zh …
 WALLET_TX_TYPES = frozenset({
     "user_tx", "consensus_rule_vote", "rule_offer", "rule_offer_accept", "rule_offer_reject",
@@ -235,6 +244,7 @@ PEERS_SAVE_SECONDS = _env_float("PEERS_SAVE_SECONDS", 300)
 # PEER_ONLINE seconds after it was last seen (no flicker between two polls).
 PEER_STEADY = _env_float("PEER_STEADY_SECONDS", 600)
 PEER_ONLINE = _env_float("PEER_ONLINE_SECONDS", 1800)
+KNOWN_PROBE = os.environ.get("KNOWN_NODES_PROBE", "1") != "0"   # TCP checks of the named nodes' P2P ports (knownnodes.py)
 PEER_ID = re.compile(r"^[1-9A-HJ-NP-Za-km-z]{20,128}$")  # base58, like 12D3KooW...
 # the network's bootnode, run by IDNI (infra/docker-compose.yml TAU_BOOTSTRAP_PEERS)
 BOOTNODE_ID = os.environ.get("BOOTNODE_PEER_ID", "12D3KooWDpWEYxBy8y84AssrPSLaq9DxC7Lncmn5wERJnAWZFnYC")
@@ -388,7 +398,6 @@ class Relay:
         self.simvotes = SimVotes()   # visitor votes for the simulation (simvotes.py)
         self.simprops = SimProps(self.simvotes)   # rule changes visitors propose to the simulation (simprops.py)
         self.simwallet = SimWallet()   # the testnet wallet's transactions in simulation mode (simwallet.py)
-        self.lease = SlotLease(places=RULE_PLACES)   # fair turns on the personal-rule places (slotlease.py)
         self.island = Island()   # White Rabbit Key: the rival candidates' moves as test transactions (island.py)
         # The island bot and the cruise ships send through their own connection to the node, so a send the node takes
         # long to answer (up to UPSTREAM_TIMEOUT) never holds the visitors' connection: pages keep loading meanwhile.
@@ -406,6 +415,7 @@ class Relay:
         self.hack.on_tx = lambda ok: self.load.sent("cruise" if ok else "refused")
         self.nomemo = NoMemo()   # No Memo's crew purse: the share, the mark and the Tracer's dust (nomemo.py)
         self.nomemo.on_tx = lambda: self.load.sent("bot")
+        self.nomemo.lenders = self.cruise.lenders   # while our node cannot take the bank's fresh wallet (IDNI tau-testnet #108)
         self.nomemo_feedback = NoMemoFeedback()   # `feedback <text>` in the No Memo terminal, kept for the owner (nomemo_feedback.py)
         self.island.idle = self.idle_step
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
@@ -484,6 +494,7 @@ class Relay:
         self.rulewall_at = 0.0
         self.board_at = 0.0
         self.peer_book = self._load_peers()      # {"since", "peers": {peer id -> row}}, kept across restarts
+        self.known_probe = knownnodes.Probe()    # TCP checks of the named nodes' P2P ports (knownnodes.py)
         self.nodehist = NodeHistory()             # nodes on the network hour by hour, for /nodes/history (nodehist.py)
         self.setup = SetupFunnel()                # how far node setups get, for /setup/stats (setupfunnel.py)
         self.peers_saved_at = 0.0
@@ -1065,30 +1076,9 @@ class Relay:
                 if str(c.get("target_stream")) in ("5", "o5") and re.sub(r"\s+", "", str(c.get("clause_body") or "")) not in (NEUTRAL_O5, NEUTRAL_O5[1:-1]):
                     holders.append(a)
                     break
-        self.rules_text = json.dumps({"places": RULE_PLACES, "taken": min(len(holders), RULE_PLACES), "holders": holders,
+        self.rules_text = json.dumps({"holders": holders, "taken": len(holders), "limit": None,
+                                      "checked": min(len(self.rule_candidates()), RULES_MAX_CHECKS),
                                       "checked_at": round(time.time())}, separators=(",", ":"))
-        self.lease.set_holders(holders)
-        if SLOTLEASE_ENABLED:
-            await self.end_turns()
-
-    async def end_turns(self):
-        """Send the pre-signed removal of each holder whose turn is over: checked first, one at a time, after poll_rules."""
-        for addr, raw in self.lease.due():
-            chk = await self.upstream.request(f"checktx {raw}")
-            if not chk or chk.get("status") != "ok" or (chk.get("data") or {}).get("ok") is False:
-                why = str(((chk or {}).get("error") or {}).get("message") or "node not reachable")
-                if chk is not None:
-                    self.lease.sent(addr, False, "stale: " + why)
-                log.info("turn over for %s…: removal not sent (%s)", addr[:12], why[:80])
-                continue
-            res = await self.upstream.request(f"sendtx {raw}")
-            ok = bool(res) and res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False
-            why = "" if ok else str(((res or {}).get("error") or {}).get("message") or "node not reachable")
-            if res is not None:
-                self.lease.sent(addr, ok, why)
-            if ok:
-                self.sources.note((res.get("data") or {}).get("tx_hash"), "", "relay")
-            log.info("turn over for %s…: removal %s %s", addr[:12], "sent" if ok else "refused", ((res or {}).get("data") or {}).get("tx_hash") or why[:80])
 
     @staticmethod
     def _tx_summary(t: dict) -> dict:
@@ -1407,8 +1397,8 @@ class Relay:
             ok, data = self.island.accept_pay(args[0].lower(), args[1], ip)
             return envelope_ok(cmd, data) if ok else envelope_error(cmd, data, "FORBIDDEN" if "off" in data else "INVALID_PARAMS")
 
-        if cmd == "leasetx":
-            return await self.lease_deposit(message[len(parts[0]):].strip(), ip)
+        if cmd == "leasetx":   # the fair turns on the two rule places, retired with the limit (IDNI main 5ad1bb7)
+            return envelope_error("leasetx", "Every account may hold a rule now; there are no turns to keep.", "FORBIDDEN")
 
         if cmd == "via":   # the Tau HUD page that led this visitor to the wallet, kept with the hashes it sends
             if len(args) != 1 or not VIA.match(args[0]):
@@ -1449,6 +1439,8 @@ class Relay:
             if cmd == "sendtx":
                 return envelope_error(cmd, "The node did not answer in time; the transaction may still arrive.", "NO_ANSWER")
             return envelope_error(cmd, "Node is not reachable right now.", "UPSTREAM_DOWN")
+        if msg.get("status") == "error" and (msg.get("error") or {}).get("code") == NEW_WALLET_CODE:
+            msg = await self.explain_new_wallet(msg, tx, way)
         if cmd == "sendtx":
             self.load.sent("sent" if msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False else "refused")
         if cmd == "sendtx" and msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False:
@@ -1462,24 +1454,43 @@ class Relay:
                 pass
         return json.dumps(msg, separators=(",", ":"))
 
-    async def lease_deposit(self, raw: str, ip: str) -> str:
-        """Keep a pre-signed neutral clause for the holder's turn (slotlease.py), once the node has checked it."""
-        if not SLOTLEASE_ENABLED:
-            return envelope_error("leasetx", "Turns on the rule places are switched off on this relay.", "FORBIDDEN")
-        tx, why = self.lease.check(raw)
-        if tx is None:
-            return envelope_error("leasetx", why, "INVALID_PARAMS")
-        mine = self.tx_per_ip.setdefault(ip, TokenBucket(TX_IP_BURST, TX_IP_REFILL))
-        if not mine.take() or not self.tx_bucket.take():
-            return envelope_error("leasetx", "Too many transactions from here; wait a minute.", "RATE_LIMITED")
-        chk = await self.upstream.request(f"checktx {raw}")
-        if chk is None:
-            return envelope_error("leasetx", "Node is not reachable right now.", "UPSTREAM_DOWN")
-        if chk.get("status") != "ok" or (chk.get("data") or {}).get("ok") is False:
-            return json.dumps({"status": "error", "command": "leasetx", "error": (chk.get("error") or {"message": "refused by the node"})}, separators=(",", ":"))
-        return json.dumps({"status": "ok", "command": "leasetx", "data": self.lease.deposit(raw, tx)}, separators=(",", ":"))
+    async def explain_new_wallet(self, msg: dict, tx: str, way) -> dict:
+        """The node answered NEW_WALLET_CODE: when a wallet of this transaction holds nothing on the chain yet (balance
+        0) and the node took other transactions lately, the answer says why (NEW_WALLET_MESSAGE) instead of "please
+        resubmit"; the node's own words stay in node_message. Any other case keeps the node's answer as it is."""
+        if not str((msg.get("error") or {}).get("message") or "").startswith(NEW_WALLET_TEXT):
+            return msg   # a rule the node could not check, or other words: the node's answer as it is
+        if time.time() - self.load.last_ok > NEW_WALLET_OK:
+            return msg   # nothing went through lately either: the node's own trouble, not a full address table
+        try:
+            t = json.loads(tx)
+        except ValueError:
+            return msg
+        wallets = [t.get("sender_pubkey"), t.get("recipient_pubkey")]
+        for op in ((t.get("operations") or {}).get("1") or []) if isinstance(t.get("operations"), dict) else []:
+            if isinstance(op, list) and len(op) >= 2:
+                wallets += op[:2]
+        seen: list[str] = []
+        for w in wallets:
+            if isinstance(w, str) and HEX.match(w) and w.lower() not in seen:
+                seen.append(w.lower())
+        new = False
+        for w in seen[:6]:
+            r = await way.request(f"getbalance {w}")
+            if not r or r.get("status") != "ok":
+                return msg
+            try:
+                if int((r.get("data") or {}).get("balance") or 0) == 0:
+                    new = True
+                    break
+            except (TypeError, ValueError):
+                return msg
+        if not new:
+            return msg
+        err = dict(msg.get("error") or {})
+        err.update(message=NEW_WALLET_MESSAGE, node_message=err.get("message"), reason="new_wallet", issue=NEW_WALLET_ISSUE)
+        return {**msg, "error": err}
 
-    # ---------- community nodes ----------
     def report(self, args: list[str], ip: str) -> str:
         fields = dict(a.split("=", 1) for a in args if "=" in a)
         if (len(fields) != len(args) or any(k not in REPORT_FIELDS or not REPORT_FIELDS[k].match(v) for k, v in fields.items())
@@ -1488,6 +1499,10 @@ class Relay:
                                   "head=<64 hex> [tip=<n>|none] [kit=<version>] [ref=<commit>] [peer=<peer id>]", "INVALID_PARAMS")
         if "tauhud" in fields["name"].lower():
             return envelope_error("report", "That name is reserved.", "INVALID_PARAMS")
+        # a named node (knownnodes.py) reports only from its own addresses; its row then carries its name
+        known_peer, refused = knownnodes.check_report(fields["name"], fields.get("peer"), ip)
+        if refused:
+            return envelope_error("report", refused, "INVALID_PARAMS")
         now = time.time()
         self.expire_community(now)
         node_id = hashlib.sha256(fields["key"].encode()).hexdigest()[:12]
@@ -1502,7 +1517,8 @@ class Relay:
         self.community[node_id] = {
             "id": node_id, "name": fields["name"], "height": int(fields["height"]),
             "tip": int(fields["tip"]) if fields.get("tip", "none") != "none" else None,
-            "head": fields["head"], "kit": fields.get("kit"), "ref": fields.get("ref"), "peer": fields.get("peer"),
+            "head": fields["head"], "kit": fields.get("kit"), "ref": fields.get("ref"), "peer": fields.get("peer") or known_peer,
+            "known": known_peer,
             # first_seen survives a silence and a relay restart through the leaderboard
             "first_seen": known["first_seen"] if known else self.board.get(node_id, {}).get("first_seen", now),
             "last_seen": now, "ip": ip,
@@ -1513,6 +1529,8 @@ class Relay:
         self.note_board(self.community[node_id], now)
         hashes = self.hash_at()
         agrees = self.agreement(self.community[node_id], hashes)
+        # when its head last matched ours block for block: a node one block ahead of our relay is still in sync (knownnodes.py)
+        self.community[node_id]["same_at"] = now if agrees == "same" else (known or {}).get("same_at")
         row = self.board.get(node_id)
         # the first report on our chain within a few blocks of our tip: the node has caught up (/setup/stats)
         if row is not None and not row.get("synced_at") and agrees == "same" and hashes and int(fields["height"]) >= max(hashes) - 5:
@@ -1667,7 +1685,8 @@ class Relay:
                 kit = named.get(pid)
                 steady = pid == BOOTNODE_ID or (last or 0) - r["first_seen"] >= PEER_STEADY
                 rows.append({"id": pid, "label": "IDNI bootnode" if pid == BOOTNODE_ID else None,
-                             "community": {"id": kit["id"], "name": kit["name"]} if kit else None,
+                             "known": knownnodes.KNOWN[pid]["name"] if pid in knownnodes.KNOWN else None,
+                             "community": {"id": kit["id"], "name": self.shown_name(kit)} if kit else None,
                              "steady": steady, "online": steady and now - (last or 0) < PEER_ONLINE,
                              "first_seen": r["first_seen"], "last_direct": r["last_direct"],
                              "last_heard": r["last_heard"], "last_seen": last, "head": r["head"],
@@ -1684,12 +1703,30 @@ class Relay:
                            "met_30m": within(1800, True), "met_24h": within(86400, True),
                            "seen_24h": within(86400), "seen_30d": len(rows)},
                 "bootnode": BOOTNODE_ID, "since": self.peer_book["since"],
+                "known": self.known_nodes(now),
                 "steady_seconds": PEER_STEADY, "online_seconds": PEER_ONLINE,
                 # the validator keys, so a page can link a node card on to the validator profile
                 "validators": list((self.governance() or {}).get("active_validators") or []),
                 "keep_days": PEERS_KEEP_DAYS, "generated_at": round(now),
             }, separators=(",", ":"))
         return self.peers_text
+
+    @staticmethod
+    def shown_name(row: dict) -> str:
+        """A named node's name (knownnodes.py), else the name it reports."""
+        k = knownnodes.KNOWN.get(row.get("known") or "")
+        return k["name"] if k else row["name"]
+
+    def known_nodes(self, now: float) -> list[dict]:
+        """Reachability and sync of each named node, apart and from real data only (knownnodes.state)."""
+        hashes, ours, out = self.hash_at(), self.canonical_height(), []
+        for pid in knownnodes.KNOWN:
+            report = next((n for n in self.community.values() if n.get("known") == pid), None)
+            board = max((b for b in self.board.values() if b.get("known") == pid), key=lambda b: b["last_seen"], default=None)
+            out.append(knownnodes.state(pid, self.peer_book["peers"].get(pid), report, board, self.known_probe.results.get(pid),
+                                        self.agreement(report, hashes) if report else None, ours, now,
+                                        online_seconds=PEER_ONLINE, lag=SYNC_LAG))
+        return out
 
     # ---------- leaderboard ----------
     def _load_board(self) -> dict[str, dict]:
@@ -1728,6 +1765,7 @@ class Relay:
         row.update(name=node["name"], last_seen=now, height=node["height"], kit=node["kit"], ref=node["ref"])
         if node.get("peer"):
             row["peer"] = node["peer"]
+        row["known"] = node.get("known")
         self.board_text = None
         cutoff = now - BOARD_KEEP_DAYS * 86400
         for k in [k for k, r in self.board.items() if r["last_seen"] < cutoff]:
@@ -1751,7 +1789,7 @@ class Relay:
         rows = []
         for r in self.board.values():
             live = self.community.get(r["id"])
-            rows.append({"id": r["id"], "name": r["name"], "first_seen": round(r["first_seen"]),
+            rows.append({"id": r["id"], "name": self.shown_name(r), "known": bool(r.get("known")), "first_seen": round(r["first_seen"]),
                          "last_seen": round(r["last_seen"]), "online": live is not None,
                          "days": int((now - r["first_seen"]) // 86400), "uptime": self.node_uptime(r, now),
                          "height": r.get("height"), "kit": r.get("kit"), "ref": r.get("ref"),
@@ -1882,7 +1920,8 @@ class Relay:
         if self.community_text is not None and now - self.community_at < STATS_CACHE_SECONDS:
             return self.community_text
         hashes = self.hash_at()
-        nodes = [{**{k: v for k, v in n.items() if k != "ip"}, "agrees": self.agreement(n, hashes),
+        nodes = [{**{k: v for k, v in n.items() if k != "ip"}, "name": self.shown_name(n), "known": bool(n.get("known")),
+                  "agrees": self.agreement(n, hashes),
                   "age_seconds": round(now - n["last_seen"])}
                  for n in sorted(self.community.values(), key=lambda n: (-n["height"], n["name"].lower()))]
         self.community_at = now
@@ -2184,12 +2223,9 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "public, max-age=30")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.peers_json().encode())
-        lease = self.lease.route(path, query, ip) if path.startswith("/lease") else None
-        if lease is not None:
+        if path in ("/lease", "/lease/wait", "/lease/leave"):   # retired: a page from before 5ad1bb7 still asks, and hears "off"
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
-            body = dict(lease[1], enabled=SLOTLEASE_ENABLED)
-            code = HTTPStatus(lease[0])
-            return Response(code.value, code.phrase, headers, json.dumps(body, separators=(",", ":")).encode())
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, b'{"enabled":false,"retired":true}')
         if path == "/rulewall":
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),
@@ -2201,7 +2237,7 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "public, max-age=60")])
             code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
-            body = (self.rules_text or '{"error":"relay is still reading the rule places"}').encode()
+            body = (self.rules_text or '{"error":"relay is still reading who holds a rule"}').encode()
             return Response(code.value, code.phrase, headers, body)
         if path == "/community":
             headers = Headers([("Content-Type", "application/json"),
@@ -2333,6 +2369,7 @@ class Relay:
             asyncio.create_task(self.presence_loop()),
             asyncio.create_task(self.uptime_loop()),
             asyncio.create_task(self.poll_loop(RULES_POLL, self.poll_rules)),
+            *([asyncio.create_task(self.known_probe.run())] if KNOWN_PROBE else []),
         ]
         async with serve(self.handler, LISTEN_HOST, LISTEN_PORT, process_request=self.process_request,
                          max_size=TX_MAX_BYTES + 64, max_queue=8, ping_interval=15, ping_timeout=15,

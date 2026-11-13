@@ -8,15 +8,18 @@
 #              up touch canoe-camp  the same, then two versions of the island with those changes, to look at (not live)
 #              up touch beach 28    the same, from island 28 of the drafts instead of the live island
 #              up keep 27 canoe camp  the same, then island 27 live and those rooms painted anew to match it
-#              up blog       the blog drafts waiting (nothing rebuilt); up blog publish <id>  puts one on tauhud.com/blog/
+#              up blog       the blog drafts waiting (the blog service rebuilt, node untouched); up blog publish <id>  puts one on tauhud.com/blog/
 #                            and posts it once to Telegram and X; up blog draft <visit>  writes that visit's draft anew
 #              up bust salado  the same, then that portrait (or several) painted anew, talking and blinking too (1 min each);
 #                            up bust --recut salado  cuts the kept painting out again, paints nothing;
 #                            up bust --from infra/rabbit-art/imports/codex hana  takes pictures painted elsewhere
 #              up follow     the node following IDNI tau-testnet main by itself: its state; up follow now  one check at once,
 #                            up follow off / on  stops / starts it (nothing rebuilt, the node left alone)
-#              up idni       what the next daily IDNI progress post would say now (nothing rebuilt, nothing posted);
+#              up idni       what the next daily IDNI progress post would say now (its two services rebuilt, nothing posted);
 #                            up idni send  posts it now, up idni hold  keeps the next one back, up idni release  undoes that
+#                            up idni restart  what the post for the newest testnet restart would say (nothing posted)
+#                            up idni fixed  what IDNI solved of our reports and its post; up idni fixed send  sends the
+#                            draft, up idni fixed no <n>  takes one back, up idni fixed auto / draft  posts without / with asking
 #              up cruise     a cruise ship's last visit in numbers and the node's timeouts per hour (nothing rebuilt)
 #                            up cruise next  the next call's announcement as it goes out by itself (posts nothing);
 #                            announcements and reports run by themselves every week (alerts/cruise_crier.py);
@@ -28,6 +31,8 @@
 #                            node left alone, safe any time), then this month's clips; up kling test  one 5 s clip of the
 #                            live island to look at (proves the key), up kling list  every clip, up kling send <key>  posts
 #                            a draft, up kling off island  the island still again (until the next painting)
+#              up shots      the post pictures of Tau HUD's pages taken anew in Live mode and checked (node left alone):
+#                            which pages have a picture, why the others have none; up shots rules status  only these
 #              up escrow     the relay alone restarted with the code just pulled (not while a ship is due), then the
 #                            cruise bookings ahead in escrow, each with its state; up escrow status  only those
 #              up nomemo     No Memo's crew purse (relay/nomemo.py): the drop, the players' board, what waits to be paid (nothing rebuilt)
@@ -164,6 +169,25 @@ if [ "${1:-}" = "clip" ]; then
   fi
   exit 0
 fi
+# The post pictures of Tau HUD's own pages (agorzilla-shots/site-shots.mjs), the node left alone: the picture service
+# built and started, Caddy given /pageshots/*, one round at once, then which pages have a checked picture and why the
+# others have none. up shots rules status  only these pages.
+if [ "${1:-}" = "shots" ]; then
+  docker compose up -d --no-deps --build site-shots >/dev/null 2>&1 || docker compose up -d --no-deps --build site-shots
+  docker compose up -d --no-deps --force-recreate caddy >/dev/null 2>&1 || true
+  shift
+  docker compose exec -T site-shots node site-shots.mjs --once "$@" | tail -40
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T site-shots sh -c 'cat /out/pageshots/index.json' | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+ok = [k for k, v in d.items() if v.get("ok")]
+print("page pictures: %d of %d checked" % (len(ok), len(d)))
+for k, v in sorted(d.items()):
+    print(("  ok    " if v.get("ok") else "  none  ") + k + ("" if v.get("ok") else "  (" + str(v.get("why")) + ")"))
+'
+  exit 0
+fi
 # Kling's clips (alerts/kling.py, kling_island.py), the node left alone: the blog and agorzilla services rebuilt with the
 # code just pulled, Caddy given /kling/*, then: up kling  this month's clips, up kling test  a 5 s test clip (waits up to
 # 10 min), up kling list, up kling send <key>  a draft posted, up kling off island
@@ -262,7 +286,8 @@ print("         feedback: %d new of %d (read them: up nomemo feedback)" % (max(n
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
-# IDNI's progress of the day as ONE post, nothing rebuilt (alerts/idni_digest.py): up idni  the last ones and what the
+# IDNI's progress of the day as ONE post (alerts/idni_digest.py), with the code just pulled: devpulse and alerts are
+# rebuilt, the node and the relay are left alone. up idni  the last ones and what the
 # next would say now (one model call, posts nothing), up idni send  writes it now and the alerts service posts it within a
 # minute (up idni send --force: also when the check marked numbers or wording), up idni hold / up idni release
 # bookings ahead of a cruise call, in escrow until its arrival (relay/cruise.py): up escrow  restarts the relay alone with
@@ -295,7 +320,22 @@ for e in es:
 fi
 if [ "${1:-}" = "idni" ]; then
   shift
-  docker compose up -d devpulse >/dev/null 2>&1 || true
+  # devpulse writes the IDNI posts, alerts sends them: both with the code just pulled (the node and the relay stay)
+  docker compose up -d --build --no-deps devpulse alerts >/dev/null 2>&1 || docker compose up -d devpulse >/dev/null 2>&1 || true
+  if [ "${1:-}" = "restart" ]; then   # what the post for the newest testnet restart would say now (restart_brief.py)
+    docker compose exec -T devpulse python devpulse.py --restart
+    exit $?
+  fi
+  if [ "${1:-}" = "repic" ]; then     # a site-update post on Telegram gets its right picture, in place: repic <t.me link> <major id>
+    shift
+    docker compose exec -T alerts python alerts.py --repic "$@"
+    exit $?
+  fi
+  if [ "${1:-}" = "fixed" ]; then     # reported by us, solved by IDNI (fixwatch.py): status, send, no <n>, auto, draft
+    shift
+    docker compose exec -T devpulse python devpulse.py --fixed "$@"
+    exit $?
+  fi
   docker compose exec -T devpulse python devpulse.py --digest "$@"
   exit $?
 fi
@@ -330,6 +370,13 @@ fi
 # nothing built, Caddy given /tau, the node left alone (safe any time); then every lesson example asked of the real engine
 if [ "${1:-}" = "tau" ]; then
   if [ "${2:-}" != "status" ]; then
+    # No Memo's intel contracts deal their hidden rules from this secret (checker/intel.py): made once here, kept in .env,
+    # so a restart of the checker does not deal every player's rule anew
+    if ! grep -q '^INTEL_SECRET=.' .env 2>/dev/null; then
+      [ -s .env ] && [ -n "$(tail -c1 .env)" ] && echo >> .env   # the last line ends first
+      printf 'INTEL_SECRET=%s\n' "$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')" >> .env; chmod 600 .env
+      echo "made INTEL_SECRET in .env (No Memo's intel contracts)"
+    fi
     docker compose up -d --no-deps --force-recreate checker >/dev/null
     docker compose up -d --no-deps --force-recreate caddy >/dev/null
     echo "waiting 8 s…"; sleep 8
@@ -418,6 +465,52 @@ fi
 # alone, safe any time: up cost  the service started with the code just pulled and Caddy given costs-paid.json, then one
 # read of the receipts; up cost mail  asks for the mailbox and its app password once (ssh -t), writes them to .env;
 # up cost gemini 10 [EUR] [2026-11-08]  a payment by hand (its receipt replaces it later); up cost drop <id>  one taken off
+# what the X API costs this month, estimated from what was sent (X bills each post: $0.015, $0.20 with a link; the bill
+# itself and the credit left: console.x.com): the alerts posts counted by alerts.py, plus one link post per blog article
+# published this month (blog.py announce, X_BLOG_LINK); hand-sent pictures and clips (up post) are not counted
+x_line() {
+  XN=$(docker compose exec -T alerts python -c 'import json,time; x=json.load(open("/state/alerts.json")).get("x",{}); print(x.get("this_month",0) if x.get("month")==time.strftime("%Y-%m") else 0)' 2>/dev/null | tr -dc 0-9)
+  XB=$(docker compose exec -T blog python -c 'import json,os,time; p=json.load(open(os.path.join(os.environ.get("PUBLIC_DIR","/public"),"blog","posts.json"))).get("posts",[]); m=time.strftime("%Y-%m"); print(sum(1 for a in p if str(a.get("on","")).startswith(m)))' 2>/dev/null | tr -dc 0-9)
+  awk -v n="${XN:-0}" -v b="${XB:-0}" -v d="$(date -u +%d)" 'BEGIN { c = n * 0.015 + b * 0.20; printf "x:       %d posts and %d blog link posts this month, about $%.2f so far, about $%.2f for the whole month at this pace (estimate; the bill: console.x.com)\n", n, b, c, c * 30 / (d < 1 ? 1 : d) }'
+}
+# the crew's ship log (alerts/crewlog.py), a members-only post in the Tau HUD crew on Fourthwall, the node left alone:
+# up crewlog  the posting service rebuilt with the code just pulled, the API user checked (tiers, members, the newest
+# posts as stored) and this week's post printed, nothing posted; up crewlog send  posts it now; up crewlog on / off
+# posts one every Monday after the weekly recap by itself, or stops that (CREWLOG_ENABLED in .env); up crewlog key  asks for
+# the shop's API user once (ssh -t) and writes it to .env
+if [ "${1:-}" = "crewlog" ]; then
+  if [ "${2:-}" = "key" ]; then
+    [ -t 0 ] || { echo "needs a terminal: ssh -t root@node.tauhud.com \"cd /opt/tau-command-hud && sh infra/up.sh crewlog key\""; exit 2; }
+    printf "Fourthwall API username (Settings, For developers, Open API): "; read -r U
+    printf "Fourthwall API password (nothing shows while typing): "
+    stty -echo; read -r P; stty echo; echo
+    [ -n "$U" ] && [ -n "$P" ] || { echo "nothing written"; exit 2; }
+    touch .env; sed -i '/^FOURTHWALL_API_USER=/d; /^FOURTHWALL_API_PASS=/d' .env; [ -s .env ] && [ -n "$(tail -c1 .env)" ] && echo >> .env
+    printf 'FOURTHWALL_API_USER=%s\nFOURTHWALL_API_PASS=%s\n' "$U" "$P" >> .env; chmod 600 .env
+    echo "written to infra/.env"
+  fi
+  case "${2:-}" in
+    on|off) touch .env; sed -i '/^CREWLOG_ENABLED=/d' .env; [ -s .env ] && [ -n "$(tail -c1 .env)" ] && echo >> .env
+            printf 'CREWLOG_ENABLED=%s\n' "$([ "$2" = on ] && echo true || echo false)" >> .env; chmod 600 .env ;;
+  esac
+  docker compose up -d --build --no-deps alerts >/dev/null 2>&1 || docker compose up -d --build --no-deps alerts
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T alerts python alerts.py --crewlog $([ "${2:-}" = send ] && echo send) 2>&1 | grep -v " INFO " || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# our share of the shop's sales and the crew's memberships (alerts/earnings.py), drawn on tauhud.com/donate/; the node left
+# alone, safe any time: up earnings  the service rebuilt with the code just pulled, Caddy given earnings.json, the shop
+# read now: each order's numbers beside the share worked out (compare with the shop's dashboard), memberships counted
+if [ "${1:-}" = "earnings" ]; then
+  docker compose up -d --build --no-deps alerts >/dev/null 2>&1 || docker compose up -d --build --no-deps alerts
+  docker compose up -d --no-deps --force-recreate caddy >/dev/null 2>&1 || true
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T alerts python alerts.py --earnings 2>&1 | grep -v " INFO " || true
+  curl -s -o /dev/null -w "         https://node.tauhud.com/earnings.json answers %{http_code}\n" https://node.tauhud.com/earnings.json || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 if [ "${1:-}" = "cost" ] || [ "${1:-}" = "costs" ]; then
   if [ "${2:-}" = "mail" ]; then
     [ -t 0 ] || { echo "needs a terminal: ssh -t root@node.tauhud.com \"cd /opt/tau-command-hud && sh infra/up.sh cost mail\""; exit 2; }
@@ -441,16 +534,17 @@ if [ "${1:-}" = "cost" ] || [ "${1:-}" = "costs" ]; then
   esac
   echo "---------------- copy from here into the chat ----------------"
   docker compose exec -T costs python receipts.py line
+  x_line
   curl -s -o /dev/null -w "         https://node.tauhud.com/costs-paid.json answers %{http_code}\n" https://node.tauhud.com/costs-paid.json || true
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
 # the node following IDNI tau-testnet main by itself (follow/idni_follow.py, a systemd timer every 30 min that every up
 # installs): up follow  its state and last log lines, up follow now  one check at once (in the background),
-# up follow off  stops following (the node stays on the commit it runs), up follow on  starts again; nothing rebuilt
+# up follow retry  tries a failed commit again, up follow off  stops following (the node stays on the commit it runs), up follow on  starts again; nothing rebuilt
 if [ "${1:-}" = "follow" ]; then
   case "${2:-}" in
-    now|on|off) python3 follow/idni_follow.py "$2" ;;
+    now|on|off|retry) python3 follow/idni_follow.py "$2" ;;
     *) python3 follow/idni_follow.py install >/dev/null 2>&1 || true ;;
   esac
   echo "---------------- copy from here into the chat ----------------"
@@ -466,7 +560,9 @@ fi
 if [ "${1:-}" = "blog" ]; then
   shift
   [ -n "${1:-}" ] || set -- drafts
-  docker compose up -d blog >/dev/null 2>&1 || true
+  # rebuilt with the code just pulled first (safe any time, the node left alone; nothing changes when the code did not),
+  # so publish, auto-publish and up blog pictures use it
+  docker compose up -d --no-deps --build blog >/dev/null 2>&1 || docker compose up -d blog >/dev/null 2>&1 || true
   docker compose exec -T blog python blog.py "$@"
   exit $?
 fi
@@ -670,6 +766,7 @@ python3 rabbit-art/paint.py usage 2>/dev/null | tee -a "$NOTE" || true
 docker compose exec -T alerts python ai_meter.py line 2>/dev/null | tee -a "$NOTE" || true
 # what the site's tools were paid, read from their receipts (alerts/receipts.py; up cost for more)
 docker compose exec -T costs python receipts.py line 2>/dev/null | tee -a "$NOTE" || true
+x_line | tee -a "$NOTE" || true
 # Kling's clips this month (alerts/kling.py; KLING_MONTH_CAP in .env, default 30 clips)
 docker compose exec -T blog python kling.py line 2>/dev/null | tee -a "$NOTE" || true
 # a new painted island, only when asked for: up island
@@ -682,4 +779,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up cost, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up cost, up crewlog, up earnings, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"

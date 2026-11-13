@@ -52,7 +52,6 @@
   /* ---------- new features: the headline of each "major" Updates log entry (the one the channels post), never the
      long log text; a feature already among the hand-written headlines, and round-ups, are left out ---------- */
   let NEWS = [], newsAt = 0;
-  const GLOW = "rabbit/";   // the one headline that pulses green, like the live light: the island election game
   const path = h => String(h || "").replace(/^\//, "").replace(/[?#].*$/, "");
   /* a feature's hover: the first sentence of its log entry after the "Name:" opening, in the reader's language, two lines at most */
   const gist = html => {
@@ -68,10 +67,8 @@
     const have = new Set((CFG.headlines || []).filter(alive).map(h => path(h.href)));
     const majors = (Array.isArray(list) ? list : []).filter(e => e && e.major && e.major.title && !/^roundup/.test(e.major.id || ""));
     const pick = majors.slice(-6).reverse().filter(e => !have.has(path(e.major.link)) && (young(e.on) || (CFG.stay || []).includes(e.major.id))).slice(0, 4);   // a feature leaves after "days", unless ticker.json "stay" keeps it
-    const glow = majors.filter(e => path(e.major.link) === GLOW).pop();   // the game stays on the line, first, after newer features
-    NEWS = (glow ? [glow, ...pick.filter(e => e !== glow).slice(0, 3)] : pick)
-      .map(e => ({ kind: "news", text: String(e.major.title), href: path(e.major.link) === "" ? "" : String(e.major.link).replace(/^\//, ""),
-        fresh: path(e.major.link) === GLOW, on: e.on, tip: gist(e.html), tipRaw: true }));
+    NEWS = pick.map(e => ({ kind: "news", text: String(e.major.title), href: path(e.major.link) === "" ? "" : String(e.major.link).replace(/^\//, ""),
+        on: e.on, tip: gist(e.html), tipRaw: true }));
   }).catch(() => {});
 
   /* ---------- IDNI's own work: news headlines about what landed on tau-testnet main in the last week, from the build
@@ -94,7 +91,7 @@
       const title = o.text && translated(o.text) ? tr(o.text) : String((n.headline || {})[lang] || "");
       if (!title) return null;
       const tip = (o.tip && translated(o.tip) ? tr(o.tip) : String((n.tip || {})[lang] || "")) + (lang === "en" ? " " : "") + (n.runs ? w.runs : w.not);
-      return { kind: "idni", text: w.pre + title, href: String(n.url || ""), raw: true, tip: tip.trim(), tipRaw: true };
+      return { kind: "idni", ts: n.ts * 1000, text: w.pre + title, href: String(n.url || ""), raw: true, tip: tip.trim(), tipRaw: true };
     }).filter(Boolean).slice(0, 3);
   }).catch(() => {});
 
@@ -155,11 +152,11 @@
         tip: pickLang(p.dek), tipRaw: true }));
     /* an article published while the page is open comes onto the line next, not only after a reload */
     const top = BLOG[0] ? BLOG[0].href : "";
-    if (blogTop !== null && top && top !== blogTop) opened = false;
+    if (blogTop !== null && top && top !== blogTop) lead.unshift(BLOG[0]);
     blogTop = top;
   }).catch(() => {});
   let blogTop = null;
-  /* for its first two days the newest title story also opens every round of the line, so nobody misses it */
+  /* for its first two days the newest title story also opens every round of the line (right after the top story), so nobody misses it */
   const hot = () => { const b = BLOG[0], t = b ? Date.parse(String(b.on || "")) : NaN; return isFinite(t) && Date.now() - t < 2 * 864e5 ? b : null; };
 
   /* ---------- the cruise ships at White Rabbit Key (relay /cruise): the next call from three days before, in the reader's
@@ -190,12 +187,43 @@
   const SLOTS = ["head", "live", "gazette", "news", "live", "idni", "head", "ship", "night", "blog", "pick", "live", "head", "invite"];
   let slot = 0, headAt = 0, pickAt = 0, inviteAt = 0;
   const from = (list, at) => list.length ? list[at % list.length] : null;
-  /* the line opens with the newest thing on it: the latest title story, else the newest feature */
-  let opened = false, ledAt = -1;
-  const opener = () => BLOG[0] || NEWS.filter(n => !n.fresh && n.on).sort((a, b) => String(b.on).localeCompare(String(a.on)))[0] || null;
+  /* ---------- the top story: of everything on the line now, the one most important piece of news. It is green, and it
+     opens the line and every round of it. Chosen afresh for every item that enters, so whatever comes in (an IDNI merge,
+     a new article, a feature, a headline) is weighed at once against what is there. The rule, simple on purpose:
+     news about the testnet itself (IDNI's own merges, our articles about the testnet, our findings filed with IDNI)
+     counts as if it were TOP_BONUS days newer than news about the site (features, the shop, other dated headlines);
+     then the newest wins. Standing pointers ("keep"), live numbers, the paper, the radio, ships and invites never
+     compete: they are not news. ---------- */
+  const TOP_BONUS = 3 * 864e5;
+  const dayOf = d => { const t = Date.parse(String(d || "")); return isFinite(t) ? t : NaN; };
+  const shows = it => it && it.text && (it.raw || translated(it.text));
+  const heads = () => (CFG.headlines || []).filter(h => alive(h) && (!h.mode || (h.mode === "live") !== sim()));
+  const headItem = n => ({ kind: "note", text: n.text, href: n.href, mark: n.mark, tip: n.tip });
+  const isFinding = h => /github\.com\/IDNI\//i.test(String(h.href || ""));   // a headline that points at an issue we filed with IDNI
+  const keyOf = it => it ? (it.href || "") + "|" + (it.raw ? it.text : tr(it.text)) : "";
+  const topStory = () => {
+    const c = [];
+    for (const i of IDNI) c.push({ it: i, at: i.ts, testnet: true, w: 3 });
+    for (const b of BLOG) c.push({ it: b, at: dayOf(b.on), testnet: true, w: 2 });
+    for (const h of heads()) if (!h.keep && h.since) c.push({ it: headItem(h), at: dayOf(h.since), testnet: isFinding(h), w: isFinding(h) ? 2.5 : 1 });
+    for (const n of NEWS) c.push({ it: n, at: dayOf(n.on), testnet: false, w: 0 });
+    let best = null, bs = -Infinity;
+    for (const x of c) {
+      if (!isFinite(x.at) || !shows(x.it)) continue;
+      const s = x.at + (x.testnet ? TOP_BONUS : 0) + x.w;   // w only breaks a tie: IDNI, then a finding, then an article, then the rest
+      if (s > bs) { bs = s; best = x.it; }
+    }
+    return best;
+  };
+  let topKey = "";
+  /* the line opens with the top story, and every round after; for its first two days the newest article follows it */
+  let lead = [], ledAt = -1;
   const next = () => {
-    if (!opened) { opened = true; const o = opener(); if (o && (o.raw || translated(o.text))) { if (slot % SLOTS.length === 0) ledAt = slot; return o; } }
-    if (slot % SLOTS.length === 0 && ledAt !== slot) { ledAt = slot; const h = hot(); if (h) return h; }
+    if (slot % SLOTS.length === 0 && ledAt !== slot) {
+      ledAt = slot; const t = topStory(), h = hot();
+      lead = [t, h && keyOf(h) !== keyOf(t) ? h : null, ...lead].filter(Boolean);
+    }
+    while (lead.length) { const o = lead.shift(); if (shows(o)) return o; }
     /* on the day a new edition comes out, it opens the line and every round after */
     if (slot % SLOTS.length === 0) { const g = gazette(); if (g && g.out) { slot++; return g; } }
     /* in the Night Line's hour, so does the show */
@@ -209,8 +237,8 @@
       else if (k === "ship") it = shipLine();
       else if (k === "gazette") { it = gazette(); if (it && it.out) it = null; }
       else if (k === "night") { it = nightLine(); if (it.on) it = null; }
-      else if (k === "head") { const n = from((CFG.headlines || []).filter(h => alive(h) && (!h.mode || (h.mode === "live") !== sim())), headAt++);
-        it = n && { kind: "note", text: n.text, href: n.href, mark: n.mark, tip: n.tip };
+      else if (k === "head") { const n = from(heads(), headAt++);
+        it = n && headItem(n);
         if (it && n.mark === "ghost") { const g = ghosts(); if (g) { it.text = g === "1" ? "1 ghost in the waiting room" : `${g} ghosts in the waiting room`; if (!translated(it.text)) it.text = n.text; } } }
       else if (k === "pick") { const p = from(CFG.picks, pickAt++); it = p && { kind: "x", text: p.text, href: p.href, quote: true, tip: p.tip }; }
       else if (k === "invite") { const v = from(CFG.invites, inviteAt++); it = v && { kind: v.kind === "tg" ? "tg" : "x", text: v.text, href: v.href, tip: v.tip }; }
@@ -225,8 +253,8 @@
     if (it.href) { a.href = it.href; if (/^https?:/.test(it.href)) { a.target = "_blank"; a.rel = "noopener"; } }
     const mark = document.createElement("i"); mark.className = "tk-mk";
     if (it.mark === "ghost") mark.classList.add("m-ghost");   // the chain core's ghost: an amber dot in a small block frame
-    else if (ICON[it.kind]) mark.innerHTML = ICON[it.kind]; else mark.textContent = it.kind === "live" || it.fresh ? "" : it.kind === "news" || it.kind === "idni" ? "+" : it.kind === "paper" ? "✦" : it.kind === "radio" ? "♪" : "›";
-    if (it.fresh) a.classList.add("fresh");
+    else if (ICON[it.kind]) mark.innerHTML = ICON[it.kind]; else mark.textContent = it.kind === "live" || it.top ? "" : it.kind === "news" || it.kind === "idni" ? "+" : it.kind === "paper" ? "✦" : it.kind === "radio" ? "♪" : "›";
+    a._key = keyOf(it);
     if (it.tip) a.dataset.full = it.tipRaw ? it.tip : tr(it.tip);   // the HUD's own hover shows it; the line pauses meanwhile
     a.append(mark);
     if (it.sim) { const s = document.createElement("em"); s.textContent = tr("Simulation"); a.append(s); }
@@ -248,8 +276,14 @@
   const SPEED = 46, ZONE = 150, GAP = 18;   // px per second; how far in from the edge a letter is still a glyph; space between items
   let items = [], last = 0, paused = false, W = 0, dir = -1, tick = 0, holdUntil = 0;
   const HOLD = 5000;   // ms the line stands still when it starts, so the first item can be read from its beginning
+  /* the green goes to the top story wherever it stands on the line; when another one takes its place, the line follows */
+  const mark = el => { const on = !!topKey && el._key === topKey; el.classList.toggle("top", on);
+    const m = el.querySelector(".tk-mk"); if (m && m.dataset.mk !== undefined) m.textContent = on ? "" : m.dataset.mk; };   // the green dot takes the place of the "+" or "›"
+  const place = it => { topKey = keyOf(topStory()); const el = build(it); const m = el.querySelector(".tk-mk");
+    if (m && !m.querySelector("svg") && !m.classList.contains("m-ghost") && !el.classList.contains("k-live")) m.dataset.mk = m.textContent; mark(el); return el; };
   const add = () => {
-    const el = build(next()); track.append(el); measure(el);
+    const el = place(next()); track.append(el); measure(el);
+    for (const o of items) mark(o);
     const prev = items[items.length - 1];
     /* one fixed gap after the item before; the first items start inside the line and decode where they stand */
     el._x = dir < 0 ? (prev ? prev._x + prev._w + GAP : 14) : (prev ? prev._x - el._w - GAP : W - 14 - el._w);
@@ -282,7 +316,7 @@
 
   /* reduced motion: one item at a time, changed in place */
   function still() {
-    const show = () => { track.textContent = ""; const el = build(next()); el.classList.add("still"); track.append(el); };
+    const show = () => { track.textContent = ""; const el = place(next()); el.classList.add("still"); track.append(el); };
     show(); setInterval(() => { if (!paused && !document.hidden) show(); }, 7000);
   }
 
@@ -293,7 +327,7 @@
   addEventListener("resize", () => { W = view.clientWidth; });
   /* switching between the real chain and the simulation starts the line afresh, so no line of the other mode stays on it */
   let mode = document.body.dataset.mode;
-  new MutationObserver(() => { if (document.body.dataset.mode === mode) return; mode = document.body.dataset.mode; if (reduced) return; items.forEach(el => el.remove()); items = []; })
+  new MutationObserver(() => { if (document.body.dataset.mode === mode) return; mode = document.body.dataset.mode; slot = 0; ledAt = -1; lead = []; if (reduced) return; items.forEach(el => el.remove()); items = []; })
     .observe(document.body, { attributes: true, attributeFilter: ["data-mode"] });
 
   Promise.all([

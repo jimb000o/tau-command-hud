@@ -342,4 +342,13 @@ TauI18n.add({ strings: {
   "Covers: all chains.": "対象：全チェーン。",
   "since {x}": "{x} 以降",
   "Covers: since {x}.": "対象：{x} 以降。",
+  "The testnet is running: block #{n} came {x1} ago.": "テストネットは稼働中です：ブロック #{n} は {x1}前に生成されました。",
+  "In the simulation, block #{n} came {x1} ago.": "シミュレーションでは、ブロック #{n} は {x1}前に生成されました。",
+  "Lately a new block came about every {x1}.": "最近は約 {x1} ごとに新しいブロックが生成されています。",
+  "The last block we saw is #{n}.": "最後に確認したブロックは #{n} です。",
+  "No new block for {x1}: the testnet has stalled.": "{x1} 新しいブロックがありません：テストネットは停止しています。",
+  "The newest block is #{n}.": "最新のブロックは #{n} です。",
+  "Waiting for the first block.": "最初のブロックを待っています。",
+  "Sample data, not the real chain.": "サンプルデータです。実際のチェーンではありません。",
+  "Our node last answered {x1} ago.": "私たちのノードが最後に応答したのは {x1}前です。",
 } });

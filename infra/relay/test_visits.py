@@ -46,6 +46,8 @@ check(t["refs"] == {"t.me": 1, "(direct)": 1}, "other sites by host name, own pa
 check(t["flows"] == {"hud>explorer": 1, "explorer>stats": 1}, "the previous Tau HUD page becomes a flow")
 check(t["sources"] == {"telegram": 1} and t["lang"] == {"en": 2, "zh": 1}, "link tags and language")
 check(t["screen"] == {"wide": 1, "phone": 1, "laptop": 1} and t["hours"][10] == 4, "screen class and hour")
+check(all(visits.tag_ok(x) for x in ("nomemo", "friend", "tg-deepdive", "tg-post", "preset-shield")), "tags from the fixed list count")
+check(not any(visits.tag_ok(x) for x in ("anna", "tg-anna", "preset-12345", "user-42", "", "NoMemo!")), "any other tag is dropped: a tag cannot name a person")
 hit("p=explorer&e=1")
 hit("p=nodes&e=1")
 t = v.report(1)["days"]["2026-10-28"]
@@ -119,6 +121,16 @@ hit("p=hud&s=newsletter&l=en&m=live", ip="9.9.9.2")
 ch = json.loads(v.route("/visits/channel", "", "1.1.1.1", H)[2])
 today = list(ch["days"])[-1]
 check(ch["days"][today].get("deepdive") == 1 and "newsletter" not in json.dumps(ch), "channel opens: tg- tags only, by kind")
+
+# marks: which shop picture the HUD showed and whether it was clicked; fixed list, once per visitor and day, only after the page itself
+hit("p=hud&l=en&m=live", ip="8.8.1.1")
+hit("p=hud&k=shop-rabbit-show", ip="8.8.1.1")
+hit("p=hud&k=shop-rabbit-show", ip="8.8.1.1")
+hit("p=hud&k=shop-rabbit-click", ip="8.8.1.1")
+hit("p=hud&k=anything-else", ip="8.8.1.1")
+hit("p=hud&k=shop-rule-show", ip="8.8.7.7")   # no page view from this address
+mk = v.report(1)["days"][today].get("marks", {})
+check(mk == {"shop-rabbit-show": 1, "shop-rabbit-click": 1}, "marks: fixed list, once per visitor, only with a page view")
 
 print("\nall ok" if not failed else f"\n{failed} failed")
 sys.exit(1 if failed else 0)

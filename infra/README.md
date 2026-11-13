@@ -61,7 +61,7 @@ Connect to `wss://node.tauhud.com`, send a command as text, get the node's JSON 
 | `presence` | relay | `{"online": n}`: pages connected right now |
 | `getbalance <addr>`, `getsequence <addr>`, `getaccountstate <addr>`, `getruleoffers <addr> [in\|out\|all]`, `getapprovalrequests <addr> [in\|out\|all]`, `getretractables <addr> [in\|out\|all]`, `getruleoffer <offer id>`, `getruleconflict <offer id>`, `gettxstatus <hash>` | node, cached 10 s | hex arguments only; global cap 2/s |
 | `sendtx <json>`, `checktx <json>` | node, never cached | the wallet's write door (tauhud.com/wallet/): a transaction the visitor's browser already signed, as one JSON object of at most 8 KB with `tx_type` in `user_tx`, `consensus_rule_vote`, `rule_offer`, `rule_offer_accept`, `rule_offer_reject`, `approval_request`, `transfer_vote`, `retractable_transfer`, `retract_transfer`, a 96-hex `sender_pubkey` and a 192-hex `signature`; `checktx` is the node's dry run (nothing is sent); both share 12/min per address (burst 6) and 60/min for everyone; content is never logged |
-| `leasetx <json>` | node `checktx` once, then kept | the wallet's pre-signed neutral clause for a fair turn on a personal-rule place (see `/lease` below); only that exact shape, same buckets as `sendtx` |
+| `leasetx <json>` | relay | retired with the two-account limit (IDNI main 5ad1bb7): answers `FORBIDDEN`, keeps nothing |
 
 | `report key=<32 hex> name=<name> height=<n> head=<64 hex> [tip=<n>\|none] [kit=<v>] [ref=<commit>]` | relay | community node heartbeat from `kit/heartbeat.py`, see below |
 
@@ -160,24 +160,16 @@ hh:20 to hh:27, one vote per browser token, at most three tokens per address per
 name and colour that are indices into fixed lists (no free text). The simulated validators
 in `assets/sim.js` follow the majority. Kept in `/data/simvotes.json`, cleared at 00:00 UTC.
 
-`GET /rules` (CORS `*`, cached 60 s) says who holds the testnet's personal-rule places:
-`{"places": 2, "taken": 1, "holders": ["<address>"], "checked_at": …}`. The node caps o5
-rules at 2 accounts chain-wide and has no command that lists them, so every 5 minutes the
-relay takes the candidates from its kept blocks (senders of an o5 rule, acceptors of an
-offer) and asks the node `getruleoffers` for each, one at a time. The wallet shows it as
-"x of 2 rule places taken".
+`GET /rules` (CORS `*`, cached 60 s) says which accounts hold a personal (o5) rule now:
+`{"holders": ["<address>"], "taken": 1, "limit": null, "checked": 2, "checked_at": …}`. Since IDNI
+main 5ad1bb7 every account may hold one (before it, 2 chain-wide). The node has no command that
+lists them, so every 5 minutes the relay takes the candidates from its kept blocks (senders of an
+o5 rule, acceptors of an offer) and asks the node `getruleoffers` for each, one at a time, at most
+`RULES_MAX_CHECKS` (40) of them (`checked` says how many).
 
-Fair turns on those places (`slotlease.py`). **The relay is not read-only here: it holds signed
-transactions and submits them on a timer.** Right after a visitor's wallet sends a rule, it signs
-the neutral clause (which frees the place) for the account's next sequence number and leaves it
-with the socket command `leasetx <json>`; the relay accepts only that exact transaction shape and
-checks it once with `checktx`. A turn lasts 24 h while nobody waits and 30 min while somebody is
-in line (`GET /lease/wait?pk=…`, three accounts per address, kept 3 h). After each rule poll the
-relay runs `checktx` again for a turn that is over and then `sendtx`, one at a time; a removal whose
-sequence number was used meanwhile is marked stale and never retried. The log names the holder
-and the transaction hash, never the payload. `GET /lease[?pk=…]` shows holders, their turns, the
-line and your place in it. Kept in `/data/slotlease.json`. Switch off without a rebuild:
-`SLOTLEASE_ENABLED=0` in `.env`, then `docker compose up -d relay`.
+The fair turns on the two old rule places (`slotlease.py`, `GET /lease`) are retired: `/lease`
+answers `{"enabled": false, "retired": true}` to an old page, and nothing is kept or sent. A
+`/data/slotlease.json` left from before is no longer read.
 
 `GET /peers` (CORS `*`, cached 30 s) is the network as our node sees it: every peer it
 talked to or heard of from another peer (a handshake's peer list) in the last 30 days,
@@ -252,6 +244,13 @@ repeated texts. The container uses the node's image (nothing extra to compile), 
 outbound network, a read-only filesystem, no capabilities, 512 MB, 1 CPU and 64 processes.
 `GET /check/health` answers `{"ok": true}`.
 
+No Memo's intel contracts use the same container: `POST https://node.tauhud.com/tau/intel` with
+`{"case", "seed"}` and one of `probe`, `final`, `name`, `reveal` or `lead` (`checker/intel.py`). The hidden rule is
+dealt from the seed and `INTEL_SECRET` in `.env` (`up tau` makes it once), and the page sees its text only once the
+player names it, shoots at the edge or gives up. A probe runs the rule in the Tau engine the Learn page uses and counts
+against the same 40 questions per 5 minutes per address. `up tau` runs six sample rules at their edges and prints
+`intel: 6 of 6 hidden rules answer as No Memo's contracts read them`.
+
 ## Node follows IDNI main
 
 `follow/idni_follow.py` keeps the node on the newest IDNI tau-testnet main by itself. Every `up` installs a systemd timer
@@ -270,6 +269,19 @@ outbound network, a read-only filesystem, no capabilities, 512 MB, 1 CPU and 64 
    `docker compose up -d --no-build`, then the node must answer and be within 3 blocks of the network tip, twice,
    3 minutes apart.
 7. If not: the old image and the copied chain data go back, and the commit is not tried again (the next IDNI commit is).
+
+**A new chain.** When the new commit ships another genesis (`networks/tau-testnet-v2/genesis.json`, block 0 hash; first
+time IDNI/tau-testnet#93, 12.11.2026), there is nothing to compare it with until IDNI restarts the testnet on it:
+- While our node still gets new blocks (its head moved in the last 45 minutes), the check only waits and builds nothing.
+  The owner hears once that a new chain is coming.
+- When our node has had no new block for 45 minutes, the image is built (and kept) and a trial node must join the new
+  chain from the bootnode and reach its tip (past block 0 and at the tip it hears, or its head block is under
+  10 minutes old, twice in a row). A trial node that stays on block 0 means the testnet does not run that genesis yet:
+  the check waits and tries again after `IDNI_FOLLOW_GENESIS_RETRY_MINUTES` (120). It is never marked failed.
+- The switch is the same as above; `infra/node/start.sh` wipes the old chain's data because the genesis differs, and
+  relay, alerts and caddy start fresh as `rejoin.sh` does. The node must be past block 0 and in sync.
+- Heights here are canonical heads (`getgovernance`), not `getblocks`, which also lists stored blocks that never joined
+  the chain (a node on its genesis read "block 1999" there on 12.11.2026).
 
 The owner's private Telegram chat (`up owner`) hears about every switch and once about every commit held back.
 `up` shows it under `idni:` as `auto-follow:`. State and log: `/var/lib/tau-idni-follow/`.
@@ -324,6 +336,13 @@ is **proposed**, **agreed** (quorum reached), **active** (its activation block a
   "Base fee 10 → 20 AGRS" or "Same rules as now (no real change)". The tracker page and
   the recap use the same words. `python alerts.py --preview` prints how the newest rule
   changes on the chain would be posted, without posting.
+- What a change decides differently is read for every case, not sampled (`alerts/rulefacts.py`,
+  the same reading as `assets/rulefacts.js` on /proposals/ and /history/): one line per change
+  such as "Newly rejected: block height exactly 0 and signature check passed", or "decides
+  exactly as before" for the same rules written another way. The Telegram posts carry these
+  lines. `relay/rulefacts.py` is the same file (each image copies only its own folder), and
+  `test_rulefacts.py` in both folders checks it against the real engine's answers in
+  `tests/rulefacts-cases.json` and the pages' lines in `tests/meaning-cases.json`.
 - Telegram and X: each event as a post, when the keys are in `.env`. Without keys that
   channel is off; the feed and the page work regardless.
 - While one yes vote is enough (one validator), a "proposed" post waits
@@ -374,7 +393,8 @@ and secret and the account's access token and secret as `X_API_KEY`, `X_API_SECR
   live overview from the share service, a new page's screenshot (`"image": "/assets/shots/<id>.png"` in its
   `major`, required by CI for every new major), else its own preview picture, else the site's; the post stays
   $0.015, and without a picture the text goes alone.
-- No links in X posts (`X_LINKS=true` adds them); `X_DAILY_CAP` (8) and `X_MONTHLY_CAP` (240, about
+- No links in X posts (`X_LINKS=true` adds them), except the blog's one post per article, which carries the
+  share page's link ($0.20 instead of $0.015; its card shows the picture; `X_BLOG_LINK=false` leaves it out); `X_DAILY_CAP` (8) and `X_MONTHLY_CAP` (240, about
   $3.60) posts at most, the rest stays on Telegram. The simulation and the smaller changes leave the
   day's last `X_RESERVE` (2) posts for the real chain. An X failure never holds up Telegram; it is
   logged and that X post is left out.
@@ -513,8 +533,8 @@ first run is silent). The kinds go into `proposals.json` as `firsts`, and the HU
 To show them ourselves, `node/tools/money_demo.py` sends them between three test wallets
 of our own (about 25 minutes, keys kept in the node volume at `/data/money-demo.json`):
 `cd /opt/tau-command-hud/infra && docker compose exec -T tau-node python - < node/tools/money_demo.py`.
-Steps 3 to 5 need one of the testnet's two personal-rule places; the script frees it again
-at the end.
+Steps 3 to 5 give one of these wallets a personal rule; the script removes it again at the
+end.
 
 **Findings** (`alerts/findings.py`): once a minute the watcher also looks for unusual
 things on the real chain and posts each incident once when it starts and once when it

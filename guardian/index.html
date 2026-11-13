@@ -110,6 +110,8 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
 [hidden] { display: none !important; }
 @media (min-width: 2200px) and (min-height: 1200px) { body { zoom: 1.3; } }
 @media (max-width: 1000px) { .main { grid-template-columns: minmax(0, 1fr); } .main.payFirst .col:last-child { display: contents; } .main.payFirst #pPay { order: -1; } }
+#howD summary { cursor: pointer; }
+#howD h2 .cnt { color: var(--dim); font: 11px var(--mono); letter-spacing: 0; text-transform: none; margin-left: 10px; } #howD[open] h2 .cnt { display: none; }
 #howD:not([open]) summary { cursor: pointer; } #howD:not([open]) h2 { margin: 0; } #howD:not([open]) h2::after { content: "›"; margin-left: auto; font-size: 14px; }
 /* a laptop (1366 × 768): everything on one screen */
 @media (min-width: 1001px) and (max-height: 820px) { body { font-size: 12px; padding-top: 6px; padding-bottom: 4px; } .wrap { gap: 8px; } .lead { font-size: 21px; } .panel { padding: 8px 16px; } .main, .col { gap: 8px; } .how { gap: 2px; } .how li, .holders, .modes, .sub { font-size: 11.5px; } .lead { font-size: 19px; margin-top: 0; } .modes { gap: 3px; margin: 4px 0 0; } .modes input[type=number] { min-height: 26px; font-size: 12px; } .fine { margin-top: 3px; } .list li { padding: 5px 0; } .panel p { margin-bottom: 5px; } .panel h2 { margin-bottom: 5px; } .row { margin-top: 4px; gap: 6px; } .hint { margin-top: 4px; } .holders { margin-top: 2px; display: flex; flex-wrap: wrap; gap: 0 14px; } .note { padding: 5px 12px; } .sim .sub { display: none; } .qr { margin: 4px 0 2px; } .qr .img, .qr { grid-template-columns: 110px minmax(0, 1fr); } .qr .img { width: 110px; height: 110px; } .busy #payHint { display: none; } }
@@ -165,8 +167,7 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
           <button class="b" type="button" id="btnUnrule" hidden>Remove the rule</button>
         </div>
         <p class="hint" id="whyRule"></p>
-        <ul class="holders" id="holders"></ul>
-        <div class="row"><span class="pips" id="pips"></span><span id="lineRow" class="row" style="margin:0" hidden><button class="b" type="button" id="btnLine">Get in line for a place</button><span class="fine" id="lineText" style="margin:0"></span></span></div>
+        <div class="row"><span class="pips" id="pips"></span></div>
         <p class="msg" id="msgRule"></p>
       </section>
     </div>
@@ -178,14 +179,14 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
         <p class="fine" id="payHint">A payment from the <a href="/wallet/?from=guardian">wallet</a> that the Guardian does not sign by itself waits here for your code. A payment nobody confirms runs out after about 1,000 blocks and the amount stays with you (the fee is spent).</p>
       </section>
       <section class="panel" aria-labelledby="hHow">
-        <details id="howD" open><summary><h2 id="hHow">What it can do, and what it cannot</h2></summary>
+        <details id="howD"><summary><h2 id="hHow">What it can do, and what it cannot <small class="cnt">3 things it does, 3 limits</small></h2></summary>
         <ul class="how">
           <li><i>✓</i><span>It co-signs only payments your own account asked for, and only after the right code. It cannot send, move or hold anything.</span></li>
           <li><i>✓</i><span>The code never goes on the chain: it comes to our server, which checks it and signs. Each code works once; five wrong codes lock your account for 15 minutes.</span></li>
+          <li><i>✓</i><span>Every account on Tau Testnet Alpha may hold its own personal rule, so the Guardian can guard any number of accounts at once.</span></li>
           <li class="no"><i>!</i><span>With "only payments above", many smaller payments are not stopped: a testnet rule sees only the payment at hand. The other two settings send every payment past the Guardian.</span></li>
           <li class="no"><i>!</i><span>Whoever holds your wallet key can still change or remove the rule. The Guardian guards against a mistaken or tricked payment, not against a stolen key.</span></li>
           <li class="no"><i>!</i><span>If our server is down, payments that wait for your code run out unconfirmed; they never go through without the code.</span></li>
-          <li class="no"><i>!</i><span>Tau Testnet Alpha holds personal rules for 2 accounts at a time, so the Guardian guards at most two accounts at once for now.</span></li>
         </ul>
         <p class="fine">Built on the reference approver bot that IDNI ships with the testnet (<a href="https://github.com/IDNI/tau-testnet/blob/main/scripts/approval_bot_totp.py" target="_blank" rel="noopener" translate="no">approval_bot_totp.py</a>) and the co-signature rules of <a href="https://github.com/IDNI/tau-testnet/blob/main/docs/approvals.md" target="_blank" rel="noopener" translate="no">docs/approvals.md</a>. A testnet prototype: Tau HUD is a community project, <b>not affiliated with IDNI</b>.</p>
         </details>
@@ -258,7 +259,7 @@ const SLOT_DEMO = 18, utcDay = () => new Date().toISOString().slice(0, 10);
 function demoRefresh() {
   W.seq = 7; W.tip = 12345; W.clause = D.clause; W.reqs = { outgoing: D.reqs };
   const holders = D.clause ? [W.pk, DEMO_OTHER] : [DEMO_OTHER];
-  W.slots = { places: 2, taken: holders.length, holders }; W.lease = { places: 2, taken: holders.length, holders: holders.map(a => ({ addr: a, managed: false, until: null })), waiting: 0, position: null };
+  W.slots = { taken: holders.length + 2, holders };
 }
 /* a rule in the demo brings one play payment that waits for the code: above the allowance, or above the limit */
 function demoRule(text) {
@@ -345,12 +346,12 @@ async function refresh() {
     const rq = await lookup(`getapprovalrequests ${W.pk} out`);
     if (rq && rq.status === "ok") W.reqs = rq.data;
   } finally { busy = false; }
-  await loadLease();
+  await loadRules();
   render();
 }
-/* the two rule places and the line for them (infra/relay/slotlease.py): who holds one, until when, our place in line */
-async function loadLease() {
-  try { const j = await (await fetch(`${RELAY}/lease?pk=${W.pk}`, { cache: "no-store" })).json(); if (j && j.places) { W.lease = j; W.slots = { places: j.places, taken: j.taken, holders: (j.holders || []).map(h => h.addr) }; } } catch (e) {}
+/* how many accounts hold a personal rule now (the relay asks the node every few minutes); every account may hold one */
+async function loadRules() {
+  try { const j = await (await fetch(`${RELAY}/rules`, { cache: "no-store" })).json(); if (j && Array.isArray(j.holders)) W.slots = j; } catch (e) {}
 }
 const head = () => (W.gov && W.gov.head_number != null ? W.gov.head_number : W.tip) || 0;
 const baseFee = () => { const m = /o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)/.exec((W.gov && W.gov.consensus_rules) || ""); return m ? parseInt(m[1], 16) : 10; };
@@ -372,13 +373,10 @@ async function sendRule(text) {
   const tx = ruleTx(text, W.seq), body = JSON.stringify(tx);
   const chk = await rpc("checktx " + body);
   const bad = m => !m || m.status !== "ok" || (m.data && m.data.ok === false);
-  const why = m => { const e = (m && (m.error || m.data)) || {}, t = String(e.message || e.code || ""); return /author slot|MAX_TIER_AUTHORS|REGISTRY_FULL/i.test(t) ? T("Both of the testnet's rule places are taken right now; nothing was sent.") : F("The node refused it, nothing was sent: {x}", { x: (t || "no answer").slice(0, 160) }); };
+  const why = m => { const e = (m && (m.error || m.data)) || {}, t = String(e.message || e.code || ""); return F("The node refused it, nothing was sent: {x}", { x: (t || "no answer").slice(0, 160) }); };
   if (bad(chk)) return { ok: false, why: why(chk) };
   const res = await rpc("sendtx " + body);
   if (bad(res)) return { ok: false, why: why(res) };
-  /* fair turns on the two places, as in the wallet: the way back (the neutral rule) is signed now for the next number and
-     left with the relay, which sends it when the turn is over (infra/relay/slotlease.py) */
-  if (text !== NEUTRAL) rpc("leasetx " + JSON.stringify(ruleTx(NEUTRAL, W.seq + 1, true)));
   W.seq += 1;
   setTimeout(refresh, 4000);
   return { ok: true };
@@ -409,6 +407,8 @@ function render() {
   // 1: the app
   const appOk = live && have && !!G.info && G.info.enabled !== false;
   $("pApp").classList.toggle("done", enrolled);
+  /* the fine print waits, folded to one line, until step 1 is done: a first visit shows the three steps first. One click opens it at any time. */
+  if (!howTouched && matchMedia("(min-width: 1001px)").matches) $("howD").open = enrolled || document.documentElement.dataset.level === "pro";   // an expert reads it from the start
   $("stApp").textContent = enrolled ? T("connected") : ""; $("stApp").className = "st" + (enrolled ? " ok" : "");
   $("btnQr").hidden = enrolled || !!shown; $("btnQr").disabled = !appOk;
   $("qrBox").hidden = !shown || enrolled; document.body.classList.toggle("qrOpen", !!shown && !enrolled);
@@ -428,17 +428,15 @@ function render() {
     if (mode === "above") $("limit").value = lim;
   }
   $("btnUnrule").hidden = !W.clause;
-  const full = s && !mine && s.taken >= s.places;
   const want = pickedMode(), wantLim = want === "above" ? Math.floor(Number($("limit").value)) : 0;
   const needRule = lim !== wantLim, needSettings = want === "allow" || !!auto;   // "above" and "always" only clear an allowance that is set
-  const why = ruleWhy({ live, have, enrolled, full: full && needRule });
+  const why = ruleWhy({ live, have, enrolled });
   $("btnRule").disabled = !!why; $("btnRule").title = why.replace(/:$/, ".");
   $("btnRule").textContent = T(needRule && needSettings ? "Save and sign" : needRule ? "Sign the rule" : "Save");
   $("codeRule").hidden = $("codeRuleL").hidden = !needSettings;
   $("whyRule").textContent = why || (W.clause && lim == null ? T("Your account has another rule now. Signing this one replaces it.") : "");
-  renderLine(full && !mine);
   $("btnUnrule").disabled = !(live && have && W.seq != null);
-  if (s) { const p = []; for (let i = 0; i < s.places; i++) p.push(Object.assign(document.createElement("span"), { className: "pip " + (i < s.taken ? (mine && i === 0 ? "mine" : "taken") : "") })); p.push(document.createTextNode(F("{a} of {b} rule places taken on the testnet", { a: s.taken, b: s.places }))); $("pips").replaceChildren(...p); }
+  if (s) { const n = s.taken != null ? s.taken : (s.holders || []).length; $("pips").replaceChildren(Object.assign(document.createElement("span"), { className: "pip " + (mine || W.clause ? "mine" : "taken") }), document.createTextNode(F(n === 1 ? "1 account has a personal rule on the testnet; every account may have one" : "{n} accounts have a personal rule on the testnet; every account may have one", { n }))); }
   // 3: payments waiting for the code
   const list = live && have && guardPk() ? waiting() : [];
   $("stPay").textContent = list.length ? F("{n} waiting", { n: list.length }) : "";
@@ -453,37 +451,20 @@ function render() {
   const row = hit && !jumped && $("pay").querySelector("li.hit"); if (row) { jumped = true; row.scrollIntoView({ block: "center" }); const i = row.querySelector("input"); if (i) i.focus({ preventScroll: true }); }
 }
 let jumped = false, howTouched = false;
-$("howD").addEventListener("toggle", () => { howTouched = true; }, { once: true });
+addEventListener("tau-level", e => { if (!howTouched && e.detail === "pro" && matchMedia("(min-width: 1001px)").matches) $("howD").open = true; });
+$("howD").querySelector("summary").addEventListener("click", () => { howTouched = true; });   // the visitor's own click (or Enter on it), not the page folding it
 /* why "Sign the rule" cannot be pressed now, in words; "" when it can */
-function ruleWhy({ live, have, enrolled, full }) {
+function ruleWhy({ live, have, enrolled }) {
   if (!live) return T("The Guardian works only on the real testnet: switch the HUD to Live.");
   if (!have) return T("Make a test wallet first.");
   if (!enrolled && (G.down || !G.info)) return T("Our Guardian does not answer right now. Try again in a minute.");
   if (!enrolled) return T("Connect your app first: otherwise a payment waiting for your code could not be confirmed.");
   if (W.seq == null) return T("Waiting for our node to answer…");
-  if (full) return T("Both rule places are held by other accounts; the node would refuse a new rule:");
   if (pickedMode() === "above") { const n = Math.floor(Number($("limit").value)); if (!(n >= 1 && n < MAX_AMOUNT)) return F("Give a limit between 1 and {n} test AGRS.", { n: fmt(MAX_AMOUNT - 1) }); }
   if (pickedMode() === "allow") { const a = Math.floor(Number($("per").value)), b = Math.floor(Number($("day").value)); if (!(a >= 1 && b >= 1 && a <= b && b < MAX_AMOUNT)) return T("Give two whole numbers: at most per payment, and at most per day, the first no larger than the second."); }
   return "";
 }
 const hhmm = t => new Date(t * 1000).toLocaleTimeString(LANG === "en" ? "en-GB" : LANG, { hour: "2-digit", minute: "2-digit" });
-function renderLine(full) {
-  const L2 = W.lease;
-  const rows = full && L2 ? (L2.holders || []).filter(h => h.addr !== W.pk).map(h => Object.assign(document.createElement("li"), {
-    textContent: h.managed && h.until ? F("{x}: fair turn from our wallet, frees at {t}", { x: short(h.addr), t: hhmm(h.until) })
-      : F("{x}: set elsewhere, only its owner can free it", { x: short(h.addr) }) })) : [];
-  $("holders").replaceChildren(...rows);
-  /* the line only ends turns that their holders agreed to when they set the rule in our wallet (they left the way back with
-     our relay); a rule set anywhere else stays until its owner removes it, and the line changes nothing about it */
-  const agreed = full && L2 && (L2.holders || []).some(h => h.addr !== W.pk && h.managed);
-  $("lineRow").hidden = !agreed && !(L2 && L2.position);
-  if (!full || !L2) return;
-  const inLine = !!L2.position;
-  $("btnLine").textContent = T(inLine ? "Leave the line" : "Get in line for a place");
-  const lt = inLine ? F("You are number {n} in line. While anyone waits, a turn lasts 30 minutes; sign the rule here as soon as a place shows free.", { n: L2.position })
-    : L2.waiting ? F("{n} waiting. With someone in line, a fair turn ends 30 minutes after it began.", { n: L2.waiting }) : T("Nobody waits. With someone in line, a fair turn ends 30 minutes after it began.");
-  $("lineText").textContent = inLine ? lt : ""; $("btnLine").title = lt;
-}
 function payRow(q, want) {
   const li = document.createElement("li"); li.dataset.id = q.request_id; if (q.request_id === want) li.className = "hit";
   const t = document.createElement("div");
@@ -566,16 +547,11 @@ $("btnRule").onclick = async () => {
   render();
 };
 $("codeRule").onkeydown = e => { if (e.key === "Enter") $("btnRule").click(); };
-$("btnLine").onclick = async () => {
-  const on = !(W.lease && W.lease.position);
-  try { const j = await (await fetch(`${RELAY}/lease/${on ? "wait" : "leave"}?pk=${W.pk}`, { cache: "no-store" })).json(); if (j && j.places) W.lease = j; } catch (e) { msg("msgRule", T("Our relay does not answer right now. Try again in a minute."), "bad"); }
-  render();
-};
 $("btnUnrule").onclick = async () => {
   if (!confirm(T("Remove your rule? Payments then go through without a code, and payments waiting now fail."))) return;
   msg("msgRule", T("Signing and sending…"), "wait");
   const r = await sendRule(NEUTRAL);
-  msg("msgRule", r.ok ? T(DEMO ? "Removed (demo)." : "Sent. Once a block holds it, your rule place is free again.") : r.why, r.ok ? "ok" : "bad");
+  msg("msgRule", r.ok ? T(DEMO ? "Removed (demo)." : "Sent. Once a block holds it, your rule is gone.") : r.why, r.ok ? "ok" : "bad");
 };
 
 render();

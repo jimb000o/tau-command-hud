@@ -176,8 +176,10 @@ footer p { margin: 0; }
     ["strained", "/load/"], ["吃紧", "/load/"], ["逼迫", "/load/"],
   ];
   /* a link the text writes itself: only to our own pages */
-  const okHref = u => /^\/[\w\/-]*(\?[\w=&;.-]*)?$/.test(u) || /^https:\/\/(node\.)?tauhud\.com(\/[\w\/?=&;.-]*)?$/.test(u);
+  const okHref = u => /^\/[\w\/-]*(\?[\w=&;.-]*)?(#[\w-]+)?$/.test(u) || /^https:\/\/(node\.)?tauhud\.com(\/[\w\/?=&;.-]*)?$/.test(u) || /^https:\/\/agorzilla\.com\/?$/.test(u) || /^https:\/\/tau-hud-shop\.fourthwall\.com\/[\w\/?=&;.-]*$/.test(u);
+  const away = u => /^https:\/\/(agorzilla\.com|tau-hud-shop\.fourthwall\.com)\//.test(u) ? ' target="_blank" rel="noopener"' : "";
   let linked = new Set();
+  const KIND = { cruise: "Cruise ship", news: "News" };   /* the label above an article; anything else is Learnings */
   const place = h => {
     for (const [name, href] of PLACES) {
       if (linked.has(href + name) || linked.has(href)) continue;
@@ -194,7 +196,7 @@ footer p { margin: 0; }
   /* a small, safe Markdown: ## headings, - and 1. lists, **bold**, *italic*, [links](/our/page/), paragraphs; nothing else */
   function md(text, mark) {
     const inline = (s, head) => {
-      let h = esc(s).replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (all, t, u) => okHref(u) ? `<a href="${u}">${t}</a>` : t)
+      let h = esc(s).replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (all, t, u) => okHref(u) ? `<a href="${u}"${away(u)}>${t}</a>` : t)
         .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>");
       if (mark && mark.length) h = h.replace(/(?<![\w.])\d+(?:[.,]\d+)?(?::\d\d)?/g, n => mark.includes(n.replace(",", ".")) ? `<mark>${n}</mark>` : n);
       return head ? h : place(h);
@@ -233,7 +235,7 @@ footer p { margin: 0; }
 
   function list(posts) {
     $("none").hidden = posts.length > 0;
-    $("posts").innerHTML = posts.map(p => `<li><a href="?p=${encodeURIComponent(p.id)}">${p.image ? `<span class="thumb">${img(p.image, pick(p.image_alt) || pick(p.title), "")}</span>` : ""}<span class="txt"><span class="meta"><b>${esc(T(p.kind === "cruise" ? "Cruise ship" : "Learnings"))}</b> · ${esc(date(p.on))} · ${esc(mins(p))}</span><h2 translate="no">${esc(pick(p.title))}</h2><p translate="no">${esc(pick(p.dek))}</p></span></a></li>`).join("");
+    $("posts").innerHTML = posts.map(p => `<li><a href="?p=${encodeURIComponent(p.id)}">${p.image ? `<span class="thumb">${img(p.image, pick(p.image_alt) || pick(p.title), "")}</span>` : ""}<span class="txt"><span class="meta"><b>${esc(T(KIND[p.kind] || "Learnings"))}</b> · ${esc(date(p.on))} · ${esc(mins(p))}</span><h2 translate="no">${esc(pick(p.title))}</h2><p translate="no">${esc(pick(p.dek))}</p></span></a></li>`).join("");
   }
 
   /* pictures only from the site itself or our server */
@@ -262,7 +264,7 @@ footer p { margin: 0; }
     document.title = pick(p.title) + " · Tau HUD Blog";
     const why = (p.why || []).map(w => `<li>${md(pick(w), mark).replace(/^<p>|<\/p>$/g, "")}</li>`).join("");
     const src = (p.sources || []).map(s => `<a href="${esc(s)}" target="_blank" rel="noopener">${esc(s.replace(/^https:\/\//, ""))}</a>`).join(" · ");
-    $("art").innerHTML = `<span class="meta"><b>${esc(T(p.kind === "cruise" ? "Cruise ship" : "Learnings"))}</b> · ${esc(date(p.on))} · ${esc(mins(p))}</span>
+    $("art").innerHTML = `<span class="meta"><b>${esc(T(KIND[p.kind] || "Learnings"))}</b> · ${esc(date(p.on))} · ${esc(mins(p))}</span>
       <h2 class="t">${esc(pick(p.title))}</h2><p class="dek">${esc(pick(p.dek))}</p>
       ${p.intro ? md(pick(p.intro), mark) : ""}
       ${p.image ? `<figure class="hero">${img(p.image, pick(p.image_alt) || pick(p.title), "hero")}</figure>` : ""}
@@ -270,6 +272,13 @@ footer p { margin: 0; }
       ${bodyWith(p, mark)}
       <p class="src">${esc(T(p.kind === "cruise" ? "Every number comes from our public logbooks:" : "Sources:"))} ${src}</p>
 `;
+    /* under a published article: what the site costs and the way to Support, and the shop */
+    document.querySelectorAll(".tn-support.blog").forEach(e => e.remove());
+    if (p.status !== "draft" && window.TauNav && TauNav.support) {
+      const sup = TauNav.support("blog"), a = document.createElement("a"); sup.classList.add("blog");
+      a.href = TauNav.pieceUrl("", "blog"); a.target = "_blank"; a.rel = "noopener"; a.textContent = T("The shop ›");
+      const two = document.createElement("p"); two.className = "tn-support blog"; two.style.marginTop = "2px"; two.append(T("Or something to wear, from the testnet:") + " ", a); $("art").after(sup, two);
+    }
     const sh = $("share");
     if (p.status !== "draft") {
       sh.hidden = false; sh.href = `https://node.tauhud.com/blog/a/${encodeURIComponent(p.id)}.html`;

@@ -31,7 +31,7 @@ Carol
 Dave
 HTML
 HunterMinerCrafter
-IDNI/tau-testnet @ {n}d{n}e{n}
+IDNI/tau-testnet @ {n}ad{n}bb{n}
 IDNI/tau-testnet#{n}
 Kudo Sara
 Kurosawa
@@ -56,6 +56,7 @@ bob
 bob ({h})
 bob · id {h}
 engine.py:{n} ↗
+sendtx.py:{n} ↗
 github.com/IDNI/tau-lang
 github.com/jimb{n}o/tau-command-hud
 services.py
@@ -78,6 +79,19 @@ tauhud.com · {n}D{n}KooW…V{n}Lr · alice-node · bob · {n}D{n}KooW…igvn
 tauhud.com/nodes
 tauhud.com/playground
 tauhud.com/story/zh
+tauhud.com/#donate
+tauhud.com/cruise/
+tauhud.com/guardian/
+tauhud.com/gxp/
+tauhud.com/gxp/?use=net
+tauhud.com/learn/brief/
+tauhud.com/llms.txt
+tauhud.com/nomemo/sfx/
+tauhud.com/rabbit/
+tauhud.com/services
+tauhud.com/story/ja
+tauhud.com/tau-today.md
+tauhud.com/wallet/#book
 youtube.com/@TauNetwork
 {h}
 {h} → {h} {n}
@@ -138,3 +152,6 @@ NO MEMO
 peek
 trace
 claim [n]
+# the crew tiers on /crew/ keep the shop's names
+Deckhand
+Navigator

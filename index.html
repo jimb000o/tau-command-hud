@@ -225,7 +225,7 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 /* a clipping of the newspaper's front page lies in what the box leaves free: newsprint and ink, the paper's own type and rules.
    The paper is a neutral grey-white, so the HUD keeps green as its only colour. */
 .statep #statePanel { flex: 0 1 auto; }
-.a-pol.has-gaz > .scroll { flex: 0 1 auto; }   /* no personal rules yet: the clipping takes the empty room below the note */
+.a-pol.has-gaz > .scroll, .a-off.has-gaz > .scroll { flex: 0 1 auto; }   /* no personal rules yet: the clipping takes the empty room below the note */
 .gazad { flex: 1 1 0; min-height: 0; margin: 10px 4px 4px; display: flex; text-decoration: none; position: relative; container: gaz / inline-size; }
 .gazad[hidden] { display: none; }
 .ga-paper { --ink: #1c1c1e; --ink2: #4a4a4e; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; overflow: hidden; padding: 12px 14px 10px; text-align: center; color: var(--ink);
@@ -254,6 +254,52 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .gazad.c4 .ga-dk, .gazad.c5 .ga-dk, .gazad.c5 .ga-dl { display: none; }
 .gazad.c4 .ga-hl, .gazad.c5 .ga-hl { font-size: 15px; }
 .gazad.c5 .ga-paper { justify-content: center; } .gazad.c5 .ga-mo, .gazad.c5 .ga-x, .gazad.c5 .ga-ph, .gazad.c5 .ga-tx { display: none; }
+/* the same slot can hold the shop notice instead (CLIP in the script): a panel in the HUD's own look, no newsprint */
+.ga-ad { display: none; }
+.gazad.shop .ga-paper { --ink: #fff; --ink2: var(--dim); background: rgba(255,255,255,.025); border: 1px solid var(--hair); border-left: 2px solid var(--ok); box-shadow: none; transform: none; clip-path: none; gap: 7px; padding: 12px 14px; color: #fff; transition: background .2s, border-color .2s; }
+.gazad.shop:hover .ga-paper, .gazad.shop:focus-visible .ga-paper { transform: none; box-shadow: none; background: rgba(255,255,255,.05); border-color: var(--ok); }
+.gazad.shop .ga-ad { display: block; position: absolute; top: 8px; right: 10px; font: 600 9.5px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+.gazad.shop .ga-nm { font: 600 12px/1 var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--ok); white-space: nowrap; }
+.gazad.shop .ga-mo { font: 400 11px/1.2 var(--mono); color: var(--dim); margin-top: -2px; }
+.gazad.shop .ga-dl { border: 0; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); padding: 4px 2px; font: 400 10px/1.2 var(--mono); letter-spacing: .04em; text-transform: none; color: var(--dim); }
+.gazad.shop .ga-x { display: block; order: 1; margin: 0; padding: 0; border: 0; background: none; transform: none; font: 400 11px/1.3 var(--mono); letter-spacing: .02em; text-transform: none; color: var(--dim); text-align: center; }
+.gazad.shop .ga-x b { font-weight: 600; color: var(--ok); font-variant-numeric: tabular-nums; }
+.gazad.shop .ga-tx { order: 2; } .gazad.shop .ga-more { order: 3; }
+.gazad.shop.c3 .ga-x { display: none; }
+/* the sweater hangs in its own light, inside a stitched frame; it lifts a little when the notice is pointed at */
+.gazad.shop .ga-paper { outline: 1px dashed rgba(255,255,255,.13); outline-offset: -5px; }
+.gazad.shop .ga-ph { background: radial-gradient(closest-side, color-mix(in srgb, var(--ok) 20%, transparent), transparent 72%); transition: transform .25s ease; }
+.gazad.shop:hover .ga-ph, .gazad.shop:focus-visible .ga-ph { transform: translateY(-3px) scale(1.04); }
+@media (prefers-reduced-motion: reduce) { .gazad.shop .ga-ph { transition: none; } .gazad.shop:hover .ga-ph, .gazad.shop:focus-visible .ga-ph { transform: none; } }
+.gazad.shop #gazDate { cursor: pointer; color: #fff; } .gazad.shop #gazDate:hover, .gazad.shop #gazDate:focus-visible { color: var(--ok); outline: none; }
+.gazad.shop .ga-hl { font: 600 clamp(15px, 1.05vw, 21px)/1.15 var(--display); letter-spacing: 0; color: #fff; }
+.gazad.shop .ga-dk { font: 400 12px/1.35 var(--mono); font-style: normal; color: var(--dim); border-bottom: 0; padding-bottom: 0; }
+.gazad.shop .ga-ph { display: block; object-fit: contain; object-position: 50% 50%; filter: none; mix-blend-mode: normal; border: 0; min-height: 96px; max-height: 340px; }
+.gazad.shop .ga-tx { columns: 1; text-align: center; hyphens: manual; font: 400 11px/1.4 var(--mono); color: var(--dim); }
+.gazad.shop .ga-tx::first-letter { float: none; font: inherit; margin: 0; }
+.gazad.shop .ga-more { margin-top: auto; align-self: stretch; text-align: center; border: 1px solid var(--ok); border-radius: 999px; padding: 8px 12px; background: var(--ok); font: 700 12px/1 var(--display); font-style: normal; letter-spacing: .14em; text-transform: uppercase; color: #000; }
+.gazad.shop:hover .ga-more { text-decoration: none; background: #fff; border-color: #fff; }
+.gazad.shop .ga-dl { flex-wrap: wrap; justify-content: center; gap: 2px 14px; }
+.gazad.shop .ga-dl i:nth-child(2) { color: var(--ok); }
+/* the shop notice keeps its picture and its button longest: the small print goes first, then the summary, then the row of facts, the picture only before the last size */
+.gazad.shop.c1 .ga-ph, .gazad.shop.c2 .ga-ph { display: block; }
+.gazad.shop.c2 .ga-dk, .gazad.shop.c3 .ga-mo, .gazad.shop.c3 .ga-ad { display: none; }
+/* last size: the sweater stands beside the headline instead of above the button */
+.gazad.shop.c3 .ga-paper { display: grid; grid-template-columns: minmax(0, 38%) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto minmax(0, 1fr) auto; column-gap: 10px; align-items: center; }
+.gazad.shop.c3 .ga-nm, .gazad.shop.c3 .ga-more { grid-column: 1 / -1; }
+.gazad.shop.c3 .ga-ph { display: block; grid-column: 1; grid-row: 2 / 6; width: 100%; height: 100%; min-height: 0; }
+.gazad.shop.c3 .ga-dl { display: flex; grid-column: 2; grid-row: 4; border: 0; padding: 0; justify-content: flex-start; } .gazad.shop.c3 .ga-dl i:not(:nth-child(2)) { display: none; }
+.gazad.shop.c5 .ga-dl { display: none; } .gazad.shop.c3 .ga-more { grid-row: 6; }
+/* the crew discount is its own way in: it opens the Crew page, the rest of the notice opens the store */
+.gazad.shop #gazNo { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; } .gazad.shop #gazNo:hover, .gazad.shop #gazNo:focus-visible { color: #fff; outline: none; text-decoration-style: solid; }
+/* stacked layouts (tablet upright, phone): panels grow with their content, so the notice brings its own height */
+@media (max-width: 1100px) { .gazad.shop { flex: none; height: 176px; } }
+@media (max-width: 1100px) and (pointer: coarse) { .gazad.shop { height: 224px; } }
+@media (pointer: coarse) { .gazad.shop #gazNo { display: inline-flex; align-items: center; min-height: 44px; } .gazad.shop.c3 .ga-more { padding: 14px 12px; } }
+.gazad.shop.c3 .ga-hl { grid-column: 2; grid-row: 3; text-align: left; }
+.gazad.shop.c4 .ga-dk { display: none; } .gazad.shop.c2 .ga-more, .gazad.shop.c3 .ga-more, .gazad.shop.c4 .ga-more { margin-top: auto; }
+.gazad.shop.c2 .ga-paper, .gazad.shop.c3 .ga-paper { justify-content: flex-start; }
+html.i18n-cjk .gazad.shop .ga-nm, html.i18n-cjk .gazad.shop .ga-hl, html.i18n-cjk .gazad.shop .ga-dk, html.i18n-cjk .gazad.shop .ga-tx, html.i18n-cjk .gazad.shop .ga-mo, html.i18n-cjk .gazad.shop .ga-more { font-family: inherit; }
 html.i18n-zh .ga-nm { font: 900 clamp(20px, 1.6vw, 30px)/1.1 "Noto Serif SC", serif; letter-spacing: .14em; }
 html.i18n-zh .ga-hl, html.i18n-zh .ga-mo, html.i18n-zh .ga-dk, html.i18n-zh .ga-tx, html.i18n-zh .ga-more { font-family: "Noto Serif SC", serif; letter-spacing: 0; }
 html.i18n-zh .ga-tx { text-align: left; }
@@ -879,6 +925,9 @@ a.btn { text-decoration: none; display: inline-block; }
 .changes li details[open] summary::after { content: " ‹"; }
 .changes li details p { margin: 4px 0 0; color: var(--dim); line-height: 1.5; }
 .changes li .one { color: #fff; font-weight: 600; line-height: 1.4; }
+.changes li a.one { display: block; text-decoration: none; } .changes li a.one::after { content: " ›"; color: var(--dim); font-weight: 400; } .changes li a.one:hover { text-decoration: underline; }
+.changes li details p a { color: var(--ok); text-decoration: none; } .changes li details p a:hover { text-decoration: underline; }
+.changes li details p a.go { display: inline-block; white-space: nowrap; font-weight: 600; }
 .community { align-items: start; }
 .community .col { display: grid; gap: 12px; align-content: start; min-width: 0; }
 .keep .lead { margin: 0 0 6px; }
@@ -1092,6 +1141,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="chip v" id="chipMode" data-full="Mode. Simulation runs in your browser and shows the documented protocol with made-up data; Live node reads the real testnet through the community relay."><span class="dot sim" id="modeDot"></span><b id="modeTxt">Simulation</b></div>
       <a class="chip next" id="chipNext" href="proposals/" hidden><b></b></a>
       <a class="chip" id="chipOnline" href="meta/?view=tauhud" data-full="People looking at Tau HUD right now, counted by our relay at node.tauhud.com: one person counts once, however many tabs are open.&#10;No cookies and nothing stored in your browser; the relay tells people apart by address and browser, hashed with a daily salt and kept in memory only. Click for Tau HUD in numbers."><span class="dot none" id="onlineDot"></span><b id="onlineN" style="margin-left:0;margin-right:6px">—</b>online</a>
+      <a class="chip" id="chipCrew" href="crew/?ref=hud" hidden data-full="The Tau HUD crew: people who support the site every month. Read from our shop every 15 minutes, as a number only, no names.&#10;The light is red while there is none, turns greener with each member and is full green when the crew covers the site's monthly bills. Click to see what the site costs and how to support it monthly, cancel any time."><span class="dot none" id="crewDot"></span><b id="crewN" style="margin-left:0;margin-right:6px">—</b>crew</a>
       <button class="chip v" type="button" id="chipCons"><b><span class="lg" id="consL">Proof of authority</span><span class="sh" id="consS">PoA</span></b><s class="st">sim</s></button>
       <div class="chip v" id="chipNet"><b id="netId">tau-testnet-v2</b><s class="st">sim</s></div>
       <div class="chip v" id="chipHeight"><b id="chipH">#0</b><s class="st">sim</s></div>
@@ -1151,7 +1201,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
     <div class="principles">
       <div class="pr"><b>Checked before it applies</b><span>A proposed rule is compiled on its own first. If it does not hold, it never enters the chain.</span><em>see it: Rule changes · “compiled in isolation ✓”</em><div class="prov" data-full="Seen on the testnet: 43 rule changes have been proposed and voted on so far (our count of 30 October, 4,036 blocks). Each one was compiled on its own against the current consensus rules before it was admitted (tau-testnet admission.py). All 43 were test changes that leave the behaviour the same; a proposal refused by this check we have not seen there yet."><span><i class="seen"></i>seen on the testnet</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/admission.py#L709" target="_blank" rel="noopener">admission.py:709 ↗</a></div></div>
       <div class="pr"><b>No admin key</b><span>Nobody can change the rules alone. A change needs the validators’ agreement and takes effect at a later block.</span><em>see it: Validators · “agreement needed”</em><div class="prov" data-full="Read from the community node (getgovernance): the active validator set, the vote_quorum policy and the approval threshold, all bound into the state hash. Threshold = ⌈2N/3⌉ for supermajority."><span><i class="seen"></i>seen on the testnet</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/governance.py#L496" target="_blank" rel="noopener">governance.py:496 ↗</a></div></div>
-      <div class="pr"><b>Enforced against the key holder</b><span>Your rule binds your account, not your device. Every node checks each payment you sign against it, from any wallet.</span><em>see it: Transactions · red “✕ refused”</em><div class="prov" data-full="Documented in tau-testnet: stream o5 is the sender’s own policy, 0 = block, enforced at admission (sendtx.py:1310) and again when the block is applied. Live, the refusals here come from the community node; in Simulation they are made up. A payment refused by its sender’s own rule we have not seen on the testnet yet. One limit: whoever holds the key can also replace the rule (tau-testnet docs/approvals.md), so a rule does not protect a stolen key; it stops a mistaken or pressured payment."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/consensus/engine.py#L1880" target="_blank" rel="noopener">engine.py:1880 ↗</a></div></div>
+      <div class="pr"><b>Enforced against the key holder</b><span>Your rule binds your account, not your device. Every node checks each payment you sign against it, from any wallet.</span><em>see it: Transactions · red “✕ refused”</em><div class="prov" data-full="Seen on the testnet, 13 November 2026: a fresh test account wrote itself the rule “nothing above 1,000 AGRS leaves” (block 165). The same key then signed a payment of 5,000 with IDNI’s own command-line wallet, not with tauhud.com, and the node refused it: “the sender’s own policy clause blocked transfer #1”. A payment of 500 went through (block 166). Every node runs this check when it takes a payment in (sendtx.py:1272) and again when it applies a block (engine.py:1709); anyone can repeat the test with infra/node/tools/keyholder_demo.py. One limit: whoever holds the key can also replace the rule (tau-testnet docs/approvals.md), so a rule does not protect a stolen key; it stops a mistaken or pressured payment."><span><i class="seen"></i>seen on the testnet</span><a href="https://github.com/IDNI/tau-testnet/blob/5ad1bb7/commands/sendtx.py#L1272" target="_blank" rel="noopener">sendtx.py:1272 ↗</a></div></div>
       <div class="pr" id="prMoney"><b>Money with terms</b><span>A transfer can be returnable until a release point, locked until a time, or co-signed above an amount.</span><em>see it: Personal money rules</em><div class="prov" data-full="Documented in tau-testnet: retractable_transfer parks funds in escrow until a release height or time; whitelists use i4, time-locks i5, limits i1. Personal rules are in force on the testnet (22 rule changes by 2 accounts, our count of 30 October), but a returnable, time-locked or co-signed payment we have not seen there yet."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/README.md#L573" target="_blank" rel="noopener">README §Retractable ↗</a></div></div>
     </div>
     <div class="tick" id="tick" translate="no" aria-label="News line: live facts, updates and pointers"><span class="tk-lab"><i></i><b>News</b></span><div class="tk-view"><div class="tk-track"></div></div></div>
@@ -1227,7 +1277,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="chainlow"><div class="blkdetail detail" id="blkDetail"><p class="lead" style="color:var(--dim)">Click a block above to inspect it here. The newest block is shown until you pick one.</p></div><div class="valslot" id="valSlot"></div></div>
     </article>
 
-    <article class="panel a-off">
+    <article class="panel a-off" id="offCard">
       <h2>Rule sharing <small id="offerCount">0 waiting</small><button class="info" type="button" aria-label="What is this?" data-tip="One account sends a Tau rule to another. The recipient reads it, runs a conflict report (shape, reserved streams, bit widths, does it compile together with the rules already in force) and then accepts it into their own specification or rejects it. Accepting replaces the recipient’s current rule on that stream.">i</button></h2>
       <p class="sub">one account offers a rule, the other checks it and accepts or rejects</p>
       <div class="offers scroll" id="offers"></div>
@@ -1248,15 +1298,16 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
         <div class="scroll" id="statePanel"></div>
         <a class="gazad" id="gazAd" href="gazette/" aria-label="Read the latest edition of The Daily Consensus" data-full="The Daily Consensus: the testnet told as a 1920s newspaper. Front page, the road from Zennet, how a hard fork works, letters to the editor. Opens the latest edition.">
           <span class="ga-paper">
-            <span class="ga-nm">The Daily Consensus</span>
-            <span class="ga-mo">Where the rules change by agreement</span>
-            <span class="ga-dl"><i>Vol. XIII</i><i id="gazNo">No. —</i><i id="gazDate"></i></span>
-            <span class="ga-x">Extra</span>
+            <span class="ga-ad" id="gazAdTag">Shop</span>
+            <span class="ga-nm" id="gazNm">The Daily Consensus</span>
+            <span class="ga-mo" id="gazMo">Where the rules change by agreement</span>
+            <span class="ga-dl"><i id="gazVol">Vol. XIII</i><i id="gazNo">No. —</i><i id="gazDate"></i></span>
+            <span class="ga-x" id="gazX">Extra</span>
             <span class="ga-hl" id="gazHl">Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys</span>
             <span class="ga-dk" id="gazDk">Consensus moves from a fixed list of validators to stake and back again, and not a single machine is reinstalled.</span>
-            <img class="ga-ph" src="gazette/img/hud-core.jpg" width="700" height="574" alt="" loading="lazy" decoding="async">
+            <img class="ga-ph" id="gazPh" src="gazette/img/hud-core.jpg" width="700" height="574" alt="" loading="lazy" decoding="async">
             <span class="ga-tx" id="gazTx">Every blockchain has a rulebook. On most of them it is carved into the software itself, and changing a single line means a hard fork: new software, shipped to every machine, installed by every operator, with the ever-present danger that some refuse and the chain splits in two.</span>
-            <span class="ga-more">Continued in the newspaper ›</span>
+            <span class="ga-more" id="gazMore">Continued in the newspaper ›</span>
           </span>
         </a>
         <button class="more" type="button" id="btnState3">Full chain state</button>
@@ -1273,7 +1324,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   <div class="t1"><span id="tourStep">Guided tour</span><button type="button" class="close" id="tourClose" aria-label="End tour" style="position:static">✕</button></div>
   <h3 id="tourTitle"></h3><p id="tourText"></p>
   <div class="bar" id="tourBar"><i style="width:0"></i></div>
-  <p class="tgive" id="tourGive" hidden>Tau HUD is free, built in spare time. <a href="donate/">Donations are voluntary ›</a></p>
+  <p class="tgive" id="tourGive" hidden>Tau HUD is free, built in spare time. <a href="crew/?ref=tour">Support Tau HUD ›</a></p>
   <div class="t3"><a id="tourLink" href="playground/" hidden>Open the playground ›</a><button type="button" id="tourBack">Back</button><button type="button" class="primary" id="tourNext">Next</button></div>
 </aside>
 
@@ -1308,13 +1359,14 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
         <p class="follow"><a href="https://t.me/tauHUDcom" rel="noopener" data-full="A Telegram channel that posts every new proposal, agreement and activation on the testnet. Opens Telegram.">Follow rule changes on Telegram ›</a> <span>· <a href="https://x.com/TauHUDcom" target="_blank" rel="noopener">on X</a> · <a href="proposals/">proposal tracker</a></span></p>
       </article>
       <article class="panel keep" id="keepUpd">
-        <h2>Donations <small>voluntary, nothing in return</small><button class="info" type="button" aria-label="What is this?" data-tip="Tau HUD is an independent community project, built by one person in their free time. The address and the QR code are the same as in About. A donation is a voluntary gift: nothing is promised or owed in return.">i</button></h2>
+        <h2>Support Tau HUD <small>optional</small><button class="info" type="button" aria-label="What is this?" data-tip="Tau HUD is an independent community project, built by one person in their free time. The address and the QR code are the same as in About. A donation is a voluntary gift: nothing is promised or owed in return.">i</button></h2>
         <p class="lead small">Tau HUD is free to use. If you find it useful, a donation is welcome. It is a voluntary gift and buys nothing: no access, no feature, no say and no promise about the future of the site. What comes in may go toward the time, tools and server behind it.</p>
         <p class="small">AGRS or ETH, one address for both · voluntary, nothing owed in return</p>
         <div class="donate" id="donate2"><div class="addr"><code id="agrsAddr2"></code><button class="btn" type="button" id="copyAddr2">Copy</button></div></div>
         <p class="small thanks" id="donorLine2" hidden></p>
         <p class="small costline" id="costUpd" hidden></p>
         <p class="small"><a href="donate/">What it costs, and every donation on chain ›</a></p>
+        <p class="small">No crypto wallet? <a href="crew/?ref=about">Support monthly from €4.17, cancel any time ›</a> A paid membership with no duties, not a donation. Something to wear or to drink from? <a href="https://tau-hud-shop.fourthwall.com/?utm_source=tauhud&utm_medium=about" target="_blank" rel="noopener">The shop ›</a></p>
         <p class="small" id="copyMsg2" aria-live="polite">Check the address against this page before sending; never trust a copy of it from elsewhere.</p>
       </article>
       </div>
@@ -1379,7 +1431,8 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <p>Live mode speaks the node's raw WebSocket protocol (<code>getblocks</code>, <code>getmempool</code>, <code>getgovernance</code>). The default address <code>wss://node.tauhud.com</code> is a read-only community relay in front of a Tau testnet node run for this page (its <a href="https://github.com/jimb000o/tau-command-hud/tree/main/infra" target="_blank" rel="noopener">setup is public</a>). To read your own node instead, run it with this page's origin in <code>TAU_WS_ALLOWED_ORIGINS</code> and put its address in the field.</p>
       </section>
       <section>
-      <h3 id="donate">Donations</h3>
+      <h3 id="donate">Support Tau HUD</h3>
+      <p style="margin:0 0 8px">Three ways, all optional. No crypto wallet? <a href="crew/?ref=about">Support monthly from €4.17, cancel any time ›</a> A paid membership with no duties, not a donation. Something to wear or to drink from? <a href="https://tau-hud-shop.fourthwall.com/?utm_source=tauhud&utm_medium=about" target="_blank" rel="noopener">The shop ›</a> Or a donation:</p>
       <p>Tau HUD is an independent community project, built by one person in their free time, and free to use. If you find it useful, a donation is welcome. It is a voluntary gift and buys nothing: no access, no feature, no say and no promise about the future of the site. What comes in may go toward the time, tools and server behind it. Not affiliated with IDNI.</p>
       <p class="small" style="margin:0 0 6px">AGRS or ETH, one address for both · voluntary, nothing owed in return</p>
       <div class="donate"><svg class="qr" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 33" shape-rendering="crispEdges" role="img" aria-label="QR code of the donation address"><rect width="33" height="33" fill="#fff"/><path d="M2 2h7v1h-7zM11 2h2v1h-2zM16 2h1v1h-1zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h1v1h-1zM14 3h1v1h-1zM17 3h1v1h-1zM19 3h2v1h-2zM22 3h1v1h-1zM24 3h1v1h-1zM30 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM13 4h1v1h-1zM17 4h2v1h-2zM20 4h1v1h-1zM24 4h1v1h-1zM26 4h3v1h-3zM30 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM14 5h2v1h-2zM17 5h4v1h-4zM24 5h1v1h-1zM26 5h3v1h-3zM30 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM16 6h1v1h-1zM21 6h2v1h-2zM24 6h1v1h-1zM26 6h3v1h-3zM30 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM13 7h2v1h-2zM17 7h1v1h-1zM22 7h1v1h-1zM24 7h1v1h-1zM30 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h7v1h-7zM10 9h1v1h-1zM14 9h1v1h-1zM17 9h1v1h-1zM2 10h1v1h-1zM4 10h5v1h-5zM12 10h1v1h-1zM15 10h1v1h-1zM17 10h4v1h-4zM22 10h1v1h-1zM24 10h5v1h-5zM2 11h4v1h-4zM11 11h3v1h-3zM16 11h1v1h-1zM21 11h1v1h-1zM24 11h1v1h-1zM26 11h1v1h-1zM30 11h1v1h-1zM2 12h4v1h-4zM7 12h2v1h-2zM12 12h2v1h-2zM17 12h2v1h-2zM22 12h8v1h-8zM2 13h1v1h-1zM6 13h1v1h-1zM9 13h1v1h-1zM11 13h2v1h-2zM22 13h2v1h-2zM26 13h2v1h-2zM29 13h2v1h-2zM3 14h1v1h-1zM8 14h3v1h-3zM12 14h2v1h-2zM15 14h1v1h-1zM17 14h4v1h-4zM22 14h1v1h-1zM26 14h1v1h-1zM28 14h2v1h-2zM2 15h1v1h-1zM4 15h1v1h-1zM6 15h1v1h-1zM13 15h1v1h-1zM16 15h1v1h-1zM19 15h1v1h-1zM21 15h1v1h-1zM23 15h5v1h-5zM30 15h1v1h-1zM2 16h4v1h-4zM7 16h2v1h-2zM13 16h3v1h-3zM17 16h2v1h-2zM20 16h1v1h-1zM22 16h1v1h-1zM25 16h1v1h-1zM28 16h2v1h-2zM3 17h1v1h-1zM5 17h1v1h-1zM7 17h1v1h-1zM9 17h2v1h-2zM13 17h2v1h-2zM16 17h2v1h-2zM20 17h2v1h-2zM23 17h1v1h-1zM26 17h2v1h-2zM29 17h1v1h-1zM2 18h1v1h-1zM4 18h1v1h-1zM6 18h4v1h-4zM11 18h1v1h-1zM13 18h4v1h-4zM18 18h2v1h-2zM23 18h1v1h-1zM25 18h1v1h-1zM29 18h2v1h-2zM2 19h3v1h-3zM9 19h2v1h-2zM12 19h2v1h-2zM20 19h3v1h-3zM24 19h1v1h-1zM26 19h1v1h-1zM30 19h1v1h-1zM2 20h1v1h-1zM4 20h1v1h-1zM7 20h3v1h-3zM12 20h3v1h-3zM16 20h2v1h-2zM19 20h2v1h-2zM22 20h1v1h-1zM25 20h1v1h-1zM28 20h1v1h-1zM2 21h1v1h-1zM4 21h4v1h-4zM9 21h1v1h-1zM11 21h1v1h-1zM16 21h1v1h-1zM20 21h1v1h-1zM22 21h1v1h-1zM24 21h1v1h-1zM26 21h1v1h-1zM29 21h1v1h-1zM2 22h1v1h-1zM4 22h2v1h-2zM8 22h6v1h-6zM15 22h3v1h-3zM19 22h2v1h-2zM22 22h8v1h-8zM10 23h4v1h-4zM18 23h2v1h-2zM21 23h2v1h-2zM26 23h2v1h-2zM30 23h1v1h-1zM2 24h7v1h-7zM11 24h5v1h-5zM17 24h1v1h-1zM20 24h3v1h-3zM24 24h1v1h-1zM26 24h4v1h-4zM2 25h1v1h-1zM8 25h1v1h-1zM10 25h1v1h-1zM17 25h2v1h-2zM20 25h1v1h-1zM22 25h1v1h-1zM26 25h1v1h-1zM29 25h2v1h-2zM2 26h1v1h-1zM4 26h3v1h-3zM8 26h1v1h-1zM10 26h2v1h-2zM13 26h1v1h-1zM17 26h4v1h-4zM22 26h9v1h-9zM2 27h1v1h-1zM4 27h3v1h-3zM8 27h1v1h-1zM10 27h3v1h-3zM14 27h1v1h-1zM22 27h2v1h-2zM25 27h1v1h-1zM27 27h1v1h-1zM29 27h2v1h-2zM2 28h1v1h-1zM4 28h3v1h-3zM8 28h1v1h-1zM10 28h1v1h-1zM15 28h4v1h-4zM21 28h1v1h-1zM24 28h1v1h-1zM26 28h1v1h-1zM28 28h2v1h-2zM2 29h1v1h-1zM8 29h1v1h-1zM11 29h2v1h-2zM17 29h2v1h-2zM22 29h2v1h-2zM25 29h3v1h-3zM29 29h1v1h-1zM2 30h7v1h-7zM10 30h2v1h-2zM13 30h2v1h-2zM17 30h1v1h-1zM19 30h1v1h-1zM21 30h1v1h-1zM23 30h1v1h-1zM26 30h1v1h-1z" fill="#000"/></svg><div class="addr"><code id="agrsAddr">0x23fB76A33A8d70f5c51aB558b85e4b93040003eb</code><button class="btn" type="button" id="copyAddr">Copy</button></div></div>
@@ -1474,14 +1527,14 @@ function catchingUp(pace) {
 function tickPace() {
   const live = S.mode === "live", pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null;
   const rTs = $("rTs");
-  if (!live || pace == null || S.lastInterval == null) { if (rTs.textContent !== "Block pace") rTs.textContent = "Block pace"; return updateTiming(pace, null); }
+  if (!live || pace == null || S.lastInterval == null) { if (rTs.textContent !== "Block pace") rTs.textContent = "Block pace"; shopWait(null); return updateTiming(pace, null); }
   const last = S.blocks[S.blocks.length - 1], paused = catchingUp(pace);
   const left = Math.round(pace - (performance.now() - S.lastBlockAt) / 1000);
   // "took": how long the newest block took after the one before; a long wait since the newest block leads, so the two never read as one number
   const txt = paused ? `no block for ${fmtAge(Date.now() / 1000 - last.ts)} · the last took ${fmtSec(S.lastInterval)}` : `last took ${fmtSec(S.lastInterval)} · ` + (left >= 0 ? `next in ~${Math.max(0, left)} s` : `next overdue by ${-left} s`);
   let i = rTs.querySelector("i"); if (!i) { rTs.innerHTML = "Block pace<i></i>"; i = rTs.querySelector("i"); }
   if (i.textContent !== txt) i.textContent = txt;
-  updateTiming(pace, paused ? null : Math.max(0, left));
+  updateTiming(pace, paused ? null : Math.max(0, left)); shopWait(left, paused);
 }
 /* the sub-lines under Height, Waiting and User rules: the same treatment as Block pace, each with its own facts */
 const fmtAge = s => s < 90 ? Math.round(s) + " s" : s < 5400 ? Math.round(s / 60) + " min" : s < 172800 ? (s / 3600).toFixed(1) + " h" : (s / 86400).toFixed(1) + " d";
@@ -1503,6 +1556,10 @@ function tickSubs() {
 const HV = "\u2063", verdict = (lv, txt) => HV + lv + HV + txt + "\n";
 /* a validator's own page: its profile on the accounts page (what it sealed, how much traffic, its votes); the language travels along */
 { const c = $("chipOnline"), l = new URLSearchParams(location.search).get("lang"); if (c && l) c.href = "meta/?view=tauhud&lang=" + encodeURIComponent(l); }
+/* the crew light: how many monthly memberships are active and how far they cover the monthly bills (TauNav.crewLight
+   in assets/nav.js paints it, here and in the header of every other page) */
+{ const c = $("chipCrew"), l = new URLSearchParams(location.search).get("lang"); if (l) c.href = "crew/?ref=hud&lang=" + encodeURIComponent(l);
+  const go = () => (window.TauNav && TauNav.crewLight ? TauNav.crewLight(c, "data-full") : setTimeout(go, 500)); go(); }
 { const l = new URLSearchParams(location.search).get("lang"); if (l) [["ownRule", "mine"], ["ownShare", "share"]].forEach(([id, t]) => { const a = $(id); if (a) a.href = `wallet/?from=hud&lang=${encodeURIComponent(l)}#rules-${t}`; }); }   // the rule panels open the wallet at the matching tab, in the same language   // the online chip opens Tau HUD in numbers on its Tau HUD tab, in the same language
 const valProfile = v => { const l = new URLSearchParams(location.search).get("lang"); return `account/?a=${encodeURIComponent(String(v).toLowerCase().replace(/^0x/, ""))}&view=validator${l ? "&lang=" + encodeURIComponent(l) : ""}`; };
 const liveChain = () => S.mode === "live" && !S.simfeed, offline = () => liveChain() && LIVE.status !== "Connected";
@@ -1652,6 +1709,13 @@ function nodeHealth(n) {
     const lag = syncLag(); if (lag) return verdict("watch", lag);
     if (d > 5) return verdict("watch", `Watch: ${fmt(d)} blocks behind the newest block; catching up.`);
     return verdict("ok", liveChain() ? `Normal: live and in step with the network at block #${fmt(S.height)}.` : "Normal: in step with the newest simulated block.");
+  }
+  if (n.kind === "known") {   // a named node: reach and sync as the relay checked them, nothing guessed
+    if (!n.online) return verdict("watch", "Watch: not reachable right now (no open P2P port, no contact, no heartbeat).");
+    if (n.sync === "synced") return verdict("ok", "Normal: reachable and in sync; its block hash matches ours.");
+    if (n.sync === "catching_up") return verdict("watch", `Watch: reachable, catching up${n.behind != null ? `, ${fmt(n.behind)} blocks behind` : ""}.`);
+    if (n.sync === "other_chain") return verdict("watch", "Watch: reachable, but on a different chain than ours.");
+    return verdict("watch", "Watch: reachable; whether it is in sync is not known yet (its heartbeat does not report).");
   }
   if (n.agrees === false && Math.abs(d) <= 5) return verdict("watch", "Watch: at the same height, but on a different head than ours.");
   if (Math.abs(d) > 5) return verdict("watch", d > 0 ? `Watch: ${fmt(d)} blocks behind the newest block.` : `Watch: ${fmt(-d)} blocks ahead of ours.`);
@@ -2192,14 +2256,15 @@ async function loadLog() {
   const vers = siteVersions(list); SITE.ver = vers.filter(Boolean).pop() || null;
   const order = list.map((e, i) => ({ ...e, i, sv: vers[i] })).sort((x, y) => String(y.on || "").localeCompare(String(x.on || "")) || y.i - x.i);
   /* a page tag links to its page; a version tag (v17.28) is this page, the HUD; from v17.54 every entry carries the site version beside its page */
-  const PAGE = { Nodes: "nodes/", Accounts: "account/", Explorer: "explorer/", Proposals: "proposals/", Alerts: "proposals/", Chronicle: "chronicle/", Story: "story/", "Time travel": "history/", Playground: "playground/", "What if": "whatif/", Findings: "findings/", Status: "status/", Stats: "stats/", Developers: "developers/", Press: "press/", Chinese: "?lang=zh", Japanese: "?lang=ja", Donations: "donate/" };
   let day = null, html = "";
   for (const e of order) {
     const tag = String(e.tag || ""), on = String(e.on || ""), ver = /^v\d/i.test(tag);
     if (on !== day) { day = on; html += `<li class="day">${fmtLogDate(on)}</li>`; }
-    const area = e.sv && (ver || tag === "HUD") ? `<a class="tag" href="./">HUD</a>` : PAGE[tag] ? `<a class="tag" href="${PAGE[tag]}">${esc(tag)}</a>` : `<b class="tag">${esc(tag)}</b>`;
+    /* where the entry leads comes from the shared helper in assets/nav.js: the tag chip opens its page, the text ends with a link to the entry's own page */
+    const L = window.TauLogLink ? TauLogLink(e) : { area: null, go: null }, href = r => /^https?:\/\//.test(r) ? r : r || "./";
+    const area = e.sv && (ver || tag === "HUD") ? `<a class="tag" href="./">HUD</a>` : L.area != null ? `<a class="tag" href="${esc(href(L.area))}"${/^https?:/.test(L.area) ? ' target="_blank" rel="noopener"' : ""}>${esc(tag)}</a>` : `<b class="tag">${esc(tag)}</b>`;
     const t = e.sv ? `<span class="tags"><b class="tag ver">${esc(e.sv)}</b>${area}</span>` : ver ? `<b class="tag ver">${esc(tag)}</b>` : area;
-    html += `<li data-tag="${esc(e.sv && ver ? "HUD" : tag)}">${t}<span class="body">${e.html || esc(e.text || "")}</span></li>`;
+    html += `<li data-tag="${esc(e.sv && ver ? "HUD" : tag)}"${L.go != null ? ` data-go="${esc(L.go)}"` : ""}>${t}<span class="body">${e.html || esc(e.text || "")}</span></li>`;
   }
   ul.innerHTML = html;
   foldLog();
@@ -2246,6 +2311,7 @@ function foldLog() {
     if (cut > 90 || (cut < 0 && text.length > 90)) { const sp = text.slice(0, 84).lastIndexOf(" "); cut = sp > 20 ? sp : cut; }
     const head = cut > 0 ? text.slice(0, cut).replace(/[:.;,]$/, "") + (/[:.;,]\s|[：。；，]/.test(text.slice(cut, cut + 2)) ? "" : " …") : text, rest = cut > 0 ? text.slice(cut).replace(/^[:.;,：。；，]?\s*/, "") : "";
     body.remove();
+    if (window.TauLogFold) { TauLogFold(li, head, rest, tr, ""); return; }
     if (rest) { const d = document.createElement("details"), sm = document.createElement("summary"), pr = document.createElement("p"); sm.textContent = head; pr.textContent = rest; d.append(sm, pr); li.append(d); }
     else { const o = document.createElement("div"); o.className = "one"; o.textContent = head; li.append(o); }
   });
@@ -2769,21 +2835,26 @@ function showBlock(b, pinned = true) {
    shown in three sizes, the largest that fits the room the box leaves, hidden when even the smallest does not fit */
 const GAZ = { at: 0, ed: null };
 /* the clipping's home is the free space of Rules in force now. When that box starts below the fold (the scrolling layout under
-   1900 px, or a zoomed browser) and Personal money rules is still empty, it moves into that empty panel instead, so it is seen */
-function placeGazAd() {
-  const a = $("gazAd"), home = $("statePanelCard"), pol = $("polCard"); if (!a || !home || !pol) return;
-  const away = home.getBoundingClientRect().top > innerHeight - 160, empty = !S.clauses.size;
-  const host = away && empty ? pol : home;
-  if (a.parentElement !== host) { if (host === home) home.insertBefore(a, $("btnState3")); else pol.append(a); }
-  pol.classList.toggle("has-gaz", host === pol);
+   1900 px, or a zoomed browser), or is too small for it, it moves into Personal money rules or Rule sharing, whichever has the room, so it is seen */
+function mountGazAd(host) {
+  const a = $("gazAd"), home = $("statePanelCard"), pol = $("polCard"), off = $("offCard");
+  if (a.parentElement !== host) { if (host === home) home.insertBefore(a, $("btnState3")); else host.append(a); }
+  pol.classList.toggle("has-gaz", host === pol); if (off) off.classList.toggle("has-gaz", host === off);
 }
 function fitGazAd() {
-  const a = $("gazAd"); if (!a) return;
-  placeGazAd();
-  a.hidden = false; a.classList.remove("c1", "c2", "c3", "c4", "c5");
+  const a = $("gazAd"), home = $("statePanelCard"), pol = $("polCard"), off = $("offCard"); if (!a || !home || !pol) return;
+  // its home first while that is in view; else, or when it does not fit there, the panel that has the room
+  const away = home.getBoundingClientRect().top > innerHeight - 160;
+  const hosts = (away ? [pol, off, home] : [home, pol, off]).filter(h => h && h.offsetParent !== null);
   const paper = a.firstElementChild, over = () => paper.scrollHeight > paper.clientHeight + 1 || paper.clientHeight < 96;
-  for (const c of ["c1", "c2", "c3", "c4", "c5"]) { if (!over()) return; a.classList.add(c); }
-  if (over()) a.hidden = true;
+  for (const host of hosts) {
+    mountGazAd(host);
+    a.hidden = false; a.classList.remove("c1", "c2", "c3", "c4", "c5");
+    let fits = !over();
+    for (const c of ["c1", "c2", "c3", "c4", "c5"]) { if (fits) break; a.classList.add(c); fits = !over(); }
+    if (fits) { if (a.classList.contains("shop")) shopMark("shop-" + SHOPAD + "-show"); return; }
+  }
+  mountGazAd(home); a.hidden = true;
 }
 async function loadGazette() {
   if (Date.now() - GAZ.at < 600000) return; GAZ.at = Date.now();
@@ -2791,7 +2862,56 @@ async function loadGazette() {
   try { const r = await fetch("https://node.tauhud.com/recap/gazette/latest.json", { cache: "no-cache" }); if (r.ok) { const j = await r.json(); if (j && typeof j.headline === "string") GAZ.ed = j; } } catch (e) {}
   renderGazAd();
 }
+/* What the slot shows: the shop notice (SHOP below), in the HUD's own look. ?clip=paper shows the newspaper clipping instead,
+   ?clip=shop the shop; set the last line of CLIP to "paper" to give the slot back to the newspaper. */
+/* which sweater leads the notice: half of the page views get the rabbit, half the Tau rule (until Christmas; ?shopad=rabbit or =rule shows one).
+   Nothing is stored in the browser. The visitor count (assets/nav.js, TauMark) notes which one was shown and whether the notice was clicked,
+   as daily totals; the store link carries the name too */
+const SHOPAD = (() => { const w = new URLSearchParams(location.search).get("shopad"); return w === "rabbit" || w === "rule" ? w : Math.random() < .5 ? "rabbit" : "rule"; })();
+const SHOP_HOME = "https://tau-hud-shop.fourthwall.com/", SHOP_UTM = "?utm_source=tauhud&utm_medium=hud&utm_content=" + SHOPAD;
+/* the notice leads with one sweater and opens that sweater's page; "All 10 pieces" opens the whole store */
+const SHOP_LEAD = {
+  rabbit: { path: "products/follow-the-rabbit-to-the-next-block", photo: "assets/shop/sweater.png", hl: "Follow the rabbit to the next block",
+    dk: "The White Rabbit Key sweater, the pattern knitted in with four yarns. Made to order, $79." },
+  rule: { path: "products/always-o1-t-i1-t", photo: "assets/shop/sweater-rule.png", hl: "always o1[t] = i1[t].",
+    dk: "A real Tau rule, knitted in and checked by the engine first. Made to order, $79." } }[SHOPAD];
+const SHOP = { url: SHOP_HOME + SHOP_LEAD.path + SHOP_UTM, home: SHOP_HOME + SHOP_UTM, photo: SHOP_LEAD.photo,
+  name: "Ship’s store", motto: "supplies for the Tau HUD crew", row: ["$79 · made to order", "Crew: 10–20 % off", "All 10 pieces ›"],
+  hl: SHOP_LEAD.hl, dk: SHOP_LEAD.dk,
+  tx: (new Date() < new Date("2026-12-16") ? "For Christmas, order early: a sweater takes 7 to 10 days to knit before it ships. " : "A sweater takes 7 to 10 days to knit before it ships. ") + "Sold and shipped by Fourthwall. Fan merchandise, not affiliated with IDNI.",
+  more: "See the sweater ›", label: "Open this sweater in the Tau HUD shop at Fourthwall",
+  full: "The Tau HUD shop at Fourthwall: knitted Christmas sweaters, tees, a sticker sheet and a mug, each made to order. Crew members get 10 or 20 % off. Fan merchandise, not affiliated with IDNI. Opens in a new tab." };
+/* the line above the button counts down to the next block with the live chain; tickPace writes it */
+const SHOP_WAIT = ["to the next block · dress for the wait", "next block is overdue · dress for the wait", "it gets cold between blocks · dress for the wait"];
+function shopWait(left, paused) {
+  const x = $("gazX"); if (!x || CLIP !== "shop") return;
+  if (!x.firstElementChild) x.innerHTML = "<b></b><span></span>";
+  const b = x.firstElementChild, t = x.lastElementChild, live = left != null && !paused;
+  const num = live && left >= 0 ? `~${left} s ` : "", txt = SHOP_WAIT[!live ? 2 : left >= 0 ? 0 : 1];
+  if (b.textContent !== num) b.textContent = num; if (t.textContent !== txt) t.textContent = txt;
+}
+const CLIP = (() => {
+  const want = new URLSearchParams(location.search).get("clip"); if (want === "shop" || want === "paper") return want;
+  return "shop";
+})();
+function shopMark(k) { try { if (window.TauMark) TauMark(k); } catch (e) {} }
+function renderShopAd() {
+  const a = $("gazAd"); a.classList.add("shop"); a.href = SHOP.url; a.target = "_blank"; a.rel = "noopener";
+  a.setAttribute("aria-label", SHOP.label); a.dataset.full = SHOP.full;
+  $("gazNm").textContent = SHOP.name; $("gazMo").textContent = SHOP.motto;
+  $("gazVol").textContent = SHOP.row[0]; $("gazNo").textContent = SHOP.row[1]; $("gazDate").textContent = SHOP.row[2];
+  $("gazHl").textContent = SHOP.hl; $("gazDk").textContent = SHOP.dk; $("gazTx").textContent = SHOP.tx; $("gazMore").textContent = SHOP.more;
+  const crew = $("gazNo"); crew.tabIndex = 0; crew.setAttribute("role", "link"); crew.dataset.full = "Opens the Crew page: what the Tau HUD crew is and how the 10 or 20 % shop discount works.";
+  if (!crew.dataset.on) { crew.dataset.on = "1"; const go = e => { if (CLIP !== "shop" || (e.type === "keydown" && e.key !== "Enter")) return; e.preventDefault(); e.stopPropagation(); shopMark("shop-crew-click"); location.href = "crew/"; }; crew.addEventListener("click", go); crew.addEventListener("keydown", go); }
+  if (!a.dataset.on) { a.dataset.on = "1"; a.addEventListener("click", () => { if (CLIP === "shop") shopMark("shop-" + SHOPAD + "-click"); }); }
+  const all = $("gazDate"); all.tabIndex = 0; all.setAttribute("role", "link"); all.dataset.full = "Opens the whole Tau HUD shop at Fourthwall in a new tab: three sweaters, five tees, a sticker sheet and a mug.";
+  if (!all.dataset.on) { all.dataset.on = "1"; const go = e => { if (CLIP !== "shop" || (e.type === "keydown" && e.key !== "Enter")) return; e.preventDefault(); e.stopPropagation(); shopMark("shop-" + SHOPAD + "-click"); window.open(SHOP.home, "_blank", "noopener"); }; all.addEventListener("click", go); all.addEventListener("keydown", go); }
+  shopWait(null);
+  if (!$("gazPh").src.endsWith(SHOP.photo)) { $("gazPh").src = SHOP.photo; $("gazPh").addEventListener("load", fitGazAd, { once: true }); }
+  fitGazAd();
+}
 function renderGazAd() {
+  if (CLIP === "shop") return renderShopAd();
   const ed = GAZ.ed || {}, zh = document.documentElement.classList.contains("i18n-zh"), ja = document.documentElement.classList.contains("i18n-ja");
   const hl = (zh && ed.headline_zh) || (ja && ed.headline_ja) || ed.headline || "Users Vote to Change How the Chain Agrees, and Every Node Simply Obeys";
   const no = ed.number != null ? Number(ed.number) : S.height || null;
@@ -2806,7 +2926,9 @@ function renderGazAd() {
 }
 addEventListener("DOMContentLoaded", () => {
   loadGazette(); setInterval(loadGazette, 600000);
-  if ("ResizeObserver" in window) { const ro = new ResizeObserver(() => fitGazAd()); ro.observe($("statePanelCard")); ro.observe($("polCard")); }
+  if ("ResizeObserver" in window) { const ro = new ResizeObserver(() => fitGazAd()); ro.observe($("statePanelCard")); ro.observe($("polCard")); if ($("offCard")) ro.observe($("offCard")); }
+  // the lists beside the notice fill in later and change how much room is left
+  if ("MutationObserver" in window) { let t = 0; const mo = new MutationObserver(() => { clearTimeout(t); t = setTimeout(fitGazAd, 120); }); for (const id of ["clauses", "composite", "offers"]) if ($(id)) mo.observe($(id), { childList: true, subtree: true, characterData: true }); }
   addEventListener("resize", () => fitGazAd());
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitGazAd);
 });
@@ -2816,7 +2938,7 @@ function renderStatePanel() {
   const active = S.updates.filter(u => u.status === "active"), open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled");
   $("statePanel").innerHTML = `<div class="big2"><div data-full="${KV_TIP["Spec revision"] || ""}"><b>${S.specRev}</b><span>spec revision</span></div><div data-full="${KV_TIP["Base fee"] || ""}"><b>${S.fee}</b><span>AGRS base fee</span></div></div>
     <p class="sent"><b>${thr} of ${N}</b> validators change a rule · <b>${S.ruleBudget}</b> rule txs per block · <b>${S.clauses.size}</b> account${S.clauses.size === 1 ? "" : "s"} with own rules · <b>${open.length}</b> open proposal${open.length === 1 ? "" : "s"} · ${active.length ? `<b>${active.length}</b> agreed change${active.length === 1 ? "" : "s"}${Number.isFinite(Number(active[active.length - 1].activeAt)) ? `, last at #${active[active.length - 1].activeAt}` : ""}` : "no agreed change yet"}</p>`;
-  if (!GAZ.ed && $("gazNo")) $("gazNo").textContent = document.documentElement.classList.contains("i18n-zh") || document.documentElement.classList.contains("i18n-ja") ? `第 ${S.height ? fmt(S.height) : "—"} ${document.documentElement.classList.contains("i18n-ja") ? "号" : "期"}` : S.height ? `No. ${fmt(S.height)}` : "No. —";   // the paper numbers its issues by block height
+  if (CLIP !== "shop" && !GAZ.ed && $("gazNo")) $("gazNo").textContent = document.documentElement.classList.contains("i18n-zh") || document.documentElement.classList.contains("i18n-ja") ? `第 ${S.height ? fmt(S.height) : "—"} ${document.documentElement.classList.contains("i18n-ja") ? "号" : "期"}` : S.height ? `No. ${fmt(S.height)}` : "No. —";   // the paper numbers its issues by block height
   fitGazAd();
 }
 function showState() {
@@ -2892,13 +3014,22 @@ async function pollNodes() {
     for (const n of Array.isArray(j.nodes) ? j.nodes : []) list.push({ kind: "kit", name: String(n.name || "node"), height: Number(n.height) || 0, head: n.head || "", agrees: n.agrees !== false, age: Number(n.age_seconds) || 0, you: !!n.you });
     try {   // peers our node met or heard of in the last day (GET /peers): the bootnode is the validator, already on its orbit; kit nodes are already listed above
       const pj = await (await get("/peers")).json(), now = Date.now() / 1000, kits = new Set(list.map(n => n.name));
+      // named nodes (relay knownnodes.py): always on the orbit, with what the relay checked; their kit and peer rows are left out
+      const known = Array.isArray(pj.known) ? pj.known : [], knownIds = new Set(known.map(k => String(k.peer)));
+      for (let i = list.length - 1; i >= 0; i--) if (list[i].kind === "kit" && known.some(k => k.name === list[i].name)) list.splice(i, 1);
+      for (const k of known) {
+        const sy = k.sync || {}, last = Math.max((k.p2p && k.p2p.talked) || 0, (k.report && k.report.last) || 0, (k.port && k.port.open ? k.port.checked : 0) || 0);
+        list.push({ kind: "known", id: String(k.peer || ""), name: String(k.name || "node"), height: Number(sy.height) || 0, head: "",
+                    online: k.reach === "online", sync: String(sy.state || "unknown"), behind: sy.behind ?? null,
+                    agrees: sy.state === "synced" ? true : sy.state === "other_chain" ? false : null, age: last ? Math.max(0, now - last) : 0 });
+      }
       for (const n of Array.isArray(pj.peers) ? pj.peers : []) {
-        if (n.label || (n.community && kits.has(String(n.community.name)))) continue;
+        if (n.label || knownIds.has(String(n.id)) || (n.community && kits.has(String(n.community.name)))) continue;
         const last = Number(n.last_seen) || 0; if ("online" in n ? !n.online : (!last || now - last > 86400)) continue;   // the relay's steady "online" flag when it has one, else seen in the last day
         const ph = Number(n.head) || 0, ref = j.reference ? Number(j.reference.tip) || Number(j.reference.height) || 0 : 0;   // a peer's "head" is its tip height, not a hash
-        list.push({ kind: "peer", id: String(n.id || ""), name: "", height: ph, head: "", agrees: ph && ref ? Math.abs(ph - ref) <= 2 : null, age: Math.max(0, now - last), first: Number(n.first_seen) || null, connected: !!n.connected });
+        list.push({ kind: "peer", id: String(n.id || ""), name: n.known ? String(n.known) : "", height: ph, head: "", agrees: ph && ref ? Math.abs(ph - ref) <= 2 : null, age: Math.max(0, now - last), first: Number(n.first_seen) || null, connected: !!n.connected });
       }
-    } catch { if (NET.src === feed) list.push(...NET.nodes.filter(n => n.kind === "peer")); }   // one slow /peers answer must not empty the orbit: keep the last good peer list
+    } catch { if (NET.src === feed) list.push(...NET.nodes.filter(n => n.kind === "peer" || n.kind === "known")); }   // one slow /peers answer must not empty the orbit: keep the last good peer list
     if (feed !== (S.simfeed ? "sim" : "live") || S.mode !== "live") return;   // the feed changed while we waited: this answer belongs to the old one
     NET.nodes = list; NET.at = Date.now(); NET.src = feed;
   } catch {} finally { clearTimeout(t); }
@@ -3342,7 +3473,8 @@ function setMode(mode, status) {
   $("hint").className = "hint" + (!simUI && status === "Offline" ? " err" : "");
 }
 $("btnSim").onclick = () => { if (window.TauSim) { TauSim.set("sim"); return; } store.set("tau-mode", "sim"); LIVE.auto = false; liveStop(); setMode("sim"); simStart(); presenceOpen(); };
-$("btnLive").onclick = () => { if (window.TauSim && TauSim.on) { TauSim.set("live"); return; } store.set("tau-mode", "live"); LIVE.auto = false; simStop(); liveStop(); S.simfeed = false; liveConnect(); };
+/* already reading the live chain: a second click opens Status, where the health score its hover names is explained in full */
+$("btnLive").onclick = () => { if (!isSim() && S.mode === "live") { location.href = "status/"; return; } if (window.TauSim && TauSim.on) { TauSim.set("live"); return; } store.set("tau-mode", "live"); LIVE.auto = false; simStop(); liveStop(); S.simfeed = false; liveConnect(); };
 $("btnConnect").onclick = () => { store.set("tau-mode", "live"); LIVE.auto = false; simStop(); liveConnect(); };
 
 /* =====================================================================
@@ -3597,18 +3729,25 @@ function draw(tm) {
     // nodes sit in the gaps between validators (one per gap, then a second round), never on a validator's radial, so no two labels crowd
     const Vn = S.validators.length || 1, rounds = Math.ceil(nodes.length / Vn), gap = Math.PI * 2 / Vn;
     const a = -Math.PI / 2 + .35 + (i % Vn) * gap + (Math.floor(i / Vn) + 1) * gap / (rounds + 1) + t * .04, x = Math.cos(a) * NR, y = Math.sin(a) * NR;   // and the whole orbit turns slowly, one round in about two and a half minutes
-    const al = n.kind === "hud" ? .95 : n.kind === "kit" ? .75 : .45, got = S.pulse > 0 && S.pulse < .2 ? (.2 - S.pulse) / .2 : 0;   // got: the new block just arrived here
+    const big = n.kind === "hud" || (n.kind === "known" && n.online && n.sync === "synced");   // a named node online and in sync looks like ours
+    const al = big ? .95 : n.kind === "kit" || (n.kind === "known" && n.online) ? .75 : .45, got = S.pulse > 0 && S.pulse < .2 ? (.2 - S.pulse) / .2 : 0;   // got: the new block just arrived here
     if (S.pulse > 0) { const q = Math.min(1, (1 - S.pulse) * 1.25), k = .30 + (NR / C - .30) * q; cx.fillStyle = `rgba(57,255,138,${S.pulse})`; cx.beginPath(); cx.arc(x * k / (NR / C), y * k / (NR / C), 4.5, 0, Math.PI * 2); cx.fill(); }   // the sealed block travels out to every node
     // our own node breathes a soft green while it reads the real chain: alive, not alarmed (green stays the one accent; simulation stays grey)
-    const liveHud = n.kind === "hud" && S.mode === "live" && !S.simfeed && PRESENCE.up, br = liveHud ? .5 + .5 * Math.sin(t * 1.6) : 0;
-    dotShadow(x, y, n.kind === "hud" ? 10 : 8, C);
-    cx.beginPath(); cx.arc(x, y, n.kind === "hud" ? 10 : 8, 0, Math.PI * 2);
+    const liveHud = big && S.mode === "live" && !S.simfeed && PRESENCE.up, br = liveHud ? .5 + .5 * Math.sin(t * 1.6) : 0;
+    dotShadow(x, y, big ? 10 : 8, C);
+    cx.beginPath(); cx.arc(x, y, big ? 10 : 8, 0, Math.PI * 2);
     if (got) { cx.fillStyle = `rgba(57,255,138,${got * .55})`; cx.fill(); }
     else if (liveHud) { cx.fillStyle = `rgba(57,255,138,${.10 + .22 * br})`; cx.fill(); }
-    cx.lineWidth = 2.5; cx.strokeStyle = got ? `rgba(57,255,138,${.5 + got * .5})` : liveHud ? `rgba(57,255,138,${.55 + .35 * br})` : `rgba(${cyan},${al})`; cx.shadowColor = got || liveHud ? "rgb(57,255,138)" : `rgb(${cyan})`; cx.shadowBlur = got ? 12 : liveHud ? 8 + 12 * br : n.kind === "hud" ? 12 : 0; cx.stroke(); cx.shadowBlur = 0;
+    cx.lineWidth = 2.5; cx.strokeStyle = got ? `rgba(57,255,138,${.5 + got * .5})` : liveHud ? `rgba(57,255,138,${.55 + .35 * br})` : `rgba(${cyan},${al})`; cx.shadowColor = got || liveHud ? "rgb(57,255,138)" : `rgb(${cyan})`; cx.shadowBlur = got ? 12 : liveHud ? 8 + 12 * br : big ? 12 : 0; cx.stroke(); cx.shadowBlur = 0;
     if (n.you) { cx.save(); cx.setLineDash([4, 5]); cx.lineWidth = 2; cx.strokeStyle = "rgba(57,255,138,.8)"; cx.beginPath(); cx.arc(x, y, 15, 0, Math.PI * 2); cx.stroke(); cx.restore(); }   // your own node: a green halo
-    if (n.you) plate("You · " + n.name, x, y + (y > 0 ? 44 : -26), "500 18px JetBrains Mono, monospace", "rgba(57,255,138,.9)");   // centred above or below the dot, so a long name never runs off the canvas
-    else if (n.name) { const label = n.kind === "hud" ? "Tau HUD" : n.name, w = cx.measureText(label).width; plate(label, x + Math.sign(x || 1) * (w / 2 + 24), y + 7, "500 18px JetBrains Mono, monospace", `rgba(${cyan},${Math.min(.85, al)})`); }
+    // every name stays whole and on one line inside the canvas: beside the dot where it fits, else centred above or below it
+    const inside = (lw, lx) => { const lim = C - (lw + 24) / 2 - 6; return Math.max(-lim, Math.min(lim, lx)); };
+    if (n.you) { const label = "You · " + n.name; plate(label, inside(cx.measureText(label).width, x), y + (y > 0 ? 44 : -26), "500 18px JetBrains Mono, monospace", "rgba(57,255,138,.9)"); }
+    else if (n.name) {
+      const label = n.kind === "hud" ? "Tau HUD" : n.name, w = cx.measureText(label).width, side = x + Math.sign(x || 1) * (w / 2 + 24);
+      const fits = inside(w, side) === side;
+      plate(label, fits ? side : inside(w, x), fits ? y + 7 : y + (y > 0 ? 40 : -24), "500 18px JetBrains Mono, monospace", `rgba(${cyan},${Math.min(.85, al)})`);
+    }
     const age = n.age ? fmtAge(n.age) + " ago" : "just now", ahead = S.height - n.height;
     const alone = S.mode === "live" && !S.simfeed && nodes.length === 1 && S.validators.length === 1;   // the whole visible network: IDNI's validator and us
     if (n.you) { hit(x, y, 24, () => nodeHealth(n) + vt(`Your node “${n.name}”\nSimulated in your browser at #${fmt(n.height)}; it checks every block for itself.\nClick to open your node.`,
@@ -3616,6 +3755,9 @@ function draw(tm) {
     hit(x, y, 24, () => nodeHealth(n) + (n.kind === "hud"
       ? vt(`Tau HUD’s node: serves this page and checks every block, at #${fmt(n.height)}.\nClick to open the Nodes page.`,
            `tauhud.com: the relay’s upstream node at #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}; verifies every block, seals none.\nClick to open the Nodes page.`)
+      : n.kind === "known"
+      ? vt(`${n.name}: ${n.online ? "reachable" : "not reachable right now"}, ${({ synced: "in sync with the chain", at_height: "at our height (not hash-checked yet)", catching_up: `catching up${n.behind != null ? ", " + fmt(n.behind) + " blocks behind" : ""}`, other_chain: "on another chain", ahead: "ahead of ours" })[n.sync] || "sync not known yet"}.\nClick to open the Nodes page.`,
+           `${n.name} (named node, ${n.id.slice(0, 8)}…${n.id.slice(-4)}): reach ${n.online ? "online" : "not online"}, sync ${n.sync}${n.height ? " at #" + fmt(n.height) : ""}; in sync only when its heartbeat's block hash matches ours.\nClick to open the Nodes page.`)
       : n.kind === "kit"
       ? vt(`${n.name}: a community node (node kit) at #${fmt(n.height)}, last report ${age}.\nClick to open the Nodes page.`,
            `${n.name} (node kit): #${fmt(n.height)}${n.head ? ", head " + short(n.head) : ""}, reported ${age}.\nClick to open the Nodes page.`)
@@ -3747,7 +3889,7 @@ function draw(tm) {
   // user-rule ring: every account that runs its own Tau policy
   const R = [...S.clauses.values()], rr = C * .56;
   ring(rr, 14, () => vt(`Rule ring: wallets with their own money rule, ${R.length ? R.length + " now" : "none now"}.\nEach rule binds only the wallet that set it, never anyone else.`,
-    `Rule ring: senders with their own o5 clause, ${R.length ? R.length + " now" : "none now"}.\nEach clause binds only its own sender; the testnet has 2 places.`));
+    `Rule ring: senders with their own o5 clause, ${R.length ? R.length + " now" : "none now"}.\nEach clause binds only its own sender; every account may hold one.`));
   const RA = [...S.clauses.keys()];
   R.forEach((p, i) => {
     const a = i / Math.max(R.length, 1) * Math.PI * 2 - t * .12, x = Math.cos(a) * rr, y = Math.sin(a) * rr;
@@ -4108,7 +4250,7 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
     if (!lines.length) head.classList.add("solo");
     ovl.append(head); if (lines.length) ovl.append(document.createTextNode(lines.join("\n")));
   };
-  const show = (el, x, y) => { cur = el; shownAt = Date.now(); const fn = el.dataset.ex === "live" ? () => LIVE_TIP : el.dataset.ex === "agz" ? agzTip : el.dataset.ex && EX.get(el.dataset.ex); setOvl(viewText((el.dataset.health ? health(el.dataset.health) : "") + (fn ? fn() : (el.dataset.full || el.getAttribute("title") || el.textContent.trim()))), !!el.closest(".core, #btnLive, #agz")); ovl.hidden = false; place(x, y); };
+  const show = (el, x, y) => { cur = el; shownAt = Date.now(); const fn = el.dataset.ex === "live" ? () => LIVE_TIP + (!isSim() && S.mode === "live" ? "\nClick: opens Status, the testnet health in full." : "") : el.dataset.ex === "agz" ? agzTip : el.dataset.ex && EX.get(el.dataset.ex); setOvl(viewText((el.dataset.health ? health(el.dataset.health) : "") + (fn ? fn() : (el.dataset.full || el.getAttribute("title") || el.textContent.trim()))), !!el.closest(".core, #btnLive, #agz")); ovl.hidden = false; place(x, y); };
   const hide = () => { cur = null; ovl.hidden = true; };
   document.addEventListener("mouseover", e => { const el = find(e.target); if (el) show(el, e.clientX, e.clientY); else if (cur && !touch) hide(); });
   document.addEventListener("mousemove", e => { if (cur) place(e.clientX, e.clientY); });
@@ -4129,6 +4271,8 @@ const store = { get: k => { try { return localStorage.getItem(k); } catch { retu
 function setView(v) { document.body.dataset.view = v; $("btnSimple").setAttribute("aria-pressed", v === "simple"); $("btnTech").setAttribute("aria-pressed", v === "tech"); store.set("tau-view", v); if (S.validators.length) renderGov(); const cur = selectedBlock !== null ? S.byHeight.get(selectedBlock) : S.blocks[S.blocks.length - 1]; if (cur) showBlock(cur, selectedBlock !== null); }
 $("btnSimple").onclick = () => setView("simple"); $("btnTech").onclick = () => setView("tech");
 setView(store.get("tau-view") || "simple");
+/* the level switch under the gear (assets/nav.js) is the one control now: Expert is the Technical view, the other levels the Simple one */
+addEventListener("tau-level", e => { if (!e.detail) return; const v = e.detail === "pro" ? "tech" : "simple"; if (document.body.dataset.view !== v) setView(v); });
 /* ---------- glyph rain toggle ---------- */
 function setRain(on) { $("rain").classList.toggle("off", !on); $("btnRain").setAttribute("aria-pressed", String(on)); store.set("tau-rain", on ? "1" : "0"); }
 $("btnRain").onclick = () => setRain($("btnRain").getAttribute("aria-pressed") !== "true");
@@ -4188,7 +4332,9 @@ addEventListener("resize", () => { if (tourI >= 0) tourPlace(); });
 addEventListener("scroll", () => { if (tourI >= 0) tourPlace(); }, { passive: true });
 /* first visit: offer the tour once; “Not now” is remembered, as is finishing it */
 function tourOffer() {
-  if (tourI >= 0 || store.get("tau-tour") || innerWidth < 900 || document.body.classList.contains("calm") || document.querySelector(".modal:not([hidden])")) return;
+  if (tourI >= 0 || store.get("tau-tour") || store.get("tau-tour-seen") || document.documentElement.dataset.level === "pro" || innerWidth < 900 || document.body.classList.contains("calm") || document.querySelector(".modal:not([hidden])")) return;
+  try { for (let k = 0; k < localStorage.length; k++) if (/^tau-tour-/.test(localStorage.key(k) || "")) return; } catch (e) {}   // one offer per visitor, on the first page they open (assets/tour.js)
+  store.set("tau-tour-seen", "1");
   tourOffered = true;
   $("tour").classList.remove("top", "anchored", "side-top", "side-bottom", "side-left", "side-right"); $("tour").style.left = $("tour").style.top = ""; TOURPOS.target = null;
   $("tour").hidden = false; $("tourStep").textContent = "New here?"; $("tourTitle").textContent = "How rules change on Tau, in one minute";

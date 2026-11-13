@@ -125,4 +125,13 @@ TauI18n.add({ strings: {
   "Rule signed and sent.": "规则已签名并发送。",
   "Meal sent.": "饭已送出。",
   "The simulation makes a block every eight seconds; this card turns green by itself.": "模拟每八秒出一个区块；这张卡片会自己变绿。",
+  "Say it in plain words": "用日常语言说出来",
+  "A rule for every account\nEvery account on the testnet may hold its own personal rule.\nNobody waits for a place.": "每个账户都能有规则\n测试网上的每个账户都可以有自己的个人规则。\n不用再排队等名额。",
+  "A rule for every account.": "每个账户都能有规则。",
+  "Every account on the testnet may hold its own personal rule, checked only on its own payments.": "测试网上的每个账户都可以有自己的个人规则，只检查这个账户自己的付款。",
+  "1 account has a rule now": "现在有 1 个账户有规则",
+  "{n} accounts have a rule now": "现在有 {n} 个账户有规则",
+  "yours is one of them": "你的也在其中",
+  "every account may have one": "每个账户都可以有一条",
+  "Simulation: every account may have a rule here, as on the testnet.": "模拟：这里每个账户都可以有规则，和测试网一样。",
 } });

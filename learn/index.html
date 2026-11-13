@@ -7,13 +7,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Learn Tau Language</title>
-<meta name="description" content="Try Tau Language in your browser: type a formula and a real Tau engine answers. Five short lessons from yes or no to a real testnet rule, then install tau yourself. Unofficial, not affiliated with IDNI.">
+<meta name="description" content="Try Tau Language in your browser: type a formula and a real Tau engine answers. Eight short lessons from yes or no to real testnet rules and their traps, then install tau yourself. Unofficial, not affiliated with IDNI.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#09090a">
 <meta property="og:title" content="Tau HUD · Learn Tau Language">
-<meta property="og:description" content="Type a formula, a real Tau engine answers. Five short lessons, then a real testnet rule.">
+<meta property="og:description" content="Type a formula, a real Tau engine answers. Eight short lessons, up to real testnet rules and their traps.">
 <meta property="og:image" content="https://tauhud.com/assets/og/hud.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -116,6 +116,7 @@ pre { margin: 6px 0 0; padding: 8px 10px; background: rgba(255,255,255,.04); bor
 .eng.on i { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
 .eng.off i { background: #e5484d; }
 .chips, #chips { display: flex; gap: 6px; }
+#chips { flex-wrap: wrap; }   /* twelve lessons at the logic level: a second row instead of a row wider than its panel */
 .chips { margin: 0 0 10px; justify-content: space-between; flex-wrap: wrap; }
 #lNext { color: var(--text); }
 button.b { background: none; cursor: pointer; }
@@ -176,8 +177,14 @@ button.b { background: none; cursor: pointer; }
 .door .skip { background: none; border: 0; color: var(--dim); font: 12px var(--mono); padding: 4px 0; min-height: 0; display: block; cursor: pointer; text-align: left; }
 .door .skip:hover { color: #fff; }
 .try.doored .ops, .try.doored textarea, .try.doored .inrow, .try.doored .act, .try.doored .out, .try.doored .eng, .try.doored .crib { display: none !important; }
-.lvl { margin-left: auto; font: 500 10.5px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; min-height: 24px; cursor: pointer; }
-.lvl:hover { color: #fff; border-color: var(--hair); }
+.lvl { margin-left: auto; font: 500 10.5px var(--mono); letter-spacing: 0; text-transform: none; color: var(--text); background: none; border: 1px solid var(--hair); border-radius: 6px; padding: 0 8px; min-height: 26px; cursor: pointer; white-space: nowrap; }
+.lvl b { color: var(--ok); font-weight: 600; margin-left: 4px; }
+.lvl:hover { color: #fff; border-color: var(--ok); }
+.door button[aria-current="true"] { border-color: var(--ok); background: rgba(57,255,138,.06); }
+.door button[aria-current="true"] div::after { content: attr(data-now); display: block; color: var(--ok); font: 600 10.5px var(--display); letter-spacing: .12em; text-transform: uppercase; margin-top: 3px; }
+.door .keep { color: var(--ok); }
+.door p.site { color: var(--dim); font: 11.5px/1.4 var(--mono); margin: 0; }
+@media (max-width: 700px) { .lvl { min-height: 44px; padding: 0 10px; font-size: 11.5px; } .door .skip { min-height: 44px; } }
 .panel.try h2 { display: flex; align-items: center; gap: 8px; }
 .crib { margin-top: 8px; border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; }
 .crib summary { cursor: pointer; color: var(--dim); font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; padding: 7px 0; list-style: none; }
@@ -293,7 +300,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
   <nav class="tnav" data-page="taulang" aria-label="Pages and tools"></nav>
   <div>
     <p class="lead">Learn Tau Language. Try it right here.</p>
-    <p class="sub">Every rule on the Tau testnet is a <b>Tau specification</b>. Type a formula and the Tau engine on our server answers in a few seconds. Five short lessons take you from yes or no to a real testnet rule. No install, no wallet, no node.</p>
+    <p class="sub">Every rule on the Tau testnet is a <b>Tau specification</b>. Type a formula and the Tau engine on our server answers in a few seconds. Eight short lessons take you from yes or no to real testnet rules and their traps. No install, no wallet, no node.</p>
   </div>
   <main class="main">
     <div class="col trycol">
@@ -305,6 +312,8 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
           <button type="button" data-level="code"><i>2</i><div>I write code<span>Lessons plus a cheat sheet: = not ==, &amp;&amp; and ||</span></div></button>
           <button type="button" data-level="pro"><i>3</i><div>I know logic or Tau already<span>Straight to the box, the real testnet rule and the Playground</span></div></button>
           <button type="button" class="skip" data-level="">Just show me the box</button>
+          <button type="button" class="skip keep" id="keepLvl" hidden></button>
+          <p class="site">Your answer also sets your level on the other pages. Change it at any time under the gear, top right.</p>
         </div>
         <div class="ops" role="group" aria-label="Question">
           <button type="button" translate="no" data-op="sat" aria-pressed="true" title="Can this be true?">sat</button>
@@ -344,9 +353,9 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
     </div>
     <div class="col">
       <section class="panel lesson" aria-labelledby="hLes">
-        <h2 id="hLes">Five short lessons</h2>
+        <h2 id="hLes">8 short lessons</h2>
         <p class="pro-note" id="newNote" hidden><button type="button" class="backg" id="gReturn">‹ Back to the step-by-step guide</button></p>
-        <p class="pro-note" id="proNote" hidden>Lessons 1 to 4 are the basics, lesson 5 is a real testnet rule, and 6 to 8 are for logic people: terms, quantifiers and how sat treats inputs. Then the <a href="/playground/">Rule Playground ›</a>.</p>
+        <p class="pro-note" id="proNote" hidden>Lessons 1 to 4 are the basics, 5 to 8 are real testnet rules and their traps, and 9 to 12 are for logic people: terms, quantifiers, how sat treats inputs and what a rule leaves open. Then the <a href="/playground/">Rule Playground ›</a>.</p>
         <div class="chips"><span id="chips" role="tablist" aria-label="Lessons"></span><button type="button" id="lNext">Next ›</button></div>
         <h3 id="lTitle"></h3>
         <p id="lText"></p>
@@ -409,6 +418,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
         </div>
         <div data-pane="net" hidden>
           <ul class="links">
+            <li><a href="/builder/">Rule builder ›</a><span>Say a wallet rule in plain words and see the Tau rule it becomes.</span></li>
             <li><a href="/playground/">Rule Playground ›</a><span>Write a transfer rule and run the testnet's checks on it, in your browser.</span></li>
             <li><a href="/nomemo/">No Memo ›</a><span>The terminal game where you learn the testnet by playing it.</span></li>
             <li><a href="/start/">Start here ›</a><span>A test wallet and a rule of your own on the real chain.</span></li>
@@ -455,15 +465,18 @@ const store = { get() { try { return JSON.parse(localStorage.getItem(KEY) || "{}
 const OPS = { sat: "Can this be true?", valid: "Is this true in every case?", why: "Which parts contradict each other?", run: "Feed inputs in, step by step, and read the outputs", unsat: "Can this never be true?", realizable: "Can the outputs always answer the inputs?" };
 let op = "sat", busy = false, engineUp = null, lessons = [], cur = 0, lastAnswer = null;
 const LEVELS = { new: "new to formulas", code: "I write code", pro: "logic or Tau" };
+const SITE_OF = { new: "new", code: "mid", pro: "pro" }, LEARN_OF = { new: "new", mid: "code", pro: "pro" };   // the site-wide level under the gear (assets/nav.js) and this page's three doors
 let level = store.get().level || "";   // "", "new", "code" or "pro"; "" = no door answer, the page infers from what is typed
 
 /* ---- the level: door, chip, what each level changes ---- */
 function applyLevel(l, how) {
   level = LEVELS[l] ? l : "";
   const st = store.get(); st.level = level; if (how) st.levelBy = how; store.set(st);
+  if (how === "door" && level && window.TauNav) TauNav.setLevel(SITE_OF[level], "learn");   // the door answers for the whole site
   document.querySelector(".try").classList.remove("doored");
   $("door").hidden = true;
-  $("lvl").hidden = false; $("lvl").textContent = T("Level") + ": " + (level ? T(LEVELS[level]) : T("not set"));
+  $("lvl").hidden = false; $("lvl").innerHTML = esc(T("Level") + ": " + (level ? T(LEVELS[level]) : T("not set"))) + "<b>" + esc(T("change")) + "</b>";
+  $("lvl").title = T("Change your level at any time");
   $("crib").hidden = level !== "code" && level !== "pro"; $("crib").open = level === "code" && innerHeight > 820;   // on a short screen it starts folded, so the answer box keeps its room
   document.querySelectorAll(".pro-only").forEach(b => { b.hidden = level !== "pro"; });
   $("proNote").hidden = level !== "pro";
@@ -471,17 +484,30 @@ function applyLevel(l, how) {
   pickLessons();
   if (lessons.length) openLesson(cur);
 }
+/* the door again, any time: the level now is marked, and one tap keeps it */
 function openDoor() {
+  const chosen = store.get().level !== undefined;
   document.body.classList.remove("lv-new");
   document.querySelector(".try").classList.add("doored");
   $("door").hidden = false; $("lvl").hidden = true;
+  $("door").querySelector("p").textContent = chosen ? T("Change your level. Your progress stays.") : T("Pick your start. One tap, and Tau answers your first question.");
+  document.querySelectorAll("#door button[data-level]").forEach(b => {
+    const now = chosen && b.dataset.level === level && !b.classList.contains("skip");
+    b.setAttribute("aria-current", String(now));
+    if (now) b.querySelector("div").dataset.now = T("Your level now");
+  });
+  $("keepLvl").hidden = !chosen;
+  $("keepLvl").textContent = "‹ " + T("Keep my level") + (level ? " (" + T(LEVELS[level]) + ")" : "");
+  if (chosen) $("door").scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
+$("keepLvl").addEventListener("click", () => { applyLevel(level); });
+addEventListener("tau-level-set", e => { const l = LEARN_OF[e.detail]; if (l && l !== level) applyLevel(l, "site"); });   // the level changed under the gear while this page is open
 /* one tap: the level, and a first question Tau answers at once */
 let full = false;   // true for this visit only: a shared #q= link shows the box even to a beginner
 const FIRST = { new: { op: "sat", spec: "x = 0", says: "That was your first Tau question: can x be 0? Yes. Lesson 1 on the right goes on from here.", lesson: 0 },
   code: { op: "sat", spec: "x = 0 || x = 1", says: "|| is or, && is and, = is equals: the cheat sheet under the box has the rest. Lesson 1 starts on the right.", lesson: 0 },
   pro: { op: "sat", spec: "sometimes o1[t] = i1[t]", says: "Streams and time work as you expect; sat quantifies inputs for all, outputs exists, step by step. Lesson 5 is the real testnet rule.", lesson: 4 } };
-document.querySelectorAll("#door button").forEach(b => b.addEventListener("click", () => {
+document.querySelectorAll("#door button[data-level]").forEach(b => b.addEventListener("click", () => {
   const l = b.dataset.level;
   if (l === "new") { const st = store.get(); delete st.view; store.set(st); full = false; }
   applyLevel(l, "door");
@@ -491,6 +517,7 @@ document.querySelectorAll("#door button").forEach(b => b.addEventListener("click
   else $("spec").focus();
 }));
 $("lvl").addEventListener("click", openDoor);
+$("lvl2").addEventListener("click", openDoor);
 
 /* what people type tells their level too: == or words mean code or sentences, REPL commands mean Tau */
 function infer(spec) {
@@ -691,6 +718,7 @@ function fillIn(l) {
   });
 }
 function openLesson(i) {
+  document.querySelectorAll(".tn-support.learn").forEach(e => e.remove());
   cur = Math.max(0, Math.min(lessons.length - 1, i));
   const l = lessons[cur];
   fillIn(l);
@@ -708,7 +736,7 @@ function openLesson(i) {
   $("lTask").textContent = " " + T(l.task.text);
   $("tVerdict").textContent = ""; $("tVerdict").className = "verdict";
   $("lNext").hidden = cur === lessons.length - 1;
-  $("lPlay").hidden = cur !== lessons.length - 1 && l.id !== "rule";
+  $("lPlay").hidden = cur !== lessons.length - 1 && !["rule", "open", "cases", "reads"].includes(l.id);   // the rule lessons: the Playground's X-ray shows the same for any rule
   chips();
   try { const u = new URL(location.href); if (!u.hash.startsWith("#q=")) { u.hash = "l" + (cur + 1); history.replaceState(null, "", u.href); } } catch (e) {}
 }
@@ -728,6 +756,10 @@ $("tCheck").addEventListener("click", async () => {
     const done = store.get(); done[l.id] = new Date().toISOString().slice(0, 10); store.set(done);
     v.className = "verdict good"; v.textContent = l.id === "rule" ? T("Solved. You just changed a testnet rule. Next: try it against the testnet's own checks in the Rule Playground.") : cur === 0 ? T("Solved. You wrote your first Tau formula.") : T("Solved. On to the next lesson.");
     const sb = document.createElement("button"); sb.type = "button"; sb.textContent = T("Copy link to it"); sb.addEventListener("click", () => $("share").click()); v.append(sb);
+    /* one calm line where it fits: after the first rule, the sweater that carries a rule of the same kind; after the last lesson, what the site costs */
+    document.querySelectorAll(".tn-support.learn").forEach(e => e.remove());
+    const sup = !window.TauNav || !TauNav.support ? null : l.id === "rule" ? TauNav.piece("rule", "learn", "You just wrote a rule with always. A rule of the same kind is knitted into our Christmas sweater: always o1[t] = i1[t].") : cur === lessons.length - 1 ? TauNav.support("learn") : null;
+    if (sup) { sup.classList.add("learn"); v.after(sup); }
     chips();
   } else {
     v.className = "verdict bad"; v.textContent = r.ok ? T("Not yet: Tau answered differently. Look at the answer on the left and try again.") : T("Tau could not read that. The error is on the left.");
@@ -743,7 +775,8 @@ let guide = [], gAt = 0, gBusy = false, allLessons = [];
 function pickLessons() {
   lessons = allLessons.filter(l => !l.level || l.level === level);
   cur = Math.min(cur, Math.max(0, lessons.length - 1));
-  $("hLes").textContent = lessons.length > 5 ? T("Five lessons, then three for logic people") : T("Five short lessons");
+  const pro = lessons.filter(l => l.level === "pro").length, base = lessons.length - pro;
+  $("hLes").textContent = pro ? T(`${base} lessons, then ${pro} for logic people`) : T(`${base} short lessons`);
 }
 const LEAD = { lead: "", sub: "" };
 function setView() {
@@ -754,7 +787,7 @@ function setView() {
   if (!LEAD.lead) { LEAD.lead = lead.innerHTML; LEAD.sub = sub.innerHTML; }
   if (g) { lead.textContent = T("Learn Tau Language, one small step at a time."); sub.textContent = T("No maths needed. Each step shows one idea, you tap an answer, and a real Tau engine on our server checks it."); }
   else { lead.innerHTML = LEAD.lead; sub.innerHTML = LEAD.sub; }
-  $("lvl2").textContent = $("lvl").textContent;
+  $("lvl2").innerHTML = $("lvl").innerHTML; $("lvl2").title = $("lvl").title;
   if (g && guide.length) guideTo(gAt);
 }
 function gState() { const st = store.get(); st.gOk = st.gOk || {}; return st; }

@@ -100,6 +100,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .det ul, .det ol { margin: 0; padding-left: 24px; display: grid; gap: 3px; max-width: 76ch; }
 .det .proof a { color: #fff; }
 .det .proof span { color: var(--dim); }
+.det .proof .lk { display: inline-block; margin-left: 4px; font: 600 10px var(--display); letter-spacing: .12em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 0 6px; vertical-align: 1px; }
+.det .proof .lk:empty { display: none; }
+.det .proof .lk.lk-merged, .det .proof .lk.lk-closed { color: var(--ok); } .det .proof .lk.lk-open { color: #fff; } .det .proof .lk.lk-not_planned { color: var(--dim); }
 .det .fit { border-left: 2px solid var(--ok); padding: 4px 10px; background: rgba(57,255,138,.04); }
 .det .fit a { color: var(--dim); }
 .det .src { margin-top: 3px; font-size: 11px; color: var(--dim); }
@@ -211,7 +214,7 @@ p.sub, .sub, .rules, .det p, .said li { max-width: 76ch; }
   </main>
 
   <footer>
-    <p>Status from the public GitHub API, refreshed every 10 minutes, and from IDNI’s own git history: a fix on IDNI’s main that names an item’s issue marks it partly fixed by itself. Quotes from IDNI’s monthly videos on the Tau Net YouTube channel. Comments are kept by the same moderator as the troll box. <a href="/findings/">Findings</a> · <a href="/status/">Status</a> · <a href="/devpulse/">Build pulse</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BRoadmap%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+    <p>Status from the public GitHub API, checked every hour by our server (the chip beside each linked IDNI issue or pull request), and from IDNI’s own git history: a fix on IDNI’s main that names an item’s issue marks it partly fixed by itself. Quotes from IDNI’s monthly videos on the Tau Net YouTube channel. Comments are kept by the same moderator as the troll box. <a href="/findings/">Findings</a> · <a href="/status/">Status</a> · <a href="/devpulse/">Build pulse</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BRoadmap%5D%20" target="_blank" rel="noopener">Feedback</a></p>
   </footer>
 </div>
 
@@ -240,24 +243,22 @@ const SAID = [
 ];
 
 /* The items. refs: IDNI issues or pull requests whose live state sets the badge (all closed or merged = fixed).
-   idni: "partly" when IDNI fixed part of it and the issue is still open. Proof links point at what anyone can check. */
+   idni: "partly" when IDNI fixed part of it and the issue is still open, "done" when IDNI fixed it and the issue is still
+   open. Proof links point at what anyone can check. */
 const ITEMS = [
-  { id: "rule-places", must: true, refs: [85], title: "Only two personal rules for the whole network",
-    brief: "Two accounts can hold a wallet rule at a time; the product is a wallet where everyone writes their own.",
-    problem: "The testnet allows two accounts at a time to hold a personal rule (a spending limit, a co-signer, an allow list). Two genesis accounts hold both places, so nobody else can try one on the live chain.",
+  { id: "rule-places", must: true, refs: [85], idni: "done", title: "Only two personal rules for the whole network",
+    brief: "Until 12 November only two accounts on the whole testnet could hold a personal rule; now every account can hold its own.",
+    problem: "Until 12 November the testnet let two accounts at a time hold a personal rule (a spending limit, a co-signer, an allow list), and two genesis accounts held both places. IDNI then changed how personal rules work: each account’s rule is judged on its own and only for that account’s payments, and nothing limits how many accounts hold one. The testnet restarted on that code. The issue is still open.",
     why: "IDNI’s own product focus is a wallet where people write rules for their own money. On a mainnet that needs a rule per user, not two for everyone.",
     proof: [
-      [`${IDNI}/blob/main/consensus/approvals.py`, "MAX_TIER_AUTHORS = 2", "in consensus/approvals.py"],
-      [`${IDNI}/blob/main/tests/test_approval_slots_native.py`, "IDNI’s measurement", "two authors build in time, four take about 110 s against a 60 s limit"],
-      ["/wallet/", "The Tau HUD wallet", "shows both places taken"],
+      [`${IDNI}/commit/0905c19feba670c8bb1f7d9cf6584d5548edb854`, "IDNI’s change 0905c19", "each payment is judged by its sender’s own rule"],
+      [`${IDNI}/blob/main/docs/approvals.md`, "IDNI’s rule docs", "“Nothing limits how many accounts hold a clause”"],
       [`${IDNI}/issues/85`, "IDNI issue #85", "our request to free one place for testers"],
     ],
     path: [
-      "Measure again with the faster Tau engine: one common rule went from 68 s to 2.4 s to load in October.",
-      "Rebuild only what changed: when one account changes its rule, the others need not be built again.",
-      "Raise the limit one step at a time, each step with the same measured test that set it to two.",
+      "Done in IDNI’s main on 12 November: one rule per account, at most 32 comparisons each, and at most 8 rule transactions per block.",
     ],
-    fit: "IDNI set the limit from a measurement, “not from taste”. The path keeps that method and only asks for the next measurement.",
+    fit: "IDNI had set the limit from a measurement. It changed the design instead of the number: a rule now costs the same however many accounts hold one.",
     talks: ["sep", "octDev"] },
   { id: "validators", must: true, refs: [80, 83], title: "One validator makes every block",
     brief: "Every block on the testnet comes from one IDNI key; nobody outside has produced one yet.",
@@ -317,17 +318,18 @@ const ITEMS = [
     ],
     fit: "In October IDNI separated trial runs from the official chain state and removed a whole class of state bugs. This sits right next to that work.",
     talks: ["octDev"] },
-  { id: "upgrades", must: true, refs: [82], title: "Restarts from block 0 come unannounced",
-    brief: "The testnet has started over from block 0 without notice, last on 1 November; a mainnet cannot start over.",
-    problem: "The testnet has started over from block 0 on the same genesis, without a notice beforehand and without anything a node can check. The last time was on 1 November, after the chain had stopped at block 5028. Nodes that missed it kept a dead chain. IDNI’s open pull request #93 plans the next restart, with a new genesis.",
+  { id: "upgrades", must: true, refs: [82], idni: "partly", title: "Restarts from block 0 come unannounced",
+    brief: "The testnet has started over from block 0 several times; since 12 November a restart brings a new block 0 that nodes check.",
+    problem: "Until 1 November the testnet started over from block 0 on the same genesis, without a notice beforehand and without anything a node can check. Nodes that missed the restart of 1 November kept a dead chain. On 12 November IDNI merged pull request #93: a restart now comes with a new genesis, IDNI’s README names its block 0 hash, and nodes compare it when they connect. IDNI restarted the testnet that way after 12 November.",
     why: "A mainnet cannot start over. The way to upgrade a running chain without a restart is best practised on the testnet first.",
     proof: [
       ["/stats/", "Stats page", "chain restarts our relay noticed"],
       [`${IDNI}/issues/82`, "IDNI issue #82", "the join profile gaps, restarts included"],
       [`${IDNI}/pull/93`, "IDNI pull request #93", "a faucet in a new genesis, which needs a network reset"],
+      [`${IDNI}/blob/main/README.md#verify-you-joined`, "IDNI’s README", "names the block 0 hash a node must have"],
     ],
     path: [
-      "Announce each restart and give it a number nodes exchange when they connect, so a node knows it is on an old chain.",
+      "Done in part: a restart now brings a new block 0 hash, which nodes compare when they connect (IDNI #93). Still open: a notice nodes can read before the restart.",
       "Practise one upgrade on the testnet that keeps the chain: new node version, same blocks.",
     ],
     fit: "Tau changes its own rules by vote without new node versions. An upgrade that keeps the chain is the same idea for the node software.",
@@ -382,7 +384,7 @@ const ITEMS = [
       ["/devpulse/", "Build pulse", "how the code moves, live"],
     ],
     path: [
-      "Ours to offer: run each new release in our node image and publish load and check times for the rules people use.",
+      "What we could do, not yet offered to IDNI: time each new release on our own node and publish how long the rules people use take to load and check.",
     ],
     fit: "Timings from a node outside IDNI help decide which optimisation matters most.",
     talks: ["aug", "octDev"] },
@@ -430,13 +432,33 @@ async function fetchIssues() {
 const PULSE_URL = "https://node.tauhud.com/devpulse.json";
 async function fetchPulse() {
   if (SAMPLE) return { items: { 81: { main: [], work: [{ branch: "issue/81-drop-sealed", ts: Date.now() / 1000 - 7200, url: `${IDNI}/tree/issue/81-drop-sealed` }] },
-    78: { main: [{ sha: "e6c8f9283f29fb53ba2a6d3b9448f4faebfd83a8", ts: 1793232000, kind: "fix", url: `${IDNI}/commit/e6c8f9283f29fb53ba2a6d3b9448f4faebfd83a8`, runs: true }], work: [] } }, news: [] };
+    78: { main: [{ sha: "e6c8f9283f29fb53ba2a6d3b9448f4faebfd83a8", ts: 1793232000, kind: "fix", url: `${IDNI}/commit/e6c8f9283f29fb53ba2a6d3b9448f4faebfd83a8`, runs: true }], work: [] } }, news: [],
+    states: { 78: { state: "closed", pr: false }, 82: { state: "open", pr: false }, 93: { state: "merged", pr: true } } };
   try {
     const r = await fetch(PULSE_URL, { cache: "no-store" });
     if (!r.ok) return null;
     const j = await r.json();
-    return j && j.refs ? { items: j.refs.items || {}, news: j.news || [] } : null;
+    return j && j.refs ? { items: j.refs.items || {}, news: j.news || [], states: j.refs.states || null, fixed: j.refs.fixed || {} } : null;
   } catch { return null; }
+}
+/* GitHub's state of every IDNI issue and pull request the page links, checked once an hour by our server
+   (infra/alerts/roadmap_watch.py, in devpulse.json refs.states; it also tells us privately when one changes, so an
+   item's words get a look). A chip beside each such link says merged, closed or open; the badges read it too, so a
+   visitor's browser asks GitHub only when our server has no answer. */
+const linkNo = h => { const m = String(h).match(/^https:\/\/github\.com\/IDNI\/tau-testnet\/(?:issues|pull)\/(\d+)$/); return m ? +m[1] : null; };
+const CHIP = { merged: "merged", closed: "closed", not_planned: "not planned", open: "open" };
+function linkState(n) {
+  const s = PULSE && PULSE.states && PULSE.states[n];
+  if (s) return s.state;
+  const i = ISSUES[n];
+  return i ? (i.merged ? "merged" : i.state === "closed" ? (i.reason === "not_planned" ? "not_planned" : "closed") : "open") : "";
+}
+const chip = n => { const s = linkState(n); return `<span class="lk lk-${s}" data-n="${n}">${s ? CHIP[s] : ""}</span>`; };
+function fromPulse(p) {   // the hourly states in the shape fetchIssues gives, when they cover every ref
+  const nums = [...new Set(ITEMS.flatMap(it => it.refs))];
+  if (!p || !p.states || !nums.every(n => p.states[n])) return null;
+  return Object.fromEntries(nums.map(n => { const s = p.states[n];
+    return [n, { state: s.state === "open" ? "open" : "closed", reason: s.state === "not_planned" ? "not_planned" : null, pr: !!s.pr, merged: s.state === "merged" }]; }));
 }
 let ISSUES = {}, PULSE = null;
 const work = it => {   // what IDNI's git says about this item: fixes on main, and branches still at work
@@ -448,12 +470,15 @@ const work = it => {   // what IDNI's git says about this item: fixes on main, a
   }
   return { main: main.sort((a, b) => b.ts - a.ts), branches: branches.sort((a, b) => b.ts - a.ts) };
 };
+/* What our server read from IDNI's code about the issues an item rests on (infra/alerts/fixwatch.py, devpulse.json
+   refs.fixed): IDNI's change solves our report (done) or part of it, with a quote from the change. */
+const solved = it => it.refs.map(n => PULSE && PULSE.fixed && PULSE.fixed[n] ? { ...PULSE.fixed[n], n } : null).filter(Boolean);
 function status(it) {
   if (!it.refs.length) return ["idni", "IDNI’s list"];
-  const got = it.refs.map(n => ISSUES[n]).filter(Boolean), w = work(it);
+  const got = it.refs.map(n => ISSUES[n]).filter(Boolean), w = work(it), fx = solved(it);
   const done = got.length === it.refs.length && got.every(i => i.state === "closed" && (!i.pr || i.merged) && i.reason !== "not_planned");
-  if (done) return ["fixed", "Fixed"];
-  if (it.idni === "partly" || w.main.length || got.some(i => i.state === "closed" && (!i.pr || i.merged))) return ["partly", "Partly fixed"];
+  if (done || it.idni === "done" || (fx.length === it.refs.length && fx.every(x => x.level === "done"))) return ["fixed", "Fixed"];
+  if (it.idni === "partly" || fx.length || w.main.length || got.some(i => i.state === "closed" && (!i.pr || i.merged))) return ["partly", "Partly fixed"];
   if (w.branches.length) return ["review", "IDNI at work"];
   if (got.some(i => i.pr && i.state === "open")) return ["review", "Fix in review"];
   if (!got.length) return ["unknown", "Status unknown"];
@@ -461,14 +486,16 @@ function status(it) {
 }
 const lang = () => (window.TauI18n && TauI18n.lang) || "en";
 function renderWork(it) {
-  const w = work(it);
-  if (!w.main.length && !w.branches.length) return "";
+  const w = work(it), fx = solved(it).filter(x => x.by === "code" && x.url && !w.main.some(c => c.sha === x.sha));
+  if (!w.main.length && !w.branches.length && !fx.length) return "";
   const day = ts => new Date(ts * 1000).toISOString().slice(0, 10);
   const head = c => {   // the news line's written headline for this commit, when there is one; never the raw commit title
     const n = PULSE.news.find(x => (x.shas || []).includes(c.sha));
     const h = n && n.headline; return h ? (h[lang()] || h.en || "") : "";
   };
+  const said = x => (x.line && (x.line[lang()] || x.line.en)) || "";
   const li = [
+    ...fx.map(x => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener" translate="no">${esc(String(x.sha).slice(0, 7))}</a> <span>${x.ts ? day(x.ts) + " · " : ""}${esc((x.level === "done" ? "solves #{n}, read by our server" : "solves part of #{n}, read by our server").replace("{n}", x.n))} · ${esc(said(x))}</span></li>`),
     ...w.main.slice(0, 4).map(c => { const h = head(c); return `<li><a href="${c.url}" target="_blank" rel="noopener" translate="no">${c.sha.slice(0, 7)}</a> <span>${day(c.ts)} · ${esc((c.kind === "merged" ? "merged by IDNI into main, names #{n}" : "fix on IDNI’s main, names #{n}").replace("{n}", c.n))}${h ? ` · ${esc(h)}` : ""} · ${(c.runs ? "our node runs it" : "our node does not run it yet")}</span></li>`; }),
     ...w.branches.slice(0, 3).map(b => `<li><a href="${b.url}" target="_blank" rel="noopener" translate="no">${esc(b.branch)}</a> <span>${day(b.ts)} · ${esc("IDNI work branch, not on main yet, names #{n}".replace("{n}", b.n))}</span></li>`),
   ];
@@ -570,7 +597,7 @@ function renderDetail() {
     <div class="meta"><span class="badge b-${cls}">${label}</span><span>${it.must ? "Must be fixed" : "Should be fixed"}</span>${refs ? `<span>At IDNI: ${refs}</span>` : ""}</div>
     <h3>The problem</h3><p>${esc(it.problem)}</p>
     <h3>Why it matters for mainnet</h3><p>${esc(it.why)}</p>
-    <h3>Proof</h3><ul class="proof">${it.proof.map(([h, t, d]) => `<li><a href="${h}"${/^https?:/.test(h) ? ' target="_blank" rel="noopener"' : ""}>${esc(t)}</a> <span>${esc(d)}</span></li>`).join("")}</ul>
+    <h3>Proof</h3><ul class="proof">${it.proof.map(([h, t, d]) => `<li><a href="${h}"${/^https?:/.test(h) ? ' target="_blank" rel="noopener"' : ""}>${esc(t)}</a>${linkNo(h) ? chip(linkNo(h)) : ""} <span>${esc(d)}</span></li>`).join("")}</ul>
     <div id="work">${renderWork(it)}</div>
     <h3>A path to a fix</h3><ol>${it.path.map(p => `<li>${esc(p)}</li>`).join("")}</ol>
     <h3>How it fits IDNI’s way</h3><div class="fit"><p>${esc(it.fit)}</p>${it.talks.map(k => `<p>${talk(k)}</p>`).join("")}</div>
@@ -640,13 +667,17 @@ document.addEventListener("click", e => {
 });
 
 async function tick() {
-  [ISSUES, PULSE] = await Promise.all([fetchIssues(), fetchPulse()]);
+  PULSE = await fetchPulse();
+  ISSUES = fromPulse(PULSE) || await fetchIssues();
   const got = Object.keys(ISSUES).length;
   $("state").className = "state " + (got ? "live" : "off");
   $("stateText").textContent = got ? (SAMPLE ? "Sample data" : "Live from GitHub") : "GitHub unreachable";
   renderList();
   const b = SEL && $("det").querySelector(".meta .badge");   // only the badge and IDNI's work: a comment being typed stays
   if (b) { const [cls, label] = status(SEL); b.className = `badge b-${cls}`; b.textContent = label; }
+  if (SEL) for (const c of $("det").querySelectorAll(".proof .lk[data-n]")) {
+    const s = linkState(+c.dataset.n); c.className = `lk lk-${s}`; c.textContent = s ? CHIP[s] : "";
+  }
   const wk = SEL && $("det").querySelector("#work"), html = SEL ? renderWork(SEL) : "";
   if (wk && wk.dataset.html !== html) { wk.innerHTML = html; wk.dataset.html = html; }
 }

@@ -22,6 +22,8 @@ os.environ.update(RELAY_URL="ws://127.0.0.1:18799", RELAY_HTTP="http://127.0.0.1
 _now = time.gmtime()
 os.environ.update(RECAP_WEEKDAY=str(_now.tm_wday), RECAP_HOUR=str(_now.tm_hour), RECAP_TZ="UTC")  # a recap slot that just passed
 os.environ["SIM_ALERTS"] = "false"  # simulated posts have their own test (test_sim_alerts.py)
+os.environ["X_DAILY_CAP"] = "8"   # this test is about posting, not the daily cap (test_x_alerts.py)
+os.environ.update(RESTART_BRIEF_WAIT_MINUTES="0", RESTART_BRIEF_PATH=os.path.join(TMP, "restart.json"))   # no devpulse here: the short restart post (test_restart_brief.py)
 import urllib.request  # noqa: E402
 
 _urlopen = urllib.request.urlopen
@@ -225,5 +227,24 @@ def test_rule_diff():
     assert "Rule text diff: none" in alerts.telegram_text(item)
 
 
+def test_rule_meaning():
+    """What a change decides differently, read for every case (rulefacts.py, the same lines as the box on /proposals/)."""
+    spec = alerts.explain.clauses(alerts.explain.GENESIS_RULES)
+    m = alerts.meaning_of([FEE_RULE], spec)
+    assert m == {"same": False, "lines": ["Base fee per transaction · 10 AGRS → 20 AGRS: every transfer"], "unread": []}, m
+    item = {"kind": "proposed", "headline": "x", "what": [], "why": "", "facts": [], "link": "https://tauhud.com", "meaning": m}
+    t = alerts.telegram_text(item)
+    assert "<b>What it decides differently</b> (read for every case)\n• Base fee per transaction · 10 AGRS → 20 AGRS: every transfer" in t, t
+    m = alerts.meaning_of(["always ( o7[t]:bv[16] = { #x0001 }:bv[16] )."], spec)   # the same answer, written another way
+    assert m and m["same"] and "decides exactly as the old one" in alerts.telegram_text({**item, "meaning": m}), m
+    m = alerts.meaning_of(["always ( o6[t]:bv[16] = { 0 }:bv[16] && o10[t]:bv[16] = i15[t]:bv[16] )."], spec)
+    t = alerts.telegram_text({**item, "meaning": m})
+    assert "• Which blocks count as valid · Newly rejected: signature check passed" in t and "Not read exactly: output o10." in t, t
+    assert alerts.meaning_of([alerts.explain.GENESIS_RULES], spec) is None   # the text in force: nothing to read
+    assert alerts.meaning_of(["always(o6[t]:bv[16]=((i10[t]:bv[16]&i10[t]:bv[16])|(i6[t]:bv[16]^i6[t]:bv[16])))."], spec) is None
+    assert alerts.meaning_of(["always ( o6[t]:bv[16] = (( )."], spec) is None   # broken text never stops a post
+
+
 test_rule_diff()
+test_rule_meaning()
 asyncio.run(main())

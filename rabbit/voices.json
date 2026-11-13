@@ -1597,6 +1597,38 @@
  },
  {
   "who": "rico",
+  "text": "A pirate just handed in a fee rule that would tax every wallet on the lagoon, not only his own. A rule you write may steer your own payments, nobody else's. The chain sent the taxman home. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "Another pirate taxman! A one percent cut on everybody's transfers. On this chain your rules cover your own wallet and nobody else's. Refused, and nobody pays a coin."
+ },
+ {
+  "who": "rico",
+  "text": "A pirate tried to take back another pirate's booking. Only the one who paid can take a booking back before its time. The chain checked whose it was. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "Hands off, matey! A pirate reached for a booking that isn't his. The chain knows who made every booking. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "A pirate tried to take back a booking that never existed. The chain looked for it, found nothing, and said so. You can't cancel a ghost."
+ },
+ {
+  "who": "rico",
+  "text": "Another phantom booking from the black ship. Taking back what you never booked: bold, imaginative, refused."
+ },
+ {
+  "who": "rico",
+  "text": "Too late, captain! A pirate tried to take back his own booking after its release time. Once that hour has passed, a booking can't be taken back. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "A pirate missed the window on his own booking. A booking can be taken back only before its release time, and his had gone. Refused. Set an alarm, matey."
+ },
+ {
+  "who": "rico",
   "text": "The black ship is weighing anchor. The lanterns go in one by one. They leave as they came: without a word to Tobias."
  },
  {
@@ -5502,6 +5534,10 @@
  },
  {
   "who": "marisol",
+  "text": "A pirate tried to cancel a booking that never existed. That’s a rumour with a wallet. The chain looked, found nothing, and said no. I wish I could do that with gossip."
+ },
+ {
+  "who": "marisol",
   "text": "One of the pirates wore a false moustache and paid from another pirate’s wallet. The chain checked the signature, not the moustache. Refused. I’m telling everyone."
  },
  {
@@ -5902,6 +5938,10 @@
  },
  {
   "who": "tobias",
+  "text": "A pirate tried to tax every wallet on the island with one rule of his own. A wallet’s rule covers that wallet and nothing more. The chain refused him. I may frame the refusal."
+ },
+ {
+  "who": "tobias",
   "text": "Gone, without a word. I’ve added a page to the harbour book: ships that do not announce themselves. It’s a short page. One name."
  },
  {
@@ -6090,7 +6130,7 @@
  },
  {
   "who": "hana",
-  "text": "Each refusal has a name in the logbook. Insufficient funds, when the wallet is too poor. Invalid sequence, for a number already taken. Tx expired, when its time or its block deadline ran out. Invalid signature, for the wrong key. Fee limit too low, for no fee. Tx invalid or tx rejected, when the payment itself breaks the rules: the wrong payer, too big, too many transfers. The class has them all on the wall."
+  "text": "Each refusal has a name in the logbook. Insufficient funds, when the wallet is too poor. Invalid sequence, for a number already taken. Tx expired, when its time or its block deadline ran out. Invalid signature, for the wrong key. Fee limit too low, for no fee. Tx invalid or tx rejected, when the payment itself breaks the rules: the wrong payer, too big, too many transfers. And every time the pirates find a new door, the class adds a new name to the wall."
  },
  {
   "who": "hana",
@@ -6131,6 +6171,10 @@
  {
   "who": "kai",
   "text": "The pirates stay off the reef, which I respect. The turtle has gone deeper anyway. She doesn’t trust a ship without a timetable."
+ },
+ {
+  "who": "kai",
+  "text": "A pirate tried to take back his booking after its time was up. Like trying to un-dive once you’re already in the water. The chain said too late. Refused."
  },
  {
   "who": "kai",
@@ -6611,6 +6655,10 @@
  {
   "who": "salado",
   "text": "A ship without a booking! No escrow, no reservation, no towels! I don’t know whether to panic or send a brochure."
+ },
+ {
+  "who": "salado",
+  "text": "A pirate tried to cancel another pirate’s booking! In my business that is called sabotage. The chain calls it the wrong sender. Refused. I love this chain. It respects a reservation."
  },
  {
   "who": "salado",

@@ -144,5 +144,11 @@ TauI18n.add({ strings: {
   "Demo with play values": "お試し値のデモ",
   "Set (demo). On the real testnet a block would hold the rule now; a play payment waits in step 3.": "設定しました（デモ）。本物のテストネットなら、いまブロックにルールが入ります。手順 3 でお試しの支払いが待っています。",
   "Removed (demo).": "削除しました（デモ）。",
-  "Today by itself: 1 payment, {a} of {b} test AGRS.": "今日の自動署名：1 件、{b} 中 {a} テスト AGRS。"
+  "Today by itself: 1 payment, {a} of {b} test AGRS.": "今日の自動署名：1 件、{b} 中 {a} テスト AGRS。",
+  "2 things it does, 4 limits": "できること 2 つ、限界 4 つ",
+  "Every account on Tau Testnet Alpha may hold its own personal rule, so the Guardian can guard any number of accounts at once.": "Tau テストネット Alpha ではどのアカウントも自分の個人ルールを持てるので、ガーディアンはいくつのアカウントでも同時に守れます。",
+  "1 account has a personal rule on the testnet; every account may have one": "テストネットで個人ルールを持つアカウントは 1 つ。どのアカウントも 1 つ持てます",
+  "{n} accounts have a personal rule on the testnet; every account may have one": "テストネットで個人ルールを持つアカウントは {n} 個。どのアカウントも 1 つ持てます",
+  "Sent. Once a block holds it, your rule is gone.": "送信しました。ブロックに入ると、あなたのルールは消えます。",
+  "3 things it does, 3 limits": "できること 3 つ、限界 3 つ",
 } });

@@ -516,6 +516,8 @@ def step(now: float, st: dict, save, tell) -> str | None:
             clips[vid] = {"at": round(now), "result": "no clip: no trick was answered and refused"}
             save(st)
             return vid
+        if blog.gap_left(now):   # the channels posted lately: the clip waits for the room (alerts.POST_GAP_MINUTES)
+            return None
         out = f"/tmp/trick-clip-{vid}.mp4"
         sea, job = motion_of(vid)
         if sea and job.get("draft"):   # one of the first living-sea clips: the still one posts, this one waits for a look

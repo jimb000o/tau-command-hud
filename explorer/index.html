@@ -47,8 +47,11 @@ button { font: inherit; }
    three columns take the remaining height, each scrolling inside. Phones and short windows scroll normally. */
 html.fit body { padding: 0; overflow: hidden; height: 100vh; }
 html.fit .wrap { width: calc(100vw / var(--z)); height: calc(100vh / var(--z)); max-width: none; margin: 0; padding: 10px 20px 12px;
-  transform: scale(var(--z)); transform-origin: 0 0; grid-template-rows: auto auto auto minmax(0, 1fr) auto; }
-html.fit .cols { min-height: 0; }
+  transform: scale(var(--z)); transform-origin: 0 0; display: flex; flex-direction: column; }
+/* a column, not grid rows counted by position: the menu adds rows of its own (the tabs under it), and a counted row list
+   then gave the search the squeezable row, so it was drawn under the chain band. Every row keeps its height, the columns take the rest */
+html.fit .wrap > * { flex: none; }
+html.fit .wrap > .cols { flex: 1 1 0; min-height: 0; }
 html.fit .cols > #band { min-height: 0; }
 html.fit .cols > .panel { min-height: 0; display: flex; flex-direction: column; }
 html.fit .scroll { min-height: 0; flex: 1 1 auto; overflow: auto; }
@@ -367,7 +370,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
   </main>
 
   <footer>
-    <p>Data: our node at node.tauhud.com<span class="vt"> (tau-testnet pinned to commit 668fbf4)</span>, which checks every block itself, served by a read-only relay. Amounts in AGRS. <a href="https://github.com/jimb000o/tau-command-hud" target="_blank" rel="noopener">Source</a> · <a href="/account/">Accounts</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BExplorer%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+    <p>Data: our node at node.tauhud.com<span class="vt"> (tau-testnet pinned to commit 668fbf4)</span>, which checks every block itself, served by a read-only relay. Amounts in AGRS. <a href="https://node.tauhud.com/stats" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="https://github.com/jimb000o/tau-command-hud" target="_blank" rel="noopener">Source</a> · <a href="/account/">Accounts</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BExplorer%5D%20" target="_blank" rel="noopener">Feedback</a></p>
   </footer>
 </div>
 <div id="tip" hidden></div>
@@ -827,7 +830,7 @@ function blockView(h) {
     ${R && R.here.length ? `<p class="note"><b>The rules changed at this block.</b> ${R.here.length === 1 ? "An agreed rule change" : `${R.here.length} agreed rule changes`} took effect at the end of it, so from #${fmtN(h + 1)} on every block is judged by revision ${R.rev + R.here.length}. No fork, no software upgrade. ${R.here.map(u => u.update_id ? `<a href="/proposals/#${esc(String(u.update_id).slice(0, 16))}">See what changed</a>` : "").filter(Boolean).join(" · ")}</p>` : ""}
     ${txs.length ? `<h3>Transactions in order</h3><table><thead><tr><th class="n">#</th><th>What</th><th>From → to</th><th class="n">AGRS</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
     <p class="note vt">The state hash is a fingerprint of every balance and rule after this block. Two nodes that agree on it agree on the whole state.</p>
-    <p class="note vp">Every node checked this block against the Tau rules before adding it. Switch View to Technical for its hashes and the raw data.</p>
+    <p class="note vp">Every node checked this block against the Tau rules before adding it. Set your level to Expert under the gear for its hashes and the raw data.</p>
     <details class="raw vt"><summary>Raw block</summary><pre class="code">${esc(JSON.stringify(b, null, 2))}</pre></details>`;
 }
 function txView(key) {

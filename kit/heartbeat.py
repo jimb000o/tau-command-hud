@@ -6,10 +6,16 @@ If NODE_NAME is set, also send that head to the Tau HUD relay, which lists the
 node under "community nodes" on tauhud.com/stats and says whether it is on the
 same chain as tauhud.com's own node.
 
-Sent: the name, canonical height and head hash, network tip, kit version and
-tau-testnet commit. Not sent: addresses, keys, peer IDs. The `key` is a random
+Sent: the name, canonical height and head hash, network tip, kit version,
+tau-testnet commit and the node's peer ID. Not sent: addresses, keys. The `key` is a random
 secret kept in /data/report.key; the relay shows only its hash, so nobody else
 can report under this node's row.
+
+A node that is not a kit node (its own tau-testnet, without the kit's node
+patches) does not tell its peer ID: set NODE_PEER_ID to it, so tauhud.com can
+match the report to the peer its own node sees. REPORT_FAMILY=4 sends the
+report over IPv4 only, for a node that tauhud.com knows by its IPv4 address
+(infra/relay/knownnodes.py).
 
 Run: python -I heartbeat.py [--once]   (needs websockets==15.0.1)
 """
@@ -21,6 +27,7 @@ import logging
 import os
 import re
 import secrets
+import socket
 import sys
 import time
 
@@ -35,12 +42,15 @@ REPORT_URL = os.environ.get("REPORT_URL", "wss://node.tauhud.com")
 TAU_TESTNET_REF = os.environ.get("TAU_TESTNET_REF", "")[:12]
 KEY_PATH = os.environ.get("KEY_PATH", "/data/report.key")
 EVERY = float(os.environ.get("HEARTBEAT_SECONDS", 60))
+NODE_PEER_ID = os.environ.get("NODE_PEER_ID", "").strip()
+REPORT_FAMILY = os.environ.get("REPORT_FAMILY", "").strip()
 NAME_OK = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,23}$")
 
 
 async def ask(url: str, *commands: str) -> list:
     """Open a connection, say hello, send each command, return the replies."""
-    async with connect(url, open_timeout=10, max_size=2**20) as ws:
+    extra = {"family": socket.AF_INET} if url == REPORT_URL and REPORT_FAMILY == "4" else {}
+    async with connect(url, open_timeout=10, max_size=2**20, **extra) as ws:
         await ws.send("hello version=1")
         hello = await asyncio.wait_for(ws.recv(), 20)
         while str(hello).startswith("{"):  # the relay pushes presence on connect
@@ -65,7 +75,7 @@ async def node_status() -> dict:
     data = gov["data"]
     tip = (data.get("network_tip") or {}).get("number")
     return {"height": int(data.get("head_number") or 0), "head": data.get("head_hash") or "",
-            "tip": int(tip) if tip is not None else None, "peer": data.get("peer_id")}
+            "tip": int(tip) if tip is not None else None, "peer": data.get("peer_id") or NODE_PEER_ID or None}
 
 
 def report_key() -> str:

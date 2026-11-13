@@ -23,6 +23,7 @@ CHAIN = os.path.join(os.path.dirname(EVENTS), "chain.jsonl")
 BOARD = os.path.join(os.path.dirname(EVENTS), "community.json")
 PEERS = os.path.join(os.path.dirname(EVENTS), "peers.json")
 os.environ.update(PEERS_PATH=PEERS, BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, SENT_PATH=EVENTS + ".sent", CHAT_PATH=EVENTS + ".chat", CHAT_KEY_PATH=EVENTS + ".chatkey", ROADMAP_PATH=EVENTS + ".roadmap", CHAINHIST_PATH=EVENTS + ".chainhist", DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
+os.environ["KNOWN_NODES_PROBE"] = "0"   # no TCP checks of real addresses from a test
 os.environ.update(UPSTREAM_URL="ws://127.0.0.1:18765", LISTEN_HOST="127.0.0.1", LISTEN_PORT="18766",
                   TRUST_PROXY="1", MAX_PER_IP="3", CLIENT_BURST="20", LOOKUP_CACHE_SECONDS="10", GOV_POLL_SECONDS="4", TAU_GOVERNANCE_OPEN_ADMISSION="true")
 sys.path.insert(0, os.path.dirname(__file__))
@@ -242,12 +243,12 @@ async def main():
             check((await ask(ws, "getapprovalrequests " + "ab" * 48 + " in"))["status"] == "ok", "wallet inbox lookup passes through")
             check((await ask(ws, "getruleconflict " + "aa" * 32))["data"]["verdict"] == "clean", "conflict report passes through")
             check((await ask(ws, "getruleconflict " + "aa" * 20))["status"] == "error", "conflict report needs a 64-hex offer id")
-            # /rules: the testnet's personal-rule places, from the kept blocks and the node's own answer
+            # /rules: who holds a personal rule, from the kept blocks and the node's own answer (no cap since IDNI 5ad1bb7)
             check(set(r.rule_candidates()) == {BOB, CAROL}, f"rule candidates from blocks {r.rule_candidates()}")
             await r.poll_rules()
             ctype, body = await get("/rules")
             rules = json.loads(body)
-            check(ctype == "application/json" and rules["places"] == 2 and rules["holders"] == [BOB] and rules["taken"] == 1,
+            check(ctype == "application/json" and "places" not in rules and rules["limit"] is None and rules["holders"] == [BOB] and rules["taken"] == 1,
                   f"/rules counts BOB, not CAROL's neutral rule {rules}")
             sent = [x for x in mock["commands"] if x.startswith("sendtx ")][-1]
             check(json.loads(sent[7:])["operations"]["0"] == good["operations"]["0"], "rule text with spaces arrives intact")
@@ -256,30 +257,16 @@ async def main():
             wall = json.loads(body)["rules"]
             check(ctype == "application/json" and len(wall) == 1 and wall[0]["author"] == BOB and wall[0]["users"] == [BOB] and wall[0]["first"] == 8,
                   f"/rulewall lists BOB's rule once {wall}")
-            # fair turns on the rule places: a pre-signed neutral clause, checked once, sent when the turn is over
+            # the fair turns on the two rule places are retired: nothing is kept, nothing is sent for anyone
             free = {"tx_type": "user_tx", "sender_pubkey": BOB, "sequence_number": 7, "expiration_time": int(time.time()) + 3 * 86400,
                     "fee_limit": "50", "expire_at_height": 9000, "operations": {"0": "always ( (o5[t]:bv[24] = { #x000001 }:bv[24]) )."}, "signature": "ef" * 96}
-            check((await ask(ws, "leasetx " + json.dumps({**free, "operations": {"0": CLAUSE}})))["error"]["code"] == "INVALID_PARAMS", "a turn takes only the neutral clause")
             before = len(mock["commands"])
             m = await ask(ws, "leasetx " + json.dumps(free))
-            check(m["status"] == "ok" and m["data"]["until"] > time.time() + 3600, f"the removal is kept; nobody waits, so a long turn {m}")
-            check(sum(x.startswith("checktx ") for x in mock["commands"][before:]) == 1 and not any(x.startswith("sendtx ") for x in mock["commands"][before:]), "kept after one checktx, not sent")
-            ctype, body = await get("/lease/wait?pk=" + "56" * 48)
-            st = json.loads(body)
-            check(st["ok"] and st["position"] == 1 and st["waiting"] == 1, f"a visitor joins the line {st}")
+            check(m["status"] == "error" and m["error"]["code"] == "FORBIDDEN", f"leasetx is retired {m}")
             ctype, body = await get("/lease?pk=" + BOB)
-            st = json.loads(body)
-            check(st["holders"][0]["managed"] and st["mine"]["status"] == "held" and st["mine"]["until"] <= time.time() + 31 * 60,
-                  f"the holder's turn is listed and, with someone waiting, shrinks to 30 minutes {st}")
-            r.lease.leases[BOB]["start"] -= 3600   # the turn began an hour ago and somebody waits
-            before = len(mock["commands"])
+            check(json.loads(body) == {"enabled": False, "retired": True}, f"/lease says off to an old page {body}")
             await r.poll_rules()
-            sent = [x for x in mock["commands"][before:] if x.startswith("sendtx ")]
-            check(len(sent) == 1 and json.loads(sent[0][7:]) == free, "the turn is over: the removal goes to the node, as signed")
-            check(r.lease.leases[BOB]["status"] == "sent", "and is marked sent, once")
-            before = len(mock["commands"])
-            await r.poll_rules()
-            check(not any(x.startswith("sendtx ") for x in mock["commands"][before:]), "never sent twice")
+            check(not any(x.startswith(("sendtx ", "checktx ")) for x in mock["commands"][before:]), "and the relay sends nothing for anyone")
             for label, tx in (("proposal", {**good, "tx_type": "consensus_rule_update"}), ("no signature", {**good, "signature": "x"}),
                               ("short key", {**good, "sender_pubkey": "ab"}), ("no type", {k: v for k, v in good.items() if k != "tx_type"})):
                 check((await ask(ws, "sendtx " + json.dumps(tx)))["error"]["code"] == "INVALID_PARAMS", f"wallet refuses {label}")
@@ -585,6 +572,31 @@ async def main():
             check(m["status"] == "ok", "silent node reports again")
         back = next(n for n in (await community())[1]["nodes"] if n["name"] == "alice-node")
         check(back["first_seen"] == alice_first, "first_seen kept across a silence")
+
+        # a named node (knownnodes.py): its name and peer ID only from its own address, shown under its display name
+        aoc = "12D3KooWEafLrs7GSJjuBbrRtGXeCzMZcJZowHvpCcFXLyetuzTc"
+        async with connect(url, additional_headers={"X-Forwarded-For": "198.51.100.9"}) as ws:
+            json.loads(await ws.recv())
+            for bad in (f"report key={'e5' * 16} name=Age-of-Chains height={h} head={head}",
+                        f"report key={'e5' * 16} name=ageofchains height={h} head={head}",
+                        f"report key={'e5' * 16} name=impostor height={h} head={head} peer={aoc}"):
+                m = await ask(ws, bad)
+                check(m["status"] == "error" and "reserved" in m["error"]["message"], f"named node refused from elsewhere: {bad[:70]}")
+        async with connect(url, additional_headers={"X-Forwarded-For": "2.29.161.201"}) as ws:
+            json.loads(await ws.recv())
+            lo = min(r.hash_at())   # our lowest block: the node reports it is still down there
+            m = await ask(ws, f"report key={'e5' * 16} name=Age-of-Chains height={lo} head={r.hash_at()[lo]} tip=none kit=3 ref=668fbf4 peer={aoc}")
+            check(m["status"] == "ok" and m["data"]["agrees"] == "same", f"named node reports from its own address {m}")
+        row = next(n for n in (await community())[1]["nodes"] if n.get("known"))
+        check(row["name"] == "Age of Chains" and row["peer"] == aoc, f"/community shows the display name {row}")
+        board = json.loads((await get("/community/board"))[1])["nodes"]
+        check(any(b["name"] == "Age of Chains" and b["known"] for b in board), "board shows the display name")
+        kn = json.loads((await get("/peers"))[1])["known"]
+        k = next(x for x in kn if x["peer"] == aoc)
+        check(k["name"] == "Age of Chains" and k["reach"] == "online" and k["report"]["live"]
+              and k["sync"]["state"] == "catching_up" and k["sync"]["source"] == "report" and k["sync"]["behind"] > relay.SYNC_LAG,
+              f"/peers known: online by report, catching up, not synced {k}")
+        check(k["port"]["open"] is None and k["p2p"]["online"] is False, "no probe, no peer contact: those stay unknown")
 
         # the kit's heartbeat end to end: reads the (mock) node, reports to the relay
         os.environ.update(NODE_URL="ws://127.0.0.1:18765", REPORT_URL=url, NODE_NAME="kit-test",
