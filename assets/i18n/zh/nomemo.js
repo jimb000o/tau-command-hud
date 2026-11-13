@@ -1,6 +1,10 @@
 /* Simplified Chinese for No Memo, the crew terminal. Keys are the English text; {n} {m} {a} {b} {h} … are placeholders.
    Command words (help, take, run, back, case, pick), node codes and the ship's name stay as they are. */
 TauI18n.add({ strings: {
+  "who pays the node": "谁为节点付费",
+  "This terminal dials node.tauhud.com, a community node with a monthly bill. The Tau HUD crew is a paid membership that carries part of it:": "这个终端连接的是 node.tauhud.com，一个每月都有账单的社区节点。Tau HUD 船员是付费会员，承担其中一部分：",
+  "The game runs on our community node. Help keep it online:": "这个游戏运行在我们的社区节点上。帮助它保持在线：",
+  "the Tau HUD crew": "Tau HUD 船员",
   "No Memo": "No Memo",
   "Contracts": "合约任务",
   "Terminal": "终端",

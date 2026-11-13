@@ -454,6 +454,21 @@ x_line() {
   XB=$(docker compose exec -T blog python -c 'import json,os,time; p=json.load(open(os.path.join(os.environ.get("PUBLIC_DIR","/public"),"blog","posts.json"))).get("posts",[]); m=time.strftime("%Y-%m"); print(sum(1 for a in p if str(a.get("on","")).startswith(m)))' 2>/dev/null | tr -dc 0-9)
   awk -v n="${XN:-0}" -v b="${XB:-0}" -v d="$(date -u +%d)" 'BEGIN { c = n * 0.015 + b * 0.20; printf "x:       %d posts and %d blog link posts this month, about $%.2f so far, about $%.2f for the whole month at this pace (estimate; the bill: console.x.com)\n", n, b, c, c * 30 / (d < 1 ? 1 : d) }'
 }
+# the crew's ship log (alerts/crewlog.py), a members-only post in the Tau HUD crew on Fourthwall, the node left alone:
+# up crewlog  the posting service rebuilt with the code just pulled, the API user checked (tiers, members, the newest
+# posts as stored) and this week's post printed, nothing posted; up crewlog send  posts it now; up crewlog on / off
+# posts one every Monday after the weekly recap by itself, or stops that (CREWLOG_ENABLED in .env)
+if [ "${1:-}" = "crewlog" ]; then
+  case "${2:-}" in
+    on|off) touch .env; sed -i '/^CREWLOG_ENABLED=/d' .env; [ -s .env ] && [ -n "$(tail -c1 .env)" ] && echo >> .env
+            printf 'CREWLOG_ENABLED=%s\n' "$([ "$2" = on ] && echo true || echo false)" >> .env; chmod 600 .env ;;
+  esac
+  docker compose up -d --build --no-deps alerts >/dev/null 2>&1 || docker compose up -d --build --no-deps alerts
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T alerts python alerts.py --crewlog $([ "${2:-}" = send ] && echo send) 2>&1 | grep -v " INFO " || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 if [ "${1:-}" = "cost" ] || [ "${1:-}" = "costs" ]; then
   if [ "${2:-}" = "mail" ]; then
     [ -t 0 ] || { echo "needs a terminal: ssh -t root@node.tauhud.com \"cd /opt/tau-command-hud && sh infra/up.sh cost mail\""; exit 2; }
@@ -722,4 +737,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up cost, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up cost, up crewlog, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"

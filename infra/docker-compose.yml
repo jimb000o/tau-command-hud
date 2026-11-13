@@ -146,6 +146,11 @@ services:
       X_LINKS: ${X_LINKS:-false}
       SIM_POSTS: ${SIM_POSTS:-false}   # the simulation's switches and visitor rule changes as posts (off since 5 Nov 2026)
       X_SIM: ${X_SIM:-false}   # the simulation is not news for X (12 Nov 2026)
+      # the crew's ship log (alerts/crewlog.py): a members-only post in the Tau HUD crew every Monday after the recap;
+      # the shop's API user from Fourthwall (Settings, For developers, Open API), off until CREWLOG_ENABLED=true (up crewlog on)
+      FOURTHWALL_API_USER: ${FOURTHWALL_API_USER:-}
+      FOURTHWALL_API_PASS: ${FOURTHWALL_API_PASS:-}
+      CREWLOG_ENABLED: ${CREWLOG_ENABLED:-false}
       X_PICTURES: ${X_PICTURES:-true}   # the rule change's card, the live overview or a new page's picture under the post
       # weekly recap image and newspaper (alerts/recap.py, gazette.py): Monday 09:00 German time unless .env says otherwise
       RECAP_ENABLED: ${RECAP_ENABLED:-true}

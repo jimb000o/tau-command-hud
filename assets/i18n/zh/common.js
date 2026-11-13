@@ -481,6 +481,7 @@ TauI18n.add({ strings: {
   "Update log": "更新日志",
   "built from your feedback": "根据你的反馈打造",
   "Keep it running": "让它继续运行",
+  "Crew": "船员",
   "Tau HUD crew": "Tau HUD 船员",
   "A paid monthly membership in our external shop; a purchase, not a donation": "我们外部商店里按月付费的会员；是购买，不是捐赠",
   "Donations": "捐赠",

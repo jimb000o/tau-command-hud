@@ -1,5 +1,6 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Keep our node online: the Tau HUD crew": "让我们的节点保持在线：Tau HUD 船员",
   "Ours runs on a Hetzner CAX11.": "我们的节点运行在一台 Hetzner CAX11 上。",
   "Rent the same one": "租一台同样的",
   "through our referral link, and Hetzner gives us server credit.": "，通过我们的推荐链接租用，Hetzner 会给我们服务器抵用额度。",
