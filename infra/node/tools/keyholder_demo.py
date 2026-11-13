@@ -85,8 +85,10 @@ def balance(pk):
 
 def status(h):
     _, out, _ = cli("rpc", "gettxstatus " + h)
-    d = data(out)
-    return (find(d, "status") or "unknown"), d
+    # `rpc --json` prints {"response": {"status": "ok", "data": {..., "status": "confirmed"}}}: the tx status is inside data
+    d = find(data(out), "data")
+    d = d if isinstance(d, dict) else {}
+    return (d.get("status") or "unknown"), d
 
 
 def confirm(h, minutes=6):
