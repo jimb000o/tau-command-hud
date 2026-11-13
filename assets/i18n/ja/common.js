@@ -772,4 +772,6 @@ TauI18n.add({ strings: {
   "Rule builder": "ルールビルダー",
   "Say what your wallet may do in plain words; see what the rule really does, checked by the real Tau engine, before you sign": "ウォレットに許すことを普通の言葉で書く。署名する前に、ルールが本当は何をするのかを本物の Tau エンジンで確かめる",
   "Back to the rule builder": "ルールビルダーに戻る",
+  "Shop": "ショップ",
+  "Knitted Christmas sweaters, tees, a sticker sheet and a mug, made to order at Fourthwall. Fan merchandise": "ニットのクリスマスセーター、Tシャツ、ステッカーシート、マグカップ。Fourthwall での受注生産。ファングッズ",
 } });

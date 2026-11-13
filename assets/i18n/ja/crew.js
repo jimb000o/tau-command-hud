@@ -10,7 +10,6 @@ TauI18n.add({ strings: {
   "a month": "/ 月",
   "10 % off products in the shop": "ショップ商品 10 % 引き",
   "20 % off products in the shop": "ショップ商品 20 % 引き",
-  "The shop has no products yet, so the discount cannot be used at the moment. Today a membership mainly funds the site.": "ショップにはまだ商品がないため、割引は今のところ使えません。現時点でのメンバーシップは主にサイトの資金になります。",
   "Prices include 19 % German VAT; the shop shows your country's price before you pay. Renews every month until you cancel.": "価格はドイツの付加価値税 19 % を含みます。お住まいの国の価格は支払い前にショップに表示されます。解約するまで毎月更新されます。",
   "Become a member at Fourthwall \u203a": "Fourthwall でメンバーになる ›",
   "Cancelling.": "解約。",
@@ -37,4 +36,6 @@ TauI18n.add({ strings: {
   "Domains": "ドメイン",
   "X account": "X アカウント",
   "Both levels also get the ship log: a members-only post every Monday on the week on the testnet and Tau HUD, written by the server.": "どちらのレベルにも航海日誌が届きます。毎週月曜に会員限定で、テストネットと Tau HUD のその週をまとめた投稿をサーバーが書きます。",
+  "See the shop ›": "ショップを見る ›",
+  "The shop is open: knitted sweaters, tees, stickers and a mug. The discount comes off at checkout.": "ショップがオープンしました。ニットセーター、Tシャツ、ステッカー、マグカップ。割引は会計時に自動で適用されます。",
 } });
