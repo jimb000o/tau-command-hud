@@ -38,6 +38,7 @@
 <script src="assets/rulediff.js" defer></script>
 <link rel="stylesheet" href="assets/ticker.css">
 <script src="assets/ticker.js" defer></script>
+<script src="assets/hearts.js" defer></script>
 <link rel="stylesheet" href="assets/agz-look.css">
 </head>
 <body>
@@ -1308,7 +1309,7 @@ html.nb .nb-today:not(:empty) { display: block; margin: 2px 0 0; font: 12px/1.4 
     </div>
   </section>
   <main class="grid">
-    <article class="panel a-eng">
+    <article class="panel a-eng" data-heart="hud-check">
       <h2>Block check by rules <small id="engineBlk">block —</small><button class="info" type="button" aria-label="What is this?" data-tip="Every block is judged by a Tau logic program, not by hard-coded Python. The host feeds inputs (i6 height, i7 time, i8 proposer, i10 signature check) and the active spec answers on output streams: o6 says whether the block is valid, o7 whether the proposer may propose, o9 the fee. The spec shown below is the real one that is live.">i</button></h2>
       <div class="scroll">
         <div class="streams" id="streams"></div>
@@ -1318,7 +1319,7 @@ html.nb .nb-today:not(:empty) { display: block; margin: 2px 0 0; font: 12px/1.4 
       <div class="verdict wait" id="verdict"><div class="seal"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="check" d="M5.5 12.5 L10 17 L18.5 7.5"/><path class="cross" d="M7 7 L17 17 M17 7 L7 17"/><path class="dia" d="M12 6 L18 12 L12 18 L6 12 Z"/></svg></div><span id="verdictTxt">Awaiting block</span></div>
     </article>
 
-    <article class="panel a-core core-panel">
+    <article class="panel a-core core-panel" data-heart="hud-core">
       <h2><span class="nb-off">Chain core </span><span class="nb-on">The chain right now</span> <small id="coreSub">next proposer —</small><button class="info" type="button" aria-label="What is this?" data-tip="The ring of diamonds is the validator set; the bright one is proposing the next block. The ringed dots on the middle ring are accounts that run their own Tau rules. The dots orbiting the core are transactions waiting in the mempool. The arc shows how close an open rule change is to the agreement it needs. Lines to the core: a rule account’s line turns green when its rule just let a transfer pass, white when it just refused one, grey while idle; the green line from a validator is the proposer sealing a block, and at each seal every validator’s line lights briefly as all rules flow into the block.">i</button></h2>
       <div class="mynode" id="myNode" hidden></div>
       <div class="core">
@@ -1335,12 +1336,12 @@ html.nb .nb-today:not(:empty) { display: block; margin: 2px 0 0; font: 12px/1.4 
       <p class="nbsay" id="nbCore" aria-live="off"></p>
     </article>
 
-    <article class="panel a-feed">
+    <article class="panel a-feed" data-heart="hud-feed">
       <h2><span class="nb-off">Transactions </span><span class="nb-on">What is happening</span> <small id="feedSub">waiting → sealed</small><button class="rejchip" id="feedRej" type="button" aria-pressed="false" data-full="What Tau refused at the door, each with its reason: a transfer the sender’s own rule said no to, too little balance, a used sequence number, a fee below the base fee, a rule or a proposed spec that does not compile. Click to show only these.">0 refused</button><button class="info" type="button" aria-label="What is this?" data-tip="Transactions as they are admitted and later sealed into blocks. Grey: transfers. Green: rule work (an account deploying, offering, accepting or rejecting a Tau rule). White: governance (proposals and votes). Red with ✕: refused, usually because the sender’s own rule (o5) blocked it, which applies even to whoever holds the key. Amounts are in AGRS (testnet balances, no real value).">i</button></h2>
       <div class="feed scroll" id="feed"></div>
     </article>
 
-    <article class="panel a-pol" id="polCard">
+    <article class="panel a-pol" id="polCard" data-heart="hud-rules">
       <h2><span class="nb-off">Personal money rules </span><span class="nb-on">Rules on their own money</span> <small id="clauseCount">0 accounts</small><button class="info" type="button" aria-label="What is this?" data-tip="Each account can program its own money: spending limits, recipient whitelists, time-locks, co-signature above a threshold. The node combines all accepted rules into one composite rule per stream, with a guarded branch per account and “allow” for everyone else. The network enforces it on every transfer.">i</button></h2>
       <p class="sub nb-off">each account programs its own money · the node folds every rule into one spec</p><p class="sub nb-on">Any wallet can give itself a rule. Every node checks each payment it sends against that rule, whoever holds the key.</p>
       <div class="scroll">
@@ -1350,7 +1351,7 @@ html.nb .nb-today:not(:empty) { display: block; margin: 2px 0 0; font: 12px/1.4 
       <a class="own" id="ownRule" href="wallet/?from=hud#rules-mine" data-full="Opens your wallet on the testnet at Your rule: pick a rule your own payments must pass, sign it, and it shows up here a block later.&#10;Test AGRS only, they have no value.">write your own rule ›</a>
     </article>
 
-    <article class="panel a-upd">
+    <article class="panel a-upd" data-heart="hud-votes">
       <h2><span class="nb-off">Rule changes by agreement </span><span class="nb-on">Votes on the chain’s rules</span> <small id="govCount">0 open</small><button class="info" type="button" aria-label="What is this?" data-tip="Validators can propose a change to the consensus rules or validator set. The proposal is compiled in isolation first; one that does not compile is refused at the door. It activates only after a quorum agrees and only at a future height, never in the same block. There is no admin key that can skip this.">i</button></h2>
       <p class="sub nb-off">proposed → checked → agreed → scheduled → active</p><p class="sub nb-on">A change to the chain’s rules is proposed, checked, voted on, and only then becomes law.</p>
       <div class="contrast" aria-label="How a rule changes: other chains versus Tau">
@@ -1371,14 +1372,14 @@ html.nb .nb-today:not(:empty) { display: block; margin: 2px 0 0; font: 12px/1.4 
       <div class="updates scroll" id="updates"></div>
     </article>
 
-    <article class="panel a-chain">
+    <article class="panel a-chain" data-heart="hud-chain">
       <h2>Blockchain <small id="chainSub">following the newest block</small><button class="info" type="button" aria-label="What is this?" data-tip="Click a block to inspect it below. The mouse wheel glides through the chain, down goes back in time, and older blocks keep loading as you go, back to genesis. The detail below follows the block at the right edge; “back to newest” returns to the live end. A bright card marks a rule change that took effect. Newest block on the right. Each card shows the block hash, the state hash (which commits to balances, both rule programs, the validator set, pending governance and the quorum policy) and the proposer. Bright cards are the blocks where an agreed rule change became active.">i</button></h2>
       <div class="radar" id="radar"></div>
       <div class="ribbon" id="ribbon"></div>
       <div class="chainlow"><div class="blkdetail detail" id="blkDetail"><p class="lead" style="color:var(--dim)">Click a block above to inspect it here. The newest block is shown until you pick one.</p></div><div class="valslot" id="valSlot"></div></div>
     </article>
 
-    <article class="panel a-off" id="offCard">
+    <article class="panel a-off" id="offCard" data-heart="hud-sharing">
       <h2>Rule sharing <small id="offerCount">0 waiting</small><button class="info" type="button" aria-label="What is this?" data-tip="One account sends a Tau rule to another. The recipient reads it, runs a conflict report (shape, reserved streams, bit widths, does it compile together with the rules already in force) and then accepts it into their own specification or rejects it. Accepting replaces the recipient’s current rule on that stream.">i</button></h2>
       <p class="sub">one account offers a rule, the other checks it and accepts or rejects</p>
       <div class="offers scroll" id="offers"></div>
@@ -1387,14 +1388,14 @@ html.nb .nb-today:not(:empty) { display: block; margin: 2px 0 0; font: 12px/1.4 
 
     <div class="stack a-val">
       <article class="panel a-tb" id="tbHost" aria-label="Troll box"></article>
-      <article class="panel gov">
+      <article class="panel gov" data-heart="hud-validators">
         <h2>Validators <small id="govSub">seal and vote</small><button class="info" type="button" aria-label="What is this?" data-tip="The accounts allowed to seal blocks. The set lives on the chain and changes only through an agreed rule change. The approval threshold is derived from the quorum policy, which is itself part of the state hash, so it cannot be changed quietly.">i</button></h2>
         <div class="modes" id="modes" data-full="Who may seal the next block. The mode is chain state and changes only by an agreed rule change."></div>
         <div class="vals" id="vals"></div>
         <dl class="kv" id="govkv"></dl>
         <a class="seat" href="playground/#seat" data-full="A simulated validator seat in the playground: propose a fee change, collect votes, watch it activate.">take a validator seat ›</a>
       </article>
-      <article class="panel statep" id="statePanelCard" title="Click to open the full chain state">
+      <article class="panel statep" id="statePanelCard" data-heart="hud-state" title="Click to open the full chain state">
         <h2>Rules in force now <small id="stateSub">changes only when the chain agrees</small><button class="info" type="button" aria-label="What is this?" data-tip="The current state of the chain’s law: the consensus rules every block is judged by, how many validators must agree to change them, and the rule changes that have been agreed so far. This panel does not animate; it only changes when a new block changes the rules. The full view with the Tau spec code and every personal rule opens with the button below.">i</button></h2>
         <div class="scroll" id="statePanel"></div>
         <a class="gazad" id="gazAd" href="gazette/" aria-label="Read the latest edition of The Daily Consensus" data-full="The Daily Consensus: the testnet told as a 1920s newspaper. Front page, the road from Zennet, how a hard fork works, letters to the editor. Opens the latest edition.">
@@ -1413,7 +1414,7 @@ html.nb .nb-today:not(:empty) { display: block; margin: 2px 0 0; font: 12px/1.4 
         </a>
         <button class="more" type="button" id="btnState3">Full chain state</button>
       </article>
-      <article class="panel logp" id="logPanel" title="Click to open the full log">
+      <article class="panel logp" id="logPanel" data-heart="hud-log" title="Click to open the full log">
         <h2>Node log <small id="logSub">host ↔ tau interpreter</small><button class="info" type="button" aria-label="What is this?" data-tip="What a node prints while it works: transactions admitted or refused, blocks added, votes counted, rule registries rebuilt, specs amended. Red lines are refusals, amber lines are governance events.">i</button></h2>
         <div class="log scroll" id="log"></div>
       </article>
@@ -2601,6 +2602,7 @@ const NB_BOX = { agorzilla: "Agorzilla", deja: "Déjà the café cat", rabbit: "
 function nbWho(a) {
   const h = String(a || "").toLowerCase(); if (!h) return "a wallet";
   if (h === String(myNodeKey() || "").toLowerCase()) return "your node";
+  if (window.TauHearts && h === TauHearts.BOX) return "Tau HUD’s heart box";
   try { const k = JSON.parse(localStorage.getItem("tauhud-wallet-key") || "null"); if (k && k.pk && String(k.pk).toLowerCase() === h) return "your wallet"; } catch (e) {}
   const O = window.TauOrigin; if (!O) return "a wallet";
   const own = O.name && O.name(h); if (own) return own;   // the showcase wallets: "Tau HUD's piggy bank" and so on
@@ -2625,7 +2627,9 @@ function nbRule(p) {
     default: return "has its own rule for its money";
   }
 }
+const heartOf = t => { const H = window.TauHearts, op = H && t.transfers && t.transfers.find(o => String(o[1]).toLowerCase() === H.BOX); return op ? H.decode(op[2]) : null; };
 function plainLabel(t) {
+  const hz = !t.rejected && heartOf(t); if (hz) return hz.on ? "♥ A heart for a part of Tau HUD" : "♡ A heart taken back";
   if (t.rejected) return /o5/.test(String(t.rejected)) ? "✕ Stopped by the sender’s own rule" : "✕ Refused";
   if (testChange(t)) return "Test change, no effect";
   return PLAIN_LABEL[t.type] || "Transaction";
@@ -2646,8 +2650,12 @@ const NB = (() => {
     setTimeout(() => dispatchEvent(new Event("resize")), 30);   // the core canvas and the tour card measure again
   }
   function more() { sset(MORE, root.classList.contains("nbmore") ? "" : "1"); apply(); }
-  /* refusals arrive between blocks: counted until the next block, then told with it */
-  function refused(t) { if (/o5/.test(String(t.rejected || ""))) ref.own++; else ref.other++; }
+  /* refusals arrive between blocks: counted until the next block, then told with it. Only fresh ones: the refusals of the last
+     hours that the relay hands over on connect fill the feed with their own age, they did not happen at this block */
+  function refused(t) {
+    const at = Number(t.at); if (Number.isFinite(at) && Date.now() / 1000 - at > 120) return;
+    if (/o5/.test(String(t.rejected || ""))) ref.own++; else ref.other++;
+  }
   /* live: what today held, from the relay's sources count (the line the other levels see as "What is real"), as one sentence:
      players' and visitors' wallets (White Rabbit Key, No Memo, Agorzilla, Tau HUD pages, other wallets) apart from IDNI's and our servers' */
   const USERS = ["rabbit", "nomemo", "agorzilla", "tauhud", "other"];

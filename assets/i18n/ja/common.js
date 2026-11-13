@@ -805,4 +805,6 @@ TauI18n.add({ strings: {
   "It is on a mug ›": "マグカップになっています ›",
   "INSUFFICIENT_FUNDS. Nearly everyone on the testnet gets this answer once; now you have it too. It also comes as a tee.": "INSUFFICIENT_FUNDS。テストネットではほとんど誰もが一度はこの応答を受け取ります。あなたも仲間入りです。T シャツにもなっています。",
   "Or something to wear, from the testnet:": "あるいは、テストネット発の着られるものを：",
+  "What you love most": "みんなが一番好きなもの",
+  "Every heart on Tau HUD is a real testnet transaction; which parts visitors love most, read from the chain": "Tau HUD のハートはどれも本物のテストネット取引。訪問者が一番好きな部分をチェーンから読み取ります"
 } });
