@@ -1217,7 +1217,14 @@ html.nb .a-chain .ribbon { padding: 4px 2px 6px; }
 html.nb .blk { flex: 0 0 118px; margin-right: 10px; padding: 6px 10px; } html.nb .blk .n { font-size: 15px; }
 @media (min-width: 1101px) and (max-height: 900px) { html.nb:not(.nbmore) .a-chain > .nbsay { display: none; } }
 html.nb .blk .h, html.nb .blk .m, html.nb .blk .simtag { display: none; }
-.blk .np { display: none; }
+.blk .np, .nb-blk { display: none; }
+/* under the strip: the newest block (or the one clicked) in words, for beginners */
+html.nb .a-chain .nb-blk { display: block; flex: 1 1 auto; min-height: 0; overflow: hidden; margin-top: 2px; font: 12px/1.45 var(--mono); color: var(--text); }
+html.nb .nb-blk p { margin: 0 0 3px; } html.nb .nb-blk b { color: #fff; font-weight: 600; }
+html.nb .nb-blk .has span + span::before { content: ", "; } html.nb .nb-blk .has span:first-child::after { content: " "; } html.nb .nb-blk .has span:first-child + span::before { content: ""; }
+html.nb .nb-blk .dim { color: var(--dim); font-size: 11.5px; }
+html.nb .nb-blk button { background: none; border: 0; padding: 0; color: var(--ok); font: 12px var(--mono); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; min-height: 24px; }
+@media (min-width: 1101px) and (max-height: 900px) { html.nb:not(.nbmore) .nb-blk .dim { display: none; } }
 html.nb .blk .np { display: block; font-size: 11.5px; line-height: 1.35; color: var(--text); }
 html.nb .blk .np span { display: block; color: var(--dim); }
 html.nb:not(.nbmore) .feed .tx.bg:not(.bgfirst) { display: none; }
@@ -1226,6 +1233,30 @@ html.nb .feed .tx.bg { opacity: .78; }
 html.nb:not(.nbmore) .tx.bgfirst .runn:not(:empty) { display: block; font-size: 11.5px; color: var(--dim); }
 .tx.rej.grd { border-left-color: var(--ok); } .tx.rej.grd .top em { color: var(--ok); }
 .nb-now .it.ok { color: var(--ok); }
+/* Intermediate (html.lvmid) and Expert (html.lvpro): the thesis band becomes one thin row, the status line (what deviates, in colour;
+   the rest dim) beside the news line; Intermediate also gets the beginners' head line. An idle votes panel says the last decision
+   in a sentence, the comparison behind a link. Names instead of hashes in the feed; Expert: hovering a transaction lights its block
+   and its wallet */
+.lvstat { display: none; }
+html.lvmid body:not(.calm) .thesis, html.lvpro body:not(.calm) .thesis { padding: 6px 12px; align-items: center; }
+html.lvmid .thesis > .thesis-main, html.lvmid .thesis > .principles, html.lvpro .thesis > .thesis-main, html.lvpro .thesis > .principles { display: none; }
+html.lvmid .lvstat, html.lvpro .lvstat { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-width: 0; font: 12px/1.4 var(--mono); color: var(--dim); }
+.lvstat b { font: 600 12px var(--display); letter-spacing: .04em; color: #fff; }
+.lvstat b.ok::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); vertical-align: 1px; }
+.lvstat .x { color: var(--text); } .lvstat .x.warn { color: #ffb13b; } .lvstat .x.bad { color: var(--refused); } .lvstat .x.ok { color: var(--ok); } .lvstat .x.hot { color: #fff; font-weight: 600; }
+.lvstat span + span::before { content: "· "; color: var(--dim); }
+html.lvmid body:not(.calm) .nbhead { display: grid; }
+html.lvmid .nbhead .nb-more, html.lvmid .nbhead .nb-today { display: none !important; }
+html.lvmid .a-upd.idle .contrast, html.lvpro .a-upd.idle .contrast { display: none; }
+html.lvmid .a-upd.idle.cmp .contrast, html.lvpro .a-upd.idle.cmp .contrast { display: block; }
+html.lvmid .a-upd .nb-vote, html.lvpro .a-upd .nb-vote { display: block; flex: 0 0 auto; margin: 0 0 4px; font: 12.5px/1.45 var(--mono); color: var(--text); }
+html.lvmid .a-upd.idle .nb-cmp, html.lvpro .a-upd.idle .nb-cmp { display: inline-block; flex: 0 0 auto; align-self: flex-start; min-height: 28px; margin: 0 0 6px; padding: 0 2px; background: none; border: 0; color: var(--dim); font: 12px var(--mono); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
+html.lvmid .a-upd.idle .updates .empty, html.lvpro .a-upd.idle .updates .empty { display: none; }
+.tx a.nm { color: var(--text); text-decoration: none; } .tx a.nm:hover { color: var(--ok); } .tx .adr { color: var(--dim); font-size: 11px; }
+.gh .g2 { display: none; } html.lvmid .gh .g1 { display: none; } html.lvmid .gh .g2 { display: inline; }
+html.lvpro .blk.spot { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,.55), 0 0 18px rgba(255,255,255,.25); }
+html.lvpro .clause.spot { outline: 1px solid rgba(255,255,255,.6); outline-offset: 2px; border-radius: 3px; }
+html.lvpro .tx.spot { box-shadow: inset 0 0 0 1px rgba(255,255,255,.5); }
 /* the shop notice under the votes: one row, headline and link */
 html.nb .a-upd .gazad { flex: 0 0 auto; height: auto; margin: 8px 0 0; }
 html.nb .a-upd .gazad .ga-ph, html.nb .a-upd .gazad .ga-tx, html.nb .a-upd .gazad .ga-x, html.nb .a-upd .gazad .ga-mo, html.nb .a-upd .gazad .ga-dk, html.nb .a-upd .gazad .ga-dl, html.nb .a-upd .gazad .ga-ad { display: none !important; }
@@ -1346,6 +1377,7 @@ html.nb .a-upd .gazad .ga-more { flex: none; margin: 0; padding: 6px 12px; align
       <div class="pr"><b>Enforced against the key holder</b><span>Your rule binds your account, not your device. Every node checks each payment you sign against it, from any wallet.</span><em>see it: Transactions · red “✕ refused”</em><div class="prov" data-full="Seen on the testnet, 13 November 2026: a fresh test account wrote itself the rule “nothing above 1,000 AGRS leaves” (block 165). The same key then signed a payment of 5,000 with IDNI’s own command-line wallet, not with tauhud.com, and the node refused it: “the sender’s own policy clause blocked transfer #1”. A payment of 500 went through (block 166). Every node runs this check when it takes a payment in (sendtx.py:1272) and again when it applies a block (engine.py:1709); anyone can repeat the test with infra/node/tools/keyholder_demo.py. One limit: whoever holds the key can also replace the rule (tau-testnet docs/approvals.md), so a rule does not protect a stolen key; it stops a mistaken or pressured payment."><span><i class="seen"></i>seen on the testnet</span><a href="https://github.com/IDNI/tau-testnet/blob/5ad1bb7/commands/sendtx.py#L1272" target="_blank" rel="noopener">sendtx.py:1272 ↗</a></div></div>
       <div class="pr" id="prMoney"><b>Money with terms</b><span>A transfer can be returnable until a release point, locked until a time, or co-signed above an amount.</span><em>see it: Personal money rules</em><div class="prov" data-full="Documented in tau-testnet: retractable_transfer parks funds in escrow until a release height or time; whitelists use i4, time-locks i5, limits i1. Personal rules are in force on the testnet (22 rule changes by 2 accounts, our count of 30 October), but a returnable, time-locked or co-signed payment we have not seen there yet."><span><i class="spec"></i>from the protocol</span><a href="https://github.com/IDNI/tau-testnet/blob/539d1e2/README.md#L573" target="_blank" rel="noopener">README §Retractable ↗</a></div></div>
     </div>
+    <div class="lvstat" id="lvStat" aria-live="off"></div>
     <div class="tick" id="tick" translate="no" aria-label="News line: live facts, updates and pointers"><span class="tk-lab"><i></i><b>News</b></span><div class="tk-view"><div class="tk-track"></div></div></div>
   </section>
 
@@ -1433,6 +1465,7 @@ html.nb .a-upd .gazad .ga-more { flex: none; margin: 0; padding: 6px 12px; align
       <p class="nbsay">Each block seals the transactions that were waiting. The newest is on the right.</p>
       <div class="radar" id="radar"></div>
       <div class="ribbon" id="ribbon"></div>
+      <div class="nb-blk" id="nbBlk" aria-live="off"></div>
       <div class="chainlow"><div class="blkdetail detail" id="blkDetail"><p class="lead" style="color:var(--dim)">Click a block above to inspect it here. The newest block is shown until you pick one.</p></div><div class="valslot" id="valSlot"></div></div>
     </article>
 
@@ -1767,7 +1800,7 @@ function sealMark(el, h) {
 function ghostMark(el, on) {
   if (el.classList.contains("listed") === on) return;
   el.classList.toggle("listed", on); el.title = on ? "Ghost transaction: already in a block, still listed by the node (known bug, IDNI #81)" : "";
-  const sl = el.querySelector(".sl"); if (sl) sl.innerHTML = `${on ? '<i class="gh">ghost </i>' : ""}✓ #${esc(el.dataset.h)}`;
+  const sl = el.querySelector(".sl"); if (sl) sl.innerHTML = `${on ? '<i class="gh"><span class="g1">ghost </span><span class="g2">still listed by the node · </span></i>' : ""}✓ #${esc(el.dataset.h)}`;
 }
 /* the relay compares the listed transactions with the whole chain it keeps (/health-score): how many are in fact sealed,
    and how long the oldest really waiting one has waited since the relay first saw it, not since this page opened */
@@ -2734,8 +2767,9 @@ const NB = (() => {
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const plural = (n, one, many) => n === 1 ? one : many.replace("{n}", fmt(n));
   function apply(level) {
-    const on = (level || root.dataset.level) === "new";
+    const lv = level || root.dataset.level, on = lv === "new";
     root.classList.toggle("nb", on);
+    root.classList.toggle("lvmid", lv === "mid"); root.classList.toggle("lvpro", lv === "pro");
     root.classList.toggle("nbmore", on && sget(MORE) === "1");
     const b = document.getElementById("nbMore");
     if (b) { const more = root.classList.contains("nbmore"); b.textContent = more ? "Fewer details" : "More details"; b.setAttribute("aria-pressed", String(more)); }
@@ -2834,6 +2868,48 @@ const NB = (() => {
   });
   return { apply, refused, block, core };
 })();
+/* Intermediate and Expert: one status line on top. What deviates comes first and in colour (simulation, a late block, a vote,
+   payments guarded or refused in the last 10 minutes); the normal state stays dim */
+const LV = { ev: [] };
+function lvStat() {
+  const box = $("lvStat"); if (!box || !box.offsetParent) return;
+  const now = Date.now() / 1000, pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null;
+  const since = Math.max(0, Math.round((performance.now() - S.lastBlockAt) / 1000)), late = S.mode === "live" && pace != null && catchingUp(pace);
+  const ex = [];
+  if (S.mode !== "live") ex.push(["warn", "Simulation: made-up data"]);
+  else if (late) ex.push(["warn", since < 5400 ? `No new block for ${Math.round(since / 60)} min` : `No new block for ${(since / 3600).toFixed(1)} h`]);
+  S.updates.filter(u => u.status === "voting" || u.status === "scheduled").forEach(u => ex.push(["hot", u.status === "scheduled" ? `Rule change agreed: active at block #${u.activateAt}` : `Vote running: ${u.votes.size} of ${threshold()} agreed`]));
+  LV.ev = LV.ev.filter(e => now - e.at < 600);
+  const g = LV.ev.filter(e => e.kind === "grd").length, r = LV.ev.length - g;
+  if (g) ex.push(["ok", g === 1 ? "1 payment guarded by its own rule in the last 10 min" : `${g} payments guarded by their own rules in the last 10 min`]);
+  if (r) ex.push(["bad", r === 1 ? "1 transaction refused in the last 10 min" : `${r} transactions refused in the last 10 min`]);
+  const left = pace != null ? Math.round(pace - since) : null, w = memState().W;
+  const base = [S.height ? (since < 90 ? `Block #${fmt(S.height)} · ${since} s ago` : `Block #${fmt(S.height)} · ${Math.round(since / 60)} min ago`) : "",
+    !late && left != null && left > 0 ? `next in about ${left} s` : "", `${fmt(w)} waiting`].filter(Boolean);
+  const key = JSON.stringify([ex, base]); if (box.dataset.k === key) return; box.dataset.k = key;
+  const T = x => window.TauI18n && TauI18n.t ? TauI18n.t(x) : x;
+  const mk = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; e.textContent = T(txt); return e; };
+  box.replaceChildren(mk("b", ex.length ? "" : "ok", ex.length ? "Worth a look:" : "All normal"), ...ex.map(([c, t]) => mk("span", "x " + c, t)), ...base.map(t => mk("span", "", t)));
+}
+setInterval(() => { if (!document.hidden && !document.documentElement.classList.contains("nb")) lvStat(); }, 1000);
+/* Expert: hovering a transaction lights its block in the chain and its wallet's rule (list and ring) */
+let SPOT = null;
+function spot(on) {
+  document.querySelectorAll(".spot").forEach(e => e.classList.remove("spot")); SPOT = on;
+  if (!on) return;
+  on.card.classList.add("spot");
+  if (on.h) { const b = document.querySelector(`#ribbon .blk[data-n="${on.h}"]`); if (b) b.classList.add("spot"); }
+  if (on.from) { const c = document.querySelector(`#clauses .clause[data-acc="${on.from}"]`); if (c) c.classList.add("spot"); }
+}
+addEventListener("DOMContentLoaded", () => {
+  const feed = $("feed"); if (!feed) return;
+  feed.addEventListener("mouseover", e => {
+    if (!document.documentElement.classList.contains("lvpro")) return;
+    const d = e.target.closest(".tx"); if (!d || (SPOT && SPOT.card === d)) return;
+    spot({ card: d, h: d.dataset.h || null, from: d.dataset.from || null });
+  });
+  feed.addEventListener("mouseleave", () => spot(null));
+});
 /* a live panel never re-renders while the pointer rests on it; the pending render runs on mouseleave */
 const HOLD = new Map();
 function hold(id, fn) {
@@ -2881,9 +2957,15 @@ const nbRunsSoon = () => { if (!nbRunsQ) nbRunsQ = requestAnimationFrame(() => {
 const cardAt = d => { const a = d.querySelector(".age[data-at]"); return a ? Number(a.dataset.at) || 0 : 0; };
 function placeCard(feed, d) { const at = cardAt(d); feed.insertBefore(d, [...feed.children].find(c => c !== d && cardAt(c) < at) || null); }
 addEventListener("DOMContentLoaded", () => $("feed").addEventListener("mouseleave", () => { const feed = $("feed"); feedHold.splice(0).forEach(d => placeCard(feed, d)); [...feed.children].forEach(d => placeCard(feed, d)); while (feed.children.length > 40) feed.lastChild.remove(); nbRunsSoon(); }));
+/* a wallet in the feed: its name where we know it (Expert: with the short address), else the short address */
+const acctN = h => {
+  const nm = h ? nbWho(h) : "a wallet"; if (nm === "a wallet") return acct(h);
+  const lk = S.mode === "live" ? `<a class="acct nm" href="account/?a=${encodeURIComponent(h)}" title="Open account ${esc(h)}">${esc(nm)}</a>` : esc(nm);
+  return TECH() ? `${lk} <span class="adr">${short(h)}</span>` : lk;
+};
 const txBody = t => t.transfers && t.transfers.length
-  ? t.transfers.map(([f, to, a]) => `${acct(f)} → ${acct(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
-  : (t.note || `sender ${acct(t.sender)}`);
+  ? t.transfers.map(([f, to, a]) => `${acctN(f)} → ${acctN(to)} <b>${fmt(a)} AGRS</b>`).join(" · ")
+  : (t.note || `sender ${acctN(t.sender)}`);
 function txCard(t) {
   const d = document.createElement("div");
   const ruleish = /rule/.test(t.type);
@@ -2899,6 +2981,8 @@ function txCard(t) {
   if (S.mode === "live" && !t.rejected && Number.isFinite(t.block)) sealMark(d, t.block);   // first seen in its block: sealed, never a ghost
   d.dataset.ex = exKey(() => explainTx(t)); d.dataset.detail = dtKey(() => detailTx(t));
   nbMark(d, t);
+  if (t.rejected) { const at = Number(t.at), now = Date.now() / 1000; if (!Number.isFinite(at) || now - at < 600) LV.ev.push({ at: Number.isFinite(at) ? at : now, kind: guard ? "grd" : "rej" }); }
+  d.dataset.from = String(t.sender || "").toLowerCase();
   if (t.rejected) { NB.refused(t); bounce(t); S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
   const feed = $("feed");
   if (feed.matches(":hover")) { feedHold.push(d); return d; }
@@ -2991,6 +3075,7 @@ function openTxt(open) { const v = open.filter(u => u.status === "voting").lengt
 function nbVote() {
   const box = $("nbVote"); if (!box) return;
   const thr = threshold(), open = S.updates.find(u => u.status === "voting" || u.status === "scheduled");
+  const panel = box.closest(".a-upd"); if (panel) panel.classList.toggle("idle", !open && !S.pending);
   const done = S.updates.filter(u => u.status === "active" || u.status === "expired"), at = u => Number(u.activeAt) || Number(u.activateAt) || 0;
   const last = done.slice().sort((a, b) => at(b) - at(a))[0];
   const yes = done.filter(u => u.status === "active").length, no = done.length - yes;
@@ -3099,7 +3184,7 @@ function renderClauses() {
     return `<div class="ap ${a.status}" data-full="${esc(TIP[a.status] || "")}"><i></i><span>${acct(a.from)} → ${acct(a.to)} <b>${fmt(a.amount)} AGRS</b></span><span>${LBL[a.status] || a.status}</span></div>`;
   }).join("")}</div>` : "";
   $("clauses").innerHTML = (entries.length ? entries.slice(0, 8).map(([acc, p]) =>
-    `<div class="clause${p.lastRefused && ruleState(p).hot ? " refused" : ""}" data-ex="${exKey(() => explainClause(acc, p) + (p.lastRefused && ruleState(p).hot ? "\nJust refused a transfer from this account." : ""))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${clauseWho(acc)}</span><span>${p.name}</span><span class="pl"><b>${esc(nbWho(acc))}</b>${esc(nbRule(p))}${nbStops(p) ? `<small>${esc(nbStops(p))}</small>` : ""}</span></div>`).join("")
+    `<div class="clause${p.lastRefused && ruleState(p).hot ? " refused" : ""}" data-acc="${esc(acc)}" data-ex="${exKey(() => explainClause(acc, p) + (p.lastRefused && ruleState(p).hot ? "\nJust refused a transfer from this account." : ""))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${clauseWho(acc)}</span><span>${p.name}</span><span class="pl"><b>${esc(nbWho(acc))}</b>${esc(nbRule(p))}${nbStops(p) ? `<small>${esc(nbStops(p))}</small>` : ""}</span></div>`).join("")
     : `<div class="empty">No personal rules yet. Each account can program its own transfer policy in Tau.</div>`) + appr;
   // The node composes all accepted clauses into ONE rule per stream (README · Rule sharing)
   const branches = entries.slice(0, 3).map(([acc, p]) => `(i12[t]:bv[384] = { #x${acc.slice(0, 8)}… }:bv[384]) ? ( ${esc(p.body)} )`);
@@ -3233,7 +3318,29 @@ function blockSummary(b) {
     <span><i data-full="The full detail lists every transaction and what the state hash commits to.">Click</i>full detail ›</span></div></div>`;
 }
 let selectedBlock = null, shownBlock = null, shownPinned = true;
+/* the block in words for beginners: when, by whom, what it holds, and why an old block cannot be changed */
+function nbBlock(b, pinned) {
+  const box = $("nbBlk"); if (!box || !b) return;
+  const tight = box.clientHeight > 0 && box.clientHeight < 44;   // a short screen: one line, the card above already shows the time
+  const at = Number(b.ts) > 1e9 ? new Date(b.ts * 1000).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "";
+  const vi = S.validators.indexOf(b.proposer), by = vi >= 0 ? `by validator ${vi + 1} of ${S.validators.length}` : b.proposer ? `by validator ${short(b.proposer)}` : "";
+  const k = { pay: 0, rule: 0, gov: 0, other: 0 };
+  (b.txs || []).forEach(t => { if (t.kind === "gov") k.gov++; else if (/rule/.test(t.type)) k.rule++; else if (t.transfers && t.transfers.length) k.pay++; else k.other++; });
+  const has = [k.pay && (k.pay === 1 ? "1 payment" : `${k.pay} payments`), k.rule && (k.rule === 1 ? "1 rule change of a wallet" : `${k.rule} rule changes of wallets`),
+    k.gov && (k.gov === 1 ? "1 proposal or vote on the chain’s rules" : `${k.gov} proposals or votes on the chain’s rules`), k.other && (k.other === 1 ? "1 other transaction" : `${k.other} other transactions`)].filter(Boolean);
+  const T = x => window.TauI18n && TauI18n.t ? TauI18n.t(x) : x, el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = T(txt); return e; };
+  const p1 = el("p"); p1.append(el("b", "", `${pinned || tight ? "Block" : "Newest block"} #${fmt(b.n)}`), ...[!tight && at && `sealed at ${at}`, by].filter(Boolean).map(t => el("span", "", " · " + t)));
+  const p2 = el("p", "has"); if (has.length) p2.append(el("span", "", "It holds"), ...has.map(t => el("span", "", t))); else p2.append(el("span", "", "It is empty: nothing was waiting."));
+  const p3 = el("p", "dim", "Each block carries the fingerprint of the block before it, so nobody can change an old block without breaking every block after it.");
+  const p4 = el("p");
+  if (pinned) { const btn = el("button", "", "Back to the newest block ›"); btn.type = "button"; btn.onclick = () => { selectedBlock = null; ribbonReset(); const last = S.blocks[S.blocks.length - 1]; if (last) showBlock(last, false); }; p4.append(btn); }
+  else p4.append(el("span", "dim", "Click any block to read it here."));
+  box.replaceChildren(p1, p2, p4, p3);
+  // a short screen: drop the last lines that would be cut, never show half a sentence
+  requestAnimationFrame(() => { while (box.clientHeight && box.scrollHeight > box.clientHeight + 1 && box.children.length > 1) box.lastElementChild.remove(); });
+}
 function showBlock(b, pinned = true) {
+  nbBlock(b, pinned);
   if (pinned) selectedBlock = b.n;
   document.querySelectorAll(".blk.sel").forEach(e => e.classList.remove("sel"));
   const card = document.querySelector(`.blk[data-n="${b.n}"]`); if (card) card.classList.add("sel");
@@ -4325,6 +4432,7 @@ function draw(tm) {
     cx.fillStyle = `rgba(${col},.9)`; cx.shadowColor = `rgb(${col})`; cx.shadowBlur = st.hot ? 18 : 10; cx.fill();
     cx.shadowBlur = 0; cx.beginPath(); cx.arc(x, y, 12, 0, Math.PI * 2); cx.strokeStyle = `rgba(${col},.45)`; cx.lineWidth = 1.5; cx.stroke();
     if (held) ruleShield(x, y, a, st, C);
+    if (SPOT && SPOT.from && SPOT.from === String(RA[i]).toLowerCase()) { cx.beginPath(); cx.arc(x, y, 20, 0, Math.PI * 2); cx.strokeStyle = "rgba(255,255,255,.9)"; cx.lineWidth = 2.5; cx.stroke(); }
     else { cx.shadowBlur = 0; cx.strokeStyle = `rgba(${col},${st.hot ? .25 + st.k * .65 : .18})`; cx.lineWidth = st.hot ? 2.5 : 1.5; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
   });
 
