@@ -65,7 +65,7 @@ TauI18n.add({ strings: {
   "That day is already past, so this part stops nothing.": "その日はもう過ぎているので、この部分は何も止めません。",
   "No co-signer named, so the Guardian is used: it co-signs with a code from your Authenticator app.": "共同署名者の指定がないので Guardian を使います。認証アプリのコードで共同署名します。",
   "Hours and weekdays need arithmetic on the block time. The wallet's blocks have no such block yet; a date is possible.": "時刻や曜日にはブロック時刻の計算が必要です。ウォレットのブロックにはまだありません。日付なら指定できます。",
-  "The testnet does not let a personal rule read the balance (i2), so no rule can keep a minimum.": "テストネットでは個人ルールが残高（i2）を読めないため、最低残高を守るルールは作れません。",
+  "This builder does not write balance rules yet. The testnet allows them since November 2026 (a rule may read the balance, i2): write one in the Playground.": "このビルダーはまだ残高のルールを書けません。テストネットは 2026 年 11 月からそれを認めています（ルールが残高 i2 を読めます）。Playground で書いてください。",
   "The wallet has no block for a list of forbidden addresses: a thief makes a new address in a second. “Only to …” keeps out every address you did not name.": "ウォレットには禁止アドレスのリストというブロックがありません。泥棒は新しいアドレスを一瞬で作れるからです。「〜にだけ送金」なら、挙げていないアドレスをすべて締め出せます。",
   "A rule sees one payment at a time, so it cannot add up a {x}. Say the limit for one payment, for example “above 1,000 the Guardian co-signs”.": "ルールが見るのは一度に 1 件の支払いなので、1 {x}分を合計できません。1 回の支払いについての線を書いてください。例：「1000を超える支払いはガーディアンの共同署名が必要」",
   "A rule sees one payment at a time (the testnet lets a personal rule read only [t]), so it cannot add up a {x}. Use a limit per payment instead, for example “at most 500 per payment”.": "ルールが見るのは一度に 1 件の支払いだけ（テストネットの個人ルールが読めるのは [t] のみ）なので、1 {x}分を合計できません。代わりに 1 回の支払いの上限を使ってください。例：「1回あたり最大500」",

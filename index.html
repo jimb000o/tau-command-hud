@@ -3779,7 +3779,7 @@ function draw(tm) {
   // user-rule ring: every account that runs its own Tau policy
   const R = [...S.clauses.values()], rr = C * .56;
   ring(rr, 14, () => vt(`Rule ring: wallets with their own money rule, ${R.length ? R.length + " now" : "none now"}.\nEach rule binds only the wallet that set it, never anyone else.`,
-    `Rule ring: senders with their own o5 clause, ${R.length ? R.length + " now" : "none now"}.\nEach clause binds only its own sender; the testnet has 2 places.`));
+    `Rule ring: senders with their own o5 clause, ${R.length ? R.length + " now" : "none now"}.\nEach clause binds only its own sender; every account may hold one.`));
   const RA = [...S.clauses.keys()];
   R.forEach((p, i) => {
     const a = i / Math.max(R.length, 1) * Math.PI * 2 - t * .12, x = Math.cos(a) * rr, y = Math.sin(a) * rr;

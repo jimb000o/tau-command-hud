@@ -253,13 +253,17 @@
     {
       "id": "o5-slots",
       "topic": "rules",
-      "en": "In the current code at most 2 accounts can hold a registered personal transfer rule at the same time, chain-wide; IDNI notes that raising the number needs new measurements.",
-      "zh": "在当前代码中，全链同时最多只有 2 个账户可以持有已登记的个人转账规则；IDNI 注明提高这个数字需要重新测量。",
-      "ja": "現在のコードでは、登録された個人の送金ルールを同時に持てるのはチェーン全体で 2 アカウントまでです。IDNI は、この数を上げるには新たな計測が必要だと書いています。",
+      "en": "Every account can hold its own registered personal transfer rule at the same time; IDNI's documentation says nothing limits how many accounts hold one. Before November 2026 the code allowed only 2 accounts chain-wide.",
+      "zh": "每个账户都可以同时持有自己已登记的个人转账规则；IDNI 的文档写明，持有规则的账户数量没有上限。2026 年 11 月之前，代码在全链只允许 2 个账户。",
+      "ja": "どのアカウントも、登録された自分の個人送金ルールを同時に持てます。IDNI のドキュメントには、持てるアカウント数に上限はないと書かれています。2026 年 11 月より前のコードでは、チェーン全体で 2 アカウントまででした。",
       "src": [
         [
-          "consensus/approvals.py",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/consensus/approvals.py#L78-L83"
+          "docs/approvals.md, Limits",
+          "https://github.com/IDNI/tau-testnet/blob/5ad1bb7f4ff4f2e408447159f19951f350889511/docs/approvals.md#L303-L305"
+        ],
+        [
+          "docs/approvals.md, how a clause judges",
+          "https://github.com/IDNI/tau-testnet/blob/5ad1bb7f4ff4f2e408447159f19951f350889511/docs/approvals.md#L280-L286"
         ]
       ]
     },

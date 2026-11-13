@@ -98,6 +98,12 @@ def src_file(url: str, repo: str) -> str | None:
     return rest.split("/", 1)[1] if "/" in rest else None
 
 
+def src_sha(url: str, repo: str) -> str | None:
+    """'https://github.com/IDNI/tau-testnet/blob/<sha>/docs/x.md#L3' -> '<sha>'."""
+    head = f"https://github.com/{repo}/blob/"
+    return url[len(head):].split("/", 1)[0] if url.startswith(head) else None
+
+
 def facts_state(facts: dict, paths: dict, branches: dict) -> dict:
     """Which facts need a fresh look: their IDNI file changed on main since the commit they were checked at."""
     changed: dict[str, dict[str, int]] = {}
@@ -105,12 +111,21 @@ def facts_state(facts: dict, paths: dict, branches: dict) -> dict:
         files = (facts.get("files") or {}).get(repo) or []
         changed[repo] = changed_since(paths.get(repo), ref.get("sha", ""), branches.get(repo, "main"), files)
     stale = {}
+    own: dict[tuple[str, str], dict[str, int]] = {}   # a fact read anew at a later commit than the file's: that commit counts
     for f in facts.get("facts") or []:
         hit = []
         for _, url in f.get("src") or []:
             for repo, files in changed.items():
                 p = src_file(url, repo)
-                if p and p in files:
+                if not p:
+                    continue
+                sha = src_sha(url, repo)
+                if sha and sha != (facts["checked_against"][repo] or {}).get("sha"):
+                    if (repo, sha) not in own:
+                        own[(repo, sha)] = changed_since(paths.get(repo), sha, branches.get(repo, "main"),
+                                                         (facts.get("files") or {}).get(repo) or [])
+                    files = own[(repo, sha)]
+                if p in files:
                     hit.append(f"{repo.split('/')[1]}/{p}")
         if hit:
             stale[f["id"]] = sorted(set(hit))

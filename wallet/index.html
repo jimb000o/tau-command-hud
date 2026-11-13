@@ -496,8 +496,6 @@ html.focus-feed #signFacts { display: none; }
         </div>
         <div id="rMine">
           <div class="rule" id="ruleNow"></div>
-          <div class="slotsbar" id="slotsBar" hidden></div>
-          <div class="slotsbar" id="leaseBar" hidden></div>
           <div class="chal" id="chalBox" hidden aria-live="polite"></div>
 <div class="presets" id="presets" role="group" aria-label="Ready-made rules"></div>
           <div class="preshare" id="preshare"></div>
@@ -622,7 +620,6 @@ function setKey(skHex) {
   W.bal = W.seq = W.offers = W.reqs = W.rets = null; W.clause = undefined;
   if (SIM) S.born = S.born || TauSim.head();
   renderAll(); refresh();
-  if (!SIM) loadLease();   // a new or imported key sees its place in the line now, not at the next minute's poll
 }
 $("btnNew").onclick = () => setKey(B.bytesToHex(B.keygen()));
 $("btnImport").onclick = () => { $("importBox").hidden = false; $("importSk").focus(); };
@@ -759,7 +756,7 @@ const secsPerBlock = () => { if (SIM) return TauSim.pace; const t = L.times; if 
 const inTime = blocks => { const s = secsPerBlock(); if (!s || blocks < 0) return ""; const m = Math.round(blocks * s / 60); return m < 1 ? T("under a minute") : m < 90 ? F("about {m} min", { m }) : F("about {n} h", { n: Math.round(m / 60) }); };
 const baseFee = () => { const m = /o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)/.exec((W.gov && W.gov.consensus_rules) || ""); return m ? parseInt(m[1], 16) : 10; };
 /* the testnet's faucet: an account whose balance on the chain is 0 counts as 100,000 test AGRS when it pays (engine.py, TESTNET_AUTO_FAUCET) */
-const spendable = () => W.bal == null ? null : (W.chainBal === 0 ? FAUCET + W.bal : W.bal) - (!SIM && W.lease && W.lease.mine && W.lease.mine.status === "held" ? baseFee() * 5 : 0);   // a held turn keeps the fee for its removal
+const spendable = () => W.bal == null ? null : (W.chainBal === 0 ? FAUCET + W.bal : W.bal) ;
 
 /* ---------- signing: the node's own preimage (consensus/tx_signing.py), sha256, BLS in this browser ---------- */
 const SIGNED = {
@@ -799,7 +796,6 @@ async function submit(tx, label, kind) {
   if (!res) return { ok: false, why: T("No answer from the node. It may still arrive: watch Activity.") };
   if (res.status !== "ok" || (res.data && res.data.ok === false)) return { ok: false, why: plain(res), policy: byRule(res) };
   nextSeq = tx.sequence_number + 1;
-  if (!SIM && takesPlace(tx)) depositTurn(tx.sequence_number + 1);   // the place's way back, signed now, sent by the relay when the turn is over
   if (SIM && tx.tx_type === "consensus_rule_vote") {   // the visitors' ballot is how a visitor has a say in the simulation
     const p = TauSim.chain.props().find(p => p.id === tx.update_id), item = p && (p.slot != null ? "slot:" + p.slot : p.visitor ? p.visitor.item : null);
     if (item) TauSim.vote(item, tx.approve !== false);
@@ -814,7 +810,10 @@ const byRule = env => /user policy \(o5\)/i.test(JSON.stringify((env && (env.err
 /* the node's refusals, in plain words where we know them */
 function plain(env) {
   const e = (env && (env.error || (env.data && env.data.ok === false ? env.data : null))) || {}, m = String(e.message || ""), code = e.code || "";
-  if (/author slots are taken|MAX_TIER_AUTHORS|author slot/i.test(m)) return T("Refused before sending: the testnet holds rules for 2 accounts at a time, and both places are taken. Nothing was sent.");
+  if (/RULE_WITH_TRANSFERS/.test(code + m)) return T("Refused before sending: a rule and payments cannot share one transaction. Send the rule first, then the payments. Nothing was sent.");
+  if (/reads no input/i.test(m)) return T("Refused before sending: a rule must look at the payment (amount, recipient, time or a co-signature); a rule that only says “block” is refused. Nothing was sent.");
+  if (/comparisons; the limit|nests parentheses/i.test(m)) return T("Refused before sending: the rule is too long for the testnet (at most 32 comparisons and 32 levels of brackets). Nothing was sent.");
+  if (/CLAUSE_SHAPE|WIDTH_MISMATCH|TEMPORAL_REFERENCE|MIXED_OUTPUT_RULE/.test(code)) return F("Refused before sending: the testnet does not take this rule in this form. Nothing was sent. ({x})", { x: (m || code).slice(0, 140) });
   if (/user policy \(o5\)/i.test(m)) return T("Refused before sending: your own rule stops this payment. Nothing left your account.");
   if (/insufficient|funds/i.test(m)) return T("Refused before sending: not enough test AGRS for the amount and the fee.");
   if (/sequence/i.test(m)) return T("Refused: an earlier transaction of yours is still on its way. Wait for the next block and try again.");
@@ -834,12 +833,26 @@ async function followLog() {   // queued → in a block, by tx hash
 }
 
 /* ---------- rules: written for the testnet's user-policy stream o5 (docs/approvals.md in IDNI/tau-testnet) ----------
-   One rule per account: every block below is one condition, and the payment is stopped when any of them holds.
-   What a rule may read there: amount (i1), recipient (i4), block time (i5) and the co-signature slots (i18 to i25).
-   The node refuses balance (i2) and custom inputs (i13 to i15) in a personal rule, so there is no minimum balance or code block. */
+   One rule per account, and since IDNI main 5ad1bb7 every account may hold one (before it, 2 chain-wide). Every block
+   below is one condition, and the payment is stopped when any of them holds. The node keeps the rule as the account's
+   own clause and asks it only about that account's payments. A clause is one always ( … ). unit, every stream typed,
+   writes only o5, never names i12 or i13 to i15, at most 32 comparisons, 32 levels of brackets and 8 KiB, and must read
+   an input: a bare "block" is refused, so Freeze reads the amount. It may read amount (i1), balance (i2, the parent
+   block's), sender and recipient (i3, i4), block time (i5), the co-signature slots (i18 to i25) and custom inputs (i26+).
+   A rule cannot share a transaction with payments, and a block takes at most 8 rule transactions. */
 const hex6 = n => Math.max(0, Math.min(MAX_AMOUNT, Math.floor(n))).toString(16).padStart(6, "0");
 const ALLOW = "(o5[t]:bv[24] = { #x000001 }:bv[24])", BLOCK = "(o5[t]:bv[24] = { #x000000 }:bv[24])";
-const FREEZE = "always ( (o5[t]:bv[24] = { #x000000 }:bv[24]) ).", MAX_ONLY = 5;
+/* Freeze must read an input since 5ad1bb7 (a constant clause is refused): every real payment has an amount above 0 */
+const FREEZE = `always ( (i1[t]:bv[24] > { #x000000 }:bv[24]) ? ${BLOCK} : ${ALLOW} ).`, FREEZE_OLD = "always ( (o5[t]:bv[24] = { #x000000 }:bv[24]) ).", MAX_ONLY = 5;
+/* the node's own limits on a clause (consensus/rule_offers.py in IDNI tau-testnet 5ad1bb7), checked here before signing */
+const CLAUSE_MAX = { comparisons: 32, depth: 32, bytes: 8192 };
+function clauseLimits(text) {
+  const body = String(text || "").replace(/#(?![bx])[^\n]*/gi, "");
+  const comparisons = (body.match(/!=|<=|>=|(?<![-<])>|<(?!-)|=/g) || []).length;
+  let d = 0, depth = 0; for (const c of body) { if (c === "(") depth = Math.max(depth, ++d); else if (c === ")") d = Math.max(0, d - 1); }
+  const bytes = new TextEncoder().encode(String(text || "")).length;
+  return { comparisons, depth, bytes, ok: comparisons <= CLAUSE_MAX.comparisons && depth <= CLAUSE_MAX.depth && bytes <= CLAUSE_MAX.bytes };
+}
 const above = n => `i1[t]:bv[24] > { #x${hex6(n)} }:bv[24]`;
 const unsigned = (slot, who) => `!(i${slot}[t]:bv[384] = { #x${who} }:bv[384])`;
 /* any: blocked while none of them signed; all: blocked while any one of them has not signed */
@@ -865,7 +878,7 @@ function readRule(text) {
   const flat = text.replace(/\s+/g, "");
   if (flat === NEUTRAL.replace(/\s+/g, "")) return null;
   const r = { freeze: false, only: [], cap: null, from: null, co: null, text };
-  if (flat === FREEZE.replace(/\s+/g, "")) return { ...r, freeze: true };
+  if (flat === FREEZE.replace(/\s+/g, "") || flat === FREEZE_OLD.replace(/\s+/g, "")) return { ...r, freeze: true };
   r.only = [...new Set([...text.matchAll(/i4\[t\]:bv\[384\]\s*=\s*\{\s*#x([0-9a-f]{96})/gi)].map(m => m[1].toLowerCase()))];
   const cap = /i1\[t\]:bv\[24\]\s*>=\s*\{\s*#x([0-9a-f]+)/i.exec(text);
   if (cap) r.cap = parseInt(cap[1], 16) - 1;
@@ -1256,7 +1269,7 @@ function seedBuilder(r) {
   fillBuilder(r);
 }
 /* ---------- ready-made rules: one click fills the blocks, and each says what it keeps off and what it does not ----------
-   "Way back by default" is no chain rule: it is this wallet's habit and needs no rule place. */
+   "Way back by default" is no chain rule: it is this wallet's habit and needs no rule. */
 const inDays = n => Math.floor((Date.now() + n * 86400000) / 86400000) * 86400;
 const coWho = () => (!SIM && GUARD) || (BOOK.find(c => c.addr !== W.pk) || {}).addr || null;
 const PRESETS = [
@@ -1268,7 +1281,7 @@ const PRESETS = [
     rule: () => ({ only: [], cap: null, from: inDays(90), co: null }) },
   { id: "second", name: "Second signature", of: "Above 1,000 test AGRS a co-signer must sign: a friend from your book, or the Guardian with a code from your Authenticator app.", against: "a stolen phone", not: "payments below the limit; a co-signer who is offline makes the payment wait",
     need: () => coWho() ? null : T(SIM ? "Put a co-signer in your address book first." : "Put a co-signer in your address book first, or wait for the Guardian to answer."), rule: () => ({ only: [], cap: null, from: null, co: { limit: 1000, who: [coWho()], slots: [[18, coWho()]], need: "any" } }) },
-  { id: "back", name: "Way back by default", of: "Payments to new addresses, and above 1,000 test AGRS, go with a way back of 30 blocks. No rule place needed: a habit of this wallet, not of the chain.", against: "a wrong address", not: "anything once the payment is released; another wallet with your key does not know this habit",
+  { id: "back", name: "Way back by default", of: "Payments to new addresses, and above 1,000 test AGRS, go with a way back of 30 blocks. No rule needed: a habit of this wallet, not of the chain.", against: "a wrong address", not: "anything once the payment is released; another wallet with your key does not know this habit",
     back: true },
 ];
 const sameRule = (a, b) => !!a && !!b && JSON.stringify([[...new Set(a.only)].sort(), a.cap, a.from, a.co && a.co.limit, a.co && a.co.who]) === JSON.stringify([[...new Set(b.only)].sort(), b.cap, b.from, b.co && b.co.limit, b.co && b.co.who]);
@@ -1313,6 +1326,7 @@ function ruleDraft() {
     if (e) no("co", e); else if (!isAddr(w) || w === W.pk) no("co", T(BOOK.length ? "pick a co-signer from your address book" : "put your co-signer in your address book first"));
     else r.co = { limit: Number($("vCoAbove").value), who: [w], slots: [[18, w]], need: "any" }; }
   const any = r.only.length || r.cap != null || r.from != null || r.co;
+  if (any && !bad.length) { const lim = clauseLimits(buildRule(r)); if (!lim.ok) bad.push(F("too long for the testnet: {a} comparisons (at most 32)", { a: lim.comparisons })); }
   return { r, ok: !!any && !bad.length, bad, at, text: any && !bad.length ? buildRule(r) : null };
 }
 [["vCap", "cCap"], ["vFrom", "cFrom"], ["vCoAbove", "cCo"], ["vCoWho", "cCo"]].forEach(([v, c]) => {
@@ -1320,7 +1334,6 @@ function ruleDraft() {
   $(v).addEventListener("pointerdown", () => { if (!$(c).checked) { $(c).checked = true; renderRule(); renderShare(); } });   // clicking into a value means you want that block; tabbing past it does not
 });
 ["cOnly", "cCap", "cFrom", "cCo", "vCap", "vFrom", "vCoAbove", "vCoWho"].forEach(id => $(id).addEventListener("input", () => { renderRule(); renderShare(); }));
-const slotsFull = () => !SIM && W.slots && W.slots.taken >= W.slots.places && !myRule() && !(W.slots.holders || []).includes(W.pk);
 /* test payments: what the rule on the screen would do, before anything is signed */
 function probes(r) {
   const friend = BOOK[0], other = "f0" + S.hash("someone new" + (W.pk || "")).slice(0, 62) + S.hash("x" + (W.pk || ""));
@@ -1376,43 +1389,19 @@ function renderRule() {
   $("probesSum").textContent = d.bad.length || !dots.length ? T("Test payments against this rule") : F("Test payments against this rule · {a} go through, {b} stopped, {c} wait", { a: n("ok"), b: dots.length - n("ok") - n("sim"), c: n("sim") });
   $("draftTau").hidden = !d.text; $("draftText").textContent = d.text || "";
   const same = d.text && r && d.text.replace(/\s+/g, "") === r.text.replace(/\s+/g, "");
-  $("btnRule").disabled = !W.pk || !d.ok || same || slotsFull();
+  $("btnRule").disabled = !W.pk || !d.ok || same;
   $("btnRule").textContent = T(r ? "Sign new rule" : "Sign this rule");
-  $("btnRule").dataset.tip = T(r ? "Sign new rule" : "Sign this rule") + "\n" + (d.ok ? T("Replaces your rule from the next block on.") : d.bad.length ? FX("Missing: {x}", {}, { x: d.bad.join(", ") }) : T("Tick at least one block above.")) + "\n" + T("Uses one of the testnet's two rule places.");
+  $("btnRule").dataset.tip = T(r ? "Sign new rule" : "Sign this rule") + "\n" + (d.ok ? T("Replaces your rule from the next block on.") : d.bad.length ? FX("Missing: {x}", {}, { x: d.bad.join(", ") }) : T("Tick at least one block above.")) + "\n" + T("Every account may hold one rule on the testnet.");
   const frozen = r && r.freeze;
   $("btnFreeze").textContent = T(frozen ? "Unfreeze" : "Freeze");
-  $("btnFreeze").disabled = !W.pk || W.clause === undefined || (!frozen && slotsFull());
+  $("btnFreeze").disabled = !W.pk || W.clause === undefined;
   $("btnFreeze").dataset.tip = frozen ? T("Unfreeze") + "\n" + T("Signs the neutral rule: payments go through again.") + "\n" + T("Build a new rule afterwards if you want one.")
     : T("Freeze") + "\n" + T("One click: nothing leaves this account until you unfreeze.") + "\n" + T("For a lost phone or a key you no longer trust.");
   $("btnRuleOff").hidden = !r || frozen;
-  $("btnRuleOff").dataset.tip = T("Remove my rule") + "\n" + T("Signs the neutral rule: every payment goes through again.") + "\n" + T("Frees one of the testnet's two rule places.");
-  /* why a button is grey, on the screen: a hover never reaches a phone */
-  const full = W.pk && W.clause !== undefined && slotsFull();
-  $("slotsBar").hidden = !full;
-  if (full) {
-    const held = (W.slots.holders || []).map(tag).join(T(" and "));
-    /* one short line: the line for a live turn below says the rest, so the blocks stay in view */
-    $("slotsBar").replaceChildren(el("span", null, el("b", { text: held ? FX("Live: both rule places are taken, by {x}.", {}, { x: held }) : T("Live: both rule places are taken.") }), " ",
-      T("Test yours here and sign it in the simulation, where every account may have a rule.")),
-      el("button", { class: "b", type: "button", text: T("Continue in the simulation"), onclick: () => toOtherMode("sim") }));
-  }
-  renderLease(full);
-  /* not in the line yet: one bar with both ways out, so the rule blocks stay in view on one screen */
-  if (full && !$("leaseBar").hidden && W.lease && !W.lease.position && !(W.slots.holders || []).includes(W.pk)) {
-    $("leaseBar").hidden = true;
-    $("slotsBar").replaceChildren(el("span", null, el("b", { text: T("Live: both rule places are taken.") }), " ",
-      T("Test yours here; sign it in the simulation now, or join the line for a live turn of 30 minutes.")),
-      el("span", { class: "row", style: "margin:0" }, el("button", { class: "b", type: "button", text: T("Continue in the simulation"), onclick: () => toOtherMode("sim") }),
-        el("button", { class: "b", type: "button", text: T("Join the line"), "data-tip": T("Join the line") + "\n" + T("A holder keeps a place 30 minutes once someone is waiting.") + "\n" + T("This page tells you when a place is yours to take."), onclick: () => joinLine(true) })));
-  }
-  else if (full && !$("leaseBar").hidden && W.lease && W.lease.position) {   // in the line: its bar says it all, with the way into the simulation beside it
-    $("slotsBar").hidden = true;
-    $("leaseBar").append(el("button", { class: "b", type: "button", text: T("Continue in the simulation"), onclick: () => toOtherMode("sim") }));
-  }
+  $("btnRuleOff").dataset.tip = T("Remove my rule") + "\n" + T("Signs the neutral rule: every payment goes through again.");
   const why = [];
   if (W.pk && d.bad.length) why.push(el("b", { text: T("Not ready to sign:") }), " ", d.bad.join(T("; ")));
   else if (W.pk && !d.text && !r) why.push(T("Tick at least one block above."));
-  else if (full) why.push(T("Grey while both live rule places are taken."));
   $("ruleWhy").className = "why2" + (W.pk && d.bad.length ? " fix" : "");
   $("ruleWhy").replaceChildren(...why);
   renderPresets();
@@ -1455,78 +1444,23 @@ $("btnShare").onclick = async () => {
   res.textContent = r.ok ? FX("Offered. {x} sees it under Activity, checks it and accepts or declines.", {}, { x: tag(to) }) : r.why;
 };
 
-/* fair turns on the live places: with a rule, the wallet also signs the neutral rule for the account's next transaction
-   and leaves it with the relay (leasetx), which sends it when the turn is over: after a day, or 30 minutes after the
-   turn began once someone is waiting. Any later transaction uses that number, so the wallet signs a fresh one each time. */
-const isNeutral = t => String(t || "").replace(/\s+/g, "") === NEUTRAL.replace(/\s+/g, "");
-function takesPlace(tx) {
-  const rule = tx.tx_type === "user_tx" && tx.operations && tx.operations["0"];
-  if (rule) return !isNeutral(rule);
-  return tx.tx_type === "rule_offer_accept" || !!myRule();
-}
-async function depositTurn(seq) {
-  const tx = { ...base("user_tx", { operations: { "0": NEUTRAL } }), sequence_number: seq, expiration_time: Math.floor(Date.now() / 1000) + 7 * 86400, expire_at_height: (head() || 0) + 9000 };
-  const r = await rpc("leasetx " + JSON.stringify(signTx(tx)));
-  W.turnErr = r && r.status === "ok" ? null : (r && r.error && r.error.message) || T("The relay did not answer.");
-  loadLease();
-}
-async function loadLease() {
-  if (SIM || !W.pk) { W.lease = null; return; }
-  try { const j = await (await fetch(`${RELAY}/lease?pk=${W.pk}`, { cache: "no-store" })).json(); if (j && j.places) W.lease = j; } catch (e) {}
-  renderRule();
-}
-async function joinLine(on) {
-  try { const j = await (await fetch(`${RELAY}/lease/${on ? "wait" : "leave"}?pk=${W.pk}`, { cache: "no-store" })).json(); if (j && j.places) W.lease = j; } catch (e) {}
-  renderRule();
-}
-const hhmm = t => { const x = new Date(t * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }); return new Date(t * 1000).toDateString() === new Date().toDateString() ? x : FX("tomorrow {x}", {}, { x }); };
-/* what the lease bar says: your turn, your place in line, or a place that just freed for you */
-function renderLease(full) {
-  const L2 = W.lease, bar = $("leaseBar");
-  const mine = W.pk && W.slots && (W.slots.holders || []).includes(W.pk);
-  if (SIM || !W.pk || !L2 || !L2.enabled || (!mine && !full && !L2.position)) { bar.hidden = true; return; }
-  bar.hidden = false;
-  const m = L2.mine, items = [];
-  if (mine && m && m.status === "held") {
-    items.push(el("span", null, el("b", { text: FX("Your rule place: until {t}.", {}, { t: hhmm(m.until) }) }), " ",
-      T(L2.waiting ? "Someone is waiting, so your turn is 30 minutes from when you took the place. Then the relay sends the removal you signed with your rule." : "While nobody waits a turn lasts a day; once someone joins the line, 30 minutes from when you took it. Then the relay sends the removal you signed with your rule.")));
-  } else if (mine) {
-    items.push(el("span", null, el("b", { text: T("Your rule place has no end yet.") }), " ", T(m && m.status === "failed" ? "The removal signed earlier no longer fits your account. Sign a new one so others get their turn." : "Sign its removal now; the relay sends it when your turn is over, so others get theirs.")));
-    items.push(el("button", { class: "b", type: "button", text: T("Sign my turn"), onclick: () => depositTurn(Math.max(W.seq || 0, nextSeq || 0)) }));
-  } else if (L2.position) {
-    const next = (L2.holders || []).filter(h => h.managed && h.until).map(h => h.until).sort()[0];
-    items.push(el("span", null, el("b", { text: F(full ? "You are number {n} in line." : "A place is free: sign your rule now.", { n: L2.position }) }), " ",
-      full ? (next ? FX("The next turn ends at {t}; this page tells you then.", {}, { t: hhmm(next) }) : T("This page tells you when a place frees.")) : T("Anyone may take it; the line only shows the fair order.")));
-    items.push(el("button", { class: "b quiet", type: "button", text: T("Leave the line"), onclick: () => joinLine(false) }));
-    if (!full && !document.hasFocus()) document.title = "● " + document.title.replace(/^● /, "");
-  } else if (full) {
-    items.push(el("span", null, el("b", { text: T("Turns are fair:") }), " ", T("a holder keeps a place 30 minutes once someone is waiting. Join the line and this page tells you when it is yours to take.")));
-    items.push(el("button", { class: "b", type: "button", text: T("Join the line"), onclick: () => joinLine(true) }));
-  }
-  if (W.turnErr) items.push(el("span", { class: "dim", text: T("Relay: ") + W.turnErr }));
-  bar.replaceChildren(...items);
-}
-addEventListener("focus", () => { document.title = document.title.replace(/^● /, ""); });
-
-/* the testnet's two rule places: who holds them (the relay reads them every few minutes) */
+/* who holds a personal rule on the testnet now (the relay asks the node every few minutes): every account may hold one */
 async function loadSlots() {
-  if (SIM) { const mine = !!myRule(); W.slots = { places: 2, taken: mine ? 2 : 1, holders: [S.friends()[5], ...(mine ? [W.pk] : [])] }; renderSlots(); return; }
-  try { const j = await (await fetch(RELAY + "/rules", { cache: "no-store" })).json(); if (j && j.places) W.slots = j; } catch (e) {}
+  if (SIM) { const mine = !!myRule(); W.slots = { taken: (mine ? 1 : 0) + 3, holders: [S.friends()[5], ...(mine ? [W.pk] : [])] }; renderSlots(); return; }
+  try { const j = await (await fetch(RELAY + "/rules", { cache: "no-store" })).json(); if (j && Array.isArray(j.holders)) W.slots = j; } catch (e) {}
   renderSlots();
-  loadLease();
 }
 function renderSlots() {
   const s = W.slots, box = $("slots");
-  if (!s) { box.replaceChildren(); $("slotNote").replaceChildren(); return; }
-  const mine = W.pk && (s.holders || []).includes(W.pk), pips = [];
-  for (let i = 0; i < s.places; i++) pips.push(el("span", { class: "pip " + (i < s.taken ? (mine && i === 0 ? "mine" : "taken") : "") }));
-  box.replaceChildren(...pips, el("span", { text: F("{a} of {b} rule places taken", { a: s.taken, b: s.places }) }));
-  box.dataset.tip = T("Rule places on the testnet") + "\n" + (mine ? T("One of them is yours.") : s.taken >= s.places ? T("Both are taken right now.") : F("{n} free: a rule you sign now takes it.", { n: s.places - s.taken })) + "\n" + T("Tau Testnet Alpha holds personal rules for 2 accounts at a time.") + "\n" + T("Removing a rule frees its place.");
-  $("slotNote").replaceChildren(el("b", { text: T("Real-chain limit: ") }), T(SIM
-    ? "Tau Testnet Alpha holds rules for 2 accounts at a time, so a real Pakt binds you and one member. Here everyone may have a rule."
-    : mine ? "one of the testnet's two rule places is yours. A Pakt binds you and one member." : s.taken >= s.places ? "both of the testnet's rule places are taken, so the node refuses a new rule until someone removes theirs. Build and test yours here meanwhile."
-    : "the testnet holds rules for 2 accounts at a time, so a Pakt binds you and one member. If both places are taken, the node says so before anything is sent."),
-    !SIM && !mine && s.taken >= s.places ? el("button", { class: "b", type: "button", style: "display:block;margin-top:6px", text: T("Continue in the simulation"), onclick: () => toOtherMode("sim") }) : "");
+  const mine = !!myRule() || !!(W.pk && s && (s.holders || []).includes(W.pk));
+  if (!s) box.replaceChildren(); else {
+    const n = s.taken != null ? s.taken : (s.holders || []).length;
+    box.replaceChildren(el("span", { class: "pip " + (mine ? "mine" : "taken") }), el("span", { text: F(n === 1 ? "1 account has a rule" : "{n} accounts have a rule", { n }) }));
+    box.dataset.tip = T("Personal rules on the testnet") + "\n" + T("Every account may hold one rule for its own payments.") + "\n" + (mine ? T("Yours is one of them.") : T("Sign yours below; nobody has to wait for a place."));
+  }
+  $("slotNote").replaceChildren(el("b", { text: T("On the real chain: ") }), T(SIM
+    ? "every account may hold its own rule, as here, so a Pakt binds every member who accepts."
+    : "every account may hold its own rule, so a Pakt binds every member who accepts. Each member's rule is checked only on that member's own payments."));
 }
 
 /* ---------- Pakt: one rule, offered to every member for their own account ---------- */
@@ -1644,7 +1578,7 @@ function renderBookHint() {
   $("bookHint").replaceChildren(...[
     T(SIM ? "No address at hand? Ask the person for theirs: their wallet shows it under Your account, with a Copy button. Or try the book with a simulated account:" : "No address at hand? Ask the person for theirs: their wallet shows it under Your account, with a Copy button. Or try the book with a real testnet account:"),
     el("br"),
-    ex && !busy ? el("button", { class: "b quiet", type: "button", text: T("Use an example name and address"), "data-tip": T("Fills in an example") + "\n" + T(SIM ? "A simulated account, nobody you know." : "A real testnet account that holds a rule place, nobody you know.") + "\n" + T("Nothing is added until you press Add."),
+    ex && !busy ? el("button", { class: "b quiet", type: "button", text: T("Use an example name and address"), "data-tip": T("Fills in an example") + "\n" + T(SIM ? "A simulated account, nobody you know." : "A real testnet account that holds a rule, nobody you know.") + "\n" + T("Nothing is added until you press Add."),
       onclick: () => { $("bName").value = ex.name; $("bAddr").value = ex.addr; renderBook(); $("btnBook").focus(); } }) : null,
     W.pk ? el("button", { class: "b quiet", type: "button", text: T("Show my own address"), onclick: () => $("acctTabs").querySelector('[data-atab="acct"]').click() }) : null,
     takeable().length ? el("button", { class: "b quiet", type: "button", text: F(SIM ? "Take the book to Live node too ({n})" : "Take the book to the simulation too ({n})", { n: takeable().length }),

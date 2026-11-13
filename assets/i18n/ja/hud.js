@@ -1,6 +1,7 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
   "Live node: a click on it while you already watch the live chain now opens Status, the page with the testnet health score its hover shows, on the HUD and on every other page. From the simulation the same button still switches to the live chain.": "ライブノード：すでにライブチェーンを見ているときにクリックすると、ホバーに表示されるテストネットの健全性スコアを詳しく示すステータスページが開くようになりました。HUD でも他のすべてのページでも同じです。シミュレーション中は、同じボタンでこれまでどおりライブチェーンに切り替わります。",
+  "Personal rules for every wallet: IDNI lifted the testnet's limit of two accounts with a rule, so the wallet, the Guardian and Start here drop the two rule places and the waiting line. Freeze now reads the amount, because a rule that only says “block” is refused; the wallet checks the node's new limits before you sign, and the Playground checks the new rule shape and lets a rule read your balance.": "すべてのウォレットに個人ルールを：IDNI がテストネットの「ルールを持てるのは 2 アカウントまで」という制限をなくしたので、ウォレット、ガーディアン、スタートページから 2 つのルール枠と待ち行列が消えました。「凍結」は金額を読むようになりました。「止める」だけのルールは拒否されるからです。ウォレットは署名の前にノードの新しい制限を確かめ、Playground は新しいルールの形を確かめ、ルールが残高を読めるようになりました。",
   "Menu: an entry that holds several pages now names them all inside the menu, one click each. Read shows The Daily Consensus, Blog and Chronicle; Explorer shows Accounts and Time travel; Testnet health shows Stats, Testnet load and Status; Road to mainnet shows Findings, Build pulse and GxP; the same for Proposals, Wallet, Wallet rules and Practise voting. Before, these pages only appeared as tabs after you had opened the first one.": "メニュー：複数のページをまとめた項目は、メニューの中でそのすべてのページを表示するようになりました。どれもワンクリックです。「読む」には The Daily Consensus、ブログ、クロニクル、「エクスプローラー」にはアカウントとタイムトラベル、「テストネットの健康」には統計、テストネットの負荷、ステータス、「メインネットへの道」には調査結果、開発の鼓動、GxP が並びます。提案、ウォレット、ウォレットのルール、投票の練習も同じです。これまでは、最初のページを開いた後にタブとしてしか出てきませんでした。",
   "Support: the membership now lists the ship log as a benefit of both levels, one members-only post every Monday that the server writes from the chain and the site's own log.": "サポート：会員の説明に、両レベルの特典として航海日誌を追加しました。毎週月曜に会員限定の投稿が一本、チェーンとサイト自身のログからサーバーが書きます。",
   "IDNI genesis account, one of the 11 the testnet started with.": "IDNI ジェネシスアカウント。テストネット開始時からある 11 のアカウントの一つです。",
@@ -2350,7 +2351,7 @@ TauI18n.add({ strings: {
   "Each rule binds only the wallet that set it, never anyone else.": "各ルールは設定したウォレットだけを縛り、他の誰も縛りません。",
   "Rule ring: senders with their own o5 clause, {n} now.": "ルールの輪：独自の o5 条項を持つ送信者、いま {n} 件。",
   "Rule ring: senders with their own o5 clause, none now.": "ルールの輪：独自の o5 条項を持つ送信者、いまはなし。",
-  "Each clause binds only its own sender; the testnet has 2 places.": "各条項は自分の送信者だけを縛ります。テストネットの枠は 2 つです。",
+  "Each clause binds only its own sender; every account may hold one.": "各条項は自分の送信者だけを縛ります。どのアカウントも 1 つ持てます。",
   "Normal: in force since block #{n}.": "正常：ブロック #{n} から施行中。",
   "Normal: in force.": "正常：施行中。",
   "Own rule of wallet {h}: {x}.": "ウォレット {h} 自身のルール：{x}。",

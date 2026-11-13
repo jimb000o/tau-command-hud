@@ -6,9 +6,9 @@
 #   cd /opt/tau-command-hud/infra && docker compose exec -T tau-node python - < node/tools/money_demo.py
 #
 # The three keys are made once and kept in /data/money-demo.json (the node's volume); they hold test AGRS only, which
-# the testnet's faucet gives every new account. Run it again and it reuses them. Steps 3 to 5 need one of the testnet's
-# two personal-rule places (MAX_TIER_AUTHORS = 2); when both are taken they are skipped and step 1 and 2 still run.
-# At the end the rule is removed with the neutral clause, so the place is free again.
+# the testnet's faucet gives every new account. Run it again and it reuses them. Steps 3 to 5 give the sender a personal
+# rule (every account may hold one since IDNI main 5ad1bb7; before it only 2 could); when the node refuses the rule they
+# are skipped and step 1 and 2 still run. At the end the rule is removed with the neutral clause.
 import json
 import os
 import re
@@ -170,8 +170,7 @@ def main():
     before = seq(A)
     code, out, err = cli("tx", "send", "--privkey", k["sender"]["priv"], "--rule-file", f.name, "--fee", FEE)
     if code:
-        if "CLAUSE_REGISTRY_FULL" in out + err:
-            say("  both personal-rule places on the testnet are taken; steps 3 to 5 skipped")
+        say("  the node refused the rule; steps 3 to 5 skipped: " + (out + err).strip()[-200:])
         return finish(done)
     if not landed(A, before):
         return finish(done)
@@ -206,12 +205,12 @@ def main():
         if st == "executed":
             done.append("time lock")
 
-    say("cleanup: the neutral clause frees the personal-rule place")
+    say("cleanup: the neutral clause removes the sender's rule")
     before = seq(A)
     with open(f.name, "w") as g:
         g.write(NEUTRAL)
     if not cli("tx", "send", "--privkey", k["sender"]["priv"], "--rule-file", f.name, "--fee", FEE)[0] and landed(A, before):
-        say("  place freed")
+        say("  rule removed")
     finish(done)
 
 
