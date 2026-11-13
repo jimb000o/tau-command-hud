@@ -1629,6 +1629,38 @@
  },
  {
   "who": "rico",
+  "text": "A pirate tried to slip a new rule for his own wallet and a coin into one payment. The chain keeps rules and coins in separate envelopes. One at a time, captain. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "Rule and payment in one parcel again. On this chain a rule travels on its own, and so does a coin. The chain sent the parcel back."
+ },
+ {
+  "who": "rico",
+  "text": "A pirate wrote one rule that steers his own wallet and the chain's fee lane at the same time. Two jobs, one rule: the chain doesn't allow that mix. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "Another mixed rule from the black ship: half his own policy, half the chain's fees. The chain asks for one or the other. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "A pirate offered a policy clause with more comparisons than one clause may carry. Over thirty-two! Rico lost count at nine. The chain didn't. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "Another monster clause from the black ship, long enough to wrap round the lighthouse. The chain has a limit for that. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "So close! A pirate allowed a fee one coin short of what the network's fee rule asks for that very payment. The chain doesn't round in anyone's favour. Refused."
+ },
+ {
+  "who": "rico",
+  "text": "One coin short on the fee, again. The fee rule names the price for each payment, and the chain counts to the last coin. Refused."
+ },
+ {
+  "who": "rico",
   "text": "The black ship is weighing anchor. The lanterns go in one by one. They leave as they came: without a word to Tobias."
  },
  {
@@ -5666,6 +5698,10 @@
  },
  {
   "who": "lola",
+  "text": "A pirate tried to pay the fee one coin short. One! I’ve had customers try that with tips. The chain counts to the last coin. So do I."
+ },
+ {
+  "who": "lola",
   "text": "A pirate sent me a payment whose time had already run out. Like paying with last week’s bar tab. The chain checked the clock and said no. I didn’t even have to look up."
  },
  {
@@ -6322,6 +6358,10 @@
  },
  {
   "who": "noor",
+  "text": "A pirate sent a rule and a coin in one payment. The chain wants them apart: rules in one, coins in another. Like invoices and complaints. Separate desks."
+ },
+ {
+  "who": "noor",
   "text": "The pirates bought their coconuts properly in the end. One price, their own wallets, a fee allowed. The free-ride trick got them nothing but a refusal. Business as usual."
  },
  {
@@ -6391,6 +6431,10 @@
  {
   "who": "pim",
   "text": "I measured her from the cliff. Black hull, three chain links on the flag, not on any list I have. The North Wind wants to know if pirates count as cruise traffic."
+ },
+ {
+  "who": "pim",
+  "text": "A pirate wrote one rule for his own wallet and the chain’s fees together. Two columns in one cell. The chain refused. I would have too. I nearly fainted."
  },
  {
   "who": "pim",
@@ -6579,6 +6623,10 @@
  {
   "who": "tano",
   "text": "The drums are quiet tonight. Not from fear. When a stranger comes, you listen first. They try their tricks, the chain answers, and we listen."
+ },
+ {
+  "who": "tano",
+  "text": "A pirate offered a rule with more comparisons than one part of a rule may hold. A rhythm with too many beats is only noise. The chain said no."
  },
  {
   "who": "tano",

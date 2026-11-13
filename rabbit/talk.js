@@ -83,6 +83,7 @@
         ["pirateHere+tReplay", "Pirates pay for their rum, would you believe it. One of them tried to pay twice with the same payment. The chain said no before I could."],
         ["pirateHere", "Pirates at my bar, by rope and basket. They pay the same price as everyone, through the same chain. I’ve never had such well-behaved pirates. I’ve never had pirates."],
         ["pirateAfter", "The pirates have gone, and the rum they paid for is paid for. Whatever else they tried, the logbook has the chain’s answer. I’d rather read that than a pirate’s promise."],
+        ["pirateHere+tEdge", "A pirate tried to pay the fee one coin short. One! I’ve had customers try that with tips. The chain counts to the last coin. So do I."],
         ["pirateHere+tExpired", "A pirate sent me a payment whose time had already run out. Like paying with last week’s bar tab. The chain checked the clock and said no. I didn’t even have to look up."],
         ["pirateClean", "Every trick they tried bounced off the chain. The rum they paid for properly went through the same door as yours. Best-behaved bad customers I’ve ever had."],
         ["pirateNext", "Morning after the pirates. The good rum is back on the shelf, and the bar still smells of lantern oil. Lovely evening. Strict chain."],
@@ -290,6 +291,7 @@
       back: [
         ["pirateHere+tGiant", "Pirates, Baako. One of them tried to pay with a sum bigger than a payment can even hold. The chain refused. So did I."],
         ["pirateHere", "Pirates, Baako. They want soap. Of course they want soap. Nobody goes near the boat. The soap goes in a basket."],
+        ["pirateHere+tSelfrule", "A pirate sent a rule and a coin in one payment. The chain wants them apart: rules in one, coins in another. Like invoices and complaints. Separate desks."],
         ["pirateClean", "The pirates bought their coconuts properly in the end. One price, their own wallets, a fee allowed. The free-ride trick got them nothing but a refusal. Business as usual."],
         ["shipNear+queen", "The Queen is coming, Baako. Double shift. Soap shaped like little ships. Don’t ask. It sells."],
         ["shipHere", "Passengers at my gate, Baako. They want to see the organ. Nobody sees the organ. They can see the soap."],
@@ -314,6 +316,7 @@
     pim: {
       back: [
         ["pirateSight", "I measured her from the cliff. Black hull, three chain links on the flag, not on any list I have. The North Wind wants to know if pirates count as cruise traffic."],
+        ["pirateHere+tMixrule", "A pirate wrote one rule for his own wallet and the chain’s fees together. Two columns in one cell. The chain refused. I would have too. I nearly fainted."],
         ["pirateNext", "I measured the horizon all morning. No black hull. I have added a column to my notebook: pirates, yes or no. Today: no. Tomorrow: probably no. Probably."],
         ["shipNear+queen", "The Queen is coming. The North Wind asked me to measure how deep she sits in the water. I did. Then they asked me to measure the bay again. It is still the same size."],
         ["shipHere+queen", "I measured the Queen from the cliff. Two hundred metres and a bit. The embassy wants to know what the bit would cost to dredge. I said: ask the council. They sighed."],
@@ -379,6 +382,7 @@
     tano: {
       back: [
         ["pirateHere", "The drums are quiet tonight. Not from fear. When a stranger comes, you listen first. They try their tricks, the chain answers, and we listen."],
+        ["pirateHere+tBigclause", "A pirate offered a rule with more comparisons than one part of a rule may hold. A rhythm with too many beats is only noise. The chain said no."],
         ["pirateClean", "Tonight the drums play the chain’s song: no, and no, and no again. Every trick, and every no with its reason. A good rhythm. Hard to dance to, if you are a pirate."],
         ["shipTomorrow", "A ship tomorrow. The drums won’t play for it. They play for the island. The passengers may listen from the path, like anyone."],
         ["shipHere", "Hear the ship’s horn? The drums don’t answer horns. When it has gone, we’ll play. Not for them. For the quiet after."],
@@ -467,7 +471,7 @@
        pirateSight     in sight or waiting off the reef     pirateHere   at anchor (her crew stays aboard)
        pirateGone      left, that evening    pirateNext   the day after    pirateAfter   either    pirateCut   left early
        pirateClean     every trick she tried was refused (never while a trick that got through is held back)
-       tOverspend tReplay tExpired tStale tForged tImpostor tFreeride tGiant tDouble tPoison tCram tGovernance tTaxman tStranger tPhantom tLate   that trick was refused at least once (live, or
+       tOverspend tReplay tExpired tStale tForged tImpostor tFreeride tGiant tDouble tPoison tCram tGovernance tTaxman tStranger tPhantom tLate tSelfrule tMixrule tBigclause tEdge   that trick was refused at least once (live, or
                        after the visit); a trick that got through is never a fact, so no line names it
      The visit under way counts first, then one that ended today, then the next call. Nothing while the ships are
      switched off (the relay announces no call then) or the relay cannot be reached: nobody talks about a ship that will not come. */
@@ -480,7 +484,8 @@
   /* the pirates' eight tricks (relay cruise.py TRICKS), as facts once the chain refused one: what a line may name */
   const TRICKF = { overspend: "tOverspend", replay: "tReplay", expired: "tExpired", stale: "tStale", forged: "tForged", impostor: "tImpostor", freeride: "tFreeride", giant: "tGiant",
     double: "tDouble", poison: "tPoison", cram: "tCram", governance: "tGovernance",
-    taxman: "tTaxman", stranger: "tStranger", phantom: "tPhantom", late: "tLate" };
+    taxman: "tTaxman", stranger: "tStranger", phantom: "tPhantom", late: "tLate",
+    selfrule: "tSelfrule", mixrule: "tMixrule", bigclause: "tBigclause", edge: "tEdge" };
   const WHEN = ["ship", "queen", "dryrun", "shipSoon", "shipTomorrow", "shipToday", "shipNear", "shipHere", "shipGone", "shipCut", "shipAfter",
     "shipSkipped", "shipQuiet", "shipClean", "shipTuned",
     "pirates", "pirateSight", "pirateHere", "pirateGone", "pirateNext", "pirateAfter", "pirateCut", "pirateClean", ...Object.values(TRICKF)];
