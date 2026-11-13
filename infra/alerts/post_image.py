@@ -49,6 +49,7 @@ def x_photo(path: str, text: str) -> str:
             if "HTTP 403" not in str(e) or i == len(x_variants(text)) - 1:
                 raise
             print(f"x: 403 for the text as written, trying variant {i + 1}:\n{x_variants(text)[i + 1]}\n---")
+    alerts.note_public_post("x")
     return "posted https://x.com/TauHUDcom/status/" + str((out.get("data") or {}).get("id"))
 
 
