@@ -1877,12 +1877,12 @@ const POLICIES = {
     blocks: tx => tx.amount > amt,
   }),
   whitelist: to => ({
-    kind: "whitelist", name: "Recipient whitelist", label: `only pays ${short(to)}`,
+    kind: "whitelist", name: "Recipient whitelist", label: `only pays ${short(to)}`, to: String(to).toLowerCase(),
     body: `(i4[t]:bv[384] = { #x${to.slice(0, 8)}… }:bv[384]) ? (o5[t]:bv[24] = { #x000001 }:bv[24]) : (o5[t]:bv[24] = { #x000000 }:bv[24])`,
     blocks: tx => tx.to !== to,
   }),
   timelock: ts => ({
-    kind: "timelock", name: "Time-lock", label: `frozen until ${new Date(ts * 1000).toLocaleTimeString("de-DE", { hour12: false })}`,
+    kind: "timelock", name: "Time-lock", label: `frozen until ${ts * 1000 - Date.now() > 72e6 ? new Date(ts * 1000).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }) : new Date(ts * 1000).toLocaleTimeString("de-DE", { hour12: false })}`,
     body: `(i5[t]:bv[64] < { ${ts} }:bv[64]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24])`,
     blocks: () => Date.now() / 1000 < ts,
   }),
@@ -2605,20 +2605,21 @@ function nbWho(a) {
   if (window.TauHearts && h === TauHearts.BOX) return "Tau HUD’s heart box";
   try { const k = JSON.parse(localStorage.getItem("tauhud-wallet-key") || "null"); if (k && k.pk && String(k.pk).toLowerCase() === h) return "your wallet"; } catch (e) {}
   const O = window.TauOrigin; if (!O) return "a wallet";
+  const own = O.name && O.name(h); if (own) return own;   // the showcase wallets: "Tau HUD's piggy bank" and so on
   const box = O.of("0", [[null, h]]); if (box && NB_BOX[box.tag]) return NB_BOX[box.tag];
   const o = O.of(h, [], ""); return (o && NB_TAG[o.tag]) || "a wallet";
 }
 const nbSpan = a => `<span>${esc(nbWho(a))}</span>`;
 function plainBody(t) {
   if (t.transfers && t.transfers.length) return t.transfers.map(([f, to, a]) => `${nbSpan(f)} → ${nbSpan(to)} <b>${fmt(a)} AGRS</b>`).join(" · ");
-  return (t.rejected ? nbSpan(t.sender) : `<span>sent by ${esc(nbWho(t.sender))}</span>`) + (t.rejected ? ` · <span>${esc(String(t.rejected).replace(/^refused( at the door)?\s*·\s*/i, "") || "the rules said no")}</span>` : "");
+  return (t.rejected ? nbSpan(t.sender) : `<span>sent by ${esc(nbWho(t.sender))}</span>`) + (t.rejected ? ` · <span>${esc(String(t.rejected).replace(/^(refused( at the door)?|o5 = 0)\s*·\s*/i, "") || "the rules said no")}</span>` : "");
 }
 /* a wallet's own rule as one plain sentence (the policy labels carry the numbers) */
 function nbRule(p) {
-  const n = (/above ([\d.,]+)/.exec(p.label || "") || [])[1], h = (/block #([\d.,]+)/.exec(p.label || "") || [])[1], tm = (/until (\d\d:\d\d(:\d\d)?)/.exec(p.label || "") || [])[1];
+  const n = (/above ([\d.,]+)/.exec(p.label || "") || [])[1], h = (/block #([\d.,]+)/.exec(p.label || "") || [])[1], tm = (/until ((\d{1,2} \w+ \d{4}, )?\d\d:\d\d(:\d\d)?)/.exec(p.label || "") || [])[1];
   switch (p.kind) {
     case "limit": return n ? `may send at most ${n} AGRS per payment` : "has a spending limit";
-    case "whitelist": return "may only pay one chosen wallet";
+    case "whitelist": { const w = p.to && nbWho(p.to); return w && w !== "a wallet" ? `may only pay ${w}` : "may only pay one chosen wallet"; }
     case "timelock": return tm ? `cannot send anything until ${tm}` : "cannot send anything for now";
     case "heightlock": return h ? `cannot send anything before block #${h}` : "cannot send anything for now";
     case "cosign": return n ? `needs a second signature above ${n} AGRS` : "needs a second signature";
@@ -2907,7 +2908,8 @@ function renderOffers() {
 }
 function renderClauses() {
   if (hold("clauses", renderClauses)) return;
-  const entries = [...S.clauses.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1);
+  const named = a => !!(window.TauOrigin && TauOrigin.name && TauOrigin.name(a));   // the showcase wallets first: they never leave the list of 8
+  const entries = [...S.clauses.entries()].sort((a, b) => named(b[0]) - named(a[0]) || (a[0] < b[0] ? -1 : 1));
   const open = S.approvals.filter(a => a.status === "open");
   $("clauseCount").textContent = entries.length + " accounts" + (open.length ? ` · ${open.length} waiting for approval` : "");
   const shown = open.concat(S.approvals.filter(a => a.status !== "open").slice(-2));

@@ -45,6 +45,7 @@ from simvotes import SimVotes, name_of
 from simwallet import SimWallet
 from cruise import Cruise
 from hackweek import HackWeek
+from showcase import Showcase
 from island import Island
 from isle import Isle
 from nomemo import NoMemo
@@ -414,6 +415,10 @@ class Relay:
         # the hack of the week, replayed on the testnet with our own wallets, after the ships in the bot's free slots (hackweek.py)
         self.hack = HackWeek(verdict=self.load_word)
         self.hack.on_tx = lambda ok: self.load.sent("cruise" if ok else "refused")
+        # three showcase wallets, each with a personal rule; once a day each tries a payment its rule forbids (showcase.py)
+        self.showcase = Showcase()
+        self.showcase.on_tx = lambda ok: self.load.sent("bot" if ok else "refused")
+        self.showcase.on_refused = self.note_refused
         self.nomemo = NoMemo()   # No Memo's crew purse: the share, the mark and the Tracer's dust (nomemo.py)
         self.nomemo.on_tx = lambda: self.load.sent("bot")
         self.nomemo.lenders = self.cruise.lenders   # while our node cannot take the bank's fresh wallet (IDNI tau-testnet #108)
@@ -512,7 +517,8 @@ class Relay:
         self.cruise.on_ready = self.tag_passengers
         self.hack.on_ready = self.tag_passengers
         self.nomemo.on_ready = self.tag_passengers
-        if self.cruise.ready or self.hack.ready or self.nomemo.ready:
+        self.showcase.on_ready = self.tag_passengers
+        if self.cruise.ready or self.hack.ready or self.nomemo.ready or self.showcase.ready:
             self.tag_passengers()
 
     # ---------- polling ----------
@@ -562,12 +568,14 @@ class Relay:
             self._archive_chain()
             self.blocks.clear()
             reset = True
+            self.showcase.recheck()   # the showcase wallets' rules are gone with the old chain: set them again
         elif full and self.blocks and self._other_chain(fetched):
             # typically right after a relay start: the blocks on disk are from a chain that is gone
             log.warning("held blocks belong to an earlier chain; dropping them")
             self._archive_chain()
             self.blocks.clear()
             dropped = True
+            self.showcase.recheck()
             if self.state.get("chain"):
                 self._record_restart(self.state["chain"])
                 self.state["chain"] = None
@@ -1095,6 +1103,14 @@ class Relay:
             kind = "rule_deploy"
         return {"type": str(kind)[:40], "sender": str(t.get("sender_pubkey") or t.get("sender") or "")[:200]}
 
+    def note_refused(self, entry: dict):
+        """A transaction the node refused at the door, before any queue (the showcase wallets' daily try): listed with the
+        dropped ones, so the HUD's feed shows it with the node's reason, like one that left the queue without a block."""
+        self.state["dropped"].append(entry)
+        self.state["dropped"] = self.state["dropped"][-EVENTS_MAX:]
+        self.stats_text = None
+        self._save_state()
+
     def track_mempool(self, data: dict):
         """A transaction that leaves the mempool and never shows up in a block
         was dropped by the node (refused on re-check, expired or replaced)."""
@@ -1173,8 +1189,10 @@ class Relay:
             w.retag()
 
     def simulated(self) -> dict:
-        """Our simulated wallets: the cruise ships' passengers and the hack of the week's four (pubkey -> who)."""
-        return {**self.cruise.who, **getattr(getattr(self, "hack", None), "who", {}), **getattr(getattr(self, "nomemo", None), "who", {})}
+        """Our simulated wallets: the cruise ships' passengers, the hack of the week's four, No Memo's own and the four
+        showcase wallets (pubkey -> who)."""
+        return {**self.cruise.who, **getattr(getattr(self, "hack", None), "who", {}), **getattr(getattr(self, "nomemo", None), "who", {}),
+                **getattr(getattr(self, "showcase", None), "who", {})}
 
     async def idle_step(self, ask, gov) -> bool:
         """The island bot's free slot: a cruise ship first, then the hack of the week (never both in one slot)."""
@@ -1182,7 +1200,9 @@ class Relay:
             return True
         if await self.hack.step(ask, gov):
             return True
-        return await self.nomemo.step(ask, gov)
+        if await self.nomemo.step(ask, gov):
+            return True
+        return await self.showcase.step(ask, gov)
 
     def island_spend(self):
         self.island.today += 1   # a passenger's transaction comes out of the island's day budget (ISLAND_DAILY)
@@ -2160,7 +2180,8 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "no-store")])
             return Response(code.value, code.phrase, headers, json.dumps(sim[1], separators=(",", ":")).encode())
-        isl = self.nomemo_feedback.route(path, query, ip) if path == "/nomemo/feedback" else self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.hack.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/hack") else self.nomemo.route(path, query) if path.startswith("/nomemo") else self.isle.route(path)
+        # GET /showcase: the three showcase wallets, their rules in words, the last daily tries (showcase.py)
+        isl = self.showcase.route(path) if path == "/showcase" else self.nomemo_feedback.route(path, query, ip) if path == "/nomemo/feedback" else self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.hack.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/hack") else self.nomemo.route(path, query) if path.startswith("/nomemo") else self.isle.route(path)
         if isl is not None:
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, json.dumps(isl, separators=(",", ":")).encode())

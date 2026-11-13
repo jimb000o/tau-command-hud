@@ -120,7 +120,8 @@ def deja(blocks: list[dict], now: float) -> dict:
             "closes_at": start + 86400, "partial": first is None or first > start}
 VIA_MAX = 24
 GAME_VIA = ("nomemo",)   # pages that are games of their own: No Memo (tauhud.com/nomemo/, sends "via nomemo")
-SIM_GROUP = {"nomemo": "nmsrv", "hack": "hack"}   # simulated() wallets that are not cruise passengers: their own group
+SIM_GROUP = {"nomemo": "nmsrv", "hack": "hack", "showcase": "bot"}   # simulated() wallets that are not cruise passengers: their own group
+# (the showcase wallets' rare rule transactions count with "bot": our own server, not a user)
 
 
 BOWL = "947c2b8988769f9fb7ada19021e27c51f5d855e4e05ad258d2ca2322821987dbff93e0425f281edded5c372b97e6a108"
