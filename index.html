@@ -2508,7 +2508,10 @@ const policyMeaning = p => !p ? "No own rule: every transfer is allowed." : ({
   custom: `Own rule on stream o5: ${p.label}. The node answers it on every transfer; 0 means refused, whoever holds the key.`,
 }[p.kind] || p.label);
 /* whose rule it is: an account's own rule binds only that account, so the hover names the wallet first */
-const ruleWhose = (a, p) => `Own rule of wallet ${short(a)}${isGenesis(a) ? " (IDNI genesis)" : ""}: ${p.label}.`;
+const ruleWhose = (a, p) => {   // with what we know about the wallet beyond the rule's text: its name, purpose, who runs it (assets/origins.js)
+  const O = window.TauOrigin, nm = O && O.name ? O.name(a) : null, ab = O && O.about ? O.about(a) : null;
+  return (nm ? `Own rule of ${nm}: ${p.label}.` : `Own rule of wallet ${short(a)}${isGenesis(a) ? " (IDNI genesis)" : ""}: ${p.label}.`) + (ab ? "\n" + ab.join("\n") : "");
+};
 const proposalMeaning = u => ({
   fee: `Every transaction would cost ${u.value} AGRS instead of ${S.fee}; the fee rule (o9) in the consensus spec changes.`,
   validator: `A new validator ${short(u.value)} joins the set that seals blocks and votes; the agreement threshold is recomputed from the larger set.`,
@@ -2551,7 +2554,8 @@ function explainOffer(o) {
 }
 const isGenesis = a => { const o = window.TauOrigin && TauOrigin.of(a); return !!o && o.tag === "idni"; };   // assets/origins.js, the same list the account page uses
 function explainClause(acc, p) {
-  return `${isGenesis(acc) ? "IDNI genesis account, one of the 11 the testnet started with. " : ""}${policyMeaning(p)}\nChecked on every transfer, at admission and again in the block. Binds the account, not the key.`;
+  const ab = window.TauOrigin && TauOrigin.about ? TauOrigin.about(acc) : null;
+  return `${isGenesis(acc) && !ab ? "IDNI genesis account, one of the 11 the testnet started with. " : ""}${policyMeaning(p)}${ab ? "\n" + ab.join("\n") : ""}\nChecked on every transfer, at admission and again in the block. Binds the account, not the key.`;
 }
 function explainBlock(b) {
   if (!b.n) return "Genesis: the starting state, spec revision 1, no transactions.";
