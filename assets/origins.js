@@ -72,8 +72,24 @@
     deja: ["Déjà the café cat", "food for Déjà, the café cat of Agorzilla’s café"],
     showcase: ["Tau HUD showcase wallet", "one of Tau HUD’s showcase wallets: a personal rule, and once a day a payment that rule forbids, on purpose"],
   };
+  // what we know about a wallet's own rule beyond its text: its purpose and who runs it (hover in the chain core and the Rules panel)
+  const RUN = "Run by tauhud.com’s server with test AGRS. Once a day it tries a payment its own rule forbids, on purpose, and the node refuses it.";
+  const ABOUT = {
+    piggy: ["Purpose: shows a time-lock. The money stays put until New Year, whoever holds the key.", RUN],
+    foureyes: ["Purpose: shows a second signature. Small payments go through; above 100 AGRS Tau HUD’s co-signer must sign as well.", RUN],
+    feeding: ["Purpose: shows a whitelist. This money can only go to Agorzilla’s bowl, nowhere else.", RUN],
+    cosigner: ["The second signature the four-eyes wallet needs. Run by tauhud.com’s server; it never sends."],
+  };
+  const TAG_ABOUT = {
+    idni: "One of the 11 accounts the testnet started with, set up by IDNI.",
+    bot: "One of our own server wallets on White Rabbit Key.",
+    cruise: "A simulated cruise passenger’s wallet, run by our server.",
+    rabbit: "A White Rabbit Key player’s wallet: whoever holds its key set this rule.",
+    nomemo: "A No Memo player’s wallet: whoever holds its key set this rule.",
+    agorzilla: "An Agorzilla player’s wallet: whoever holds its key set this rule.",
+  };
   const sim = () => !!(window.TauSim && TauSim.on);
-  let known = new Map(), via = new Map(), names = new Map();
+  let known = new Map(), via = new Map(), names = new Map(), roles = new Map();
   const get = async path => { try { const r = await fetch("https://node.tauhud.com" + path, { cache: "no-store" }); return r.ok ? await r.json() : null; } catch (e) { return null; } };
   const load = async () => {
     if (sim()) return;
@@ -85,9 +101,9 @@
     if (isle) { add(Object.values(isle.wallets || {}), "bot"); add(Object.values(isle.purses || {}), "bot"); }
     if (ship && ship.wallets) add(Object.values(ship.wallets).flat(), "cruise");
     // the showcase wallets (relay showcase.py), each with its own name: "Tau HUD's piggy bank" and so on
-    const nm = new Map();
-    if (show && show.wallets) [...Object.values(show.wallets), show.cosigner].forEach(w => { if (w && typeof w.pk === "string" && w.name) { m.set(w.pk.toLowerCase(), "showcase"); nm.set(w.pk.toLowerCase(), String(w.name)); } });
-    if (nm.size) names = nm;
+    const nm = new Map(), rl = new Map();
+    if (show && show.wallets) [...Object.entries(show.wallets), ["cosigner", show.cosigner]].forEach(([role, w]) => { if (w && typeof w.pk === "string" && w.name) { m.set(w.pk.toLowerCase(), "showcase"); nm.set(w.pk.toLowerCase(), String(w.name)); rl.set(w.pk.toLowerCase(), role); } });
+    if (nm.size) { names = nm; roles = rl; }
     if (m.size || tags) known = m;
     if (tags && tags.via) via = new Map(Object.entries(tags.via).filter(([, v]) => TAGS[v]));
   };
@@ -115,5 +131,12 @@
   const label = tag => { const t = SHORT[tag] || tag; return window.TauI18n ? TauI18n.t(t) : t; };
   // a wallet's own name where it has one (the showcase wallets), else null
   const name = pk => (!sim() && names.get(String(pk || "").toLowerCase())) || null;
-  window.TauOrigin = { of, label, name, tags: TAGS, ready: () => first };
+  // what we know about the wallet behind a rule, as lines (purpose, who runs it), or null when we know nothing
+  const about = pk => {
+    if (sim()) return null;
+    const h = String(pk || "").toLowerCase(), r = roles.get(h);
+    if (r && ABOUT[r]) return ABOUT[r].slice();
+    const o = of(h, [], ""); return o && TAG_ABOUT[o.tag] ? [TAG_ABOUT[o.tag]] : null;
+  };
+  window.TauOrigin = { of, label, name, about, tags: TAGS, ready: () => first };
 })();
