@@ -384,8 +384,9 @@ def node_line(d: dict) -> str:
 def tg_text(d: dict) -> str:
     e = html.escape
     head = "🛠 <b>IDNI testnet progress" + (f" · {e(d['days'])}" if d.get("days") else "") + "</b>"
-    parts = [head, f"<b>{e(d['title'])}</b>", "\n".join("• " + e(p) for p in d["points"]),
-             f"<b>Why it matters</b>\n{e(d['why'])}", e(node_line(d)),
+    # air between the points, short paragraphs (Kilian, 13 Nov 2026: "we don't need to cluster everything so much")
+    parts = [head, f"<b>{e(d['title'])}</b>", *("• " + e(p) for p in d["points"]),
+             f"<b>Why it matters:</b> {e(d['why'])}", e(node_line(d)),
              f'<a href="{e(d["url"])}">IDNI\'s commits</a> · <a href="{SITE}/devpulse/">Build pulse on Tau HUD</a>',
              "<i>Merged by IDNI. Tau HUD is a community project, not affiliated with IDNI.</i>"]
     return "\n\n".join(parts)

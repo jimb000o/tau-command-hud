@@ -2535,4 +2535,5 @@ TauI18n.add({ strings: {
   "Every account on the Tau Net testnet can now have its own payment rule": "Tau Net テストネットのすべてのアカウントが、自分の支払いルールを持てるようになりました",
   "Shop notice on the HUD: it now shows at every screen size. Where its place under Rules in force now is off screen or too small, it moves into Personal money rules or Rule sharing, and on phones it brings its own height. “Crew: 10–20 % off” opens the Crew page, the rest opens the store. Until Christmas the picture is one of two sweaters, the rabbit or the Tau rule, picked by chance on each page view.": "HUD のショップ告知：どの画面サイズでも表示されるようになりました。「現在有効なルール」の下の場所が画面外か小さすぎるときは、「個人のマネールール」か「ルール共有」のパネルに移り、スマートフォンでは自分の高さを持ちます。「クルー：10〜20% 引き」はクルーページを、それ以外はショップを開きます。クリスマスまでは、画像はうさぎか Tau ルールの 2 枚のセーターのどちらかで、ページを開くたびにランダムに選ばれます。",
   "Opens the Crew page: what the Tau HUD crew is and how the 10 or 20 % shop discount works.": "クルーページを開きます：Tau HUD クルーとは何か、10% または 20% のショップ割引の仕組み。",
+  "IDNI changed personal rules on 12 November: every account can now hold its own. What a rule gives you, where it stops, and where to try one.": "IDNI は 11 月 12 日にパーソナルルールを変えました。今はすべてのアカウントが自分のルールを持てます。ルールが何をもたらすか、どこまでか、どこで試せるか。"
 } });

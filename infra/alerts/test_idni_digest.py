@@ -115,7 +115,8 @@ check(len(asked) == 1 and "respawn its evaluator" in asked[0] and "Diff" in aske
       and "- ci: give the test environment" in asked[0], "the writer reads every change with its diff and headline, housekeeping by title")
 check(d["status"] == "ready" and d["shas"] == [f1, f2] and d["days"] == "5 Nov" and d["runs"] == "none", "two merges, ONE post, ready")
 tg = idg.tg_text(d)
-check(tg.startswith("🛠 <b>IDNI testnet progress · 5 Nov</b>") and "<b>Why it matters</b>" in tg and "not affiliated with IDNI" in tg
+check(tg.startswith("🛠 <b>IDNI testnet progress · 5 Nov</b>") and "<b>Why it matters:</b> " in tg and "not affiliated with IDNI" in tg
+      and all(f"\n\n• {p}" in tg for p in d["points"])
       and "Our node does not run it yet; its code is from 3 Nov." in tg and "github.com/IDNI/tau-testnet/commits/main" in tg,
       "Telegram: the day, the points, why it matters, what our node runs, the links, not affiliated")
 x = alerts.x_post(idg.x_lines(d), foot=idg.X_FOOT, keep=2)
