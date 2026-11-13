@@ -14,6 +14,9 @@ Control, and bots by user agent, are not counted.
 
 GET /v?p=<page>&r=<referrer>&s=<tag>&l=en|zh&m=sim|live&w=<width>[&e=1]   count (204, empty)
 GET /v?p=<page>&t=<seconds>                                               time on that page, as a step
+GET /v?p=<page>&k=<mark>                                                  a mark from the fixed list MARKS (which picture the shop
+                                                                          notice on the HUD showed, and whether it was clicked):
+                                                                          one per visitor and day, kept as a daily total per mark
 GET /visits?key=<key>                                                     the owner's report page (visits.html)
 GET /visits.json?key=<key>[&days=<n>]                                     the counts behind it
 GET /visits/channel                                                       page opens from our own Telegram channel's links per day,
@@ -61,6 +64,8 @@ FIXED_TAGS = {"friend", "telegram", "x", "youtube", "github", "reddit", "hn", "n
               "about", "tour", "card", "gazette", "win", "recap", "hud"}
 TG_KINDS = {"costs", "today", "recap", "deepdive", "site", "digest", "island", "challenge", "firsts", "nodes", "restart",
             "health", "idni", "blog", "gazette", "rabbit", "chain", "post"}   # ref=tg-<kind>: the kinds in infra/alerts/alerts.py (TG_KINDS, and "post" for the rest)
+# k=<mark>: the shop notice on the HUD (index.html, SHOPAD): which of its two pictures was shown, and clicks on the notice or its crew line
+MARKS = {"shop-rabbit-show", "shop-rabbit-click", "shop-rule-show", "shop-rule-click", "shop-crew-click"}
 PRESET_IDS = {"shield", "people", "savings", "second", "back"}   # ref=preset-<id>: the ready-made rules in wallet/index.html (PRESETS)
 
 
@@ -104,6 +109,7 @@ class Visits:
         self.seen: set[str] = set()                   # today's visitor hashes, memory only
         self.seen_page: set[tuple[str, str]] = set()  # (hash, page), memory only
         self.seen_hour: set[tuple[str, int]] = set()  # (hash, hour), memory only
+        self.seen_mark: set[tuple[str, str]] = set()  # (hash, mark), memory only
         self.buckets: dict[str, list] = {}            # address -> [tokens, last], memory only
         self.dirty_since = 0.0
         self.key = os.environ.get("VISITS_KEY", "").strip() or self._load_key(
@@ -163,6 +169,7 @@ class Visits:
         if d != self.day:
             self.day, self.salt = d, secrets.token_bytes(32)
             self.seen, self.seen_page, self.seen_hour = set(), set(), set()
+            self.seen_mark = set()
             for old in [k for k in self.days if k < _day_str(d - KEEP_DAYS)]:
                 del self.days[old]
 
@@ -206,7 +213,13 @@ class Visits:
         site = page.split("/")[0] if page.split("/")[0] in SITES else ""
         t = self._today(site)
         visitor = site + self.person(ip, ua)   # one person on both sites is one visitor on each
-        if q.get("t"):
+        if q.get("k"):
+            mark = q["k"]
+            if mark not in MARKS or (visitor, page) not in self.seen_page or (visitor, mark) in self.seen_mark:
+                return False
+            self.seen_mark.add((visitor, mark))
+            _bump(t.setdefault("marks", {}), mark)
+        elif q.get("t"):
             try:
                 secs = int(q["t"])
             except ValueError:

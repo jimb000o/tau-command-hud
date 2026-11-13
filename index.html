@@ -2847,7 +2847,7 @@ function fitGazAd() {
     a.hidden = false; a.classList.remove("c1", "c2", "c3", "c4", "c5");
     let fits = !over();
     for (const c of ["c1", "c2", "c3", "c4", "c5"]) { if (fits) break; a.classList.add(c); fits = !over(); }
-    if (fits) return;
+    if (fits) { if (a.classList.contains("shop")) shopMark("shop-" + SHOPAD + "-show"); return; }
   }
   mountGazAd(home); a.hidden = true;
 }
@@ -2860,7 +2860,8 @@ async function loadGazette() {
 /* What the slot shows: the shop notice (SHOP below), in the HUD's own look. ?clip=paper shows the newspaper clipping instead,
    ?clip=shop the shop; set the last line of CLIP to "paper" to give the slot back to the newspaper. */
 /* which sweater leads the notice: half of the page views get the rabbit, half the Tau rule (until Christmas; ?shopad=rabbit or =rule shows one).
-   Nothing is stored or counted here; the store link carries the name, so the shop's own statistics can tell the two apart */
+   Nothing is stored in the browser. The visitor count (assets/nav.js, TauMark) notes which one was shown and whether the notice was clicked,
+   as daily totals; the store link carries the name too */
 const SHOPAD = (() => { const w = new URLSearchParams(location.search).get("shopad"); return w === "rabbit" || w === "rule" ? w : Math.random() < .5 ? "rabbit" : "rule"; })();
 const SHOP = { url: "https://tau-hud-shop.fourthwall.com/?utm_source=tauhud&utm_medium=hud&utm_content=" + SHOPAD, photo: SHOPAD === "rule" ? "assets/shop/sweater-rule.png" : "assets/shop/sweater.png",
   name: "Ship’s store", motto: "supplies for the Tau HUD crew", row: ["Made to order", "Crew: 10–20 % off", new Date() < new Date("2026-12-16") ? "Christmas: order early" : "Sold by Fourthwall"],
@@ -2872,6 +2873,7 @@ const CLIP = (() => {
   const want = new URLSearchParams(location.search).get("clip"); if (want === "shop" || want === "paper") return want;
   return "shop";
 })();
+function shopMark(k) { try { if (window.TauMark) TauMark(k); } catch (e) {} }
 function renderShopAd() {
   const a = $("gazAd"); a.classList.add("shop"); a.href = SHOP.url; a.target = "_blank"; a.rel = "noopener";
   a.setAttribute("aria-label", SHOP.label); a.dataset.full = SHOP.full;
@@ -2879,7 +2881,8 @@ function renderShopAd() {
   $("gazVol").textContent = SHOP.row[0]; $("gazNo").textContent = SHOP.row[1]; $("gazDate").textContent = SHOP.row[2];
   $("gazHl").textContent = SHOP.hl; $("gazDk").textContent = SHOP.dk; $("gazTx").textContent = SHOP.tx; $("gazMore").textContent = SHOP.more;
   const crew = $("gazNo"); crew.tabIndex = 0; crew.setAttribute("role", "link"); crew.dataset.full = "Opens the Crew page: what the Tau HUD crew is and how the 10 or 20 % shop discount works.";
-  if (!crew.dataset.on) { crew.dataset.on = "1"; const go = e => { if (CLIP !== "shop" || (e.type === "keydown" && e.key !== "Enter")) return; e.preventDefault(); e.stopPropagation(); location.href = "crew/"; }; crew.addEventListener("click", go); crew.addEventListener("keydown", go); }
+  if (!crew.dataset.on) { crew.dataset.on = "1"; const go = e => { if (CLIP !== "shop" || (e.type === "keydown" && e.key !== "Enter")) return; e.preventDefault(); e.stopPropagation(); shopMark("shop-crew-click"); location.href = "crew/"; }; crew.addEventListener("click", go); crew.addEventListener("keydown", go); }
+  if (!a.dataset.on) { a.dataset.on = "1"; a.addEventListener("click", () => { if (CLIP === "shop") shopMark("shop-" + SHOPAD + "-click"); }); }
   if (!$("gazPh").src.endsWith(SHOP.photo)) { $("gazPh").src = SHOP.photo; $("gazPh").addEventListener("load", fitGazAd, { once: true }); }
   fitGazAd();
 }

@@ -2584,4 +2584,5 @@ TauI18n.add({ strings: {
   "A paid membership with no duties, not a donation.": "这是付费会员，没有任何义务，不是捐赠。",
   "Two ways, both optional. No crypto wallet?": "两种方式，都出于自愿。没有加密钱包？",
   "Or a donation:": "或者捐赠：",
+  "Shop notice on the HUD: the visitor count now also notes which of the two sweater pictures was shown and whether the notice was clicked, as daily totals per picture and at most once per visitor and day. No cookies, nothing stored in the browser; the privacy page says so.": "HUD 上的商店告示：访客统计现在也会记录显示的是两张毛衣图片中的哪一张，以及告示是否被点击，按图片记为每日总数，每位访客每天最多一次。不使用 Cookie，不在浏览器中存储任何内容；隐私页面有说明。",
 } });
