@@ -271,6 +271,13 @@ footer p { margin: 0; }
       ${bodyWith(p, mark)}
       <p class="src">${esc(T(p.kind === "cruise" ? "Every number comes from our public logbooks:" : "Sources:"))} ${src}</p>
 `;
+    /* under a published article: what the site costs and the way to Support, and the shop */
+    document.querySelectorAll(".tn-support.blog").forEach(e => e.remove());
+    if (p.status !== "draft" && window.TauNav && TauNav.support) {
+      const sup = TauNav.support("blog"), a = document.createElement("a"); sup.classList.add("blog");
+      a.href = TauNav.pieceUrl("", "blog"); a.target = "_blank"; a.rel = "noopener"; a.textContent = T("The shop ›");
+      const two = document.createElement("p"); two.className = "tn-support blog"; two.style.marginTop = "2px"; two.append(T("Or something to wear, from the testnet:") + " ", a); $("art").after(sup, two);
+    }
     const sh = $("share");
     if (p.status !== "draft") {
       sh.hidden = false; sh.href = `https://node.tauhud.com/blog/a/${encodeURIComponent(p.id)}.html`;

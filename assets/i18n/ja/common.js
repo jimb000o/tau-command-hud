@@ -795,4 +795,8 @@ TauI18n.add({ strings: {
   "Three ways, all optional. No crypto wallet?": "方法は 3 つ、どれも任意です。暗号資産ウォレットがない方は：",
   "A paid membership with no duties, not a donation. Something to wear or to drink from?": "義務のない有料メンバーシップで、寄付ではありません。着るもの、飲むためのものがいいですか？",
   "The shop ›": "ショップ ›",
+  "The White Rabbit also comes knitted: a Christmas sweater that says “Follow the rabbit to the next block.”": "白ウサギは編み物にもなっています。「Follow the rabbit to the next block.」（ウサギを追って次のブロックへ）と書かれたクリスマスセーターです。",
+  "It is on a mug ›": "マグカップになっています ›",
+  "INSUFFICIENT_FUNDS. Nearly everyone on the testnet gets this answer once; now you have it too. It also comes as a tee.": "INSUFFICIENT_FUNDS。テストネットではほとんど誰もが一度はこの応答を受け取ります。あなたも仲間入りです。T シャツにもなっています。",
+  "Or something to wear, from the testnet:": "あるいは、テストネット発の着られるものを：",
 } });

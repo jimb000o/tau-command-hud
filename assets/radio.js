@@ -168,6 +168,11 @@
     const S = window.COVE_SOUND; if (!S || !S.on) return false;
     const text = parts.map(p => p.t).join(CJK ? "" : " ");
     caption(text);
+    /* Rico names the week's most requested song: it is the one printed on the mug, so the line carries a small link to it */
+    if (parts.some(p => p && /Waiting for the Next Block/.test(p.v || p.t || "")) && window.TauNav && TauNav.pieceUrl) {
+      const a = document.createElement("a"); a.className = "blk"; a.href = TauNav.pieceUrl("mug", "radio"); a.target = "_blank"; a.rel = "noopener"; a.textContent = T("It is on a mug ›");
+      a.addEventListener("click", e => e.stopPropagation()); R.cap.querySelector("span").append(" ", a);
+    }
     /* a phone call goes up one turn at a time, with who is speaking */
     const call = parts.some(p => p && p.who), said = parts.filter(p => p && p.v);
     const turns = secs => { (R.turnT || []).forEach(clearTimeout); R.turnT = []; const total = said.reduce((n, p) => n + p.v.length, 0) || 1; let at = 0; said.forEach(p => { const who = p.who ? p.who[0].toUpperCase() + p.who.slice(1) : "Rico"; R.turnT.push(setTimeout(() => caption(who + ": " + p.t), at * 1000)); at += secs ? secs * p.v.length / total : Math.max(2.5, p.t.length * 0.06); }); return at; };

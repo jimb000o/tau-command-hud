@@ -403,3 +403,4 @@ span.tn-real { display: block; margin-top: 4px; }
 /* one calm line where a visit ends well (TauNav.support in nav.js): what the site costs, and the way to Support */
 .tn-support { margin: 10px 0 0; font: 400 12.5px/1.5 var(--mono, ui-monospace, monospace); color: var(--u-dim, #9aa5a0); }
 .tn-support a { color: var(--ok, #39ff8a); white-space: nowrap; }
+.tn-piece { display: flex; align-items: center; gap: 10px; text-align: left; } .tn-piece img { flex: none; width: 66px; height: auto; border-radius: 4px; } .tn-piece span { min-width: 0; }
