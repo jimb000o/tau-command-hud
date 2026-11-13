@@ -36,4 +36,5 @@ TauI18n.add({ strings: {
   "Voices": "配音",
   "Domains": "域名",
   "X account": "X 账号",
+  "Both levels also get the ship log: a members-only post every Monday on the week on the testnet and Tau HUD, written by the server.": "两个等级还会收到航海日志：每周一一篇仅限会员的帖子，讲测试网和 Tau HUD 这一周的情况，由服务器写成。",
 } });

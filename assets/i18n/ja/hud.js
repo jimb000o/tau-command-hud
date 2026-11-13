@@ -1,5 +1,6 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Support: the membership now lists the ship log as a benefit of both levels, one members-only post every Monday that the server writes from the chain and the site's own log.": "サポート：会員の説明に、両レベルの特典として航海日誌を追加しました。毎週月曜に会員限定の投稿が一本、チェーンとサイト自身のログからサーバーが書きます。",
   "IDNI genesis account, one of the 11 the testnet started with.": "IDNI ジェネシスアカウント。テストネット開始時からある 11 のアカウントの一つです。",
   "genesis": "ジェネシス",
   "Personal money rules: an account that is one of IDNI's genesis accounts (the 11 the testnet started with) now carries a small “genesis” tag, and its hover says so. Every other account stays unnamed.": "個人の送金ルール：IDNI のジェネシスアカウント（テストネット開始時からある 11 のアカウント）には小さな「ジェネシス」タグが付き、ホバーでもそう表示されます。ほかのアカウントには名前を付けません。",
