@@ -156,6 +156,9 @@ TauI18n.add({ strings: {
   "tries to take back a booking the chain never had": "试图取回一条链上从未有过的预订",
   "tries to take back a booking after its release time": "在预订的释放时间之后试图取回它",
   "allows one test AGRS less fee than the network’s fee rule asks for that very payment": "付款时允许的手续费比网络收费规则对这笔付款要求的少 1 个测试 AGRS",
+  "sends a policy rule and a coin in one payment, which the chain keeps apart": "在一次付款里同时发送一条策略规则和一笔币，链会把两者分开",
+  "writes its own policy and the chain’s own fee stream in one rule": "用一条规则同时写入自己的策略和链自己的收费流",
+  "offers a policy rule with more comparisons than one clause may carry (over 32)": "提交一条比较次数超过单条子句上限（超过 32）的策略规则",
   "{a} allowed, the fee rule asks {b}": "允许 {a}，收费规则要求 {b}",
   "with {b} it went through": "允许 {b} 时就通过了",
 } });
