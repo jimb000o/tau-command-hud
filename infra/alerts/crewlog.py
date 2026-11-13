@@ -31,6 +31,7 @@ UPDATES_URL = os.environ.get("CREWLOG_UPDATES_URL", "https://tauhud.com/assets/u
 COSTS_URL = os.environ.get("CREWLOG_COSTS_URL", "https://tauhud.com/assets/costs.json")
 WEEK = 7 * 86400
 MAX_UPDATES = 8
+SKIP_TAGS = {"Crew", "Donations"}   # the site's own money pages: members already know them, the log shows what else changed
 UA = "tauhud-crewlog/1"
 
 
@@ -100,7 +101,7 @@ def week_updates(updates: list | None, start: float, end: float, site: str) -> l
     b = datetime.fromtimestamp(end - 1, timezone.utc).strftime("%Y-%m-%d")
     out = []
     for e in reversed(updates or []):
-        if not isinstance(e, dict) or not (a <= str(e.get("on", "")) <= b):
+        if not isinstance(e, dict) or not (a <= str(e.get("on", "")) <= b) or e.get("tag") in SKIP_TAGS:
             continue
         text = _plain(e.get("html", ""))
         if not text:
