@@ -384,5 +384,14 @@ lines = lambda lab, size: len(blog_pics.wrap(od, lab, blog_pics.font(size, 500),
 wide = [lab for lab in labels if lines(lab, 21) > 2 and lines(lab, 18) > 2]
 check(not wide and "bookings in port paid out" in labels, f"every tile label fits in two lines {wide}")
 
+# a character the font lacks (Sora has no arrows) comes from the other font, never as the missing-glyph box
+from PIL import Image as _I, ImageDraw as _D  # noqa: E402
+_f = blog_pics.font(76, 700)
+_a, _b = _I.new("RGB", (200, 100)), _I.new("RGB", (200, 100))
+blog_pics.draw(_a).text((10, 10), "→", font=_f, fill=(255, 255, 255))
+_D.Draw(_b).text((10, 10), "→", font=_f, fill=(255, 255, 255))
+check(not blog_pics.has_glyph(_f, "→") and blog_pics.has_glyph(_f, "2") and _a.getbbox() and _a.tobytes() != _b.tobytes(),
+      "2 → all on a hero: the arrow drawn from JetBrains Mono, not the box")
+
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)

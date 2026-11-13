@@ -398,7 +398,7 @@ def post_ask(prompt: str) -> dict:
 def tg_text(p: dict) -> str:
     e = html.escape
     rows = [f"• <b>#{n}</b> {e(t)}" for n, t in zip(p["ns"], p["items"])]
-    return "\n\n".join([f"🎉 <b>{e(p['title'])}</b>", "\n".join(rows),
+    return "\n\n".join([f"🎉 <b>{e(p['title'])}</b>", *rows,
                         f'Thank you, IDNI. Every report we filed and where it stands: <a href="{SITE}/findings/">Findings on Tau HUD</a>',
                         "<i>Tau HUD is a community project, not affiliated with IDNI.</i>"])
 

@@ -1005,8 +1005,9 @@ def announce(a: dict, dry: bool) -> None:
     nums = numbers_of(a.get("facts") or {})
     parts = [f"📝 <b>{alerts.html.escape(a['title']['en'])}</b>", alerts.html.escape(a["dek"]["en"])]
     if nums:
-        parts.append("<b>In numbers</b>\n" + "\n".join("• " + alerts.html.escape(n) for n in nums))
-    parts += ["<b>Why it matters</b>\n" + "\n".join("• " + alerts.html.escape(w["en"]) for w in a["why"]),
+        parts.append("<b>In numbers</b>\n" + "\n\n".join("• " + alerts.html.escape(n) for n in nums))
+    # short paragraphs with air between them (Kilian, 13 Nov 2026), on Telegram as on X
+    parts += ["<b>Why it matters</b>\n" + "\n\n".join("• " + alerts.html.escape(w["en"]) for w in a["why"]),
               f'<a href="{link}">Read it on the Tau HUD blog</a>']
     tg = "\n\n".join(parts)
     lines = [a["title"]["en"], a.get("x") or a["dek"]["en"], "The whole story is on the Tau HUD blog."]

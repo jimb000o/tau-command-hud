@@ -326,6 +326,11 @@ if [ "${1:-}" = "idni" ]; then
     docker compose exec -T devpulse python devpulse.py --restart
     exit $?
   fi
+  if [ "${1:-}" = "repic" ]; then     # a site-update post on Telegram gets its right picture, in place: repic <t.me link> <major id>
+    shift
+    docker compose exec -T alerts python alerts.py --repic "$@"
+    exit $?
+  fi
   if [ "${1:-}" = "fixed" ]; then     # reported by us, solved by IDNI (fixwatch.py): status, send, no <n>, auto, draft
     shift
     docker compose exec -T devpulse python devpulse.py --fixed "$@"

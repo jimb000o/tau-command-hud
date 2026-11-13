@@ -609,7 +609,8 @@ def telegram_text(item: dict) -> str:
         warn = "⚠️ " if item.get("severity") in ("halt", "unsafe") else ""
         out += ["", f"<b>{e(item.get('why_title', 'Why it matters'))}</b>", warn + e(item["why"])]
     if len(item["what"]) > 1 or (item["kind"] == "restart" and item["what"]):  # one change is already the headline (not a restart's)
-        out += ["", f"<b>{e(item.get('what_title', 'What changes'))}</b>"] + [f"• {e(w)}" for w in item["what"]]
+        rows = [f"• {e(w)}" for w in item["what"]]   # air between them (13 Nov 2026: posts in short paragraphs)
+        out += ["", f"<b>{e(item.get('what_title', 'What changes'))}</b>", rows[0]] + [x for r in rows[1:] for x in ("", r)]
     mean = item.get("meaning")
     if mean:  # exact, not sampled: the same reading as the box on /proposals/
         if mean["same"]:
@@ -1446,7 +1447,8 @@ def major_text(m: dict) -> str:
     e = html.escape
     if m.get("lines"):
         body = [e(m["text"]), ""] if m.get("text") else []
-        body += [f"• <a href=\"{e(l['link'])}\">{e(l['label'])}</a>: {e(l['text'])}" for l in m["lines"]] + [""]
+        for l in m["lines"]:   # one paragraph each, with air between them
+            body += [f"• <a href=\"{e(l['link'])}\">{e(l['label'])}</a>: {e(l['text'])}", ""]
         return "\n".join([SITE_LINE, f"<b>{e(m['title'])}</b>", ""] + body
                          + [f"<a href=\"{e(SITE_LOG_LINK)}\">Every change in the Updates log</a>"])
     return "\n".join([SITE_LINE, f"<b>{e(m['title'])}</b>", "", e(m["text"]), "",
@@ -2292,10 +2294,39 @@ def live_shot(link: str | None) -> str | None:
     return f"{NODE_PUBLIC}/pageshots/{name}.jpg?v={re.sub(r'[^0-9]', '', str(e.get('at')))[:12]}"
 
 
+BLOG_IMG = os.path.join(PUBLIC_DIR, "blog", "img")   # the blog service's hero pictures (blog.py), node.tauhud.com/blog/img/
+# a post about one blog article waits this long for the article's own picture, then goes without a picture
+ARTICLE_WAIT_HOURS = float(os.environ.get("ARTICLE_PICTURE_WAIT_HOURS", 24))
+
+
+def article_id(link: str | None) -> str | None:
+    """The blog article a link opens (tauhud.com/blog/?p=<id>), or None."""
+    u = urllib.parse.urlsplit(str(link or ""))
+    if u.netloc and u.netloc.split(":")[0] not in ("tauhud.com", "www.tauhud.com"):
+        return None
+    if u.path.strip("/") != "blog":
+        return None
+    p = (urllib.parse.parse_qs(u.query).get("p") or [""])[0]
+    return p if re.fullmatch(r"[\w-]{1,120}", p) else None
+
+
+def article_picture(aid: str) -> str | None:
+    """The article's own hero picture, once the blog service made it: it does so only after the article is on the site."""
+    path = os.path.join(BLOG_IMG, aid + "-hero.jpg")
+    if not os.path.exists(path):
+        return None
+    return f"{NODE_PUBLIC}/blog/img/{aid}-hero.jpg?v={int(os.path.getmtime(path))}"
+
+
 def post_picture(image: str | None, link: str | None) -> str | None:
     """The picture a post about a Tau HUD page carries: the page's checked live picture; a screenshot or preview picture
     from the repo (assets/shots/, assets/og/, made without live data) never, then the post goes without one.
-    Other pictures (paintings, blog pictures, cards) as they are."""
+    Other pictures (paintings, blog pictures, cards) as they are. A post about one blog article carries that article's
+    own picture or none: never the blog list's (13 Nov 2026: the personal-rules article went out with the list's picture,
+    another article on it, because the site did not have the new one yet)."""
+    aid = article_id(link)
+    if aid:
+        return article_picture(aid)
     shot = live_shot(link)
     if shot:
         return shot
@@ -3466,6 +3497,8 @@ class Watcher:
             # one post per slot: a single new page or feature on its own, several together, so none waits for another day
             batch = list(st["majors"])
             shown = 1 if len(batch) == 1 else catchup_text(batch).count("\n• ")
+            if shown == 1 and not self.article_ready(st["majors"][0], now):
+                return
             if tg_due:
                 m = batch[0]
                 sent = await self.site_send(tg, major_text(m), major_buttons(m), now, post_picture(m.get("image"), m.get("link"))) if shown == 1 else \
@@ -3518,6 +3551,18 @@ class Watcher:
                 self.save_state()
                 await self.post_x(digest_x(items), "site digest", now, spare=True)
         self.save_state()
+
+    def article_ready(self, m: dict, now: float) -> bool:
+        """A post about one blog article waits until the article is on the site, which its own picture shows (the blog
+        service makes it from the site's article list), at most ARTICLE_WAIT_HOURS; then it goes without a picture."""
+        aid = article_id(m.get("link"))
+        if not aid or article_picture(aid):
+            return True
+        if "waiting" not in m:
+            m["waiting"] = round(now)
+            log.info("site updates: %s waits for the article %s to be on the site", m.get("key"), aid)
+            self.save_state()
+        return now - m["waiting"] >= ARTICLE_WAIT_HOURS * 3600
 
     async def site_send(self, tg: list, text: str, buttons: dict, now: float, picture: str | None = None) -> bool:
         st = self.state["site"]
@@ -4507,8 +4552,35 @@ def earnings_cli() -> int:
     return 0
 
 
+def repic_cli(args: list[str]) -> int:
+    """A site-update post already on Telegram gets its right picture, in place, no new post: up idni repic <the post's
+    t.me link or number> <the major's id in assets/updates.json>. 13 Nov 2026: the personal-rules article went out with
+    the blog list's picture (post_picture now gives an article its own). X cannot be edited."""
+    num = re.search(r"(\d+)\s*$", args[0]) if args else None
+    want = args[1] if len(args) > 1 else ""
+    e = next((x for x in (Watcher([]).fetch_updates() or []) if isinstance(x.get("major"), dict) and x["major"].get("id") == want), None)
+    if not num or not e:
+        print("usage: up idni repic <https://t.me/<channel>/<number>> <major id from assets/updates.json>"
+              + ("" if not num else f"\n(no major named {want!r} in the site's update log)"))
+        return 2
+    m = major_item(e)
+    pic = post_picture(m.get("image"), m.get("link"))
+    if not pic:
+        print("no right picture for it yet (an article: up blog pictures first, once the article is on the site); nothing changed")
+        return 1
+    text, buttons = major_text(m), major_buttons(m)
+    text, buttons = tag_links(text, buttons, tg_kind(text))
+    msg = {"chat_id": TELEGRAM_CHAT, "message_id": int(num.group(1)), "text": text, "parse_mode": "HTML",
+           "link_preview_options": {"url": pic, "prefer_large_media": True, "show_above_text": True}, "reply_markup": buttons}
+    ok, _, err = Telegram().call("editMessageText", json.dumps(msg).encode(), "application/json")
+    print(f"telegram post {num.group(1)}: picture is now {pic}" if ok else f"telegram said no: {err}")
+    return 0 if ok else 1
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    if "--repic" in sys.argv:
+        sys.exit(repic_cli(sys.argv[sys.argv.index("--repic") + 1:]))
     if "--test" in sys.argv:
         sys.exit(send_test())
     if "--earnings" in sys.argv:

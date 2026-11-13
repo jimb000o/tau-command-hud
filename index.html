@@ -225,7 +225,7 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 /* a clipping of the newspaper's front page lies in what the box leaves free: newsprint and ink, the paper's own type and rules.
    The paper is a neutral grey-white, so the HUD keeps green as its only colour. */
 .statep #statePanel { flex: 0 1 auto; }
-.a-pol.has-gaz > .scroll { flex: 0 1 auto; }   /* no personal rules yet: the clipping takes the empty room below the note */
+.a-pol.has-gaz > .scroll, .a-off.has-gaz > .scroll { flex: 0 1 auto; }   /* no personal rules yet: the clipping takes the empty room below the note */
 .gazad { flex: 1 1 0; min-height: 0; margin: 10px 4px 4px; display: flex; text-decoration: none; position: relative; container: gaz / inline-size; }
 .gazad[hidden] { display: none; }
 .ga-paper { --ink: #1c1c1e; --ink2: #4a4a4e; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; overflow: hidden; padding: 12px 14px 10px; text-align: center; color: var(--ink);
@@ -273,13 +273,21 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .gazad.shop .ga-dl { flex-wrap: wrap; justify-content: center; gap: 2px 14px; }
 .gazad.shop .ga-dl i:nth-child(2) { color: var(--ok); }
 /* the shop notice keeps its picture and its button longest: the small print goes first, then the summary, then the row of facts, the picture only before the last size */
-.gazad.shop.c1 .ga-ph, .gazad.shop.c2 .ga-ph, .gazad.shop.c3 .ga-ph { display: block; }
-.gazad.shop.c2 .ga-dk, .gazad.shop.c3 .ga-dl, .gazad.shop.c3 .ga-mo, .gazad.shop.c4 .ga-ad { display: none; }
+.gazad.shop.c1 .ga-ph, .gazad.shop.c2 .ga-ph { display: block; }
+.gazad.shop.c2 .ga-dk, .gazad.shop.c3 .ga-mo, .gazad.shop.c3 .ga-ad { display: none; }
 /* last size: the sweater stands beside the headline instead of above the button */
-.gazad.shop.c4 .ga-paper { display: grid; grid-template-columns: minmax(0, 34%) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 10px; align-items: center; }
-.gazad.shop.c4 .ga-nm, .gazad.shop.c4 .ga-more { grid-column: 1 / -1; }
-.gazad.shop.c4 .ga-ph { display: block; grid-column: 1; grid-row: 2; width: 100%; height: 100%; min-height: 0; }
-.gazad.shop.c4 .ga-hl { grid-column: 2; grid-row: 2; text-align: left; }
+.gazad.shop.c3 .ga-paper { display: grid; grid-template-columns: minmax(0, 38%) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto minmax(0, 1fr) auto; column-gap: 10px; align-items: center; }
+.gazad.shop.c3 .ga-nm, .gazad.shop.c3 .ga-more { grid-column: 1 / -1; }
+.gazad.shop.c3 .ga-ph { display: block; grid-column: 1; grid-row: 2 / 6; width: 100%; height: 100%; min-height: 0; }
+.gazad.shop.c3 .ga-dl { display: flex; grid-column: 2; grid-row: 4; border: 0; padding: 0; justify-content: flex-start; } .gazad.shop.c3 .ga-dl i:not(:nth-child(2)) { display: none; }
+.gazad.shop.c5 .ga-dl { display: none; } .gazad.shop.c3 .ga-more { grid-row: 6; }
+/* the crew discount is its own way in: it opens the Crew page, the rest of the notice opens the store */
+.gazad.shop #gazNo { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; } .gazad.shop #gazNo:hover, .gazad.shop #gazNo:focus-visible { color: #fff; outline: none; text-decoration-style: solid; }
+/* stacked layouts (tablet upright, phone): panels grow with their content, so the notice brings its own height */
+@media (max-width: 1100px) { .gazad.shop { flex: none; height: 176px; } }
+@media (max-width: 1100px) and (pointer: coarse) { .gazad.shop { height: 224px; } }
+@media (pointer: coarse) { .gazad.shop #gazNo { display: inline-flex; align-items: center; min-height: 44px; } .gazad.shop.c3 .ga-more { padding: 14px 12px; } }
+.gazad.shop.c3 .ga-hl { grid-column: 2; grid-row: 3; text-align: left; }
 .gazad.shop.c4 .ga-dk { display: none; } .gazad.shop.c2 .ga-more, .gazad.shop.c3 .ga-more, .gazad.shop.c4 .ga-more { margin-top: auto; }
 .gazad.shop.c2 .ga-paper, .gazad.shop.c3 .ga-paper { justify-content: flex-start; }
 html.i18n-cjk .gazad.shop .ga-nm, html.i18n-cjk .gazad.shop .ga-hl, html.i18n-cjk .gazad.shop .ga-dk, html.i18n-cjk .gazad.shop .ga-tx, html.i18n-cjk .gazad.shop .ga-mo, html.i18n-cjk .gazad.shop .ga-more { font-family: inherit; }
@@ -1259,7 +1267,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="chainlow"><div class="blkdetail detail" id="blkDetail"><p class="lead" style="color:var(--dim)">Click a block above to inspect it here. The newest block is shown until you pick one.</p></div><div class="valslot" id="valSlot"></div></div>
     </article>
 
-    <article class="panel a-off">
+    <article class="panel a-off" id="offCard">
       <h2>Rule sharing <small id="offerCount">0 waiting</small><button class="info" type="button" aria-label="What is this?" data-tip="One account sends a Tau rule to another. The recipient reads it, runs a conflict report (shape, reserved streams, bit widths, does it compile together with the rules already in force) and then accepts it into their own specification or rejects it. Accepting replaces the recipient’s current rule on that stream.">i</button></h2>
       <p class="sub">one account offers a rule, the other checks it and accepts or rejects</p>
       <div class="offers scroll" id="offers"></div>
@@ -2811,21 +2819,26 @@ function showBlock(b, pinned = true) {
    shown in three sizes, the largest that fits the room the box leaves, hidden when even the smallest does not fit */
 const GAZ = { at: 0, ed: null };
 /* the clipping's home is the free space of Rules in force now. When that box starts below the fold (the scrolling layout under
-   1900 px, or a zoomed browser) and Personal money rules is still empty, it moves into that empty panel instead, so it is seen */
-function placeGazAd() {
-  const a = $("gazAd"), home = $("statePanelCard"), pol = $("polCard"); if (!a || !home || !pol) return;
-  const away = home.getBoundingClientRect().top > innerHeight - 160, empty = !S.clauses.size;
-  const host = away && empty ? pol : home;
-  if (a.parentElement !== host) { if (host === home) home.insertBefore(a, $("btnState3")); else pol.append(a); }
-  pol.classList.toggle("has-gaz", host === pol);
+   1900 px, or a zoomed browser), or is too small for it, it moves into Personal money rules or Rule sharing, whichever has the room, so it is seen */
+function mountGazAd(host) {
+  const a = $("gazAd"), home = $("statePanelCard"), pol = $("polCard"), off = $("offCard");
+  if (a.parentElement !== host) { if (host === home) home.insertBefore(a, $("btnState3")); else host.append(a); }
+  pol.classList.toggle("has-gaz", host === pol); if (off) off.classList.toggle("has-gaz", host === off);
 }
 function fitGazAd() {
-  const a = $("gazAd"); if (!a) return;
-  placeGazAd();
-  a.hidden = false; a.classList.remove("c1", "c2", "c3", "c4", "c5");
+  const a = $("gazAd"), home = $("statePanelCard"), pol = $("polCard"), off = $("offCard"); if (!a || !home || !pol) return;
+  // its home first while that is in view; else, or when it does not fit there, the panel that has the room
+  const away = home.getBoundingClientRect().top > innerHeight - 160;
+  const hosts = (away ? [pol, off, home] : [home, pol, off]).filter(h => h && h.offsetParent !== null);
   const paper = a.firstElementChild, over = () => paper.scrollHeight > paper.clientHeight + 1 || paper.clientHeight < 96;
-  for (const c of ["c1", "c2", "c3", "c4", "c5"]) { if (!over()) return; a.classList.add(c); }
-  if (over()) a.hidden = true;
+  for (const host of hosts) {
+    mountGazAd(host);
+    a.hidden = false; a.classList.remove("c1", "c2", "c3", "c4", "c5");
+    let fits = !over();
+    for (const c of ["c1", "c2", "c3", "c4", "c5"]) { if (fits) break; a.classList.add(c); fits = !over(); }
+    if (fits) return;
+  }
+  mountGazAd(home); a.hidden = true;
 }
 async function loadGazette() {
   if (Date.now() - GAZ.at < 600000) return; GAZ.at = Date.now();
@@ -2835,7 +2848,10 @@ async function loadGazette() {
 }
 /* What the slot shows: the shop notice (SHOP below), in the HUD's own look. ?clip=paper shows the newspaper clipping instead,
    ?clip=shop the shop; set the last line of CLIP to "paper" to give the slot back to the newspaper. */
-const SHOP = { url: "https://tau-hud-shop.fourthwall.com/", photo: "assets/shop/sweater.png",
+/* which sweater leads the notice: half of the page views get the rabbit, half the Tau rule (until Christmas; ?shopad=rabbit or =rule shows one).
+   Nothing is stored or counted here; the store link carries the name, so the shop's own statistics can tell the two apart */
+const SHOPAD = (() => { const w = new URLSearchParams(location.search).get("shopad"); return w === "rabbit" || w === "rule" ? w : Math.random() < .5 ? "rabbit" : "rule"; })();
+const SHOP = { url: "https://tau-hud-shop.fourthwall.com/?utm_source=tauhud&utm_medium=hud&utm_content=" + SHOPAD, photo: SHOPAD === "rule" ? "assets/shop/sweater-rule.png" : "assets/shop/sweater.png",
   name: "Ship’s store", motto: "supplies for the Tau HUD crew", row: ["Made to order", "Crew: 10–20 % off", new Date() < new Date("2026-12-16") ? "Christmas: order early" : "Sold by Fourthwall"],
   hl: "Knitted for the long wait between blocks", dk: "Christmas sweaters with the pattern knitted in, tees that quote a real node, a sticker sheet and a mug.",
   tx: "A sweater takes 7 to 10 days to knit before it ships. Sold and shipped by Fourthwall. Fan merchandise, not affiliated with IDNI.",
@@ -2851,6 +2867,8 @@ function renderShopAd() {
   $("gazNm").textContent = SHOP.name; $("gazMo").textContent = SHOP.motto;
   $("gazVol").textContent = SHOP.row[0]; $("gazNo").textContent = SHOP.row[1]; $("gazDate").textContent = SHOP.row[2];
   $("gazHl").textContent = SHOP.hl; $("gazDk").textContent = SHOP.dk; $("gazTx").textContent = SHOP.tx; $("gazMore").textContent = SHOP.more;
+  const crew = $("gazNo"); crew.tabIndex = 0; crew.setAttribute("role", "link"); crew.dataset.full = "Opens the Crew page: what the Tau HUD crew is and how the 10 or 20 % shop discount works.";
+  if (!crew.dataset.on) { crew.dataset.on = "1"; const go = e => { if (CLIP !== "shop" || (e.type === "keydown" && e.key !== "Enter")) return; e.preventDefault(); e.stopPropagation(); location.href = "crew/"; }; crew.addEventListener("click", go); crew.addEventListener("keydown", go); }
   if (!$("gazPh").src.endsWith(SHOP.photo)) { $("gazPh").src = SHOP.photo; $("gazPh").addEventListener("load", fitGazAd, { once: true }); }
   fitGazAd();
 }
@@ -2870,7 +2888,9 @@ function renderGazAd() {
 }
 addEventListener("DOMContentLoaded", () => {
   loadGazette(); setInterval(loadGazette, 600000);
-  if ("ResizeObserver" in window) { const ro = new ResizeObserver(() => fitGazAd()); ro.observe($("statePanelCard")); ro.observe($("polCard")); }
+  if ("ResizeObserver" in window) { const ro = new ResizeObserver(() => fitGazAd()); ro.observe($("statePanelCard")); ro.observe($("polCard")); if ($("offCard")) ro.observe($("offCard")); }
+  // the lists beside the notice fill in later and change how much room is left
+  if ("MutationObserver" in window) { let t = 0; const mo = new MutationObserver(() => { clearTimeout(t); t = setTimeout(fitGazAd, 120); }); for (const id of ["clauses", "composite", "offers"]) if ($(id)) mo.observe($(id), { childList: true, subtree: true, characterData: true }); }
   addEventListener("resize", () => fitGazAd());
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitGazAd);
 });
