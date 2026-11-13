@@ -15,7 +15,7 @@
 #                            up bust --from infra/rabbit-art/imports/codex hana  takes pictures painted elsewhere
 #              up follow     the node following IDNI tau-testnet main by itself: its state; up follow now  one check at once,
 #                            up follow off / on  stops / starts it (nothing rebuilt, the node left alone)
-#              up idni       what the next daily IDNI progress post would say now (nothing rebuilt, nothing posted);
+#              up idni       what the next daily IDNI progress post would say now (only its service rebuilt, nothing posted);
 #                            up idni send  posts it now, up idni hold  keeps the next one back, up idni release  undoes that
 #              up cruise     a cruise ship's last visit in numbers and the node's timeouts per hour (nothing rebuilt)
 #                            up cruise next  the next call's announcement as it goes out by itself (posts nothing);
@@ -283,7 +283,8 @@ print("         feedback: %d new of %d (read them: up nomemo feedback)" % (max(n
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
-# IDNI's progress of the day as ONE post, nothing rebuilt (alerts/idni_digest.py): up idni  the last ones and what the
+# IDNI's progress of the day as ONE post (alerts/idni_digest.py), with the code just pulled: only devpulse is rebuilt, the
+# node and the relay are left alone. up idni  the last ones and what the
 # next would say now (one model call, posts nothing), up idni send  writes it now and the alerts service posts it within a
 # minute (up idni send --force: also when the check marked numbers or wording), up idni hold / up idni release
 # bookings ahead of a cruise call, in escrow until its arrival (relay/cruise.py): up escrow  restarts the relay alone with
@@ -316,7 +317,7 @@ for e in es:
 fi
 if [ "${1:-}" = "idni" ]; then
   shift
-  docker compose up -d devpulse >/dev/null 2>&1 || true
+  docker compose up -d --build --no-deps devpulse >/dev/null 2>&1 || docker compose up -d devpulse >/dev/null 2>&1 || true
   docker compose exec -T devpulse python devpulse.py --digest "$@"
   exit $?
 fi
