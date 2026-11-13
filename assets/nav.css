@@ -32,6 +32,12 @@
 .mi b .ext { color: var(--tn-dim); font-weight: 400; }
 .mi > span:last-child { font: 400 12px/1.45 var(--tn-font); color: var(--tn-dim); }
 .mi.soon { cursor: default; opacity: .5; }
+/* the pages inside one menu entry, named under it (Read: The Daily Consensus, Blog, Chronicle) */
+.msub { display: flex; flex-wrap: wrap; gap: 6px; margin: -4px 0 6px 50px; }
+.msub .ms { font: 500 12px var(--tn-font); color: #d6d6dc; text-decoration: none; padding: 3px 10px; border: 1px solid var(--tn-hair); border-radius: 999px; white-space: nowrap; }
+.msub .ms:hover, .msub .ms:focus-visible { color: #fff; border-color: #fff; background: rgba(255,255,255,.05); }
+.msub .ms.here { color: var(--tn-ok); border-color: var(--tn-ok); }
+@media (max-width: 700px) { .tsheet .msub { margin-left: 44px; gap: 8px; } .tsheet .msub .ms { min-height: 44px; display: inline-flex; align-items: center; padding: 0 14px; } }
 .mi.soon:hover { background: transparent; }
 .mi.soon b::after { content: "soon"; margin-left: 8px; font: 500 11px var(--tn-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--tn-dim); }
 .mi.here .ic { border-color: var(--tn-ok); box-shadow: 0 0 8px rgba(57,255,138,.45); }

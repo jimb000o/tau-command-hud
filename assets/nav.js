@@ -525,7 +525,19 @@
     else if (p.act && isHud) { a.href = "#"; a.addEventListener("click", e => { e.preventDefault(); closeAll(); emit(p.act); }); }
     else a.href = ROOT + (k === "wrules" ? wrulesHref() : p.h);   // an expert lands on the Tau box, everyone else on plain words
     if (here) a.setAttribute("aria-current", k === page ? "page" : "true");
-    return a;
+    if (!TABS[k]) return a;
+    /* 13 Nov: an entry that holds several pages names them all right in the menu, each one click away. Before, Blog and
+       Chronicle (and Accounts, Status, Findings, ...) only showed up as tabs after landing on the first page of their entry */
+    const f = document.createDocumentFragment(), sub = el("div", "msub"), cur = tabPage(page);
+    sub.setAttribute("role", "group"); sub.setAttribute("aria-label", p.t);
+    TABS[k][1].forEach(([pk, label]) => {
+      const s = el("a", "ms" + (pk === cur ? " here" : ""), esc(label || P[pk].t)), [path, hash] = P[pk].h.split("#");
+      s.href = ROOT + path + (hash ? "#" + hash : ""); s.setAttribute("role", "menuitem"); s.title = P[pk].d;
+      if (pk === cur) s.setAttribute("aria-current", "page");
+      sub.append(s);
+    });
+    f.append(a, sub);
+    return f;
   }
 
   /* "Tour of this page": every subpage has a short tour of its own (assets/tour.js), listed under First steps */
