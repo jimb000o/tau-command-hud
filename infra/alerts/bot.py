@@ -21,7 +21,8 @@ Plain questions work too in a private chat: "height?", "last proposal?",
 answers commands (Telegram's privacy mode hides everything else anyway).
 
 Where it answers: private chats, groups (commands only), the channel's
-discussion group, and the channel's Direct Messages (Telegram's "message the
+discussion group, Tau HUD's own group (answered in the topic the command was
+written in), and the channel's Direct Messages (Telegram's "message the
 channel" button, when switched on). Into the alerts channel itself it writes
 only when a channel admin posts a command there; the command post is then
 removed and the answer stays. `python bot.py --post-howto` posts an "Ask the
@@ -48,12 +49,13 @@ import urllib.request
 from websockets.asyncio.client import connect
 
 import follow
+import tgnews
 import tickerwatch
 
 log = logging.getLogger("tau-bot")
 
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
-CHANNEL = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDcom").strip()  # the alerts channel: never answered into
+CHANNEL = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDcom").strip()  # where the alerts go: a channel, or a group with topics
 API = os.environ.get("TELEGRAM_API", "https://api.telegram.org").rstrip("/")
 RELAY_URL = os.environ.get("RELAY_URL", "ws://relay:8080")
 RELAY_HTTP = os.environ.get("RELAY_HTTP", "http://relay:8080").rstrip("/")
@@ -576,11 +578,9 @@ class Bot:
         self.watcher = follow.Watcher(self.store, self.notify, self.src.lookup, self.src.proposals, self.head)
 
     def channel_chat(self, chat: dict) -> bool:
-        """True for the alerts channel (or any channel): never answered into."""
-        if chat.get("type") not in ("private", "group", "supergroup"):
-            return True
-        un = "@" + str(chat.get("username") or "")
-        return CHANNEL in (str(chat.get("id")), un) or un.lower() == CHANNEL.lower()
+        """True for any channel: never answered into. Tau HUD's own group (TELEGRAM_CHAT_ID naming a group with a News
+        topic, tgnews.py) is a group like any other: commands in its Chat topic are answered there."""
+        return chat.get("type") not in ("private", "group", "supergroup")
 
     async def setup(self):
         me = await asyncio.to_thread(self.tg.call, "getMe", {})
@@ -676,6 +676,8 @@ class Bot:
             params["direct_messages_topic_id"] = topic  # the conversation with this one person
         elif chat.get("type") != "private":
             params["reply_parameters"] = {"message_id": msg.get("message_id"), "allow_sending_without_reply": True}
+            if msg.get("is_topic_message") and msg.get("message_thread_id"):
+                params["message_thread_id"] = msg["message_thread_id"]   # a group with topics: answered in that topic
         r = await asyncio.to_thread(self.tg.call, "sendMessage", params)
         if not r.get("ok"):
             log.warning("sendMessage failed: %s %s", r.get("error_code", ""), r.get("description", ""))
@@ -759,7 +761,8 @@ def post_howto() -> int:
         print("bot: cannot read its name (TELEGRAM_BOT_TOKEN?)")
         return 1
     r = tg.call("sendMessage", {"chat_id": CHANNEL, "text": howto_text(name), "parse_mode": "HTML",
-                                "link_preview_options": {"is_disabled": True}, "reply_markup": buttons(name)})
+                                "link_preview_options": {"is_disabled": True}, "reply_markup": buttons(name),
+                                **tgnews.fields(CHANNEL)})
     if not r.get("ok"):
         print(f"post: FAILED {r.get('error_code', '')} {r.get('description', '')}")
         return 1

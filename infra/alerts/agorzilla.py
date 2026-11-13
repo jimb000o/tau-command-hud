@@ -462,15 +462,18 @@ def fetch() -> dict:
 
 
 def post(msg: str, png: bytes | None = None) -> bool:
-    """The evening on the channel; with its picture as a photo with the text under it."""
+    """The evening on the channel (the group's News topic, when Tau HUD lives in a group); with its picture as a photo
+    with the text under it."""
+    import tgnews
     from alerts import air
     msg = air(msg)
     if png:
         from alerts import multipart
-        body, ctype = multipart({"chat_id": CHAT, "caption": msg, "parse_mode": "HTML"}, {"photo": ("agorzilla-evening.png", png, "image/png")})
+        body, ctype = multipart({"chat_id": CHAT, "caption": msg, "parse_mode": "HTML", **tgnews.fields(CHAT)}, {"photo": ("agorzilla-evening.png", png, "image/png")})
         req = urllib.request.Request(f"https://api.telegram.org/bot{TOKEN}/sendPhoto", body, {"Content-Type": ctype})
     else:
-        body = json.dumps({"chat_id": CHAT, "text": msg, "parse_mode": "HTML", "link_preview_options": {"is_disabled": True}}).encode()
+        body = json.dumps({"chat_id": CHAT, "text": msg, "parse_mode": "HTML", "link_preview_options": {"is_disabled": True},
+                           **tgnews.fields(CHAT)}).encode()
         req = urllib.request.Request(f"https://api.telegram.org/bot{TOKEN}/sendMessage", body, {"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=20) as r:

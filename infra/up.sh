@@ -67,6 +67,8 @@
 #                            service, the node left alone); up cost gemini 10  a payment by hand; up cost mail  the mailbox
 #              up tau        Tau Language on tauhud.com/learn: the checker recreated with the code just pulled (nothing built,
 #                            the node left alone, safe any time), then every lesson example asked of the engine; up tau status  only that
+#              up telegram   Tau HUD's Telegram group made ready: a closed News topic for the posts, General renamed Chat
+#                            (posting services rebuilt, node left alone, posts nothing); up telegram @name  if the link is not @tauHUDcom
 #              up owner      the same, then a one-time link: open it in your Telegram, and the news line's watchtower
 #                            warns you there privately (never on the channel); up owner test  sends you one test message
 set -e
@@ -529,6 +531,21 @@ if [ "${1:-}" = "crewlog" ]; then
   docker compose up -d --build --no-deps alerts >/dev/null 2>&1 || docker compose up -d --build --no-deps alerts
   echo "---------------- copy from here into the chat ----------------"
   docker compose exec -T alerts python alerts.py --crewlog $([ "${2:-}" = send ] && echo send) 2>&1 | grep -v " INFO " || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# Tau HUD in ONE Telegram group (alerts/tgnews.py): up telegram  rebuilds the services that post to Telegram with the
+# code just pulled (the node left alone, safe any time) and makes the group ready: a closed News topic only the bot
+# writes in, General renamed Chat; posts nothing. up telegram @name  first writes TELEGRAM_CHAT_ID=@name into infra/.env
+# (only needed when the group's public link is not @tauHUDcom); up telegram -100123…  the same with the group's id.
+if [ "${1:-}" = "telegram" ]; then
+  case "${2:-}" in
+    @*|-100*) touch .env; sed -i '/^TELEGRAM_CHAT_ID=/d' .env; [ -s .env ] && [ -n "$(tail -c1 .env)" ] && echo >> .env
+              printf 'TELEGRAM_CHAT_ID=%s\n' "$2" >> .env; chmod 600 .env; echo "TELEGRAM_CHAT_ID=$2 written to infra/.env" ;;
+  esac
+  docker compose up -d --build --no-deps alerts bot blog donations agorzilla >/dev/null 2>&1 || docker compose up -d --build --no-deps alerts bot blog donations agorzilla
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T alerts python alerts.py --telegram-setup 2>&1 | grep -v " INFO " || true
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
