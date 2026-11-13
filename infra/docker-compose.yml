@@ -350,6 +350,8 @@ services:
       # note to the owner (the chat `up owner` set, in /state/owner.json), never the channel
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
+      # fixwatch.py: everything IDNI solved of what we reported goes into one post; this long after the newest one
+      FIXWATCH_GROUP_MINUTES: ${FIXWATCH_GROUP_MINUTES:-120}
     volumes:
       - alerts_state:/state     # the clones, in /state/devpulse; digests.json (the daily IDNI post)
       - alerts_public:/public   # devpulse.json, served by Caddy
@@ -358,6 +360,7 @@ services:
       - ./node/patches:/pins/patches:ro   # tried on each new upstream main: do our node patches still apply?
       - ../facts:/facts:ro   # the hand-checked facts for Tau today (knowledge.py, tauhud.com/facts/); a folder, so a pull reaches it
       - ../roadmap:/roadmap:ro   # the Road to mainnet page: which IDNI issues and pull requests it links (roadmap_watch.py)
+      - ../findings:/findings:ro   # our reports to IDNI (fixwatch.py): which ones IDNI's changes solve, for the pages, a note and a post
     depends_on: [relay]
     mem_limit: 256m
     restart: unless-stopped

@@ -23,6 +23,7 @@ _now = time.gmtime()
 os.environ.update(RECAP_WEEKDAY=str(_now.tm_wday), RECAP_HOUR=str(_now.tm_hour), RECAP_TZ="UTC")  # a recap slot that just passed
 os.environ["SIM_ALERTS"] = "false"  # simulated posts have their own test (test_sim_alerts.py)
 os.environ["X_DAILY_CAP"] = "8"   # this test is about posting, not the daily cap (test_x_alerts.py)
+os.environ.update(RESTART_BRIEF_WAIT_MINUTES="0", RESTART_BRIEF_PATH=os.path.join(TMP, "restart.json"))   # no devpulse here: the short restart post (test_restart_brief.py)
 import urllib.request  # noqa: E402
 
 _urlopen = urllib.request.urlopen
