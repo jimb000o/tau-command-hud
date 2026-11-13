@@ -96,8 +96,8 @@
   "invites": [
     {
       "kind": "tg",
-      "text": "Chain news on Telegram: t.me/tauHUDcom",
-      "href": "https://t.me/tauHUDcom",
+      "text": "Chain news on Telegram: t.me/tauHUDchat",
+      "href": "https://t.me/tauHUDchat",
       "tip": "Our Telegram channel: rule changes, new nodes and a short digest of the testnet every day."
     },
     {

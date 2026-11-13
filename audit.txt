@@ -8,19 +8,19 @@ edeac3…0ffa ·
 sendtx 939990…ff9c 已接纳 · rule_offer · 预计手续费 10
 sendtx edeac3…0ffa 已接纳 · rule_offer · 预计手续费 10
 sendtx 58e67d…3cdc 已接纳 · rule_offer · 预计手续费 10
-Telegram @tauHUDcom ↗
+Telegram @tauHUDchat ↗
 Header, right side
 the word “View” is gone (the hover on the switch says what Simple and Technical do), the language switch is a two-way pill like Simple/Technical with EN and 中文, and a thin line separates the text links from the two switches. Same on every page.
 Telegram 机器人可以回答问题：向 @tauhud_alerts_bot 发送 height、proposals、交易哈希或地址。已在 Telegram …
 “在线”计数现在按人数而不是连接数计算：浏览器中的一个随机令牌（没有 Cookie，没有统计分析）告诉中继，你的多个标签页和子页面属于同一位访客。中继更新后生效。
 编年史：新页面 /chronicle/ 讲述项目的历史和里程碑；可从页眉进入。
 规则试验场：新页面 /playground/，你可以在这里编写自己的转账规则，并用测试网自己的检查来运行它；或者坐上一个模拟的验证者席位，投票让一项规则变更成为法律。可从页眉（“试验场”）和验证者面板进入。
-加入 @tauHUDcom ↗
+加入 @tauHUDchat ↗
 实时模式使用节点原始的 WebSocket 协议（
 Guarded Successor 时序逻辑
-@tauHUDcom：每次规则变更和链重启实时推送、每周回顾、HUD 更新
+@tauHUDchat：每次规则变更和链重启实时推送、每周回顾、HUD 更新
 Back to the start: the HUD.
-Telegram 频道 tauHUDcom
+Telegram 群组 tauHUDchat
 Language · 语言
 Read this site in English · 切换到英文
 阅读中文版 · Read this site in Chinese

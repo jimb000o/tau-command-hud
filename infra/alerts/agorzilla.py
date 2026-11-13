@@ -47,7 +47,7 @@ URL = os.environ.get("AGORZILLA_LATEST", "https://agorzilla.com/chain/latest.jso
 STATE = os.environ.get("AGORZILLA_STATE", "/state/agorzilla.json")
 EVERY = float(os.environ.get("AGORZILLA_SECONDS", 600))
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
-CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDcom").strip()
+CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDchat").strip()
 ENABLED = os.environ.get("AGORZILLA_POSTS", "1") != "0"
 X_OUT = X({k: os.environ.get("AGORZILLA_" + k, "").strip() for k in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET")})
 # the creature: its base picture (portrait WebP, transparent), set once on a dark 16:9 card for X
@@ -462,15 +462,18 @@ def fetch() -> dict:
 
 
 def post(msg: str, png: bytes | None = None) -> bool:
-    """The evening on the channel; with its picture as a photo with the text under it."""
+    """The evening on the channel (the group's News topic, when Tau HUD lives in a group); with its picture as a photo
+    with the text under it."""
+    import tgnews
     from alerts import air
     msg = air(msg)
     if png:
         from alerts import multipart
-        body, ctype = multipart({"chat_id": CHAT, "caption": msg, "parse_mode": "HTML"}, {"photo": ("agorzilla-evening.png", png, "image/png")})
+        body, ctype = multipart({"chat_id": CHAT, "caption": msg, "parse_mode": "HTML", **tgnews.fields(CHAT)}, {"photo": ("agorzilla-evening.png", png, "image/png")})
         req = urllib.request.Request(f"https://api.telegram.org/bot{TOKEN}/sendPhoto", body, {"Content-Type": ctype})
     else:
-        body = json.dumps({"chat_id": CHAT, "text": msg, "parse_mode": "HTML", "link_preview_options": {"is_disabled": True}}).encode()
+        body = json.dumps({"chat_id": CHAT, "text": msg, "parse_mode": "HTML", "link_preview_options": {"is_disabled": True},
+                           **tgnews.fields(CHAT)}).encode()
         req = urllib.request.Request(f"https://api.telegram.org/bot{TOKEN}/sendMessage", body, {"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=20) as r:

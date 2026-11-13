@@ -357,12 +357,12 @@ moment. State (seen events, what went where) lives in the `alerts_state` volume,
 nothing is posted twice across restarts. Failed posts are retried up to 8 times with
 back-off; the token is never logged.
 
-**Telegram** (channel `@tauHUDcom`):
+**Telegram** (group `@tauHUDchat`, News topic for the bot):
 1. In Telegram, open @BotFather, send `/newbot`, pick a name and a username ending in
    `bot`. It answers with a token.
 2. Channel → Administrators → Add admin → the bot, with "Post messages".
 3. On the server: `cd /opt/tau-command-hud/infra && nano .env`, add
-   `TELEGRAM_BOT_TOKEN=<token>` (and `TELEGRAM_CHAT_ID=@tauHUDcom` if the channel has
+   `TELEGRAM_BOT_TOKEN=<token>` (and `TELEGRAM_CHAT_ID=@tauHUDchat` if the channel has
    another name), save, then `docker compose up -d alerts`.
 4. Test: `docker compose run --rm alerts python alerts.py --test` posts one message.
 
@@ -559,7 +559,7 @@ Logs: `docker compose logs -f alerts`.
 
 ## Question bot
 
-The bot that posts to `@tauHUDcom` also answers anyone who writes to it (`alerts/bot.py`,
+The bot that posts to `@tauHUDchat` also answers anyone who writes to it (`alerts/bot.py`,
 service `bot`, same image as alerts, same `TELEGRAM_BOT_TOKEN`; nothing else to set up):
 
 | Ask | Answer | Source |

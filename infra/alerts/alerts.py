@@ -69,6 +69,8 @@ ten minutes, because the relay starts those over at midnight UTC.
   python alerts.py --test           send one test line to the owner's private chat (never the channel)
   python alerts.py --check          check the channel keys without posting: Telegram token and the bot's right to post,
                                     the X keys of Tau HUD and of Agorzilla; exit 1 when a channel cannot post
+  python alerts.py --telegram-setup the Telegram group made ready (tgnews.py): a closed News topic for the posts,
+                                    General renamed Chat; posts nothing (up telegram)
   python alerts.py --preview        print how the newest rule changes would be posted, post nothing
   python alerts.py --recap-preview  draw this week's recap and save it, post nothing
   python alerts.py --recap-now      draw the recap and post it to each configured channel
@@ -111,6 +113,7 @@ import explain
 import findings
 import firsts
 import gazette
+import tgnews
 import ai_meter
 import crewlog
 import earnings
@@ -138,7 +141,7 @@ NODE_PUBLIC = os.environ.get("NODE_URL", "https://node.tauhud.com").rstrip("/") 
 POST_MAX_AGE = float(os.environ.get("POST_MAX_AGE_SECONDS", 3 * 3600))
 OPEN_ADMISSION = os.environ.get("TAU_GOVERNANCE_OPEN_ADMISSION", "true").lower() in ("1", "true", "yes")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
-TELEGRAM_CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDcom").strip()
+TELEGRAM_CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDchat").strip()
 # the question bot (bot.py, same token): every channel post carries buttons that open it; empty = no buttons
 TELEGRAM_BOT_NAME = os.environ.get("TELEGRAM_BOT_USERNAME", "tauhud_alerts_bot").strip().lstrip("@")
 X_KEYS = {k: os.environ.get(k, "").strip() for k in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET")}
@@ -2180,7 +2183,8 @@ class Telegram(Outlet):
         return res[:3]
 
     def call_raw(self, method: str, body: bytes | None, ctype: str = "application/json") -> tuple[bool, float | None, str, dict]:
-        """One Bot API call: (ok, retry_after, error text, the reply)."""
+        """One Bot API call: (ok, retry_after, error text, the reply). A post to the group lands in its News topic."""
+        body = tgnews.into(method, body, ctype)
         req = urllib.request.Request(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/{method}", data=body,
                                      headers={"Content-Type": ctype} if body else {})
         try:
@@ -2215,7 +2219,9 @@ class Telegram(Outlet):
             return False, f"@{bot.get('username')} cannot see {TELEGRAM_CHAT} ({err}); add the bot to the channel as an administrator"
         r = m.get("result") or {}
         if r.get("status") == "creator" or (r.get("status") == "administrator" and r.get("can_post_messages", True)):
-            return True, f"@{bot.get('username')} is an administrator of {TELEGRAM_CHAT} and may post"
+            n = tgnews.topic()
+            where = f" (group, News topic {n})" if n else ""
+            return True, f"@{bot.get('username')} is an administrator of {TELEGRAM_CHAT}{where} and may post"
         return False, f"@{bot.get('username')} is '{r.get('status')}' in {TELEGRAM_CHAT}, not an administrator who may post: " \
             "in the channel's Administrators, add the bot with Post messages"
 
@@ -4337,6 +4343,24 @@ def check_channels() -> int:
     return code
 
 
+def telegram_setup() -> int:
+    """up telegram: the group made ready for the posts (News topic for the bot, closed; General renamed Chat), then the
+    channel check. Posts nothing."""
+    o = Telegram()
+    if not o.enabled():
+        print("telegram: off (TELEGRAM_BOT_TOKEN not set in infra/.env)")
+        return 1
+
+    def call(method, d):
+        ok, _, err, reply = o.call_raw(method, json.dumps(d).encode())
+        return ok, err, reply
+    for line in tgnews.setup(call):
+        print("telegram: " + line)
+    ok, why = o.check()
+    print(f"telegram: {'ok' if ok else 'CANNOT POST'}, {why}")
+    return 0 if ok else 1
+
+
 def send_test() -> int:
     """One test line to the owner's private chat (up owner), never to the public channel or X: a test post on the
     channel (3 November 2026) read as a second "alerts are connected" to every follower. --check tests X without posting."""
@@ -4718,6 +4742,8 @@ if __name__ == "__main__":
         sys.exit(crewlog_cli("send" in sys.argv))
     if "--check" in sys.argv:
         sys.exit(check_channels())
+    if "--telegram-setup" in sys.argv:
+        sys.exit(telegram_setup())
     if "--x-test" in sys.argv:
         sys.exit(x_test())
     if "--x-preview" in sys.argv:
