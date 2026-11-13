@@ -3469,6 +3469,13 @@ class Watcher:
                     log.info("site updates: major %s is older than %d days, not posted", k, SITE_MAJOR_MAX_AGE_DAYS)
             elif st["primed"]:
                 st["pending"].append({"key": k, "at": round(now), **digest_item(e)})
+        # a major still waiting takes the log's wording of now (13 Nov 2026: an article was reworked after its entry was queued)
+        fresh = {site_key(e): major_item(e) for e in entries if isinstance(e.get("major"), dict)}
+        for m in st["majors"]:
+            if m["key"] in fresh:
+                keep = {k: m[k] for k in ("key", "waiting") if k in m}
+                m.clear()
+                m.update({**fresh[keep["key"]], **keep})
         # a major marked "skip" after it was queued (posted by hand meanwhile) leaves the queue
         skip = {site_key(e) for e in entries if isinstance(e.get("major"), dict) and e["major"].get("skip")}
         st["majors"] = [m for m in st["majors"] if m["key"] not in skip]

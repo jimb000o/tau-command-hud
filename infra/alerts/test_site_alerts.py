@@ -9,6 +9,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 from datetime import datetime, timezone
 
 TMP = tempfile.mkdtemp()
@@ -84,6 +85,16 @@ ox = alerts.major_x(own)
 check(ox.startswith("First paragraph for X.\n\nSecond one.") and "A long title" not in ox and "Telegram text." not in ox,
       "\"x\": [lines] gives X its own text, paragraph by paragraph")
 check("Telegram text." in alerts.major_text(own), "Telegram keeps the major's text")
+wq = alerts.Watcher([])
+wq.state["site"] = {"seen": {}, "majors": [], "pending": [], "primed": True}
+queued = {"on": time.strftime("%Y-%m-%d", time.gmtime()), "html": "Blog: x.", "major": {"id": "q", "title": "T", "text": "Old words."}}
+wq.take_updates([queued], time.time())
+wq.state["site"]["majors"][0]["waiting"] = 5
+queued["major"]["text"] = "New words."
+wq.take_updates([queued], time.time())
+qm = wq.state["site"]["majors"]
+check(len(qm) == 1 and qm[0]["text"] == "New words." and qm[0]["waiting"] == 5 and qm[0]["key"] == "major:q",
+      "a major still waiting takes the log's wording of now, once, and keeps its wait")
 d = alerts.digest_item(log[2])
 check(d == {"area": "Stats", "line": "The chart is calmer.", "on": "2026-10-28"}, "digest line: area once, first sentence")
 check(alerts.digest_item(log[0])["area"] == "HUD", "a version tag counts as the HUD")
