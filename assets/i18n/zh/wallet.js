@@ -701,4 +701,7 @@ TauI18n.add({ strings: {
   "The engine runs the clause on the testnet's own Tau, with these payments.": "引擎用测试网自己的 Tau 和这些付款来运行这个子句。",
   "a clause written by hand": "一条手写的子句",
   "How the wallet looks": "钱包的外观",
+  "Step 1 first: make your account on the left. Then you choose your rule here.": "先完成第 1 步：在左边创建你的账户。然后在这里选择你的规则。",
+  "Step 2 of 3: tap the card that says what your rule should do.": "第 2 步（共 3 步）：点一张卡片，选出你的规则要做什么。",
+  "Step 3 of 3: check the test payments, then sign your rule.": "第 3 步（共 3 步）：看一看测试付款，然后签署你的规则。",
 } });

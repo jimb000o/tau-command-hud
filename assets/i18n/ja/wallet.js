@@ -701,4 +701,7 @@ TauI18n.add({ strings: {
   "The engine runs the clause on the testnet's own Tau, with these payments.": "エンジンはテストネット自身の Tau で、これらの支払いを使って句を実行します。",
   "a clause written by hand": "手書きの句",
   "How the wallet looks": "ウォレットの見た目",
+  "Step 1 first: make your account on the left. Then you choose your rule here.": "まずステップ1：左でアカウントを作ってください。そのあと、ここでルールを選びます。",
+  "Step 2 of 3: tap the card that says what your rule should do.": "ステップ 2/3：ルールにさせたいことのカードをタップしてください。",
+  "Step 3 of 3: check the test payments, then sign your rule.": "ステップ 3/3：テスト支払いを確かめてから、ルールに署名してください。",
 } });

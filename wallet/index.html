@@ -435,6 +435,13 @@ html.wl-new.wl-nokey #acct { display: none; }
   .bchips button, .cmore button, .lvl button { min-height: 44px; padding: 3px 12px; }
   .bctl input.in, .bctl select.in { min-height: 44px; }
 }
+/* Beginner, one step at a time: the rest is blurred and cannot be used until its step comes */
+.wl-lock { filter: blur(2px) grayscale(.6); opacity: .32; pointer-events: none; user-select: none; transition: filter .35s, opacity .35s; }
+html.wl-new #coach, html.wl-new #rules, html.wl-new #acct { transition: border-color .3s, box-shadow .3s; }
+html.wl-new .wl-here { border-color: rgba(57,255,138,.55); box-shadow: 0 0 0 1px rgba(57,255,138,.25), 0 0 24px rgba(57,255,138,.08); }
+.bgate { margin: 0 0 8px; border-radius: 6px; padding: 7px 11px; font: 600 13px/1.4 var(--display); color: #000; background: var(--ok); }
+.bgate.s1 { background: none; color: var(--text); border: 1px dashed var(--hair); font-weight: 500; }
+@media (prefers-reduced-motion: reduce) { .wl-lock { transition: none; } }
 /* Intermediate: each test payment now and after signing */
 .probe.cmp { grid-template-columns: 10px minmax(0, 1fr) auto 4.2em; }
 .probe.cmp.head { color: var(--dim); font: 600 11px var(--display); letter-spacing: .08em; }
@@ -2007,6 +2014,7 @@ function applyLevel() {
   if (LV === "new" && RTAB !== "mine") document.querySelector('#ruleTabs [data-rtab="mine"]').click();
   if (LV === "new" && TAB !== "send") $("tabSend").click();
   if (was !== LV) { probesFolded = false; $("probesBox").open = true; }
+  if (LV !== "new") { document.querySelectorAll(".wl-lock").forEach(e => lock(e, false)); document.querySelectorAll(".wl-here").forEach(e => e.classList.remove("wl-here")); STEP = -1; }
   renderLvlSeg();
   renderRule();
   fitLog();
@@ -2056,9 +2064,9 @@ function renderCoach(d, r) {
     now === -1 ? el("p", { class: "cdone", text: T(r && r.freeze ? "Your account is frozen: nothing leaves it." : "Done: your rule is in force. Try it: send a payment it should stop, and watch the chain refuse it.") }) : null,
     el("div", { class: "cmore" },
       el("button", { type: "button", onclick: () => setFull(true, "send"), text: T("Send test AGRS") }),
-      el("button", { type: "button", onclick: () => { ACCT_OPEN = true; applyLevel(); $("tabBook").click(); $("acct").scrollIntoView({ block: "nearest" }); }, text: T("Address book") }),
+      el("button", { type: "button", onclick: () => { ACCT_OPEN = BOOK_OPEN = true; applyLevel(); $("tabBook").click(); $("acct").scrollIntoView({ block: "nearest" }); }, text: T("Address book") }),
       el("button", { type: "button", onclick: () => setFull(true, "activity"), text: T("Activity") }),
-      el("button", { type: "button", onclick: () => setFull(true), text: T("Show the whole wallet") }))].filter(Boolean));
+      el("button", { type: "button", class: "whole", onclick: () => setFull(true), text: T("Show the whole wallet") }))].filter(Boolean));
 }
 
 /* ---- Beginner: four cards, each one block of the rule ---- */
@@ -2094,7 +2102,7 @@ function buildCards() {
       el("div", { class: "bkeep" }, el("span", { text: T("Against: " + pre.against) }), el("span", { class: "not", text: T("Not against: " + pre.not) })),
       el("div", { class: "fixit", id: "bfx-" + c.k }));
   };
-  $("bPick").replaceChildren(el("div", { class: "bhead" }, el("h3", { text: T("What should your rule do?") }),
+  $("bPick").replaceChildren(el("div", { class: "bgate", id: "bGate", role: "status", "aria-live": "polite" }), el("div", { class: "bhead" }, el("h3", { text: T("What should your rule do?") }),
     el("a", { class: "bwords", href: "/builder/" + (SIM ? "?mode=sim" : ""), text: T("Or say it in a sentence: the rule builder ›") })),
     el("div", { class: "bcards" }, ...CARDS.map(mk)), el("div", { class: "bsay", id: "bSay" }));
   /* the card's own fields write into the blocks, so signing, sharing and the test payments read one rule */
@@ -2111,7 +2119,7 @@ function renderCards(d) {
   $("bCoWho").value = $("vCoWho").value;
   $("bOnly").replaceChildren(...(others.length ? others.slice(0, 8).map(c => el("button", { type: "button", "aria-pressed": ONLY.has(c.addr) ? "true" : "false", translate: "no", text: c.name,
     onclick: () => { if (ONLY.has(c.addr)) ONLY.delete(c.addr); else if (ONLY.size < MAX_ONLY) ONLY.add(c.addr); $("cOnly").checked = ONLY.size > 0; keepDraft = true; renderRule(); renderShare(); } }))
-    : [el("button", { type: "button", class: "add", onclick: () => { ACCT_OPEN = true; applyLevel(); $("tabBook").click(); $("acct").scrollIntoView({ block: "nearest" }); $("bName").focus(); }, text: T("+ Put a name in your address book") })]));
+    : [el("button", { type: "button", class: "add", onclick: () => { ACCT_OPEN = BOOK_OPEN = true; applyLevel(); $("tabBook").click(); $("acct").scrollIntoView({ block: "nearest" }); $("bName").focus(); }, text: T("+ Put a name in your address book") })]));
   CARDS.forEach(c => {
     const on = $(c.box).checked, card = $("bc-" + c.k);
     card.classList.toggle("on", on); card.classList.toggle("bad", !!d.at[c.k]);
@@ -2119,7 +2127,7 @@ function renderCards(d) {
     card.querySelector(".bx").textContent = on ? "✓" : "";
     card.querySelector(".bfit").hidden = !(CHAL && !SIM && (c.fits.includes(CHAL.id) || CHAL.id === "both"));
     if (CHAL && CHAL.id === "both") card.querySelector(".bfit").textContent = T("Pick two for this week's challenge");
-    $("bfx-" + c.k).replaceChildren(...(d.at[c.k] ? ["↳ " + d.at[c.k]] : []), ...(c.k === "co" && d.at.co && !others.length ? [" ", el("button", { type: "button", class: "b quiet", onclick: () => { ACCT_OPEN = true; applyLevel(); $("tabBook").click(); $("acct").scrollIntoView({ block: "nearest" }); $("bName").focus(); }, text: T("+ Put a name in your address book") })] : []));
+    $("bfx-" + c.k).replaceChildren(...(d.at[c.k] ? ["↳ " + d.at[c.k]] : []), ...(c.k === "co" && d.at.co && !others.length ? [" ", el("button", { type: "button", class: "b quiet", onclick: () => { ACCT_OPEN = BOOK_OPEN = true; applyLevel(); $("tabBook").click(); $("acct").scrollIntoView({ block: "nearest" }); $("bName").focus(); }, text: T("+ Put a name in your address book") })] : []));
   });
   const say = $("bSay");
   if (d.bad.length) say.replaceChildren(el("b", { text: T("Almost:") }), " ", d.bad.join(T("; ")));
@@ -2249,11 +2257,38 @@ async function askX() {
   } catch (e) { if (seq === X.seq) X.state = "off"; }
   renderX();
 }
+/* ---- Beginner: one step at a time. Only the step to do now can be used; what comes later or is not needed now is blurred and locked
+   (inert, so no tab or tap reaches it), and opens by itself once the step before is done. "Show the whole wallet" always stays open.
+   Step 1 the account (in the guide), step 2 the cards, step 3 the test payments and the sign button; after that nothing is locked. ---- */
+let STEP = -1, BOOK_OPEN = false;   // BOOK_OPEN: a card asked for a name, so the address book opens inside step 2 or 3
+function lock(e, on) { if (!e) return; e.classList.toggle("wl-lock", on); if (on) e.setAttribute("inert", ""); else e.removeAttribute("inert"); }
+function guide(d, r) {
+  const signedNow = !!r && !r.freeze && (!d.ok || sameText(d.text, r.text));
+  const step = LV !== "new" ? -1 : !W.pk ? 1 : signedNow ? 0 : !d.ok ? 2 : 3;
+  if (step !== STEP) { if (STEP !== -1 && step > STEP && step !== 1) BOOK_OPEN = false;
+    if (STEP === 1 && step === 2 && matchMedia("(max-width: 700px)").matches) $("rules").scrollIntoView({ block: "start", behavior: "smooth" }); }
+  STEP = step;
+  const g = n => step > 0 && step !== n && !(n === 2 && step === 3);   // the cards stay open in step 3, to change the rule before signing
+  lock(document.querySelector("#bPick .bhead"), g(2)); lock(document.querySelector("#bPick .bcards"), g(2)); lock($("bSay"), g(2));
+  lock($("probesBox"), g(3)); lock($("btnRule") && $("btnRule").parentElement, g(3)); lock($("ruleWhy"), g(3));
+  lock($("acct"), step > 1 && !BOOK_OPEN);
+  document.querySelectorAll("#coach .cmore button:not(.whole)").forEach(b => lock(b, step > 0));
+  ["rules", "coach"].forEach(id => $(id).classList.toggle("wl-here", step === 1 ? id === "coach" : step > 1 ? id === "rules" : false));
+  if (BOOK_OPEN && step > 1) $("acct").classList.add("wl-here");
+  else $("acct").classList.remove("wl-here");
+  $("btnRule").classList.toggle("next", step === 3);
+  const gate = $("bGate");
+  if (gate) { gate.hidden = step < 1;
+    gate.textContent = step === 1 ? T("Step 1 first: make your account on the left. Then you choose your rule here.")
+      : step === 2 ? T("Step 2 of 3: tap the card that says what your rule should do.")
+      : T("Step 3 of 3: check the test payments, then sign your rule."); gate.className = "bgate s" + step; }
+}
 function renderLevel(d, r) {
   $("probesBox").hidden = LV === "new" && !d.ok;   // a beginner sees test payments once there is a rule to test
   $("ruleNow").classList.toggle("nokey", !W.pk || (W.clause !== undefined && !r));   // a beginner sees this line once a rule is in force
   document.documentElement.classList.toggle("wl-nokey", !W.pk && !ACCT_OPEN);
   if (LV === "new") { renderCoach(d, r); renderCards(d); }
+  guide(d, r);
   if (LV === "mid") compareProbes(d, r);
   if (LV === "pro") { if (!xBuilt) buildX(); renderX(); }
 }
