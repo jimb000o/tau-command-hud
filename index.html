@@ -262,7 +262,16 @@ body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 .gazad.shop .ga-nm { font: 600 12px/1 var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--ok); white-space: nowrap; }
 .gazad.shop .ga-mo { font: 400 11px/1.2 var(--mono); color: var(--dim); margin-top: -2px; }
 .gazad.shop .ga-dl { border: 0; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); padding: 4px 2px; font: 400 10px/1.2 var(--mono); letter-spacing: .04em; text-transform: none; color: var(--dim); }
-.gazad.shop .ga-x { display: none; }
+.gazad.shop .ga-x { display: block; order: 1; margin: 0; padding: 0; border: 0; background: none; transform: none; font: 400 11px/1.3 var(--mono); letter-spacing: .02em; text-transform: none; color: var(--dim); text-align: center; }
+.gazad.shop .ga-x b { font-weight: 600; color: var(--ok); font-variant-numeric: tabular-nums; }
+.gazad.shop .ga-tx { order: 2; } .gazad.shop .ga-more { order: 3; }
+.gazad.shop.c3 .ga-x { display: none; }
+/* the sweater hangs in its own light, inside a stitched frame; it lifts a little when the notice is pointed at */
+.gazad.shop .ga-paper { outline: 1px dashed rgba(255,255,255,.13); outline-offset: -5px; }
+.gazad.shop .ga-ph { background: radial-gradient(closest-side, color-mix(in srgb, var(--ok) 20%, transparent), transparent 72%); transition: transform .25s ease; }
+.gazad.shop:hover .ga-ph, .gazad.shop:focus-visible .ga-ph { transform: translateY(-3px) scale(1.04); }
+@media (prefers-reduced-motion: reduce) { .gazad.shop .ga-ph { transition: none; } .gazad.shop:hover .ga-ph, .gazad.shop:focus-visible .ga-ph { transform: none; } }
+.gazad.shop #gazDate { cursor: pointer; color: #fff; } .gazad.shop #gazDate:hover, .gazad.shop #gazDate:focus-visible { color: var(--ok); outline: none; }
 .gazad.shop .ga-hl { font: 600 clamp(15px, 1.05vw, 21px)/1.15 var(--display); letter-spacing: 0; color: #fff; }
 .gazad.shop .ga-dk { font: 400 12px/1.35 var(--mono); font-style: normal; color: var(--dim); border-bottom: 0; padding-bottom: 0; }
 .gazad.shop .ga-ph { display: block; object-fit: contain; object-position: 50% 50%; filter: none; mix-blend-mode: normal; border: 0; min-height: 96px; max-height: 340px; }
@@ -1518,14 +1527,14 @@ function catchingUp(pace) {
 function tickPace() {
   const live = S.mode === "live", pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null;
   const rTs = $("rTs");
-  if (!live || pace == null || S.lastInterval == null) { if (rTs.textContent !== "Block pace") rTs.textContent = "Block pace"; return updateTiming(pace, null); }
+  if (!live || pace == null || S.lastInterval == null) { if (rTs.textContent !== "Block pace") rTs.textContent = "Block pace"; shopWait(null); return updateTiming(pace, null); }
   const last = S.blocks[S.blocks.length - 1], paused = catchingUp(pace);
   const left = Math.round(pace - (performance.now() - S.lastBlockAt) / 1000);
   // "took": how long the newest block took after the one before; a long wait since the newest block leads, so the two never read as one number
   const txt = paused ? `no block for ${fmtAge(Date.now() / 1000 - last.ts)} · the last took ${fmtSec(S.lastInterval)}` : `last took ${fmtSec(S.lastInterval)} · ` + (left >= 0 ? `next in ~${Math.max(0, left)} s` : `next overdue by ${-left} s`);
   let i = rTs.querySelector("i"); if (!i) { rTs.innerHTML = "Block pace<i></i>"; i = rTs.querySelector("i"); }
   if (i.textContent !== txt) i.textContent = txt;
-  updateTiming(pace, paused ? null : Math.max(0, left));
+  updateTiming(pace, paused ? null : Math.max(0, left)); shopWait(left, paused);
 }
 /* the sub-lines under Height, Waiting and User rules: the same treatment as Block pace, each with its own facts */
 const fmtAge = s => s < 90 ? Math.round(s) + " s" : s < 5400 ? Math.round(s / 60) + " min" : s < 172800 ? (s / 3600).toFixed(1) + " h" : (s / 86400).toFixed(1) + " d";
@@ -2859,12 +2868,28 @@ async function loadGazette() {
    Nothing is stored in the browser. The visitor count (assets/nav.js, TauMark) notes which one was shown and whether the notice was clicked,
    as daily totals; the store link carries the name too */
 const SHOPAD = (() => { const w = new URLSearchParams(location.search).get("shopad"); return w === "rabbit" || w === "rule" ? w : Math.random() < .5 ? "rabbit" : "rule"; })();
-const SHOP = { url: "https://tau-hud-shop.fourthwall.com/?utm_source=tauhud&utm_medium=hud&utm_content=" + SHOPAD, photo: SHOPAD === "rule" ? "assets/shop/sweater-rule.png" : "assets/shop/sweater.png",
-  name: "Ship’s store", motto: "supplies for the Tau HUD crew", row: ["Made to order", "Crew: 10–20 % off", new Date() < new Date("2026-12-16") ? "Christmas: order early" : "Sold by Fourthwall"],
-  hl: "Knitted for the long wait between blocks", dk: "Christmas sweaters with the pattern knitted in, tees that quote a real node, a sticker sheet and a mug.",
-  tx: "A sweater takes 7 to 10 days to knit before it ships. Sold and shipped by Fourthwall. Fan merchandise, not affiliated with IDNI.",
-  more: "Open the store ›", label: "Open the Tau HUD shop at Fourthwall",
+const SHOP_HOME = "https://tau-hud-shop.fourthwall.com/", SHOP_UTM = "?utm_source=tauhud&utm_medium=hud&utm_content=" + SHOPAD;
+/* the notice leads with one sweater and opens that sweater's page; "All 10 pieces" opens the whole store */
+const SHOP_LEAD = {
+  rabbit: { path: "products/follow-the-rabbit-to-the-next-block", photo: "assets/shop/sweater.png", hl: "Follow the rabbit to the next block",
+    dk: "The White Rabbit Key sweater, the pattern knitted in with four yarns. Made to order, $79." },
+  rule: { path: "products/always-o1-t-i1-t", photo: "assets/shop/sweater-rule.png", hl: "always o1[t] = i1[t].",
+    dk: "A real Tau rule, knitted in and checked by the engine first. Made to order, $79." } }[SHOPAD];
+const SHOP = { url: SHOP_HOME + SHOP_LEAD.path + SHOP_UTM, home: SHOP_HOME + SHOP_UTM, photo: SHOP_LEAD.photo,
+  name: "Ship’s store", motto: "supplies for the Tau HUD crew", row: ["$79 · made to order", "Crew: 10–20 % off", "All 10 pieces ›"],
+  hl: SHOP_LEAD.hl, dk: SHOP_LEAD.dk,
+  tx: (new Date() < new Date("2026-12-16") ? "For Christmas, order early: a sweater takes 7 to 10 days to knit before it ships. " : "A sweater takes 7 to 10 days to knit before it ships. ") + "Sold and shipped by Fourthwall. Fan merchandise, not affiliated with IDNI.",
+  more: "See the sweater ›", label: "Open this sweater in the Tau HUD shop at Fourthwall",
   full: "The Tau HUD shop at Fourthwall: knitted Christmas sweaters, tees, a sticker sheet and a mug, each made to order. Crew members get 10 or 20 % off. Fan merchandise, not affiliated with IDNI. Opens in a new tab." };
+/* the line above the button counts down to the next block with the live chain; tickPace writes it */
+const SHOP_WAIT = ["to the next block · dress for the wait", "next block is overdue · dress for the wait", "it gets cold between blocks · dress for the wait"];
+function shopWait(left, paused) {
+  const x = $("gazX"); if (!x || CLIP !== "shop") return;
+  if (!x.firstElementChild) x.innerHTML = "<b></b><span></span>";
+  const b = x.firstElementChild, t = x.lastElementChild, live = left != null && !paused;
+  const num = live && left >= 0 ? `~${left} s ` : "", txt = SHOP_WAIT[!live ? 2 : left >= 0 ? 0 : 1];
+  if (b.textContent !== num) b.textContent = num; if (t.textContent !== txt) t.textContent = txt;
+}
 const CLIP = (() => {
   const want = new URLSearchParams(location.search).get("clip"); if (want === "shop" || want === "paper") return want;
   return "shop";
@@ -2879,6 +2904,9 @@ function renderShopAd() {
   const crew = $("gazNo"); crew.tabIndex = 0; crew.setAttribute("role", "link"); crew.dataset.full = "Opens the Crew page: what the Tau HUD crew is and how the 10 or 20 % shop discount works.";
   if (!crew.dataset.on) { crew.dataset.on = "1"; const go = e => { if (CLIP !== "shop" || (e.type === "keydown" && e.key !== "Enter")) return; e.preventDefault(); e.stopPropagation(); shopMark("shop-crew-click"); location.href = "crew/"; }; crew.addEventListener("click", go); crew.addEventListener("keydown", go); }
   if (!a.dataset.on) { a.dataset.on = "1"; a.addEventListener("click", () => { if (CLIP === "shop") shopMark("shop-" + SHOPAD + "-click"); }); }
+  const all = $("gazDate"); all.tabIndex = 0; all.setAttribute("role", "link"); all.dataset.full = "Opens the whole Tau HUD shop at Fourthwall in a new tab: three sweaters, five tees, a sticker sheet and a mug.";
+  if (!all.dataset.on) { all.dataset.on = "1"; const go = e => { if (CLIP !== "shop" || (e.type === "keydown" && e.key !== "Enter")) return; e.preventDefault(); e.stopPropagation(); shopMark("shop-" + SHOPAD + "-click"); window.open(SHOP.home, "_blank", "noopener"); }; all.addEventListener("click", go); all.addEventListener("keydown", go); }
+  shopWait(null);
   if (!$("gazPh").src.endsWith(SHOP.photo)) { $("gazPh").src = SHOP.photo; $("gazPh").addEventListener("load", fitGazAd, { once: true }); }
   fitGazAd();
 }
