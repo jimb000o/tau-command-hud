@@ -155,6 +155,12 @@ def step(now: float, get=_get, tell=_tell) -> dict | None:
         return None
     if not w:
         return None
+    try:   # our own reports on the Findings page too: fixwatch.py learns from their state when IDNI solves one
+        import fixwatch
+        for n in fixwatch.numbers():
+            w.setdefault(n, [])
+    except Exception as e:  # noqa: BLE001
+        log.info("findings numbers: %s", e)
     try:
         got = fetch(set(w), get)
     except Exception as e:  # noqa: BLE001 - rate limit or network: the last states stay, nothing is told
@@ -169,7 +175,8 @@ def step(now: float, get=_get, tell=_tell) -> dict | None:
         if not first and was and was != s["state"]:
             known = next((p["from"] for p in pending if p["n"] == n), was)   # what the owner last heard of it
             pending = [p for p in pending if p["n"] != n] + [{"n": n, "from": known, "to": s["state"], "pr": s["pr"], "items": w[n], "at": now}]
-    pending = [p for p in pending if p["from"] != (got.get(p["n"]) or {}).get("state")]   # changed back: nothing to say
+    pending = [p for p in pending if p["from"] != (got.get(p["n"]) or {}).get("state")   # changed back: nothing to say
+               and p["items"]]   # a number only Findings names: fixwatch.py tells that one
     if pending and not quiet(now):
         ok, why = tell(note(pending))
         log.info("roadmap note to the owner %s", "sent" if ok else f"NOT sent ({why})")
