@@ -778,4 +778,6 @@ TauI18n.add({ strings: {
   "Rule builder": "规则搭建器",
   "Say what your wallet may do in plain words; see what the rule really does, checked by the real Tau engine, before you sign": "用日常语言说出你的钱包可以做什么；签名之前，看清规则到底会做什么，由真正的 Tau 引擎检查",
   "Back to the rule builder": "返回规则搭建器",
+  "Shop": "商店",
+  "Knitted Christmas sweaters, tees, a sticker sheet and a mug, made to order at Fourthwall. Fan merchandise": "针织圣诞毛衣、T 恤、一张贴纸和一只马克杯，在 Fourthwall 按订单制作。粉丝周边",
 } });
