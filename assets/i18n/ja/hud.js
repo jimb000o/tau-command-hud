@@ -1,5 +1,6 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Menu: an entry that holds several pages now names them all inside the menu, one click each. Read shows The Daily Consensus, Blog and Chronicle; Explorer shows Accounts and Time travel; Testnet health shows Stats, Testnet load and Status; Road to mainnet shows Findings, Build pulse and GxP; the same for Proposals, Wallet, Wallet rules and Practise voting. Before, these pages only appeared as tabs after you had opened the first one.": "メニュー：複数のページをまとめた項目は、メニューの中でそのすべてのページを表示するようになりました。どれもワンクリックです。「読む」には The Daily Consensus、ブログ、クロニクル、「エクスプローラー」にはアカウントとタイムトラベル、「テストネットの健康」には統計、テストネットの負荷、ステータス、「メインネットへの道」には調査結果、開発の鼓動、GxP が並びます。提案、ウォレット、ウォレットのルール、投票の練習も同じです。これまでは、最初のページを開いた後にタブとしてしか出てきませんでした。",
   "Support: the membership now lists the ship log as a benefit of both levels, one members-only post every Monday that the server writes from the chain and the site's own log.": "サポート：会員の説明に、両レベルの特典として航海日誌を追加しました。毎週月曜に会員限定の投稿が一本、チェーンとサイト自身のログからサーバーが書きます。",
   "IDNI genesis account, one of the 11 the testnet started with.": "IDNI ジェネシスアカウント。テストネット開始時からある 11 のアカウントの一つです。",
   "genesis": "ジェネシス",
