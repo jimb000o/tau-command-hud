@@ -58,7 +58,7 @@ TAG = re.compile(r"^[a-z0-9._-]{1,40}$")
 # can never carry a name or an id of a person. A new tag starts counting when it is added here.
 FIXED_TAGS = {"friend", "telegram", "x", "youtube", "github", "reddit", "hn", "nomemo", "agorzilla", "rabbit", "nodes",
               "donate", "crew", "blog", "learn", "wallet", "builder", "gxp", "book", "shop",
-              "about", "tour", "card", "gazette", "win", "recap"}
+              "about", "tour", "card", "gazette", "win", "recap", "hud"}
 TG_KINDS = {"costs", "today", "recap", "deepdive", "site", "digest", "island", "challenge", "firsts", "nodes", "restart",
             "health", "idni", "blog", "gazette", "rabbit", "chain", "post"}   # ref=tg-<kind>: the kinds in infra/alerts/alerts.py (TG_KINDS, and "post" for the rest)
 PRESET_IDS = {"shield", "people", "savings", "second", "back"}   # ref=preset-<id>: the ready-made rules in wallet/index.html (PRESETS)

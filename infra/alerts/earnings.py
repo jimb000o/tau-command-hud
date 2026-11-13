@@ -163,8 +163,13 @@ def note_members(s: dict, members: list[dict], now: float) -> int:
     return n
 
 
-def public(shop: list[dict], s: dict, now: float) -> dict:
-    """Summed per day and kind (shop, crew) in each currency; nothing that names a buyer or a member."""
+def active(members: list[dict]) -> int:
+    return sum(1 for m in members if str((m.get("subscription") or {}).get("type", "")).upper() == "ACTIVE")
+
+
+def public(shop: list[dict], s: dict, now: float, members: int | None = None) -> dict:
+    """Summed per day and kind (shop, crew) in each currency, and how many memberships are active now (the HUD's crew
+    light); nothing that names a buyer or a member."""
     days = {}
     for o in shop:
         k = (o["on"], "shop", o["cur"])
@@ -176,7 +181,7 @@ def public(shop: list[dict], s: dict, now: float) -> dict:
     items = [{"on": d, "kind": kind, "amount": round(v, 2), "cur": c} for (d, kind, c), v in sorted(days.items()) if abs(v) >= 0.005]
     return {"updated": datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "how": "Our share after Fourthwall's costs and fees, estimated from the shop's API; tax and shipping not counted.",
-            "items": items}
+            "items": items, **({} if members is None else {"members": int(members)})}
 
 
 def _items(o: dict) -> str:
@@ -229,7 +234,7 @@ def run(now: float | None = None, tier_names: dict | None = None) -> tuple[dict,
     lines = news(s, orders, members, tier_names)
     s["checked"] = now
     write_atomic(STATE_PATH, json.dumps(s, separators=(",", ":")))
-    pub = public(shop, s, now)
+    pub = public(shop, s, now, active(members))
     write_atomic(PUBLIC_PATH, json.dumps(pub, separators=(",", ":")))
     return pub, shop, added, lines
 
