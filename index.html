@@ -503,6 +503,11 @@ a.chip { text-decoration: none; cursor: pointer; } a.chip:hover { border-color: 
 .dot.behind { background: var(--behind); box-shadow: 0 0 8px var(--behind); }
 .dot.off { background: var(--bad); box-shadow: 0 0 8px var(--bad); animation: none; }
 .dot.none { background: var(--dim); box-shadow: none; animation: none; opacity: .6; }
+/* one dot per pill: the value pills get a quiet dot that follows the mode light, like on every other page */
+.rail .chips .chip.v:not(#chipMode)::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.rail .chips:has(#modeDot.sim, #modeDot.behind) .chip.v:not(#chipMode)::before { background: #ffb13b; box-shadow: 0 0 6px #ffb13b; }
+.rail .chips:has(#modeDot.off) .chip.v:not(#chipMode)::before { background: var(--bad); box-shadow: 0 0 6px var(--bad); }
+.rail .chips:has(#modeDot.none) .chip.v:not(#chipMode)::before { background: var(--dim); box-shadow: none; opacity: .6; }
 @keyframes blink { 50% { opacity: .35; } }
 
 .gearbody { display: flex; flex-direction: column; gap: 8px; }
