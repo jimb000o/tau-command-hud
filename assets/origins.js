@@ -76,8 +76,8 @@
   const RUN = "Run by tauhud.com’s server with test AGRS. Once a day it tries a payment its own rule forbids, on purpose, and the node refuses it.";
   const ABOUT = {
     piggy: ["Purpose: shows a time-lock. The money stays put until New Year, whoever holds the key.", RUN],
-    foureyes: ["Purpose: shows a second signature. Small payments go through; above 100 AGRS Tau HUD’s co-signer must sign as well.", RUN],
-    feeding: ["Purpose: shows a whitelist. This money can only go to Agorzilla’s bowl, nowhere else.", RUN],
+    foureyes: ["Purpose: shows a second signature. Small payments go through; above 100 AGRS Tau HUD’s co-signer must sign as well, and once the balance is below 90,000 for every payment, so many small payments cannot empty it.", RUN],
+    feeding: ["Purpose: shows a whitelist. This money can only go to Agorzilla’s bowl, at most 20 AGRS a meal, and nothing once the balance is below 90,000, so many small payments cannot empty it.", RUN],
     cosigner: ["The second signature the four-eyes wallet needs. Run by tauhud.com’s server; it never sends."],
   };
   const TAG_ABOUT = {
