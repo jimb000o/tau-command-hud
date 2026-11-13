@@ -63,7 +63,9 @@ def tiers() -> list[dict]:
     d = _req("GET", "/memberships/tiers")
     rows = d.get("tiers", []) if isinstance(d, dict) else (d or [])
     return [{"id": t.get("id"), "name": t.get("name", ""), "status": t.get("status", ""),
-             "members": (t.get("statistics") or {}).get("membersCount")} for t in rows if isinstance(t, dict)]
+             "members": (t.get("statistics") or {}).get("membersCount"), "description": t.get("description", ""),
+             "monthly": {c: (v or {}).get("amount") for c, v in (((t.get("variants") or {}).get("monthly") or {}).get("amounts") or {}).items()}}
+            for t in rows if isinstance(t, dict)]
 
 
 def posts(limit: int = 3) -> list[dict]:

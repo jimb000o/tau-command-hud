@@ -50,7 +50,7 @@
     press:      { t: "Press kit", d: "Video, logo, screenshots, facts and a ready paragraph, free to use", i: "↓", h: "press/" },
     tau:        { t: "What is Tau?", d: "tau.net, the project behind the testnet", i: "τ", h: "https://tau.net", ext: true },
     donate:     { t: "Donations", d: "What the site costs each month and every donation received, on chain; voluntary, nothing in return", i: "♡", h: "donate/" },
-    crew:       { t: "Tau HUD crew", d: "A paid monthly membership in our external shop; a purchase, not a donation", i: "⚑", h: "crew/" },
+    crew:       { t: "Support", d: "Optional: a paid monthly membership in the Tau HUD crew, or a one-off crypto contribution", i: "⚑", h: "crew/" },
     legal:      { t: "Privacy", d: "Privacy notice: exactly what this site processes (no cookies, no tracking)", i: "§", h: "legal/" },
     about:      { t: "About Tau HUD", d: "Who built this page, sources, how to support it", i: "i", h: "#about", act: "about" },
     share:      { t: "Share this page", d: "Copy the link, or post it on X, Telegram, Reddit or Hacker News", i: "↗", h: "#share", act: "share" },
