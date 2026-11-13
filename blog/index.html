@@ -176,7 +176,8 @@ footer p { margin: 0; }
     ["strained", "/load/"], ["吃紧", "/load/"], ["逼迫", "/load/"],
   ];
   /* a link the text writes itself: only to our own pages */
-  const okHref = u => /^\/[\w\/-]*(\?[\w=&;.-]*)?(#[\w-]+)?$/.test(u) || /^https:\/\/(node\.)?tauhud\.com(\/[\w\/?=&;.-]*)?$/.test(u);
+  const okHref = u => /^\/[\w\/-]*(\?[\w=&;.-]*)?(#[\w-]+)?$/.test(u) || /^https:\/\/(node\.)?tauhud\.com(\/[\w\/?=&;.-]*)?$/.test(u) || /^https:\/\/agorzilla\.com\/?$/.test(u) || /^https:\/\/tau-hud-shop\.fourthwall\.com\/[\w\/?=&;.-]*$/.test(u);
+  const away = u => /^https:\/\/(agorzilla\.com|tau-hud-shop\.fourthwall\.com)\//.test(u) ? ' target="_blank" rel="noopener"' : "";
   let linked = new Set();
   const KIND = { cruise: "Cruise ship", news: "News" };   /* the label above an article; anything else is Learnings */
   const place = h => {
@@ -195,7 +196,7 @@ footer p { margin: 0; }
   /* a small, safe Markdown: ## headings, - and 1. lists, **bold**, *italic*, [links](/our/page/), paragraphs; nothing else */
   function md(text, mark) {
     const inline = (s, head) => {
-      let h = esc(s).replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (all, t, u) => okHref(u) ? `<a href="${u}">${t}</a>` : t)
+      let h = esc(s).replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (all, t, u) => okHref(u) ? `<a href="${u}"${away(u)}>${t}</a>` : t)
         .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>");
       if (mark && mark.length) h = h.replace(/(?<![\w.])\d+(?:[.,]\d+)?(?::\d\d)?/g, n => mark.includes(n.replace(",", ".")) ? `<mark>${n}</mark>` : n);
       return head ? h : place(h);

@@ -1,6 +1,99 @@
 {
  "posts": [
   {
+   "id": "2026-11-13-support-tau-hud",
+   "on": "2026-11-13",
+   "kind": "news",
+   "kicker": "Open books · 13 November 2026",
+   "title": {
+    "en": "Tau HUD now has a shop and a monthly way to support it. Here is where the money goes.",
+    "zh": "Tau HUD 现在有了一个小店和每月支持的方式。钱都去了哪里，这里写清楚。",
+    "ja": "Tau HUD にショップと毎月の支援ができました。お金の行き先をここに書きます。"
+   },
+   "dek": {
+    "en": "Tau HUD is free and has no ads. Until this week the only way to help with its bills was a crypto donation. Now there are two more. What they are, what they cost, and how much of your money reaches the site.",
+    "zh": "Tau HUD 免费，没有广告。直到本周，帮它付账单的唯一方式是加密货币捐赠。现在多了两种。它们是什么、要花多少，以及你的钱有多少真正到了网站。",
+    "ja": "Tau HUD は無料で、広告もありません。今週まで、運営費を手伝う方法は暗号資産での寄付だけでした。今は方法が 2 つ増えました。それが何か、いくらかかるか、そしてあなたのお金のうちどれだけがサイトに届くのか。"
+   },
+   "why": [
+    {
+     "en": "For you: Tau HUD stays free, without ads and without tracking.",
+     "zh": "对你：Tau HUD 保持免费，没有广告，也不追踪。",
+     "ja": "あなたにとって：Tau HUD は無料のまま、広告もトラッキングもありません。"
+    },
+    {
+     "en": "For the site: its bills are public, and so is what comes in.",
+     "zh": "对网站：它的账单是公开的，收入也是。",
+     "ja": "サイトにとって：運営費は公開されていて、入ってくるお金も公開です。"
+    },
+    {
+     "en": "Honest: a tee or a membership is a purchase, not a donation. A donation still buys nothing.",
+     "zh": "诚实地说：T 恤或会员是一次购买，不是捐赠。捐赠依然什么也买不到。",
+     "ja": "正直に：T シャツやメンバーシップは購入であって、寄付ではありません。寄付は今まで通り、何も買いません。"
+    }
+   ],
+   "intro": {
+    "en": "[Tau HUD](/), [Agorzilla](https://agorzilla.com/), [No Memo](/nomemo/) and White Rabbit Key are built by one person in spare time. The time is not paid and not counted. The bills are, and this article puts them next to the new ways to help with them.",
+    "zh": "[Tau HUD](/)、[Agorzilla](https://agorzilla.com/)、[No Memo](/nomemo/) 和 White Rabbit Key 都由一个人在业余时间做出来。时间没有报酬，也不计入。账单要算，这篇文章把账单和新的帮忙方式放在一起。",
+    "ja": "[Tau HUD](/)、[Agorzilla](https://agorzilla.com/)、[No Memo](/nomemo/)、White Rabbit Key は、ひとりが空いた時間に作っています。その時間は無給で、数にも入れていません。数えるのは運営費で、この記事はそれを新しい支援の方法と並べて見せます。"
+   },
+   "body": {
+    "en": "## What the site costs\nThe bills come to about $431 and €25 a month. The server with our testnet node is the small part, €6. The two AI tools the site is built with are the large part, $200 each. Voices, image editing, two domains and the X bot make up the rest. Every bill is listed on the [Donations page](/donate/), with a chart of what was paid and what came in.\n\n## Why not ads\nAds make a page worse to use: they push the content aside, slow it down and pull your eyes away from what you came for. Most also come with tracking, and we do not track anyone. Visits are counted on our own server, without cookies, as daily totals. There is also nothing to sell around the testnet itself: test AGRS have no value, and we do not promote any coin.\n\n## Three ways to help, all optional\n- **Support monthly.** From €4.17 a month including German VAT, or €10.71 for the larger level. You can cancel any time and there are no duties. You get a ship log every Monday, written from the week's real numbers, and 10 % or 20 % off in the shop. We call the members the Tau HUD crew. Details on the [Support page](/crew/).\n- **[The shop](https://tau-hud-shop.fourthwall.com/?utm_source=tauhud&utm_medium=blog).** Five tees, three knitted sweaters, a mug and a sticker sheet, each made to order. The designs come from the testnet: answers our node really gives, the transaction format [No Memo](/nomemo/) is built on, a real rule from [Learn Tau](/learn/) knitted into a sweater, the White Rabbit, and Agorzilla on a sticker. Prices are shown in the shop with tax for your country.\n- **A donation in AGRS or ETH**, as before, on the [Donations page](/donate/).\n\nThe shop and the membership are run by Fourthwall, who is the seller, takes the payment and handles the tax.\n\n## What reaches the site\nNot the price you pay. Fourthwall keeps what it costs to make a piece, and a card fee. By our estimate from its published rates:\n- a tee: about $21 of its $35\n- a sweater: about $37 of its $79\n- a membership: about €2.90 a month of the €4.17 one, about €7.90 of the €10.71 one\n\nSo one larger membership covers the server. Nothing covers the AI tools yet. The crew light at the top of every page shows how much of the monthly bills the members cover.\n\nThe Donations page counts only this share, never the full price, and names no buyer. These are estimates until the first real order; then we compare with Fourthwall's own statement and correct them.\n\n## Where it stands today\nBoth opened this week. As of 13 November: no order and no member yet. The chart and the crew light will show it when that changes.",
+    "zh": "## 网站要花多少钱\n账单每月约 431 美元加 25 欧元。放着我们测试网节点的服务器是小头，6 欧元。搭建网站用的两个 AI 工具是大头，各 200 美元。剩下的是语音、图片编辑、两个域名和 X 机器人。每一笔账单都列在[捐赠页](/donate/)上，还有一张图显示付出了多少、收到了多少。\n\n## 为什么不放广告\n广告让页面更难用：它把内容挤到一边，拖慢页面，把你的目光从你要看的东西上拉走。大多数广告还带着追踪，而我们不追踪任何人。访问量在我们自己的服务器上统计，不用 cookie，只记每日总数。测试网本身也没有可卖的东西：测试 AGRS 没有价值，我们也不推广任何币。\n\n## 三种帮忙方式，全部自愿\n- **每月支持。** 每月 4.17 欧元起（含德国增值税），较高一档 10.71 欧元。随时可以取消，没有任何义务。每周一你会收到一份用本周真实数字写的航海日志，在小店里享受 10 % 或 20 % 的折扣。我们把这些成员叫作 Tau HUD crew。详情见[支持页](/crew/)。\n- **[小店](https://tau-hud-shop.fourthwall.com/?utm_source=tauhud&utm_medium=blog)。** 五款 T 恤、三款针织毛衣、一个马克杯和一张贴纸，都是下单后制作。图案来自测试网：我们的节点真实给出的回答、[No Memo](/nomemo/) 所基于的交易格式、一条来自[学习 Tau](/learn/) 的真实规则织进毛衣里、白兔，还有贴纸上的 Agorzilla。价格在店里按你所在国家含税显示。\n- **用 AGRS 或 ETH 捐赠**，和以前一样，在[捐赠页](/donate/)上。\n\n小店和会员由 Fourthwall 运营，它是卖方，负责收款和税务。\n\n## 有多少到了网站\n不是你付的价格。Fourthwall 留下制作成本和一笔刷卡手续费。根据它公布的费率，我们估计：\n- 一件 T 恤：35 美元中约 21 美元\n- 一件毛衣：79 美元中约 37 美元\n- 会员：4.17 欧元那档每月约 2.90 欧元，10.71 欧元那档约 7.90 欧元\n\n所以一份较高档的会员就能付服务器。AI 工具目前还没有任何收入覆盖。每个页面顶部的 crew 灯显示成员们覆盖了每月账单的多少。\n\n捐赠页只计入这部分，从不计入全价，也不写出买家。在第一笔真实订单之前这些都是估计；之后我们会和 Fourthwall 自己的结算单对比并修正。\n\n## 今天的情况\n两样都是本周才开。截至 11 月 13 日：还没有订单，也还没有成员。有变化时，图表和 crew 灯会显示出来。",
+    "ja": "## サイトにかかる費用\n運営費は月に約 431 ドルと 25 ユーロです。私たちのテストネットノードが動くサーバーは小さな部分で、6 ユーロ。サイトを作るのに使っている 2 つの AI ツールが大きな部分で、それぞれ 200 ドルです。残りは音声、画像編集、2 つのドメイン、X のボットです。すべての請求は[寄付ページ](/donate/)に載っていて、支払った額と入ってきた額のグラフもあります。\n\n## なぜ広告を載せないのか\n広告はページを使いにくくします。内容を押しのけ、表示を遅くし、見に来たものから目をそらさせます。ほとんどの広告にはトラッキングも付いてきますが、私たちは誰も追跡しません。アクセスは自分たちのサーバーで、cookie なしに、1 日の合計として数えています。テストネットそのものにも売るものはありません。テスト用の AGRS に価値はなく、私たちはどのコインも宣伝しません。\n\n## 支援の方法は 3 つ、どれも任意です\n- **毎月の支援。** 月 4.17 ユーロから（ドイツの付加価値税込み）、上のレベルは 10.71 ユーロ。いつでも解約でき、義務は何もありません。毎週月曜日に、その週の実際の数字から書いた航海日誌が届き、ショップで 10 % または 20 % 引きになります。メンバーのことを Tau HUD crew と呼んでいます。詳しくは[支援ページ](/crew/)で。\n- **[ショップ](https://tau-hud-shop.fourthwall.com/?utm_source=tauhud&utm_medium=blog)。** T シャツ 5 種、ニットのセーター 3 種、マグカップとステッカーシート。どれも注文を受けてから作ります。デザインはテストネットから来ています。私たちのノードが本当に返す答え、[No Memo](/nomemo/) の元になっている取引の形、[Tau を学ぶ](/learn/)にある本物のルールを編み込んだセーター、白ウサギ、そしてステッカーの Agorzilla。価格はショップで、あなたの国の税込みで表示されます。\n- **AGRS または ETH での寄付**は、これまで通り[寄付ページ](/donate/)で。\n\nショップとメンバーシップは Fourthwall が運営し、Fourthwall が販売者として支払いを受け、税金を扱います。\n\n## サイトに届く額\nあなたが払う価格ではありません。Fourthwall が製作費とカード手数料を差し引きます。公開されている料金からの私たちの見積もりでは：\n- T シャツ：35 ドルのうち約 21 ドル\n- セーター：79 ドルのうち約 37 ドル\n- メンバーシップ：4.17 ユーロのレベルで月約 2.90 ユーロ、10.71 ユーロのレベルで約 7.90 ユーロ\n\nつまり上のレベルのメンバーシップ 1 つでサーバー代がまかなえます。AI ツールの分はまだ何もまかなえていません。各ページの上にある crew ライトが、月の運営費のうちメンバーがどれだけをまかなっているかを示します。\n\n寄付ページはこの取り分だけを数え、全額は数えず、購入者の名前も出しません。最初の本当の注文までは見積もりで、その後 Fourthwall 自身の明細と比べて直します。\n\n## 今日の状況\nどちらも今週始まりました。11 月 13 日時点で、注文もメンバーもまだありません。それが変わったら、グラフと crew ライトに表れます。"
+   },
+   "sources": [
+    "https://tauhud.com/donate/",
+    "https://tauhud.com/crew/",
+    "https://help.fourthwall.com/"
+   ],
+   "card": [
+    "Where the money goes",
+    "A shop and a monthly way to support Tau HUD",
+    "## Why it matters",
+    "- Free, no ads, no tracking",
+    "- Every bill is public",
+    "- A purchase is not a donation",
+    "Tau HUD blog · community project, not affiliated with IDNI"
+   ],
+   "image": "/assets/blog/img/2026-11-13-support-tau-hud-hero.jpg",
+   "image_alt": {
+    "en": "The article's card and its four numbers in the Tau HUD look, above a row of testnet blocks",
+    "zh": "以 Tau HUD 风格呈现的文章卡片和四个数字，下方是一排测试网区块",
+    "ja": "Tau HUD のデザインで描いた記事のカードと4つの数字、下に並ぶテストネットのブロック"
+   },
+   "stats": [
+    [
+     "~$431",
+     "+ €25 in bills a month"
+    ],
+    [
+     "€6",
+     "of it the server"
+    ],
+    [
+     "€4.17",
+     "a month to support"
+    ],
+    [
+     "~$21",
+     "of a $35 tee reaches the site"
+    ]
+   ],
+   "figures": [
+    {
+     "src": "/assets/blog/img/support-shop-pieces.jpg",
+     "after": 3,
+     "link": "/crew/",
+     "caption": {
+      "en": "The best pieces of the first drop. Each one quotes something from the testnet or our games. All of them on the Support page.",
+      "zh": "第一批里最好的几件。每一件都引用了测试网或我们游戏里的一句话。全部在支持页上。",
+      "ja": "最初のラインナップから選んだ数点。どれもテストネットか私たちのゲームの何かを引用しています。全部は支援ページで。"
+     }
+    }
+   ]
+  },
+  {
    "id": "2026-11-13-personal-rules-for-everyone",
    "on": "2026-11-13",
    "kind": "news",
