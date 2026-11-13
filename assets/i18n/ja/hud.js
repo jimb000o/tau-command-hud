@@ -1,5 +1,6 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Live node: a click on it while you already watch the live chain now opens Status, the page with the testnet health score its hover shows, on the HUD and on every other page. From the simulation the same button still switches to the live chain.": "ライブノード：すでにライブチェーンを見ているときにクリックすると、ホバーに表示されるテストネットの健全性スコアを詳しく示すステータスページが開くようになりました。HUD でも他のすべてのページでも同じです。シミュレーション中は、同じボタンでこれまでどおりライブチェーンに切り替わります。",
   "Menu: an entry that holds several pages now names them all inside the menu, one click each. Read shows The Daily Consensus, Blog and Chronicle; Explorer shows Accounts and Time travel; Testnet health shows Stats, Testnet load and Status; Road to mainnet shows Findings, Build pulse and GxP; the same for Proposals, Wallet, Wallet rules and Practise voting. Before, these pages only appeared as tabs after you had opened the first one.": "メニュー：複数のページをまとめた項目は、メニューの中でそのすべてのページを表示するようになりました。どれもワンクリックです。「読む」には The Daily Consensus、ブログ、クロニクル、「エクスプローラー」にはアカウントとタイムトラベル、「テストネットの健康」には統計、テストネットの負荷、ステータス、「メインネットへの道」には調査結果、開発の鼓動、GxP が並びます。提案、ウォレット、ウォレットのルール、投票の練習も同じです。これまでは、最初のページを開いた後にタブとしてしか出てきませんでした。",
   "Support: the membership now lists the ship log as a benefit of both levels, one members-only post every Monday that the server writes from the chain and the site's own log.": "サポート：会員の説明に、両レベルの特典として航海日誌を追加しました。毎週月曜に会員限定の投稿が一本、チェーンとサイト自身のログからサーバーが書きます。",
   "IDNI genesis account, one of the 11 the testnet started with.": "IDNI ジェネシスアカウント。テストネット開始時からある 11 のアカウントの一つです。",
@@ -1646,6 +1647,7 @@ TauI18n.add({ strings: {
   "In progress: catching up, verified to {n} of {m}.": "進行中：追いつき中、{m} のうち {n} まで検証済み。",
   "Normal: testnet health {n} of 100.": "正常：テストネットのヘルス {n} / 100。",
   "Normal: online and following the real testnet chain.": "正常：オンラインで、実際のテストネットのチェーンを追っています。",
+  "Click: opens Status, the testnet health in full.": "クリック：ステータスページが開き、テストネットの健全性を詳しく見られます。",
   "Live node: the real testnet, read through our community node.": "ライブノード：私たちのコミュニティノードを通じて読んだ実際のテストネット。",
   "Lost most on {x} (−{a}) and {y} (−{b}).": "最も失点したのは {x}（−{a}）と {y}（−{b}）。",
   "Lost most on {x} (−{a}).": "最も失点したのは {x}（−{a}）。",

@@ -140,6 +140,7 @@ TauI18n.add({ strings: {
   "offline": "离线",
   "One minute, eight steps: how rules change by agreement": "一分钟，八个步骤：规则如何经共识而改变",
   "online": "在线",
+  "Click: opens Status, the testnet health in full.": "点击：打开状态页，查看完整的测试网健康详情。",
   "Opens the HUD in Live mode.": "在实时模式下打开 HUD。",
   "Pages": "页面",
   "Pages and tools": "页面与工具",
