@@ -356,3 +356,41 @@ span.tn-real { display: block; margin-top: 4px; }
   summary { padding-top: 12px; padding-bottom: 12px; }
   input[type=checkbox], input[type=radio] { min-width: 22px; min-height: 22px; }
 }
+/* About in place on the subpages (nav.js openAbout): the HUD's own About text, styled like the HUD's About window */
+.tn-about .tn-sheet { width: min(1760px, 100%); padding: 28px 32px; background: #0e0e11; border: 1px solid var(--u-hair); border-radius: 10px; }
+.tn-about .tn-close { top: 10px; right: 10px; }
+.tn-about h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 20px; padding-right: 44px; font: 600 13px var(--u-display); letter-spacing: .24em; text-transform: uppercase; color: #fff; }
+.tn-about .mark { width: 40px; height: 40px; flex: 0 0 auto; display: block; }
+.tn-about .mark circle { fill: none; stroke: #fff; stroke-opacity: .45; stroke-width: 3.5; }
+.tn-about .mark .pulse { fill: none; stroke: var(--u-ok); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.tn-about .unofficial { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 28px; padding: 8px 16px; border: 1px solid rgba(255,255,255,.45); border-radius: 6px; background: rgba(255,255,255,.06); font: 600 12px var(--u-display); letter-spacing: .14em; text-transform: uppercase; color: #fff; }
+.tn-about .unofficial span { flex: 1 1 320px; min-width: 0; font: 12px var(--u-mono); letter-spacing: 0; text-transform: none; color: var(--u-text); }
+.tn-about .about-cols { column-gap: 56px; column-rule: 1px solid var(--u-line); }
+.tn-about .about-cols > section { break-inside: avoid; -webkit-column-break-inside: avoid; display: block; margin: 0 0 24px; }
+.tn-about .about-cols > section:last-child { margin-bottom: 0; }
+@media (min-width: 1500px) { .tn-about .about-cols { column-count: 3; } }
+@media (min-width: 1000px) and (max-width: 1499px) { .tn-about .about-cols { column-count: 2; } }
+.tn-about h3 { margin: 12px 0 8px; font: 600 12px var(--u-display); letter-spacing: .2em; text-transform: uppercase; color: #fff; }
+.tn-about section > h3:first-child { margin-top: 0; }
+.tn-about p { margin: 0 0 8px; font-size: 13px; line-height: 1.55; max-width: 80ch; }
+.tn-about a, .tn-about code { color: var(--u-cyan); }
+.tn-about .small { color: var(--u-dim); font-size: 12px; }
+.tn-about .thanks { color: var(--u-text); } .tn-about .thanks a { color: var(--u-ok); }
+.tn-about .tgbox { padding: 16px 24px; border: 1px solid rgba(57,255,138,.5); border-radius: 8px; background: rgba(57,255,138,.04); }
+.tn-about .tgbox h3 { color: var(--u-ok); }
+.tn-about .tgbox ul { margin: 0 0 12px; padding-left: 16px; font-size: 13px; line-height: 1.5; }
+.tn-about .tgbox li { margin: 0 0 6px; } .tn-about .tgbox li b { color: #fff; font-weight: 600; }
+.tn-about .tgjoins { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.tn-about .tgjoin { display: inline-flex; align-items: center; min-height: 32px; font: 600 11px var(--u-display); letter-spacing: .1em; text-transform: uppercase; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--u-ok); color: var(--u-ok); text-decoration: none; }
+.tn-about .tgjoin:hover { background: var(--u-ok); color: #000; }
+.tn-about .prov span { font: 11px var(--u-mono); color: var(--u-dim); }
+.tn-about .prov i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; border: 1px solid var(--u-dim); }
+.tn-about .prov i.seen { background: var(--u-ok); border-color: var(--u-ok); box-shadow: 0 0 6px var(--u-ok); }
+.tn-about .donate { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 16px; align-items: center; margin: 12px 0; }
+.tn-about .donate .qr { width: 132px; height: 132px; border-radius: 6px; display: block; }
+.tn-about .addr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 12px; border: 1px solid var(--u-hair); border-radius: 6px; background: rgba(0,0,0,.35); }
+.tn-about .addr code { flex: 1 1 260px; min-width: 0; font: 400 13px var(--u-mono); color: var(--u-ok); overflow-wrap: anywhere; user-select: all; }
+.tn-about .addr button { min-height: 32px; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--u-hair); background: transparent; color: #fff; font: 600 11px var(--u-display); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
+.tn-about .addr button:hover { border-color: #fff; }
+@media (max-width: 700px) { .tn-about .tn-sheet { padding: 20px 16px; } .tn-about .tgbox { padding: 12px 14px; } .tn-about .tgjoin, .tn-about .addr button { min-height: 44px; } }
+@media (max-width: 520px) { .tn-about .donate { grid-template-columns: minmax(0, 1fr); justify-items: start; } }

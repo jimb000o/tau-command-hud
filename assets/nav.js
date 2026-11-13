@@ -400,11 +400,11 @@
     const days = Math.max(1, Math.floor((Date.now() - new Date(git.since + "T00:00:00Z")) / 86400000) + 1), e = UPD.el.querySelector(".tn-effort");
     e.querySelector('[data-n="commits"]').textContent = fmt(git.commits); e.querySelector('[data-n="days"]').textContent = String(days); e.querySelector('[data-n="releases"]').textContent = String(releases); e.querySelector('[data-n="since"]').textContent = `since ${logDate(git.since)}`; e.hidden = false;
   }
-  async function loadUpdDonors() {
-    loadUpdCosts();
-    if (Date.now() - UPD.donorsAt < 120000) return; UPD.donorsAt = Date.now();
+  async function loadUpdDonors(box = UPD.el) {   // the Updates overlay, or About in place
+    loadUpdCosts(box);
+    if (Date.now() - (box.tnDonorsAt || 0) < 120000) return; box.tnDonorsAt = Date.now();
     try {
-      const d = await (await fetch(DONATE.donors, { cache: "no-store" })).json(), line = UPD.el.querySelector(".tn-thanks");
+      const d = await (await fetch(DONATE.donors, { cache: "no-store" })).json(), line = box.querySelector(".tn-thanks, .thanks");
       const items = (d.items || []).filter(x => /^0x[0-9a-f]{40}$/i.test(x.from) && /^0x[0-9a-f]{64}$/i.test(x.tx) && (x.asset === "AGRS" || x.asset === "ETH") && isFinite(x.amount));
       if (!items.length) { line.hidden = true; return; }
       const short = a => a.slice(0, 6) + "…" + a.slice(-4);
@@ -416,19 +416,62 @@
       const n = Math.max(1, parseInt(d.donors, 10) || 1);
       line.innerHTML = (n === 1 ? "Supported by 1 person so far. Thank you, " : `Supported by ${n} people so far. Thank you, `) + items.slice(0, 3).map(one).join(", ") + (items.length > 3 ? " and everyone before." : ".");
       line.hidden = false;
-    } catch (e) { UPD.donorsAt = 0; }
+    } catch (e) { box.tnDonorsAt = 0; }
   }
   /* running costs in one line, from the same list as the Donations page; each bill in its own currency, never converted */
-  async function loadUpdCosts() {
-    if (UPD.costs) return; UPD.costs = true;
+  async function loadUpdCosts(box = UPD.el) {
+    if (box.tnCosts) return; box.tnCosts = true;
     try {
       const items = ((await (await fetch(ROOT + "assets/costs.json", { cache: "no-cache" })).json()).items || []).filter(c => typeof c.amount === "number" && /^[A-Z]{3}$/.test(c.cur));
       if (!items.length) return;
       const sums = {}; items.forEach(c => { sums[c.cur] = (sums[c.cur] || 0) + c.amount; });
-      const el = UPD.el.querySelector(".tn-cost");
+      const el = box.querySelector(".tn-cost, .costline");
       el.textContent = `Running costs: about ${Object.entries(sums).map(([c, n]) => new Intl.NumberFormat(c === "USD" ? "en-US" : "en-GB", { style: "currency", currency: c, maximumFractionDigits: n % 1 ? 2 : 0 }).format(n)).join(" + ")} a month, not counting time.`;
       el.hidden = false;
-    } catch (e) { UPD.costs = false; }
+    } catch (e) { box.tnCosts = false; }
+  }
+  /* About in place on every page but the HUD: the HUD's own About text, fetched once from the main page so there is one text,
+     opened over the page the reader is on instead of sending them back to the HUD (13 Nov) */
+  let ABOUT = null;
+  async function openAbout() {
+    if (!ABOUT) {
+      ABOUT = el("div", "tn-modal tn-about"); ABOUT.hidden = true;
+      ABOUT.innerHTML = `<div class="tn-sheet" role="dialog" aria-modal="true" aria-label="About this page"><button class="tn-close" type="button" aria-label="Close">✕</button><div class="tn-ab-body"><p class="small">Loading…</p></div></div>`;
+      const close = () => { ABOUT.hidden = true; try { if (location.hash === "#about") history.replaceState(null, "", location.pathname + location.search); } catch (e) {} };
+      ABOUT.querySelector(".tn-close").addEventListener("click", close);
+      ABOUT.addEventListener("click", ev => { if (ev.target === ABOUT) close(); });
+      document.addEventListener("keydown", ev => { if (ev.key === "Escape" && ABOUT && !ABOUT.hidden) close(); });
+      document.body.append(ABOUT);
+      const body = ABOUT.querySelector(".tn-ab-body"), base = new URL(ROOT, location.href);
+      try {
+        const doc = new DOMParser().parseFromString(await (await fetch(base.href)).text(), "text/html"), art = doc.querySelector("#mAbout article");
+        if (!art) throw new Error("no About");
+        art.querySelectorAll("[href]").forEach(a => { const h = a.getAttribute("href"); if (!/^[a-z][a-z0-9+.-]*:/i.test(h)) a.setAttribute("href", new URL(h, base).href); });
+        art.querySelectorAll("[id]").forEach(x => x.removeAttribute("id"));
+        art.querySelectorAll("[data-full]").forEach(x => { x.dataset.tnt = x.dataset.full; delete x.dataset.full; });
+        body.replaceChildren(document.importNode(art, true));
+        const code = body.querySelector(".addr code"), btn = body.querySelector(".addr button"), msg = body.querySelector(".donate ~ p[aria-live]");
+        if (code && btn) btn.addEventListener("click", async () => {
+          try { await navigator.clipboard.writeText(code.textContent); if (msg) msg.textContent = "Address copied."; }
+          catch (e) { const r = document.createRange(); r.selectNodeContents(code); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); if (msg) msg.textContent = "Copy blocked by the browser; the address is selected, press Ctrl/Cmd+C."; }
+        });
+      } catch (e) { body.innerHTML = `<p>Could not load the About text. <a href="${base.href}#about">Open it on the HUD ›</a></p>`; }
+    }
+    ABOUT.hidden = false;
+    loadUpdDonors(ABOUT);
+  }
+  /* every link to the HUD's About (menu, footer, gear, the "unofficial" chip, links in the pages) opens it here instead */
+  function aboutInPlace() {
+    if (aboutInPlace.on) return; aboutInPlace.on = true;
+    const hud = new URL(ROOT, location.href).pathname;
+    document.addEventListener("click", e => {
+      const a = e.target.closest && e.target.closest("a[href]");
+      if (!a || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || a.target === "_blank") return;
+      const u = new URL(a.href, location.href);
+      if (u.hash !== "#about" || u.origin !== location.origin || u.pathname.replace(/index\.html$/, "") !== hud) return;
+      e.preventDefault(); closeAll(); openAbout();
+    });
+    if (location.hash === "#about") setTimeout(openAbout, 50);
   }
 
   /* Share: this page's own link (without the view switches) and its own preview picture, to copy or to post; on phones the system's share sheet first */
@@ -762,6 +805,7 @@
     if (!isHud && !["rabbit", "nomemo"].includes(page)) document.documentElement.classList.add("tn-lift");
     if (QUIET.has(page)) document.documentElement.classList.add("tn-quiet");
     if (!isHud && location.hash === "#updates") setTimeout(() => openUpdates(page), 50);   // the deep link lands in the overlay, not on the HUD
+    if (!isHud) aboutInPlace();
     const tip = (e, txt) => { if (!txt) return; if (isHud) e.dataset.full = txt; else e.dataset.tnt = txt; };
     const slots = {}; nav.querySelectorAll("[data-slot]").forEach(e => { slots[e.dataset.slot] = e; });
     /* the level switch sits under the gear on every page; the HUD's own Simple/Technical buttons stay in the page, hidden, and follow it */
