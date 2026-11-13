@@ -1,4 +1,4 @@
-"""Post one picture by hand to the channels the alerts service writes to: Telegram (@tauHUDcom) and X (@TauHUDcom).
+"""Post one picture by hand to the channels the alerts service writes to: Telegram (@tauHUDchat) and X (@TauHUDcom).
 
   docker compose run --rm -v /opt/tau-command-hud:/repo:ro alerts python /repo/infra/alerts/post_image.py \
       /repo/assets/share/<file>.jpg /repo/assets/share/<file>.json [--x-image <file>.jpg] [--dry] [--only telegram|x]

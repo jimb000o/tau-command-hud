@@ -230,7 +230,6 @@ TauI18n.add({ strings: {
   "on X": "在 X 上",
   "Every rule change from proposal to law, with alerts on Telegram, X and RSS": "每一项规则变更从提案到成为法律的全过程，附 Telegram、X 和 RSS 提醒",
   "Telegram": "Telegram 频道",
-  "Telegram channel tauHUDcom": "Telegram 频道 tauHUDcom",
   "The chain core live: blocks, rules and agreement as they happen.": "实时链核心：区块、规则和共识，实时呈现。",
   "This page reads the real testnet through the community relay. Opens the HUD in Live mode.": "本页通过社区中继读取真实测试网。在实时模式下打开 HUD。",
   "Time": "时间",
