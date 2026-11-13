@@ -1836,6 +1836,44 @@ SITE_LINK_RE = re.compile(r"https://(?:www\.)?tauhud\.com(/[^\s\"'<>]*)?")
 
 KINDS_PATH = os.environ.get("TG_KINDS_PATH", os.path.join(os.path.dirname(os.environ.get("STATE_PATH", "/state/alerts.json")) or "/state",
                                                          "tg-kinds.json"))
+# Room between two posts on the same channel (13 November 2026: two blog articles went out on X twelve minutes apart):
+# every post to the channel or @TauHUDcom is noted in last-posts.json (shared by the alerts and blog services), and an
+# automatic post that is not urgent waits, or on X is left out, while the last one is younger than POST_GAP_MINUTES.
+# Chain news (rule changes, findings), the ships' timed announcements and posts by hand never wait. 0 = no gap.
+POST_GAP_MINUTES = float(os.environ.get("POST_GAP_MINUTES", 120) or 0)
+LAST_POSTS_PATH = os.environ.get("LAST_POSTS_PATH", os.path.join(os.path.dirname(STATE_PATH) or "/state", "last-posts.json"))
+
+
+def note_public_post(channel: str, now: float | None = None) -> None:
+    """A post went out on this channel ("telegram" or "x"): its time, for post_gap_left."""
+    try:
+        with open(LAST_POSTS_PATH) as f:
+            d = json.load(f)
+    except (OSError, ValueError):
+        d = {}
+    d[channel] = round(now if now is not None else time.time())
+    try:
+        write_atomic(LAST_POSTS_PATH, json.dumps(d))
+    except OSError as e:
+        log.warning("last post not noted: %s", e)
+
+
+def post_gap_left(channels=("telegram", "x"), now: float | None = None) -> float:
+    """Seconds until the last post on any of these channels is POST_GAP_MINUTES old (0: free to post)."""
+    if POST_GAP_MINUTES <= 0:
+        return 0.0
+    if isinstance(channels, str):
+        channels = (channels,)
+    try:
+        with open(LAST_POSTS_PATH) as f:
+            d = json.load(f)
+    except (OSError, ValueError):
+        return 0.0
+    now = now if now is not None else time.time()
+    last = max([float(d.get(c) or 0) for c in channels] or [0])
+    return max(0.0, last + POST_GAP_MINUTES * 60 - now)
+
+
 # Kinds that post less often by themselves when nobody opened their links for CLICKS_QUIET_DAYS (maybe_clicks); every
 # change is written to the log ("tuned: …") and told to the owner privately. Chain news and the evening post never tune.
 CLICKS_TUNABLE = ("deepdive", "digest")
@@ -2036,6 +2074,8 @@ class Telegram(Outlet):
     def call(self, method: str, body: bytes, ctype: str) -> tuple[bool, float | None, str]:
         res = self.call_raw(method, body, ctype)
         note_send(self.name, res[0], res[2])
+        if res[0] and method.startswith("send"):
+            note_public_post("telegram")
         return res[:3]
 
     def call_raw(self, method: str, body: bytes | None, ctype: str = "application/json") -> tuple[bool, float | None, str, dict]:
@@ -2162,6 +2202,8 @@ class X(Outlet):
         res = self.call_once(req, want_reply)
         if record:
             note_send(self.name, res[0], res[2])
+            if res[0] and req.full_url == self.URL and not self.prefix:   # a post on @TauHUDcom (not Agorzilla's, not an upload)
+                note_public_post("x")
         return res
 
     def call_once(self, req, want_reply=False):
@@ -2575,14 +2617,19 @@ class Watcher:
         st = self.state["x"]
         st["today"], st["this_month"] = st.get("today", 0) + 1, st.get("this_month", 0) + 1
 
-    async def post_x(self, text: str, what: str, now: float | None = None, picture: str | None = None, spare: bool = False) -> bool:
+    async def post_x(self, text: str, what: str, now: float | None = None, picture: str | None = None, spare: bool = False,
+                     urgent: bool = False) -> bool:
         """The X copy of a post that just went to Telegram. One try: X never holds Telegram up, and a post that failed is
-        not sent hours late; over the caps it is left out."""
+        not sent hours late; over the caps, or within POST_GAP_MINUTES of the last X post (unless urgent), it is left out."""
         o = self.x_on()
         if not o:
             return False
         if not self.x_room(now, spare):
             log.info("x: %s not posted (daily or monthly cap, or paused)", what)
+            return False
+        gap = 0 if urgent else post_gap_left("x")
+        if gap:
+            log.info("x: %s left out (the last X post is younger than %g minutes)", what, POST_GAP_MINUTES)
             return False
         if picture and hasattr(o, "send_with_picture"):
             ok, retry, err = await asyncio.to_thread(o.send_with_picture, text, picture)
@@ -2709,7 +2756,7 @@ class Watcher:
                 if st.get("x_day") != day:
                     st["x_day"], st["x_today"] = day, 0
                 if st["x_today"] < findings.X_DAILY:
-                    if await self.post_x(x_post(m["x"]), "finding " + m["what"], now):
+                    if await self.post_x(x_post(m["x"]), "finding " + m["what"], now, urgent=True):
                         st["x_today"] += 1
             if m.get("tg_done") or not tg:
                 if not tg:

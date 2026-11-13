@@ -144,6 +144,7 @@ services:
       X_DAILY_CAP: ${X_DAILY_CAP:-2}
       X_MONTHLY_CAP: ${X_MONTHLY_CAP:-240}
       X_LINKS: ${X_LINKS:-false}
+      POST_GAP_MINUTES: ${POST_GAP_MINUTES:-120}   # an X copy within this many minutes of the last post is left out (chain news never)
       SIM_POSTS: ${SIM_POSTS:-false}   # the simulation's switches and visitor rule changes as posts (off since 5 Nov 2026)
       X_SIM: ${X_SIM:-false}   # the simulation is not news for X (12 Nov 2026)
       # the crew's ship log (alerts/crewlog.py): a members-only post in the Tau HUD crew every Monday after the recap;
@@ -267,6 +268,8 @@ services:
       # the article's post on Telegram and X only up to this many hours after its call began; later it goes on the blog
       # without a post (0 = no limit; up blog publish <id> --post posts a late one by hand)
       BLOG_POST_MAX_HOURS: ${BLOG_POST_MAX_HOURS:-30}
+      # room between two posts on Telegram or X (minutes): the article, the pirates' clip and the hack post wait for it
+      POST_GAP_MINUTES: ${POST_GAP_MINUTES:-120}
       # the weekly report for IDNI (alerts/idni_report.py): counted from our public data, written as an unlisted page with
       # a pre-filled issue link for IDNI/tau-testnet and told to the owner's private chat (Sunday 18:00 German time);
       # never filed by itself. IDNI_REPORT=false stops it; up report shows it any time
