@@ -65,7 +65,7 @@ TauI18n.add({ strings: {
   "That day is already past, so this part stops nothing.": "那一天已经过去，所以这部分什么都拦不住。",
   "No co-signer named, so the Guardian is used: it co-signs with a code from your Authenticator app.": "没有指定共同签名人，所以使用 Guardian：它凭你的身份验证器应用里的验证码共同签名。",
   "Hours and weekdays need arithmetic on the block time. The wallet's blocks have no such block yet; a date is possible.": "钟点和星期需要对区块时间做运算。钱包的积木里还没有这一种；日期是可以的。",
-  "The testnet does not let a personal rule read the balance (i2), so no rule can keep a minimum.": "测试网不允许个人规则读取余额（i2），所以没有规则能保住最低余额。",
+  "This builder does not write balance rules yet. The testnet allows them since November 2026 (a rule may read the balance, i2): write one in the Playground.": "这个搭建器还不会写余额规则。测试网自 2026 年 11 月起允许这样的规则（规则可以读取余额 i2）：可以在 Playground 里写一条。",
   "The wallet has no block for a list of forbidden addresses: a thief makes a new address in a second. “Only to …” keeps out every address you did not name.": "钱包没有“禁止地址名单”这种积木：小偷一秒钟就能生成一个新地址。“只能付给……”会挡住所有你没有点名的地址。",
   "A rule sees one payment at a time, so it cannot add up a {x}. Say the limit for one payment, for example “above 1,000 the Guardian co-signs”.": "规则一次只看到一笔付款，所以无法把一{x}的付款加起来。请说出单笔付款的界限，例如“超过1000需要守护者共同签名”。",
   "A rule sees one payment at a time (the testnet lets a personal rule read only [t]), so it cannot add up a {x}. Use a limit per payment instead, for example “at most 500 per payment”.": "规则一次只看到一笔付款（测试网只允许个人规则读取 [t]），所以无法把一{x}的付款加起来。请改用单笔付款上限，例如“每笔最多500”。",

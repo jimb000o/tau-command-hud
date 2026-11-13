@@ -6,12 +6,15 @@ them, using tau-testnet's own code from the node image rather than a copy:
 
   1. consensus.rule_offers.normalize_offer_rule_text   shape screen
   2. consensus.admission._screen_clause_domains        stream / time / width screens
-  3. consensus.rule_offers.compose_stream_rule         the guarded composite the node stores
-  4. tau_speculation.SpeculationSession                the isolated, killable engine worker
-                                                       admission itself uses: build the
-                                                       baseline, revise with the composite,
-                                                       then step each sample transfer and
-                                                       read o5.
+  3. the engine, the way the node of the running commit asks it:
+     - since IDNI main 5ad1bb7 (per-account clauses): tau_policy.PolicyEvaluator, the
+       policy worker admission and apply use. The body is built on its own
+       (`always ( body ).`, refused when it does not build or reads no input), then
+       each sample transfer OF THE SENDER is stepped and o5 read. A transfer by
+       anyone else is not judged by this clause at all.
+     - before that: consensus.rule_offers.compose_stream_rule (the guarded composite
+       the node stored) in tau_speculation.SpeculationSession: build the baseline,
+       revise with the composite, then step each sample transfer and read o5.
 
 Nothing here touches the chain or the node. Every request gets a fresh worker
 process that is thrown away afterwards. Limits: one engine run at a time, a short
@@ -37,10 +40,21 @@ sys.path.insert(0, TESTNET_DIR)
 
 from consensus import admission  # noqa: E402
 from consensus.rule_offers import (  # noqa: E402
-    MAX_OFFER_RULE_BYTES, RuleOfferShapeError, compose_stream_rule, normalize_offer_rule_text,
+    MAX_OFFER_RULE_BYTES, RuleOfferShapeError, normalize_offer_rule_text,
 )
 import tau_native  # noqa: E402
 import tau_speculation  # noqa: E402
+try:   # gone in IDNI main 5ad1bb7: every account's o5 rule is its own clause, judged on its own
+    from consensus.rule_offers import compose_stream_rule  # noqa: E402
+except ImportError:
+    compose_stream_rule = None
+PER_ACCOUNT = compose_stream_rule is None
+if PER_ACCOUNT:
+    import tau_policy  # noqa: E402
+    from consensus.sender_policy import clause_inputs  # noqa: E402
+# The balance a test transfer's sender has (i2, which a per-account clause may read): a fresh testnet account's faucet
+# balance unless the test gives one.
+TEST_BALANCE = 100_000
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import intel  # noqa: E402  No Memo's intel contracts: a hidden rule judged by the same engine (POST /tau/intel)
@@ -178,6 +192,11 @@ def _validate_request(data):
         if not all(x == "" or HEX96.match(x) for x in signed):
             raise ValueError("signed holds 96 lowercase hex digits or empty strings")
         row = {"amount": amount, "time": time_, "from": frm, "to": to}
+        if t.get("balance") is not None:
+            balance = int(t["balance"])
+            if not 0 <= balance <= MAX_BV24:
+                raise ValueError("test balance out of range")
+            row["balance"] = balance
         if any(signed):
             row["signed"] = signed
         clean.append(row)
@@ -196,9 +215,10 @@ def check(rule: str, sender: str, tests: list, engine_ok: bool = True) -> dict:
     domain_error = admission._screen_clause_domains(body)
     if domain_error:
         return {"accepted": False, "stage": "streams", "reason": domain_error}
-    composite = compose_stream_rule(stream, {sender: body})
+    # what the node keeps: the clause on its own, or (before 5ad1bb7) the composite behind the sender guard
+    composite = tau_policy.clause_spec(body) if PER_ACCOUNT else compose_stream_rule(stream, {sender: body})
 
-    key = hashlib.sha256(json.dumps([composite, tests], sort_keys=True).encode()).hexdigest()
+    key = hashlib.sha256(json.dumps([composite, sender if PER_ACCOUNT else "", tests], sort_keys=True).encode()).hexdigest()
     with _cache_lock:
         if key in _cache:
             _cache.move_to_end(key)
@@ -210,6 +230,8 @@ def check(rule: str, sender: str, tests: list, engine_ok: bool = True) -> dict:
     deadline = started + BUDGET
     left = lambda: max(0.5, deadline - time.monotonic())  # noqa: E731
     result = {"composite": composite, "engine": ENGINE_LABEL}
+    if PER_ACCOUNT:
+        return _check_clause(body, sender, tests, result, started, left, key)
     session = tau_speculation.SpeculationSession(cwd=TESTNET_DIR)
     try:
         session.init(SEED_SPEC, timeout=left())
@@ -262,6 +284,67 @@ def check(rule: str, sender: str, tests: list, engine_ok: bool = True) -> dict:
         while len(_cache) > 256:
             _cache.popitem(last=False)
     return result
+
+
+def _check_clause(body: str, sender: str, tests: list, result: dict, started: float, left, key: str) -> dict:
+    """The engine part for per-account clauses (IDNI main 5ad1bb7 on), as consensus/sender_policy.py asks it: does the
+    clause build and step once on its own, then o5 for each of the sender's own test transfers. A clause the engine
+    cannot step on a transfer's inputs blocks it, as on the node."""
+    evaluator = tau_policy.PolicyEvaluator(pool="checker", cwd=TESTNET_DIR)
+    try:
+        built = evaluator.validate(body, timeout=left())
+        if not built.ok:
+            reason = _first_error({"diagnostics": built.error}) or built.error.strip()[:400]
+            result.update(accepted=False, stage="engine",
+                          reason=reason or "the rule does not build on the Tau engine, so the node would refuse it")
+        else:
+            result["accepted"] = True
+            runs = []
+            slots = bool(READS_SLOTS.search(body))
+            for t in tests:
+                if t["from"] != sender:   # someone else's transfer: this clause is never asked
+                    runs.append({"ok": True, "o5": 1, "o1": None, "other": True})
+                    continue
+                inputs = {"i1": str(t["amount"]), "i2": str(t.get("balance", TEST_BALANCE)), "i3": "#x" + t["from"],
+                          "i4": "#x" + t["to"], "i5": str(t["time"])}
+                if slots:
+                    signed = t.get("signed") or []
+                    for k in range(SLOT_COUNT):
+                        who = signed[k] if k < len(signed) else ""
+                        inputs[f"i{SLOT_BASE + k}"] = "#x" + who if who else "0"
+                try:
+                    v = evaluator.verdict(body, clause_inputs(inputs), timeout=left())
+                    runs.append({"ok": True, "o5": tau_policy.parse_o5(v.o5) if v.o5 is not None else 1, "o1": None})
+                except (tau_policy.PolicyBuildError, tau_policy.PolicyStepError):
+                    runs.append({"ok": True, "o5": 0, "o1": None, "refused_step": True})   # the node blocks it
+            result["tests"] = runs
+        evaluator.close()
+    except tau_speculation.WorkerTimeout:
+        _drop(evaluator)
+        result.update(accepted=False, stage="engine", timeout=True,
+                      reason=f"the engine needed more than {BUDGET:g} seconds, so the check was stopped")
+    except (tau_speculation.SpeculationError, tau_speculation.WorkerLost) as exc:
+        _drop(evaluator)
+        log.warning("engine unavailable: %s", exc)
+        return {"accepted": None, "stage": "engine", "unavailable": True, "reason": "the engine stopped unexpectedly"}
+    result["ms"] = int((time.monotonic() - started) * 1000)
+    with _cache_lock:
+        _cache[key] = result
+        while len(_cache) > 256:
+            _cache.popitem(last=False)
+    return result
+
+
+def _drop(evaluator) -> None:
+    """Throw a stuck or lost policy worker away without waiting on it."""
+    w = getattr(evaluator, "_worker", None)
+    evaluator._worker = None
+    evaluator._closed = True
+    if w is not None:
+        try:
+            w.kill()
+        except Exception:
+            pass
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -493,5 +576,6 @@ def _prove_signed() -> None:
 
 if __name__ == "__main__":
     threading.Thread(target=_prove_signed, daemon=True).start()
-    log.info("baseline: genesis + %d builtin rules, listening on :%d", len(BUILTIN_RULES), PORT)
+    log.info("%s, listening on :%d", "per-account clauses (policy worker)" if PER_ACCOUNT
+             else f"baseline: genesis + {len(BUILTIN_RULES)} builtin rules", PORT)
     ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()

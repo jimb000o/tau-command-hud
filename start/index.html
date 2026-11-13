@@ -208,7 +208,7 @@ html.fit .step { overflow: hidden; }
       <p>For example: no payment above 1,000 test AGRS. From then on <b>every node checks your payments against it</b>, not an app.</p>
       <div class="vis" aria-hidden="true"><div class="rulebox"><div><span class="k">if</span> a payment &gt; 1,000</div><div>&nbsp;&nbsp;<span class="k">then</span> <span class="v">every node says no</span></div><div><span class="k">else</span> <span class="v">it goes through</span></div></div></div>
       <div class="acts"><a class="b go" id="go2" href="/wallet/?from=start#rules-mine">Write my rule</a><a class="b" href="/builder/">Say it in plain words</a></div>
-      <p class="mini" id="places" data-tip="Rule places\nThe testnet holds personal rules for 2 accounts at a time.\nWhen both are taken, the wallet puts you in a fair line, or you try it on the simulation."></p>
+      <p class="mini" id="places" data-tip="A rule for every account\nEvery account on the testnet may hold its own personal rule.\nNobody waits for a place."></p>
       <div class="say" id="say2"><span>Waiting for step 1.</span></div>
     </li>
     <li class="step" id="s3">
@@ -235,7 +235,7 @@ html.fit .step { overflow: hidden; }
     <ul class="facts">
       <li><span><b>Your key stays here.</b> It lives in this browser; back it up in the wallet if you want to keep the account.</span></li>
       <li><span><b>Nothing is sold.</b> Test AGRS have no value and are only for trying things out.</span></li>
-      <li><span><b>Two rule places.</b> The testnet holds personal rules for 2 accounts at a time; the line is fair, and the simulation is always open.</span></li>
+      <li><span><b>A rule for every account.</b> Every account on the testnet may hold its own personal rule, checked only on its own payments.</span></li>
       <li><span><b>Unofficial.</b> Built by Tau community members, not by IDNI or the Tau team.</span></li>
     </ul>
   </section>
@@ -334,8 +334,7 @@ async function follow() {
 }
 async function loadPlaces() {
   if (SIM) return;
-  try { const j = await (await fetch(RELAY + "/rules", { cache: "no-store" })).json(); if (j && j.places) S.places = j; } catch (e) {}
-  if (S.pk) try { const j = await (await fetch(`${RELAY}/lease?pk=${S.pk}`, { cache: "no-store" })).json(); if (j && j.places) S.lease = j; } catch (e) {}
+  try { const j = await (await fetch(RELAY + "/rules", { cache: "no-store" })).json(); if (j && Array.isArray(j.holders)) S.places = j; } catch (e) {}
   render();
 }
 
@@ -368,17 +367,16 @@ function render() {
   if (S.pk) say(1, el("b", { class: "ok", text: T("Your wallet is ready.") }), el("span", null, T("Address") + " ", el("a", { href: "/account/?a=" + S.pk, translate: "no", text: short(S.pk) })));
   else say(1, T("No wallet in this browser yet."), T("In the wallet press “Make my account”."));
 
-  /* 2: the rule, and the testnet's two rule places */
+  /* 2: the rule, and how many accounts hold one (every account may) */
   $("go2").href = "/wallet/?from=start" + sim + lang + "#rules-mine";
   $("go2").setAttribute("aria-disabled", S.pk ? "false" : "true");
   const P = S.places;
   if (P && !SIM) {
-    const holders = P.holders || [], taken = Math.min(P.places, P.taken != null ? P.taken : holders.length);
-    $("places").replaceChildren(T("Rule places on the testnet:"), el("span", { class: "places", "aria-hidden": "true" }, ...Array.from({ length: P.places }, (_, i) => el("i", { class: i < taken ? (holders[i] === S.pk ? "mine" : "taken") : "" }))),
-      el("b", { text: taken >= P.places ? T("both taken") : F("{n} free", { n: P.places - taken }) }), " · ", T(taken >= P.places ? "join the fair line, or try it on the simulation" : "take one now"));
-  } else if (SIM) $("places").textContent = T("Simulation: a rule place is always free here.");
+    const holders = P.holders || [], n = P.taken != null ? P.taken : holders.length, mine = !!S.pk && holders.includes(S.pk);
+    $("places").replaceChildren(el("span", { class: "places", "aria-hidden": "true" }, el("i", { class: mine ? "mine" : "taken" })),
+      el("b", { text: F(n === 1 ? "1 account has a rule now" : "{n} accounts have a rule now", { n }) }), " · ", T(mine ? "yours is one of them" : "every account may have one"));
+  } else if (SIM) $("places").textContent = T("Simulation: every account may have a rule here, as on the testnet.");
   if (r) say(2, el("b", { class: "ok", text: T(r.sim ? "Rule sent on the simulation." : "Rule sent to the testnet.") }), el("span", { text: r.label || "" }));
-  else if (S.lease && S.lease.position) say(2, el("b", { class: "wait", text: F("You are number {n} in line for a rule place.", { n: S.lease.position }) }), T("The wallet tells you when it is yours. Meanwhile try it on the simulation."));
   else say(2, T(S.pk ? "Pick a rule in the wallet and sign it." : "Waiting for step 1."));
 
   /* 3: sealed */

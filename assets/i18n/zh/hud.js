@@ -1,6 +1,7 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
   "Live node: a click on it while you already watch the live chain now opens Status, the page with the testnet health score its hover shows, on the HUD and on every other page. From the simulation the same button still switches to the live chain.": "实时节点：当你已经在看实时链时，点击它现在会打开状态页，也就是它悬停提示中那个测试网健康分的详细页面，在 HUD 和其他每个页面上都是如此。在模拟模式下，这个按钮仍然切换到实时链。",
+  "Personal rules for every wallet: IDNI lifted the testnet's limit of two accounts with a rule, so the wallet, the Guardian and Start here drop the two rule places and the waiting line. Freeze now reads the amount, because a rule that only says “block” is refused; the wallet checks the node's new limits before you sign, and the Playground checks the new rule shape and lets a rule read your balance.": "人人都能有个人规则：IDNI 取消了测试网“最多 2 个账户有规则”的限制，所以钱包、守护者和“从这里开始”不再显示两个规则名额和排队。“冻结”现在会读取金额，因为只写“拦下”的规则会被拒绝；钱包会在你签名前检查节点的新限制，Playground 会检查新的规则写法，并允许规则读取你的余额。",
   "Menu: an entry that holds several pages now names them all inside the menu, one click each. Read shows The Daily Consensus, Blog and Chronicle; Explorer shows Accounts and Time travel; Testnet health shows Stats, Testnet load and Status; Road to mainnet shows Findings, Build pulse and GxP; the same for Proposals, Wallet, Wallet rules and Practise voting. Before, these pages only appeared as tabs after you had opened the first one.": "菜单：包含多个页面的菜单项，现在会在菜单里直接列出全部页面，每个只需点一下。“阅读”列出《共识日报》、博客和编年史；“浏览器”列出账户和时间旅行；“测试网健康”列出统计、测试网负载和状态；“通往主网之路”列出发现、开发脉搏和 GxP；提案、钱包、钱包规则和练习投票也一样。以前，这些页面只有在打开第一个页面后才会以标签形式出现。",
   "Support: the membership now lists the ship log as a benefit of both levels, one members-only post every Monday that the server writes from the chain and the site's own log.": "支持：会员说明现在把航海日志列为两个等级的福利，每周一一篇仅限会员的帖子，由服务器根据链上数据和网站自己的日志写成。",
   "Support: the crew page is now “Support Tau HUD”. It explains what support pays for and shows two separate options: the monthly membership with both prices including VAT, what each level gives, how renewal and cancelling work and who sells it, and a one-off crypto contribution without benefits. It also says plainly that the shop has no products yet, so the member discount cannot be used. Larger text on this page.": "支持：船员页面现在叫“支持 Tau HUD”。它说明支持用来支付什么，并列出两个分开的方式：按月会员（两个含增值税的价格、每个等级的权益、续期和取消方式以及卖方），以及没有权益的一次性加密货币捐助。页面还直接说明商店目前还没有商品，所以会员折扣暂时无法使用。本页文字更大。",
@@ -2362,7 +2363,7 @@ TauI18n.add({ strings: {
   "Each rule binds only the wallet that set it, never anyone else.": "每条规则只约束设定它的钱包，从不约束其他人。",
   "Rule ring: senders with their own o5 clause, {n} now.": "规则环：有自己 o5 条款的发送方，目前 {n} 个。",
   "Rule ring: senders with their own o5 clause, none now.": "规则环：有自己 o5 条款的发送方，目前没有。",
-  "Each clause binds only its own sender; the testnet has 2 places.": "每个条款只约束它自己的发送方；测试网有 2 个位置。",
+  "Each clause binds only its own sender; every account may hold one.": "每个条款只约束它自己的发送方；每个账户都可以有一条。",
   "Normal: in force since block #{n}.": "正常：自区块 #{n} 起生效。",
   "Normal: in force.": "正常：生效中。",
   "Own rule of wallet {h}: {x}.": "钱包 {h} 自己的规则：{x}。",

@@ -54,8 +54,17 @@ try:
 except ValueError:
     check("bad co-signer refused", True)
 
-r = checker.check(LIMIT.replace("i1[t]", "i2[t]"), YOU, [])
-check("balance read refused before the engine", r["accepted"] is False and r["stage"] == "streams", r)
+if checker.PER_ACCOUNT:   # IDNI main 5ad1bb7 on: a clause may read the balance, and a constant clause is refused
+    FLOOR = LIMIT.replace("i1[t]:bv[24] > { 1000 }", "i2[t]:bv[24] < { 100 }")
+    r = checker.check(FLOOR, YOU, [dict(tx(10, YOU, BOB), balance=50), dict(tx(10, YOU, BOB), balance=500)])
+    check("balance floor accepted", r["accepted"] is True and [t["o5"] for t in r.get("tests", [])] == [0, 1], r)
+    r = checker.check("always ( (o5[t]:bv[24] = { #x000000 }:bv[24]) ).", YOU, [])
+    check("constant clause refused by the engine", r["accepted"] is False and r["stage"] == "engine", r)
+    r = checker.check(LIMIT.replace("i1[t]", "i13[t]"), YOU, [])
+    check("reserved input refused before the engine", r["accepted"] is False and r["stage"] == "streams", r)
+else:
+    r = checker.check(LIMIT.replace("i1[t]", "i2[t]"), YOU, [])
+    check("balance read refused before the engine", r["accepted"] is False and r["stage"] == "streams", r)
 
 r = checker.check(LIMIT.replace("i1[t]", "i1[t-1]"), YOU, [])
 check("lookback refused", r["accepted"] is False and "[t] only" in r["reason"], r)
@@ -63,14 +72,15 @@ check("lookback refused", r["accepted"] is False and "[t] only" in r["reason"], 
 r = checker.check("always ( (o5[t]:bv[24] = { #x000000 }:bv[24]) && (o5[t]:bv[24] = { #x000001 }:bv[24]) ).", YOU, [])
 check("contradiction refused by the engine", r["accepted"] is False and r["stage"] == "engine", r)
 
-r = checker.check(LIMIT.replace("i1[t]:bv[24] >", "i4[t]:bv[16] >").replace("{ 1000 }:bv[24]", "{ 1000 }:bv[16]"), YOU, [])
-check("width clash refused by the engine", r["accepted"] is False and "i4" in r.get("reason", ""), r)
+if not checker.PER_ACCOUNT:   # a clause is built on its own now, beside no network rule to clash with
+    r = checker.check(LIMIT.replace("i1[t]:bv[24] >", "i4[t]:bv[16] >").replace("{ 1000 }:bv[24]", "{ 1000 }:bv[16]"), YOU, [])
+    check("width clash refused by the engine", r["accepted"] is False and "i4" in r.get("reason", ""), r)
 
 r = checker.check(LIMIT, YOU, [tx(500, YOU, BOB), tx(5000, YOU, CAROL), tx(5000, BOB, CAROL)], engine_ok=False)
 check("cached answer still served when the engine is off limits", r.get("cached") is True and r["accepted"] is True, r)
 r = checker.check(LIMIT.replace("1000", "1001"), YOU, [], engine_ok=False)
 check("fresh rule waits when the engine is off limits", r.get("limited") is True, r)
-r = checker.check(LIMIT.replace("i1[t]", "i2[t]"), YOU, [], engine_ok=False)
+r = checker.check(LIMIT.replace("i1[t]", "i13[t]"), YOU, [], engine_ok=False)
 check("text refusal still served when the engine is off limits", r["stage"] == "streams", r)
 
 ip = "203.0.113.9"

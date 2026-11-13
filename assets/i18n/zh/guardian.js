@@ -146,4 +146,9 @@ TauI18n.add({ strings: {
   "Removed (demo).": "已移除（演示）。",
   "Today by itself: 1 payment, {a} of {b} test AGRS.": "今天自动通过：1 笔，{a} / {b} 测试 AGRS。",
   "2 things it does, 4 limits": "它做的 2 件事，4 条限制",
+  "Every account on Tau Testnet Alpha may hold its own personal rule, so the Guardian can guard any number of accounts at once.": "Tau Testnet Alpha 上的每个账户都可以有自己的个人规则，所以守护者可以同时守护任意多个账户。",
+  "1 account has a personal rule on the testnet; every account may have one": "测试网上有 1 个账户有个人规则；每个账户都可以有一条",
+  "{n} accounts have a personal rule on the testnet; every account may have one": "测试网上有 {n} 个账户有个人规则；每个账户都可以有一条",
+  "Sent. Once a block holds it, your rule is gone.": "已发送。一旦区块收录它，你的规则就被移除了。",
+  "3 things it does, 3 limits": "它做的 3 件事，3 条限制",
 } });

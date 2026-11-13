@@ -126,4 +126,12 @@ TauI18n.add({ strings: {
   "Meal sent.": "ごはんを送りました。",
   "The simulation makes a block every eight seconds; this card turns green by itself.": "シミュレーションは 8 秒ごとにブロックを作ります。このカードは自動で緑になります。",
   "Say it in plain words": "普通の言葉で書く",
+  "A rule for every account\nEvery account on the testnet may hold its own personal rule.\nNobody waits for a place.": "すべてのアカウントにルールを\nテストネットではどのアカウントも自分の個人ルールを持てます。\n枠を待つ必要はありません。",
+  "A rule for every account.": "すべてのアカウントにルールを。",
+  "Every account on the testnet may hold its own personal rule, checked only on its own payments.": "テストネットではどのアカウントも自分の個人ルールを持てます。チェックされるのはそのアカウント自身の支払いだけです。",
+  "1 account has a rule now": "いまルールを持つアカウントは 1 つ",
+  "{n} accounts have a rule now": "いまルールを持つアカウントは {n} 個",
+  "yours is one of them": "あなたのもその 1 つ",
+  "every account may have one": "どのアカウントも 1 つ持てます",
+  "Simulation: every account may have a rule here, as on the testnet.": "シミュレーション：テストネットと同じく、ここではどのアカウントもルールを持てます。",
 } });
