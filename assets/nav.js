@@ -127,6 +127,7 @@
     simBadge: "Everything on this page is simulated: invented but protocol-true activity, generated in your browser. Nothing here happened on the real testnet. Opens the full notice.",
     unoff: "Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Opens the full notice.",
     mode: "Live: this page reads the real testnet through the community relay at node.tauhud.com.",
+    crew: "The Tau HUD crew: people who support the site every month. Read from our shop every 15 minutes, as a number only, no names.\nThe light is red while there is none, turns greener with each member and is full green when the crew covers the site's monthly bills. Click to see what the site costs and how to support it monthly, cancel any time.",
     online: "People looking at Tau HUD right now, counted by the community relay; no cookies, no analytics, nobody is identified. “—” means the relay has not answered yet.",
     net: "Network id " + "tau-testnet-v2" + ": the chain every page shows, read from the community node.",
     height: "Newest block the community node has verified.",
@@ -569,6 +570,7 @@
     chips.append(
       chip("div", "tnMode", "v", SIM ? '<span class="dot sim"></span><b>Simulation</b>' : '<span class="dot none"></span><b>Live · Connecting</b>', SIM ? TIPS.simMode : TIPS.mode),
       chip("div", "tnOnline", "", '<span class="dot none"></span><b class="n">—</b>online', TIPS.online),
+      chip("a", "tnCrew", "", '<span class="dot none"></span><b class="n">—</b>crew', TIPS.crew),
       chip("a", "tnCons", "v", '<b><span class="lg">—</span><span class="sh">—</span></b>', TIPS.cons),
       chip("div", "tnNet", "v", `<b>${NET}</b>`, TIPS.net),
       chip("div", "tnHeight", "v", "<b>—</b>", TIPS.height),
@@ -577,6 +579,7 @@
     chips.querySelectorAll(".chip.v > b").forEach(b => { b.style.marginLeft = "0"; });   // value-only chips: the name lives in the hover text
     if (SIM) chips.querySelectorAll(".chip.v:not(#tnMode)").forEach(c => c.append(el("s", "st", "sim")));   // every simulated value says so, also on a screenshot
     chips.querySelector("#tnRev").href = chips.querySelector("#tnCons").href = ROOT + "#chain-state";
+    { const cw = chips.querySelector("#tnCrew"); cw.hidden = true; cw.href = ROOT + "crew/?ref=hud" + (lang ? "&lang=" + encodeURIComponent(lang) : ""); crewLight(cw, "data-tnt"); }
     if (!SIM) {   // coming up on the live chain: an agreed rule change that is not yet in force, counted down from the relay's proposals file
       const nx = el("a", "chip next", "<b></b>"); nx.id = "tnNext"; nx.hidden = true; nx.href = ROOT + "proposals/" + (lang ? "?lang=" + encodeURIComponent(lang) : ""); chips.append(nx);
     }
@@ -1115,6 +1118,42 @@
       return { month: money(month), got: money(got) };
     })().catch(() => null));
   }
+  /* the crew against the monthly bills, for the HUD's crew light: n active memberships, part = the share of the monthly
+     bills (assets/costs.json) that their monthly share covers, more = how many more memberships of the smallest tier
+     would cover the rest. Follows the bills, the tiers and the fees by itself; null while the server has no count. */
+  async function crewFacts() {
+    const j = async (u, o) => { const r = await fetch(u, o); if (!r.ok) throw 0; return r.json(); };
+    const e = await j("https://node.tauhud.com/earnings.json", { cache: "no-store" }).catch(() => null);
+    if (!e || !Number.isInteger(e.members) || e.members < 0) return null;
+    const out = { n: e.members, part: null, more: null };
+    try {
+      const [c, d] = await Promise.all([j(ROOT + "assets/costs.json", { cache: "no-cache" }), j(DONATE.donors, { cache: "no-store" })]);
+      const fx = (d.items || []).find(x => x.fiat && ["eur", "usd"].every(k => x.fiat[k] > 0)), ok = x => x && typeof x.amount === "number" && ["EUR", "USD"].includes(x.cur);
+      const eur = x => (x.cur === "EUR" ? x.amount : x.amount * fx.fiat.eur / fx.fiat.usd);
+      const month = (c.items || []).filter(ok).reduce((a, x) => a + eur(x), 0), crew = e.crew || {};
+      if (!fx || !(month > 0) || !e.crew) return out;
+      const got = (crew.month || []).filter(ok).reduce((a, x) => a + eur(x), 0);
+      out.part = Math.max(0, Math.min(1, got / month));
+      if (ok(crew.one) && crew.one.amount > 0) out.more = Math.max(0, Math.ceil((month - got) / eur(crew.one) - 1e-9));
+    } catch (x) {}
+    return out;
+  }
+  /* paints a crew chip (an <a> with a .dot and a <b>) and keeps it fresh: red at nothing covered, full green when the
+     crew covers the monthly bills; in between the hue follows the square root of the part covered, so the first members
+     show. attr = the chip's hover attribute (data-full on the HUD, data-tnt on the other pages). Hidden until the server has a count. */
+  function crewLight(c, attr) {
+    const tr = x => (window.TauI18n ? TauI18n.t(x) : x), d = c.querySelector(".dot"), b = c.querySelector("b");
+    const read = () => crewFacts().then(f => {
+      if (!f) return;
+      const part = f.part == null ? (f.n > 0 ? .05 : 0) : f.n > 0 ? Math.max(f.part, .003) : 0, col = `hsl(${Math.round(Math.sqrt(part) * 145)} 100% ${part >= 1 ? 61 : 58}%)`;
+      b.textContent = String(f.n); d.className = "dot" + (part > 0 ? "" : " off"); d.style.background = col; d.style.boxShadow = "0 0 8px " + col; b.style.color = col;
+      let now = "";
+      if (f.part != null) now = tr(f.part > 0 && f.part < .01 ? `Right now: ${f.n} in the crew, covering less than 1 % of the monthly bills.` : `Right now: ${f.n} in the crew, covering ${Math.floor(f.part * 100)} % of the monthly bills.`)
+        + (f.more > 0 ? " " + tr(`About ${f.more} more at the smallest level would cover them.`) : f.more === 0 ? " " + tr("The bills are covered.") : "");
+      c.setAttribute(attr, tr(TIPS.crew) + (now ? "\n" + now : "")); c.hidden = false;
+    }).catch(() => {});
+    read(); setInterval(read, 15 * 60000);
+  }
   function support(ref, shop) {
     const tr = x => (window.TauI18n ? TauI18n.t(x) : x), p = el("p", "tn-support");
     const a = document.createElement("a");
@@ -1126,5 +1165,5 @@
     supportFacts().then(f => { if (f) say(tr("Tau HUD costs about 904170a a month to run. This month 904170b came in.").replace("904170a", f.month).replace("904170b", f.got), tr("Support Tau HUD ›")); });
     return p;
   }
-  window.TauNav = { support, LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM, tabs: retab, level: () => LEVEL, setLevel };
+  window.TauNav = { support, crewFacts, crewLight, LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM, tabs: retab, level: () => LEVEL, setLevel };
 })();

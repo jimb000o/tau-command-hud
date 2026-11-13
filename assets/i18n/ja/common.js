@@ -786,4 +786,10 @@ TauI18n.add({ strings: {
   "You just wrote a rule with always. A rule of the same kind is knitted into our Christmas sweater: always o1[t] = i1[t].": "いま always を使ったルールを書きました。同じ種類のルールが、私たちのクリスマスセーターに編み込まれています：always o1[t] = i1[t]。",
   "Two ways, both optional. No crypto wallet?": "方法は 2 つ、どちらも任意です。暗号資産のウォレットがない方は：",
   "Or a donation:": "または寄付：",
+  "The Tau HUD crew: people who support the site every month. Read from our shop every 15 minutes, as a number only, no names.\nThe light is red while there is none, turns greener with each member and is full green when the crew covers the site's monthly bills. Click to see what the site costs and how to support it monthly, cancel any time.": "Tau HUD クルー：毎月サイトを支えている人たちです。15 分ごとにショップから読み取り、数字だけで名前は出ません。\n0 人のあいだランプは赤で、1 人増えるごとに緑に近づき、クルーがサイトの毎月の請求をまかなえたとき完全な緑になります。クリックすると、サイトの費用と、いつでも解約できる毎月のサポート方法が見られます。",
+  "crew": "クルー",
+  "Right now: {n} in the crew, covering {p} % of the monthly bills.": "現在：クルー {n} 人、毎月の請求の {p} % をまかなっています。",
+  "Right now: {n} in the crew, covering less than 1 % of the monthly bills.": "現在：クルー {n} 人、毎月の請求の 1 % 未満をまかなっています。",
+  "About {m} more at the smallest level would cover them.": "最小レベルであと約 {m} 人いれば、すべてまかなえます。",
+  "The bills are covered.": "請求はすべてまかなわれています。",
 } });

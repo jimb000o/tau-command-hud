@@ -791,4 +791,10 @@ TauI18n.add({ strings: {
   "You just wrote a rule with always. A rule of the same kind is knitted into our Christmas sweater: always o1[t] = i1[t].": "你刚刚用 always 写了一条规则。我们的圣诞毛衣上织着一条同类的规则：always o1[t] = i1[t]。",
   "Two ways, both optional. No crypto wallet?": "两种方式，都出于自愿。没有加密钱包？",
   "Or a donation:": "或者捐赠：",
+  "The Tau HUD crew: people who support the site every month. Read from our shop every 15 minutes, as a number only, no names.\nThe light is red while there is none, turns greener with each member and is full green when the crew covers the site's monthly bills. Click to see what the site costs and how to support it monthly, cancel any time.": "Tau HUD 船员：每月支持本站的人。每 15 分钟从我们的商店读取一次，只有数字，没有名字。\n没有人时灯是红色，每多一位就更绿一些，船员付清本站每月账单时全绿。点击查看本站的开销，以及如何按月支持，可随时取消。",
+  "crew": "船员",
+  "Right now: {n} in the crew, covering {p} % of the monthly bills.": "目前：船员 {n} 人，承担每月账单的 {p} %。",
+  "Right now: {n} in the crew, covering less than 1 % of the monthly bills.": "目前：船员 {n} 人，承担每月账单不到 1 %。",
+  "About {m} more at the smallest level would cover them.": "大约再有 {m} 位最低档成员就能付清。",
+  "The bills are covered.": "账单已付清。",
 } });
