@@ -143,18 +143,24 @@
       const p = PARTS[part.dataset.heart], h = part.querySelector("h2, h3"); if (!p || !h || h.querySelector("button.heart")) return;
       const b = document.createElement("button"); b.type = "button"; b.className = "heart"; b.dataset.id = String(p[0]);
       b.setAttribute("aria-label", T("Heart for this part"));
-      b.innerHTML = '<span class="hh" aria-hidden="true">♥</span><span class="hn"></span>';
-      b.onclick = e => { e.stopPropagation(); toggle(b); };
-      const info = h.querySelector("button.info"); if (info) h.insertBefore(b, info); else h.append(b);
+      b.innerHTML = '<span class="hn"></span><span class="hh" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M8 13.4C3.4 10.3 1.8 7.9 1.8 5.8 1.8 3.9 3.2 2.6 4.9 2.6c1.3 0 2.4.7 3.1 1.8.7-1.1 1.8-1.8 3.1-1.8 1.7 0 3.1 1.3 3.1 3.2 0 2.1-1.6 4.5-6.2 7.6z"/></svg></span>';
+      b.onclick = e => { e.stopPropagation(); const o = document.getElementById("ovl"); if (o) o.hidden = true; toggle(b); };   // the hover tip never sits on the note
+      // the heart and the (i) are one pair at the right end of the heading: same circle, same size, side by side
+      const info = h.querySelector("button.info");
+      if (info) { const g = document.createElement("span"); g.className = "hgrp"; h.insertBefore(g, info); g.append(b, info); } else h.append(b);
     });
     paint();
   }
   /* the CSS travels with the script, so any page gets the same heart */
   const css = document.createElement("style");
-  css.textContent = `button.heart{display:inline-flex;align-items:center;gap:4px;flex:none;margin-left:6px;padding:0 6px;min-height:22px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:999px;background:transparent;color:var(--dim,#8a8a94);font:500 11px var(--mono,monospace);letter-spacing:0;text-transform:none;cursor:pointer;line-height:1}
-button.heart .hh{font-size:12px}button.heart:hover,button.heart:focus-visible{color:#ff6b8a;border-color:rgba(255,107,138,.6)}
-button.heart[aria-pressed="true"]{color:#ff6b8a;border-color:rgba(255,107,138,.7);background:rgba(255,107,138,.1)}
-@media (pointer:coarse){button.heart{min-height:44px;min-width:44px;justify-content:center}}
+  css.textContent = `.hgrp{display:inline-flex;align-items:center;gap:6px;flex:none}
+button.heart{display:inline-flex;align-items:center;gap:4px;flex:none;margin:0;padding:0;border:0;background:none;color:var(--dim,#8a8a94);font:500 11px/1 var(--mono,monospace);letter-spacing:0;text-transform:none;cursor:pointer}
+button.heart .hh{display:grid;place-items:center;box-sizing:border-box;width:18px;height:18px;border:1px solid var(--hair,rgba(255,255,255,.18));border-radius:50%;background:rgba(255,255,255,.04)}
+button.heart .hh svg{display:block;width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
+button.heart .hn:empty{display:none}
+button.heart:hover,button.heart:focus-visible{color:#ff6b8a;outline:none}button.heart:hover .hh,button.heart:focus-visible .hh{border-color:rgba(255,107,138,.7)}
+button.heart[aria-pressed="true"]{color:#ff6b8a}button.heart[aria-pressed="true"] .hh{border-color:rgba(255,107,138,.7);background:rgba(255,107,138,.12)}button.heart[aria-pressed="true"] svg{fill:currentColor}
+@media (pointer:coarse){button.heart{min-height:44px;min-width:36px;justify-content:center;margin:-13px 0}}
 .heart-tell{position:fixed;z-index:80;background:#101012;border:1px solid rgba(255,107,138,.6);border-radius:8px;padding:12px;box-shadow:0 20px 50px -10px rgba(0,0,0,.9);font:13px/1.5 var(--mono,monospace);color:#ebebee}
 .heart-tell p{margin:0 0 10px}.heart-tell .ht-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .heart-tell button{min-height:36px;padding:4px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff;font:600 12px var(--display,sans-serif);cursor:pointer}
