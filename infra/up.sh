@@ -18,6 +18,8 @@
 #              up idni       what the next daily IDNI progress post would say now (its two services rebuilt, nothing posted);
 #                            up idni send  posts it now, up idni hold  keeps the next one back, up idni release  undoes that
 #                            up idni restart  what the post for the newest testnet restart would say (nothing posted)
+#                            up idni fixed  what IDNI solved of our reports and its post; up idni fixed send  sends the
+#                            draft, up idni fixed no <n>  takes one back, up idni fixed auto / draft  posts without / with asking
 #              up cruise     a cruise ship's last visit in numbers and the node's timeouts per hour (nothing rebuilt)
 #                            up cruise next  the next call's announcement as it goes out by itself (posts nothing);
 #                            announcements and reports run by themselves every week (alerts/cruise_crier.py);
@@ -322,6 +324,11 @@ if [ "${1:-}" = "idni" ]; then
   docker compose up -d --build --no-deps devpulse alerts >/dev/null 2>&1 || docker compose up -d devpulse >/dev/null 2>&1 || true
   if [ "${1:-}" = "restart" ]; then   # what the post for the newest testnet restart would say now (restart_brief.py)
     docker compose exec -T devpulse python devpulse.py --restart
+    exit $?
+  fi
+  if [ "${1:-}" = "fixed" ]; then     # reported by us, solved by IDNI (fixwatch.py): status, send, no <n>, auto, draft
+    shift
+    docker compose exec -T devpulse python devpulse.py --fixed "$@"
     exit $?
   fi
   docker compose exec -T devpulse python devpulse.py --digest "$@"

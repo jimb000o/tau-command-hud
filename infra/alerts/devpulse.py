@@ -676,6 +676,9 @@ def main():
     if len(sys.argv) >= 2 and sys.argv[1] == "--digest":   # up idni: the day's IDNI post by hand (idni_digest.py)
         import idni_digest
         sys.exit(idni_digest.cli(sys.argv[2:]))
+    if len(sys.argv) >= 2 and sys.argv[1] == "--fixed":   # up idni fixed: what is marked solved, the post, the mode
+        import fixwatch
+        sys.exit(fixwatch.cli(sys.argv[2:]))
     if len(sys.argv) >= 2 and sys.argv[1] == "--restart":   # up idni restart: what the newest restart's post would say now
         import restart_brief
         path = sync(TESTNET)
@@ -703,6 +706,13 @@ def main():
             data = build(int(started), trackers, digest=True)
             if links and isinstance(data.get("refs"), dict):
                 data["refs"]["states"] = links
+            try:   # reported by us, solved by IDNI (fixwatch.py): the Findings and Roadmap pages, a note, the post
+                import fixwatch
+                fx = fixwatch.step(data.get("news") or [], links, os.path.join(CLONES, TESTNET.replace("/", "__") + ".git"), int(started))
+                if isinstance(data.get("refs"), dict):
+                    data["refs"]["fixed"] = fx
+            except Exception as e:  # noqa: BLE001 - never stops the pulse
+                log.warning("fixwatch: %s", e)
             if data["repos"]:
                 write_atomic(PUBLIC_PATH, json.dumps(data, separators=(",", ":")))
                 try:   # Tau today for AI assistants and tauhud.com/facts/ (knowledge.py): facts, live numbers, IDNI's work

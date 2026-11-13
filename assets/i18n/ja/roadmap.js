@@ -255,4 +255,6 @@ TauI18n.add({ strings: {
   "IDNI’s README": "IDNIのREADME",
   "names the block 0 hash a node must have": "ノードが持つべきブロック0のハッシュを記載",
   "Done in part: a restart now brings a new block 0 hash, which nodes compare when they connect (IDNI #93). Still open: a notice nodes can read before the restart.": "一部実現：再起動で新しいブロック0のハッシュが付き、ノードは接続時にそれを照合します（IDNI #93）。残り：再起動の前にノードが読める告知。",
+  "solves #{n}, read by our server": "#{n} を解決、私たちのサーバーが読み取り",
+  "solves part of #{n}, read by our server": "#{n} の一部を解決、私たちのサーバーが読み取り"
 } });

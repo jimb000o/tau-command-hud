@@ -115,6 +115,7 @@ import ai_meter
 import crewlog
 import idni_digest
 import restart_brief
+import fixwatch
 import recap
 import rulefacts
 import tickerwatch
@@ -3211,6 +3212,39 @@ class Watcher:
             st[k] = {i: t for i, t in st[k].items() if t >= now - 30 * 86400}
         self.save_state()
 
+    # ---------- reported by us, solved by IDNI (fixwatch.py, written by devpulse into /state/devpulse/fixes.json) ----------
+    async def maybe_fixed(self, now: float | None = None, post: dict | None = None):
+        """The post fixwatch.py wrote and the owner approved (or auto mode did): Telegram, then X without a link; once
+        each, not between 22:00 and 08:00 German time. Its id goes into this state, which is how fixwatch learns it went out."""
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("fixed", {"posted": {}, "x_posted": {}})
+        if post is None:
+            if now - st.get("checked", 0) < 60:
+                return
+            st["checked"] = now
+            post = fixwatch.load().get("post")
+        if not post or post.get("status") != "approved" or fixwatch.quiet(now):
+            return
+        pid = post["id"]
+        tg = self.tg_on()
+        if tg and pid not in st["posted"] and st.get("pause_until", 0) <= now:
+            for o in tg:
+                ok, retry, err = await asyncio.to_thread(o.send_text, fixwatch.tg_text(post), None)
+                if not ok:
+                    st["pause_until"] = now + (retry or 300)
+                    log.warning("fixed post %s failed (%s); trying again later", pid, err)
+                    break
+            else:
+                st["posted"][pid] = round(now)
+                log.info("fixed post: %s", post.get("title"))
+            self.save_state()
+        if pid not in st["x_posted"] and (pid in st["posted"] or self.x_alone(st, now)):
+            st["x_posted"][pid] = round(now)
+            st["posted"].setdefault(pid, round(now))
+            self.save_state()
+            await self.post_x(x_post(fixwatch.x_lines(post), foot=fixwatch.X_FOOT, keep=2), "fixed post", now, spare=True)
+        self.save_state()
+
     # ---------- the Key Crier: White Rabbit Key's shared island, the day before (relay /isle) ----------
     async def maybe_island(self, now: float | None = None, snap: dict | None = None):
         """Keep the island's day as the relay sums it up (the last reading before midnight UTC is the day), and every
@@ -4074,6 +4108,7 @@ class Watcher:
                         await self.maybe_plan()
                         await self.maybe_deepdive()
                         await self.maybe_idni()
+                        await self.maybe_fixed()
                         await self.maybe_clicks()
                         await self.maybe_poll()
                         await self.maybe_costs()
@@ -4092,6 +4127,7 @@ class Watcher:
                 await self.maybe_plan()
                 await self.maybe_deepdive()  # the site's pages are there whether the chain runs or not
                 await self.maybe_idni()      # IDNI's code moves whether our relay answers or not
+                await self.maybe_fixed()
                 await self.maybe_clicks()
                 await self.maybe_poll()
                 await self.maybe_costs()

@@ -160,4 +160,9 @@ TauI18n.add({ strings: {
   "since 12 November every account can hold its own rule.": "自 11 月 12 日起，每个账户都能有自己的规则。",
   "On 12 November IDNI replaced the two places with one rule per account: each account's rule is judged on its own, only for that account's payments, and nothing limits how many accounts hold one (0905c19, b2476d9). The testnet restarted on that code. The issue is still open.": "11 月 12 日 IDNI 用“每个账户一条规则”取代了两个位置：每个账户的规则单独判断，只作用于该账户自己的付款，持有规则的账户数量也不受限制（0905c19、b2476d9）。测试网已用这份代码重新启动。该 issue 仍未关闭。",
   "Until then the wallet said when both places were taken and offered the simulation; a freed place would have rotated between testers on our side.": "在那之前，钱包会在两个位置都被占用时说明，并提供模拟；如果有位置空出来，我们这边会让测试者轮流使用。",
+  "Not a bug: only two accounts on the whole testnet could hold a personal rule.": "不是 bug：整个测试网上曾经只有两个账户能持有个人规则。",
+  "IDNI closed the issue as completed.": "IDNI 已将该 issue 作为完成关闭。",
+  "IDNI merged it.": "IDNI 已合并。",
+  "Read by our server from IDNI’s change": "由我们的服务器从 IDNI 的这次改动中读出：",
+  ", which says:": "，其中写道："
 } });

@@ -160,4 +160,9 @@ TauI18n.add({ strings: {
   "since 12 November every account can hold its own rule.": "11月12日から、どのアカウントも自分のルールを持てます。",
   "On 12 November IDNI replaced the two places with one rule per account: each account's rule is judged on its own, only for that account's payments, and nothing limits how many accounts hold one (0905c19, b2476d9). The testnet restarted on that code. The issue is still open.": "11月12日、IDNIは2つの枠を「アカウントごとに1つのルール」に置き換えました。各アカウントのルールは単独で、そのアカウント自身の支払いだけに対して判定され、ルールを持てるアカウント数に上限はありません（0905c19、b2476d9）。テストネットはこのコードで再起動しました。issueはまだ開いたままです。",
   "Until then the wallet said when both places were taken and offered the simulation; a freed place would have rotated between testers on our side.": "それまでウォレットは、2つの枠が埋まっているとそう伝えてシミュレーションを勧めていました。枠が空けば、私たちの側でテスターに順番に回す予定でした。",
+  "Not a bug: only two accounts on the whole testnet could hold a personal rule.": "バグではありません：テストネット全体で個人ルールを持てるアカウントは 2 つだけでした。",
+  "IDNI closed the issue as completed.": "IDNI はこの issue を完了として閉じました。",
+  "IDNI merged it.": "IDNI がマージしました。",
+  "Read by our server from IDNI’s change": "私たちのサーバーが IDNI の変更から読み取りました：",
+  ", which says:": "、その記述："
 } });

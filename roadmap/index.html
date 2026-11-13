@@ -438,7 +438,7 @@ async function fetchPulse() {
     const r = await fetch(PULSE_URL, { cache: "no-store" });
     if (!r.ok) return null;
     const j = await r.json();
-    return j && j.refs ? { items: j.refs.items || {}, news: j.news || [], states: j.refs.states || null } : null;
+    return j && j.refs ? { items: j.refs.items || {}, news: j.news || [], states: j.refs.states || null, fixed: j.refs.fixed || {} } : null;
   } catch { return null; }
 }
 /* GitHub's state of every IDNI issue and pull request the page links, checked once an hour by our server
@@ -470,12 +470,15 @@ const work = it => {   // what IDNI's git says about this item: fixes on main, a
   }
   return { main: main.sort((a, b) => b.ts - a.ts), branches: branches.sort((a, b) => b.ts - a.ts) };
 };
+/* What our server read from IDNI's code about the issues an item rests on (infra/alerts/fixwatch.py, devpulse.json
+   refs.fixed): IDNI's change solves our report (done) or part of it, with a quote from the change. */
+const solved = it => it.refs.map(n => PULSE && PULSE.fixed && PULSE.fixed[n] ? { ...PULSE.fixed[n], n } : null).filter(Boolean);
 function status(it) {
   if (!it.refs.length) return ["idni", "IDNI’s list"];
-  const got = it.refs.map(n => ISSUES[n]).filter(Boolean), w = work(it);
+  const got = it.refs.map(n => ISSUES[n]).filter(Boolean), w = work(it), fx = solved(it);
   const done = got.length === it.refs.length && got.every(i => i.state === "closed" && (!i.pr || i.merged) && i.reason !== "not_planned");
-  if (done || it.idni === "done") return ["fixed", "Fixed"];
-  if (it.idni === "partly" || w.main.length || got.some(i => i.state === "closed" && (!i.pr || i.merged))) return ["partly", "Partly fixed"];
+  if (done || it.idni === "done" || (fx.length === it.refs.length && fx.every(x => x.level === "done"))) return ["fixed", "Fixed"];
+  if (it.idni === "partly" || fx.length || w.main.length || got.some(i => i.state === "closed" && (!i.pr || i.merged))) return ["partly", "Partly fixed"];
   if (w.branches.length) return ["review", "IDNI at work"];
   if (got.some(i => i.pr && i.state === "open")) return ["review", "Fix in review"];
   if (!got.length) return ["unknown", "Status unknown"];
@@ -483,14 +486,16 @@ function status(it) {
 }
 const lang = () => (window.TauI18n && TauI18n.lang) || "en";
 function renderWork(it) {
-  const w = work(it);
-  if (!w.main.length && !w.branches.length) return "";
+  const w = work(it), fx = solved(it).filter(x => x.by === "code" && x.url && !w.main.some(c => c.sha === x.sha));
+  if (!w.main.length && !w.branches.length && !fx.length) return "";
   const day = ts => new Date(ts * 1000).toISOString().slice(0, 10);
   const head = c => {   // the news line's written headline for this commit, when there is one; never the raw commit title
     const n = PULSE.news.find(x => (x.shas || []).includes(c.sha));
     const h = n && n.headline; return h ? (h[lang()] || h.en || "") : "";
   };
+  const said = x => (x.line && (x.line[lang()] || x.line.en)) || "";
   const li = [
+    ...fx.map(x => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener" translate="no">${esc(String(x.sha).slice(0, 7))}</a> <span>${x.ts ? day(x.ts) + " · " : ""}${esc((x.level === "done" ? "solves #{n}, read by our server" : "solves part of #{n}, read by our server").replace("{n}", x.n))} · ${esc(said(x))}</span></li>`),
     ...w.main.slice(0, 4).map(c => { const h = head(c); return `<li><a href="${c.url}" target="_blank" rel="noopener" translate="no">${c.sha.slice(0, 7)}</a> <span>${day(c.ts)} · ${esc((c.kind === "merged" ? "merged by IDNI into main, names #{n}" : "fix on IDNI’s main, names #{n}").replace("{n}", c.n))}${h ? ` · ${esc(h)}` : ""} · ${(c.runs ? "our node runs it" : "our node does not run it yet")}</span></li>`; }),
     ...w.branches.slice(0, 3).map(b => `<li><a href="${b.url}" target="_blank" rel="noopener" translate="no">${esc(b.branch)}</a> <span>${day(b.ts)} · ${esc("IDNI work branch, not on main yet, names #{n}".replace("{n}", b.n))}</span></li>`),
   ];

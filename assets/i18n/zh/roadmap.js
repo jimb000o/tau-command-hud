@@ -256,4 +256,6 @@ TauI18n.add({ strings: {
   "IDNI’s README": "IDNI 的 README",
   "names the block 0 hash a node must have": "写明节点必须具有的区块 0 哈希",
   "Done in part: a restart now brings a new block 0 hash, which nodes compare when they connect (IDNI #93). Still open: a notice nodes can read before the restart.": "已部分完成：现在重启会带来新的区块 0 哈希，节点在连接时会比对它（IDNI #93）。仍未完成：重启前节点能读到的通知。",
+  "solves #{n}, read by our server": "解决了 #{n}，由我们的服务器读出",
+  "solves part of #{n}, read by our server": "解决了 #{n} 的一部分，由我们的服务器读出"
 } });
