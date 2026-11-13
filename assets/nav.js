@@ -1115,6 +1115,26 @@
       return { month: money(month), got: money(got) };
     })().catch(() => null));
   }
+  /* the crew against the monthly bills, for the HUD's crew light: n active memberships, part = the share of the monthly
+     bills (assets/costs.json) that their monthly share covers, more = how many more memberships of the smallest tier
+     would cover the rest. Follows the bills, the tiers and the fees by itself; null while the server has no count. */
+  async function crewFacts() {
+    const j = async (u, o) => { const r = await fetch(u, o); if (!r.ok) throw 0; return r.json(); };
+    const e = await j("https://node.tauhud.com/earnings.json", { cache: "no-store" }).catch(() => null);
+    if (!e || !Number.isInteger(e.members) || e.members < 0) return null;
+    const out = { n: e.members, part: null, more: null };
+    try {
+      const [c, d] = await Promise.all([j(ROOT + "assets/costs.json", { cache: "no-cache" }), j(DONATE.donors, { cache: "no-store" })]);
+      const fx = (d.items || []).find(x => x.fiat && ["eur", "usd"].every(k => x.fiat[k] > 0)), ok = x => x && typeof x.amount === "number" && ["EUR", "USD"].includes(x.cur);
+      const eur = x => (x.cur === "EUR" ? x.amount : x.amount * fx.fiat.eur / fx.fiat.usd);
+      const month = (c.items || []).filter(ok).reduce((a, x) => a + eur(x), 0), crew = e.crew || {};
+      if (!fx || !(month > 0) || !e.crew) return out;
+      const got = (crew.month || []).filter(ok).reduce((a, x) => a + eur(x), 0);
+      out.part = Math.max(0, Math.min(1, got / month));
+      if (ok(crew.one) && crew.one.amount > 0) out.more = Math.max(0, Math.ceil((month - got) / eur(crew.one) - 1e-9));
+    } catch (x) {}
+    return out;
+  }
   function support(ref, shop) {
     const tr = x => (window.TauI18n ? TauI18n.t(x) : x), p = el("p", "tn-support");
     const a = document.createElement("a");
@@ -1126,5 +1146,5 @@
     supportFacts().then(f => { if (f) say(tr("Tau HUD costs about 904170a a month to run. This month 904170b came in.").replace("904170a", f.month).replace("904170b", f.got), tr("Support Tau HUD ›")); });
     return p;
   }
-  window.TauNav = { support, LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM, tabs: retab, level: () => LEVEL, setLevel };
+  window.TauNav = { support, crewFacts, LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM, tabs: retab, level: () => LEVEL, setLevel };
 })();

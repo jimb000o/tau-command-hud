@@ -59,6 +59,13 @@ check(("2026-11-14", "shop") in kinds and ("2026-11-13", "crew") in kinds and ("
 
 check("members" not in pub and earnings.public([s], st, now, earnings.active([member, gone]))["members"] == 1, "the public file counts active members only")
 
+tiers = [{"status": "Published", "monthly": {"eur": 350, "usd": 350}}, {"status": "Published", "monthly": {"eur": 900}}, {"status": "Draft", "monthly": {"eur": 100}}]
+yearly = dict(member, id=9, subscription={"type": "ACTIVE", "variant": {"interval": "ANNUAL", "amount": M(36)}})
+cn = earnings.crew_now([member, gone, yearly], tiers)
+check(cn["month"] == [{"amount": round(earnings.crew_share(3.5) + earnings.crew_share(36) / 12, 2), "cur": "USD"}], f"what the active crew brings in a month, a yearly one by the twelfth: {cn['month']}")
+check(cn["one"] == {"amount": earnings.crew_share(3.5), "cur": "EUR"}, "one membership of the smallest published tier")
+check(earnings.crew_now([], [])== {"month": []} and "crew" in earnings.public([], {}, now, 0, cn), "no members, no tiers: an empty month; the public file carries the crew")
+
 ns = {}
 check(earnings.news(ns, [order], [member]) == [], "the first read only learns what is there")
 o2 = dict(order, id="o2", offers=[{"name": "No Memo tee", "quantity": 1, "variant": {"unitCost": M(11.75)}}])

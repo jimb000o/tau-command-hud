@@ -167,7 +167,30 @@ def active(members: list[dict]) -> int:
     return sum(1 for m in members if str((m.get("subscription") or {}).get("type", "")).upper() == "ACTIVE")
 
 
-def public(shop: list[dict], s: dict, now: float, members: int | None = None) -> dict:
+def crew_now(members: list[dict], tiers: list[dict] | None = None) -> dict:
+    """The crew as it stands, for the HUD's crew light: what the active memberships bring us in a month (a yearly one
+    counts a twelfth), per currency, and what one membership of the smallest tier brings. No names."""
+    month = {}
+    for m in members:
+        sub = m.get("subscription") or {}
+        v = sub.get("variant") or {}
+        amount = _v(v.get("amount"))
+        if str(sub.get("type", "")).upper() != "ACTIVE" or amount <= 0:
+            continue
+        yearly = str(v.get("interval", "")).upper() == "ANNUAL"
+        c = _cur(v.get("amount"))
+        month[c] = month.get(c, 0) + crew_share(amount) / (12 if yearly else 1)
+    out = {"month": [{"amount": round(v, 2), "cur": c} for c, v in sorted(month.items())]}
+    for cur in ("eur", "usd"):   # tier prices are stored in cents, before tax
+        prices = [float(t["monthly"][cur]) / 100 for t in tiers or [] if str(t.get("status", "Published")).lower() == "published"
+                  and isinstance((t.get("monthly") or {}).get(cur), (int, float)) and t["monthly"][cur] > 0]
+        if prices:
+            out["one"] = {"amount": crew_share(min(prices)), "cur": cur.upper()}
+            break
+    return out
+
+
+def public(shop: list[dict], s: dict, now: float, members: int | None = None, crew: dict | None = None) -> dict:
     """Summed per day and kind (shop, crew) in each currency, and how many memberships are active now (the HUD's crew
     light); nothing that names a buyer or a member."""
     days = {}
@@ -181,7 +204,8 @@ def public(shop: list[dict], s: dict, now: float, members: int | None = None) ->
     items = [{"on": d, "kind": kind, "amount": round(v, 2), "cur": c} for (d, kind, c), v in sorted(days.items()) if abs(v) >= 0.005]
     return {"updated": datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "how": "Our share after Fourthwall's costs and fees, estimated from the shop's API; tax and shipping not counted.",
-            "items": items, **({} if members is None else {"members": int(members)})}
+            "items": items, **({} if members is None else {"members": int(members)}),
+            **({"crew": crew} if crew else {})}
 
 
 def _items(o: dict) -> str:
@@ -234,7 +258,11 @@ def run(now: float | None = None, tier_names: dict | None = None) -> tuple[dict,
     lines = news(s, orders, members, tier_names)
     s["checked"] = now
     write_atomic(STATE_PATH, json.dumps(s, separators=(",", ":")))
-    pub = public(shop, s, now, active(members))
+    try:
+        tiers = crewlog.tiers()
+    except Exception:  # noqa: BLE001 - without the tiers the light only lacks its "of about N"
+        tiers = []
+    pub = public(shop, s, now, active(members), crew_now(members, tiers))
     write_atomic(PUBLIC_PATH, json.dumps(pub, separators=(",", ":")))
     return pub, shop, added, lines
 

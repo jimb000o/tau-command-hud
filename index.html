@@ -1132,7 +1132,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
       <div class="chip v" id="chipMode" data-full="Mode. Simulation runs in your browser and shows the documented protocol with made-up data; Live node reads the real testnet through the community relay."><span class="dot sim" id="modeDot"></span><b id="modeTxt">Simulation</b></div>
       <a class="chip next" id="chipNext" href="proposals/" hidden><b></b></a>
       <a class="chip" id="chipOnline" href="meta/?view=tauhud" data-full="People looking at Tau HUD right now, counted by our relay at node.tauhud.com: one person counts once, however many tabs are open.&#10;No cookies and nothing stored in your browser; the relay tells people apart by address and browser, hashed with a daily salt and kept in memory only. Click for Tau HUD in numbers."><span class="dot none" id="onlineDot"></span><b id="onlineN" style="margin-left:0;margin-right:6px">—</b>online</a>
-      <a class="chip" id="chipCrew" href="crew/?ref=hud" hidden data-full="The Tau HUD crew: people who support the site every month. Read from our shop every 15 minutes, as a number only, no names.&#10;The light is red while there is none and turns greener with each member, full green at 10. Click to see what the site costs and how to support it monthly, cancel any time."><span class="dot none" id="crewDot"></span><b id="crewN" style="margin-left:0;margin-right:6px">—</b>crew</a>
+      <a class="chip" id="chipCrew" href="crew/?ref=hud" hidden data-full="The Tau HUD crew: people who support the site every month. Read from our shop every 15 minutes, as a number only, no names.&#10;The light is red while there is none, turns greener with each member and is full green when the crew covers the site's monthly bills. Click to see what the site costs and how to support it monthly, cancel any time."><span class="dot none" id="crewDot"></span><b id="crewN" style="margin-left:0;margin-right:6px">—</b>crew</a>
       <button class="chip v" type="button" id="chipCons"><b><span class="lg" id="consL">Proof of authority</span><span class="sh" id="consS">PoA</span></b><s class="st">sim</s></button>
       <div class="chip v" id="chipNet"><b id="netId">tau-testnet-v2</b><s class="st">sim</s></div>
       <div class="chip v" id="chipHeight"><b id="chipH">#0</b><s class="st">sim</s></div>
@@ -1547,12 +1547,19 @@ function tickSubs() {
 const HV = "\u2063", verdict = (lv, txt) => HV + lv + HV + txt + "\n";
 /* a validator's own page: its profile on the accounts page (what it sealed, how much traffic, its votes); the language travels along */
 { const c = $("chipOnline"), l = new URLSearchParams(location.search).get("lang"); if (c && l) c.href = "meta/?view=tauhud&lang=" + encodeURIComponent(l); }
-/* the crew light: how many monthly memberships are active (earnings.json of our server, a number only); red at none */
-{ const CREW_FULL = 10, c = $("chipCrew"), l = new URLSearchParams(location.search).get("lang"); if (l) c.href = "crew/?ref=hud&lang=" + encodeURIComponent(l);
-  const read = () => fetch("https://node.tauhud.com/earnings.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => {
-    const n = j && Number.isInteger(j.members) && j.members >= 0 ? j.members : null; if (n == null) return;
-    $("crewN").textContent = String(n); const d = $("crewDot"), col = `hsl(${Math.round(Math.min(n, CREW_FULL) / CREW_FULL * 145)} 100% ${n >= CREW_FULL ? 61 : 58}%)`;   // red at none, through orange and yellow, the site's green at CREW_FULL
-    d.className = "dot" + (n > 0 ? "" : " off"); d.style.background = col; d.style.boxShadow = "0 0 8px " + col; $("crewN").style.color = col; c.hidden = false;
+/* the crew light: how many monthly memberships are active, and how far their share covers the monthly bills
+   (TauNav.crewFacts: earnings.json of our server against assets/costs.json). Red at nothing covered, full green when
+   the crew covers the bills; in between the hue follows the square root of the part covered, so the first members show. */
+{ const c = $("chipCrew"), l = new URLSearchParams(location.search).get("lang"), tip = c.dataset.full; if (l) c.href = "crew/?ref=hud&lang=" + encodeURIComponent(l);
+  const T = x => (window.TauI18n ? TauI18n.t(x) : x);
+  const read = () => !(window.TauNav && TauNav.crewFacts) ? setTimeout(read, 500) : TauNav.crewFacts().then(f => {
+    if (!f) return;
+    const part = f.part == null ? (f.n > 0 ? .05 : 0) : f.n > 0 ? Math.max(f.part, .003) : 0, d = $("crewDot"), col = `hsl(${Math.round(Math.sqrt(part) * 145)} 100% ${part >= 1 ? 61 : 58}%)`;
+    $("crewN").textContent = String(f.n); d.className = "dot" + (part > 0 ? "" : " off"); d.style.background = col; d.style.boxShadow = "0 0 8px " + col; $("crewN").style.color = col;
+    let now = "";
+    if (f.part != null) now = T(f.part > 0 && f.part < .01 ? `Right now: ${f.n} in the crew, covering less than 1 % of the monthly bills.` : `Right now: ${f.n} in the crew, covering ${Math.floor(f.part * 100)} % of the monthly bills.`)
+      + (f.more > 0 ? " " + T(`About ${f.more} more at the smallest level would cover them.`) : f.more === 0 ? " " + T("The bills are covered.") : "");
+    c.dataset.full = T(tip) + (now ? "\n" + now : ""); c.hidden = false;
   }).catch(() => {});
   read(); setInterval(read, 15 * 60000); }
 { const l = new URLSearchParams(location.search).get("lang"); if (l) [["ownRule", "mine"], ["ownShare", "share"]].forEach(([id, t]) => { const a = $(id); if (a) a.href = `wallet/?from=hud&lang=${encodeURIComponent(l)}#rules-${t}`; }); }   // the rule panels open the wallet at the matching tab, in the same language   // the online chip opens Tau HUD in numbers on its Tau HUD tab, in the same language
