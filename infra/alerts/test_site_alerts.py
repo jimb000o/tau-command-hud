@@ -78,6 +78,12 @@ check("Open it on tauhud.com</a>" in t, "the link names tauhud.com for a page of
 ext = alerts.major_item(major("2026-10-29", "Agorzilla", "New: Agorzilla.", "agorzilla", title="New: Agorzilla", link="https://agorzilla.com", x=False))
 check("Open it on agorzilla.com</a>" in alerts.major_text(ext) and ext["x"] is False, "another site is named as itself; \"x\": false is kept")
 check("x" not in m, "a major goes to X unless the log says otherwise")
+own = alerts.major_item({"on": "2026-11-13", "html": "Blog: x.", "major": {"id": "o", "title": "A long title", "text": "Telegram text.",
+                         "x": ["First paragraph for X.", "Second one."]}})
+ox = alerts.major_x(own)
+check(ox.startswith("First paragraph for X.\n\nSecond one.") and "A long title" not in ox and "Telegram text." not in ox,
+      "\"x\": [lines] gives X its own text, paragraph by paragraph")
+check("Telegram text." in alerts.major_text(own), "Telegram keeps the major's text")
 d = alerts.digest_item(log[2])
 check(d == {"area": "Stats", "line": "The chart is calmer.", "on": "2026-10-28"}, "digest line: area once, first sentence")
 check(alerts.digest_item(log[0])["area"] == "HUD", "a version tag counts as the HUD")

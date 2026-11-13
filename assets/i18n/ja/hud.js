@@ -2574,4 +2574,5 @@ TauI18n.add({ strings: {
   "Three ways, all optional. No crypto wallet?": "方法は 3 つ、どれも任意です。暗号資産ウォレットがない方は：",
   "A paid membership with no duties, not a donation. Something to wear or to drink from?": "義務のない有料メンバーシップで、寄付ではありません。着るもの、飲むためのものがいいですか？",
   "The shop ›": "ショップ ›",
+  "Blog: a new article says what the site costs a month, why it has no ads, and the three ways to help: monthly support, the shop and a donation, all optional. It shows how much of each purchase reaches the site, with a picture of the best pieces of the first drop.": "ブログ：新しい記事で、サイトに月いくらかかるか、なぜ広告を載せないか、そして支援の 3 つの方法（毎月の支援、ショップ、寄付、どれも任意）を書きました。購入ごとにどれだけがサイトに届くかを示し、最初のラインナップから選んだ数点の写真も載せています。",
 } });

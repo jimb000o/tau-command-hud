@@ -201,6 +201,7 @@ SIM_LINK = f"{SITE}/proposals/?mode=sim"
 IDNI_ON = os.environ.get("IDNI_DIGEST", "true").lower() in ("1", "true", "yes")
 # Changes to Tau HUD itself, from the update log every release appends to. Mark an entry as worth its own post with
 #   "major": {"id": "unique-slug", "title": "…", "text": "one or two plain sentences", "link": "/page/"}
+# ("x": ["paragraph", "paragraph"] gives X its own text instead of the title and the text)
 # plus "image": "/assets/shots/<id>.png", a 16:9 screenshot (PNG or JPEG, at most 5 MB) that goes under the X post,
 # and add "skip": "why" to a major that must not be posted (already announced by hand); it also leaves the queue.
 # (text and link are optional: the entry's first two sentences and the home page). Everything else is bundled into a digest.
@@ -1433,6 +1434,7 @@ def major_item(e: dict) -> dict:
     return {"title": str(m.get("title") or site_area(e)), "text": str(m.get("text") or sentences(plain(e.get("html")), 2)),
             "link": site_link(m.get("link")), "on": e.get("on"), **({"image": site_link(m["image"])} if m.get("image") else {}),
             **({"x": False} if m.get("x") is False else {}),
+            **({"x_lines": [str(x) for x in m["x"] if str(x).strip()]} if isinstance(m.get("x"), list) else {}),
             **({"lines": [{"label": str(l.get("label", "")), "text": str(l.get("text", "")), "link": site_link(l.get("link")),
                            "x": str(l.get("x") or l.get("label", ""))} for l in m["lines"] if isinstance(l, dict)]}
                if isinstance(m.get("lines"), list) else {})}
@@ -1469,6 +1471,8 @@ def link_host(link: str) -> str:
 def major_x(m: dict) -> str:
     if m.get("lines"):  # a round-up: the title and one short line per change, as many as fit
         return x_post([m["title"]] + [f"• {l['x']}" for l in m["lines"]], m["link"], foot=X_SITE_NOTE)
+    if m.get("x_lines"):   # the log's own X text ("x": ["…", "…"]), as written, paragraph by paragraph
+        return x_post(m["x_lines"], m["link"], foot=X_SITE_NOTE)
     t = re.sub(r"^New:\s*", "", m["title"])
     return x_post([f"New on Tau HUD: {t[:1].upper() + t[1:]}", m["text"]], m["link"], foot=X_SITE_NOTE)
 

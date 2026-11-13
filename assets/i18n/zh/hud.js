@@ -2609,4 +2609,5 @@ TauI18n.add({ strings: {
   "Three ways, all optional. No crypto wallet?": "三种方式，都出于自愿。没有加密钱包？",
   "A paid membership with no duties, not a donation. Something to wear or to drink from?": "这是付费会员，没有任何义务，不是捐赠。想要能穿的、能用来喝水的？",
   "The shop ›": "商店 ›",
+  "Blog: a new article says what the site costs a month, why it has no ads, and the three ways to help: monthly support, the shop and a donation, all optional. It shows how much of each purchase reaches the site, with a picture of the best pieces of the first drop.": "博客：一篇新文章写明网站每月花多少钱、为什么不放广告，以及三种帮忙方式：每月支持、小店和捐赠，全部自愿。文章说明每笔购买有多少到了网站，并配有第一批最好几件商品的图片。",
 } });
