@@ -83,6 +83,15 @@ dialog.log .k { margin: 0 0 8px; }
 dialog.log .post { border: 1px solid var(--hair); border-radius: 8px; padding: 12px 14px; font-size: 14px; line-height: 1.5; }
 dialog.log .post h3 { margin: 0 0 6px; font-size: 17px; color: #fff; } dialog.log .post p { margin: 8px 0 0; } dialog.log .post b { color: #fff; }
 dialog.log .fine { margin: 10px 0 0; font-size: 12.5px; color: var(--dim); }
+.opt.shop { flex-direction: row; gap: 22px; align-items: center; }
+.shop .sh { flex: 0 1 34%; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.shop .k { color: var(--dim); }
+.pcs { flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.pc { display: flex; flex-direction: column; gap: 2px; text-decoration: none; border: 1px solid var(--line); border-radius: 8px; padding: 10px 10px 8px; background: rgba(255,255,255,.03); min-width: 0; }
+.pc:hover, .pc:focus-visible { border-color: var(--ok); background: rgba(57,255,138,.06); }
+.pc img { width: 100%; height: auto; aspect-ratio: 660 / 570; object-fit: contain; border-radius: 4px; margin-bottom: 4px; }
+.pc b { font: 600 13px/1.3 var(--display); color: #fff; overflow-wrap: anywhere; }
+.pc span { font-size: 12px; line-height: 1.35; color: var(--dim); }
 .bills { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; font-size: 13.5px; color: var(--dim); border-top: 1px solid var(--line); padding-top: 10px; }
 .bills b { color: var(--text); font-weight: 600; }
 .bills span { min-width: 0; overflow-wrap: anywhere; }
@@ -91,8 +100,20 @@ footer { color: var(--dim); font-size: 13px; border-top: 1px solid var(--line); 
 footer p { margin: 0; }
 [hidden] { display: none !important; }
 @media (max-width: 1200px) { .paid .cols { grid-template-columns: minmax(0, 1fr); } .terms { padding: 10px 0 0; border-left: 0; border-top: 1px solid var(--line); } }
+@media (max-width: 1100px) { .opt.shop { flex-direction: column; align-items: stretch; } .shop .sh { flex: none; } }
 @media (max-width: 900px) { .opts { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 700px) { .pcs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 420px) { .pcs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 520px) { body { font-size: 15px; } .tiers { grid-template-columns: minmax(0, 1fr); } .opt { padding: 16px; } .b { width: 100%; justify-content: center; } }
+@media (min-width: 1101px) and (min-height: 801px) and (max-height: 1100px) { .shop .paidnote { display: none; } .opt.shop { padding-top: 14px; padding-bottom: 14px; } }
+/* a short screen: the shop is one slim row (pictures and names), so all three options stay in view */
+@media (min-width: 1101px) and (max-height: 800px) {
+  .opt.shop { padding: 8px 18px; gap: 16px; } .shop .sh { flex-basis: 30%; gap: 4px; } .shop .sh > p:not(.k), .pc span { display: none; }
+  .shop .sh { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 14px; } .shop .sh .k { flex: 1 1 100%; }
+  .shop .act { margin: 0; } .shop .b { min-height: 34px; padding: 0 12px; } .shop h3 { font-size: 17px; }
+  .pc { flex-direction: row; align-items: center; gap: 8px; padding: 5px 8px; } .pc img { width: 46px; flex: none; margin: 0; } .pc b { font-size: 11.5px; overflow-wrap: normal; word-break: normal; } .pcs { gap: 8px; }
+  .bills { display: none; } .paid .act { margin-top: 0; }
+}
 @media (min-width: 901px) and (max-height: 800px) { .intro p { font-size: 15px; margin-top: 4px; } .opt { padding: 12px 18px; gap: 7px; } .opt h3 { font-size: 19px; } .intro h2 { font-size: 24px; } .tiers li { padding: 7px 12px; } .wrap { gap: 10px; } }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
@@ -107,7 +128,7 @@ footer p { margin: 0; }
   <div class="intro">
     <h2>Support Tau HUD</h2>
     <p>Tau HUD is free to use. Optional support helps fund the site and the work behind it: the community node, the server, and the tools the pages are built with.</p>
-    <p class="none">There are two ways to help, and neither is required. Every page stays open without paying and without an account.</p>
+    <p class="none">There are three ways to help, and none is required. Every page stays open without paying and without an account.</p>
   </div>
   <dialog class="log" id="logDlg" aria-labelledby="logH">
     <button type="button" class="x" id="logClose" aria-label="Close">✕</button>
@@ -136,7 +157,6 @@ footer p { margin: 0; }
       <div class="act"><a class="b go" id="shop" href="https://tau-hud-shop.fourthwall.com/supporters/pricing" target="_blank" rel="noopener">Become a member at Fourthwall ›</a></div>
       </div>
       <ul class="terms">
-        <li><span><b>The shop.</b> <span>The shop is open, and the discount comes off at checkout.</span> <a href="https://tau-hud-shop.fourthwall.com/" target="_blank" rel="noopener">See the shop ›</a></span></li>
         <li><span><b>Cancelling.</b> Cancel any time in your account in the shop; access runs to the end of the month you paid for. In the EU, EEA and UK you can withdraw from a new membership within 14 days.</span></li>
         <li><span><b>Who sells it.</b> Fourthwall, Inc. is the seller and takes the payment. The person who runs Tau HUD provides the benefits, receives the membership income and can see the membership in the shop's dashboard.</span></li>
         <li><span><a href="https://fourthwall.com/legal/merchandise-terms-of-service" target="_blank" rel="noopener">Fourthwall's terms for buyers</a> · <a href="https://fourthwall.com/privacy-policy" target="_blank" rel="noopener">Fourthwall's privacy policy</a> · <a href="../legal/#shop-en">our privacy notice</a></span></li>
@@ -151,6 +171,23 @@ footer p { margin: 0; }
       <div class="act"><a class="b" href="../donate/">Address and every contribution ›</a></div>
     </section>
   </main>
+  <section class="opt shop" aria-labelledby="hShop">
+    <div class="sh">
+      <p class="k">Option 3 · the shop · made to order</p>
+      <h3 id="hShop">Wear the testnet</h3>
+      <p>Sweaters with the pattern knitted in, tees that quote a real answer of a testnet node, a mug and a sticker sheet. Part of each price reaches the site. Crew members get 10 or 20 % off at checkout.</p>
+      <p class="paidnote">Sold, made and shipped by Fourthwall. Fan merchandise, not affiliated with IDNI.</p>
+      <div class="act"><a class="b" href="https://tau-hud-shop.fourthwall.com/?utm_source=tauhud&utm_medium=crew" target="_blank" rel="noopener">Open the shop ›</a></div>
+    </div>
+    <div class="pcs">
+      <a class="pc" href="https://tau-hud-shop.fourthwall.com/products/always-o1-t-i1-t?utm_source=tauhud&utm_medium=crew" target="_blank" rel="noopener"><img src="../assets/shop/sweater-rule.png" alt="" loading="lazy" width="660" height="570"><b>Tau rule sweater</b><span>A real rule in Tau Language, knitted in</span></a>
+      <a class="pc" href="https://tau-hud-shop.fourthwall.com/products/follow-the-rabbit-to-the-next-block?utm_source=tauhud&utm_medium=crew" target="_blank" rel="noopener"><img src="../assets/shop/sweater.png" alt="" loading="lazy" width="660" height="570"><b>White Rabbit sweater</b><span>Follow the rabbit to the next block</span></a>
+      <a class="pc" href="https://tau-hud-shop.fourthwall.com/products/insufficient-funds-tee?utm_source=tauhud&utm_medium=crew" target="_blank" rel="noopener"><img src="../assets/shop/tee-funds.webp" alt="" loading="lazy" width="660" height="570"><b>Node answer tee</b><span>INSUFFICIENT_FUNDS: a real answer from a real node</span></a>
+      <a class="pc" href="https://tau-hud-shop.fourthwall.com/products/no-memo-tee?utm_source=tauhud&utm_medium=crew" target="_blank" rel="noopener"><img src="../assets/shop/tee-nomemo.webp" alt="" loading="lazy" width="660" height="570"><b>No Memo tee</b><span>tx = from, to, amount. No memo.</span></a>
+      <a class="pc" href="https://tau-hud-shop.fourthwall.com/products/waiting-for-the-next-block-mug?utm_source=tauhud&utm_medium=crew" target="_blank" rel="noopener"><img src="../assets/shop/mug.webp" alt="" loading="lazy" width="660" height="570"><b>Next Block mug</b><span>Waiting for the Next Block</span></a>
+      <a class="pc" href="https://tau-hud-shop.fourthwall.com/products/testnet-sticker-pack?utm_source=tauhud&utm_medium=crew" target="_blank" rel="noopener"><img src="../assets/shop/stickers.webp" alt="" loading="lazy" width="660" height="570"><b>Sticker sheet</b><span>Seven stickers from the testnet</span></a>
+    </div>
+  </section>
   <p class="bills" id="billsLine" hidden><b>What support pays for, each month:</b> <span id="billItems"></span> <a href="../donate/">all bills ›</a></p>
   <footer>
     <p><span>Tau HUD is a community project, not affiliated with IDNI.</span> <a href="../legal/">Privacy</a></p>

@@ -291,7 +291,7 @@
         <p class="small tn-thanks" hidden></p>
         <p class="small tn-cost" hidden></p>
         <p class="small"><a href="${ROOT}donate/">What it costs, and every donation on chain ›</a></p>
-        <p class="small tn-crew">No crypto wallet? <a href="${ROOT}crew/?ref=about">Support monthly from €4.17, cancel any time ›</a> A paid membership with no duties, not a donation.</p>
+        <p class="small tn-crew">No crypto wallet? <a href="${ROOT}crew/?ref=about">Support monthly from €4.17, cancel any time ›</a> A paid membership with no duties, not a donation. Something to wear or to drink from? <a href="https://tau-hud-shop.fourthwall.com/?utm_source=tauhud&utm_medium=about" target="_blank" rel="noopener">The shop ›</a></p>
         <p class="small tn-copymsg" aria-live="polite">Check the address against this page before sending; never trust a copy of it from elsewhere.</p>
       </article>
       </div>

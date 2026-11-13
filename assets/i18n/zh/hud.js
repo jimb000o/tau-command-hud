@@ -1,5 +1,6 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Support page: the shop now has its own place there as a third way to help, with pictures of six pieces that each open in the shop. The About panel names the shop too.": "支持页面：商店现在在那里有了自己的位置，作为第三种帮忙的方式，配有六件商品的图片，点击即可在商店中打开。“关于”面板也提到了商店。",
   "Right now: {n} in the crew, covering less than 1 % of the monthly bills.": "目前：船员 {n} 人，承担每月账单不到 1 %。",
   "Crew light: it now shows in the header of every page, and its colour follows money, not a head count. It is full green when the crew's memberships cover the site's monthly bills, and its hover says how many are in the crew, what part of the bills they cover and about how many more at the smallest level would cover the rest. It follows the bills and the membership levels by itself.": "船员灯：现在每个页面的页眉都有它，而且它的颜色跟着金额走，不再数人头。船员的会员费足以支付本站每月账单时，它才全绿；悬停时会显示船员人数、他们承担了账单的多少，以及大约还需要多少位最低档成员才能付清其余部分。账单和会员档位变动时它会自动跟上。",
   "Right now: {n} in the crew, covering {p} % of the monthly bills.": "目前：船员 {n} 人，承担每月账单的 {p} %。",
@@ -2604,4 +2605,7 @@ TauI18n.add({ strings: {
   "it gets cold between blocks · dress for the wait": "区块之间会变冷 · 为等待穿暖一点",
   "Opens the whole Tau HUD shop at Fourthwall in a new tab: three sweaters, five tees, a sticker sheet and a mug.": "在新标签页打开 Fourthwall 上的整个 Tau HUD 商店：三件毛衣、五件 T 恤、一张贴纸和一个马克杯。",
   "Shop notice on the HUD: it now leads with one sweater and opens that sweater’s page; “All 10 pieces” opens the whole store. A line above the button counts down to the next block with the live chain, and the sweater hangs in its own light inside a stitched frame.": "HUD 上的商店告示：现在以一件毛衣为主角，点击会打开这件毛衣的页面；“全部 10 件”打开整个商店。按钮上方的一行文字随实时链倒数到下一个区块，毛衣挂在自己的光里，外面是一圈缝线边框。",
+  "Three ways, all optional. No crypto wallet?": "三种方式，都出于自愿。没有加密钱包？",
+  "A paid membership with no duties, not a donation. Something to wear or to drink from?": "这是付费会员，没有任何义务，不是捐赠。想要能穿的、能用来喝水的？",
+  "The shop ›": "商店 ›",
 } });
