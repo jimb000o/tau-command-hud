@@ -2706,6 +2706,7 @@ TauI18n.add({ strings: {
   "an Agorzilla player": "一位 Agorzilla 玩家",
   "may send at most {n} AGRS per payment": "每笔付款最多可发送 {n} AGRS",
   "has a spending limit": "有支出上限",
+  "Three showcase wallets with a personal rule each, live on the testnet: Tau HUD’s piggy bank cannot send anything until New Year, Tau HUD’s four-eyes wallet needs a second signature above 100 AGRS, and Tau HUD’s Agorzilla feeding fund may only pay Agorzilla. Once a day each one tries a payment its own rule forbids, on purpose, and the feed shows “✕ Stopped by the sender’s own rule”. A refused payment never enters a block, so it costs nothing.": "三个展示钱包，各有一条个人规则，在测试网上运行：Tau HUD 的存钱罐在新年之前不能发送任何东西，Tau HUD 的四眼钱包超过 100 AGRS 需要第二个签名，Tau HUD 的 Agorzilla 喂食基金只能付款给 Agorzilla。每个钱包每天故意尝试一次被自己规则禁止的付款，动态栏会显示“✕ 被发送者自己的规则拦下”。被拒绝的付款从不进入区块，所以不花任何费用。",
   "may only pay {x}": "只能付款给 {x}",
   "Tau HUD's piggy bank": "Tau HUD 的存钱罐",
   "Tau HUD's four-eyes wallet": "Tau HUD 的四眼钱包",

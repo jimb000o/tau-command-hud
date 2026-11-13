@@ -2671,6 +2671,7 @@ TauI18n.add({ strings: {
   "an Agorzilla player": "Agorzilla のプレイヤー",
   "may send at most {n} AGRS per payment": "1 回の支払いで最大 {n} AGRS まで送れる",
   "has a spending limit": "支出上限がある",
+  "Three showcase wallets with a personal rule each, live on the testnet: Tau HUD’s piggy bank cannot send anything until New Year, Tau HUD’s four-eyes wallet needs a second signature above 100 AGRS, and Tau HUD’s Agorzilla feeding fund may only pay Agorzilla. Once a day each one tries a payment its own rule forbids, on purpose, and the feed shows “✕ Stopped by the sender’s own rule”. A refused payment never enters a block, so it costs nothing.": "個人ルールを 1 つずつ持つ 3 つのショーケース・ウォレットがテストネットで動いています：Tau HUD の貯金箱は新年まで何も送れず、Tau HUD のダブルチェック・ウォレットは 100 AGRS を超えると 2 つ目の署名が要り、Tau HUD の Agorzilla ごはん基金は Agorzilla にしか払えません。1 日 1 回、それぞれがわざと自分のルールが禁じる支払いを試み、フィードに「✕ 送り手自身のルールで止められた」と表示されます。拒否された支払いはブロックに入らないので、費用はかかりません。",
   "may only pay {x}": "{x} にしか払えない",
   "Tau HUD's piggy bank": "Tau HUD の貯金箱",
   "Tau HUD's four-eyes wallet": "Tau HUD のダブルチェック・ウォレット",
