@@ -308,6 +308,8 @@ C.ready = (async () => {
   $("paidSum").textContent = Object.entries(paid).map(([c, n]) => cost(n, c)).join(" + ");
   $("oneoff").hidden = !once.length;
   C.items = known; C.once = once;
+  /* what the shop and the crew brought in: our share after Fourthwall's costs and fees, per day (earnings.json, kept by the server) */
+  try { const r = await fetch("https://node.tauhud.com/earnings.json", { cache: "no-store" }); if (r.ok) C.earn = ((await r.json()).items || []).filter(e => typeof e.amount === "number" && /^[A-Z]{3}$/.test(e.cur || "") && /^\d{4}-\d{2}-\d{2}$/.test(e.on || "")); } catch (e) {}
 })();
 /* every bill of a monthly item from its "since" day to now, on the same day each month (the 31st falls back to the month's last day) */
 function bills(it, until) {
@@ -334,8 +336,9 @@ function flow(don) {
   C.items.forEach(c => bills(c, mEnd).filter(t => t > now).forEach(t => due.push({ t, v: to(c.amount, c.cur), n: c.t })));
   due.sort((a, b) => a.t - b.t);
   (don || []).forEach(x => { const v = x.fiat && x.fiat[RC.toLowerCase()]; if (isFinite(v)) ev.push({ t: x.ts * 1000, v, w: "g" }); });
+  (C.earn || []).forEach(e => ev.push({ t: Date.parse(e.on + "T12:00:00Z"), v: to(e.amount, e.cur), w: "e", k: e.kind }));
   ev.sort((a, b) => a.t - b.t);
-  const paidAll = ev.filter(e => e.w === "p").reduce((a, e) => a + e.v, 0), gotAll = ev.filter(e => e.w === "g").reduce((a, e) => a + e.v, 0);
+  const paidAll = ev.filter(e => e.w === "p").reduce((a, e) => a + e.v, 0), gotAll = ev.filter(e => e.w === "g").reduce((a, e) => a + e.v, 0), earnAll = ev.filter(e => e.w === "e").reduce((a, e) => a + e.v, 0);
   const firstBill = ev.find(e => e.w === "p");
   const eur = v => new Intl.NumberFormat("en-GB", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v * fx.fiat.eur / fx.fiat[RC.toLowerCase()]);
   $("perMonth").textContent = G("≈ {v}", { v: money1(month) });
@@ -346,8 +349,8 @@ function flow(don) {
   $("costBilled").textContent = G("As billed: {v}, each in the currency of its bill", { v: C.billed }); $("costBilled").hidden = false; $("costSum").title = $("costBilled").textContent;
   $("costSum").textContent = G("≈ {v} a month", { v: money1(month) });
   const m0 = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1);
-  const gotMonth = ev.filter(e => e.w === "g" && e.t >= m0).reduce((a, e) => a + e.v, 0);
-  return { ev, due, month, paidAll, gotAll, gotMonth, since: firstBill && firstBill.t };
+  const gotMonth = ev.filter(e => e.w === "g" && e.t >= m0).reduce((a, e) => a + e.v, 0), earnMonth = ev.filter(e => e.w === "e" && e.t >= m0).reduce((a, e) => a + e.v, 0);
+  return { ev, due, month, paidAll, gotAll, gotMonth, earnAll, earnMonth, since: firstBill && firstBill.t };
 }
 /* the chart: two running totals day by day, as steps (a bill or a donation lands on one day), the gap between them shaded */
 function drawFlow(f) {
@@ -355,8 +358,9 @@ function drawFlow(f) {
   if (!f || !f.ev.length) { wrap.hidden = true; return; }
   wrap.hidden = false; $("standWait").hidden = true;
   const start = dayOf(f.ev[0].t), end = dayOf(Date.now()), pts = [];
-  let p = 0, g = 0, i = 0;
-  for (let t = start; t <= end; t += DAY) { while (i < f.ev.length && dayOf(f.ev[i].t) <= t) { const e = f.ev[i++]; if (e.w === "p") p += e.v; else g += e.v; } pts.push({ t, p, g }); }
+  let p = 0, g = 0, d = 0, i = 0;   // g: all that came in (donations, and our share of the shop and the crew), d: donations alone
+  for (let t = start; t <= end; t += DAY) { while (i < f.ev.length && dayOf(f.ev[i].t) <= t) { const e = f.ev[i++]; if (e.w === "p") p += e.v; else { g += e.v; if (e.w === "g") d += e.v; } } pts.push({ t, p, g, d }); }
+  const EARN = f.earnAll !== 0;   // with shop or crew money, the green line says "came in" and the tip splits it
   const n = pts.length, now = pts[n - 1], w = Math.max(box.clientWidth, 10), h = Math.max(box.clientHeight, 10);
   /* the bills already due this month, ahead of today: one dashed step per bill day */
   const ahead = []; let pa = now.p;
@@ -395,7 +399,7 @@ function drawFlow(f) {
     /* today's two totals beside today's points; the dashed line's end says what is already due */
     const tx = f1(x(end) + 7);
     s += `<text class="now p" x="${tx}" y="${f1(y(now.p) - 6)}">${G("spent {v}", { v: money1(now.p) })}</text>`;
-    s += `<text class="now g" x="${tx}" y="${f1(Math.min(y(now.g) - 6, top + ch - 4))}">${G("donated {v}", { v: money1(now.g) })}</text>`;
+    s += `<text class="now g" x="${tx}" y="${f1(Math.min(y(now.g) - 6, top + ch - 4))}">${G(EARN ? "came in {v}" : "donated {v}", { v: money1(now.g) })}</text>`;
     const ye = Math.max(top + 4, y(ahead[ahead.length - 1].p));
     s += `<text class="end d" x="${lx}" y="${f1(ye - 1)}">${G("due by {d}", { d: dm(last) })}</text><text class="end d v" x="${lx}" y="${f1(ye + 11)}">${money1(ahead[ahead.length - 1].p)}</text>`;
   } else {
@@ -404,7 +408,7 @@ function drawFlow(f) {
     if (yg - yp < 26) { const mid = (yp + yg) / 2; yp = mid - 13; yg = mid + 13; }
     yp = Math.max(top + 4, yp); yg = Math.min(top + ch + 8, yg);
     s += `<text class="end p" x="${lx}" y="${f1(yp - 1)}">${T("spent")}</text><text class="end p v" x="${lx}" y="${f1(yp + 11)}">${money1(now.p)}</text>`;
-    s += `<text class="end g" x="${lx}" y="${f1(yg - 1)}">${T("donated")}</text><text class="end g v" x="${lx}" y="${f1(yg + 11)}">${money1(now.g)}</text>`;
+    s += `<text class="end g" x="${lx}" y="${f1(yg - 1)}">${T(EARN ? "came in" : "donated")}</text><text class="end g v" x="${lx}" y="${f1(yg + 11)}">${money1(now.g)}</text>`;
   }
   s += `<line class="xh" y1="${top}" y2="${top + ch}" visibility="hidden"/><rect class="ov" x="${Lx}" y="${top}" width="${f1(x(end) - Lx)}" height="${ch}"/></svg><div class="ctip" hidden></div>`;
   box.innerHTML = s;
@@ -412,21 +416,24 @@ function drawFlow(f) {
   const show = e => {
     const r = box.getBoundingClientRect(), mx = (e.clientX - r.left) * w / r.width, j = Math.max(0, Math.min(n - 1, Math.round((mx - Lx) / ((x(end) - Lx) || 1) * (n - 1)))), q = pts[j], px = x(q.t);
     xh.setAttribute("x1", px); xh.setAttribute("x2", px); xh.setAttribute("visibility", "visible");
-    tip.innerHTML = `<b></b><br><span></span><br><span></span>`;
+    tip.innerHTML = EARN ? `<b></b><br><span></span><br><span></span><br><span></span>` : `<b></b><br><span></span><br><span></span>`;
     tip.firstChild.textContent = new Date(q.t).toLocaleDateString(L === "en" ? "en-GB" : L, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-    tip.children[2].textContent = G("donated so far {v}", { v: money1(q.g) }); tip.children[4].textContent = G("spent so far {v}", { v: money1(q.p) });
+    tip.children[2].textContent = G("donated so far {v}", { v: money1(q.d) }); tip.children[4].textContent = G("spent so far {v}", { v: money1(q.p) });
+    if (EARN) tip.children[6].textContent = G("shop and crew so far {v}", { v: money1(q.g - q.d) });
     tip.hidden = false; const tw = tip.offsetWidth, left = px * r.width / w; tip.style.left = Math.max(0, Math.min(r.width - tw, left + (left > r.width / 2 ? -tw - 10 : 10))) + "px";
   };
   ov.addEventListener("mousemove", show); ov.addEventListener("touchstart", e => show(e.touches[0]), { passive: true });
   ov.addEventListener("mouseleave", () => { xh.setAttribute("visibility", "hidden"); tip.hidden = true; });
-  const share = f.paidAll ? Math.min(1, f.gotAll / f.paidAll) : 0, pct = Math.round(share * 100), ps = (pct < 1 && f.gotAll > 0 ? "<1" : pct) + "%";
-  $("covL").textContent = G("of the costs since {d} not covered by donations", { d: dm(f.since || Date.now()) });
+  const inAll = f.gotAll + f.earnAll, share = f.paidAll ? Math.max(0, Math.min(1, inAll / f.paidAll)) : 0, pct = Math.round(share * 100), ps = (pct < 1 && inAll > 0 ? "<1" : pct) + "%";
+  $("covL").textContent = G(EARN ? "of the costs since {d} not covered by donations, the shop and the crew" : "of the costs since {d} not covered by donations", { d: dm(f.since || Date.now()) });
   $("covFill").style.width = (share * 100).toFixed(1) + "%";
   $("covBar").setAttribute("aria-label", G("{p} covered", { p: ps }));
-  $("covNums").textContent = G("{p} covered: {v} donated of {w} spent", { p: ps, v: money1(f.gotAll), w: money1(f.paidAll) });
-  $("covGap").textContent = money1(Math.max(0, f.paidAll - f.gotAll));
-  const ms = f.month ? Math.min(1, f.gotMonth / f.month) : 0;
-  $("monL").textContent = G("This month: {g} donated of about {c} it costs", { g: money1(f.gotMonth), c: money1(f.month) });
+  $("covNums").textContent = EARN ? G("{p} covered: {v} donated + {e} our share of the shop and the crew, of {w} spent", { p: ps, v: money1(f.gotAll), e: money1(f.earnAll), w: money1(f.paidAll) })
+    : G("{p} covered: {v} donated of {w} spent", { p: ps, v: money1(f.gotAll), w: money1(f.paidAll) });
+  $("covNums").title = EARN ? T("Shop and crew count only our share: what members and buyers paid, less Fourthwall's costs and fees and the tax. Estimated by our server from the shop's data.") : "";
+  $("covGap").textContent = money1(Math.max(0, f.paidAll - inAll));
+  const inMonth = f.gotMonth + f.earnMonth, ms = f.month ? Math.max(0, Math.min(1, inMonth / f.month)) : 0;
+  $("monL").textContent = EARN ? G("This month: {g} came in of about {c} it costs", { g: money1(inMonth), c: money1(f.month) }) : G("This month: {g} donated of about {c} it costs", { g: money1(f.gotMonth), c: money1(f.month) });
   $("monFill").style.width = (ms * 100).toFixed(1) + "%";
   $("monBar").setAttribute("aria-label", G("{p} of this month covered", { p: Math.round(ms * 100) + "%" }));
   const dd = f.month ? f.gotAll / (f.month * 12 / 365) : 0;

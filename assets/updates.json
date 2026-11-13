@@ -2987,5 +2987,6 @@
     "on": "2026-11-13",
     "link": "/",
     "html": "Principles: “Enforced against the key holder” is now seen on the testnet, no longer only from the protocol. On 13 November a fresh test account gave itself the rule “nothing above 1,000 AGRS leaves”; the same key then signed a payment of 5,000 with IDNI’s own command-line wallet, and the node refused it, while a payment of 500 went through. The card links the check in IDNI’s code, and anyone can repeat the test."
-  }
+  },
+  {"tag": "Donations", "on": "2026-11-13", "link": "/donate/", "html": "Donations: the page now counts what the shop and the crew bring in, beside the donations. Only our share counts: what buyers and members paid, less Fourthwall's costs for each product, its fees and the tax. Our server works it out from the shop's data every six hours and publishes it summed per day, with no names. The green line then reads “came in”, and its tip splits donations from shop and crew."}
 ]

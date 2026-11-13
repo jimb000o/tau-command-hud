@@ -113,6 +113,7 @@ import firsts
 import gazette
 import ai_meter
 import crewlog
+import earnings
 import idni_digest
 import restart_brief
 import fixwatch
@@ -4081,6 +4082,21 @@ class Watcher:
             log.warning("crew ship log failed: %s", crewlog.error_text(exc))
         self.save_state()
 
+    async def maybe_earnings(self):
+        """Our share of the shop's sales and the crew's memberships, for tauhud.com/donate/: read every 6 hours once the
+        Fourthwall API user is in .env (earnings.py)."""
+        if not crewlog.enabled() or not earnings.due():
+            return
+        try:
+            pub, _, added = await asyncio.to_thread(earnings.run)
+            log.info("earnings: %d day rows, %d new membership periods", len(pub["items"]), added)
+        except Exception as exc:  # tried again on the next pass after 6 hours
+            log.warning("earnings failed: %s", crewlog.error_text(exc))
+            try:
+                s = earnings.load(); s["checked"] = time.time(); earnings.write_atomic(earnings.STATE_PATH, json.dumps(s))
+            except OSError:
+                pass
+
     async def run(self):
         while True:
             try:
@@ -4096,6 +4112,7 @@ class Watcher:
                         await self.deliver()
                         await self.maybe_recap()
                         await self.maybe_crewlog()
+                        await self.maybe_earnings()
                         await self.maybe_print()
                         await self.maybe_gazette()
                         await self.maybe_challenge()
@@ -4461,10 +4478,41 @@ def crewlog_cli(send: bool) -> int:
     return 0
 
 
+def earnings_cli() -> int:
+    """Reads the shop now: every order's numbers beside the share worked out (to compare with Fourthwall's dashboard),
+    the membership periods counted, and what tauhud.com/donate/ gets; writes earnings.json."""
+    if not crewlog.enabled():
+        print("earnings: API user NOT set (up crewlog key)")
+        return 1
+    print(f"fees:    card {earnings.CARD_PCT} % + {earnings.CARD_FIX:.2f} per payment, memberships {earnings.CREW_PCT} %, "
+          f"shop cut {earnings.SHOP_PCT} % on top of the base cost (EARNINGS_* in .env to change)")
+    try:
+        pub, shop, added = earnings.run()
+    except Exception as exc:
+        print(f"earnings: the Fourthwall API answered with an error: {crewlog.error_text(exc)}")
+        return 1
+    for o in shop:
+        print(f"order:   {o['on']} {o['cur']} items {o['subtotal']:.2f} - discount {o['discount']:.2f} - cost {o['cost']:.2f}"
+              f" - cut {o['cut']:.2f} + tip {o['tip']:.2f} - card fee {o['fee']:.2f} (buyer paid {o['total']:.2f}) = our share {o['share']:.2f}")
+    if not shop:
+        print("order:   none yet (cancelled orders, samples and giveaways do not count)")
+    s = earnings.load()
+    n = sum(len(v) for v in (s.get("crew") or {}).values())
+    print(f"crew:    {n} membership periods counted, {added} new now")
+    sums = {}
+    for i in pub["items"]:
+        k = (i["kind"], i["cur"]); sums[k] = sums.get(k, 0) + i["amount"]
+    print("total:   " + (", ".join(f"{k} {c} {v:.2f}" for (k, c), v in sorted(sums.items())) or "nothing yet")
+          + " · public: https://node.tauhud.com/earnings.json (per day, no names)")
+    return 0
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     if "--test" in sys.argv:
         sys.exit(send_test())
+    if "--earnings" in sys.argv:
+        sys.exit(earnings_cli())
     if "--crewlog" in sys.argv:
         sys.exit(crewlog_cli("send" in sys.argv))
     if "--check" in sys.argv:

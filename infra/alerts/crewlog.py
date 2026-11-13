@@ -45,10 +45,10 @@ def enabled() -> bool:
     return bool(USER and PASS)
 
 
-def _req(method: str, path: str, body: dict | None = None, timeout: int = 30):
+def _req(method: str, path: str, body: dict | None = None, timeout: int = 30, base: str | None = None):
     data = json.dumps(body).encode() if body is not None else None
     auth = base64.b64encode(f"{USER}:{PASS}".encode()).decode()
-    r = urllib.request.Request(API + path, data=data, method=method,
+    r = urllib.request.Request((base or API) + path, data=data, method=method,
                                headers={"Authorization": "Basic " + auth, "Accept": "application/json", "User-Agent": UA,
                                         **({"Content-Type": "application/json"} if data else {})})
     with urllib.request.urlopen(r, timeout=timeout) as resp:

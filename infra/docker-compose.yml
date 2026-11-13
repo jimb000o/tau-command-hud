@@ -151,6 +151,11 @@ services:
       FOURTHWALL_API_USER: ${FOURTHWALL_API_USER:-}
       FOURTHWALL_API_PASS: ${FOURTHWALL_API_PASS:-}
       CREWLOG_ENABLED: ${CREWLOG_ENABLED:-false}
+      # our share of shop sales and memberships for tauhud.com/donate/ (alerts/earnings.py); the fees only if Fourthwall's statement differs
+      EARNINGS_CARD_PCT: ${EARNINGS_CARD_PCT:-3.9}
+      EARNINGS_CARD_FIXED: ${EARNINGS_CARD_FIXED:-0.30}
+      EARNINGS_CREW_PCT: ${EARNINGS_CREW_PCT:-5}
+      EARNINGS_SHOP_PCT: ${EARNINGS_SHOP_PCT:-0}
       X_PICTURES: ${X_PICTURES:-true}   # the rule change's card, the live overview or a new page's picture under the post
       # weekly recap image and newspaper (alerts/recap.py, gazette.py): Monday 09:00 German time unless .env says otherwise
       RECAP_ENABLED: ${RECAP_ENABLED:-true}
