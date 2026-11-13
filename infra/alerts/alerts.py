@@ -608,7 +608,8 @@ def telegram_text(item: dict) -> str:
         warn = "⚠️ " if item.get("severity") in ("halt", "unsafe") else ""
         out += ["", f"<b>{e(item.get('why_title', 'Why it matters'))}</b>", warn + e(item["why"])]
     if len(item["what"]) > 1 or (item["kind"] == "restart" and item["what"]):  # one change is already the headline (not a restart's)
-        out += ["", f"<b>{e(item.get('what_title', 'What changes'))}</b>"] + [f"• {e(w)}" for w in item["what"]]
+        rows = [f"• {e(w)}" for w in item["what"]]   # air between them (13 Nov 2026: posts in short paragraphs)
+        out += ["", f"<b>{e(item.get('what_title', 'What changes'))}</b>", rows[0]] + [x for r in rows[1:] for x in ("", r)]
     mean = item.get("meaning")
     if mean:  # exact, not sampled: the same reading as the box on /proposals/
         if mean["same"]:
@@ -1445,7 +1446,8 @@ def major_text(m: dict) -> str:
     e = html.escape
     if m.get("lines"):
         body = [e(m["text"]), ""] if m.get("text") else []
-        body += [f"• <a href=\"{e(l['link'])}\">{e(l['label'])}</a>: {e(l['text'])}" for l in m["lines"]] + [""]
+        for l in m["lines"]:   # one paragraph each, with air between them
+            body += [f"• <a href=\"{e(l['link'])}\">{e(l['label'])}</a>: {e(l['text'])}", ""]
         return "\n".join([SITE_LINE, f"<b>{e(m['title'])}</b>", ""] + body
                          + [f"<a href=\"{e(SITE_LOG_LINK)}\">Every change in the Updates log</a>"])
     return "\n".join([SITE_LINE, f"<b>{e(m['title'])}</b>", "", e(m["text"]), "",
