@@ -70,7 +70,7 @@ my-node
 node.tauhud.com
 node.tauhud.com/services
 ok version={n} env=simulation node=tau-hud-sim
-tauhud.com/telegram
+t.me/tauHUDchat
 tau-testnet
 tau-testnet-v{n}
 tau.net

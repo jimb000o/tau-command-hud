@@ -126,7 +126,7 @@ services:
       TAU_GOVERNANCE_OPEN_ADMISSION: ${TAU_NETWORK_OPEN_GOVERNANCE:-false}  # what the network admits now (pages, vote counting); see the node comment above
       FEED_URL: https://${RELAY_DOMAIN}/feed.xml
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
-      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDcom}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDchat}
       TELEGRAM_NEWS_TOPIC: ${TELEGRAM_NEWS_TOPIC:-}
       X_API_KEY: ${X_API_KEY:-}
       X_API_SECRET: ${X_API_SECRET:-}
@@ -208,7 +208,7 @@ services:
     command: ["python", "donations.py"]
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
-      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDcom}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDchat}
       TELEGRAM_NEWS_TOPIC: ${TELEGRAM_NEWS_TOPIC:-}
       X_API_KEY: ${X_API_KEY:-}
       X_API_SECRET: ${X_API_SECRET:-}
@@ -253,7 +253,7 @@ services:
       CHAT_AI_KEY: ${CHAT_AI_KEY:-}
       NEWS_AI_MODEL: ${NEWS_AI_MODEL:-claude-sonnet-5-5}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
-      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDcom}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDchat}
       TELEGRAM_NEWS_TOPIC: ${TELEGRAM_NEWS_TOPIC:-}
       X_API_KEY: ${X_API_KEY:-}
       X_API_SECRET: ${X_API_SECRET:-}
@@ -382,7 +382,7 @@ services:
     command: ["python", "agorzilla.py"]
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
-      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDcom}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDchat}
       TELEGRAM_NEWS_TOPIC: ${TELEGRAM_NEWS_TOPIC:-}
       AGORZILLA_POSTS: ${AGORZILLA_POSTS:-1}
       AGORZILLA_X_API_KEY: ${AGORZILLA_X_API_KEY:-}
@@ -476,7 +476,7 @@ services:
       RELAY_URL: ws://relay:8080
       RELAY_HTTP: http://relay:8080
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
-      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDcom}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDchat}
       TELEGRAM_NEWS_TOPIC: ${TELEGRAM_NEWS_TOPIC:-}
     volumes:
       - alerts_public:/public:ro   # proposals.json, written by alerts

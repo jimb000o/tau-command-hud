@@ -2148,7 +2148,7 @@ TauI18n.add({ strings: {
   "Every rule change is compiled on its own before it can enter the chain": "每项规则变更在进入链之前都会先单独编译",
   "Get a Telegram message when an account you follow moves: @tauhud_alerts_bot": "你关注的账户有动静时收到 Telegram 消息：@tauhud_alerts_bot",
   "Try writing a Tau rule in the Playground": "在游乐场里试着写一条 Tau 规则",
-  "Chain news on Telegram: tauhud.com/telegram": "Telegram 上的链上动态：tauhud.com/telegram",
+  "Chain news on Telegram: t.me/tauHUDchat": "Telegram 上的链上动态：t.me/tauHUDchat",
   "Follow @TauHUDcom on X": "在 X 上关注 @TauHUDcom",
   "Rules on Tau change only by agreement": "Tau 上的规则只能经同意而改变",
   "HUD: a news line under the four principles, which became shorter cards with their source in the corner. Live facts from the chain, the newest updates, pointers to useful pages and now and then our Telegram and X; each item decodes out of falling glyphs where it enters. Hover to pause, click to open. With reduced motion the items change in place. The header button “Get alerts” is now “Follow the chain”, with the same Telegram, X and RSS links.": "HUD：四条原则下方新增一条快讯，原则变成了更短的卡片，来源放在角落。链上的实时数据、最新更新、有用页面的指引，偶尔也有我们的 Telegram 和 X；每一条在进入时从落下的字符中解码出来。悬停可暂停，点击可打开。开启“减少动态效果”时，各条在原地切换。页头按钮“获取提醒”现在叫“关注这条链”，链接仍是 Telegram、X 和 RSS。",

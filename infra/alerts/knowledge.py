@@ -259,7 +259,7 @@ def md(d: dict) -> str:
     if d.get("progress"):
         a("### IDNI progress, one post a day")
         a("")
-        a("Written by Tau HUD from IDNI's commits and posted on Telegram (tauhud.com/telegram); the commits are the source.")
+        a("Written by Tau HUD from IDNI's commits and posted on Telegram (t.me/tauHUDchat); the commits are the source.")
         a("")
         for p in d["progress"]:
             a(f"- {p.get('days') or day(p.get('end'))}: {p['title']}. {p.get('why') or ''}".rstrip() +

@@ -40,6 +40,7 @@
     const r = await fetch("https://node.tauhud.com/proposals.json", { cache: "no-store", signal: ctl.signal });
     url = ((await r.json()).channels || {}).telegram || null;
   } catch (e) { url = null; }
+  if (!url) url = "https://t.me/tauHUDchat";   // the node not reachable: the group's name as of 13 November 2026
   if (bad(url)) {
     msg.textContent = "Our Telegram group is moving to a new address. It will be linked here in a moment; until then, follow along on X or the RSS feed.";
     return;

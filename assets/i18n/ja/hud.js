@@ -2137,7 +2137,7 @@ TauI18n.add({ strings: {
   "Every rule change is compiled on its own before it can enter the chain": "ルール変更はチェーンに入る前に単独でコンパイルされます",
   "Get a Telegram message when an account you follow moves: @tauhud_alerts_bot": "フォローしたアカウントが動くと Telegram でお知らせ：@tauhud_alerts_bot",
   "Try writing a Tau rule in the Playground": "プレイグラウンドで Tau のルールを書いてみよう",
-  "Chain news on Telegram: tauhud.com/telegram": "Telegram でチェーンのニュース：tauhud.com/telegram",
+  "Chain news on Telegram: t.me/tauHUDchat": "Telegram でチェーンのニュース：t.me/tauHUDchat",
   "Follow @TauHUDcom on X": "X で @TauHUDcom をフォロー",
   "Rules on Tau change only by agreement": "Tau のルールは合意によってのみ変わります",
   "HUD: a news line under the four principles, which became shorter cards with their source in the corner. Live facts from the chain, the newest updates, pointers to useful pages and now and then our Telegram and X; each item decodes out of falling glyphs where it enters. Hover to pause, click to open. With reduced motion the items change in place. The header button “Get alerts” is now “Follow the chain”, with the same Telegram, X and RSS links.": "HUD：4つの原則の下にニュースの行を追加し、原則は出典を隅に置いた短いカードになりました。チェーンのライブ情報、最新の更新、役立つページへの案内、ときどき私たちの Telegram と X。各項目は入ってくるところで降る文字からデコードされます。ホバーで一時停止、クリックで開きます。動きを減らす設定では、その場で切り替わります。ヘッダーのボタン「通知を受け取る」は「チェーンを追う」になりました。リンクは同じ Telegram、X、RSS です。",

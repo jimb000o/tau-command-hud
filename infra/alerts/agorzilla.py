@@ -47,7 +47,7 @@ URL = os.environ.get("AGORZILLA_LATEST", "https://agorzilla.com/chain/latest.jso
 STATE = os.environ.get("AGORZILLA_STATE", "/state/agorzilla.json")
 EVERY = float(os.environ.get("AGORZILLA_SECONDS", 600))
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
-CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDcom").strip()
+CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDchat").strip()
 ENABLED = os.environ.get("AGORZILLA_POSTS", "1") != "0"
 X_OUT = X({k: os.environ.get("AGORZILLA_" + k, "").strip() for k in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET")})
 # the creature: its base picture (portrait WebP, transparent), set once on a dark 16:9 card for X

@@ -4,7 +4,7 @@
    anything missing is generated as a link to the HUD. */
 (() => {
   "use strict";
-  const TELEGRAM = "https://tauhud.com/telegram/", XCOM = "https://x.com/TauHUDcom", RSS = "https://node.tauhud.com/feed.xml", AGZX = "https://x.com/Agorzilla";
+  const TELEGRAM = "https://t.me/tauHUDchat", XCOM = "https://x.com/TauHUDcom", RSS = "https://node.tauhud.com/feed.xml", AGZX = "https://x.com/Agorzilla";
   const LATEST = "v30.4"; // fallback only: the green dot keys on the newest entry of assets/updates.json (tag|date), read below
   let LATEST_ID = LATEST;
   const SEEN_KEY = "tauhud-updates-seen", VIEW_KEY = "tau-view", VIEWER_KEY = "tauhud-viewer";
@@ -1039,7 +1039,7 @@
     const host = f.querySelector("p:last-of-type") || f; as.forEach(a => host.append(" · ", a));
     const sh = el("a", "tn-foot", "Share"); sh.href = "#share"; sh.addEventListener("click", e => { e.preventDefault(); openShare(); }); host.append(" · ", sh);
     /* socials as their own group at the end of the line, with their marks, so they read as a way to follow along and not as one more link */
-    f.querySelectorAll('a[href*="tauhud.com/telegram"], a[href*="x.com/TauHUDcom"]').forEach(a => { if (a.previousSibling && a.previousSibling.nodeType === 3) a.previousSibling.textContent = a.previousSibling.textContent.replace(/\s*·\s*$/, " "); a.remove(); });
+    f.querySelectorAll('a[href*="t.me/tauHUDchat"], a[href*="x.com/TauHUDcom"]').forEach(a => { if (a.previousSibling && a.previousSibling.nodeType === 3) a.previousSibling.textContent = a.previousSibling.textContent.replace(/\s*·\s*$/, " "); a.remove(); });
     const so = el("span", "tn-social", `<span class="tn-sol">Follow</span>`);
     [[TELEGRAM, PLANE, "Telegram"], [XCOM, XLOGO, "X"], [AGZX, `<img src="${ROOT}${agzPic}" alt="">`, "Agorzilla"]].forEach(([h, ic, t]) => { const a = el("a", "tn-soc", `${ic}<span>${esc(t)}</span>`); a.href = h; a.target = "_blank"; a.rel = "noopener"; so.append(a); });
     host.append(" ", so);

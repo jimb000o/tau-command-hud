@@ -328,7 +328,7 @@ window.GAZETTE_JA = {
         <p><a href="/playground/" data-noflip>自分でルールを書く</a> <i>/playground</i></p>
         <p><a href="/chronicle/" data-noflip>年代記の全編</a> <i>/chronicle</i></p>
       </div>
-      <div class="ad inv"><div class="t">電報サービス</div><p>合意されたルール変更、施行、新しいノードのすべてを、起きたその瞬間にあなたのポケットへ。</p><p><a href="https://tauhud.com/telegram/" target="_blank" rel="noopener" data-noflip>tauhud.com/telegram</a></p></div>
+      <div class="ad inv"><div class="t">電報サービス</div><p>合意されたルール変更、施行、新しいノードのすべてを、起きたその瞬間にあなたのポケットへ。</p><p><a href="https://t.me/tauHUDchat" target="_blank" rel="noopener" data-noflip>t.me/tauHUDchat</a></p></div>
     </div>
     <div class="u full rt"><h3 style="text-align:left;border-bottom:1px solid;padding-bottom:.2em">案内広告</h3></div>
     <div class="u s2 cls">
@@ -382,7 +382,7 @@ window.GAZETTE_JA = {
       <h2 class="l">近日予告</h2>
       <div class="c2"><p class="ni dc">チームが発表した今後の演目：言語へのテーブルと抽象データ型の追加、次のリリース前の開発ブランチのマージ、ふだんの言葉でルールを書けるシンプルなウォレット、そしてさらに先には、メインネットと、チームが長く描いてきた計算能力・知識・専門家の助言の市場、Agoras。</p>
       <p>本紙は日付を約束できないし、チームも約束しない。だが本紙はこれだけは約束できる。テストネット Alpha で次にルールが変わるとき、Tau HUD はその場にいる。あなたもいられる。</p></div>
-      <div class="coupon"><div class="t">切り抜いて保存</div><p>ライブで見る：<b>tauhud.com</b> · 通知：<b>tauhud.com/telegram</b> · ルールを試す：<b>tauhud.com/playground</b> · Tau 公式：<b>tau.net</b></p></div>
+      <div class="coupon"><div class="t">切り抜いて保存</div><p>ライブで見る：<b>tauhud.com</b> · 通知：<b>t.me/tauHUDchat</b> · ルールを試す：<b>tauhud.com/playground</b> · Tau 公式：<b>tau.net</b></p></div>
     </div>
     <div class="u s2 rl rt">
       <div class="ad"><div class="t">Tau HUD</div><p>自らのルールを変えるチェーンを見るための 12 の計器。無料。オープンソース。</p><div class="fine">寄付は任意で歓迎、見返りの約束はありません。詳しくは tauhud.com/donate。</div></div>

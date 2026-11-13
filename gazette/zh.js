@@ -328,7 +328,7 @@ window.GAZETTE_ZH = {
         <p><a href="/playground/" data-noflip>亲手写一条规则</a> <i>/playground</i></p>
         <p><a href="/chronicle/" data-noflip>完整编年史</a> <i>/chronicle</i></p>
       </div>
-      <div class="ad inv"><div class="t">电报服务</div><p>每项通过的规则变更、每次生效、每个新节点，发生的那一刻就送到你的口袋里。</p><p><a href="https://tauhud.com/telegram/" target="_blank" rel="noopener" data-noflip>tauhud.com/telegram</a></p></div>
+      <div class="ad inv"><div class="t">电报服务</div><p>每项通过的规则变更、每次生效、每个新节点，发生的那一刻就送到你的口袋里。</p><p><a href="https://t.me/tauHUDchat" target="_blank" rel="noopener" data-noflip>t.me/tauHUDchat</a></p></div>
     </div>
     <div class="u full rt"><h3 style="text-align:left;border-bottom:1px solid;padding-bottom:.2em">分类广告</h3></div>
     <div class="u s2 cls">
@@ -382,7 +382,7 @@ window.GAZETTE_ZH = {
       <h2 class="l">近期预告</h2>
       <div class="c2"><p class="ni dc">团队公布的后续节目：为语言加入表格和抽象数据类型；在下一次发布前合并开发分支；一个用白话写规则的简易钱包；以及更远一些的主网和 Agoras，即团队长期描述的算力、知识和专家咨询市场。</p>
       <p>本报无法承诺日期，团队也不承诺。但本报可以承诺：Testnet Alpha 上下一次规则变更时，Tau HUD 会在现场，你也可以。</p></div>
-      <div class="coupon"><div class="t">剪下收藏</div><p>实时观看：<b>tauhud.com</b> · 提醒：<b>tauhud.com/telegram</b> · 试写规则：<b>tauhud.com/playground</b> · Tau 官方：<b>tau.net</b></p></div>
+      <div class="coupon"><div class="t">剪下收藏</div><p>实时观看：<b>tauhud.com</b> · 提醒：<b>t.me/tauHUDchat</b> · 试写规则：<b>tauhud.com/playground</b> · Tau 官方：<b>tau.net</b></p></div>
     </div>
     <div class="u s2 rl rt">
       <div class="ad"><div class="t">Tau HUD</div><p>十二件仪器，观看一条能修改自身规则的链。免费。开源。</p><div class="fine">欢迎自愿捐赠，不承诺任何回报。详见 tauhud.com/donate。</div></div>

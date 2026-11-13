@@ -22,7 +22,7 @@ import json
 import os
 import re
 
-CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDcom").strip()
+CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@tauHUDchat").strip()
 STATE_DIR = os.path.dirname(os.environ.get("STATE_PATH", "/state/alerts.json")) or "/state"
 PATH = os.environ.get("TELEGRAM_STATE_PATH", os.path.join(STATE_DIR, "telegram.json"))
 NEWS_NAME = os.environ.get("TELEGRAM_NEWS_NAME", "📰 News")
