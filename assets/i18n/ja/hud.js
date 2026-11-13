@@ -1,7 +1,7 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
   "Right now: {n} in the crew, covering less than 1 % of the monthly bills.": "現在：クルー {n} 人、毎月の請求の 1 % 未満をまかなっています。",
-  "Crew light: its colour now follows money, not a head count. It is full green when the crew's memberships cover the site's monthly bills, and its hover says how many are in the crew, what part of the bills they cover and about how many more at the smallest level would cover the rest. It follows the bills and the membership levels by itself.": "クルーのランプ：色は人数ではなく金額に従うようになりました。クルーのメンバーシップがサイトの毎月の請求をまかなえたときに完全な緑になります。カーソルを合わせると、クルーの人数、請求のどれだけをまかなっているか、残りをまかなうには最小レベルであと約何人必要かが表示されます。請求やメンバーシップのレベルが変われば自動で追従します。",
+  "Crew light: it now shows in the header of every page, and its colour follows money, not a head count. It is full green when the crew's memberships cover the site's monthly bills, and its hover says how many are in the crew, what part of the bills they cover and about how many more at the smallest level would cover the rest. It follows the bills and the membership levels by itself.": "クルーのランプ：すべてのページのヘッダーに表示されるようになり、色は人数ではなく金額に従います。クルーのメンバーシップがサイトの毎月の請求をまかなえたときに完全な緑になります。カーソルを合わせると、クルーの人数、請求のどれだけをまかなっているか、残りをまかなうには最小レベルであと約何人必要かが表示されます。請求やメンバーシップのレベルが変われば自動で追従します。",
   "Right now: {n} in the crew, covering {p} % of the monthly bills.": "現在：クルー {n} 人、毎月の請求の {p} % をまかなっています。",
   "About {m} more at the smallest level would cover them.": "最小レベルであと約 {m} 人いれば、すべてまかなえます。",
   "The bills are covered.": "請求はすべてまかなわれています。",

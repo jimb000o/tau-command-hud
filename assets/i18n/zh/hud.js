@@ -1,7 +1,7 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
   "Right now: {n} in the crew, covering less than 1 % of the monthly bills.": "目前：船员 {n} 人，承担每月账单不到 1 %。",
-  "Crew light: its colour now follows money, not a head count. It is full green when the crew's memberships cover the site's monthly bills, and its hover says how many are in the crew, what part of the bills they cover and about how many more at the smallest level would cover the rest. It follows the bills and the membership levels by itself.": "船员灯：它的颜色现在跟着金额走，不再数人头。船员的会员费足以支付本站每月账单时，它才全绿；悬停时会显示船员人数、他们承担了账单的多少，以及大约还需要多少位最低档成员才能付清其余部分。账单和会员档位变动时它会自动跟上。",
+  "Crew light: it now shows in the header of every page, and its colour follows money, not a head count. It is full green when the crew's memberships cover the site's monthly bills, and its hover says how many are in the crew, what part of the bills they cover and about how many more at the smallest level would cover the rest. It follows the bills and the membership levels by itself.": "船员灯：现在每个页面的页眉都有它，而且它的颜色跟着金额走，不再数人头。船员的会员费足以支付本站每月账单时，它才全绿；悬停时会显示船员人数、他们承担了账单的多少，以及大约还需要多少位最低档成员才能付清其余部分。账单和会员档位变动时它会自动跟上。",
   "Right now: {n} in the crew, covering {p} % of the monthly bills.": "目前：船员 {n} 人，承担每月账单的 {p} %。",
   "About {m} more at the smallest level would cover them.": "大约再有 {m} 位最低档成员就能付清。",
   "The bills are covered.": "账单已付清。",

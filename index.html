@@ -1547,21 +1547,10 @@ function tickSubs() {
 const HV = "\u2063", verdict = (lv, txt) => HV + lv + HV + txt + "\n";
 /* a validator's own page: its profile on the accounts page (what it sealed, how much traffic, its votes); the language travels along */
 { const c = $("chipOnline"), l = new URLSearchParams(location.search).get("lang"); if (c && l) c.href = "meta/?view=tauhud&lang=" + encodeURIComponent(l); }
-/* the crew light: how many monthly memberships are active, and how far their share covers the monthly bills
-   (TauNav.crewFacts: earnings.json of our server against assets/costs.json). Red at nothing covered, full green when
-   the crew covers the bills; in between the hue follows the square root of the part covered, so the first members show. */
-{ const c = $("chipCrew"), l = new URLSearchParams(location.search).get("lang"), tip = c.dataset.full; if (l) c.href = "crew/?ref=hud&lang=" + encodeURIComponent(l);
-  const T = x => (window.TauI18n ? TauI18n.t(x) : x);
-  const read = () => !(window.TauNav && TauNav.crewFacts) ? setTimeout(read, 500) : TauNav.crewFacts().then(f => {
-    if (!f) return;
-    const part = f.part == null ? (f.n > 0 ? .05 : 0) : f.n > 0 ? Math.max(f.part, .003) : 0, d = $("crewDot"), col = `hsl(${Math.round(Math.sqrt(part) * 145)} 100% ${part >= 1 ? 61 : 58}%)`;
-    $("crewN").textContent = String(f.n); d.className = "dot" + (part > 0 ? "" : " off"); d.style.background = col; d.style.boxShadow = "0 0 8px " + col; $("crewN").style.color = col;
-    let now = "";
-    if (f.part != null) now = T(f.part > 0 && f.part < .01 ? `Right now: ${f.n} in the crew, covering less than 1 % of the monthly bills.` : `Right now: ${f.n} in the crew, covering ${Math.floor(f.part * 100)} % of the monthly bills.`)
-      + (f.more > 0 ? " " + T(`About ${f.more} more at the smallest level would cover them.`) : f.more === 0 ? " " + T("The bills are covered.") : "");
-    c.dataset.full = T(tip) + (now ? "\n" + now : ""); c.hidden = false;
-  }).catch(() => {});
-  read(); setInterval(read, 15 * 60000); }
+/* the crew light: how many monthly memberships are active and how far they cover the monthly bills (TauNav.crewLight
+   in assets/nav.js paints it, here and in the header of every other page) */
+{ const c = $("chipCrew"), l = new URLSearchParams(location.search).get("lang"); if (l) c.href = "crew/?ref=hud&lang=" + encodeURIComponent(l);
+  const go = () => (window.TauNav && TauNav.crewLight ? TauNav.crewLight(c, "data-full") : setTimeout(go, 500)); go(); }
 { const l = new URLSearchParams(location.search).get("lang"); if (l) [["ownRule", "mine"], ["ownShare", "share"]].forEach(([id, t]) => { const a = $(id); if (a) a.href = `wallet/?from=hud&lang=${encodeURIComponent(l)}#rules-${t}`; }); }   // the rule panels open the wallet at the matching tab, in the same language   // the online chip opens Tau HUD in numbers on its Tau HUD tab, in the same language
 const valProfile = v => { const l = new URLSearchParams(location.search).get("lang"); return `account/?a=${encodeURIComponent(String(v).toLowerCase().replace(/^0x/, ""))}&view=validator${l ? "&lang=" + encodeURIComponent(l) : ""}`; };
 const liveChain = () => S.mode === "live" && !S.simfeed, offline = () => liveChain() && LIVE.status !== "Connected";
