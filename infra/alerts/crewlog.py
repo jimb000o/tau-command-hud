@@ -31,6 +31,11 @@ UPDATES_URL = os.environ.get("CREWLOG_UPDATES_URL", "https://tauhud.com/assets/u
 COSTS_URL = os.environ.get("CREWLOG_COSTS_URL", "https://tauhud.com/assets/costs.json")
 WEEK = 7 * 86400
 MAX_UPDATES = 8
+# where an entry without its own link leads, by its tag (the same pages as LOGPAGE in assets/nav.js)
+TAG_PAGE = {"Playground": "/playground/", "Learn": "/learn/", "Explorer": "/explorer/", "Wallet": "/wallet/", "Nodes": "/nodes/",
+            "Proposals": "/proposals/", "Blog": "/blog/", "Status": "/status/", "Stats": "/stats/", "Findings": "/findings/",
+            "Roadmap": "/roadmap/", "No Memo": "/nomemo/", "White Rabbit Key": "/rabbit/", "Rule builder": "/builder/",
+            "Guardian": "/guardian/", "Privacy": "/legal/", "In numbers": "/meta/", "Agorzilla": "https://agorzilla.com/"}
 SKIP_TAGS = {"Crew", "Donations"}   # the site's own money pages: members already know them, the log shows what else changed
 UA = "tauhud-crewlog/1"
 
@@ -106,7 +111,7 @@ def week_updates(updates: list | None, start: float, end: float, site: str) -> l
         text = _plain(e.get("html", ""))
         if not text:
             continue
-        link = str(e.get("link") or "")
+        link = str(e.get("link") or "") or TAG_PAGE.get(str(e.get("tag", "")), "")
         link = link if link.startswith("https://") else (site + link if link.startswith("/") else site + "/")
         out.append((text if len(text) <= 240 else text[:237].rsplit(" ", 1)[0] + "…", link))
     return out

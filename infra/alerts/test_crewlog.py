@@ -40,5 +40,7 @@ check(crewlog.members([{"members": 3}, {"members": 1}, {"members": None}]) == 4 
 many = [{"on": "2026-11-12", "html": f"change {i}"} for i in range(11)]
 _, d2 = crewlog.compose(r, [], "x", many, {}, 0)
 check("and 3 smaller changes" in d2, "long weeks shortened with a link to the full log")
+_, d3 = crewlog.compose(r, [], "x", [{"tag": "Learn", "on": "2026-11-12", "html": "a lesson"}], {}, 0)
+check('href="https://tauhud.com/learn/"' in d3, "an entry without a link leads to its tag's page")
 print("\nall ok" if not fails else f"\n{fails} failed")
 sys.exit(1 if fails else 0)
