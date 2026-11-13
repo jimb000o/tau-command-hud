@@ -39,6 +39,7 @@ class Fake(alerts.Outlet):
 
 
 long_why = "This is a long sentence about why the change matters to everyone who uses the chain. " * 8
+alerts.X_SITE_LINK = False   # the link-free shape first; the site's own link is checked below
 texts = {
     "rule": alerts.x_text({"kind": "agreed", "headline": "Users agreed: the base fee goes from 20 to 30", "why": long_why,
                            "link": "https://tauhud.com/proposals/"}),
@@ -99,6 +100,12 @@ alerts.X_LINKS = True
 t = alerts.x_text({"kind": "agreed", "headline": "h", "why": "w", "link": "https://tauhud.com/proposals/"})
 check(t.endswith("https://tauhud.com/proposals/ · #TauNet"), "X_LINKS=true puts the link back")
 alerts.X_LINKS = False
+alerts.X_SITE_LINK = True
+t = alerts.major_x({"title": "New: The Daily Consensus", "text": long_why, "link": "https://tauhud.com/gazette/"})
+check("https://tauhud.com/gazette/" in t and t.endswith("#TauNet") and alerts.x_len(t) <= 280, "X_SITE_LINK: the site's news carry their link, within 280")
+t = alerts.catchup_x([{"title": f"New: page number {i} with a fairly long name"} for i in range(20)])
+check(alerts.SITE_LOG_LINK in t and alerts.x_len(t) <= 280, "X_SITE_LINK: a catch-up carries the log's link, within 280")
+alerts.X_SITE_LINK = False
 
 
 async def main():
