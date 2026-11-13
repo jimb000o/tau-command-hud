@@ -797,4 +797,7 @@ TauI18n.add({ strings: {
   "Right now: {n} in the crew, covering less than 1 % of the monthly bills.": "目前：船员 {n} 人，承担每月账单不到 1 %。",
   "About {m} more at the smallest level would cover them.": "大约再有 {m} 位最低档成员就能付清。",
   "The bills are covered.": "账单已付清。",
+  "Three ways, all optional. No crypto wallet?": "三种方式，都出于自愿。没有加密钱包？",
+  "A paid membership with no duties, not a donation. Something to wear or to drink from?": "这是付费会员，没有任何义务，不是捐赠。想要能穿的、能用来喝水的？",
+  "The shop ›": "商店 ›",
 } });

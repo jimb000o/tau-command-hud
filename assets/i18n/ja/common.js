@@ -792,4 +792,7 @@ TauI18n.add({ strings: {
   "Right now: {n} in the crew, covering less than 1 % of the monthly bills.": "現在：クルー {n} 人、毎月の請求の 1 % 未満をまかなっています。",
   "About {m} more at the smallest level would cover them.": "最小レベルであと約 {m} 人いれば、すべてまかなえます。",
   "The bills are covered.": "請求はすべてまかなわれています。",
+  "Three ways, all optional. No crypto wallet?": "方法は 3 つ、どれも任意です。暗号資産ウォレットがない方は：",
+  "A paid membership with no duties, not a donation. Something to wear or to drink from?": "義務のない有料メンバーシップで、寄付ではありません。着るもの、飲むためのものがいいですか？",
+  "The shop ›": "ショップ ›",
 } });

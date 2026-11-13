@@ -1,5 +1,6 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Support page: the shop now has its own place there as a third way to help, with pictures of six pieces that each open in the shop. The About panel names the shop too.": "サポートページ：ショップが 3 つ目の支援方法として専用の場所を持ち、6 点の写真からそれぞれショップで開けます。「About」パネルにもショップを載せました。",
   "Right now: {n} in the crew, covering less than 1 % of the monthly bills.": "現在：クルー {n} 人、毎月の請求の 1 % 未満をまかなっています。",
   "Crew light: it now shows in the header of every page, and its colour follows money, not a head count. It is full green when the crew's memberships cover the site's monthly bills, and its hover says how many are in the crew, what part of the bills they cover and about how many more at the smallest level would cover the rest. It follows the bills and the membership levels by itself.": "クルーのランプ：すべてのページのヘッダーに表示されるようになり、色は人数ではなく金額に従います。クルーのメンバーシップがサイトの毎月の請求をまかなえたときに完全な緑になります。カーソルを合わせると、クルーの人数、請求のどれだけをまかなっているか、残りをまかなうには最小レベルであと約何人必要かが表示されます。請求やメンバーシップのレベルが変われば自動で追従します。",
   "Right now: {n} in the crew, covering {p} % of the monthly bills.": "現在：クルー {n} 人、毎月の請求の {p} % をまかなっています。",
@@ -2569,4 +2570,7 @@ TauI18n.add({ strings: {
   "it gets cold between blocks · dress for the wait": "ブロックの合間は冷えます · 待ち時間に備えて着込もう",
   "Opens the whole Tau HUD shop at Fourthwall in a new tab: three sweaters, five tees, a sticker sheet and a mug.": "Fourthwall の Tau HUD ショップ全体を新しいタブで開きます：セーター 3 点、T シャツ 5 点、ステッカーシート、マグカップ。",
   "Shop notice on the HUD: it now leads with one sweater and opens that sweater’s page; “All 10 pieces” opens the whole store. A line above the button counts down to the next block with the live chain, and the sweater hangs in its own light inside a stitched frame.": "HUD のショップ告知：1 枚のセーターを主役にし、クリックするとそのセーターのページが開きます。「全 10 点」はショップ全体を開きます。ボタンの上の行はライブのチェーンに合わせて次のブロックまでをカウントダウンし、セーターはステッチの枠の中で自分の光に照らされています。",
+  "Three ways, all optional. No crypto wallet?": "方法は 3 つ、どれも任意です。暗号資産ウォレットがない方は：",
+  "A paid membership with no duties, not a donation. Something to wear or to drink from?": "義務のない有料メンバーシップで、寄付ではありません。着るもの、飲むためのものがいいですか？",
+  "The shop ›": "ショップ ›",
 } });
