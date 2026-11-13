@@ -2221,6 +2221,7 @@
       Object.keys(CANDS).forEach(c => acts.append(chainBtn(c, F("Vote {x}", { x: nm(c) }), F("Key ballot: {x}", { x: nm(c) }))));
       acts.append(ballotEl(), isleVerdict());
       bank(); acts.append(el("p", { class: "cv-note", text: Fd("Your savings: {n} coins. They carry over to your next campaign and buy things the island keeps: a roof for the school, a lamp for the lighthouse, a stone in Tano’s circle.", { n: savings().coins }) }));
+      if (window.TauNav && TauNav.piece) acts.append(TauNav.piece("rabbit", "rabbit", "The White Rabbit also comes knitted: a Christmas sweater that says “Follow the rabbit to the next block.”"));   // the rabbit they just played, as a piece
       if (window.TauNav && TauNav.support) acts.append(TauNav.support("rabbit"));   // the campaign is over: one calm line on what the site costs
       const again = FREE || !G.week || G.week !== weekId();
       acts.append(btn(again ? T("Play again") : T("Next campaign on Monday"), () => { store.del(KEY); G = null; closeCard(); start(); }, { go: true, off: !again, sub: again ? null : Fd("the week is played; a new one begins {x}", { x: countIn() }) }), btn(T("Read the Book"), () => openCard("book", PLACE.book)), btn(T("The players’ board"), () => openBoard()), btn(T("The special edition"), () => { G.over.read = false; closeCard(true); ending(); }));

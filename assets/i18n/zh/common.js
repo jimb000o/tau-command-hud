@@ -800,4 +800,8 @@ TauI18n.add({ strings: {
   "Three ways, all optional. No crypto wallet?": "三种方式，都出于自愿。没有加密钱包？",
   "A paid membership with no duties, not a donation. Something to wear or to drink from?": "这是付费会员，没有任何义务，不是捐赠。想要能穿的、能用来喝水的？",
   "The shop ›": "商店 ›",
+  "The White Rabbit also comes knitted: a Christmas sweater that says “Follow the rabbit to the next block.”": "白兔也有针织版：一件圣诞毛衣，上面写着“Follow the rabbit to the next block.”（跟着兔子去下一个区块）。",
+  "It is on a mug ›": "这句话印在马克杯上 ›",
+  "INSUFFICIENT_FUNDS. Nearly everyone on the testnet gets this answer once; now you have it too. It also comes as a tee.": "INSUFFICIENT_FUNDS。测试网上几乎每个人都收到过一次这个回答，现在你也有了。它还有 T 恤版。",
+  "Or something to wear, from the testnet:": "或者来一件能穿的，出自测试网：",
 } });

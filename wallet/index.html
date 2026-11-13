@@ -806,6 +806,12 @@ async function submit(tx, label, kind) {
   setTimeout(refresh, SIM ? 50 : 1500);
   return { ok: true, hash, data: res.data };
 }
+/* the node's best-known answer, met for the first time in this browser: one line that it also comes as a tee. Once, never again. */
+function teeOnce(res, why) {
+  if (SIM || why !== T("Refused before sending: not enough test AGRS for the amount and the fee.") || !window.TauNav || !TauNav.piece) return;
+  try { if (localStorage.getItem("tauhud-tee-funds")) return; localStorage.setItem("tauhud-tee-funds", "1"); } catch (e) { return; }
+  res.after(TauNav.piece("funds", "wallet", "INSUFFICIENT_FUNDS. Nearly everyone on the testnet gets this answer once; now you have it too. It also comes as a tee."));
+}
 const byRule = env => /user policy \(o5\)/i.test(JSON.stringify((env && (env.error || env.data)) || {}));
 /* the node's refusals, in plain words where we know them */
 function plain(env) {
@@ -1179,7 +1185,7 @@ async function signNow(p, trying) {
     res.textContent = p.kind === "cosign" ? T("Sent as a request: it executes the moment your co-signer signs.") : p.kind === "back" ? T("Sent. Until it is released you can take it back under Activity.") : p.kind === "vote" ? T("Your yes is on its way; the next block counts it.") : T("Sent. The next block takes it in.");
     if (p.kind !== "vote") { $("amount").value = ""; $("fromLink").hidden = true; if (p.kind === "split") SPLITS = [{ to: "", amount: "" }, { to: "", amount: "" }]; renderSplits(); }
   } else if (trying && r.policy) { res.className = "result no"; res.textContent = T("Refused, as your rule says: the node turned it away before it reached a block. Nothing left your account."); }
-  else { res.className = "result no"; res.textContent = r.why; }
+  else { res.className = "result no"; res.textContent = r.why; teeOnce(res, r.why); }
   renderAll();
 }
 $("btnSign").onclick = () => { if (P && P.can) signNow(P, false); };

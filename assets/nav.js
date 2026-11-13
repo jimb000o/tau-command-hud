@@ -1154,6 +1154,19 @@
     }).catch(() => {});
     read(); setInterval(read, 15 * 60000);
   }
+  /* a piece of the shop where the visitor just met what it quotes (the rabbit after the game, the rule after the lesson):
+     a small picture, one sentence, one link to that piece. TauNav.piece("rabbit", "rabbit", text) returns the <p>. */
+  const SHOP = "https://tau-hud-shop.fourthwall.com/";
+  const PIECES = { rabbit: ["follow-the-rabbit-to-the-next-block", "sweater.png"], rule: ["always-o1-t-i1-t", "sweater-rule.png"], funds: ["insufficient-funds-tee", "tee-funds.webp"],
+    nomemo: ["no-memo-tee", "tee-nomemo.webp"], mug: ["waiting-for-the-next-block-mug", "mug.webp"], stickers: ["testnet-sticker-pack", "stickers.webp"] };
+  const pieceUrl = (key, ref) => SHOP + (PIECES[key] ? "products/" + PIECES[key][0] : "") + "?utm_source=tauhud&utm_medium=" + encodeURIComponent(ref);
+  function piece(key, ref, text) {
+    const tr = x => (window.TauI18n ? TauI18n.t(x) : x), p = el("p", "tn-support tn-piece"), a = document.createElement("a"), s = document.createElement("span");
+    a.href = pieceUrl(key, ref); a.target = "_blank"; a.rel = "noopener"; a.textContent = tr("See it in the shop ›");
+    if (PIECES[key]) { const i = document.createElement("img"); i.src = ROOT + "assets/shop/" + PIECES[key][1]; i.alt = ""; i.loading = "lazy"; i.width = 66; i.height = 57; p.append(i); }
+    s.textContent = tr(text) + " "; s.append(a); p.append(s);
+    return p;
+  }
   function support(ref, shop) {
     const tr = x => (window.TauI18n ? TauI18n.t(x) : x), p = el("p", "tn-support");
     const a = document.createElement("a");
@@ -1165,5 +1178,5 @@
     supportFacts().then(f => { if (f) say(tr("Tau HUD costs about 904170a a month to run. This month 904170b came in.").replace("904170a", f.month).replace("904170b", f.got), tr("Support Tau HUD ›")); });
     return p;
   }
-  window.TauNav = { support, crewFacts, crewLight, LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM, tabs: retab, level: () => LEVEL, setLevel };
+  window.TauNav = { support, piece, pieceUrl, crewFacts, crewLight, LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM, tabs: retab, level: () => LEVEL, setLevel };
 })();
