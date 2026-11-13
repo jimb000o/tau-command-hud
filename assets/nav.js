@@ -283,13 +283,14 @@
         <p class="tn-follow"><a href="${TELEGRAM}" rel="noopener" data-full="A Telegram channel that posts every new proposal, agreement and activation on the testnet. Opens Telegram.">Follow rule changes on Telegram ›</a> <span>· <a href="${XCOM}" target="_blank" rel="noopener">on X</a> · <a href="${ROOT}proposals/${q}">proposal tracker</a></span></p>
       </article>
       <article class="tn-panel tn-keep">
-        <h2>Donations <small>voluntary, nothing in return</small><button class="tn-info" type="button" aria-label="What is this?" data-tip="Tau HUD is an independent community project, built by one person in their free time. The address and the QR code are the same as in About. A donation is a voluntary gift: nothing is promised or owed in return.">i</button></h2>
+        <h2>Support Tau HUD <small>optional</small><button class="tn-info" type="button" aria-label="What is this?" data-tip="Tau HUD is an independent community project, built by one person in their free time. The address and the QR code are the same as in About. A donation is a voluntary gift: nothing is promised or owed in return.">i</button></h2>
         <p class="lead small">Tau HUD is free to use. If you find it useful, a donation is welcome. It is a voluntary gift and buys nothing: no access, no feature, no say and no promise about the future of the site. What comes in may go toward the time, tools and server behind it.</p>
         <p class="small">AGRS or ETH, one address for both · voluntary, nothing owed in return</p>
         <div class="tn-donate">${DONATE.qr}<div class="tn-addr"><code>${DONATE.addr}</code><button class="tn-btn" type="button">Copy</button></div></div>
         <p class="small tn-thanks" hidden></p>
         <p class="small tn-cost" hidden></p>
         <p class="small"><a href="${ROOT}donate/">What it costs, and every donation on chain ›</a></p>
+        <p class="small tn-crew">No crypto wallet? <a href="${ROOT}crew/?ref=about">Support monthly from €4.17, cancel any time ›</a> A paid membership with no duties, not a donation.</p>
         <p class="small tn-copymsg" aria-live="polite">Check the address against this page before sending; never trust a copy of it from elsewhere.</p>
       </article>
       </div>
@@ -1090,5 +1091,38 @@
   /* the Rule Playground switches between its two halves without leaving the page: the tabs follow */
   const retab = () => document.querySelectorAll("nav.tnav").forEach(nav => { if ((nav.dataset.page || "hud") === "playground") groupTabs(nav, "playground"); });
   addEventListener("hashchange", retab);
-  window.TauNav = { LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM, tabs: retab, level: () => LEVEL, setLevel };
+  /* One calm line for the place where a visit ends well (a game's ending, the last lesson): what the site costs a month
+     and what came in this month, from the same lists as the Donations page, and a link to Support. Never on a first view,
+     never more than one on a page. TauNav.support("win") returns the <p>; the caller puts it where it belongs. */
+  let SUPF = null;
+  function supportFacts() {
+    return SUPF || (SUPF = (async () => {
+      const lang = (window.TauI18n && TauI18n.lang) || "en", RC = { zh: "CNY", ja: "JPY" }[lang] || "USD", rc = RC.toLowerCase();
+      const j = async (u, o) => { const r = await fetch(u, o); if (!r.ok) throw 0; return r.json(); };
+      const [c, d, e] = await Promise.all([j(ROOT + "assets/costs.json", { cache: "no-cache" }), j(DONATE.donors, { cache: "no-store" }),
+        j("https://node.tauhud.com/earnings.json", { cache: "no-store" }).catch(() => ({ items: [] }))]);
+      const fx = (d.items || []).find(x => x.fiat && ["eur", "usd", "cny", "jpy"].every(k => x.fiat[k] > 0)); if (!fx) throw 0;
+      const to = (n, cur) => (cur === RC ? n : n * fx.fiat[rc] / fx.fiat[String(cur).toLowerCase()]);
+      const bills = (c.items || []).filter(x => typeof x.amount === "number" && ["EUR", "USD", "CNY", "JPY"].includes(x.cur));
+      const month = bills.reduce((a, x) => a + to(x.amount, x.cur), 0); if (!(month > 0)) throw 0;
+      const m0 = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1);
+      let got = 0;
+      (d.items || []).forEach(x => { const v = x.fiat && x.fiat[rc]; if (x.ts * 1000 >= m0 && isFinite(v)) got += v; });
+      (e.items || []).forEach(x => { if (typeof x.amount === "number" && ["EUR", "USD", "CNY", "JPY"].includes(x.cur) && Date.parse(x.on + "T12:00:00Z") >= m0) got += to(x.amount, x.cur); });
+      const money = v => new Intl.NumberFormat(RC === "USD" ? "en-US" : lang, { style: "currency", currency: RC, maximumFractionDigits: 0 }).format(Math.max(0, v));
+      return { month: money(month), got: money(got) };
+    })().catch(() => null));
+  }
+  function support(ref, shop) {
+    const tr = x => (window.TauI18n ? TauI18n.t(x) : x), p = el("p", "tn-support");
+    const a = document.createElement("a");
+    if (shop) { a.href = "https://tau-hud-shop.fourthwall.com/?utm_source=tauhud&utm_medium=" + encodeURIComponent(ref); a.target = "_blank"; a.rel = "noopener"; }
+    else a.href = ROOT + "crew/?ref=" + encodeURIComponent(ref);
+    const say = (text, link) => { p.textContent = text + " "; a.textContent = link; p.append(a); };
+    if (shop) { say(tr(shop), tr("See it in the shop ›")); return p; }
+    say(tr("Tau HUD is free and built in spare time."), tr("Support Tau HUD ›"));
+    supportFacts().then(f => { if (f) say(tr("Tau HUD costs about 904170a a month to run. This month 904170b came in.").replace("904170a", f.month).replace("904170b", f.got), tr("Support Tau HUD ›")); });
+    return p;
+  }
+  window.TauNav = { support, LATEST, version: () => SITE_VER || LATEST, TELEGRAM, XCOM, RSS, AGZX, markSeen, closeAll, share: openShare, chain: CHAIN, sim: SIM, tabs: retab, level: () => LEVEL, setLevel };
 })();

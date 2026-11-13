@@ -1176,5 +1176,8 @@ TauI18n.add({ strings: {
   "intel contracts": "情报任务",
   "Personal rules": "个人规则",
   "Guards and probes": "守卫与试探",
-  "An intel contract hides a wallet’s personal rule: a line of Tau the chain checks each of that wallet’s payments against. A probe asks the real Tau engine on our server whether the rule lets a transfer of that amount through (o5 = 1) or blocks it (o5 = 0); nothing goes to the chain. Where a rule says nothing, the engine answers 0: blocked.": "情报任务藏着一个钱包的个人规则：一行 Tau，链用它检查这个钱包的每一笔付款。一次试探就是问我们服务器上真正的 Tau 引擎：这条规则放行这笔金额的转账（o5 = 1）还是拦下（o5 = 0）；什么都不会发到链上。规则什么也没说的地方，引擎回答 0：拦下。"
+  "An intel contract hides a wallet’s personal rule: a line of Tau the chain checks each of that wallet’s payments against. A probe asks the real Tau engine on our server whether the rule lets a transfer of that amount through (o5 = 1) or blocks it (o5 = 0); nothing goes to the chain. Where a rule says nothing, the engine answers 0: blocked.": "情报任务藏着一个钱包的个人规则：一行 Tau，链用它检查这个钱包的每一笔付款。一次试探就是问我们服务器上真正的 Tau 引擎：这条规则放行这笔金额的转账（o5 = 1）还是拦下（o5 = 0）；什么都不会发到链上。规则什么也没说的地方，引擎回答 0：拦下。",
+  "{x} is the chain doing its job. That answer is also printed on a tee:": "{x} 说明链在尽职。这个回答也印在一件 T 恤上：",
+  "the Tau HUD shop": "Tau HUD 商店",
+  "Three contracts settled. The node this terminal dials has a monthly bill. Nobody has to, but whoever wants can carry a part of it:": "三份合约已结清。这个终端连接的节点每月都有账单。没有人必须这样做，但愿意的人可以分担一部分：",
 } });

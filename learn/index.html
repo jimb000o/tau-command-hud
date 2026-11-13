@@ -718,6 +718,7 @@ function fillIn(l) {
   });
 }
 function openLesson(i) {
+  document.querySelectorAll(".tn-support.learn").forEach(e => e.remove());
   cur = Math.max(0, Math.min(lessons.length - 1, i));
   const l = lessons[cur];
   fillIn(l);
@@ -755,6 +756,10 @@ $("tCheck").addEventListener("click", async () => {
     const done = store.get(); done[l.id] = new Date().toISOString().slice(0, 10); store.set(done);
     v.className = "verdict good"; v.textContent = l.id === "rule" ? T("Solved. You just changed a testnet rule. Next: try it against the testnet's own checks in the Rule Playground.") : cur === 0 ? T("Solved. You wrote your first Tau formula.") : T("Solved. On to the next lesson.");
     const sb = document.createElement("button"); sb.type = "button"; sb.textContent = T("Copy link to it"); sb.addEventListener("click", () => $("share").click()); v.append(sb);
+    /* one calm line where it fits: after the first rule, the sweater that carries a rule of the same kind; after the last lesson, what the site costs */
+    document.querySelectorAll(".tn-support.learn").forEach(e => e.remove());
+    const sup = !window.TauNav || !TauNav.support ? null : l.id === "rule" ? TauNav.support("learn", "You just wrote a rule with always. A rule of the same kind is knitted into our Christmas sweater: always o1[t] = i1[t].") : cur === lessons.length - 1 ? TauNav.support("learn") : null;
+    if (sup) { sup.classList.add("learn"); v.after(sup); }
     chips();
   } else {
     v.className = "verdict bad"; v.textContent = r.ok ? T("Not yet: Tau answered differently. Look at the answer on the left and try again.") : T("Tau could not read that. The error is on the left.");

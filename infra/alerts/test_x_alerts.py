@@ -68,6 +68,11 @@ cap = alerts.recap_caption(week)
 check(texts["paper"].startswith("📰 The Daily Consensus No. 2 is out\n\n“A vote of the users becomes law”"), "Monday on X: the paper first")
 check(cap.startswith("📰 <b>THE DAILY CONSENSUS · No. 2 is out</b>") and "/gazette/" in cap and "• 12 transactions" in cap
       and len(re.sub(r"<[^>]+>", "", cap)) <= 1024, "Monday on Telegram: the paper, its link, the week, within a photo caption")
+check("/crew/" not in cap, "no ship log link while the crew's weekly log is off")
+alerts.crewlog.ON, alerts.crewlog.USER, alerts.crewlog.PASS = True, "u", "p"
+cap2 = alerts.recap_caption(week)
+check("/crew/\">Members get the full ship log</a>" in cap2 and len(re.sub(r"<[^>]+>", "", cap2)) <= 1024, "with the weekly ship log on: one last link to it")
+alerts.crewlog.ON, alerts.crewlog.USER, alerts.crewlog.PASS = False, "", ""
 for k, t in texts.items():
     check(alerts.x_len(t) <= 280, f"{k}: {alerts.x_len(t)} of 280 as X counts it")
     check("http" not in t and "tauhud.com/" not in t, f"{k}: no link (a link costs $0.20 instead of $0.015)")
