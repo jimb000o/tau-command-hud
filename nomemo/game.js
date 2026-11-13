@@ -952,6 +952,12 @@
     say("ok", F("Contract {n} settled. Standing: {r}.", { n: num(c), r: rank() }));
     if (Object.keys(S.done).length === 1 && !again) { say("sys", T("First one done. The instruments are open now: block, trace, wallet, balance and your standing, on the right.")); youAre(); }
     say("learn", T(c.learn));
+    /* one quiet line at a good moment, each once: the refusal you just earned is also on a tee; after the third contract, who pays the node */
+    if (!again) {
+      const tee = (c.want || []).find(x => ["INSUFFICIENT_FUNDS", "INVALID_SIGNATURE", "TX_EXPIRED", "FEE_LIMIT_TOO_LOW"].includes(x));
+      if (tee && !settle.tee) { settle.tee = true; say("sys", T("{x} is the chain doing its job. That answer is also printed on a tee:").replace("{x}", tee), link("https://tau-hud-shop.fourthwall.com/?utm_source=tauhud&utm_medium=nomemo", T("the Tau HUD shop"))); }
+      else if (Object.keys(S.done).length === 3) say("sys", T("Three contracts settled. The node this terminal dials has a monthly bill. Nobody has to, but whoever wants can carry a part of it:"), link("/crew/?ref=nomemo", "tauhud.com/crew"));
+    }
     if (c.id === "mark") tutAt("done1");
     if (chapterDone(CH[0]) && chapterOf(c).n === 1) tutAt("chap1");
     if (again) { chips(); return; }

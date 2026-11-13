@@ -131,11 +131,11 @@ def lines(r: dict, site: str) -> list[str]:
 REAL_LINE = "⛓ <b>TESTNET ALPHA · live chain</b>"
 
 
-def caption_html(r: dict, site: str) -> str:
+def caption_html(r: dict, site: str, tail: str = "") -> str:
     import html
     body = "\n".join("• " + html.escape(x) for x in lines(r, site))
     return (f"{REAL_LINE}\n📊 <b>Tau testnet weekly recap</b> · {html.escape(period(r))}\n{body}\n\n"
-            f"<a href=\"{site}/stats/\">Stats</a> · <a href=\"{site}/proposals/\">Rule changes</a> · <a href=\"{site}/history/\">Time travel</a>")
+            f"<a href=\"{site}/stats/\">Stats</a> · <a href=\"{site}/proposals/\">Rule changes</a> · <a href=\"{site}/history/\">Time travel</a>{tail}")
 
 
 def caption_x(r: dict, site: str) -> str:

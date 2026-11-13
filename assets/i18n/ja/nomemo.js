@@ -1176,5 +1176,8 @@ TauI18n.add({ strings: {
   "intel contracts": "諜報の依頼",
   "Personal rules": "個人ルール",
   "Guards and probes": "門番と探り",
-  "An intel contract hides a wallet’s personal rule: a line of Tau the chain checks each of that wallet’s payments against. A probe asks the real Tau engine on our server whether the rule lets a transfer of that amount through (o5 = 1) or blocks it (o5 = 0); nothing goes to the chain. Where a rule says nothing, the engine answers 0: blocked.": "諜報の依頼は、あるウォレットの個人ルールを隠している：チェーンがそのウォレットの支払いを一つずつ確かめる Tau の一行だ。探りは、サーバーの本物の Tau エンジンに、その金額の送金をルールが通すか（o5 = 1）止めるか（o5 = 0）を聞く。チェーンには何も送られない。ルールが何も言わないところでエンジンは 0 と答える：止める。"
+  "An intel contract hides a wallet’s personal rule: a line of Tau the chain checks each of that wallet’s payments against. A probe asks the real Tau engine on our server whether the rule lets a transfer of that amount through (o5 = 1) or blocks it (o5 = 0); nothing goes to the chain. Where a rule says nothing, the engine answers 0: blocked.": "諜報の依頼は、あるウォレットの個人ルールを隠している：チェーンがそのウォレットの支払いを一つずつ確かめる Tau の一行だ。探りは、サーバーの本物の Tau エンジンに、その金額の送金をルールが通すか（o5 = 1）止めるか（o5 = 0）を聞く。チェーンには何も送られない。ルールが何も言わないところでエンジンは 0 と答える：止める。",
+  "{x} is the chain doing its job. That answer is also printed on a tee:": "{x} はチェーンが仕事をした証です。この応答は T シャツにもなっています：",
+  "the Tau HUD shop": "Tau HUD ショップ",
+  "Three contracts settled. The node this terminal dials has a monthly bill. Nobody has to, but whoever wants can carry a part of it:": "契約を 3 件完了しました。この端末がつなぐノードには毎月の請求があります。義務ではありませんが、望む方はその一部を担えます：",
 } });

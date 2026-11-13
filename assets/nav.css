@@ -400,3 +400,6 @@ span.tn-real { display: block; margin-top: 4px; }
 .tn-about .addr button:hover { border-color: #fff; }
 @media (max-width: 700px) { .tn-about .tn-sheet { padding: 20px 16px; } .tn-about .tgbox { padding: 12px 14px; } .tn-about .tgjoin, .tn-about .addr button { min-height: 44px; } }
 @media (max-width: 520px) { .tn-about .donate { grid-template-columns: minmax(0, 1fr); justify-items: start; } }
+/* one calm line where a visit ends well (TauNav.support in nav.js): what the site costs, and the way to Support */
+.tn-support { margin: 10px 0 0; font: 400 12.5px/1.5 var(--mono, ui-monospace, monospace); color: var(--u-dim, #9aa5a0); }
+.tn-support a { color: var(--ok, #39ff8a); white-space: nowrap; }
