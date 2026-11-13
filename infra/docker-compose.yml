@@ -58,7 +58,6 @@ services:
       MAX_PER_IP: ${MAX_PER_IP:-96}   # sockets per address; every open page holds 2 to 4 (2026-10-30: 32 was hit by one visitor with many tabs)
       TAU_GOVERNANCE_OPEN_ADMISSION: ${TAU_NETWORK_OPEN_GOVERNANCE:-false}  # what the network admits now (pages, vote counting); see the node comment above
       VISITS_KEY: ${VISITS_KEY:-}   # key of the visitor numbers report; empty: made once in /data/visits.key
-      SLOTLEASE_ENABLED: ${SLOTLEASE_ENABLED:-1}   # fair turns on the rule places (relay/slotlease.py); 0 switches them off
       CHAT_ENABLED: ${CHAT_ENABLED:-1}   # the troll box on the HUD (relay/chat.py); 0 closes the room
       CHAT_KEY: ${CHAT_KEY:-}   # key of the troll box admin page /chat/admin; empty: made once in /data/chat.key
       CHAT_BLOCK_WORDS: ${CHAT_BLOCK_WORDS:-}   # extra words the troll box refuses, comma separated
