@@ -82,7 +82,7 @@ The ship only sees our node. It saw no new block for ten minutes with payments w
 
 ## What we learned and what we change
 
-- **A node that loses the network has to notice by itself.** We will add a watchdog: when our node goes about ten minutes without a working connection, it restarts, which is what fixed it this time, instead of waiting for us.
+- **A node that loses the network has to notice by itself.** We have built a watchdog: when our node cannot reach the network for ten minutes, it restarts itself, which is what fixed it this time. If that does not help, it waits longer before each next try. Today's two hours would have been about ten minutes.
 - **"No new blocks on our node" is not "the testnet stalled".** The ship will write a plain note in its logbook when the chain under it stops or starts over, and check our node's connection before it calls anything a stall.
 - **The brake stays as it is.** A test ship should not send while its node gets no new blocks, whatever the reason.
 - **A short call is a result too.** We show it as it was: 12 of 90 minutes, in amber, not in green.
@@ -90,7 +90,7 @@ The ship only sees our node. It saw no new block for ten minutes with payments w
 ## What is still open
 
 - Why the testnet was restarted at that moment. When the IDNI team says, we will add it here.
-- The Queen's next call, on the new chain, will show whether the voyage runs as on 7 November.""",
+- **The Queen comes back for a make-up call on Sunday, 15 November, at 14:00 UTC** (15:00 in Germany), on the new chain and with the same plan as always. It will show whether the voyage runs as on 7 November.""",
             "zh": f"""## 发生了什么
 
 Queen Mempool 在 UTC 13:00 到达 White Rabbit Key，计划停靠 90 分钟。几分钟后，测试网从初始状态重新开始，她的停靠在 12 分钟后结束。我们的节点接受了她的 8 笔付款；另有 12 笔没有及时得到回应，517 个计划中的停靠点被跳过。
@@ -116,7 +116,7 @@ Queen Mempool 在 UTC 13:00 到达 White Rabbit Key，计划停靠 90 分钟。�
 
 ## 我们学到了什么，要改什么
 
-- **失去网络的节点必须自己察觉。** 我们会加一个看门程序：当我们的节点大约十分钟没有可用的连接时，它会自动重启（这次正是重启解决了问题），而不是等我们来处理。
+- **失去网络的节点必须自己察觉。** 我们已经做好了一个看门程序：当我们的节点十分钟连不上网络时，它会自动重启（这次正是重启解决了问题）；如果重启没用，每次再试之前会等得更久。今天的两个小时，本来大约十分钟就能解决。
 - **“我们的节点没有新区块”不等于“测试网停了”。** 当脚下的链停下或重新开始时，船会在日志里写下清楚的说明，并在把任何情况叫作停顿之前，先检查我们节点的连接。
 - **刹车保持不变。** 无论原因是什么，当节点收不到新区块时，测试船都不应该发送。
 - **短暂的停靠也是一个结果。** 我们如实展示：90 分钟里只有 12 分钟，用琥珀色，而不是绿色。
@@ -124,7 +124,7 @@ Queen Mempool 在 UTC 13:00 到达 White Rabbit Key，计划停靠 90 分钟。�
 ## 仍待解答
 
 - 测试网为什么在那个时候重启。IDNI 团队说明后，我们会补充在这里。
-- Queen 在新链上的下一次停靠，会显示这次航行能否像 11 月 7 日那样进行。""",
+- **Queen 将在 11 月 15 日星期日 UTC 14:00（德国时间 15:00）回来补一次停靠**，在新链上，计划和往常一样。它会显示这次航行能否像 11 月 7 日那样进行。""",
             "ja": f"""## 何が起きたのか
 
 Queen Mempool は UTC 13:00 に White Rabbit Key に着き、90 分の寄港を予定していました。数分後、テストネットは初期状態から最初からやり直しになり、寄港は 12 分で終わりました。私たちのノードは彼女の支払いのうち 8 件を受け付け、さらに 12 件は時間内に応答がなく、予定していた 517 か所の立ち寄りは飛ばされました。
@@ -150,7 +150,7 @@ Queen Mempool は UTC 13:00 に White Rabbit Key に着き、90 分の寄港を�
 
 ## わかったこと、変えること
 
-- **ネットワークを失ったノードは、自分で気づかなければなりません。** 監視の仕組みを加えます。ノードが約 10 分間うまく接続できないとき、私たちを待たずに再起動します。今回直したのも再起動でした。
+- **ネットワークを失ったノードは、自分で気づかなければなりません。** 監視の仕組みを作りました。ノードが 10 分間ネットワークにつながらないとき、自分で再起動します。今回直したのも再起動でした。それでもだめなら、次に試すまでの間隔を延ばします。今日の 2 時間は、10 分ほどで済んだはずです。
 - **「私たちのノードに新しいブロックが来ない」は「テストネットが止まった」ではありません。** 足元のチェーンが止まったり最初からやり直しになったりしたとき、船は航海日誌にはっきり書き残し、停止と呼ぶ前にノードの接続を確かめます。
 - **ブレーキはこのままにします。** 理由が何であれ、ノードに新しいブロックが来ないうちは、テストの船は送るべきではありません。
 - **短い寄港も結果のひとつです。** そのまま見せます。90 分のうち 12 分、緑ではなく琥珀色で。
@@ -158,7 +158,7 @@ Queen Mempool は UTC 13:00 に White Rabbit Key に着き、90 分の寄港を�
 ## まだわからないこと
 
 - なぜあの時点でテストネットが再起動したのか。IDNI チームが説明したら、ここに加えます。
-- 新しいチェーンでの Queen の次の寄港で、11 月 7 日のように航海できるかがわかります。""",
+- **Queen は 11 月 15 日（日）UTC 14:00（ドイツ時間 15:00）に、やり直しの寄港に戻ってきます。** 新しいチェーンで、いつもと同じ計画です。11 月 7 日のように航海できるかがわかります。""",
         },
     },
 }
