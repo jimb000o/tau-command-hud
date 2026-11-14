@@ -21,7 +21,7 @@ NOTES: dict[str, dict] = {
 We checked this first, because a ship that slows the chain down would be our mistake to own.
 
 - The stall came on a calm chain. The last block reached our node at 13:01:56 UTC, block 1569, shortly after the Queen arrived. By then she had sent only a few payments.
-- On 7 November the same ship sent more than 400 payments in 90 minutes, and the chain kept making blocks the whole time.
+- [On 7 November](/blog/?p=2026-11-07-queen-learnings) the same ship sent more than 400 payments in 90 minutes, and the chain kept making blocks the whole time.
 - Our node stayed up through the stall and kept taking in transfers: 21 were waiting when the ship left. What stopped was new blocks arriving.
 - The ship did what it is built to do. When the newest block was more than ten minutes old with payments waiting, she left at once instead of adding more to a chain that stood still.
 
@@ -37,7 +37,7 @@ So the ship's load does not explain the stall. What does is still being checked,
 我们首先查的就是这一点，因为如果是船拖慢了链，那就是我们的错，应由我们承担。
 
 - 链停下时，网络很平静。最后一个区块在 UTC 13:01:56 到达我们的节点，是第 1569 号区块，那时 Queen 刚到不久，只发出了很少几笔付款。
-- 11 月 7 日，同一艘船在 90 分钟里发出了 400 多笔付款，链在整个过程中一直在出块。
+- [11 月 7 日](/blog/?p=2026-11-07-queen-learnings)，同一艘船在 90 分钟里发出了 400 多笔付款，链在整个过程中一直在出块。
 - 链停下期间，我们的节点一直在线，并继续接收转账：船离开时有 21 笔在等待。停下的是新区块的到来。
 - 船做了它被设计要做的事：当最新区块已超过十分钟、还有付款在等待时，它立刻离开，而不是继续给一条停住的链加负担。
 
@@ -53,7 +53,7 @@ So the ship's load does not explain the stall. What does is still being checked,
 まずこれを確かめました。船がチェーンを遅くしたのなら、それは私たちの責任だからです。
 
 - 停止は落ち着いたチェーンで起きました。最後のブロックは UTC 13:01:56 に私たちのノードに届いたブロック 1569 で、Queen が着いて間もない頃でした。その時点で送った支払いはわずかでした。
-- 11 月 7 日、同じ船は 90 分間で 400 件以上の支払いを送り、その間チェーンはずっとブロックを作り続けました。
+- [11 月 7 日](/blog/?p=2026-11-07-queen-learnings)、同じ船は 90 分間で 400 件以上の支払いを送り、その間チェーンはずっとブロックを作り続けました。
 - 停止の間も私たちのノードは動き続け、送金を受け付けていました。船が去ったとき 21 件が待っていました。止まったのは新しいブロックの到着です。
 - 船は設計どおりに動きました。最新のブロックが 10 分以上前のもので支払いが待っているとき、止まったチェーンにさらに積み上げず、すぐに出航しました。
 
