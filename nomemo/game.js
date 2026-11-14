@@ -396,7 +396,7 @@
   const myPk = () => { const k = myKey(false); return k ? k.pk : null; };
   /* Python's json.dumps(sort_keys=True, separators=(",", ":")), what the node signs over */
   const canon = o => Array.isArray(o) ? "[" + o.map(canon).join(",") + "]" : o === null || typeof o !== "object" ? JSON.stringify(o === undefined ? null : o).replace(/[\u007f-￿]/g, c => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")) : "{" + Object.keys(o).sort().map(k => JSON.stringify(k) + ":" + canon(o[k])).join(",") + "}";
-  const SIGNED = { user_tx: ["operations"], retractable_transfer: ["recipient_pubkey", "amount", "release_at_height", "release_at_time"], retract_transfer: ["retractable_id"] };
+  const SIGNED = { user_tx: ["operations"], approval_request: ["recipient_pubkey", "amount", "expire_at_height", "approvers", "custom_inputs"], transfer_vote: ["request_id", "approve", "reason"], retractable_transfer: ["recipient_pubkey", "amount", "release_at_height", "release_at_time"], retract_transfer: ["retractable_id"] };
   function preimage(tx) {
     const d = { sender_pubkey: tx.sender_pubkey, sequence_number: tx.sequence_number, expiration_time: tx.expiration_time, fee_limit: tx.fee_limit, tx_type: tx.tx_type };
     if (tx.expire_at_height != null) d.expire_at_height = tx.expire_at_height;
@@ -416,6 +416,7 @@
     if (!d || !d.rule) return null;
     if (d.rule === "allow") return NEUTRAL;
     if (d.rule === "cap") return "always ( (i1[t]:bv[24] > { #x" + hex6(d.cap) + " }:bv[24]) ? " + BLOCK_O5 + " : " + ALLOW_O5 + " ).";
+    if (d.rule === "eyes") { const p = partnerPk(d); return p ? "always ( ((i1[t]:bv[24] > { #x" + hex6(d.cap) + " }:bv[24]) && !(i18[t]:bv[384] = { #x" + p + " }:bv[384])) ? " + BLOCK_O5 + " : " + ALLOW_O5 + " )." : null; }
     if (d.rule === "mix") return "always ( ( o5[t]:bv[24] = { #x000001 }:bv[24] ) && ( o9[t]:bv[24] = { #x000000 }:bv[24] ) ).";
     if (d.rule === "size") return "always ( " + Array.from({ length: d.size }, () => "( o5[t]:bv[24] = { #x000001 }:bv[24] )").join(" && ") + " ).";
     return null;
@@ -1531,7 +1532,7 @@
     say("sys", F("This week: {x}. Contracts on {y} pay double and come more often.", { x: th.name, y: th.topics.map(t => TOPICS[t] ? TOPICS[t][0] : t).join(", ") }));
     say("sys", left > 1 ? F("{n} days until the next theme.", { n: left }) : T("The next theme starts tomorrow."), btn("inbox", "inbox"));
   }
-  const DRAFT0 = () => ({ to: "drop", amount: 1, fee: null, expiry: "ok", height: "auto", signer: "you", payer: "you", seq: "next", rule: null, pay: true });
+  const DRAFT0 = () => ({ to: "drop", amount: 1, fee: null, expiry: "ok", height: "auto", signer: "you", payer: "you", seq: "next", rule: null, pay: true, ask: false, partner: "hud" });
   const rnd = n => Math.floor(Math.random() * n);
   /* the kinds of offer: t = the lowest tier that gets it; brief/hint may hold {k} {a} {b}; check(d, x) says what is wrong
      with the draft for this contract, or null; x = { tx, base, tip } */
@@ -1631,6 +1632,16 @@
       check: (d, x, j) => !ownRule(x.said) ? "the chain refused it, but not for your own rule" : d.amount <= j.a ? "that amount is within your cap" : null },
     { k: "g-off", t: 2, who: "qm", topic: "clause", rules: true, guard: true, stage: true, want: "in", name: "Hands free", brief: "Take the rule off again: send the rule that says o5 = 1 and nothing else, alone.", hint: "set rule allow, set pay off",
       check: d => d.rule !== "allow" ? "that is not the rule that takes a rule away" : d.pay !== false ? "the payment is still on" : null },
+    /* four eyes, two keys (IDNI docs/approvals.md): a rule on your own wallet that wants a second signature above an amount,
+       in approval slot i18; then a bigger payment as an approval_request that waits on the chain until the partner signs
+       (transfer_vote). The partner is Tau HUD's co-signer (infra/relay/showcase.py, GET /showcase/cosign) or a friend's
+       wallet, who signs from their own No Memo with cosign. Live only: the practice node has no approvals */
+    { k: "h-eyes", t: 3, who: "look", heist: ["e-set", "e-ask", "g-off"], ok: () => !SIM && !S.guard && showCo(), name: "Four eyes, two keys", brief: "Three parts, one trace: put a rule on your own wallet that wants a second signature above an amount, send a bigger payment that waits on the chain for it, and take the rule off again. Your partner is Tau HUD’s co-signer, or a friend’s wallet." },
+    { k: "e-set", t: 3, who: "look", topic: "clause", rules: true, guard: true, eyes: true, stage: true, want: "in", name: "A second key", brief: "Put a rule on your own wallet: above {a} test AGRS, a payment needs your partner’s signature in slot i18. A rule is a transaction of its own, without a payment.", hint: "set rule eyes {a}, set pay off",
+      mk: j => { if (j.a == null) j.a = 100 * (2 + rnd(8)); },
+      check: (d, x, j) => d.rule !== "eyes" || d.cap !== j.a ? F("the rule is not a second key above {a}", { a: j.a }) : d.pay !== false ? "the payment is still on" : null },
+    { k: "e-ask", t: 3, who: "look", topic: "guard", guard: true, ask: true, stage: true, want: "parked", name: "Wait for the partner", brief: "Now pay the drop more than {a}, as a request that waits for your partner: set ask on. The chain parks it; it is paid only when your partner signs.", hint: "set amount <more than {a}>, set ask on",
+      check: (d, x, j) => !d.ask ? "this one goes as a request: set ask on" : d.amount <= j.a ? "that amount needs no second key" : d.partner === "hud" && d.amount > CO_MAX ? F("Tau HUD’s co-signer signs at most {n}", { n: CO_MAX }) : null },
     /* the three showcase wallets Tau HUD runs on the testnet (infra/relay/showcase.py): their rules are real and in force,
        and anyone may read them (showcase) */
     { k: "s-four", t: 2, who: "look", topic: "guard", want: "in", ok: () => showUp("foureyes"), name: "Four eyes", brief: "Tau HUD’s four-eyes wallet carries a rule on the testnet: above some amount, it needs its co-signer. Read the rule and pay the drop the smallest amount that needs the co-signer.", hint: "showcase: in the rule, i1 is the amount, in hex",
@@ -1658,7 +1669,7 @@
     "r-fee9": "peek getgovernance", "p-tight": "peek getgovernance", "p-last": "history", "predict": "what order",
     "p-bits": "rule", "p-stream": "rule", "p-ones": "what #b", "p-top": "what top", "p-spec": "what stream", "p-table": "what and", "p-table3": "what and",
     "i-cap": "probe 0", "i-edge": "probe 10000", "i-band": "probe {lead}", "i-purse": "probe 0 at 0",
-    "r-pack": "set rule allow", "r-mix": "set rule mix", "r-long": "what clause", "g-set": "set rule cap {a}", "g-hit": "tx", "g-off": "set rule allow", "s-four": "showcase", "s-piggy": "showcase", "s-feed": "showcase" };
+    "r-pack": "set rule allow", "r-mix": "set rule mix", "r-long": "what clause", "g-set": "set rule cap {a}", "g-hit": "tx", "g-off": "set rule allow", "e-set": "set rule eyes {a}", "e-ask": "set ask on", "s-four": "showcase", "s-piggy": "showcase", "s-feed": "showcase" };
   const tryCmd = j => { const k = j && kindOf(j).k; if (!k || !TRY[k]) return null; const v = { m: j.m, a: j.a }; if (j.lead != null) v.lead = j.lead; const c = fill0(TRY[k], v); return c.includes("{") ? null : c; };
   const hintLine = j => { const kd = kindOf(j), go = tryCmd(j), plainHint = !(j.lock || j.code || j.tab || j.spec);   // an English filler, so the dictionaries translate the whole line
     say("learn", F("Hint: {x}", { x: plainHint ? fill0(kd.hint, { m: j.m, a: j.a, b: j.b }) : fill(kd.hint, j) }), go ? btn(go, go) : null); };
@@ -1719,6 +1730,7 @@
     while (S.inbox.length < 2) { const j = makeJob(); if (!j) break; S.inbox.push(j); news.push(j); }
     if (S.inbox.length < 4 && tip >= (S.nextJob || 0)) { const j = makeJob(); if (j) { S.inbox.push(j); news.push(j); } S.nextJob = tip + 5 + rnd(6); }
     const dj = dailyTick(tip); if (dj) { news.push(dj); changed = true; }
+    { const cj = curJob(); if (cj && cj.req && !RUN.busy && tip - (cj.req.lookAt || 0) >= 2) { cj.req.lookAt = tip; reqLook(cj); } }
     if (news.length || changed) { save(); jobs(); instruments(); chips(); }
     if (news.length && S.booted) {
       snd.mail(); const j = news[news.length - 1];
@@ -1817,8 +1829,11 @@
       ["payer", (d.payer === "drop" ? T("the drop") : T("your wallet")) + L("payer")],
       ["seq", (d.seq === "old" ? T("a used one (next − 1)") : T("the next one")) + L("seq")],
       ...(kindOf(j).rules || d.rule || d.pay === false ? [
-        ["rule", !d.rule ? T("none") : d.rule === "allow" ? T("o5 = 1 and nothing else: takes a rule away") : d.rule === "cap" ? F("at most {n} test AGRS a payment", { n: fmt(d.cap) }) : d.rule === "mix" ? T("writes o5 and o9") : F("{n} comparisons", { n: d.size })],
+        ["rule", !d.rule ? T("none") : d.rule === "allow" ? T("o5 = 1 and nothing else: takes a rule away") : d.rule === "eyes" ? F("above {n} test AGRS only with your partner’s signature (i18)", { n: fmt(d.cap) }) : d.rule === "cap" ? F("at most {n} test AGRS a payment", { n: fmt(d.cap) }) : d.rule === "mix" ? T("writes o5 and o9") : F("{n} comparisons", { n: d.size })],
         ["pay", d.pay === false ? T("off: the rule goes alone") : T("on: the payment above goes too")]] : []),
+      ...(kindOf(j).eyes || kindOf(j).ask ? [
+        ["partner", d.partner === "hud" ? T("Tau HUD’s co-signer") + (partnerPk(d) ? " " + short(partnerPk(d)) : "") : T("a friend’s wallet") + " " + short(d.partner)],
+        ...(kindOf(j).ask ? [["ask", d.ask ? T("on: a request that waits for your partner’s signature") : T("off: a plain payment")]] : [])] : []),
     ]);
     if (d.rule) say("sys", ruleText(d).length > 200 ? ruleText(d).slice(0, 197) + "…" : ruleText(d));
     say("sys", kindOf(j).rules ? T("set to|amount|fee|expiry|height|signer|payer|seq|rule|pay <value> · reset · send") : T("set to|amount|fee|expiry|height|signer|payer|seq <value> · reset · send"), btn("send", "send"));
@@ -1839,11 +1854,24 @@
       if (f === "seq" && (v === "next" || v === "old")) return d.seq = v, true;
       if (f === "to" && (v === "drop" || v === "me" || v === "bowl" || (doors(j) && ["a", "b", "c"].includes(v)))) return d.to = v, true;
       if (f === "pay" && (v === "on" || v === "off")) return d.pay = v === "on", true;
+      if (f === "ask" && (v === "on" || v === "off")) {
+        if (v === "on" && !kindOf(j).ask) return say("warn", T("A payment that waits for a second signature belongs to the contract Four eyes, two keys.")), "said";
+        return d.ask = v === "on", true;
+      }
+      if (f === "partner") {
+        const p = String(v || "").toLowerCase().replace(/^0x/, "");
+        if (p === "hud") return d.partner = "hud", true;
+        if (/^[0-9a-f]{96}$/.test(p)) { if (p === myPk()) return say("warn", T("You cannot be your own partner: the chain refuses a sender as their own approver.")), "said"; return d.partner = p, true; }
+      }
       if (f === "rule") {
         const k = args[2] != null && /^\d+$/.test(args[2]) ? parseInt(args[2], 10) : null;
         if (v === "off" || v === "none") return d.rule = null, true;
         if (v === "allow" || v === "mix") return d.rule = v, true;
         if (v === "size" && k >= 1 && k <= 64) return d.rule = "size", d.size = k, true;
+        if (v === "eyes" && k >= 1 && k < GIANT) {
+          if (!kindOf(j).eyes) return say("warn", T("A second key would become your wallet’s own rule for every payment it makes. Only the contract Four eyes, two keys puts one on.")), "said";
+          return d.rule = "eyes", d.cap = k, true;
+        }
         if (v === "cap" && k >= 1 && k < GIANT) {
           if (!kindOf(j).guard) return say("warn", T("A cap would become your wallet’s own rule for every payment it makes. Only the contract Your own hands puts one on.")), "said";
           return d.rule = "cap", d.cap = k, true;
@@ -1852,7 +1880,7 @@
       return false;
     })();
     if (ok === "said") return;
-    if (!ok) { cols([["set amount <n>", T("whole test AGRS")], ["set fee <n>|auto", T("the fee limit you sign")], ["set expiry past|ok", T("the expiry time")], ["set height past|+<n>|auto", T("the last block it may land in")], ["set signer you|other", T("whose key signs")], ["set rule allow|mix|size <n>|off · set pay on|off", T("a rule in the same transaction")], ["set payer you|drop", T("who pays, inside the transfer")], ["set seq next|old", T("the sequence number")], ["set to drop|me" + (doors(j) ? "|a|b|c" : ""), T("who receives")]]); return; }
+    if (!ok) { cols([["set amount <n>", T("whole test AGRS")], ["set fee <n>|auto", T("the fee limit you sign")], ["set expiry past|ok", T("the expiry time")], ["set height past|+<n>|auto", T("the last block it may land in")], ["set signer you|other", T("whose key signs")], ["set rule allow|mix|size <n>|off · set pay on|off", T("a rule in the same transaction")], ...(kindOf(j).eyes || kindOf(j).ask ? [["set rule eyes <n> · set ask on|off · set partner hud|<address>", T("the second key")]] : []), ["set payer you|drop", T("who pays, inside the transfer")], ["set seq next|old", T("the sequence number")], ["set to drop|me" + (doors(j) ? "|a|b|c" : ""), T("who receives")]]); return; }
     save(); say("ok", F("{f} set.", { f }), btn("tx", "tx"), btn("send", "send"));
   }
   function predict(a) {
@@ -1884,6 +1912,14 @@
       if (!rt && d.pay === false) fail(T("Nothing to send: the payment is off and the draft has no rule."));
       if (d.rule === "size" && d.size <= CLAUSE_MAX && d.pay === false) fail(F("A rule of {n} comparisons fits: sent alone, it would become your wallet’s own rule. This contract wants one the chain refuses.", { n: d.size }));
       if (d.rule === "cap" && !kd.guard) fail(T("A cap would become your wallet’s own rule for every payment it makes. Only the contract Your own hands puts one on."));
+      if (d.rule === "eyes" && !rt) fail(T("Tau HUD’s co-signer is out of reach right now, so the rule has no second key to name. Try again in a minute, or set partner <address>."));
+      if (d.ask) {   // four eyes: the payment as an approval_request that waits for the partner's vote
+        const p = partnerPk(d); if (!p) fail(T("No partner to wait for: set partner hud, or a friend’s address."));
+        if (d.rule) fail(T("A request goes alone: set rule off."));
+        const tx = sign({ tx_type: "approval_request", sender_pubkey: k.pk, sequence_number: seq, expiration_time: t + 600, expire_at_height: tip + 300, fee_limit: String(d.fee == null ? base * 5 : d.fee),
+          recipient_pubkey: to, amount: d.amount, approvers: { "18": p }, custom_inputs: {} }, k.sk);
+        return await askSend(j, kd, d, tx, p);
+      }
       const tx = sign({ tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: d.seq === "old" ? seq - 1 : seq, expiration_time: d.expiry === "past" ? t - 120 : t + 600,
         expire_at_height: d.height === "past" ? Math.max(1, tip - 5) : d.height === "auto" ? tip + 1000 : tip + d.height, fee_limit: String(d.fee == null ? base * 5 : d.fee),
         operations: ops }, d.signer === "other" ? B.keygen() : k.sk);
@@ -1912,11 +1948,13 @@
         const w = await sealed(s.hash, S.deadline, s.way);
         if (!w.in) { say("no", F("Not sealed: {x}", { x: w.why })); if (/EXPIRED/.test(w.why) && S.deadline != null && CHAIN.tip > S.deadline) jobTraced(); return; }
         say("ok", F("Sealed in block {n}.", { n: fmt(w.block) }), explorer(s.hash));
-        if (rt && !ops["1"]) { S.guard = isNeutral(rt) ? null : d.rule === "cap" ? { cap: d.cap, block: w.block } : S.guard; save(); instruments();
-          say("learn", S.guard ? F("Your wallet now carries its own rule: at most {n} test AGRS a payment. The chain checks every payment it makes against it. unguard takes it off.", { n: fmt(S.guard.cap) }) : T("Your wallet carries no rule of its own now.")); }
+        if (rt && !ops["1"]) { S.guard = isNeutral(rt) ? null : d.rule === "cap" ? { cap: d.cap, block: w.block } : d.rule === "eyes" ? { cap: d.cap, partner: partnerPk(d), block: w.block } : S.guard; save(); instruments();
+          if (S.guard && S.guard.partner) say("learn", F("Your wallet now carries its own rule: above {n} test AGRS a payment needs your partner’s signature. A plain payment above it is stopped; a request waits for the vote. unguard takes it off.", { n: fmt(S.guard.cap) }));
+          else say("learn", S.guard ? F("Your wallet now carries its own rule: at most {n} test AGRS a payment. The chain checks every payment it makes against it. unguard takes it off.", { n: fmt(S.guard.cap) }) : T("Your wallet carries no rule of its own now.")); }
         if (ops["1"]) { S.hist.unshift({ id: j.k, hash: s.hash, block: w.block, amount: d.amount }); S.hist = S.hist.slice(0, 20); save(); }
         if (ops["1"] && to === BOWL) say("sys", T("Agorzilla counts it as a meal: one a wallet an hour."), link("https://agorzilla.com/", "agorzilla.com"));
         if (j.k === "p-nokey") { snd.no(); flash("bad"); say("no", T("That was a real wallet: your coin went to a stranger, and it stays there. The address that is no key gives itself away in its first character.")); jobMiss(j, x); return; }
+        if (want === "parked") { say("warn", T("That payment needed no second key, so it went straight through. This part wants one above your rule’s edge, as a request: set ask on.")); learnTopic(j.topic); heatAdd(8); return; }
         if (want !== "in") { say("warn", ops["1"] ? T("The payment was good, so the chain took it; this contract wanted a refusal. Look at the draft again.") : T("The rule was good, so the chain took it; this contract wanted a refusal. Look at the draft again.")); learnTopic(j.topic); heatAdd(8); return; }
         if (j.k === "p-doors" && to !== DROP) { snd.no(); flash("bad"); say("no", T("That door was a lookalike: your coin went to a wallet that is not the drop, and it stays there. The middle of an address is where it differs.")); jobMiss(j, x); return; }
         const why = kd.check && kd.check(d, x, j);
@@ -1925,11 +1963,12 @@
         return;
       }
       const c0 = codeOf(s.r); x.said = s.r;
-      if (ownRule(s.r) && kd.k !== "g-hit") { if (!S.guard) { S.guard = { cap: null }; save(); } say("sys", T("Your wallet’s own rule stopped this payment. unguard takes the rule off."), btn("unguard", "unguard")); }
+      if (ownRule(s.r) && kd.k !== "g-hit" && kd.k !== "e-ask") { if (!S.guard) { S.guard = { cap: null }; save(); } say("sys", T("Your wallet’s own rule stopped this payment. unguard takes the rule off."), btn("unguard", "unguard")); }
       snd.no(); slotFail(c0 || T("refused"));
       say(want === "in" ? "no" : "sys", F("The chain said no in {n} ms: {x}", { n: s.ms, x: c0 || plain(s.r) }));
       const topic0 = ownRule(s.r) ? "guard" : CODE_TOPIC[c0] || j.topic;
       if (want === "in") { flash("bad"); say("sys", T("This contract wants a payment that lands. Nothing was spent.")); learnTopic(topic0); heatAdd(8); return; }
+      if (want === "parked") { say("sys", T("Your own rule stopped the plain payment: above its edge it wants the second key. Send it as a request that waits for it: set ask on."), btn("set ask on", "set ask on")); learnTopic(topic0); return; }
       if (want === "any") { const right = S.pred === c0; S.predOut = right; jobWin(j, { code: c0, predicted: S.pred }, right ? 0 : PAYS[j.t] - 1); return; }
       if (!want.includes(c0)) { flash("bad"); say("warn", F("Refused, but this contract wants {x}.", { x: want.join(" / ") })); learnTopic(topic0); heatAdd(8); return; }
       const why = kd.check && kd.check(d, x, j);
@@ -2074,6 +2113,7 @@
     [["guard", "guards", "intel", "probe", "probes", "personal rule", "open answer"], "Guards and probes", "An intel contract hides a wallet’s personal rule: a line of Tau the chain checks each of that wallet’s payments against. A probe asks the real Tau engine on our server whether the rule lets a transfer of that amount through (o5 = 1) or blocks it (o5 = 0); nothing goes to the chain. Where a rule says nothing, the engine answers 0: blocked."],
     [["recurring", "standing order", "subscription", "percent", "percentage"], "Standing orders and percent", "Tau Testnet Alpha has no standing orders yet: a rule can let a payment through or stop it, never start one. The nearest thing is the way back turned around: timed payments that pay themselves out at a set block or time, up to 16 open per wallet and 90 days ahead, each yours to take back until then. A percentage works only as a fee on your own payments, worked out from the amount; it goes to whoever seals the block."],
     [["clause", "rule size", "comparisons", "parcel", "rule tx"], "A wallet’s own rule", "A wallet’s own rule is a transaction of its own: operation 0 carries it, and no payment may ride along (RULE_WITH_TRANSFERS). It is one always ( … ). unit that writes o5 and nothing else (MIXED_OUTPUT_RULE), with at most 32 comparisons (=, <, >, <=, >= and != count one each); a rule with more is refused: TX_REJECTED. A new rule replaces the old one; the rule that says o5 = 1 and nothing else takes it away (unguard)."],
+    [["cosign", "co-sign", "second key", "four eyes", "approval", "i18", "transfer_vote"], "A second key", "A wallet’s own rule may want a second signature above an amount: it names the partner’s address in an approval slot, i18 to i25. A payment above it goes as an approval_request and waits on the chain; when the partner signs (a transfer_vote, without a fee), the chain pays it by itself. cosign shows what waits for your own signature."],
     [["i2", "balance", "reserve"], "i2, the balance", "In a wallet’s rule, i2 is the wallet’s balance before the payment, as the chain knows it. A rule that reads it can keep a reserve: no payment while the balance is low. The contract Mind the purse hides such a rule."],
     [["i5", "time", "seconds", "when", "unix"], "i5, the time", "In a wallet’s rule, i5 is the block’s time in seconds since 1 January 1970, UTC. when <seconds> turns such a number into a date."],
     [["showcase", "piggy bank", "four-eyes", "four eyes", "feeding fund"], "The showcase wallets", "Three wallets Tau HUD runs on the testnet, each with a rule of its own: a piggy bank locked until New Year, a four-eyes wallet that needs a co-signer, and Agorzilla’s feeding fund. Their rules are in force on the chain and anyone may read them: showcase."],
@@ -2463,7 +2503,7 @@
   /* help: every command on one screen, in groups side by side; a click on a command types it */
   const HELP = [
     ["Story", [["jobs", "the twelve contracts"], ["take <n>", "take one"], ["run", "build, sign, send"], ["back", "retract a payment"], ["drop", "put it back"], ["claim [n]", "the chapter’s share"], ["chapter <n>", "the chapter’s card"]]],
-    ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["probe · name · final", "intel contracts"], ["why [topic]", "what just happened"], ["archive · history", "your record"], ["daily · unguard", "the day’s order · your rule off"]]],
+    ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["probe · name · final", "intel contracts"], ["why [topic]", "what just happened"], ["archive · history", "your record"], ["daily · unguard", "the day’s order · your rule off"], ["cosign", "sign a friend’s request"]]],
     ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail · mail <n>", "letters; some bring special orders"], ["crew", "who is who"], ["scan · blocks · dry", "gear for rank"]]],
     ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["showcase · when <s>", "real wallet rules, read them"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"], ["upkeep", "who pays the node"]]],
     ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · reboot · clear", "reboot: dial the node again"], ["scene · transmission on|off", "the cabin; the crew on screen"]]],
@@ -2488,7 +2528,7 @@
       [T("balance"), CHAIN.bal == null ? "—" : fmt(CHAIN.bal === 0 ? FAUCET : CHAIN.bal) + " " + T("test AGRS")],
       [T("standing"), T(rank()) + " · " + F("{n} points", { n: rep() })],
       [T("inbox"), inboxOpen() ? F("{n} open · tier {m} of 4", { n: S.inbox.length, m: tierMax() }) : T("opens when chapter 1 is done")],
-      [T("own rule"), S.guard ? (S.guard.cap != null ? F("at most {n} test AGRS a payment", { n: fmt(S.guard.cap) }) : T("one, set elsewhere")) + " · unguard" : T("none")],
+      [T("own rule"), S.guard ? (S.guard.partner ? F("above {n} test AGRS a second key", { n: fmt(S.guard.cap) }) : S.guard.cap != null ? F("at most {n} test AGRS a payment", { n: fmt(S.guard.cap) }) : T("one, set elsewhere")) + " · unguard" : T("none")],
       [T("daily"), F("streak {n}", { n: streakNow() }) + (S.dailyLast === dayKey() ? " · " + T("today’s order settled") : "")],
       [T("chapters"), CH.map(ch => ch.n + (S.chap[ch.n] ? " ✓" : chapterDone(ch) ? " ●" : chapterOpen(ch) ? " ○" : " ·")).join("  ")],
     ]);
@@ -2533,6 +2573,9 @@
   }
   const showW = name => { const x = SHOW.data; return x && x.ready && x.wallets && x.wallets[name] && x.wallets[name].in_force ? x.wallets[name] : null; };
   const showUp = name => { showLoad(false); return !!showW(name); };
+  const CO_MAX = 5000;   // Tau HUD's co-signer signs a No Memo request up to this (showcase.py COSIGN_MAX)
+  const showCo = () => { showLoad(false); const x = SHOW.data; return !!(x && x.ready && x.cosigner && /^[0-9a-f]{96}$/.test(x.cosigner.pk || "")); };
+  const partnerPk = d => d.partner === "hud" ? (showCo() ? SHOW.data.cosigner.pk : null) : /^[0-9a-f]{96}$/.test(d.partner || "") ? d.partner : null;
   const showNum = name => { const w = showW(name), m = w && /i1\[t\]:bv\[24\]\s*>\s*\{\s*#x([0-9a-f]+)/i.exec(w.rule_text || ""); return m ? parseInt(m[1], 16) : null; };
   const showYear = () => { const w = showW("piggy"), m = w && /i5\[t\]:bv\[64\]\s*<\s*\{\s*(\d+)\s*\}/.exec(w.rule_text || ""); return m ? Number(berlinAt(Number(m[1])).slice(0, 4)) : null; };
   const SHOW_NAMES = { piggy: "Tau HUD’s piggy bank", foureyes: "Tau HUD’s four-eyes wallet", feeding: "Tau HUD’s Agorzilla feeding fund" };
@@ -2573,6 +2616,98 @@
       S.guard = null; save(); instruments();
       say("ok", F("Sealed in block {n}. Your wallet carries no rule of its own now.", { n: fmt(w.block) }), explorer(s.hash));
     } catch (e) { say("no", T("The node did not answer in time; nothing is lost. Type unguard again.")); }
+    finally { RUN.busy = false; chips(); balance(); }
+  }
+  /* ---------- four eyes, two keys: a payment parked on the chain until the partner signs (IDNI docs/approvals.md) ----------
+     The node does not hand back the request id when it takes the request, so the page finds it among the wallet's own
+     requests (getapprovalrequests <me> out) by amount, recipient and deadline. Tau HUD's co-signer is asked once
+     (GET /showcase/cosign); a friend signs from their own No Memo with cosign */
+  const partnerName = p => (showCo() && p === SHOW.data.cosigner.pk ? "Tau HUD’s co-signer" : fill0("your friend {h}", { h: short(p) }));   // English: F() around it translates the line
+  async function askSend(j, kd, d, tx, p) {
+    const why0 = kd.check && kd.check(d, {}, j);
+    if (why0) { say("warn", F("Not sent: {x}.", { x: T(why0) })); learnTopic(j.topic); return; }
+    say("step", F("signing a request: {a} test AGRS to the drop, parked until {x} signs in slot i18", { a: fmt(tx.amount), x: partnerName(p) }));
+    if (RUN.dry) {
+      const r = await ask("checktx " + JSON.stringify(tx)); if (!r) fail(T("No answer from the node; nothing was sent."));
+      say(isOk(r) ? "ok" : "warn", isOk(r) ? T("Dry run: the node would take it.") : F("Dry run: the node would refuse it: {x}", { x: codeOf(r) || plain(r) }));
+      say("sys", T("Nothing was sent. send sends it for real."), btn("send", "send")); return;
+    }
+    const s = await sendtx(tx);
+    if (!s.r) fail(T("No answer from the node; nothing was sent. Type send again."));
+    if (!s.hash) {
+      const c0 = codeOf(s.r); snd.no(); slotFail(c0 || T("refused")); flash("bad");
+      say("no", F("The chain said no in {n} ms: {x}", { n: s.ms, x: c0 || plain(s.r) }));
+      if (c0 === "APPROVAL_NOT_NEEDED") say("learn", T("Your wallet’s rule lets this amount through without a second key, so there is nothing to wait for. The amount must be above the rule’s edge, and the rule must be in force."));
+      heatAdd(8); return;
+    }
+    sent(tx, s); say("step", T("waiting for a block …"));
+    const w = await sealed(s.hash, S.deadline, s.way);
+    if (!w.in) { say("no", F("Not sealed: {x}", { x: w.why })); return; }
+    say("ok", F("Parked in block {n}: the payment waits on the chain for your partner’s signature. Nothing has moved yet.", { n: fmt(w.block) }), explorer(s.hash));
+    j.req = { amount: tx.amount, to: tx.recipient_pubkey, exp: tx.expire_at_height, p, id: null, asked: false, at: CHAIN.tip ?? 0 }; save();
+    await reqLook(j, true);
+  }
+  let REQ_BUSY = false;
+  async function reqLook(j, loud) {
+    if (!j || !j.req || REQ_BUSY || SIM) return;
+    REQ_BUSY = true;
+    try {
+      const me = myPk(), r = me ? await ask("getapprovalrequests " + me + " out") : null;
+      if (!isOk(r)) { if (loud) say("warn", T("The node did not show your request yet; looking again with the next blocks.")); return; }
+      const q = (r.data.outgoing || []).find(x => Number(x.amount) === Number(j.req.amount) && x.recipient_pubkey === j.req.to && Number(x.expire_at_height) === Number(j.req.exp));
+      if (!q) { if (loud) say("sys", T("Your request is not in a block the node shows yet; looking again with the next blocks.")); return; }
+      if (!j.req.id) { j.req.id = q.request_id; save(); say("sys", F("Your request on the chain: {h}", { h: short(q.request_id) })); }
+      if (q.status === "executed") {
+        const id = j.req.id; delete j.req; save();
+        snd.seal(); say("ok", T("Your partner signed: the chain paid the parked payment by itself, in the block that took the vote."));
+        if (S.job === j.n && kindOf(j).k === "e-ask") jobWin(j, { request: id });
+        return;
+      }
+      if (q.status === "failed" || q.status === "expired") {
+        delete j.req; save(); flash("bad"); snd.no();
+        say("no", q.status === "expired" ? T("Your request expired on the chain without the second signature. Nothing moved; the fee is spent. Send it again.") : T("Your request failed on the chain: your rule changed, or the balance no longer covers it. Nothing moved. Send it again."));
+        return;
+      }
+      if (!j.req.asked) {
+        j.req.asked = true; save();
+        if (showCo() && j.req.p === SHOW.data.cosigner.pk) {
+          const a = await fetch(RELAY + "/showcase/cosign?id=" + q.request_id + "&from=" + me, { cache: "no-store" }).then(x => x.json()).catch(() => null);
+          if (a && a.ok) say("sys", T("Tau HUD’s co-signer has your request. It reads it on the chain and signs within a few minutes; the payment goes through in that block."));
+          else say("warn", F("Tau HUD’s co-signer could not take it: {x}. A friend can sign instead (cosign in their No Memo).", { x: String((a && a.error) || T("no answer")).slice(0, 160) }));
+        } else say("sys", F("Your friend signs it from their own No Memo: they type cosign. Their address: {h}.", { h: short(j.req.p) }));
+      }
+    } finally { REQ_BUSY = false; }
+  }
+  async function cosignCmd(arg) {
+    if (SIM) { say("sys", T("Co-signing happens on the live testnet only: switch to the live node in the header.")); return; }
+    if (!B) { say("no", T("This browser cannot sign (no BLS library loaded).")); return; }
+    if (RUN.busy) { say("warn", T("Already under way.")); return; }
+    const k = myKey(true);
+    RUN.busy = true; chips();
+    try {
+      const r = await ask("getapprovalrequests " + k.pk + " in");
+      if (!isOk(r)) { say("no", T("The node did not answer; try again in a minute.")); return; }
+      const rows = (r.data.incoming || []).filter(x => x.status === "open" && Object.values(x.approvers || {}).some(a => a.pubkey === k.pk && a.state === "awaiting"));
+      if (!arg) {
+        if (!rows.length) { say("sys", T("Nobody is waiting for your signature. A friend who wants you as their second key needs your address:")); say("sys", k.pk); return; }
+        say("sys", T("Waiting for your signature:"));
+        cols(rows.map((x, i) => ["cosign " + (i + 1), F("{n} test AGRS from {h} to {g}", { n: fmt(x.amount), h: short(x.sender_pubkey), g: short(x.recipient_pubkey) })]));
+        say("learn", T("Signing is a transaction of its own (transfer_vote), without a fee. Once the second key the sender’s rule wants has signed, the chain pays the parked payment by itself."));
+        return;
+      }
+      const x = rows[Number(arg) - 1] || rows.find(q => q.request_id.startsWith(String(arg).toLowerCase()));
+      if (!x) { say("warn", T("No such request waits for you: type cosign to see them.")); return; }
+      const { seq, tip } = await envelope(k.pk);
+      const tx = sign({ tx_type: "transfer_vote", sender_pubkey: k.pk, sequence_number: seq, expiration_time: now() + 600, expire_at_height: tip + 1000, fee_limit: "0", request_id: x.request_id, approve: true, reason: "No Memo" }, k.sk);
+      say("step", F("signing {h}’s request: {n} test AGRS", { h: short(x.sender_pubkey), n: fmt(x.amount) }));
+      const s = await sendtx(tx);
+      if (!s.r) { say("no", T("No answer from the node; nothing was sent. Type cosign again.")); return; }
+      if (!s.hash) { say("no", F("The chain said no: {x}", { x: codeOf(s.r) || plain(s.r) })); return; }
+      sent(tx, s); say("step", T("waiting for a block …"));
+      const w = await sealed(s.hash, null, s.way);
+      if (!w.in) { say("no", F("Not sealed: {x}", { x: w.why })); return; }
+      snd.seal(); say("ok", F("Signed in block {n}. If yours was the key the rule wanted, the chain paid it in the same block.", { n: fmt(w.block) }), explorer(s.hash));
+    } catch (e) { say("no", T("The node did not answer in time; nothing is lost. Type cosign again.")); }
     finally { RUN.busy = false; chips(); balance(); }
   }
   /* ---------- the daily order: one contract a day (German days) that pays a point more for each day in a row, up to five.
@@ -2751,6 +2886,7 @@
     if (c === "showcase" || c === "showcases") return showcaseCmd();
     if (c === "when") return whenCmd(args[0]);
     if (c === "unguard") return unguard();
+    if (c === "cosign") return cosignCmd(args[0]);
     if (c === "daily" || c === "streak") return dailyCmd();
     if (c === "board") return board();
     if (c === "tau") return tauCmd(s.slice(3));

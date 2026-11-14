@@ -212,5 +212,53 @@ asyncio.run(run(bad, loose, clock2, cruise.berlin_t(dt.date(2027, 1, 2), 23)))
 late = [t["sender_pubkey"] for t in loose.sent[n:] if "1" in t.get("operations", {})]
 check(bad.pk["piggy"] not in late and len(late) == 2, "after New Year the piggy bank no longer tries; the other two do")
 
+# the co-signer for No Memo's Four eyes, two keys: signs an open request from the asking address, up to COSIGN_MAX
+class Inbox(Node):
+    def __init__(self, cosigner, rows):
+        super().__init__()
+        self.cosigner, self.rows = cosigner, rows
+
+    async def ask(self, cmd):
+        if cmd == f"getapprovalrequests {self.cosigner} in":
+            return {"status": "ok", "data": {"incoming": self.rows}}
+        if cmd.startswith("sendtx "):
+            tx = json.loads(cmd[7:])
+            self.sent.append(tx)
+            return {"status": "ok", "data": {"ok": True, "tx_hash": "v%d" % len(self.sent)}}
+        return await super().ask(cmd)
+
+
+tmp4 = tempfile.mkdtemp()
+clock4 = Clock(cruise.berlin_t(DAY, 9))
+co = showcase.Showcase(keys_path=os.path.join(tmp4, "k"), state_path=os.path.join(tmp4, "s.json"), clock=clock4, enabled=True)
+P, Q = "ab" * 48, "ef" * 48
+good, big, other = "11" * 32, "22" * 32, "33" * 32
+rows = [{"request_id": good, "sender_pubkey": P, "amount": 600, "status": "open"},
+        {"request_id": big, "sender_pubkey": P, "amount": showcase.COSIGN_MAX + 1, "status": "open"},
+        {"request_id": other, "sender_pubkey": Q, "amount": 600, "status": "open"}]
+inbox = Inbox(co.pk["cosigner"], rows)
+for bad_q, why in (("id=zz&from=" + P, "a request id that is no hex"), ("id=" + good + "&from=12", "an address that is no key")):
+    check(co.route("/showcase/cosign", bad_q, "1.1.1.1")["ok"] is False, "refused: " + why)
+check(co.route("/showcase/cosign", f"id={good}&from={P}", "1.1.1.1").get("queued") and co.route("/showcase/cosign", f"id={good}&from={P}", "1.1.1.1").get("already"),
+      "GET /showcase/cosign queues a request once")
+co.route("/showcase/cosign", f"id={big}&from={P}", "1.1.1.1")
+co.route("/showcase/cosign", f"id={other}&from={P}", "1.1.1.1")
+co.route("/showcase/cosign", f"id={'44' * 32}&from={P}", "1.1.1.1")
+for st in co.st["wallets"].values():   # the wallets' rules are in force and tried today: the slots go to the votes
+    st.update(checked=int(clock4.t), in_force=True, tried=showcase.berlin_day(clock4.t).isoformat())
+asyncio.run(run(co, inbox, clock4, clock4.t + 400))
+votes = [t for t in inbox.sent if t["tx_type"] == "transfer_vote"]
+check(len(votes) == 1 and votes[0]["request_id"] == good and votes[0]["approve"] is True and votes[0]["fee_limit"] == "0"
+      and votes[0]["sender_pubkey"] == co.pk["cosigner"] and votes[0]["signature"],
+      "the co-signer signs only the open request from that address within the limit: feeless, approve")
+check(b'"request_id":"' + good.encode() in showcase.signing_bytes(votes[0]) and b'"reason"' in showcase.signing_bytes(votes[0]),
+      "the vote's preimage carries request_id, approve and reason, as the node signs it")
+notes = " ".join(x["note"] for x in co.st["log"])
+check("more than 5,000" in notes and "from another address" in notes, "too big or from another address: not signed, noted")
+check(not co.votes, "a request never seen in the inbox is dropped after five minutes")
+for i in range(showcase.COSIGN_PER_IP):
+    co.route("/showcase/cosign", f"id={i:064x}&from={P}", "2.2.2.2")
+check(co.route("/showcase/cosign", f"id={'55' * 32}&from={P}", "2.2.2.2")["ok"] is False, "at most ten a day from one address")
+
 print("all ok" if not failed else f"{failed} FAILED")
 sys.exit(1 if failed else 0)

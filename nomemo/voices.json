@@ -333,6 +333,18 @@
  },
  {
   "who": "look",
+  "text": "Four eyes, two keys. Your wallet gets a rule that wants a second signature for big payments. Then a big payment waits on the chain for it, and at the end the rule comes off. Three parts, one trace."
+ },
+ {
+  "who": "look",
+  "text": "First part. A rule on your own wallet: above the amount on your screen, a payment needs your partner's key in slot eighteen. Send it alone."
+ },
+ {
+  "who": "look",
+  "text": "Second part. Pay the drop more than that, as a request. The chain parks it, and it moves only when your partner signs."
+ },
+ {
+  "who": "look",
   "text": "Tau HUD's four-eyes wallet carries a real rule on the testnet. Above some amount it needs a co-signer. Read the rule, then pay the drop the smallest amount that needs one."
  },
  {
