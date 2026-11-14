@@ -845,6 +845,140 @@
         ],
         "solution": "always ( o30[t]:bv[8] = o30[t-1]:bv[8] + { #x01 }:bv[8] && o29[t]:bv[8] = i29[t]:bv[8] ) && o30[0]:bv[8] = { #x07 }:bv[8]."
       }
+    },
+    {
+      "id": "until",
+      "level": "pro",
+      "title": "Until: waiting for a moment",
+      "text": "The engine on our server also knows the operators of full LTL. a until b says: b happens at some step, and a holds at every step before it. weak_until says the same, except that b may never come. sat reads them like sometimes: the inputs do their worst, so an until that waits for an input may wait forever.",
+      "tries": [
+        {
+          "label": "Wait for the input",
+          "op": "sat",
+          "spec": "(o1[t] = 0) until (i1[t] = 1)",
+          "expect": {
+            "verdict": false
+          },
+          "says": "The input may stay 0 at every step, so the moment never has to come: F, just like sometimes i1[t] = 1 in lesson 4."
+        },
+        {
+          "label": "Let an output end the wait",
+          "op": "sat",
+          "spec": "(o1[t] = 0) until (o2[t] = 1)",
+          "expect": {
+            "verdict": true
+          },
+          "says": "Now an output ends the wait. The program can set o2 to 1 whenever it likes, even at the first step: T."
+        }
+      ],
+      "task": {
+        "text": "Change until in the first try to weak_until, so the wait may last forever. sat should answer T.",
+        "op": "sat",
+        "expect": {
+          "verdict": true
+        },
+        "must": [
+          "weak_until"
+        ],
+        "solution": "(o1[t] = 0) weak_until (i1[t] = 1)"
+      }
+    },
+    {
+      "id": "since",
+      "level": "pro",
+      "title": "Since: a rule with a memory",
+      "text": "since looks back. a since b says: b happened at some step up to now, and a has held at every step after it. The engine keeps track with hidden helper outputs, so a rule can remember an event without storing a value itself. once and historically, its cousins, came in later versions of tau-lang than the one our server runs.",
+      "tries": [
+        {
+          "label": "A switch with a memory",
+          "op": "run",
+          "spec": "always ( ((i2[t]:bv[8] = { 0 }:bv[8]) since (i1[t]:bv[8] = { 1 }:bv[8])) ? (o1[t]:bv[8] = { 1 }:bv[8]) : (o1[t]:bv[8] = { 0 }:bv[8]) ).",
+          "steps": [
+            {
+              "i1": "0",
+              "i2": "0"
+            },
+            {
+              "i1": "1",
+              "i2": "0"
+            },
+            {
+              "i1": "0",
+              "i2": "0"
+            },
+            {
+              "i1": "0",
+              "i2": "1"
+            },
+            {
+              "i1": "0",
+              "i2": "0"
+            }
+          ],
+          "expect": {
+            "out": {
+              "o1": [
+                "0",
+                "1",
+                "1",
+                "0",
+                "0"
+              ]
+            }
+          },
+          "says": "i1 = 1 at step 1 switches o1 on, and it stays on at step 2 with no input. i2 = 1 at step 3 switches it off, and it stays off. The rule stores nothing: since remembers for it."
+        },
+        {
+          "label": "Demand a past input",
+          "op": "sat",
+          "spec": "always ( (o1[t] = 0) since (i1[t] = 1) )",
+          "expect": {
+            "verdict": false
+          },
+          "says": "At every step, i1 must have been 1 at some step so far. The inputs decide that, and at step 0 the input can simply be 0: F."
+        }
+      ],
+      "task": {
+        "text": "Swap the roles in the first try: i2 = 1 switches o1 on and i1 = 1 switches it off. Run the same inputs.",
+        "op": "run",
+        "steps": [
+          {
+            "i1": "0",
+            "i2": "0"
+          },
+          {
+            "i1": "1",
+            "i2": "0"
+          },
+          {
+            "i1": "0",
+            "i2": "0"
+          },
+          {
+            "i1": "0",
+            "i2": "1"
+          },
+          {
+            "i1": "0",
+            "i2": "0"
+          }
+        ],
+        "expect": {
+          "out": {
+            "o1": [
+              "0",
+              "0",
+              "0",
+              "1",
+              "1"
+            ]
+          }
+        },
+        "must": [
+          "since"
+        ],
+        "solution": "always ( ((i1[t]:bv[8] = { 0 }:bv[8]) since (i2[t]:bv[8] = { 1 }:bv[8])) ? (o1[t]:bv[8] = { 1 }:bv[8]) : (o1[t]:bv[8] = { 0 }:bv[8]) )."
+      }
     }
   ],
   "guide": [

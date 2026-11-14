@@ -116,9 +116,10 @@ pre { margin: 6px 0 0; padding: 8px 10px; background: rgba(255,255,255,.04); bor
 .eng.on i { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
 .eng.off i { background: #e5484d; }
 .chips, #chips { display: flex; gap: 6px; }
-#chips { flex-wrap: wrap; }   /* twelve lessons at the logic level: a second row instead of a row wider than its panel */
+#chips { flex-wrap: wrap; }   /* fourteen lessons at the logic level: a second row instead of a row wider than its panel */
 .chips { margin: 0 0 10px; justify-content: space-between; flex-wrap: wrap; }
 #lNext { color: var(--text); }
+@media (min-width: 701px) { .chips { flex-wrap: nowrap; align-items: flex-start; } #chips { flex: 1 1 auto; min-width: 0; } #lNext { flex: none; } }   /* fourteen lessons: the numbers wrap beside Next, Next keeps its place on the first row */
 button.b { background: none; cursor: pointer; }
 .chips button { min-width: 34px; padding: 0 8px; }
 .chips button[aria-current=true] { color: #fff; border-color: #fff; }
@@ -355,7 +356,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
       <section class="panel lesson" aria-labelledby="hLes">
         <h2 id="hLes">8 short lessons</h2>
         <p class="pro-note" id="newNote" hidden><button type="button" class="backg" id="gReturn">‹ Back to the step-by-step guide</button></p>
-        <p class="pro-note" id="proNote" hidden>Lessons 1 to 4 are the basics, 5 to 8 are real testnet rules and their traps, and 9 to 12 are for logic people: terms, quantifiers, how sat treats inputs and what a rule leaves open. Then the <a href="/playground/">Rule Playground ›</a>.</p>
+        <p class="pro-note" id="proNote" hidden>Lessons 1 to 4 are the basics, 5 to 8 are real testnet rules and their traps, 9 to 12 are for logic people: terms, quantifiers, how sat treats inputs and what a rule leaves open, and 13 and 14 add until and since. Then the <a href="/playground/">Rule Playground ›</a>.</p>
         <div class="chips"><span id="chips" role="tablist" aria-label="Lessons"></span><button type="button" id="lNext">Next ›</button></div>
         <h3 id="lTitle"></h3>
         <p id="lText"></p>
@@ -404,12 +405,13 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
         </div>
         <div data-pane="deep" hidden>
           <ul class="links">
+            <li><a href="taba/">Tau's math in plain words ›</a><span>Five ideas from Ohad Asor's book, each with a question for the engine.</span></li>
             <li><a href="https://arxiv.org/abs/2407.06214" target="_blank" rel="noopener">Guarded Successor ↗</a><span>Ohad Asor's paper on the logic behind Tau.</span></li>
             <li><a href="https://github.com/IDNI/tau-lang/blob/main/docs/Theories-and-Applications-of-Boolean-Algebras-0.25.pdf" target="_blank" rel="noopener">Theories and Applications of Boolean Algebras ↗</a><span>The book in the making, as a PDF.</span></li>
             <li><a href="https://github.com/IDNI/tau-lang#satisfiability-and-execution" target="_blank" rel="noopener">How sat reads a spec ↗</a><span>Inputs for all, outputs exist, step by step: the exact rule in IDNI's README.</span></li>
             <li><a href="https://github.com/IDNI/tau-lang#boolean-functions" target="_blank" rel="noopener">Boolean functions and bitvectors ↗</a><span>Every term operator, and why 1:bv[8] is 255.</span></li>
             <li><a href="https://github.com/IDNI/tau-lang/tree/main/demos" target="_blank" rel="noopener">Demos for the newest tau ↗</a><span>30 .tau files, from basic syntax to LTL and synthesis.</span></li>
-            <li><a href="https://www.youtube.com/watch?v=lNU1wS5rqtg&amp;list=PLav2klOnTUlOeakJCbLZxoib_x0jYAQ5f&amp;index=2" target="_blank" rel="noopener">Lectures on atomless Boolean algebra ↗</a><span>Video series by Ohad Asor.</span></li>
+            <li><a href="https://www.youtube.com/watch?v=lNU1wS5rqtg&amp;list=PLav2klOnTUlOeakJCbLZxoib_x0jYAQ5f&amp;index=2" target="_blank" rel="noopener">Lectures on atomless Boolean algebra ↗</a><span>Video series by Ohad Asor, 2024. For exact statements, use the book.</span></li>
           </ul>
         </div>
         <div data-pane="ask" hidden>
@@ -943,7 +945,7 @@ else openDoor();
 fetch("lessons.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
   allLessons = d.lessons || []; pickLessons(); guide = d.guide || []; renderAsked(d.asked || []); gAt = Math.min(store.get().g || 0, guide.length);
   setView();
-  const m = /^#l(\d)$/.exec(h);
+  const m = /^#l(\d{1,2})$/.exec(h);
   const done = store.get();
   const first = lessons.findIndex(l => !done[l.id]);
   openLesson(m ? +m[1] - 1 : level === "pro" && !done.rule && first === 0 ? 4 : (first < 0 ? 0 : first));
