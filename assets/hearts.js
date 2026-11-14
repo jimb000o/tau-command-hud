@@ -131,8 +131,25 @@
         try { const lk = "tauhud-wallet-log-live-" + k.pk, logs = JSON.parse(store.get(lk) || "[]"); logs.unshift({ hash: sent[id].hash, kind: "pay", label: (on ? "♥ " : "♡ ") + T(PARTS[Object.keys(PARTS).find(p => String(PARTS[p][0]) === id)][1]), at: Date.now(), status: "queued", seq: tx.sequence_number, paid: true }); store.set(lk, JSON.stringify(logs.slice(0, 200))); } catch (e) {}
       }
     } catch (e) { note(T("The testnet is out of reach just now; your heart is sent on your next visit.")); }
-    if (c) c.close();
+    if (c) { const last = Object.keys(sent).filter(id => sent[id].hash && Date.now() - sent[id].at < 30000).sort((x, y) => sent[y].at - sent[x].at)[0]; if (last && sent[last].on) { const cc = c; landed(cc, last).catch(() => {}).then(() => cc.close()); } else c.close(); }
     busy = false; paint(); setTimeout(fetchCounts, 60000);
+  }
+  /* the heart you just gave, followed until a block holds it (up to about a minute), then one calm card: it is in, what it
+     is for, and the block (assets/win.js, loaded here when the page does not have it) */
+  async function landed(c, id) {
+    const h = sent[id].hash;
+    for (let k = 0; k < 14; k++) {
+      await new Promise(r => setTimeout(r, 5000));
+      const m = await c.ask("gettxstatus " + h, 8000), d = (m && m.status === "ok" && m.data) || {};
+      if (d.block_number == null && !/confirmed|included|mined|sealed|applied/i.test(String(d.status || d.state || ""))) continue;
+      const blk = d.block_number ?? d.height ?? null, name = window.TauHearts ? TauHearts.name(id) : null;
+      const show = () => window.TauWin && TauWin.moment({ key: "heart", at: document.querySelector(`button.heart[data-id="${id}"]`),
+        title: name ? T("Your heart is in a block") + ": " + T(name) : T("Your heart is in a block"),
+        meaning: T("It tells us which parts you love most, so we build those first. Public on the chain, without a name."),
+        proof: (blk != null ? "block #" + blk + " · " : "") + "tx " + h.slice(0, 8) + "…", href: "/hearts/" });
+      if (window.TauWin) show(); else { const sc = document.createElement("script"); sc.src = "/assets/win.js"; sc.onload = show; document.head.append(sc); }
+      return;
+    }
   }
   function note(t) {
     let n = document.querySelector(".heart-note"); if (!n) { n = document.createElement("div"); n.className = "heart-note"; n.setAttribute("role", "status"); document.body.append(n); }

@@ -1,6 +1,8 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. Addresses, hashes and Tau rule text stay as they are. */
 TauI18n.add({ strings: {
   /* 14.11.2026: the moment you did something (assets/win.js) */
+  "take-back in block #{a}": "撤回在区块 #{a}",
+  "take-back sent": "撤回已发出",
   "It is final: every node now holds the same record of it.": "已经确定：每个节点现在都保存着同一份记录。",
   "It waits for its release block. Until then you can still take it back under Activity.": "它在等待释放区块。在那之前，你仍可以在“动态”里撤回。",
   "Your request is on the chain. It executes the moment your co-signer signs.": "你的请求已上链。共同签名人一签名就会执行。",

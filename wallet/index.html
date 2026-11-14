@@ -1914,7 +1914,8 @@ function renderWalk() {
   ];
   const done = steps.filter(x => x[0]).length;
   $("steps").hidden = false;
-  if (done === steps.length && window.TauWin && W.log.some(x => x.kind === "retract" && Date.now() - x.at < 9e5)) setTimeout(() => TauWin.moment({ once: true, key: "wallet-walk", title: T("All steps done: you sent a payment and took it back"), meaning: T("On the chain only the sender can take a payment back, and only before the release block. You have now done both sides of it."), at: $("steps") }), 2600);
+  if (done === steps.length && window.TauWin && W.log.some(x => x.kind === "retract" && Date.now() - x.at < 9e5)) setTimeout(() => TauWin.moment({ once: true, key: "wallet-walk", title: T("All steps done: you sent a payment and took it back"), meaning: T("On the chain only the sender can take a payment back, and only before the release block. You have now done both sides of it."), at: $("steps"),
+    ...(r => r ? { proof: (r.block != null ? F("take-back in block #{a}", { a: r.block }) : T("take-back sent")) + (r.hash ? " · tx " + short(r.hash) : ""), href: W.pk ? "/account/?a=" + W.pk : null } : {})(W.log.find(x => x.kind === "retract")) }), 2600);
   const line = T("I sent test money to a wrong address on Tau Testnet Alpha and took it back before it arrived. Five minutes, nothing to install:") + " https://tauhud.com/wallet/?walk=friend&ref=friend";   // the tag counts opens, nothing about who
   $("steps").replaceChildren(el("h3", { text: F("A payment you can take back · {a} of {b} done", { a: done, b: steps.length }) }),
     ...steps.map(([ok, t, x]) => el("div", { class: "step" + (ok ? " done" : "") }, el("span", { class: "ck", text: ok ? "✓" : "○" }), el("span", null, el("b", { text: T(t) }), " ", ok ? null : el("span", { text: T(x) })))),

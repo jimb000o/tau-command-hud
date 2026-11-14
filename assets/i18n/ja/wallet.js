@@ -1,6 +1,8 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
   /* 14.11.2026: the moment you did something (assets/win.js) */
+  "take-back in block #{a}": "取り消しはブロック #{a}",
+  "take-back sent": "取り消しを送信済み",
   "It is final: every node now holds the same record of it.": "確定しました。すべてのノードが同じ記録を持っています。",
   "It waits for its release block. Until then you can still take it back under Activity.": "解放ブロックを待っています。それまでは「アクティビティ」から取り消せます。",
   "Your request is on the chain. It executes the moment your co-signer signs.": "リクエストはチェーン上にあります。共同署名者が署名した瞬間に実行されます。",

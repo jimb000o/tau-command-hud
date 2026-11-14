@@ -1,6 +1,7 @@
 /* Simplified Chinese for the Guardian page (guardian/). Keys are the English text; {n} {e1} … are placeholders. */
 TauI18n.add({ strings: {
   /* 14.11.2026: the moment you did something (assets/win.js) */
+  "your rule on the chain": "你在链上的规则",
   "Step 1 done: your authenticator app is connected": "第 1 步完成：你的验证器应用已连接",
   "Its six-digit codes are now the second key for your test wallet.": "它的六位数验证码现在是你测试钱包的第二把钥匙。",
   "Step 2 done: the Guardian rule is in force": "第 2 步完成：Guardian 规则已生效",

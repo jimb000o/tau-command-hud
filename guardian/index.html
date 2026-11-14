@@ -408,7 +408,8 @@ function guardWin(enrolled, mode) {
   const first = wasApp === null;
   if (!first && window.TauWin) {
     if (enrolled && !wasApp) TauWin.moment({ key: "guardian-app", at: $("pApp"), title: T("Step 1 done: your authenticator app is connected"), meaning: T("Its six-digit codes are now the second key for your test wallet.") });
-    else if (mode != null && wasRule == null) TauWin.moment({ key: "guardian-rule", at: $("pRule"), title: T("Step 2 done: the Guardian rule is in force"), meaning: T("A block holds it now. From here, payments it covers wait for a code from your app."), proof: SIM ? T("simulation") : null });
+    else if (mode != null && wasRule == null) TauWin.moment({ key: "guardian-rule", at: $("pRule"), title: T("Step 2 done: the Guardian rule is in force"), meaning: T("A block holds it now. From here, payments it covers wait for a code from your app."),
+      proof: (SIM ? T("simulation") + " · " : "") + (W.clause ? String(W.clause).replace(/\s+/g, " ").slice(0, 70) + (String(W.clause).length > 70 ? "…" : "") : T("your rule on the chain")), href: W.pk && !SIM ? "/account/?a=" + W.pk : null });
   }
   if (first && (!W.pk || G.acct === null || W.clause === undefined)) return;   // nothing known yet: the first real answer is the starting point
   wasApp = enrolled; wasRule = mode;

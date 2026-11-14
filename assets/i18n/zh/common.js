@@ -1,6 +1,8 @@
 /* Simplified Chinese for the shared header and strings used on several pages. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
   /* 14.11.2026: the moment you did something (assets/win.js) */
+  "Your heart is in a block": "你的心已进入区块",
+  "It tells us which parts you love most, so we build those first. Public on the chain, without a name.": "它告诉我们你最喜欢哪些部分，我们会优先做这些。在链上公开，没有名字。",
   "first time": "第一次",
   "Close": "关闭",
   "simulation": "模拟",
