@@ -532,6 +532,7 @@ a.chip { text-decoration: none; cursor: pointer; } a.chip:hover { border-color: 
 .seg button[aria-pressed="true"] #liveDot.behind { box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(255,177,59,.9); }
 /* red only here, by decision 27 Oct: the node light is a traffic light (green synced · amber not synced or catching up · red offline · grey unknown) */
 #liveDot.off { background: var(--bad); box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 0 12px 2px rgba(255,77,109,.85); animation: none; opacity: 1; }
+#liveDot.off.stop { animation: livepulse 1.6s ease-in-out infinite; }   /* red and still breathing: our node answers, the chain has stopped */
 .seg button[aria-pressed="true"] #liveDot.off { box-shadow: 0 0 0 2px #000, 0 0 10px 2px rgba(255,77,109,.9); }
 #liveDot.none { background: #5a5a62; box-shadow: 0 0 0 2px rgba(0,0,0,.35); animation: none; opacity: 1; }
 .seg button[aria-pressed="true"] #liveDot.none { background: #9a9aa2; box-shadow: 0 0 0 2px rgba(0,0,0,.25); }
@@ -1759,6 +1760,14 @@ const HV = "\u2063", verdict = (lv, txt) => HV + lv + HV + txt + "\n";
 { const l = new URLSearchParams(location.search).get("lang"); if (l) [["ownRule", "mine"], ["ownShare", "share"]].forEach(([id, t]) => { const a = $(id); if (a) a.href = `wallet/?from=hud&lang=${encodeURIComponent(l)}#rules-${t}`; }); }   // the rule panels open the wallet at the matching tab, in the same language   // the online chip opens Tau HUD in numbers on its Tau HUD tab, in the same language
 const valProfile = v => { const l = new URLSearchParams(location.search).get("lang"); return `account/?a=${encodeURIComponent(String(v).toLowerCase().replace(/^0x/, ""))}&view=validator${l ? "&lang=" + encodeURIComponent(l) : ""}`; };
 const liveChain = () => S.mode === "live" && !S.simfeed, offline = () => liveChain() && LIVE.status !== "Connected";
+/* seconds since the newest block was sealed: on the live chain by the block's own timestamp (a page opened during a stall
+   would otherwise count from its own first block, "8 s ago"), in the simulation since it arrived */
+const blockAge = () => { const last = S.blocks[S.blocks.length - 1]; return liveChain() && last && Number(last.ts) > 1e9 ? Math.max(0, Date.now() / 1000 - Number(last.ts)) : Math.max(0, (performance.now() - S.lastBlockAt) / 1000); };
+/* the chain has stopped: our node answers, but nothing has been sealed for a long time while transactions wait (the block pace's
+   "Problem"). "late" is the pace's "Watch": the next block is overdue. From here we cannot tell whether the validator stopped or
+   lost its link to the network; only that no block reaches any node we can see */
+const chainStall = () => { if (!liveChain() || offline() || !S.blocks.length || syncLag()) return null; const p = healthOf("pace"); if (!p) return null;
+  return p[0] === "bad" ? { lv: "bad", since: memState().since, W: memState().W } : p[0] === "watch" && /late/.test(p[1]) ? { lv: "late", since: memState().since, W: memState().W } : null; };
 const SEALED = { h: -1, n: -1, ids: new Set() };
 function sealedIds() {
   if (SEALED.h !== S.height || SEALED.n !== S.blocks.length || SEALED.k !== S.byHeight.size || SEALED.s !== SCAN.ids.size) {
@@ -1872,6 +1881,9 @@ const HEALTH = {
     if (offline()) return ["bad", "Problem: no connection to a node."];
     const N = S.validators.length;
     if (!N) return ["watch", "Watch: no validator known yet."];
+    const st = chainStall();
+    if (st && st.lv === "bad") return ["bad", `Problem: ${N === 1 ? "the validator has not" : "no validator has"} sealed a block for ${fmtAge(st.since)} while ${wait_s(st.W)}. Our node answers, so the stop is not on our side; from here we cannot tell whether ${N === 1 ? "it" : "they"} stopped or lost the link to the network.`];
+    if (st) return ["watch", `Watch: the next block is late, ${fmtAge(st.since)} since the last.`];
     if (N === 1) return ["watch", "Watch: one validator seals every block; if it stops, the chain waits."];
     return ["ok", `Normal: ${N} validators take turns sealing.`];
   },
@@ -1904,11 +1916,12 @@ function nodeHealth(n) {
   if (n.kind === "hud") {
     const lag = syncLag(); if (lag) return verdict("watch", lag);
     if (d > 5) return verdict("watch", `Watch: ${fmt(d)} blocks behind the newest block; catching up.`);
+    const st = chainStall(); if (st && st.lv === "bad") return verdict("watch", `Waiting: answers and is in step at block #${fmt(S.height)}, but no new block has come to check for ${fmtAge(st.since)}.`);
     return verdict("ok", liveChain() ? `Normal: live and in step with the network at block #${fmt(S.height)}.` : "Normal: in step with the newest simulated block.");
   }
   if (n.kind === "known") {   // a named node: reach and sync as the relay checked them, nothing guessed
     if (!n.online) return verdict("watch", "Watch: not reachable right now (no open P2P port, no contact, no heartbeat).");
-    if (n.sync === "synced") return verdict("ok", "Normal: reachable and in sync; its block hash matches ours.");
+    if (n.sync === "synced") { const st = chainStall(); return st && st.lv === "bad" ? verdict("watch", `Waiting: reachable and in sync, but no new block has come for ${fmtAge(st.since)}.`) : verdict("ok", "Normal: reachable and in sync; its block hash matches ours."); }
     if (n.sync === "catching_up") return verdict("watch", `Watch: reachable, catching up${n.behind != null ? `, ${fmt(n.behind)} blocks behind` : ""}.`);
     if (n.sync === "other_chain") return verdict("watch", "Watch: reachable, but on a different chain than ours.");
     return verdict("watch", "Watch: reachable; whether it is in sync is not known yet (its heartbeat does not report).");
@@ -2112,10 +2125,12 @@ function setRelay(up) {
   const synced = PRESENCE.synced !== false;
   const catching = synced && PRESENCE.tip && PRESENCE.canon != null && PRESENCE.canon < PRESENCE.tip - 2;
   const sc = PRESENCE.score != null ? ` health ${PRESENCE.score} of 100` : "", why = healthWhy(), sv = stalled ? stallVerdict(sc) : null;
-  // red means one thing: our node or the relay does not answer. A stalled or catching-up chain with our node answering is amber,
-  // so the light turns back from red the moment the node answers again, whatever the relay's score still remembers of the outage
-  $("liveDot").className = "dot " + (up ? (synced && !catching && !degraded && !sv ? "" : "behind") : "off");
-  LIVE_TIP = (sv ? verdict(sv[0], sv[1]) : !up ? verdict("bad", PRESENCE.stale ? "Problem: no answer from the relay for over a minute." : PRESENCE.health === "down" ? `Problem: the testnet is down,${sc || " says its health score"}.` : "Problem: the community node is offline, the relay is not answering.")
+  // solid red: our node or the relay does not answer. Breathing red: our node answers, but the chain has stopped (nothing sealed for
+  // over 10 min, or 10 blocks' time, while transactions wait). A late block, a quiet chain or catching up is amber. The light turns
+  // back from red the moment a block comes or the node answers again, whatever the relay's score still remembers of the outage
+  const stop = up && !sv && chainStall(), stopped = up && ((sv && sv[0] === "bad") || (stop && stop.lv === "bad"));
+  $("liveDot").className = "dot " + (stopped ? "off stop" : up ? (synced && !catching && !degraded && !sv ? "" : "behind") : "off");
+  LIVE_TIP = (sv ? verdict(sv[0], sv[1]) : stop && stop.lv === "bad" ? verdict(...healthOf("pace")) : !up ? verdict("bad", PRESENCE.stale ? "Problem: no answer from the relay for over a minute." : PRESENCE.health === "down" ? `Problem: the testnet is down,${sc || " says its health score"}.` : "Problem: the community node is offline, the relay is not answering.")
     : degraded ? verdict("watch", `Watch: testnet${sc || " health"}, degraded.`) : !synced ? verdict("busy", "In progress: online, not synced with the real chain yet.")
     : catching ? verdict("busy", `In progress: catching up, verified to #${fmt(PRESENCE.canon)} of ${fmt(PRESENCE.tip)}.`) : verdict("ok", sc ? `Normal: testnet${sc}.` : "Normal: online and following the real testnet chain."))
     + "Live node: the real testnet, read through our community node." + (why && (degraded || PRESENCE.health === "down") ? `\n${why}` : "");
@@ -2883,10 +2898,10 @@ const LV = { ev: [] };
 function lvStat() {
   const box = $("lvStat"); if (!box || !box.offsetParent) return;
   const now = Date.now() / 1000, pace = S.blockTimes.length ? S.blockTimes.reduce((a, b) => a + b, 0) / S.blockTimes.length : null;
-  const since = Math.max(0, Math.round((performance.now() - S.lastBlockAt) / 1000)), late = S.mode === "live" && pace != null && catchingUp(pace);
+  const since = Math.round(blockAge()), late = S.mode === "live" && pace != null && catchingUp(pace);
   const ex = [];
   if (S.mode !== "live") ex.push(["warn", "Simulation: made-up data"]);
-  else if (late) ex.push(["warn", since < 5400 ? `No new block for ${Math.round(since / 60)} min` : `No new block for ${(since / 3600).toFixed(1)} h`]);
+  else if (late) ex.push([(chainStall() || {}).lv === "bad" ? "bad" : "warn", since < 5400 ? `No new block for ${Math.round(since / 60)} min` : `No new block for ${(since / 3600).toFixed(1)} h`]);
   S.updates.filter(u => u.status === "voting" || u.status === "scheduled").forEach(u => ex.push(["hot", u.status === "scheduled" ? `Rule change agreed: active at block #${u.activateAt}` : `Vote running: ${u.votes.size} of ${threshold()} agreed`]));
   LV.ev = LV.ev.filter(e => now - e.at < 600);
   const g = LV.ev.filter(e => e.kind === "grd").length, r = LV.ev.length - g;
@@ -4254,6 +4269,7 @@ function draw(tm) {
   const cyan = "236,236,240", amber = "255,255,255";
   CORE_HITS.length = 0; const hit = (x, y, r, fn, href, open) => CORE_HITS.push({ x, y, r, fn, href, open }); const ring = (r, w, fn, href, open) => CORE_RINGS.push({ r, w, fn, href, open });
   CORE_RINGS.length = 0;
+  const stall = chainStall();   // the chain has stopped (red) or its next block is late (amber): the validator and the nodes show it
   ring(C * .84, 16, () => health("validators") + vt(`Validator orbit: the ${S.validators.length || "—"} validator${S.validators.length === 1 ? " that seals" : "s that seal"} blocks; the green one builds the next.`, `Validator orbit: ${S.validators.length || "—"} validator${S.validators.length === 1 ? "" : "s"}; the proposer rotates (o7), a white frame marks a consensus_rule_vote.`) + (S.updates.some(u => u.status === "voting") ? vt("\nA white frame marks a vote for the open rule change.", "") : ""));
   const nodes = nodesNow(), NR = C * .77, named = nodes.filter(n => n.name);
   ring(NR, 12, () => {
@@ -4273,11 +4289,12 @@ function draw(tm) {
     if (S.pulse > 0) { const q = Math.min(1, (1 - S.pulse) * 1.25), k = .30 + (NR / C - .30) * q; cx.fillStyle = `rgba(57,255,138,${S.pulse})`; cx.beginPath(); cx.arc(x * k / (NR / C), y * k / (NR / C), 4.5, 0, Math.PI * 2); cx.fill(); }   // the sealed block travels out to every node
     // our own node breathes a soft green while it reads the real chain: alive, not alarmed (green stays the one accent; simulation stays grey)
     const liveHud = big && S.mode === "live" && !S.simfeed && PRESENCE.up, br = liveHud ? .5 + .5 * Math.sin(t * 1.6) : 0;
+    const NG = liveHud && stall && stall.lv === "bad" ? "255,177,59" : "57,255,138";   // in step but nothing new to check: it waits, amber
     dotShadow(x, y, big ? 10 : 8, C);
     cx.beginPath(); cx.arc(x, y, big ? 10 : 8, 0, Math.PI * 2);
     if (got) { cx.fillStyle = `rgba(57,255,138,${got * .55})`; cx.fill(); }
-    else if (liveHud) { cx.fillStyle = `rgba(57,255,138,${.10 + .22 * br})`; cx.fill(); }
-    cx.lineWidth = 2.5; cx.strokeStyle = got ? `rgba(57,255,138,${.5 + got * .5})` : liveHud ? `rgba(57,255,138,${.55 + .35 * br})` : `rgba(${cyan},${al})`; cx.shadowColor = got || liveHud ? "rgb(57,255,138)" : `rgb(${cyan})`; cx.shadowBlur = got ? 12 : liveHud ? 8 + 12 * br : big ? 12 : 0; cx.stroke(); cx.shadowBlur = 0;
+    else if (liveHud) { cx.fillStyle = `rgba(${NG},${.10 + .22 * br})`; cx.fill(); }
+    cx.lineWidth = 2.5; cx.strokeStyle = got ? `rgba(57,255,138,${.5 + got * .5})` : liveHud ? `rgba(${NG},${.55 + .35 * br})` : `rgba(${cyan},${al})`; cx.shadowColor = got ? "rgb(57,255,138)" : liveHud ? `rgb(${NG})` : `rgb(${cyan})`; cx.shadowBlur = got ? 12 : liveHud ? 8 + 12 * br : big ? 12 : 0; cx.stroke(); cx.shadowBlur = 0;
     if (n.you) { cx.save(); cx.setLineDash([4, 5]); cx.lineWidth = 2; cx.strokeStyle = "rgba(57,255,138,.8)"; cx.beginPath(); cx.arc(x, y, 15, 0, Math.PI * 2); cx.stroke(); cx.restore(); }   // your own node: a green halo
     // every name stays whole and on one line inside the canvas: beside the dot where it fits, else centred above or below it
     const inside = (lw, lx) => { const lim = C - (lw + 24) / 2 - 6; return Math.max(-lim, Math.min(lim, lx)); };
@@ -4381,13 +4398,14 @@ function draw(tm) {
   }
 
   // validators
-  const V = S.validators.length || 1, vr = C * .84;
+  const V = S.validators.length || 1, vr = C * .84, stopCol = stall ? (stall.lv === "bad" ? "255,77,109" : "255,177,59") : null;   // stopped: red, late: amber
   S.validators.forEach((v, i) => {
     const a = i / V * Math.PI * 2 - Math.PI / 2 + .35, x = Math.cos(a) * vr, y = Math.sin(a) * vr, on = i === S.proposerIdx;
     const voted = open && open.votes.has(v); dotShadow(x, y, on ? 20 : 15, C);
     cx.save(); cx.translate(x, y); cx.rotate(Math.PI / 4);
-    cx.fillStyle = on ? "rgba(57,255,138,1)" : `rgba(${cyan},.85)`;
-    cx.shadowColor = on ? "rgb(57,255,138)" : `rgb(${cyan})`; cx.shadowBlur = on ? 36 : 14;
+    const sb = stopCol && on ? .55 + .45 * Math.sin(t * 2.4) : 0;   // the one that should seal next blinks slowly in the stall colour
+    cx.fillStyle = stopCol && on ? `rgba(${stopCol},${.6 + .4 * sb})` : on ? "rgba(57,255,138,1)" : `rgba(${cyan},.85)`;
+    cx.shadowColor = stopCol && on ? `rgb(${stopCol})` : on ? "rgb(57,255,138)" : `rgb(${cyan})`; cx.shadowBlur = stopCol && on ? 14 + 18 * sb : on ? 36 : 14;
     const s = on ? 30 : 22; cx.fillRect(-s / 2, -s / 2, s, s);
     if (voted) { cx.strokeStyle = `rgba(${amber},.95)`; cx.lineWidth = 3; cx.strokeRect(-s, -s, s * 2, s * 2); }
     cx.restore();
@@ -4487,7 +4505,7 @@ function draw(tm) {
   g.addColorStop(0, "rgba(240,246,255,.95)"); g.addColorStop(.25, `rgba(${core},${.55 + Math.max(p, am) * .4})`); g.addColorStop(1, `rgba(${core},0)`);
   cx.fillStyle = g; cx.beginPath(); cx.arc(0, 0, C * (.30 + p * .06), 0, Math.PI * 2); cx.fill();
   hit(0, 0, C * .30, () => { const last = S.blocks[S.blocks.length - 1] || {}; return health("pace") + vt(`Newest block\nBlock #${fmt(S.height)} under rule version ${S.specRev}.\nChanging a rule needs ${threshold()} of ${S.validators.length} validators.`,
-    `Newest block\nBlock #${S.height}, sealed ${((performance.now() - S.lastBlockAt) / 1000).toFixed(0)} s ago, judged under spec revision ${S.specRev}.\nhash ${short(last.hash)} · state ${short(last.state)} · ${(last.txs || []).length} tx · proposer ${short(last.proposer)}\nEach seal pulls the rules of every validator and rule-holding account into the block; a rule change needs ${threshold()} of ${S.validators.length} validators.`); });
+    `Newest block\nBlock #${S.height}, sealed ${fmtAge(blockAge())} ago, judged under spec revision ${S.specRev}.\nhash ${short(last.hash)} · state ${short(last.state)} · ${(last.txs || []).length} tx · proposer ${short(last.proposer)}\nEach seal pulls the rules of every validator and rule-holding account into the block; a rule change needs ${threshold()} of ${S.validators.length} validators.`); });
   cx.strokeStyle = `rgba(${core},.8)`; cx.lineWidth = 3;
   for (let k = 0; k < 3; k++) { cx.save(); cx.rotate(t * (k % 2 ? -.8 : .6) + k); const r = C * (.17 + k * .04); for (let j = 0; j < 3; j++) { cx.beginPath(); cx.arc(0, 0, r, j * Math.PI * 2 / 3, j * Math.PI * 2 / 3 + 1.75); cx.stroke(); } cx.restore(); }
 
@@ -4938,7 +4956,7 @@ function doorProof() {
   const reach = PRESENCE.okAt && Date.now() - PRESENCE.okAt < 90000;   // /status answered lately: the relay is reachable from here
   let st = "wait", text = "connecting to our node…";
   if (live) {
-    const ago = Math.max(0, Math.round((performance.now() - S.lastBlockAt) / 1000)), v = S.validators.length, s = ago >= 90 ? (ago / 60).toFixed(1) + " min" : ago + " s";
+    const ago = Math.round(blockAge()), v = S.validators.length, s = ago >= 90 ? (ago / 60).toFixed(1) + " min" : ago + " s";
     text = v ? `Block #${fmt(S.height)} · sealed ${s} ago · ${v} validators` : `Block #${fmt(S.height)} · sealed ${s} ago`;
     st = ago > 180 ? "warn" : "ok";
     store.set("tau-door-last", JSON.stringify({ h: S.height, at: Date.now() }));
