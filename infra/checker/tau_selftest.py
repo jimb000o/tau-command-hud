@@ -94,7 +94,16 @@ def main():
         good_rules += good
         print(f"{'ok  ' if good else 'FAIL'} intel · {rule['kind']}: {intel.words(rule)}")
         print(f"       → o5 {' '.join(seen) or shown(got)} for {', '.join(map(str, amounts))} ({got.get('ms')} ms)" + ("" if good else f"  expected {' '.join(want)}"))
-    print(f"intel:   {good_rules} of 6 hidden rules answer as No Memo's contracts read them")
+    for rule in ({"kind": "reserve", "a": None, "b": 40000}, {"kind": "rich", "a": 3000, "b": 40000}, {"kind": "safe", "a": 3000, "b": 40000}):
+        pts = [(0, 39999), (0, 40000), (3000, 39999), (3001, 39999), (3001, 40000), (intel.MAX, intel.MAX)]
+        got = tau_sandbox.ask(tau_sandbox.parse({"op": "run", "spec": intel.text(rule), "steps": [{"i1": str(x), "i2": str(y)} for x, y in pts]}))
+        seen = [str((row.get("out") or {}).get("o5")) for row in got.get("outputs") or []] if got.get("ok") else []
+        want = ["1" if intel.passes2(rule, x, y) else "0" for x, y in pts]
+        good = [int(x) != 0 if x.isdigit() else None for x in seen] == [w == "1" for w in want]
+        good_rules += good
+        print(f"{'ok  ' if good else 'FAIL'} intel · {rule['kind']}: {intel.words(rule)}")
+        print(f"       → o5 {' '.join(seen) or shown(got)} for {', '.join(f'{x}@{y}' for x, y in pts)} ({got.get('ms')} ms)" + ("" if good else f"  expected {' '.join(want)}"))
+    print(f"intel:   {good_rules} of 9 hidden rules answer as No Memo's contracts read them")
     # a guard that must hold: a file stream is refused before the engine sees it
     try:
         tau_sandbox.parse({"op": "run", "spec": "o1[t] = i1[t] && x := ifile(\"/etc/passwd\")"})

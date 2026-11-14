@@ -50,6 +50,10 @@
   "g-off": {"who": "qm", "say": "Last part. Take the rule off again: the rule that changes nothing, sent alone."},
   "s-four": {"who": "look", "say": "Tau HUD's four-eyes wallet carries a real rule on the testnet. Above some amount it needs a co-signer. Read the rule, then pay the drop the smallest amount that needs one."},
   "s-piggy": {"who": "qm", "say": "Tau HUD's piggy bank is locked by time. Its rule reads the block's clock and lets nothing out before a certain moment. Read it and tell me the year it opens."},
-  "s-feed": {"who": "bosun", "say": "Tau HUD's feeding fund may only feed Agorzilla, and only so much a meal. Read its rule and feed the beast exactly that much, from your own wallet."}
+  "s-feed": {"who": "bosun", "say": "Tau HUD's feeding fund may only feed Agorzilla, and only so much a meal. Read its rule and feed the beast exactly that much, from your own wallet."},
+  "i-purse": {"who": "look", "say": "This purse has a guard that looks at the wallet as well as the payment. How much is left in it decides what may go. Ask it with an amount and a balance, both. Find what it keeps back, then name it."},
+  "h-eyes": {"who": "look", "say": "Four eyes, two keys. Your wallet gets a rule that wants a second signature for big payments. Then a big payment waits on the chain for it, and at the end the rule comes off. Three parts, one trace."},
+  "e-set": {"who": "look", "say": "First part. A rule on your own wallet: above the amount on your screen, a payment needs your partner's key in slot eighteen. Send it alone."},
+  "e-ask": {"who": "look", "say": "Second part. Pay the drop more than that, as a request. The chain parks it, and it moves only when your partner signs."}
  }
 }

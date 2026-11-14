@@ -26,6 +26,13 @@ that day. After New Year the piggy bank's lock has opened by itself: its try sto
 
 Paced like the hack of the week: in the island bot's free slots, at most one transaction every GAP seconds.
 
+No Memo's contract Four eyes, two keys (nomemo/game.js h-eyes): a player puts a rule on their own wallet that names
+Tau HUD's co-signer in approval slot i18 above some amount, then asks for a bigger payment as an approval_request. The
+page asks GET /showcase/cosign?id=<request_id>&from=<the player's address>; the co-signer looks the request up in its
+own inbox on the node (getapprovalrequests <co-signer> in) and signs it (transfer_vote, feeless) only when it is open,
+from that address, names the co-signer and moves at most COSIGN_MAX. A player's friend can sign instead, from their own
+No Memo (cosign).
+
 GET /showcase   the four wallets with their names, each rule in words and whether it is in force, the last tries
 """
 from __future__ import annotations
@@ -84,6 +91,10 @@ STORY_GIVE_UP = 45 * 60
 STARTER_MAX = 1000      # the starter rule a visitor's wallet is offered: at most this much per payment
 DESK_PER_DAY = 40       # starter offers a day, all visitors together
 DESK_PER_IP = 3         # per address a day
+COSIGN_MAX = 5000       # the co-signer signs a No Memo player's request up to this amount
+COSIGN_PER_DAY = 100    # votes a day, all players together
+COSIGN_PER_IP = 10      # per address a day
+COSIGN_REASON = "Tau HUD's co-signer, for No Memo"
 
 
 def berlin_t(day: dt.date, hour: int) -> int:
@@ -122,6 +133,8 @@ def signing_bytes(tx: dict) -> bytes:
         d.update(offer_id=tx.get("offer_id"), rule_text=tx.get("rule_text"))
     elif t == "rule_offer_reject":
         d["offer_id"] = tx.get("offer_id")
+    elif t == "transfer_vote":
+        d.update(request_id=tx.get("request_id"), approve=tx.get("approve", True), reason=tx.get("reason", ""))
     else:
         raise ValueError(t)
     return json.dumps(d, sort_keys=True, separators=(",", ":")).encode()
@@ -165,6 +178,8 @@ class Showcase:
         self.hold_until = 0.0
         self.st: dict = {"wallets": {}, "log": [], "stories": {}, "desk": {"day": "", "n": 0, "ips": {}, "to": {}}}
         self.queue: list[dict] = []   # visitors' wallets waiting for the desk's starter offer
+        self.last_vote_look = 0.0
+        self.votes: list[dict] = []   # No Memo players' requests waiting for the co-signer's vote
         self.last_story_look = 0.0
         self.load_state()
         if not self.enabled:
@@ -303,6 +318,8 @@ class Showcase:
             tx.update(offer_id=offer_id, rule_text=rule)
         elif kind == "rule_offer_reject":
             tx.update(offer_id=offer_id)
+        elif kind == "transfer_vote":   # feeless: votes are outside the fee-bearing types, so the fee limit signed is 0
+            tx.update(request_id=offer_id, approve=True, reason=COSIGN_REASON, fee_limit="0")
         else:
             raise ValueError(kind)
         tx["signature"] = G2Basic.Sign(self.sk[name], hashlib.sha256(signing_bytes(tx)).digest()).hex()
@@ -417,12 +434,17 @@ class Showcase:
             sent = await self.try_forbidden(name, ask, gov, day)
             self.save_state()
             return sent
-        # 4. a visitor asked the desk for a starter rule
+        # 4. a No Memo player waits for the co-signer (a player waits at the screen: before the desk)
+        if self.votes:
+            sent = await self.vote_step(ask, gov)
+            self.save_state()
+            return sent
+        # 5. a visitor asked the desk for a starter rule
         if self.queue:
             sent = await self.desk_step(ask, gov)
             self.save_state()
             return sent
-        # 5. the day's rule-sharing stories
+        # 6. the day's rule-sharing stories
         sent = await self.story_step(ask, gov, now, day)
         self.save_state()
         return bool(sent)
@@ -557,6 +579,67 @@ class Showcase:
         self.on_tx and self.on_tx(ok)
         return True
 
+    # ---------- the co-signer for No Memo's Four eyes, two keys ----------
+    def ask_vote(self, rid: str, frm: str, ip: str = "") -> dict:
+        rid = str(rid or "").strip().lower()
+        frm = str(frm or "").strip().lower().removeprefix("0x")
+        if not re.fullmatch(r"[0-9a-f]{64}", rid):
+            return {"ok": False, "error": "a request id is 64 hex characters"}
+        if not re.fullmatch(r"[0-9a-f]{96}", frm):
+            return {"ok": False, "error": "an address is 96 hex characters"}
+        if not self.ready or not self.enabled:
+            return {"ok": False, "error": "the co-signer is not here right now"}
+        day = berlin_day(self.clock()).isoformat()
+        c = self.st.setdefault("cosign", {})
+        if c.get("day") != day:
+            c.update(day=day, n=0, ips={}, ids={})
+        info = {"ok": True, "cosigner": self.pk["cosigner"], "max": COSIGN_MAX}
+        if c["ids"].get(rid) or any(v["id"] == rid for v in self.votes):
+            return {**info, "already": True}
+        if c["ips"].get(ip, 0) >= COSIGN_PER_IP or c["n"] >= COSIGN_PER_DAY or len(self.votes) >= 20:
+            return {"ok": False, "error": "the co-signer has signed enough today; ask a friend to cosign, or try tomorrow"}
+        c["ips"][ip] = c["ips"].get(ip, 0) + 1
+        c["n"] += 1
+        c["ids"][rid] = int(self.clock())
+        self.votes.append({"id": rid, "from": frm, "t": int(self.clock())})
+        self.save_state()
+        return {**info, "queued": True}
+
+    async def vote_step(self, ask, gov) -> bool:
+        """Looks the first waiting request up in the co-signer's own inbox and signs it when it is one to sign."""
+        if self.clock() - self.last_vote_look < LOOK_GAP:
+            return False
+        self.last_vote_look = self.clock()
+        v = self.votes[0]
+        res = await ask(f"getapprovalrequests {self.pk['cosigner']} in")
+        if res is None:
+            v["tries"] = v.get("tries", 0) + 1
+            if v["tries"] >= 3:
+                self.votes.pop(0)
+            return False
+        rows = ((res or {}).get("data") or {}).get("incoming") or []
+        row = next((r for r in rows if str(r.get("request_id", "")).lower() == v["id"]), None)
+        why = ("not in the co-signer's inbox (not mined yet, already settled, or not naming the co-signer)" if row is None
+               else "not open" if row.get("status") != "open"
+               else "from another address" if str(row.get("sender_pubkey", "")).lower() != v["from"]
+               else f"more than {COSIGN_MAX:,}" if not (0 < int(row.get("amount") or 0) <= COSIGN_MAX)
+               else "")
+        self.votes.pop(0)
+        if row is None and int(self.clock()) - v["t"] < 5 * 60:   # a request just sent may wait for its block: look again later
+            self.votes.append(v)
+            return False
+        if why:
+            self.note("cosigner", f"did not sign {v['id'][:10]}…: {why}")
+            return False
+        res, tx = await self.send("cosigner", ask, gov, kind="transfer_vote", offer_id=v["id"])
+        if tx is None:
+            return False
+        ok = res is not None and self.took(res)
+        self.note("cosigner", (f"signed No Memo request {v['id'][:10]}… of {int(row['amount']):,}" if ok
+                               else f"the node refused the vote on {v['id'][:10]}…: " + self.said(res)))
+        self.on_tx and self.on_tx(ok)
+        return True
+
     # ---------- GET /showcase ----------
     def snapshot(self) -> dict:
         if not self.ready:
@@ -580,10 +663,15 @@ class Showcase:
 
     def route(self, path: str, query: str = "", ip: str = "") -> dict | None:
         """GET /showcase; GET /showcase/offer?to=<address>: the rule desk offers that wallet a starter rule (the owner
-        accepts or declines it in their own wallet)."""
+        accepts or declines it in their own wallet); GET /showcase/cosign?id=<request_id>&from=<address>: the co-signer
+        signs a No Memo player's approval request (ask_vote)."""
         if path == "/showcase":
             return self.snapshot()
         if path == "/showcase/offer":
             from urllib.parse import parse_qs
             return self.ask_offer((parse_qs(query or "").get("to") or [""])[0], ip)
+        if path == "/showcase/cosign":
+            from urllib.parse import parse_qs
+            q = parse_qs(query or "")
+            return self.ask_vote((q.get("id") or [""])[0], (q.get("from") or [""])[0], ip)
         return None

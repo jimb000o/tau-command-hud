@@ -3024,5 +3024,17 @@
   {"tag": "Agorzilla", "on": "2026-11-14", "link": "https://agorzilla.com/", "html": "Agorzilla’s feeder card: a part your picks won twice now shows once with ×2, and the card’s picture shows Agorzilla whole again."},
   {"tag": "No Memo", "on": "2026-11-14", "link": "/nomemo/", "html": "No Memo: new work from the testnet update of 13 November. Three contracts where the chain refuses a wallet’s own rule (a rule and a payment in one transaction, a rule that also writes the fee stream, a rule one comparison too long). The heist Your own hands puts a real rule on your own wallet, lets it stop you and takes it off again; unguard takes it off at any time. showcase reads the real rules of Tau HUD’s piggy bank, four-eyes wallet and feeding fund, and three contracts are answered from them, one of them a meal for Agorzilla. And a daily order ★ that pays more for each day in a row."},
   {"tag": "White Rabbit Key", "on": "2026-11-14", "link": "/rabbit/", "html": "White Rabbit Key: at an embassy you can sign a clean-hands pledge on the testnet, a real rule on your own wallet that pays no embassy until the election. Reach for an embassy’s money later and the testnet itself says no. The election lifts the pledge; taking it back early stands in the Book and on the chain."},
-  {"tag": "Agorzilla", "on": "2026-11-14", "link": "https://agorzilla.com/", "html": "Agorzilla: under Latest meals stands Tau HUD’s feeding fund with its rule on the testnet: it may only pay Agorzilla, at most 20 test AGRS a meal, and once a day the chain refuses a payment it tries elsewhere."}
+  {"tag": "Agorzilla", "on": "2026-11-14", "link": "https://agorzilla.com/", "html": "Agorzilla: under Latest meals stands Tau HUD’s feeding fund with its rule on the testnet: it may only pay Agorzilla, at most 20 test AGRS a meal, and once a day the chain refuses a payment it tries elsewhere."},
+  {
+    "tag": "No Memo",
+    "on": "2026-11-14",
+    "link": "/nomemo/",
+    "html": "No Memo: the contract Mind the purse hides a guard that reads the wallet’s balance (i2) as well as the amount, as wallet rules on the testnet may since 13 November. Each probe names both, probe 500 at 40000, and the real Tau engine judges it: a reserve, small payments always, or small ones only above a balance."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-14",
+    "link": "/nomemo/",
+    "html": "No Memo: the heist Four eyes, two keys. Put a rule on your own wallet that wants a second signature above an amount, send a bigger payment that waits on the chain as an approval request, and let your partner sign it: Tau HUD’s co-signer, or a friend who types cosign in their own No Memo. Then take the rule off again."
+  }
 ]
