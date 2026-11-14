@@ -42,6 +42,11 @@ def shown(got):
 def main():
     lessons = json.load(open(LESSONS, encoding="utf-8"))["lessons"]
     fails = total = 0
+    # until, since and the other full LTL operators need Spot's ltlsynt (lessons 13 and 14)
+    if tau_sandbox.SPOT_BIN:
+        print(f"spot:    ltlsynt found in {tau_sandbox.SPOT_BIN}")
+    else:
+        print(f"spot:    ltlsynt NOT FOUND on PATH or under {tau_sandbox.STORE}; until and since cannot be answered")
     for n, lesson in enumerate(lessons, 1):
         items = [(t["label"], t) for t in lesson["tries"]]
         task = lesson.get("task")
