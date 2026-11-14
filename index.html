@@ -128,7 +128,8 @@ body[data-view="simple"] .pr em { display: none; }
 /* tour */
 .tour { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 55; width: min(560px, calc(100% - 32px)); background: var(--deck); border: 1px solid rgba(57,255,138,.55); border-radius: 8px; padding: 12px 12px 8px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.95), 0 0 0 1px rgba(0,0,0,.6); }
 .tour[hidden] { display: none; }
-.tour.top { bottom: auto; top: 64px; }   /* the card moves to the top when the spotlighted panel sits in the lower half */
+.tour.top { bottom: auto; top: 64px; }
+@media (max-width: 899px) { body[data-tour="1"] { padding-bottom: 85vh; } }   /* a phone: room below the last panel, so every spotlit panel can move to the top above the sheet */   /* the card moves to the top when the spotlighted panel sits in the lower half */
 /* anchored (desktop): the card sits next to the spotlighted panel with a pointer on the edge that faces it; tourPlace() picks below, right, left or above */
 .tour.anchored { left: 0; top: 0; bottom: auto; transform: none; width: min(440px, calc(100% - 32px)); }
 .tour.anchored::before { content: ""; position: absolute; width: 12px; height: 12px; background: var(--deck); border: 1px solid rgba(57,255,138,.55); transform: rotate(45deg); }
@@ -1070,7 +1071,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   .panel h2 small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .upd .u1 b { white-space: normal; }
   .fb-fab { font-size: 11px; padding: 8px 12px; left: auto; right: 12px; }
-  .tour { bottom: 60px; }
+  .tour { bottom: 60px; } .tour.top { bottom: auto; }
   .deck, .lower, .community, .rw-grid, .principles, .grid { grid-template-columns: minmax(0, 1fr); }
   .readout b { font-size: 18px; }
   .thesis h2 { font-size: 15px; }
@@ -1129,6 +1130,7 @@ html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z))
   .core canvas { max-width: 100%; max-height: 300px; }
   .scroll { max-height: 240px; }
   .tour { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .tour.top { bottom: auto; }
 }
 /* the full-screen button: on touch screens only, at the top right of the header; ✕ brings the site back */
 .hfs, .hfs-x { display: none; }
@@ -1243,15 +1245,13 @@ html.nb:not(.nbmore) .tx.bgfirst .runn:not(:empty) { display: block; font-size: 
    in a sentence, the comparison behind a link. Names instead of hashes in the feed; Expert: hovering a transaction lights its block
    and its wallet */
 .lvstat { display: none; }
-html.lvmid body:not(.calm) .thesis, html.lvpro body:not(.calm) .thesis { padding: 6px 12px; align-items: center; }
-html.lvmid .thesis > .thesis-main, html.lvmid .thesis > .principles, html.lvpro .thesis > .thesis-main, html.lvpro .thesis > .principles { display: none; }
+html.lvpro body:not(.calm) .thesis { padding: 6px 12px; align-items: center; }
+html.lvpro .thesis > .thesis-main, html.lvpro .thesis > .principles { display: none; }   /* Intermediate keeps the four principle tiles */
 html.lvmid .lvstat, html.lvpro .lvstat { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-width: 0; font: 12px/1.4 var(--mono); color: var(--dim); }
 .lvstat b { font: 600 12px var(--display); letter-spacing: .04em; color: #fff; }
 .lvstat b.ok::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); vertical-align: 1px; }
 .lvstat .x { color: var(--text); } .lvstat .x.warn { color: #ffb13b; } .lvstat .x.bad { color: var(--refused); } .lvstat .x.ok { color: var(--ok); } .lvstat .x.hot { color: #fff; font-weight: 600; }
 .lvstat span + span::before { content: "· "; color: var(--dim); }
-html.lvmid body:not(.calm) .nbhead { display: grid; }
-html.lvmid .nbhead .nb-more, html.lvmid .nbhead .nb-today { display: none !important; }
 html.lvmid .a-upd.idle .contrast, html.lvpro .a-upd.idle .contrast { display: none; }
 html.lvmid .a-upd.idle.cmp .contrast, html.lvpro .a-upd.idle.cmp .contrast { display: block; }
 html.lvmid .a-upd .nb-vote, html.lvpro .a-upd .nb-vote { display: block; flex: 0 0 auto; margin: 0 0 4px; font: 12.5px/1.45 var(--mono); color: var(--text); }
@@ -4863,6 +4863,12 @@ function tourShow(i, from) {
   $("tourBack").textContent = "Back"; $("tourBack").disabled = i === 0; $("tourNext").textContent = i === TOUR.length - 1 ? "Done" : "Next";
   $("tourLink").hidden = i !== TOUR.length - 1; $("tourLink").href = TOUR === NB_TOUR ? "start/" : "playground/"; $("tourLink").textContent = TOUR === NB_TOUR ? "Write your first rule ›" : "Open the playground ›"; $("tourGive").hidden = i !== TOUR.length - 1;
   tourPlace();
+  if (innerWidth < 900) {   // a phone: the card is a sheet; the panel moves to the top of the screen so the sheet sits below it, never on it
+    $("tour").classList.remove("top");
+    const r = target.getBoundingClientRect(), free = $("tour").getBoundingClientRect().top - 8;
+    if (r.top < 8 || r.bottom > free) scrollTo({ top: Math.max(0, scrollY + r.top - 8), behavior: "auto" });
+    tourPlace();
+  }
   if (from !== "key") $("tourNext").focus({ preventScroll: true });
 }
 /* place the card next to the spotlighted panel: below it, else right, left, above; always inside the viewport; the pointer aims at the panel's centre.
@@ -4870,7 +4876,16 @@ function tourShow(i, from) {
 const TOURPOS = { target: null };
 function tourPlace() {
   const card = $("tour"), t = TOURPOS.target;
-  if (!t || card.hidden || innerWidth < 900) { card.classList.remove("anchored", "side-top", "side-bottom", "side-left", "side-right"); card.style.left = card.style.top = ""; return; }
+  if (!t || card.hidden || innerWidth < 900) {
+    card.classList.remove("anchored", "side-top", "side-bottom", "side-left", "side-right"); card.style.left = card.style.top = "";
+    if (t && !card.hidden) {   // a phone: the sheet goes to the bottom or the top, whichever covers less of the panel
+      card.classList.remove("top");
+      const r = t.getBoundingClientRect(), c = card.getBoundingClientRect();
+      const over = (a, b) => Math.max(0, Math.min(r.bottom, b) - Math.max(r.top, a));
+      card.classList.toggle("top", over(64, 64 + c.height) < over(c.top, c.bottom));
+    }
+    return;
+  }
   card.classList.add("anchored"); card.classList.remove("top");
   card.style.left = "0px"; card.style.top = "0px";
   const cr = card.getBoundingClientRect(), z = card.offsetWidth ? cr.width / card.offsetWidth : 1;   // html.wide zooms the card

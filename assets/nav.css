@@ -181,7 +181,7 @@ header.trail .chip.unoff.sim.soon { animation: navSoon 1.6s ease-in-out infinite
   header.trail .chip { font-size: 11px; padding: 4px 9px; letter-spacing: .04em; }
   header.trail #tnNet, header.trail #tnRev, header.trail #tnFee { display: none; }
   :is(.tnav, header.trail, header.rail) .seg > a, :is(.tnav, header.trail, header.rail) .seg > button { font-size: 11px; padding: 0 12px; min-height: 44px; }
-  .tour { bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
+  .tour:not(.top) { bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
 }
 
 /* View · Simple / Technical on subpages: .vt is developer detail (hashes, sequence numbers, raw data), .vp is its plain-language stand-in */
