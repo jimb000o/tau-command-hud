@@ -74,9 +74,9 @@ We checked first whether the ship could have caused it, because that would be ou
 
 ## What happened on our side
 
-Our node did not reconnect on its own after the restart. It stayed on the old chain and every attempt to connect to the network failed, so no new block reached it until we restarted the node at 15:03 UTC. The connection then worked at once, and the node caught up with the new chain, 117 blocks, within minutes. Why reconnecting failed before that is still being looked at.
+Our node didn't reconnect on its own afterwards; a node restart fixed it. Until then it stayed on the old chain and every attempt to connect to the network failed, so no new block reached it until we restarted the node at 15:03 UTC. The connection then worked at once, and the node caught up with the new chain, 117 blocks, within minutes. Why reconnecting failed before that is still being looked at.
 
-Our node does move to a new chain by itself, but only over a working connection. So for two hours Tau HUD showed a chain standing still while the new one was already running. We would rather catch that within minutes, and that is what the first change below is for.
+So for two hours Tau HUD showed the old chain standing still. We would rather catch that within minutes, and that is what the first change below is for.
 
 The ship only sees our node. It saw no new block for ten minutes with payments waiting and left at once, as it is built to. That brake did its job: it did not keep sending into a chain that had gone still. But the ship's own report called it a stall of the testnet, and that was not what happened.
 
@@ -110,7 +110,7 @@ Queen Mempool 在 UTC 13:00 到达 White Rabbit Key，计划停靠 90 分钟。�
 
 重启之后，我们的节点没有自己重新连上。它停留在旧链上，每次连接网络的尝试都失败了，所以直到我们在 UTC 15:03 重启节点之前，都没有新区块到达。之后连接立刻恢复，节点在几分钟内追上了新链，共 117 个区块。在那之前为什么无法重新连接，仍在查看中。
 
-我们的节点会自己转到新链，但前提是连接可用。所以 Tau HUD 有两个小时显示一条静止的链，而新链早已在运行。我们希望在几分钟内就发现这种情况，下面的第一项改动就是为此。
+所以 Tau HUD 有两个小时显示一条静止的旧链。我们希望在几分钟内就发现这种情况，下面的第一项改动就是为此。
 
 船只能看到我们的节点。它看到十分钟没有新区块、还有付款在等待，就按设计立刻离开。刹车起了作用：它没有继续往一条静止的链里发送。但船自己的报告把它叫作测试网的停顿，而事实并非如此。
 
@@ -144,7 +144,7 @@ Queen Mempool は UTC 13:00 に White Rabbit Key に着き、90 分の寄港を�
 
 再起動の後、私たちのノードは自分ではつなぎ直せませんでした。古いチェーンに残ったままで、ネットワークへの接続はすべて失敗し、UTC 15:03 にノードを再起動するまで新しいブロックは届きませんでした。再起動するとすぐに接続でき、数分で新しいチェーンの 117 ブロックに追いつきました。それまでなぜつなぎ直せなかったのかは、まだ調べています。
 
-私たちのノードは新しいチェーンへ自分で移りますが、それは接続がうまくいっているときだけです。そのため Tau HUD は 2 時間、止まったチェーンを表示していました。その間、新しいチェーンはすでに動いていました。これは数分で気づきたいところで、下の最初の変更はそのためのものです。
+そのため Tau HUD は 2 時間、止まった古いチェーンを表示していました。これは数分で気づきたいところで、下の最初の変更はそのためのものです。
 
 船が見ているのは私たちのノードだけです。10 分間新しいブロックが来ず、支払いが待っているのを見て、設計どおりすぐに出航しました。このブレーキは役目を果たし、止まったチェーンに送り続けることはありませんでした。ただ、船自身の報告はこれをテストネットの停止と呼びましたが、実際に起きたことは違いました。
 
