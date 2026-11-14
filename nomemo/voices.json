@@ -300,6 +300,10 @@
   "text": "A guard, and little else to go on. A cap, a floor, a window, a hole, or a rule that lets nothing through. Mind what a rule leaves unsaid. No hint from me."
  },
  {
+  "who": "look",
+  "text": "This purse has a guard that looks at the wallet as well as the payment. How much is left in it decides what may go. Ask it with an amount and a balance, both. Find what it keeps back, then name it."
+ },
+ {
   "who": "qm",
   "text": "One parcel, two things in it: a payment and a rule. The chain will not take both together. Send them in one transaction and let it refuse the lot."
  },

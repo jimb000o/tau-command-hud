@@ -1609,6 +1609,10 @@
       mk: j => { j.seed = seedHex(); j.m = 8; j.trace = 60; } },
     { k: "i-blind", t: 4, who: "bosun", topic: "guard", intel: true, lead: true, want: null, ok: () => intelUp(), name: "The blind guard", brief: "A guard, and little to go on: a cap, a floor, a window, a hole, or a rule that lets nothing through. The Lookout made out one number in it. Probe, think, then name it. Mind what a rule leaves unsaid. {m} probes or fewer pays a point more. No hint from me.", hint: null,
       mk: j => { j.seed = seedHex(); j.m = 10; j.trace = 60; } },
+    /* the purse (13 November 2026: a wallet's rule may read i2, its balance before the payment): the guard looks at the
+       amount and at how much is left in the wallet. A probe names both: probe <amount> at <balance> */
+    { k: "i-purse", t: 3, who: "look", topic: "guard", intel: true, purse: true, want: null, ok: () => intelUp("i-purse"), name: "Mind the purse", brief: "A guard that also reads i2, the wallet’s balance before the payment. It keeps a reserve: nothing passes below some balance; or it lets small payments through always and big ones only from some balance up; or small ones only, and only from some balance up. Amounts are round hundreds up to 20,000, balances round thousands from 5,000 to 150,000. Probe with probe <amount> at <balance>, then name it. {m} probes or fewer pays a point more.", hint: "probe 0 at 0 and probe 50000 at 200000 first: together they tell the three apart. Then halve towards each edge, one number at a time",
+      mk: j => { j.seed = seedHex(); j.m = 18; j.trace = 60; } },
     /* rules on the chain (IDNI tau-testnet 5ad1bb7, 13 November 2026): a wallet's own rule is a transaction of its own.
        The three refusals bind nothing: a refused rule never reaches the wallet */
     { k: "r-pack", t: 2, who: "qm", topic: "clause", rules: true, want: ["RULE_WITH_TRANSFERS"], name: "One parcel", brief: "Make the chain refuse a payment for what else it carries: put a rule into the same transaction. The rule that changes nothing will do.", hint: "set rule allow",
@@ -1653,7 +1657,7 @@
     "r-clock": "set expiry past", "r-payer": "set payer drop", "r-seq": "set seq old", "r-width": "what width", "p-hex": "status", "p-fee": "peek getgovernance", "p-doors": "status", "r-self": "set to me", "p-nokey": "what curve",
     "r-fee9": "peek getgovernance", "p-tight": "peek getgovernance", "p-last": "history", "predict": "what order",
     "p-bits": "rule", "p-stream": "rule", "p-ones": "what #b", "p-top": "what top", "p-spec": "what stream", "p-table": "what and", "p-table3": "what and",
-    "i-cap": "probe 0", "i-edge": "probe 10000", "i-band": "probe {lead}",
+    "i-cap": "probe 0", "i-edge": "probe 10000", "i-band": "probe {lead}", "i-purse": "probe 0 at 0",
     "r-pack": "set rule allow", "r-mix": "set rule mix", "r-long": "what clause", "g-set": "set rule cap {a}", "g-hit": "tx", "g-off": "set rule allow", "s-four": "showcase", "s-piggy": "showcase", "s-feed": "showcase" };
   const tryCmd = j => { const k = j && kindOf(j).k; if (!k || !TRY[k]) return null; const v = { m: j.m, a: j.a }; if (j.lead != null) v.lead = j.lead; const c = fill0(TRY[k], v); return c.includes("{") ? null : c; };
   const hintLine = j => { const kd = kindOf(j), go = tryCmd(j), plainHint = !(j.lock || j.code || j.tab || j.spec);   // an English filler, so the dictionaries translate the whole line
@@ -2070,6 +2074,7 @@
     [["guard", "guards", "intel", "probe", "probes", "personal rule", "open answer"], "Guards and probes", "An intel contract hides a wallet’s personal rule: a line of Tau the chain checks each of that wallet’s payments against. A probe asks the real Tau engine on our server whether the rule lets a transfer of that amount through (o5 = 1) or blocks it (o5 = 0); nothing goes to the chain. Where a rule says nothing, the engine answers 0: blocked."],
     [["recurring", "standing order", "subscription", "percent", "percentage"], "Standing orders and percent", "Tau Testnet Alpha has no standing orders yet: a rule can let a payment through or stop it, never start one. The nearest thing is the way back turned around: timed payments that pay themselves out at a set block or time, up to 16 open per wallet and 90 days ahead, each yours to take back until then. A percentage works only as a fee on your own payments, worked out from the amount; it goes to whoever seals the block."],
     [["clause", "rule size", "comparisons", "parcel", "rule tx"], "A wallet’s own rule", "A wallet’s own rule is a transaction of its own: operation 0 carries it, and no payment may ride along (RULE_WITH_TRANSFERS). It is one always ( … ). unit that writes o5 and nothing else (MIXED_OUTPUT_RULE), with at most 32 comparisons (=, <, >, <=, >= and != count one each); a rule with more is refused: TX_REJECTED. A new rule replaces the old one; the rule that says o5 = 1 and nothing else takes it away (unguard)."],
+    [["i2", "balance", "reserve"], "i2, the balance", "In a wallet’s rule, i2 is the wallet’s balance before the payment, as the chain knows it. A rule that reads it can keep a reserve: no payment while the balance is low. The contract Mind the purse hides such a rule."],
     [["i5", "time", "seconds", "when", "unix"], "i5, the time", "In a wallet’s rule, i5 is the block’s time in seconds since 1 January 1970, UTC. when <seconds> turns such a number into a date."],
     [["showcase", "piggy bank", "four-eyes", "four eyes", "feeding fund"], "The showcase wallets", "Three wallets Tau HUD runs on the testnet, each with a rule of its own: a piggy bank locked until New Year, a four-eyes wallet that needs a co-signer, and Agorzilla’s feeding fund. Their rules are in force on the chain and anyone may read them: showcase."],
     [["daily", "streak", "today"], "The daily order", "One contract a day, marked ★, German days. Each day in a row adds a point to it, up to five; a missed day starts the streak again."],
@@ -2193,14 +2198,14 @@
      /learn uses; nothing goes to the chain. The answer is what the guard does, compared amount by amount: a rule that says
      "above 4,000" is named floor 4,100. Asked once a visit whether the server has the contracts (GET /tau/health) */
   let INTEL = null, REVEAL = 0;
-  function intelUp() {
+  function intelUp(k = "i-blind") {
     if (SIM) return false;
     if (INTEL === null) {
       INTEL = "asking";
       fetch(RELAY + "/tau/health", { cache: "no-store" }).then(r => (r.ok ? r.json() : null))
-        .then(h => { INTEL = !!(h && Array.isArray(h.intel) && h.intel.includes("i-blind")); }).catch(() => { INTEL = false; });
+        .then(h => { INTEL = h && Array.isArray(h.intel) ? h.intel : false; }).catch(() => { INTEL = false; });
     }
-    return INTEL === true;
+    return Array.isArray(INTEL) && INTEL.includes(k);
   }
   const seedHex = () => Array.from(crypto.getRandomValues(new Uint8Array(8)), b => b.toString(16).padStart(2, "0")).join("");
   const amountOf = s => { const m = /^(\d{1,8})(k?)$/.exec(String(s == null ? "" : s).toLowerCase().replace(/[\s,_']/g, "")); if (!m) return null; const n = +m[1] * (m[2] ? 1000 : 1); return n < GIANT ? n : null; };
@@ -2247,7 +2252,9 @@
   function intelStart(j) {
     const kd = kindOf(j);
     say("sys", T("This one is answered with probes, not with a payment. probe <amount> asks the guard whether it lets a transfer of that amount through; the real Tau engine on our server judges it with the hidden rule. Nothing goes to the chain."));
+    if (kd.purse) say("sys", T("This guard reads the balance too: probe <amount> at <balance> asks whether a payment of that amount passes from a wallet holding that balance."));
     say("sys", kd.final ? T("When you know the edge, final <amount> is your one shot: the last amount that passes. A miss loses the contract.")
+      : kd.purse ? T("When you know it, name says what the guard does: name reserve <balance>, rich <amount> <balance> or safe <amount> <balance>. Three wrong names lose the contract.")
       : T("When you know it, name says what the guard does: name cap <n>, floor <n>, band <a> <b>, hole <a> <b> or none. Three wrong names lose the contract."), btn("what probe", "what probe"));
     if (kd.lead) intelLead(j);
   }
@@ -2255,54 +2262,72 @@
   function intelSeen(j) {
     const p = j.probes || [];
     if (!p.length) { say("sys", F("No probes yet; {m} or fewer pays a point more.", { m: j.m })); return; }
-    say("sys", F("Probes so far ({n}; {m} or fewer pays a point more):", { n: p.length, m: j.m }) + " " + p.map(([a, ok]) => fmt(a) + (ok ? " ✓" : " ✗")).join(" · "));
+    say("sys", F("Probes so far ({n}; {m} or fewer pays a point more):", { n: p.length, m: j.m }) + " " + p.map(([a, ok, bal]) => fmt(a) + (bal != null ? " @ " + fmt(bal) : "") + (ok ? " ✓" : " ✗")).join(" · "));
   }
   function intelShow(j) {
     const kd = kindOf(j);
     if (j.lead != null) say("sys", F("The lookout’s number: {n}", { n: fmt(j.lead) }));
     intelSeen(j);
     say("sys", kd.final ? T("probe <amount> asks the guard · final <amount> is your one shot at the edge · reveal gives up")
+      : kd.purse ? T("probe <amount> at <balance> asks the guard · name reserve <balance>, rich|safe <amount> <balance> · reveal gives up")
       : T("probe <amount> asks the guard · name cap|floor <n>, band|hole <a> <b> or none · reveal gives up"));
     if (kd.lead && j.lead == null) intelLead(j);
   }
   async function probeCmd(arg) {
     const j = intelJob(); if (!j) { intelNone("probe"); return; }
     if (!arg) { intelShow(j); return; }
-    const n = amountOf(arg);
+    const purse = !!kindOf(j).purse, parts = purse ? String(arg).toLowerCase().split(/\s+(?:at|@)\s+|\s*@\s*|\s+(?=\d)/).filter(Boolean) : [arg];
+    const n = amountOf(parts[0]), bal = purse ? amountOf(parts[1]) : null;
+    if (purse && (parts.length !== 2 || n == null || bal == null)) { say("warn", T("probe <amount> at <balance>: two whole numbers, such as probe 500 at 40000.")); return; }
     if (n == null) { say("warn", T("probe <amount>: a whole number from 0 to 16,777,215.")); return; }
-    const had = (j.probes || []).find(p => p[0] === n);
-    if (had) { say("sys", had[1] ? F("{n} was probed already: it passes.", { n: fmt(n) }) : F("{n} was probed already: it is blocked.", { n: fmt(n) })); intelSeen(j); return; }
+    const had = (j.probes || []).find(p => p[0] === n && (p[2] == null ? null : p[2]) === bal);
+    if (had) { const v = { n: fmt(n), b: fmt(bal) }; say("sys", purse ? (had[1] ? F("{n} at a balance of {b} was probed already: it passes.", v) : F("{n} at a balance of {b} was probed already: it is blocked.", v))
+      : had[1] ? F("{n} was probed already: it passes.", v) : F("{n} was probed already: it is blocked.", v)); intelSeen(j); return; }
     if (intelSim()) return;
     if (RUN.busy) { say("warn", T("Already under way.")); return; }
     RUN.busy = true; chips();
     try {
-      say("step", F("probing the guard: a transfer of {n}", { n: fmt(n) }));
-      const r = await intelAsk(j, { probe: n });
+      say("step", purse ? F("probing the guard: a transfer of {n} from a balance of {b}", { n: fmt(n), b: fmt(bal) }) : F("probing the guard: a transfer of {n}", { n: fmt(n) }));
+      const r = await intelAsk(j, purse ? { probe: n, balance: bal } : { probe: n });
       if (!intelOk(j, r)) return;
-      j.probes = [...(j.probes || []), [n, !!r.pass]].sort((a, b) => a[0] - b[0]); save();
+      j.probes = [...(j.probes || []), purse ? [n, !!r.pass, bal] : [n, !!r.pass]].sort((a, b) => a[0] - b[0] || (a[2] || 0) - (b[2] || 0)); save();
       if (r.pass) snd.ok(); else snd.no();
-      say(r.pass ? "ok" : "warn", r.pass ? F("{n} passes: o5 = 1.", { n: fmt(n) }) : F("{n} is blocked: o5 = 0.", { n: fmt(n) }));
+      const v = { n: fmt(n), b: fmt(bal) };
+      say(r.pass ? "ok" : "warn", purse ? (r.pass ? F("{n} at a balance of {b} passes: o5 = 1.", v) : F("{n} at a balance of {b} is blocked: o5 = 0.", v))
+        : r.pass ? F("{n} passes: o5 = 1.", v) : F("{n} is blocked: o5 = 0.", v));
       intelSeen(j);
     } finally { RUN.busy = false; chips(); }
   }
   /* name: what the guard lets through. above and below are said as the floor or cap they are */
-  const NAMEWORDS = { cap: "cap", floor: "floor", band: "band", window: "band", hole: "hole", none: "none", nothing: "none", above: "above", below: "below" };
+  const NAMEWORDS = { cap: "cap", floor: "floor", band: "band", window: "band", hole: "hole", none: "none", nothing: "none", above: "above", below: "below", reserve: "reserve", rich: "rich", safe: "safe" };
   function guessOf(args) {
     const kind = NAMEWORDS[args[0]], nums = args.slice(1).join(" ").replace(/[,_']/g, "").split(/\s*(?:\.\.|–|-|\bto\b|\s)\s*/).filter(Boolean).map(amountOf);
     if (!kind || nums.some(n => n == null)) return null;
     if (kind === "none") return nums.length ? null : { kind: "none" };
+    if (kind === "reserve") return nums.length === 1 ? { kind, b: nums[0] } : null;
+    if (kind === "rich" || kind === "safe") return nums.length === 2 ? { kind, a: nums[0], b: nums[1] } : null;
     if (kind === "above") return nums.length === 1 && nums[0] < GIANT - 1 ? { kind: "floor", a: nums[0] + 1 } : null;
     if (kind === "below") return nums.length === 1 && nums[0] > 0 ? { kind: "cap", a: nums[0] - 1 } : null;
     if (kind === "band" || kind === "hole") return nums.length === 2 && nums[0] <= nums[1] ? { kind, a: nums[0], b: nums[1] } : null;
     return nums.length === 1 ? { kind, a: nums[0] } : null;
   }
-  const guessWords = g => (g.kind === "none" ? T("it lets nothing through") : g.kind === "cap" ? F("it lets through every amount up to {a}", { a: fmt(g.a) })
-    : g.kind === "floor" ? F("it lets through every amount from {a} up", { a: fmt(g.a) }) : g.kind === "band" ? F("it lets through only the amounts from {a} to {b}", { a: fmt(g.a), b: fmt(g.b) })
-    : F("it lets through everything but the amounts from {a} to {b}", { a: fmt(g.a), b: fmt(g.b) }));
+  const guessWords = g => (g.kind === "reserve" ? fill0("it lets every amount through, but only from a balance of {b} up", { b: fmt(g.b) })
+    : g.kind === "rich" ? fill0("it lets through up to {a} always, and more only from a balance of {b} up", { a: fmt(g.a), b: fmt(g.b) })
+    : g.kind === "safe" ? fill0("it lets through up to {a}, and only from a balance of {b} up", { a: fmt(g.a), b: fmt(g.b) })
+    : g.kind === "none" ? "it lets nothing through" : g.kind === "cap" ? fill0("it lets through every amount up to {a}", { a: fmt(g.a) })
+    : g.kind === "floor" ? fill0("it lets through every amount from {a} up", { a: fmt(g.a) }) : g.kind === "band" ? fill0("it lets through only the amounts from {a} to {b}", { a: fmt(g.a), b: fmt(g.b) })
+    : fill0("it lets through everything but the amounts from {a} to {b}", { a: fmt(g.a), b: fmt(g.b) }));
   async function nameCmd(args) {
     const j = intelJob(); if (!j) { intelNone("name"); return; }
     if (kindOf(j).final) { say("sys", T("This contract is answered in one shot: final <amount>, the last amount that passes."), btn("final", "final")); return; }
     const g = args.length ? guessOf(args) : null;
+    if (!g && kindOf(j).purse) {
+      say("sys", T("name says what the guard lets through:"));
+      cols([["name reserve <b>", T("every amount, but only from a balance of b up")], ["name rich <a> <b>", T("up to a always, more only from a balance of b up")],
+        ["name safe <a> <b>", T("up to a, and only from a balance of b up")], ["name cap <n>", T("every amount up to n")], ["name none", T("nothing at all")]]);
+      say("sys", F("Three wrong names lose the contract; {n} so far.", { n: j.wrong || 0 }));
+      return;
+    }
     if (!g) {
       say("sys", T("name says what the guard lets through:"));
       cols([["name cap <n>", T("every amount up to n")], ["name floor <n>", T("every amount from n up")], ["name band <a> <b>", T("from a to b, and nothing else")],
@@ -2370,10 +2395,15 @@
       band: () => F("It lets through the amounts from {a} to {b}, and nothing else.", { a: fmt(a), b: fmt(b) }),
       hole: () => F("It lets through everything but the amounts from {a} to {b}.", { a: fmt(a), b: fmt(b) }),
       none: () => F("It only says when to block: above {a}. At {a} and below it says nothing, and where a rule says nothing the engine answers 0. So nothing passes at all.", { a: fmt(a) }),
+      reserve: () => F("It keeps a reserve: from a balance of {b} up every amount passes, below it nothing.", { b: fmt(b) }),
+      rich: () => F("Up to {a} always passes; more passes only from a balance of {b} up.", { a: fmt(a), b: fmt(b) }),
+      safe: () => F("Up to {a} passes, and only from a balance of {b} up; more never.", { a: fmt(a), b: fmt(b) }),
       above: () => F("It only says when to let through: above {a}. At {a} and below it says nothing, and where a rule says nothing the engine answers 0: blocked. So it is a floor at {b}.", { a: fmt(a), b: fmt(a + 1) }),
     }[d.kind];
     if (words) say("learn", words());
     const at = { cap: [a, a + 1], floor: [a - 1, a], band: [a - 1, a, b, b + 1], hole: [a - 1, a, b, b + 1], none: [0, a, a + 1], above: [a, a + 1] }[d.kind];
+    const at2 = { reserve: [[0, b - 1], [0, b], [GIANT - 1, b]], rich: [[a, 0], [a + 1, b - 1], [a + 1, b]], safe: [[a, b - 1], [a, b], [a + 1, b]] }[d.kind];
+    if (at2) say("sys", T("Run it yourself, at its edges:"), link("/learn/" + lang() + "#q=" + b64(JSON.stringify({ op: "run", spec: r.rule, in: "i1 = " + at2.map(p => p[0]).join(", ") + "; i2 = " + at2.map(p => p[1]).join(", ") })), T("on the Learn page")));
     if (at) say("sys", T("Run it yourself, at its edges:"), link("/learn/" + lang() + "#q=" + b64(JSON.stringify({ op: "run", spec: r.rule, in: "i1 = " + at.filter(x => x >= 0).join(", ") })), T("on the Learn page")));
   }
   function intelWin(j, r) {
