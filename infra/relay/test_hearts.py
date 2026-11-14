@@ -2,7 +2,7 @@
 import os
 import tempfile
 
-from hearts import BOX, Hearts, decode
+from hearts import BOX, Hearts, decode, decode_level
 
 A, B = "aa" * 48, "bb" * 48
 
@@ -33,4 +33,18 @@ assert not h.add_blocks([blk(40, (A, "cc" * 48, 101), (B, BOX, 50)), {"header": 
 h.save(force=True)
 again = Hearts(path)
 assert again.summary() == h.summary(), (again.summary(), h.summary())
+# the level rides on top: 300 × (1 Beginner, 2 Intermediate, 3 Expert); a heart counts for its newest mark's level
+assert decode_level(101) == (1, True, 0) and decode_level(401) == (1, True, 1) and decode_level(805) == (5, False, 2) and decode_level(1099) == (99, True, 3) and decode_level(1199) == (99, False, 3)
+assert decode(401) == (1, True) and decode_level(400) is None and decode_level(1300) is None and decode_level(1401) is None
+L = Hearts(os.path.join(tempfile.mkdtemp(), "hearts.json"))
+L.add_blocks([blk(10, (A, BOX, 401), (B, BOX, 1001), (A, BOX, 102))])
+lv = L.summary()["levels"]
+assert L.summary()["parts"] == {"1": 2, "2": 1}
+assert lv["new"] == {"1": 1} and lv["pro"] == {"1": 1} and lv["none"] == {"2": 1} and lv["mid"] == {}, lv
+L.add_blocks([blk(20, (A, BOX, 701))])   # the same wallet, now Intermediate: its heart moves to that level
+assert L.summary()["levels"]["new"] == {} and L.summary()["levels"]["mid"] == {"1": 1}
+L.add_blocks([blk(30, (A, BOX, 1101))])  # taken back as an Expert: gone from every level
+assert L.summary()["parts"] == {"1": 1, "2": 1} and L.summary()["levels"]["mid"] == {}
+L.save(force=True)
+assert Hearts(L.path).summary() == L.summary()
 print("hearts ok")

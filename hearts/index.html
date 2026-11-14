@@ -60,6 +60,11 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .rank .c { text-align: right; color: var(--heart); font: 600 13px var(--display); }
 .rank li.none .c { color: var(--dim); }
 .state { color: var(--dim); }
+.lvs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.lvs button { min-height: 32px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--dim); font: 600 12px var(--display); cursor: pointer; }
+.lvs button[aria-pressed="true"] { border-color: var(--heart); color: #fff; background: rgba(255,107,138,.12); }
+.lvs button span { color: var(--heart); margin-left: 6px; font-weight: 500; }
+@media (pointer: coarse) { .lvs button { min-height: 44px; } }
 .codes { width: 100%; border-collapse: collapse; font-size: 12px; margin: 6px 0 10px; }
 .codes td { padding: 3px 6px; border-top: 1px solid var(--line); }
 .codes td:first-child { color: var(--heart); white-space: nowrap; }
@@ -84,9 +89,17 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
   <div class="main">
     <section class="panel">
       <h2>Hearts per part <span class="n" id="total"></span></h2>
+      <div class="lvs" id="lvs" role="group" aria-label="Whose hearts">
+        <button type="button" data-lv="all" aria-pressed="true">Everyone<span></span></button>
+        <button type="button" data-lv="new" aria-pressed="false">Beginners<span></span></button>
+        <button type="button" data-lv="mid" aria-pressed="false">Intermediate<span></span></button>
+        <button type="button" data-lv="pro" aria-pressed="false">Experts<span></span></button>
+      </div>
       <p class="state" id="state">Reading the hearts on the testnet…</p>
       <ul class="rank" id="rank"></ul>
       <p class="fine">Read from the chain by our relay at node.tauhud.com, every two minutes. A new heart shows once its block is sealed.</p>
+      <p class="fine">A heart counts for the level its wallet chose on Tau HUD when it was given; hearts from before 14 Nov 2026 carry no level and count only under Everyone.</p>
+      <p class="fine">The hearts stay when the testnet starts a new chain: our relay keeps them.</p>
     </section>
     <section class="panel">
       <h2>How a heart works</h2>
@@ -94,6 +107,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
       <table class="codes"><tbody>
         <tr><td>100 + part</td><td>a heart for that part (101 is part 1, the chain core)</td></tr>
         <tr><td>200 + part</td><td>the heart taken back</td></tr>
+        <tr><td>+ 300 × level</td><td>the level chosen on Tau HUD: 1 Beginner, 2 Intermediate, 3 Expert (401 is a beginner’s heart for part 1)</td></tr>
       </tbody></table>
       <p>For each wallet and part only the newest of these counts, so clicking a hundred times gives at most one heart. A transaction carries no memo on this testnet, so the amount is the message.</p>
       <p class="box">The box: <a id="boxLink" href="../account/">open it in the account view ›</a><br><span id="boxKey"></span></p>
@@ -108,15 +122,24 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
   const $ = id => document.getElementById(id), H = window.TauHearts;
   const fmt = n => Number(n).toLocaleString("de-DE");
   $("boxKey").textContent = H.BOX; $("boxLink").href = "../account/?a=" + H.BOX;
+  let LV = "all", J = null;
+  $("lvs").addEventListener("click", e => { const b = e.target.closest("button[data-lv]"); if (!b) return; LV = b.dataset.lv; draw(); });
   async function show() {
     let j = null;
     try { const r = await fetch("https://node.tauhud.com/hearts", { cache: "no-store" }); if (r.ok) j = await r.json(); } catch (e) {}
     if (!j) { $("state").textContent = "Our relay is out of reach just now; the hearts show here once it answers."; $("state").hidden = false; return; }
-    const parts = j.parts || {}, rows = Object.keys(H.parts).map(k => ({ id: H.parts[k][0], name: H.parts[k][1], n: parts[H.parts[k][0]] || 0 })).sort((a, b) => b.n - a.n || a.id - b.id);
+    J = j; draw();
+  }
+  function draw() {
+    const j = J; if (!j) return;
+    const lvs = j.levels || {}, sum = o => Object.values(o || {}).reduce((a, b) => a + b, 0);
+    document.querySelectorAll("#lvs button").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.lv === LV)); b.querySelector("span").textContent = "♥ " + fmt(b.dataset.lv === "all" ? sum(j.parts) : sum(lvs[b.dataset.lv])); });
+    const parts = (LV === "all" ? j.parts : lvs[LV]) || {}, rows = Object.keys(H.parts).map(k => ({ id: H.parts[k][0], name: H.parts[k][1], n: parts[H.parts[k][0]] || 0 })).sort((a, b) => b.n - a.n || a.id - b.id);
     const top = Math.max(1, ...rows.map(r => r.n));
     $("total").textContent = j.wallets === 1 ? "1 wallet" : `${fmt(j.wallets || 0)} wallets`;
-    $("state").textContent = j.wallets ? "" : "No hearts yet. Open the HUD and give one to the part you like best.";
-    $("state").hidden = !!j.wallets;
+    const none = LV === "all" ? !j.wallets : !sum(parts);
+    $("state").textContent = !none ? "" : LV === "all" ? "No hearts yet. Open the HUD and give one to the part you like best." : "No hearts from this level yet.";
+    $("state").hidden = !none;
     $("rank").replaceChildren(...rows.map(r => {
       const li = document.createElement("li"); li.className = r.n ? "" : "none";
       const b = document.createElement("b"); b.textContent = r.name;

@@ -49,5 +49,15 @@ TauI18n.add({ strings: {
   "No hearts yet. Open the HUD and give one to the part you like best.": "还没有心。打开 HUD，给你最喜欢的部分一颗心。",
   "1 wallet": "1 个钱包",
   "{n} wallets": "{n} 个钱包",
-  "Every heart on Tau HUD is a real transaction on the Tau Net testnet. This page reads them: which parts of the site visitors love most, so we build those first. Wallets, not people.": "Tau HUD 上的每颗心都是 Tau Net 测试网上的一笔真实交易。本页读取它们：访客最喜欢网站的哪些部分，我们就先做这些。统计钱包，不是人。"
+  "Every heart on Tau HUD is a real transaction on the Tau Net testnet. This page reads them: which parts of the site visitors love most, so we build those first. Wallets, not people.": "Tau HUD 上的每颗心都是 Tau Net 测试网上的一笔真实交易。本页读取它们：访客最喜欢网站的哪些部分，我们就先做这些。统计钱包，不是人。",
+  "Whose hearts": "谁的心",
+  "Everyone": "所有人",
+  "Beginners": "新手",
+  "Intermediate": "中级",
+  "Experts": "专家",
+  "No hearts from this level yet.": "这个级别还没有心。",
+  "A heart counts for the level its wallet chose on Tau HUD when it was given; hearts from before 14 Nov 2026 carry no level and count only under Everyone.": "一颗心计入钱包送出它时在 Tau HUD 上选择的级别；2026 年 11 月 14 日之前的心没有级别，只计入“所有人”。",
+  "The hearts stay when the testnet starts a new chain: our relay keeps them.": "测试网开始一条新链时，心会保留：我们的中继保存着它们。",
+  "+ 300 × level": "+ 300 × 级别",
+  "the level chosen on Tau HUD: 1 Beginner, 2 Intermediate, 3 Expert (401 is a beginner’s heart for part 1)": "在 Tau HUD 上选择的级别：1 新手，2 中级，3 专家（401 是新手给第 1 部分的心）",
 } });

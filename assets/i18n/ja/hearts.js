@@ -49,5 +49,15 @@ TauI18n.add({ strings: {
   "No hearts yet. Open the HUD and give one to the part you like best.": "まだハートはありません。HUD を開いて、一番好きな部分にハートを付けてください。",
   "1 wallet": "1 つのウォレット",
   "{n} wallets": "{n} つのウォレット",
-  "Every heart on Tau HUD is a real transaction on the Tau Net testnet. This page reads them: which parts of the site visitors love most, so we build those first. Wallets, not people.": "Tau HUD のハートはどれも Tau Net テストネット上の本物の取引です。このページはそれを読み、訪問者がサイトのどの部分を一番好きかを示します。そこから先に作ります。人ではなくウォレットを数えます。"
+  "Every heart on Tau HUD is a real transaction on the Tau Net testnet. This page reads them: which parts of the site visitors love most, so we build those first. Wallets, not people.": "Tau HUD のハートはどれも Tau Net テストネット上の本物の取引です。このページはそれを読み、訪問者がサイトのどの部分を一番好きかを示します。そこから先に作ります。人ではなくウォレットを数えます。",
+  "Whose hearts": "誰のハート",
+  "Everyone": "全員",
+  "Beginners": "初心者",
+  "Intermediate": "中級",
+  "Experts": "エキスパート",
+  "No hearts from this level yet.": "このレベルからのハートはまだありません。",
+  "A heart counts for the level its wallet chose on Tau HUD when it was given; hearts from before 14 Nov 2026 carry no level and count only under Everyone.": "ハートは、贈られたときにそのウォレットが Tau HUD で選んでいたレベルに数えられます。2026年11月14日より前のハートにはレベルがなく、「全員」にだけ数えられます。",
+  "The hearts stay when the testnet starts a new chain: our relay keeps them.": "テストネットが新しいチェーンを始めても、ハートは残ります。私たちのリレーが保存しています。",
+  "+ 300 × level": "+ 300 × レベル",
+  "the level chosen on Tau HUD: 1 Beginner, 2 Intermediate, 3 Expert (401 is a beginner’s heart for part 1)": "Tau HUD で選んだレベル：1 初心者、2 中級、3 エキスパート（401 は初心者がパート1に贈ったハート）",
 } });
