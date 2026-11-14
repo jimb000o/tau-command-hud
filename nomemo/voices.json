@@ -298,5 +298,45 @@
  {
   "who": "bosun",
   "text": "A guard, and little else to go on. A cap, a floor, a window, a hole, or a rule that lets nothing through. Mind what a rule leaves unsaid. No hint from me."
+ },
+ {
+  "who": "qm",
+  "text": "One parcel, two things in it: a payment and a rule. The chain will not take both together. Send them in one transaction and let it refuse the lot."
+ },
+ {
+  "who": "bosun",
+  "text": "Two pens on one rule: it writes your wallet's own line and the chain's fee line at once. Send it alone. The chain refuses a rule that reaches past your own wallet."
+ },
+ {
+  "who": "look",
+  "text": "A wallet's rule may only be so long. Find the limit, then send the shortest rule that goes one past it, alone. The chain counts every comparison."
+ },
+ {
+  "who": "qm",
+  "text": "This one is about your own hands. Put a rule on your wallet, let it stop you, then take it off. Nobody else can sign that rule, and nobody else can lift it."
+ },
+ {
+  "who": "qm",
+  "text": "First part. Put a cap on your own wallet, a rule of its own, without a payment."
+ },
+ {
+  "who": "qm",
+  "text": "Second part. Now pay more than your own cap allows. Your rule must stop you before a coin moves."
+ },
+ {
+  "who": "qm",
+  "text": "Last part. Take the rule off again: the rule that changes nothing, sent alone."
+ },
+ {
+  "who": "look",
+  "text": "Tau HUD's four-eyes wallet carries a real rule on the testnet. Above some amount it needs a co-signer. Read the rule, then pay the drop the smallest amount that needs one."
+ },
+ {
+  "who": "qm",
+  "text": "Tau HUD's piggy bank is locked by time. Its rule reads the block's clock and lets nothing out before a certain moment. Read it and tell me the year it opens."
+ },
+ {
+  "who": "bosun",
+  "text": "Tau HUD's feeding fund may only feed Agorzilla, and only so much a meal. Read its rule and feed the beast exactly that much, from your own wallet."
  }
 ]

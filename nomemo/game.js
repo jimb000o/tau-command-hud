@@ -61,6 +61,7 @@
   const WKEY = "tauhud-wallet-key", SAVE = "tauhud-nomemo", RELAY = "https://node.tauhud.com", WS = "wss://node.tauhud.com", CLIPS = RELAY + "/rico/";
   /* the crew's dead drop: the game's wallet. Live, the server names its own (GET /nomemo "drop", a key made there, infra/relay/nomemo.py);
      until it answers, and in the simulation, this one, whose key stays with the game's keeper, never in this code */
+  const BOWL = "947c2b8988769f9fb7ada19021e27c51f5d855e4e05ad258d2ca2322821987dbff93e0425f281edded5c372b97e6a108";   // Agorzilla's bowl (agorzilla.com): a payment of 1 or more is a meal, one a wallet an hour
   let DROP = "9309956d5f97d1b91b409b0b2995470f5f646f2c43c3b8eb2203a42135c7caf1a9b4ff99cbdfc9ad16bd44fcea5d5065";
   const FAUCET = 100000, GIANT = 1 << 24, TRACE = 45, RACE = 6, WAYBACK_MIN = 5, SHARE = 500, CLAIM_BASE = 100;
   const short = h => (h && h.length > 14 ? h.slice(0, 6) + "…" + h.slice(-4) : h || "");
@@ -264,7 +265,7 @@
     });
   }
   const isOk = r => !!(r && r.status === "ok" && !(r.data && r.data.ok === false));
-  const CODES = ["INSUFFICIENT_FUNDS", "TX_REJECTED", "INVALID_SEQUENCE", "TX_EXPIRED", "INVALID_SIGNATURE", "TX_INVALID", "FEE_LIMIT_TOO_LOW", "INVALID_PARAMS", "NOT_RETRACTABLE_SENDER", "FORBIDDEN", "RATE_LIMITED"];
+  const CODES = ["INSUFFICIENT_FUNDS", "TX_REJECTED", "INVALID_SEQUENCE", "TX_EXPIRED", "INVALID_SIGNATURE", "TX_INVALID", "FEE_LIMIT_TOO_LOW", "INVALID_PARAMS", "NOT_RETRACTABLE_SENDER", "FORBIDDEN", "RATE_LIMITED", "RULE_WITH_TRANSFERS", "MIXED_OUTPUT_RULE", "CLAUSE_SHAPE"];
   function codeOf(r) {   // the node's error code in a refusal, wherever the answer carries it (cruise.py code_of)
     if (!r || typeof r !== "object") return null;
     for (const d of [r.error, r.data, r]) if (d && typeof d === "object" && typeof d.code === "string") return d.code;
@@ -295,7 +296,17 @@
       if (tx.sequence_number !== A.seq) return err("sendtx", `sequence ${tx.sequence_number} is not the account’s next (${A.seq})`, "INVALID_SEQUENCE");
       const fee = Number(tx.fee_limit), bal = A.bal === 0 ? FAUCET : A.bal;
       if (tx.tx_type === "user_tx") {
-        for (const op of (tx.operations && tx.operations["1"]) || []) {
+        const rule = tx.operations && tx.operations["0"], pays = (tx.operations && tx.operations["1"]) || [];
+        if (rule != null) {   // the node's screens for a rule that writes o5, in the node's order
+          const outs = [...new Set((String(rule).match(/\bo(\d+)\s*\[/g) || []).map(x => x.replace(/\D/g, "")))];
+          if (outs.length > 1 && outs.includes("5")) return err("sendtx", "A rule writing o5 is registered as your policy clause and may write o5 only", "MIXED_OUTPUT_RULE");
+          if (pays.length) return err("sendtx", "A policy rule (o5) and transfers cannot share one transaction", "RULE_WITH_TRANSFERS");
+          if (comparisons(rule) > CLAUSE_MAX) return err("sendtx", "Shared rules: clause has " + comparisons(rule) + " comparisons; the limit is " + CLAUSE_MAX, "TX_REJECTED");
+          if (!(fee >= 10)) return err("sendtx", "fee_limit below the base fee of 10", "FEE_LIMIT_TOO_LOW");
+          const m = /i1\[t\]:bv\[24\]\s*>\s*\{\s*#x([0-9a-f]+)/i.exec(rule);
+          A.clause = isNeutral(rule) ? null : m ? parseInt(m[1], 16) : A.clause; A.bal = bal - 10;
+        }
+        for (const op of pays) {
           const [from, to, amt] = op, n = Number(amt);
           if (!/^[0-9a-f]{96}$/.test(to || "")) return err("sendtx", "recipient is not a key", "INVALID_PARAMS");
           if (!(n > 0) || n >= GIANT || String(amt) !== String(Math.floor(n))) return err("sendtx", `amount ${amt} does not fit a 24-bit transfer`, "INVALID_PARAMS");
@@ -303,6 +314,7 @@
           if (!/^[89ab]/.test(to)) return err("sendtx", "'to' address is not a key: no point on the curve", "TX_INVALID");
           if (to === from) return err("sendtx", "'to' address is the sender", "TX_INVALID");
           if (!(fee >= 10)) return err("sendtx", "fee_limit below the base fee of 10", "FEE_LIMIT_TOO_LOW");
+          if (A.clause != null && n > A.clause) return err("sendtx", `Transaction rejected: the sender's own policy clause blocked transfer #1 (${n})`, "TX_REJECTED");
           if (n + 10 > bal) return err("sendtx", `balance ${bal} is below ${n} plus the fee`, "INSUFFICIENT_FUNDS");
           A.bal = bal - n - 10; a(to).bal += n;
           SimBot.saw(tx.sender_pubkey, to, n, hashOf(tx), tip);
@@ -393,6 +405,24 @@
   }
   /* the chain's rules are a Tau specification; the part the game reads: a stream, its bitvector width, a constant */
   const SIM_RULES = "(o9[t]:bv[24] = {#x00000a}:bv[24])";
+  /* a wallet's own rule (a policy clause, IDNI tau-testnet 5ad1bb7, 13 November 2026): a user transaction whose operation
+     "0" is one always ( … ). unit writing o5 (1 lets a payment through, 0 stops it). It may not share a transaction with
+     transfers (RULE_WITH_TRANSFERS), may write o5 only (MIXED_OUTPUT_RULE), holds at most 32 comparisons
+     (consensus/rule_offers.py MAX_CLAUSE_COMPARISONS), and the one spelling below that says o5 = 1 and nothing else takes
+     the wallet's rule away (NEUTRAL_O5_CLAUSE_BODY) */
+  const ALLOW_O5 = "(o5[t]:bv[24] = { #x000001 }:bv[24])", BLOCK_O5 = "(o5[t]:bv[24] = { #x000000 }:bv[24])", NEUTRAL = "always ( " + ALLOW_O5 + " ).", CLAUSE_MAX = 32;
+  const hex6 = n => Math.max(0, Math.min(GIANT - 1, Math.floor(n))).toString(16).padStart(6, "0");
+  function ruleText(d) {
+    if (!d || !d.rule) return null;
+    if (d.rule === "allow") return NEUTRAL;
+    if (d.rule === "cap") return "always ( (i1[t]:bv[24] > { #x" + hex6(d.cap) + " }:bv[24]) ? " + BLOCK_O5 + " : " + ALLOW_O5 + " ).";
+    if (d.rule === "mix") return "always ( ( o5[t]:bv[24] = { #x000001 }:bv[24] ) && ( o9[t]:bv[24] = { #x000000 }:bv[24] ) ).";
+    if (d.rule === "size") return "always ( " + Array.from({ length: d.size }, () => "( o5[t]:bv[24] = { #x000001 }:bv[24] )").join(" && ") + " ).";
+    return null;
+  }
+  const comparisons = t => (String(t || "").replace(/#(?![bx])[^\n]*/gi, "").match(/!=|<=|>=|(?<![-<])>|<(?!-)|=/g) || []).length;
+  const isNeutral = t => String(t || "").replace(/\s+/g, "") === NEUTRAL.replace(/\s+/g, "");
+  const ownRule = r => /own policy clause|user policy \(o5\)/i.test(JSON.stringify(r || ""));
   function parseRule(text) {
     const m = /\b([a-z]+)(\d+)\[t\]:bv\[(\d+)\]\s*=\s*\{\s*#x([0-9a-fA-F]+)\s*\}/.exec(String(text || ""));
     return m ? { stream: m[1] + m[2], io: m[1], num: +m[2], bits: +m[3], hex: m[4], val: parseInt(m[4], 16) } : null;
@@ -432,8 +462,8 @@
   }
   function logWallet(tx, r) {   // the wallet page's own activity list, so the payment shows there too
     try {
-      const lk = "tauhud-wallet-log-live-" + tx.sender_pubkey, logs = JSON.parse(store.get(lk) || "[]"), amount = tx.tx_type === "user_tx" ? tx.operations["1"][0][2] : tx.amount;
-      logs.unshift({ hash: r.data && r.data.tx_hash, kind: tx.tx_type === "retract_transfer" ? "retract" : "pay", label: "No Memo" + (amount != null ? ": " + amount : ""), at: Date.now(), status: "queued", seq: tx.sequence_number, paid: tx.fee_limit !== "0" });
+      const lk = "tauhud-wallet-log-live-" + tx.sender_pubkey, logs = JSON.parse(store.get(lk) || "[]"), amount = tx.tx_type === "user_tx" ? (tx.operations["1"] ? tx.operations["1"][0][2] : null) : tx.amount;
+      logs.unshift({ hash: r.data && r.data.tx_hash, kind: tx.tx_type === "retract_transfer" ? "retract" : "pay", label: "No Memo" + (amount != null ? ": " + amount : tx.operations && tx.operations["0"] ? ": rule" : ""), at: Date.now(), status: "queued", seq: tx.sequence_number, paid: tx.fee_limit !== "0" });
       if (!SIM) store.set(lk, JSON.stringify(logs.slice(0, 40)));
     } catch (e) {}
   }
@@ -1482,14 +1512,15 @@
     rule: ["Tau Language", "The chain’s rules are a Tau specification. In (o9[t]:bv[24] = {#x00000a}:bv[24]), o9[t] is output stream 9 at every step t, :bv[24] makes it a bitvector 24 bits wide, and {#x00000a} is a constant written in hex: 10. Learn to write such lines yourself: tauhud.com/learn/."],
     order: ["Order of checks", "A payment wrong in two ways is refused for one of them: the node answers with the first check it fails. Which check comes first is the node’s own order; its answer shows it."],
     guard: ["Personal rules", "A wallet can carry a rule of its own, written in Tau, and the chain checks each of its payments against it: o5 = 1 lets the payment through, 0 stops it, and i1 is the amount. Where the rule says nothing, the engine answers 0, so a rule that only says when to block blocks everything."],
+    clause: ["Rules on the chain", "A wallet’s own rule is a transaction of its own: operation 0 carries the rule, operation 1 the payments, and one transaction may not carry both (RULE_WITH_TRANSFERS). A rule that writes o5 may write nothing else (MIXED_OUTPUT_RULE), and it holds at most 32 comparisons. A wallet has one rule at a time: a new one replaces it, and the rule that says o5 = 1 and nothing else takes it away."],
   };
-  const CODE_TOPIC = { FEE_LIMIT_TOO_LOW: "fee", TX_EXPIRED: "height", INVALID_SEQUENCE: "seq", INVALID_SIGNATURE: "sig", TX_INVALID: "payer", INVALID_PARAMS: "width", INSUFFICIENT_FUNDS: "funds", TX_REJECTED: "funds" };
+  const CODE_TOPIC = { RULE_WITH_TRANSFERS: "clause", MIXED_OUTPUT_RULE: "clause", CLAUSE_SHAPE: "clause", FEE_LIMIT_TOO_LOW: "fee", TX_EXPIRED: "height", INVALID_SEQUENCE: "seq", INVALID_SIGNATURE: "sig", TX_INVALID: "payer", INVALID_PARAMS: "width", INSUFFICIENT_FUNDS: "funds", TX_REJECTED: "funds" };
   const PAYS = { 1: 1, 2: 2, 3: 3, 4: 5 };
   /* the week's theme, the same for every player: weeks counted from Monday 00:00 UTC; its topics come more often and pay double */
   const THEMES = [
     { k: "fee", who: "qm", name: "Fee week", topics: ["fee", "funds", "width"], text: "This week is fee week. Contracts about the fee, empty pockets and amount widths come more often and pay double. Learn what the base fee is, where the chain keeps it, and what a fee limit really promises." },
     { k: "deadline", who: "look", name: "Deadline week", topics: ["height", "clock"], text: "This week is deadline week. Contracts about block heights and expiry times come more often and pay double. Two clocks guard every payment; learn to tell them apart." },
-    { k: "tau", who: "bosun", name: "Tau week", topics: ["rule", "bool", "guard"], text: "This week is Tau week. Contracts about the chain’s rule and Boolean functions come more often and pay double. The rules of this chain are written in Tau; read them, then write your own." },
+    { k: "tau", who: "bosun", name: "Tau week", topics: ["rule", "bool", "guard", "clause"], text: "This week is Tau week. Contracts about the chain’s rule and Boolean functions come more often and pay double. The rules of this chain are written in Tau; read them, then write your own." },
     { k: "mask", who: "bosun", name: "Disguise week", topics: ["sig", "payer", "seq"], text: "This week is disguise week. Contracts about signatures, payers and sequence numbers come more often and pay double. Learn what the chain checks to know a payment is really yours." },
     { k: "eyes", who: "look", name: "Sharp eyes week", topics: ["addr", "order"], text: "This week is sharp eyes week. Contracts about addresses and the order of the node’s checks come more often and pay double. Read the middle of an address, and know which check comes first." },
   ];
@@ -1500,7 +1531,7 @@
     say("sys", F("This week: {x}. Contracts on {y} pay double and come more often.", { x: th.name, y: th.topics.map(t => TOPICS[t] ? TOPICS[t][0] : t).join(", ") }));
     say("sys", left > 1 ? F("{n} days until the next theme.", { n: left }) : T("The next theme starts tomorrow."), btn("inbox", "inbox"));
   }
-  const DRAFT0 = () => ({ to: "drop", amount: 1, fee: null, expiry: "ok", height: "auto", signer: "you", payer: "you", seq: "next" });
+  const DRAFT0 = () => ({ to: "drop", amount: 1, fee: null, expiry: "ok", height: "auto", signer: "you", payer: "you", seq: "next", rule: null, pay: true });
   const rnd = n => Math.floor(Math.random() * n);
   /* the kinds of offer: t = the lowest tier that gets it; brief/hint may hold {k} {a} {b}; check(d, x) says what is wrong
      with the draft for this contract, or null; x = { tx, base, tip } */
@@ -1578,6 +1609,32 @@
       mk: j => { j.seed = seedHex(); j.m = 8; j.trace = 60; } },
     { k: "i-blind", t: 4, who: "bosun", topic: "guard", intel: true, lead: true, want: null, ok: () => intelUp(), name: "The blind guard", brief: "A guard, and little to go on: a cap, a floor, a window, a hole, or a rule that lets nothing through. The Lookout made out one number in it. Probe, think, then name it. Mind what a rule leaves unsaid. {m} probes or fewer pays a point more. No hint from me.", hint: null,
       mk: j => { j.seed = seedHex(); j.m = 10; j.trace = 60; } },
+    /* rules on the chain (IDNI tau-testnet 5ad1bb7, 13 November 2026): a wallet's own rule is a transaction of its own.
+       The three refusals bind nothing: a refused rule never reaches the wallet */
+    { k: "r-pack", t: 2, who: "qm", topic: "clause", rules: true, want: ["RULE_WITH_TRANSFERS"], name: "One parcel", brief: "Make the chain refuse a payment for what else it carries: put a rule into the same transaction. The rule that changes nothing will do.", hint: "set rule allow",
+      check: d => !d.rule ? "the transaction carries no rule" : d.pay === false ? "the payment is off" : null },
+    { k: "r-mix", t: 3, who: "bosun", topic: "clause", rules: true, want: ["MIXED_OUTPUT_RULE"], name: "Two pens", brief: "A rule that writes your wallet’s o5 and the chain’s fee stream o9 at once. Send it alone and let the chain refuse it for that.", hint: "set rule mix, set pay off",
+      check: d => d.rule !== "mix" ? "the rule does not write two streams" : null },
+    { k: "r-long", t: 3, who: "look", topic: "clause", rules: true, want: ["TX_REJECTED"], name: "One too long", brief: "A wallet’s rule may hold only so many comparisons. Send the shortest rule that is one too long, alone, without a payment.", hint: "what clause; set rule size <n>, set pay off",
+      check: d => d.rule !== "size" ? "that is not a rule of plain comparisons (set rule size <n>)" : d.size !== CLAUSE_MAX + 1 ? F("{n} comparisons is not the shortest rule too long", { n: d.size }) : null },
+    /* a heist on your own wallet: put a rule on it, be stopped by it, take it off. Every part is a real transaction; unguard
+       takes the rule off at any time */
+    { k: "h-hands", t: 2, who: "qm", heist: ["g-set", "g-hit", "g-off"], ok: () => !S.guard, name: "Your own hands", brief: "Three parts, one trace: put a rule on your own wallet, let it stop you, take it off again. Nobody else can sign a rule for your wallet, and nobody but you can lift it." },
+    { k: "g-set", t: 2, who: "qm", topic: "clause", rules: true, guard: true, stage: true, want: "in", name: "Bind your hands", brief: "Put a rule on your own wallet: at most {a} test AGRS a payment. A rule is a transaction of its own, without a payment.", hint: "set rule cap {a}, set pay off",
+      mk: j => { if (j.a == null) j.a = 100 * (2 + rnd(8)); },
+      check: (d, x, j) => d.rule !== "cap" || d.cap !== j.a ? F("the rule is not a cap of {a}", { a: j.a }) : d.pay !== false ? "the payment is still on" : null },
+    { k: "g-hit", t: 2, who: "qm", topic: "guard", guard: true, stage: true, want: ["TX_REJECTED"], name: "Stopped by yourself", brief: "Now pay the drop more than {a}. Your own rule must stop you, before a coin moves.", hint: "set amount <more than your cap>",
+      check: (d, x, j) => !ownRule(x.said) ? "the chain refused it, but not for your own rule" : d.amount <= j.a ? "that amount is within your cap" : null },
+    { k: "g-off", t: 2, who: "qm", topic: "clause", rules: true, guard: true, stage: true, want: "in", name: "Hands free", brief: "Take the rule off again: send the rule that says o5 = 1 and nothing else, alone.", hint: "set rule allow, set pay off",
+      check: d => d.rule !== "allow" ? "that is not the rule that takes a rule away" : d.pay !== false ? "the payment is still on" : null },
+    /* the three showcase wallets Tau HUD runs on the testnet (infra/relay/showcase.py): their rules are real and in force,
+       and anyone may read them (showcase) */
+    { k: "s-four", t: 2, who: "look", topic: "guard", want: "in", ok: () => showUp("foureyes"), name: "Four eyes", brief: "Tau HUD’s four-eyes wallet carries a rule on the testnet: above some amount, it needs its co-signer. Read the rule and pay the drop the smallest amount that needs the co-signer.", hint: "showcase: in the rule, i1 is the amount, in hex",
+      check: d => { const n = showNum("foureyes"); return n == null ? "the four-eyes wallet’s rule could not be read" : d.amount !== n + 1 ? F("{a} is not the smallest amount that needs the co-signer", { a: d.amount }) : null; } },
+    { k: "s-piggy", t: 2, who: "qm", topic: "guard", want: "in", ok: () => showUp("piggy"), name: "The piggy bank", brief: "Tau HUD’s piggy bank carries a rule that reads i5, the block’s time in seconds since 1970. Until that moment nothing leaves it. Pay the drop the year in which it opens, German time.", hint: "showcase, then when <seconds>",
+      check: d => { const y = showYear(); return y == null ? "the piggy bank’s rule could not be read" : d.amount !== y ? F("{a} is not the year it opens", { a: d.amount }) : null; } },
+    { k: "s-feed", t: 1, who: "bosun", topic: "guard", want: "in", ok: () => showUp("feeding"), name: "Feed it right", brief: "Tau HUD’s feeding fund may only pay Agorzilla’s bowl, and only so much a meal. Read its rule and feed Agorzilla exactly that much, from your own wallet.", hint: "showcase: i1 is the amount, in hex; set to bowl",
+      check: d => { const n = showNum("feeding"); return d.to !== "bowl" ? "the payment does not go to Agorzilla’s bowl" : n == null ? "the feeding fund’s rule could not be read" : d.amount !== n ? F("{a} is not what the fund may pay a meal", { a: d.amount }) : null; } },
   ];
   const kindOf = j => { const b = KINDS.find(x => x.k === j.k); return b && b.heist && j.hs != null ? KINDS.find(x => x.k === b.heist[j.hs]) : b; };
   const heistOf = j => { const b = KINDS.find(x => x.k === j.k); return b && b.heist ? b : null; };
@@ -1596,9 +1653,11 @@
     "r-clock": "set expiry past", "r-payer": "set payer drop", "r-seq": "set seq old", "r-width": "what width", "p-hex": "status", "p-fee": "peek getgovernance", "p-doors": "status", "r-self": "set to me", "p-nokey": "what curve",
     "r-fee9": "peek getgovernance", "p-tight": "peek getgovernance", "p-last": "history", "predict": "what order",
     "p-bits": "rule", "p-stream": "rule", "p-ones": "what #b", "p-top": "what top", "p-spec": "what stream", "p-table": "what and", "p-table3": "what and",
-    "i-cap": "probe 0", "i-edge": "probe 10000", "i-band": "probe {lead}" };
-  const tryCmd = j => { const k = j && kindOf(j).k; if (!k || !TRY[k]) return null; const v = { m: j.m }; if (j.lead != null) v.lead = j.lead; const c = fill0(TRY[k], v); return c.includes("{") ? null : c; };
-  const hintLine = j => { const kd = kindOf(j), go = tryCmd(j); say("learn", F("Hint: {x}", { x: fill(kd.hint, j) }), go ? btn(go, go) : null); };
+    "i-cap": "probe 0", "i-edge": "probe 10000", "i-band": "probe {lead}",
+    "r-pack": "set rule allow", "r-mix": "set rule mix", "r-long": "what clause", "g-set": "set rule cap {a}", "g-hit": "tx", "g-off": "set rule allow", "s-four": "showcase", "s-piggy": "showcase", "s-feed": "showcase" };
+  const tryCmd = j => { const k = j && kindOf(j).k; if (!k || !TRY[k]) return null; const v = { m: j.m, a: j.a }; if (j.lead != null) v.lead = j.lead; const c = fill0(TRY[k], v); return c.includes("{") ? null : c; };
+  const hintLine = j => { const kd = kindOf(j), go = tryCmd(j), plainHint = !(j.lock || j.code || j.tab || j.spec);   // an English filler, so the dictionaries translate the whole line
+    say("learn", F("Hint: {x}", { x: plainHint ? fill0(kd.hint, { m: j.m, a: j.a, b: j.b }) : fill(kd.hint, j) }), go ? btn(go, go) : null); };
   const LOCK_TEXT = { fee: "fee limit 0", payer: "the drop named as payer", signer: "a stranger’s signing key", expiry: "an expiry time in the past", seq: "a used sequence number", height: "a height deadline behind the tip", amount: "an amount of 2^24" };
   const inboxOpen = () => chapterDone(CH[0]);
   const tierMax = () => { const r = rep(); return r >= 35 ? 4 : r >= 12 ? 3 : r >= 4 ? 2 : 1; };
@@ -1609,7 +1668,7 @@
   const fill = (s, j) => { const v = {}; for (const k of ["m", "a", "b"]) if (j[k] != null) v[k] = j[k]; if (j.lock) { v.x = T(LOCK_TEXT[j.lock[0][0]]); v.y = T(LOCK_TEXT[j.lock[1][0]]); } else if (j.code) v.x = j.code; else if (j.tab && TABLES[j.tab] && s === "{y}") return T(TABLES[j.tab].hint); else if (j.spec && SPECS[j.spec]) return s === "{x}" ? T(SPECS[j.spec].brief) : s === "{y}" ? T(SPECS[j.spec].hint) : F(s, v); return F(s, v); };
   function makeJob() {
     const max = tierMax(), have = new Set(S.inbox.map(j => j.k));
-    const heistIn = S.inbox.some(j => heistOf(j)), pool = KINDS.filter(x => x.t <= max && !have.has(x.k) && (!x.ok || x.ok()) && (!x.heist || (!heistIn && Math.random() < 0.35)));
+    const heistIn = S.inbox.some(j => heistOf(j)), pool = KINDS.filter(x => x.t <= max && !x.stage && !have.has(x.k) && (!x.ok || x.ok()) && (!x.heist || (!heistIn && Math.random() < 0.35)));
     if (!pool.length) return null;
     const th = theme(), hot = pool.filter(x => th.topics.includes(x.topic)), top = pool.filter(x => x.t === max);
     const pickFrom = hot.length && Math.random() < 0.4 ? hot : top.length && Math.random() < 0.5 ? top : pool, kd = pickFrom[rnd(pickFrom.length)];
@@ -1655,10 +1714,12 @@
     const news = [];
     while (S.inbox.length < 2) { const j = makeJob(); if (!j) break; S.inbox.push(j); news.push(j); }
     if (S.inbox.length < 4 && tip >= (S.nextJob || 0)) { const j = makeJob(); if (j) { S.inbox.push(j); news.push(j); } S.nextJob = tip + 5 + rnd(6); }
+    const dj = dailyTick(tip); if (dj) { news.push(dj); changed = true; }
     if (news.length || changed) { save(); jobs(); instruments(); chips(); }
     if (news.length && S.booted) {
       snd.mail(); const j = news[news.length - 1];
       say("sys", news.length > 1 ? F("{n} new contracts in the inbox.", { n: news.length }) : F("New contract in the inbox: {x} {t}, from the {w}.", { x: jname(j), t: heistOf(j) ? heistOf(j).name : kindOf(j).name, w: CREW[j.who] }), btn(F("read {x}", { x: jname(j) }), "read " + jname(j)));
+      if (dj) say("ok", F("★ Today’s order: {x}. It pays {n} more for the streak; settle it today, German time.", { x: jname(dj), n: dj.dbonus }), btn(F("read {x}", { x: jname(dj) }), "read " + jname(dj)));
     }
   }
   function archive(j, out, pts, extra) {
@@ -1674,7 +1735,7 @@
     jobTick(CHAIN.tip);
     if (!S.inbox.length) { say("sys", T("The inbox is empty for the moment; a new contract comes within a few blocks.")); return; }
     say("sys", F("Inbox: {n} open. Tier {t} of 4 is open to you.", { n: S.inbox.length, t: tierMax() }) + " " + F("This week: {x}.", { x: theme().name }), btn("week", "week"));
-    cols(S.inbox.map(j => [jname(j) + (S.job === j.n ? " ●" : ""), jobName(j) + " · " + stars(j.t) + " · " + T(CREW[j.who]) + " · " + F("+{n}", { n: PAYS[j.t] + (j.special || 0) }) + " · " + F("lapses at block {n}", { n: fmt(j.until) })]));
+    cols(S.inbox.map(j => [jname(j) + (S.job === j.n ? " ●" : "") + (j.daily ? " ★" : ""), jobName(j) + " · " + stars(j.t) + " · " + T(CREW[j.who]) + " · " + F("+{n}", { n: PAYS[j.t] + (j.special || 0) }) + " · " + F("lapses at block {n}", { n: fmt(j.until) })]));
     const j = S.inbox.find(x => S.job !== x.n) || S.inbox[0];
     say("sys", T("read <j> opens one; accept <j> takes it; decline <j> clears it."), btn(F("read {x}", { x: jname(j) }), "read " + jname(j)));
   }
@@ -1684,6 +1745,7 @@
     say("sys", F("{x} · {t} · tier {n} · from the {w}", { x: jname(j), t: h ? h.name : kd.name, n: j.t, w: CREW[j.who] }));
     transmit(j.who, fill((h || kd).brief, j), { k: j.k, n: j.n, name: (h || kd).name, tier: j.t });
     if (h) heistShow(j);
+    if (j.daily) say("ok", F("★ Today’s order: {n} points more for your streak, if you settle it today.", { n: j.dbonus || 1 }));
     if (doors(j)) cols(["a", "b", "c"].map((x, i) => [x, doorAddr(j, i)]));
     if (j.tab) tableShow(j);
     if (j.t <= 2 && kd.hint) hintLine(j);
@@ -1701,7 +1763,7 @@
   }
   const doors = j => !!j && (j.k === "p-doors" || j.k === "p-nokey");
   const doorAddr = (j, i) => (j.k === "p-nokey" ? j.addrs[i] : i === j.door ? DROP : DROP.slice(0, 6) + j.mids[i] + DROP.slice(-4));
-  const draftTo = (j, d, pk) => (d.to === "me" ? pk : d.to === "drop" ? DROP : doorAddr(j, "abc".indexOf(d.to)));
+  const draftTo = (j, d, pk) => (d.to === "me" ? pk : d.to === "drop" ? DROP : d.to === "bowl" ? BOWL : doorAddr(j, "abc".indexOf(d.to)));
   function accept(a) {
     const j = parseJ(a) || (a ? null : S.inbox[0]); if (!j) { say("sys", T("No such contract in the inbox. Type inbox.")); return; }
     if (S.job === j.n) { say("sys", F("{x} is yours already. Build it: tx, set, send.", { x: jname(j) }), btn("tx", "tx")); return; }
@@ -1742,7 +1804,7 @@
     const j = curJob(), locked = new Set(((j && j.lock) || []).map(x => x[0]));
     const L = k => (locked.has(k) ? " 🔒" : "");
     cols([
-      ["to", (d.to === "drop" ? T("the drop") + " " + short(DROP) : d.to === "me" ? T("your own wallet") + (myPk() ? " " + short(myPk()) : "") : d.to + " " + short(doorAddr(j, "abc".indexOf(d.to)))) + L("to")],
+      ["to", (d.to === "drop" ? T("the drop") + " " + short(DROP) : d.to === "bowl" ? T("Agorzilla’s bowl") + " " + short(BOWL) : d.to === "me" ? T("your own wallet") + (myPk() ? " " + short(myPk()) : "") : d.to + " " + short(doorAddr(j, "abc".indexOf(d.to)))) + L("to")],
       ["amount", fmt(d.amount) + " " + T("test AGRS") + L("amount")],
       ["fee", (d.fee == null ? T("auto: 5 × the base fee") : String(d.fee)) + L("fee")],
       ["expiry", (d.expiry === "past" ? T("two minutes ago") : T("in ten minutes")) + L("expiry")],
@@ -1750,8 +1812,12 @@
       ["signer", (d.signer === "other" ? T("a stranger’s key, made now") : T("your key")) + L("signer")],
       ["payer", (d.payer === "drop" ? T("the drop") : T("your wallet")) + L("payer")],
       ["seq", (d.seq === "old" ? T("a used one (next − 1)") : T("the next one")) + L("seq")],
+      ...(kindOf(j).rules || d.rule || d.pay === false ? [
+        ["rule", !d.rule ? T("none") : d.rule === "allow" ? T("o5 = 1 and nothing else: takes a rule away") : d.rule === "cap" ? F("at most {n} test AGRS a payment", { n: fmt(d.cap) }) : d.rule === "mix" ? T("writes o5 and o9") : F("{n} comparisons", { n: d.size })],
+        ["pay", d.pay === false ? T("off: the rule goes alone") : T("on: the payment above goes too")]] : []),
     ]);
-    say("sys", T("set to|amount|fee|expiry|height|signer|payer|seq <value> · reset · send"), btn("send", "send"));
+    if (d.rule) say("sys", ruleText(d).length > 200 ? ruleText(d).slice(0, 197) + "…" : ruleText(d));
+    say("sys", kindOf(j).rules ? T("set to|amount|fee|expiry|height|signer|payer|seq|rule|pay <value> · reset · send") : T("set to|amount|fee|expiry|height|signer|payer|seq <value> · reset · send"), btn("send", "send"));
   }
   function setDraft(args) {
     const d = S.draft, j = curJob(); if (!d || !j) { say("sys", T("No draft: accept a contract from the inbox first.")); return; }
@@ -1767,10 +1833,22 @@
       if (f === "signer" && (v === "you" || v === "other")) return d.signer = v, true;
       if (f === "payer" && (v === "you" || v === "drop")) return d.payer = v, true;
       if (f === "seq" && (v === "next" || v === "old")) return d.seq = v, true;
-      if (f === "to" && (v === "drop" || v === "me" || (doors(j) && ["a", "b", "c"].includes(v)))) return d.to = v, true;
+      if (f === "to" && (v === "drop" || v === "me" || v === "bowl" || (doors(j) && ["a", "b", "c"].includes(v)))) return d.to = v, true;
+      if (f === "pay" && (v === "on" || v === "off")) return d.pay = v === "on", true;
+      if (f === "rule") {
+        const k = args[2] != null && /^\d+$/.test(args[2]) ? parseInt(args[2], 10) : null;
+        if (v === "off" || v === "none") return d.rule = null, true;
+        if (v === "allow" || v === "mix") return d.rule = v, true;
+        if (v === "size" && k >= 1 && k <= 64) return d.rule = "size", d.size = k, true;
+        if (v === "cap" && k >= 1 && k < GIANT) {
+          if (!kindOf(j).guard) return say("warn", T("A cap would become your wallet’s own rule for every payment it makes. Only the contract Your own hands puts one on.")), "said";
+          return d.rule = "cap", d.cap = k, true;
+        }
+      }
       return false;
     })();
-    if (!ok) { cols([["set amount <n>", T("whole test AGRS")], ["set fee <n>|auto", T("the fee limit you sign")], ["set expiry past|ok", T("the expiry time")], ["set height past|+<n>|auto", T("the last block it may land in")], ["set signer you|other", T("whose key signs")], ["set payer you|drop", T("who pays, inside the transfer")], ["set seq next|old", T("the sequence number")], ["set to drop|me" + (doors(j) ? "|a|b|c" : ""), T("who receives")]]); return; }
+    if (ok === "said") return;
+    if (!ok) { cols([["set amount <n>", T("whole test AGRS")], ["set fee <n>|auto", T("the fee limit you sign")], ["set expiry past|ok", T("the expiry time")], ["set height past|+<n>|auto", T("the last block it may land in")], ["set signer you|other", T("whose key signs")], ["set rule allow|mix|size <n>|off · set pay on|off", T("a rule in the same transaction")], ["set payer you|drop", T("who pays, inside the transfer")], ["set seq next|old", T("the sequence number")], ["set to drop|me" + (doors(j) ? "|a|b|c" : ""), T("who receives")]]); return; }
     save(); say("ok", F("{f} set.", { f }), btn("tx", "tx"), btn("send", "send"));
   }
   function predict(a) {
@@ -1779,7 +1857,8 @@
     S.pred = c; save(); say("ok", F("Prediction: {x}. Now send.", { x: c }), btn("send", "send"));
   }
   /* the draft's faults: what the chain must refuse whatever the contract wants */
-  const faults = (d, x) => [d.fee != null && d.fee < x.base && "fee", d.expiry === "past" && "expiry", d.height === "past" && "height", d.signer === "other" && "signer", d.payer === "drop" && "payer", d.seq === "old" && "seq", d.amount >= GIANT && "amount"].filter(Boolean);
+  const faults = (d, x) => [d.fee != null && d.fee < x.base && "fee", d.expiry === "past" && "expiry", d.height === "past" && "height", d.signer === "other" && "signer", d.payer === "drop" && "payer", d.seq === "old" && "seq", d.pay !== false && d.amount >= GIANT && "amount",
+    d.rule && d.pay !== false && "parcel", d.rule === "mix" && "mix", d.rule === "size" && d.size > CLAUSE_MAX && "size"].filter(Boolean);
   async function jobSend() {
     const j = curJob(), d = S.draft; if (!j || !d) { say("sys", T("No contract from the inbox taken. Type inbox.")); return; }
     if (RUN.busy) { say("warn", T("Already under way.")); return; }
@@ -1795,13 +1874,19 @@
     try {
       const { seq, tip } = await envelope(k.pk), base = await fee(), t = now();
       if (d.seq === "old" && seq === 0) fail(T("This wallet has no used sequence number yet."));
-      const to = draftTo(j, d, k.pk);
+      const to = draftTo(j, d, k.pk), rt = ruleText(d), ops = {};
+      if (rt) ops["0"] = rt;
+      if (d.pay !== false) ops["1"] = [[d.payer === "drop" ? DROP : k.pk, to, String(d.amount)]];
+      if (!rt && d.pay === false) fail(T("Nothing to send: the payment is off and the draft has no rule."));
+      if (d.rule === "size" && d.size <= CLAUSE_MAX && d.pay === false) fail(F("A rule of {n} comparisons fits: sent alone, it would become your wallet’s own rule. This contract wants one the chain refuses.", { n: d.size }));
+      if (d.rule === "cap" && !kd.guard) fail(T("A cap would become your wallet’s own rule for every payment it makes. Only the contract Your own hands puts one on."));
       const tx = sign({ tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: d.seq === "old" ? seq - 1 : seq, expiration_time: d.expiry === "past" ? t - 120 : t + 600,
         expire_at_height: d.height === "past" ? Math.max(1, tip - 5) : d.height === "auto" ? tip + 1000 : tip + d.height, fee_limit: String(d.fee == null ? base * 5 : d.fee),
-        operations: { "1": [[d.payer === "drop" ? DROP : k.pk, to, String(d.amount)]] } }, d.signer === "other" ? B.keygen() : k.sk);
+        operations: ops }, d.signer === "other" ? B.keygen() : k.sk);
       const x = { tx, base, tip, last, rule: ruleNow() }, bad = faults(d, x);
-      if (to === k.pk || !/^[89ab]/.test(to)) bad.push("to");   // to the sender itself, or to no key: refused since 10 November 2026
-      say("step", F("signing the draft: {a} test AGRS, fee limit {b}, sequence {c}, deadline block {n}", { a: fmt(d.amount), b: tx.fee_limit, c: tx.sequence_number, n: fmt(tx.expire_at_height) }));
+      if (ops["1"] && (to === k.pk || !/^[89ab]/.test(to))) bad.push("to");   // to the sender itself, or to no key: refused since 10 November 2026
+      say("step", ops["1"] ? F("signing the draft: {a} test AGRS, fee limit {b}, sequence {c}, deadline block {n}", { a: fmt(d.amount), b: tx.fee_limit, c: tx.sequence_number, n: fmt(tx.expire_at_height) })
+        + (rt ? " · " + T("with a rule in the same transaction") : "") : F("signing a rule of its own: {n} comparisons, fee limit {b}, sequence {c}", { n: comparisons(rt), b: tx.fee_limit, c: tx.sequence_number }));
       if (RUN.dry) {
         const r = await ask("checktx " + JSON.stringify(tx)); if (!r) fail(T("No answer from the node; nothing was sent."));
         const bad2 = r.status !== "ok" || (r.data && r.data.ok === false), c1 = bad2 ? codeOf(r) : null;
@@ -1823,21 +1908,26 @@
         const w = await sealed(s.hash, S.deadline, s.way);
         if (!w.in) { say("no", F("Not sealed: {x}", { x: w.why })); if (/EXPIRED/.test(w.why) && S.deadline != null && CHAIN.tip > S.deadline) jobTraced(); return; }
         say("ok", F("Sealed in block {n}.", { n: fmt(w.block) }), explorer(s.hash));
-        S.hist.unshift({ id: j.k, hash: s.hash, block: w.block, amount: d.amount }); S.hist = S.hist.slice(0, 20); save();
+        if (rt && !ops["1"]) { S.guard = isNeutral(rt) ? null : d.rule === "cap" ? { cap: d.cap, block: w.block } : S.guard; save(); instruments();
+          say("learn", S.guard ? F("Your wallet now carries its own rule: at most {n} test AGRS a payment. The chain checks every payment it makes against it. unguard takes it off.", { n: fmt(S.guard.cap) }) : T("Your wallet carries no rule of its own now.")); }
+        if (ops["1"]) { S.hist.unshift({ id: j.k, hash: s.hash, block: w.block, amount: d.amount }); S.hist = S.hist.slice(0, 20); save(); }
+        if (ops["1"] && to === BOWL) say("sys", T("Agorzilla counts it as a meal: one a wallet an hour."), link("https://agorzilla.com/", "agorzilla.com"));
         if (j.k === "p-nokey") { snd.no(); flash("bad"); say("no", T("That was a real wallet: your coin went to a stranger, and it stays there. The address that is no key gives itself away in its first character.")); jobMiss(j, x); return; }
-        if (want !== "in") { say("warn", T("The payment was good, so the chain took it; this contract wanted a refusal. Look at the draft again.")); learnTopic(j.topic); heatAdd(8); return; }
+        if (want !== "in") { say("warn", ops["1"] ? T("The payment was good, so the chain took it; this contract wanted a refusal. Look at the draft again.") : T("The rule was good, so the chain took it; this contract wanted a refusal. Look at the draft again.")); learnTopic(j.topic); heatAdd(8); return; }
         if (j.k === "p-doors" && to !== DROP) { snd.no(); flash("bad"); say("no", T("That door was a lookalike: your coin went to a wallet that is not the drop, and it stays there. The middle of an address is where it differs.")); jobMiss(j, x); return; }
         const why = kd.check && kd.check(d, x, j);
         if (why) { say("warn", F("Sealed, but not what was asked: {x}.", { x: why })); learnTopic(j.topic); say("sys", T("The contract stays yours while the trace lasts.")); heatAdd(8); return; }
         jobWin(j, { hash: s.hash, block: w.block });
         return;
       }
-      const c0 = codeOf(s.r);
+      const c0 = codeOf(s.r); x.said = s.r;
+      if (ownRule(s.r) && kd.k !== "g-hit") { if (!S.guard) { S.guard = { cap: null }; save(); } say("sys", T("Your wallet’s own rule stopped this payment. unguard takes the rule off."), btn("unguard", "unguard")); }
       snd.no(); slotFail(c0 || T("refused"));
       say(want === "in" ? "no" : "sys", F("The chain said no in {n} ms: {x}", { n: s.ms, x: c0 || plain(s.r) }));
-      if (want === "in") { flash("bad"); say("sys", T("This contract wants a payment that lands. Nothing was spent.")); learnTopic(CODE_TOPIC[c0] || j.topic); heatAdd(8); return; }
+      const topic0 = ownRule(s.r) ? "guard" : CODE_TOPIC[c0] || j.topic;
+      if (want === "in") { flash("bad"); say("sys", T("This contract wants a payment that lands. Nothing was spent.")); learnTopic(topic0); heatAdd(8); return; }
       if (want === "any") { const right = S.pred === c0; S.predOut = right; jobWin(j, { code: c0, predicted: S.pred }, right ? 0 : PAYS[j.t] - 1); return; }
-      if (!want.includes(c0)) { flash("bad"); say("warn", F("Refused, but this contract wants {x}.", { x: want.join(" / ") })); learnTopic(CODE_TOPIC[c0] || j.topic); heatAdd(8); return; }
+      if (!want.includes(c0)) { flash("bad"); say("warn", F("Refused, but this contract wants {x}.", { x: want.join(" / ") })); learnTopic(topic0); heatAdd(8); return; }
       const why = kd.check && kd.check(d, x, j);
       if (why) { flash("bad"); say("warn", F("Right answer, but not the way asked: {x}.", { x: why })); heatAdd(8); return; }
       flash("ok"); jobWin(j, { code: c0 });
@@ -1885,7 +1975,7 @@
     const pts = Math.max(1, PAYS[j.t] + (j.special || 0) - (j.t >= 3 && j.hinted ? 1 : 0) - (j.hpen || 0) - (j.dried ? 1 : 0) - (less || 0));
     if (heat()) heatAdd(-10);
     const before = rank();
-    S.rep = (S.rep || 0) + pts; archive(j, "settled", pts, rec);
+    S.rep = (S.rep || 0) + pts; archive(j, "settled", pts, rec); dailyWin(j);
     snd.tension(false); snd.seal(); flash("ok"); mood(j.who, "glad");
     if (rec.predicted) say(rec.predicted === rec.code ? "ok" : "warn", rec.predicted === rec.code ? F("Predicted {x}, and so it was.", { x: rec.code }) : F("You said {x}; the node said {y}. It stopped at another check first.", { x: rec.predicted, y: rec.code }));
     if (h) say("ok", F("The heist is done: all {n} parts.", { n: h.heist.length }));
@@ -1905,6 +1995,7 @@
     const h = document.documentElement; h.classList.add("tr-out"); setTimeout(() => h.classList.remove("tr-out"), 2500); snd.out(); flash("bad");
     say("no", F("Trace complete: block {n} passed. {x} is lost.", { n: fmt(CHAIN.tip), x: jname(j) })); if (loss) say("warn", loss > 1 ? T("A blown heist costs 2 points of standing.") : T("It costs 1 point of standing."));
     crew(j.who, "The block clock does not wait. There is more work in the inbox.", "sour"); heatAdd(25);
+    if (S.guard) say("warn", T("Your wallet still carries its own rule. unguard takes it off."), btn("unguard", "unguard"));
     jobs(); instruments(); topbar(); chips(); jobTick(CHAIN.tip);
   }
   function archiveList() {
@@ -1978,6 +2069,10 @@
     [["testnet", "tau", "chain"], "Tau Testnet Alpha", "IDNI’s public test chain. Its coins have no value; it is there to be tested. This game is one way to test it, together with every other player."],
     [["guard", "guards", "intel", "probe", "probes", "personal rule", "open answer"], "Guards and probes", "An intel contract hides a wallet’s personal rule: a line of Tau the chain checks each of that wallet’s payments against. A probe asks the real Tau engine on our server whether the rule lets a transfer of that amount through (o5 = 1) or blocks it (o5 = 0); nothing goes to the chain. Where a rule says nothing, the engine answers 0: blocked."],
     [["recurring", "standing order", "subscription", "percent", "percentage"], "Standing orders and percent", "Tau Testnet Alpha has no standing orders yet: a rule can let a payment through or stop it, never start one. The nearest thing is the way back turned around: timed payments that pay themselves out at a set block or time, up to 16 open per wallet and 90 days ahead, each yours to take back until then. A percentage works only as a fee on your own payments, worked out from the amount; it goes to whoever seals the block."],
+    [["clause", "rule size", "comparisons", "parcel", "rule tx"], "A wallet’s own rule", "A wallet’s own rule is a transaction of its own: operation 0 carries it, and no payment may ride along (RULE_WITH_TRANSFERS). It is one always ( … ). unit that writes o5 and nothing else (MIXED_OUTPUT_RULE), with at most 32 comparisons (=, <, >, <=, >= and != count one each); a rule with more is refused: TX_REJECTED. A new rule replaces the old one; the rule that says o5 = 1 and nothing else takes it away (unguard)."],
+    [["i5", "time", "seconds", "when", "unix"], "i5, the time", "In a wallet’s rule, i5 is the block’s time in seconds since 1 January 1970, UTC. when <seconds> turns such a number into a date."],
+    [["showcase", "piggy bank", "four-eyes", "four eyes", "feeding fund"], "The showcase wallets", "Three wallets Tau HUD runs on the testnet, each with a rule of its own: a piggy bank locked until New Year, a four-eyes wallet that needs a co-signer, and Agorzilla’s feeding fund. Their rules are in force on the chain and anyone may read them: showcase."],
+    [["daily", "streak", "today"], "The daily order", "One contract a day, marked ★, German days. Each day in a row adds a point to it, up to five; a missed day starts the streak again."],
   ];
   /* rule: the chain's rules, taken apart token by token */
   async function ruleCmd() {
@@ -2338,9 +2433,9 @@
   /* help: every command on one screen, in groups side by side; a click on a command types it */
   const HELP = [
     ["Story", [["jobs", "the twelve contracts"], ["take <n>", "take one"], ["run", "build, sign, send"], ["back", "retract a payment"], ["drop", "put it back"], ["claim [n]", "the chapter’s share"], ["chapter <n>", "the chapter’s card"]]],
-    ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["probe · name · final", "intel contracts"], ["why [topic]", "what just happened"], ["archive · history", "your record"]]],
+    ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["probe · name · final", "intel contracts"], ["why [topic]", "what just happened"], ["archive · history", "your record"], ["daily · unguard", "the day’s order · your rule off"]]],
     ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail · mail <n>", "letters; some bring special orders"], ["crew", "who is who"], ["scan · blocks · dry", "gear for rank"]]],
-    ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"], ["upkeep", "who pays the node"]]],
+    ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["showcase · when <s>", "real wallet rules, read them"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"], ["upkeep", "who pays the node"]]],
     ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · reboot · clear", "reboot: dial the node again"], ["scene · transmission on|off", "the cabin; the crew on screen"]]],
   ];
   function help() {
@@ -2363,6 +2458,8 @@
       [T("balance"), CHAIN.bal == null ? "—" : fmt(CHAIN.bal === 0 ? FAUCET : CHAIN.bal) + " " + T("test AGRS")],
       [T("standing"), T(rank()) + " · " + F("{n} points", { n: rep() })],
       [T("inbox"), inboxOpen() ? F("{n} open · tier {m} of 4", { n: S.inbox.length, m: tierMax() }) : T("opens when chapter 1 is done")],
+      [T("own rule"), S.guard ? (S.guard.cap != null ? F("at most {n} test AGRS a payment", { n: fmt(S.guard.cap) }) : T("one, set elsewhere")) + " · unguard" : T("none")],
+      [T("daily"), F("streak {n}", { n: streakNow() }) + (S.dailyLast === dayKey() ? " · " + T("today’s order settled") : "")],
       [T("chapters"), CH.map(ch => ch.n + (S.chap[ch.n] ? " ✓" : chapterDone(ch) ? " ●" : chapterOpen(ch) ? " ○" : " ·")).join("  ")],
     ]);
   }
@@ -2383,6 +2480,98 @@
     const r = await ask([c, a, b].filter(Boolean).join(" "));
     if (!r) { say("no", T("No answer from the node.")); return; }
     say(r.status === "ok" ? "sys" : "no", JSON.stringify(r.data || r.error || r, null, 1).slice(0, 1200));
+  }
+  /* ---------- the showcase wallets: three wallets Tau HUD runs on the testnet with real rules of their own
+     (infra/relay/showcase.py, GET node.tauhud.com/showcase); the practice node shows the same three, made up ---------- */
+  const SHOW = { data: null, at: 0, busy: null };
+  const berlinAt = t => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(t * 1000));
+  function simShow() {
+    const pk = c => c + "0".repeat(95), until = 1798758000, t = Math.floor(Date.now() / 1000);
+    return { ready: true, simulated: true, piggy_until: until, wallets: {
+      piggy: { pk: pk("a"), name: "Tau HUD’s piggy bank", rule_text: "always ( (i5[t]:bv[64] < { " + until + " }:bv[64]) ? " + BLOCK_O5 + " : " + ALLOW_O5 + " ).", in_force: true, last_try: { t: t - 7200, outcome: "stopped" } },
+      foureyes: { pk: pk("b"), name: "Tau HUD’s four-eyes wallet", rule_text: "always ( ((i1[t]:bv[24] > { #x000064 }:bv[24] || i2[t]:bv[24] < { #x015f90 }:bv[24]) && !(i18[t]:bv[384] = { #x" + pk("8") + " }:bv[384])) ? " + BLOCK_O5 + " : " + ALLOW_O5 + " ).", in_force: true, last_try: { t: t - 3600, outcome: "stopped" } },
+      feeding: { pk: pk("9"), name: "Tau HUD’s Agorzilla feeding fund", rule_text: "always ( (i4[t]:bv[384] = { #x" + BOWL + " }:bv[384] && !(i1[t]:bv[24] > { #x000014 }:bv[24]) && !(i2[t]:bv[24] < { #x015f90 }:bv[24])) ? " + ALLOW_O5 + " : " + BLOCK_O5 + " ).", in_force: true, last_try: null } } };
+  }
+  function showLoad(now) {
+    if (SIM) { SHOW.data = SHOW.data || simShow(); return Promise.resolve(SHOW.data); }
+    if (SHOW.busy) return SHOW.busy;
+    if (!now && Date.now() - SHOW.at < 10 * 60 * 1000) return Promise.resolve(SHOW.data);
+    SHOW.at = Date.now();
+    SHOW.busy = fetch(RELAY + "/showcase", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).catch(() => null)
+      .then(x => { if (x && x.ready) SHOW.data = x; SHOW.busy = null; return SHOW.data; });
+    return SHOW.busy;
+  }
+  const showW = name => { const x = SHOW.data; return x && x.ready && x.wallets && x.wallets[name] && x.wallets[name].in_force ? x.wallets[name] : null; };
+  const showUp = name => { showLoad(false); return !!showW(name); };
+  const showNum = name => { const w = showW(name), m = w && /i1\[t\]:bv\[24\]\s*>\s*\{\s*#x([0-9a-f]+)/i.exec(w.rule_text || ""); return m ? parseInt(m[1], 16) : null; };
+  const showYear = () => { const w = showW("piggy"), m = w && /i5\[t\]:bv\[64\]\s*<\s*\{\s*(\d+)\s*\}/.exec(w.rule_text || ""); return m ? Number(berlinAt(Number(m[1])).slice(0, 4)) : null; };
+  const SHOW_NAMES = { piggy: "Tau HUD’s piggy bank", foureyes: "Tau HUD’s four-eyes wallet", feeding: "Tau HUD’s Agorzilla feeding fund" };
+  async function showcaseCmd() {
+    say("step", T("asking our relay for the showcase wallets …"));
+    const x = await showLoad(true);
+    if (!x || !x.wallets) { say("no", T("The showcase wallets are not answering just now. Try again in a minute.")); return; }
+    for (const k of Object.keys(SHOW_NAMES)) {
+      const w = x.wallets[k]; if (!w) continue;
+      say("sys", T(SHOW_NAMES[k]) + " · " + short(w.pk) + " · " + (w.in_force ? T("rule in force on the chain") : T("rule not confirmed yet")));
+      say("sys", String(w.rule_text || ""));
+      const lt = w.last_try; if (lt && lt.t) say(lt.outcome === "stopped" ? "ok" : "warn", F("Last forbidden try: {t}, German time: {x}.", { t: berlinAt(lt.t), x: lt.outcome === "stopped" ? "stopped by its own rule" : lt.outcome === "took" ? "the chain took it, a finding" : "refused for another reason" }));
+    }
+    say("learn", T("Each of them tries once a day to pay what its own rule forbids (11:00, 15:00 and 19:00 German time); the node refuses it before the mempool, so it costs nothing. In a rule, i1 is the amount, i2 the balance, i4 where the payment goes, i5 the time in seconds, i18 a co-signer."));
+    if (x.simulated) say("sys", T("These three are made up by the practice node; on the live node they are Tau HUD’s real wallets."));
+  }
+  function whenCmd(a) {
+    if (!/^\d{1,12}$/.test(a || "")) { say("sys", T("when <seconds since 1970>: that moment, German time and UTC. A rule reads the time as i5, in seconds.")); return; }
+    const n = Number(a);
+    say("sys", F("{a} German time · {b} UTC", { a: berlinAt(n), b: new Date(n * 1000).toISOString().slice(0, 16).replace("T", " ") }));
+  }
+  /* unguard: the rule that says o5 = 1 and nothing else, alone in a transaction, takes the wallet's own rule away */
+  async function unguard() {
+    if (RUN.busy) { say("warn", T("Already under way.")); return; }
+    if (!B) { say("no", T("This browser cannot sign (no BLS library loaded).")); return; }
+    if (!SIM && CHAIN.ok === false) { say("no", T("The node is out of reach; nothing was sent. Try again in a minute, or switch to the simulation in the header."), btn("reboot", "reboot")); return; }
+    RUN.busy = true; chips();
+    try {
+      const k = myKey(true), { seq, tip } = await envelope(k.pk), base = await fee();
+      const tx = sign({ tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: seq, expiration_time: now() + 600, expire_at_height: tip + 1000, fee_limit: String(base * 5), operations: { "0": NEUTRAL } }, k.sk);
+      say("step", T("signing the rule that takes your wallet’s own rule away: o5 = 1 and nothing else"));
+      const s = await sendtx(tx);
+      if (!s.r) { say("no", T("No answer from the node; nothing was sent. Type unguard again.")); return; }
+      if (!s.hash) { say("no", F("The chain said no: {x}", { x: codeOf(s.r) || plain(s.r) })); return; }
+      sent(tx, s); say("step", T("waiting for a block …"));
+      const w = await sealed(s.hash, null, s.way);
+      if (!w.in) { say("no", F("Not sealed: {x}", { x: w.why })); return; }
+      S.guard = null; save(); instruments();
+      say("ok", F("Sealed in block {n}. Your wallet carries no rule of its own now.", { n: fmt(w.block) }), explorer(s.hash));
+    } catch (e) { say("no", T("The node did not answer in time; nothing is lost. Type unguard again.")); }
+    finally { RUN.busy = false; chips(); balance(); }
+  }
+  /* ---------- the daily order: one contract a day (German days) that pays a point more for each day in a row, up to five.
+     The streak lives in this browser ---------- */
+  const dayKey = (t = Date.now()) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(t));
+  const dayBefore = k => dayKey(Date.parse(k + "T12:00:00Z") - 86400000);
+  const streakNow = () => (S.dailyLast === dayKey() || S.dailyLast === dayBefore(dayKey()) ? S.streak || 0 : 0);
+  const streakNext = () => Math.min(5, S.dailyLast === dayBefore(dayKey()) ? (S.streak || 0) + 1 : 1);
+  function dailyTick(tip) {
+    const today = dayKey();
+    if (S.dailyMade === today || S.dailyLast === today || S.inbox.some(j => j.daily === today)) return null;
+    const j = makeJob(); if (!j) return null;
+    j.daily = today; j.dbonus = streakNext(); j.special = (j.special || 0) + j.dbonus; j.until = Math.max(j.until, tip + 1500); S.dailyMade = today;
+    S.inbox.push(j); return j;
+  }
+  function dailyWin(j) {
+    if (!j.daily) return;
+    S.streak = S.dailyLast === dayBefore(j.daily) ? (S.streak || 0) + 1 : S.dailyLast === j.daily ? S.streak || 1 : 1; S.dailyLast = j.daily; save();
+    say("ok", F("Today’s order is done. Daily streak: {n} days.", { n: S.streak }));
+    if (S.streak >= 3) crew("qm", F("{n} days in a row. The crew notices who comes back.", { n: S.streak }), "glad");
+  }
+  function dailyCmd() {
+    const today = dayKey(), j = S.inbox.find(x => x.daily === today), n = streakNow();
+    say("sys", n ? F("Daily streak: {n} days.", { n }) : T("No daily streak yet."));
+    if (!inboxOpen()) say("sys", T("Daily orders start once the inbox is open: chapter 1 first."), nextChip());
+    else if (S.dailyLast === today) say("ok", T("Today’s order is settled. The next one comes tomorrow, German time."));
+    else if (j) say("sys", F("Today’s order: {x}, {n} points more for the streak.", { x: jname(j), n: j.dbonus || 1 }), btn(F("read {x}", { x: jname(j) }), "read " + jname(j)));
+    else say("sys", T("Today’s order comes with the next block."));
+    say("learn", T("One order a day, German days. Each day in a row adds a point to it, up to five; a day missed starts the streak again. The streak lives in this browser."));
   }
   /* gear for standing: real tools on the real chain */
   const gearLocked = k => { say("sys", F("{x} is gear for the rank {r}.", { x: k, r: GEAR_AT[k] }) + " " + F("You: {x}.", { x: rank() })); };
@@ -2529,6 +2718,10 @@
     if (c === "scan") return scanCmd();
     if (c === "blocks") return blocksCmd();
     if (c === "dry") return dryCmd();
+    if (c === "showcase" || c === "showcases") return showcaseCmd();
+    if (c === "when") return whenCmd(args[0]);
+    if (c === "unguard") return unguard();
+    if (c === "daily" || c === "streak") return dailyCmd();
     if (c === "board") return board();
     if (c === "tau") return tauCmd(s.slice(3));
     if (c === "rule" || c === "rules" || (c === "explain" && /^rules?$/.test(args[0] || ""))) return ruleCmd();
