@@ -6,12 +6,17 @@ sender's own rule" with a real refusal from the node.
             i5, the block time: a clause may not read the block height (i6), so the lock is by the clock.
             Daily try: 10 test AGRS to the feeding fund.
   foureyes  Tau HUD's four-eyes wallet: above COSIGN_ABOVE test AGRS a payment needs a second signature from Tau
-            HUD's co-signer (approval slot i18, tau-testnet docs/approvals.md), and so does EVERY payment once the
-            balance (i2) is below FLOOR: many small payments cannot empty it. Daily try: 250 to the piggy bank as a
-            plain payment, without the co-signer's vote.
+            HUD's co-signer (approval slot i18, tau-testnet docs/approvals.md), and so does EVERY payment that would
+            leave less than FLOOR (i2 - i1, the floor template of IDNI's issue #20). Daily try: 250 to the piggy bank as
+            a plain payment, without the co-signer's vote.
   feeding   Tau HUD's Agorzilla feeding fund: may only pay Agorzilla's bowl (i4, the recipient), at most MEAL_MAX
-            a payment (i1), and nothing once the balance (i2) is below FLOOR. Daily try: 5 test AGRS to the piggy
-            bank instead.
+            a payment (i1), and nothing that would leave less than FLOOR (i2 - i1). Daily try: 5 test AGRS to the
+            piggy bank instead.
+
+            The floor is honest only per payment: i2 is the balance at the PARENT block, frozen for the whole block
+            (IDNI engine.py, issue #20: "a min-balance floor does not compound within a block"), so several payments
+            in one block (up to 64 transfers in a single tx) all see the same balance and together can still go below
+            FLOOR. No rule can close that (i16 is read from the parent block too); the texts say so.
   cosigner  Tau HUD's co-signer: never sends; it is the second signature the four-eyes wallet names.
 
 The keys are made here once (SHOWCASE_KEYS_PATH, mode 0600, they never leave the server). The faucet funds each wallet
@@ -43,8 +48,8 @@ log = logging.getLogger("showcase")
 
 BOWL = "947c2b8988769f9fb7ada19021e27c51f5d855e4e05ad258d2ca2322821987dbff93e0425f281edded5c372b97e6a108"
 COSIGN_ABOVE = 100
-FLOOR = 90_000        # below this balance (i2, the balance at the parent block) the small-payment way is closed: many
-                      # payments under a limit cannot empty the wallet (a daily limit needs IDNI's i16, switched off)
+FLOOR = 90_000        # no single payment may leave less than this (i2 - i1; i2 = balance at the parent block, so
+                      # payments inside ONE block do not add up against it: see the docstring)
 MEAL_MAX = 20         # the feeding fund pays Agorzilla's bowl at most this much per payment
 GAP = 20              # seconds between two of our sends, at least
 RECHECK = 30 * 60     # how often each wallet's rule is looked up on the node
@@ -145,6 +150,12 @@ def make_keys(path: str, keys: dict | None = None) -> dict:
     return keys
 
 
+def short_of_floor() -> str:
+    """True when this payment would leave less than FLOOR: the amount is more than the balance (guards the bv[24]
+    wrap of i2 - i1; money arriving in the same block can still make such a payment succeed) or what stays is below."""
+    return (f"(i1[t]:bv[24] > i2[t]:bv[24] || (i2[t]:bv[24] - i1[t]:bv[24]) < {{ #x{FLOOR:06x} }}:bv[24])")
+
+
 class Showcase:
     def __init__(self, keys_path: str | None = None, state_path: str | None = None, clock=time.time,
                  enabled: bool | None = None, keys: dict | None = None):
@@ -237,11 +248,11 @@ class Showcase:
         if name == "piggy":
             body = f"(i5[t]:bv[64] < {{ {piggy_until()} }}:bv[64]) ? {BLOCK} : {ALLOW}"
         elif name == "foureyes":
-            body = (f"((i1[t]:bv[24] > {{ #x{COSIGN_ABOVE:06x} }}:bv[24] || i2[t]:bv[24] < {{ #x{FLOOR:06x} }}:bv[24])"
+            body = (f"((i1[t]:bv[24] > {{ #x{COSIGN_ABOVE:06x} }}:bv[24] || {short_of_floor()})"
                     f" && !(i18[t]:bv[384] = {{ #x{self.pk['cosigner']} }}:bv[384])) ? {BLOCK} : {ALLOW}")
         elif name == "feeding":
             body = (f"(i4[t]:bv[384] = {{ #x{BOWL} }}:bv[384] && !(i1[t]:bv[24] > {{ #x{MEAL_MAX:06x} }}:bv[24])"
-                    f" && !(i2[t]:bv[24] < {{ #x{FLOOR:06x} }}:bv[24])) ? {ALLOW} : {BLOCK}")
+                    f" && !({short_of_floor()})) ? {ALLOW} : {BLOCK}")
         else:
             raise ValueError(name)
         return body
@@ -251,8 +262,8 @@ class Showcase:
             return "cannot send anything until New Year (1 January, 00:00 German time)"
         if name == "foureyes":
             return (f"needs a second signature from {COSIGNER['name']} above {COSIGN_ABOVE} test AGRS, "
-                    f"and for every payment once it holds less than {FLOOR:,}")
-        return f"may only pay Agorzilla's bowl, at most {MEAL_MAX} test AGRS a meal, and nothing once it holds less than {FLOOR:,}"
+                    f"and for every payment that would leave less than {FLOOR:,}")
+        return f"may only pay Agorzilla's bowl, at most {MEAL_MAX} test AGRS a meal, and nothing that would leave less than {FLOOR:,}"
 
     def try_words(self, name: str) -> str:
         c = WALLETS[name]
