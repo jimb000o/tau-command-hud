@@ -82,5 +82,22 @@ TauI18n.add({ strings: {
   "The public testnet as the signed record of a batch release decision is a different use with a different answer. See the other view of this page.": "把公开测试网当作批放行决定的已签名记录，是另一个用途，答案也不同。请看本页的另一个视图。",
   "Rules that run a process.": "驱动流程的规则。",
   "Tau can also execute a specification step by step. A system that acts on its outputs is a larger use and needs its own assessment.": "Tau 也可以一步一步地执行一份规范。根据其输出采取行动的系统是更大的用途，需要单独评估。",
-  "Check written process rules for contradictions during validation. This use has its own answers: see the other view of this page.": "在验证过程中检查书面流程规则是否存在矛盾。这一用途有自己的一组答案：请看本页的另一个视图。"
+  "Check written process rules for contradictions during validation. This use has its own answers: see the other view of this page.": "在验证过程中检查书面流程规则是否存在矛盾。这一用途有自己的一组答案：请看本页的另一个视图。",
+  "Answers": "答案",
+  "Route to ready": "通往就绪的路线",
+  "See the route to ready": "查看通往就绪的路线",
+  "Needs IDNI": "需要 IDNI",
+  "Step {n} of the route": "路线第 {n} 步",
+  "Your side, possible today": "你方今天就能做到",
+  "To close it": "如何补上",
+  "{n} of {m} open answers left": "{m} 个未解决的答案中还剩 {n} 个",
+  "The shortest route we see from today's public sources to answers a quality unit can accept. Tau HUD's proposal, not IDNI's plan; the effort is our estimate. A step moves an answer up; whether a use is approved stays the decision of the company that relies on it.": "根据今天的公开资料，我们看到的通往质量部门可以接受的答案的最短路线。这是 Tau HUD 的建议，不是 IDNI 的计划；工作量是我们的估计。每一步会让某个答案得到改善；某个用途是否获批，仍由依赖它的企业决定。",
+  "open answers": "个未解决的答案",
+  "your company can meet today": "个你方今天就能满足",
+  "need IDNI, in {n} steps": "个需要 IDNI，分 {n} 步",
+  "Now": "现在",
+  "Days": "数天",
+  "Weeks": "数周",
+  "Months": "数月",
+  "Conditions the regulated company meets in its own procedure and validated system. They need nothing from IDNI.": "受监管企业在自己的流程和已验证系统中满足的条件。这些不需要 IDNI 做任何事。"
 } });

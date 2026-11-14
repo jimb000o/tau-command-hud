@@ -82,5 +82,22 @@ TauI18n.add({ strings: {
   "The public testnet as the signed record of a batch release decision is a different use with a different answer. See the other view of this page.": "公開テストネットをバッチ出荷判定の署名済み記録として使うのは別の用途であり、答えも別です。このページのもう一つの表示をご覧ください。",
   "Rules that run a process.": "工程を動かすルール。",
   "Tau can also execute a specification step by step. A system that acts on its outputs is a larger use and needs its own assessment.": "Tau は仕様を一ステップずつ実行することもできます。その出力に基づいて動作するシステムは、より大きな用途であり、別の評価が必要です。",
-  "Check written process rules for contradictions during validation. This use has its own answers: see the other view of this page.": "バリデーションの際に、文書化された工程ルールに矛盾がないかを検査します。この用途には独自の答えがあります。このページのもう一つの表示をご覧ください。"
+  "Check written process rules for contradictions during validation. This use has its own answers: see the other view of this page.": "バリデーションの際に、文書化された工程ルールに矛盾がないかを検査します。この用途には独自の答えがあります。このページのもう一つの表示をご覧ください。",
+  "Answers": "回答",
+  "Route to ready": "準備完了への道筋",
+  "See the route to ready": "準備完了への道筋を見る",
+  "Needs IDNI": "IDNI が必要",
+  "Step {n} of the route": "道筋のステップ {n}",
+  "Your side, possible today": "自社で今日から可能",
+  "To close it": "解消するには",
+  "{n} of {m} open answers left": "未解決の回答 {m} 件中、残り {n} 件",
+  "The shortest route we see from today's public sources to answers a quality unit can accept. Tau HUD's proposal, not IDNI's plan; the effort is our estimate. A step moves an answer up; whether a use is approved stays the decision of the company that relies on it.": "今日の公開情報から見た、品質部門が受け入れられる回答への最短の道筋です。Tau HUD の提案であり、IDNI の計画ではありません。工数は私たちの見積もりです。各ステップは回答を一段引き上げますが、用途を承認するかどうかは、それに依拠する企業が決めます。",
+  "open answers": "件の未解決の回答",
+  "your company can meet today": "件は自社で今日から満たせる",
+  "need IDNI, in {n} steps": "件は IDNI が必要、{n} ステップ",
+  "Now": "今すぐ",
+  "Days": "数日",
+  "Weeks": "数週間",
+  "Months": "数か月",
+  "Conditions the regulated company meets in its own procedure and validated system. They need nothing from IDNI.": "規制対象の企業が自社の手順とバリデーション済みシステムで満たす条件です。IDNI からは何も必要ありません。"
 } });
