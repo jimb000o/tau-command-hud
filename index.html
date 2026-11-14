@@ -5,7 +5,12 @@
 <!-- the files the first screen waits for, fetched at once instead of one after another -->
 <link rel="preload" href="assets/i18n.js" as="script"><link rel="preload" href="assets/chainload.js" as="script"><link rel="preload" href="assets/sim.js" as="script"><link rel="preload" href="assets/simvote.js" as="script"><link rel="preload" href="assets/simnode.js" as="script">
 <link rel="preload" href="assets/nav.css" as="style"><link rel="preload" href="assets/chat.css" as="style"><link rel="preload" href="assets/fonts/sora-jetbrainsmono-unifrakturmaguntia-playfairdisplay-oldstandardtt-notoserifsc.css" as="style">
-<script>{ const q = new URLSearchParams(location.search), c = document.documentElement.classList; if (q.get("view") === "core") { c.add("coreonly"); if (q.get("bg") === "none") c.add("bgnone"); if (q.get("quiet") === "1") c.add("corequiet"); } }</script>
+<script>{ const q = new URLSearchParams(location.search), c = document.documentElement.classList; if (q.get("view") === "core") { c.add("coreonly"); if (q.get("bg") === "none") c.add("bgnone"); if (q.get("quiet") === "1") c.add("corequiet"); }
+  /* the visitor's level before the first paint (nav.js confirms it later), so the page does not jump when the header is built */
+  try { const L = { new: "new", mid: "mid", pro: "pro" }, F = { new: "new", code: "mid", pro: "pro" }; let lv = L[localStorage.getItem("tau-level")];
+    if (!lv) lv = F[(JSON.parse(localStorage.getItem("tauhud-learn") || "{}") || {}).level];
+    if (lv) { document.documentElement.dataset.level = lv; c.toggle("nb", lv === "new"); c.toggle("lvmid", lv === "mid"); c.toggle("lvpro", lv === "pro");
+      if (lv === "new" && sessionStorage.getItem("tauhud-hud-more") === "1") c.add("nbmore"); } } catch (e) {} }</script>
 <script src="assets/i18n.js"></script>
 <script src="assets/chainload.js"></script>
 <script src="assets/sim.js"></script>
@@ -422,7 +427,7 @@ body.calm .simbar, body.calm .thesis, body.calm main.grid, body.calm .community,
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 /* Agorzilla stands on the header's bottom line, just left of the live status he keeps an eye on (placed by placeAgz) */
 .agz { position: absolute; z-index: 3; display: block; line-height: 0; height: var(--agz-h, 78px); width: calc(var(--agz-h, 78px) * .665); opacity: .95; transition: opacity .2s, filter .2s; }
-.agz.cramped { visibility: hidden; }
+.agz.cramped, .agz:not(.placed) { visibility: hidden; }   /* shown once his spot has settled, so he never appears somewhere first and jumps */
 .agz, .agz * { -webkit-user-select: none; user-select: none; -webkit-user-drag: none; }
 .agz:hover { opacity: 1; filter: drop-shadow(0 0 8px rgba(57,255,138,.45)); }
 /* a puppet cut from the one picture: legs, trunk and head are the same image under different masks, so he can turn his head, blink and shift his weight; the rock is cut away, the header line is his ground */
@@ -2181,8 +2186,13 @@ function placeAgz() {   // two anchors: the header's bottom line is his ground, 
   const stop = Math.max(R.left + 24 * z, ...band.map(q => q.right + 18 * z));
   AGZ.room = clash ? 0 : Math.max(0, Math.min(200 * z, left + w * .12 - stop)) / z;
   a.style.left = Math.round((left - opr.left) / z) + "px"; a.style.top = Math.round((top - opr.top) / z) + "px";
+  const k = a.style.left + a.style.top + clash, t = performance.now();
+  if (k !== AGZ.pk) { AGZ.pk = k; AGZ.pat = t; } else if (t - AGZ.pat > 300) a.classList.add("placed");
 }
-addEventListener("resize", placeAgz); addEventListener("load", placeAgz); setInterval(placeAgz, 2000);
+/* while the page builds itself (header, chips filling with data, the level's layout) he is placed every frame and shown
+   once his spot has held for 0.3 s; after 6 s he shows wherever he is */
+(function agzSettle() { const a = $("agz"); if (a && a.classList.contains("placed")) return; placeAgz(); if (performance.now() > 6000) { if (a) a.classList.add("placed"); } else requestAnimationFrame(agzSettle); })();
+addEventListener("resize", placeAgz); addEventListener("load", placeAgz); addEventListener("tau-level", () => requestAnimationFrame(placeAgz)); setInterval(placeAgz, 2000);
 try { const ro = new ResizeObserver(() => placeAgz()); ["chipMode", "chipNext"].forEach(id => $(id) && ro.observe($(id))); ro.observe(document.querySelector("header.rail")); document.fonts && document.fonts.ready.then(placeAgz); } catch (e) {}   // the chips change width as data arrives; he follows at once
 async function pollAgz(force) {   // agorzilla.com's archive, written every 30 min; read every 5 min and again on hover after a minute
   if (Date.now() - AGZ.at < (force ? 60000 : 300000) || !$("agz") || getComputedStyle($("agz")).display === "none") return; AGZ.at = Date.now();
