@@ -94,8 +94,8 @@
   const RUN = "Run by tauhud.com’s server with test AGRS. Once a day it tries a payment its own rule forbids, on purpose, and the node refuses it.";
   const ABOUT = {
     piggy: ["Purpose: shows a time-lock. The money stays put until New Year, whoever holds the key.", RUN],
-    foureyes: ["Purpose: shows a second signature. Small payments go through; above 100 AGRS Tau HUD’s co-signer must sign as well, and once the balance is below 90,000 for every payment, so many small payments cannot empty it.", RUN],
-    feeding: ["Purpose: shows a whitelist. This money can only go to Agorzilla’s bowl, at most 20 AGRS a meal, and nothing once the balance is below 90,000, so many small payments cannot empty it.", RUN],
+    foureyes: ["Purpose: shows a second signature. Small payments go through; above 100 AGRS Tau HUD’s co-signer must sign as well, and so must every payment that would leave less than 90,000. Honest limit: the rule sees the balance of the last block, so several payments inside one block can still go below it together.", RUN],
+    feeding: ["Purpose: shows a whitelist. This money can only go to Agorzilla’s bowl, at most 20 AGRS a meal, and no meal that would leave less than 90,000. Honest limit: the rule sees the balance of the last block, so several meals inside one block can still go below it together.", RUN],
     cosigner: ["The second signature the four-eyes wallet needs. Run by tauhud.com’s server; it never sends."],
     apprentice: ["Purpose: shows a shared rule taken over. Every day Tau HUD’s piggy bank offers it its own rule, and it reads the rule and accepts it.", "Run by tauhud.com’s server with test AGRS."],
     stranger: ["Purpose: shows why you read a rule before you accept it. Every day it offers Tau HUD’s four-eyes wallet a rule that would let it pay only the stranger, and the offer is declined.", "Run by tauhud.com’s server with test AGRS."],
