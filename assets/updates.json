@@ -3031,5 +3031,17 @@
   {"tag": "Learn", "on": "2026-11-14", "link": "/learn/taba/", "html": "Learn Tau Language: Tau's math in plain words now reads two ways. Simple puts each idea in everyday words; Exact keeps the book's terms and theorem numbers, and it is where the page starts for people who picked logic or Tau. Each question now opens its lesson, with the lesson's own explanation under the answer and a link back. For a rule over time, sat's answer now says what it means: whether the outputs can meet it for every input, forever."},
   {"tag": "HUD", "on": "2026-11-14", "link": "/", "html": "HUD and pages: a hover text that does not fit beside the pointer now flips to its other side and always stays whole on the screen, also next to the Windows scrollbar."},
   {"tag": "HUD", "on": "2026-11-14", "link": "/", "html": "HUD: when the chain stops (nothing sealed for over 10 minutes while transactions wait), the Live node light turns red and keeps breathing, because our node still answers; solid red still means our node does not answer. In the chain core the validator turns red (amber while a block is only late), and our node and the nodes in step wait in amber. The status line now counts the wait from the block’s own time, not from when the page opened."},
-  {"tag": "HUD", "on": "2026-11-14", "link": "/", "html": "Correction: we wrote that the showcase wallets cannot be emptied with many small payments. That was wrong. A rule sees the wallet’s balance as it was at the last block, so several payments inside one block all see the same balance and together can still go below 90,000. IDNI documents this. The rules now check what a payment would leave, so no single payment goes below 90,000, and the texts say where the limit ends."}
+  {"tag": "HUD", "on": "2026-11-14", "link": "/", "html": "Correction: we wrote that the showcase wallets cannot be emptied with many small payments. That was wrong. A rule sees the wallet’s balance as it was at the last block, so several payments inside one block all see the same balance and together can still go below 90,000. IDNI documents this. The rules now check what a payment would leave, so no single payment goes below 90,000, and the texts say where the limit ends."},
+  {
+    "tag": "No Memo",
+    "on": "2026-11-14",
+    "link": "/nomemo/",
+    "html": "No Memo: the contract Mind the purse hides a guard that reads the wallet’s balance (i2) as well as the amount, as wallet rules on the testnet may since 13 November. Each probe names both, probe 500 at 40000, and the real Tau engine judges it: a reserve, small payments always, or small ones only above a balance."
+  },
+  {
+    "tag": "No Memo",
+    "on": "2026-11-14",
+    "link": "/nomemo/",
+    "html": "No Memo: the heist Four eyes, two keys. Put a rule on your own wallet that wants a second signature above an amount, send a bigger payment that waits on the chain as an approval request, and let your partner sign it: Tau HUD’s co-signer, or a friend who types cosign in their own No Memo. Then take the rule off again."
+  }
 ]
