@@ -323,6 +323,21 @@ stage. Nothing of a voyage is public and nothing goes to IDNI from here; a findi
 `up copy last` the last voyage in full, `up copy log` its log, `up copy off` / `on` stops and starts it. The live node
 is never touched.
 
+## Build cache
+
+Every `up` that rebuilds a service leaves layers behind in docker's build cache (BuildKit): 15.7 GB of it on 14.11.2026,
+with 1.4 GB of the disk left. `buildcache/buildcache.py` keeps it small without ever touching the tau-lang stage of the
+node image (the compiled engine, its tau-store and ccache, the node image's copies of them): building that again takes
+hours on this server and once froze it, and a new IDNI commit reuses it. A plain `docker builder prune` would drop it,
+and BuildKit's own garbage collection drops the least recently used entries first, which puts it first in line while
+the cache grows.
+
+At most once a day any `up` starts a clean-up in the background: while the cache is above `BUILDCACHE_KEEP_GB` (6), it
+drops entries no build used for `BUILDCACHE_MIN_DAYS` (3) days, oldest first, one by one by id, never an entry of the
+tau-lang stage and never one in use. Log and last result in `/var/lib/tau-buildcache/`. `up cache` shows the cache, the
+tau-lang stage it keeps (with a warning when that is missing) and the last clean-up (also in every `up` under `cache:`),
+`up cache now` cleans up at once, `up cache plan` lists what it would drop.
+
 ## Validator seat
 
 tau-testnet-v2 is proof of authority: only keys in the on-chain validator set propose
