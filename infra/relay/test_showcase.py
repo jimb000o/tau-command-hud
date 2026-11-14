@@ -190,7 +190,8 @@ asyncio.run(run(sc, node, clock, clock.t + 600))
 desk = [t for t in node.sent[n:] if t["tx_type"] == "rule_offer" and t["sender_pubkey"] == sc.pk["desk"]]
 check(len(desk) == 4 and desk[0]["recipient_pubkey"] == vis and desk[0]["rule_text"] == sc.starter_rule()
       and desk[0]["expire_at_height"] == 50 + showcase.VISITOR_WINDOW, "the desk sends the four starter offers: at most 1,000 per payment, open ~1000 blocks")
-check("sharers" in sc.snapshot() and sc.snapshot()["stories"]["scam"]["result"] == "rejected", "GET /showcase shows the sharing wallets and the stories")
+check("sharers" in sc.snapshot() and sc.snapshot()["stories"]["scam"]["result"] == "rejected"
+      and sc.snapshot()["stories"]["ignored"]["result"].startswith("offered, in a block"), "GET /showcase shows the sharing wallets and the stories")
 check(sc.route("/showcase/offer", "to=" + "cd" * 48, "9.9.9.9")["ok"], "GET /showcase/offer?to=… asks the desk")
 
 # old keys file with four keys: the sharing wallets are added, the old ones kept
@@ -265,6 +266,29 @@ check(not co.votes, "a request never seen in the inbox is dropped after five min
 for i in range(showcase.COSIGN_PER_IP):
     co.route("/showcase/cosign", f"id={i:064x}&from={P}", "2.2.2.2")
 check(co.route("/showcase/cosign", f"id={'55' * 32}&from={P}", "2.2.2.2")["ok"] is False, "at most ten a day from one address")
+
+# offers that never reach a block: the status says what the node knows of the transaction, and it is sent once more
+class LostNode(Node):
+    async def ask(self, cmd):
+        verb, _, rest = cmd.partition(" ")
+        if verb == "sendtx" and json.loads(rest)["tx_type"] == "rule_offer":
+            self.sent.append(json.loads(rest))
+            return {"status": "ok", "data": {"ok": True, "tx_hash": "%064x" % len(self.sent)}}
+        if verb == "gettxstatus":
+            return {"status": "ok", "data": {"tx_hash": rest.strip(), "status": "expired"}}
+        return await super().ask(cmd)
+
+tmp5 = tempfile.mkdtemp()
+clock5 = Clock(cruise.berlin_t(DAY, 9))
+lost = showcase.Showcase(keys_path=os.path.join(tmp5, "k"), state_path=os.path.join(tmp5, "s.json"), clock=clock5, enabled=True)
+ln = LostNode()
+asyncio.run(run(lost, ln, clock5, cruise.berlin_t(DAY, 18)))
+gifts = [t for t in ln.sent if t["tx_type"] == "rule_offer" and t["recipient_pubkey"] == lost.pk["apprentice"]]
+res = lost.st["stories"]["gift"]["result"]
+check(len(gifts) == 2 and "node: expired" in res and "trying once more" not in res,
+      "an offer that never reaches a block: the node's word on it in the status, sent once more, then left")
+check("node: expired" in lost.st["stories"]["ignored"]["result"],
+      "the ignored offer is watched too: it must reach a block before it can be left to expire")
 
 print("all ok" if not failed else f"{failed} FAILED")
 sys.exit(1 if failed else 0)
