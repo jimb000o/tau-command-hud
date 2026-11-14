@@ -49,7 +49,7 @@ SHIPS = os.environ.get("BLOG_SHIPS", "/ships")  # the painted ships (rabbit/art/
 IMG = os.path.join(PUBLIC, "img")               # hero pictures and charts, node.tauhud.com/blog/img/
 SHARE = os.path.join(PUBLIC, "a")               # one small page per article for link previews, node.tauhud.com/blog/a/<id>.html
 EVERY = 600
-PICS_VERSION = 5   # raise when the hero picture changes: every article's picture is made anew once (2: numbers and Rico, 3: one story on refusals, 4: a whole clause of the title, 5: tile labels in two lines)
+PICS_VERSION = 6   # raise when the hero picture changes: every article's picture is made anew once (2: numbers and Rico, 3: one story on refusals, 4: a whole clause of the title, 5: tile labels in two lines, 6: card ends before Rico, an early leave in amber)
 DESK_VERSION = 2   # the same for the heroes without island art (blog_pics.desk_hero): IDNI news, Q&As, testnet learnings
 CHECK_WAIT = 3 * 3600      # a visit whose bookings were never checked is drafted this long after it ended
 RETRY_AFTER = 2 * 3600
@@ -776,6 +776,52 @@ def draft_url(st: dict, did: str) -> str:
     return f"{SITE}/blog/?draft={st['drafts'][did]}"
 
 
+def with_notes(a: dict) -> dict:
+    """The draft with its hand-written sections (blog_notes.NOTES) put in before its last section, in every language.
+    The model's own text stays in body_model, so a changed note replaces the old one and is never put in twice."""
+    import blog_notes
+    note = blog_notes.NOTES.get(str(a.get("id") or "")) or {}
+    secs = note.get("sections") or {}
+    if not secs:
+        return a
+    a = dict(a)
+    model = a.get("body_model") or a.get("body") or {}
+    body = {}
+    for k, text in (model or {}).items():
+        add = str(secs.get(k) or secs.get("en") or "").strip()
+        parts = re.split(r"\n(?=## )", str(text).rstrip())
+        if add and len(parts) > 1 and parts[-1].startswith("## "):
+            body[k] = "\n".join(parts[:-1]).rstrip() + "\n\n" + add + "\n\n" + parts[-1]
+        else:
+            body[k] = str(text).rstrip() + ("\n\n" + add if add else "")
+    a["body_model"], a["body"] = model, body
+    return a
+
+
+def held(did: str) -> str:
+    """Why this draft waits for a read before it may publish itself (blog_notes.NOTES "hold"), or ""."""
+    import blog_notes
+    return str((blog_notes.NOTES.get(did) or {}).get("hold") or "")
+
+
+def notes_tick() -> int:
+    """Every waiting draft with a note gets its hand-written sections (the preview link shows them at once)."""
+    st, n = state(), 0
+    live = {p["id"] for p in posts()["posts"]}
+    for did, name in list(st["drafts"].items()):
+        if did in live:
+            continue
+        path = os.path.join(PUBLIC, "drafts", str(name) + ".json")
+        a = read_json(path, {})
+        if not a:
+            continue
+        b = with_notes(a)
+        if b.get("body") != a.get("body"):
+            write_json(path, b)
+            n += 1
+    return n
+
+
 def write_draft(vid: str, now: float | None = None) -> str:
     now = now or time.time()
     log_ = get(f"/cruise/log?visit={vid}&n=2000")
@@ -799,6 +845,7 @@ def write_draft(vid: str, now: float | None = None) -> str:
     st["drafts"][a["id"]], st["drafted"][vid] = name, a["id"]
     st.setdefault("drafted_at", {})[a["id"]] = round(now)
     a["status"] = "draft"
+    a = with_notes(a)
     write_json(os.path.join(PUBLIC, "drafts", name + ".json"), a)
     write_json(STATE, st)
     return a["id"]
@@ -866,7 +913,7 @@ def auto_publish(now: float | None = None) -> str | None:
     st = state()
     live = {p["id"] for p in posts()["posts"]} | set(st.get("announced") or [])
     for did, at in sorted((st.get("drafted_at") or {}).items(), key=lambda kv: kv[1]):
-        if did in live or did not in st["drafts"] or now - at < AUTO_PUBLISH_HOURS * 3600:
+        if did in live or did not in st["drafts"] or now - at < AUTO_PUBLISH_HOURS * 3600 or held(did):
             continue
         a = read_json(os.path.join(PUBLIC, "drafts", st["drafts"][did] + ".json"), {})
         chk = a.get("check") or {}
@@ -913,6 +960,8 @@ def auto_note(st: dict, did: str, a: dict) -> str:
     chk = a.get("check") or {}
     if not at:
         return "never by itself: written before drafts published themselves, only by hand"
+    if held(did):
+        return "never by itself, held: " + held(did)
     if chk.get("unknown_numbers") or chk.get("hype"):
         return "never by itself: the check marked numbers or wording (up blog publish --force after a read)"
     when = at + AUTO_PUBLISH_HOURS * 3600
@@ -939,6 +988,10 @@ def drafts_cli() -> int:
             print(line)
     except Exception as e:  # noqa: BLE001
         print(f"report:  not read ({e})")
+    try:
+        notes_tick()
+    except Exception as e:  # noqa: BLE001
+        print(f"blog:    hand-written sections not put in ({e})")
     st = state()
     live = {p["id"] for p in posts()["posts"]}
     waiting = [d for d in st["drafts"] if d not in live]
@@ -1053,7 +1106,7 @@ def publish_cli(did: str, dry: bool, force: bool, post_late: bool = False, now: 
     if dry:
         print(f"would publish {did} at {SITE}/blog/?p={did}")
     else:
-        a = {k: v for k, v in a.items() if k not in ("status", "model", "check")}
+        a = {k: v for k, v in with_notes(a).items() if k not in ("status", "model", "check", "body_model")}
         p["posts"] = [a] + [x for x in p["posts"] if x.get("id") != did]
         write_json(os.path.join(PUBLIC, "posts.json"), p)
         print(f"published: {SITE}/blog/?p={did}  (link preview: {share_page(a)})")
@@ -1136,6 +1189,7 @@ def main(argv: list[str]) -> int:
             except Exception as e:  # noqa: BLE001
                 log.warning("news article: %s", e)
             try:
+                notes_tick()
                 site_pictures()
                 tick()
                 auto_publish()
