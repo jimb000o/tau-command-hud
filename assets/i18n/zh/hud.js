@@ -2863,4 +2863,5 @@ TauI18n.add({ strings: {
   "Back to the newest block ›": "回到最新区块 ›",
   "Click any block to read it here.": "点击任意区块，在这里阅读它。",
   "HUD: Intermediate and Expert get one status line on top: what deviates comes first and in colour, the normal state stays dim. The feed names known wallets instead of showing hashes (Expert adds the short address), and an idle votes panel says the last decision in one sentence. Expert: hovering a transaction lights its block, its wallet’s rule and its dot in the rule ring. Beginners read the newest block in plain words under the blockchain strip.": "HUD：中级和专家视图顶部有一行状态：偏离正常的情况排在前面并带颜色，正常状态保持暗色。交易流显示已知钱包的名字而不是哈希（专家视图另附短地址），空闲的投票面板用一句话说明上一次决定。专家视图：鼠标停在一笔交易上，会点亮它的区块、它钱包的规则以及规则环中的点。新手在区块链条下方能用简单的话读到最新的区块。",
+  "Hearts: the page What you love most splits the hearts by level, Beginners, Intermediate and Experts, so we see what each of them values. A heart now carries the level chosen on Tau HUD in its amount; the hearts given so far stay, also when the testnet starts a new chain.": "爱心：“你们最喜欢的”页面按级别（新手、中级、专家）分开显示心，让我们看到每个级别看重什么。现在一颗心在金额里带着在 Tau HUD 上选择的级别；已经送出的心都会保留，测试网开始新链时也一样。",
 } });

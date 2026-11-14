@@ -2,7 +2,8 @@
    No tracking: a heart is a real transaction on Tau Testnet Alpha, signed in the browser by the visitor's own test wallet
    (the same key as tauhud.com/wallet/, made here if there is none) and sent to one box with no key behind it (BOX).
    A transaction has no memo, so the amount says which part and which way: LIKE + id gives the heart, UNLIKE + id takes it
-   back. Clicks wait SETTLE ms after the last one and only the end state is sent, so a hundred clicks are at most one
+   back; LEVEL × the visitor's level (1 Beginner, 2 Intermediate, 3 Expert, 0 none chosen) is added on top, so the box can tell
+   which level loves which part (401 = a beginner's heart for part 1). Clicks wait SETTLE ms after the last one and only the end state is sent, so a hundred clicks are at most one
    transaction per part; the relay (infra/relay/hearts.py, GET /hearts) counts only each wallet's newest mark per part.
    It counts wallets, not people, and the hearts are public on the chain (no name, only the wallet's key). Test AGRS have no value.
    A part: any element with data-heart="<key>" whose key is in PARTS; the button goes into its h2.
@@ -10,7 +11,7 @@
 (() => {
   "use strict";
   const BOX = "a43259757c7e5a26dae5dde9ce22ecafe2d7570c93e71ccf65756691d57e7a512e7fdfbfc78e9ce3bfd608b71e286a0b";
-  const LIKE = 100, UNLIKE = 200, SETTLE = 10000, RELAY = "https://node.tauhud.com", WS = "wss://node.tauhud.com";
+  const LIKE = 100, UNLIKE = 200, LEVEL = 300, LV = { new: 1, mid: 2, pro: 3 }, LV_OF = ["", "new", "mid", "pro"], SETTLE = 10000, RELAY = "https://node.tauhud.com", WS = "wss://node.tauhud.com";
   /* the ids are on the chain for good: never reuse or renumber one, only add */
   const PARTS = {
     "hud-core": [1, "HUD · The chain right now (chain core)"],
@@ -120,7 +121,7 @@
       for (const id of diff) {
         const on = !!want[id], st = await c.ask("getsequence " + k.pk); if (!st || st.status !== "ok") throw new Error("no sequence");
         const tx = { tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: st.data.sequence_number || 0, expiration_time: Math.floor(Date.now() / 1000) + 600,
-          expire_at_height: (st.data.tip_height || 0) + 1000, fee_limit: String(fee * 5), operations: { "1": [[k.pk, BOX, String((on ? LIKE : UNLIKE) + Number(id))]] } };
+          expire_at_height: (st.data.tip_height || 0) + 1000, fee_limit: String(fee * 5), operations: { "1": [[k.pk, BOX, String((on ? LIKE : UNLIKE) + Number(id) + LEVEL * (LV[document.documentElement.dataset.level] || 0))]] } };
         const d = { sender_pubkey: tx.sender_pubkey, sequence_number: tx.sequence_number, expiration_time: tx.expiration_time, fee_limit: tx.fee_limit, tx_type: tx.tx_type, expire_at_height: tx.expire_at_height, operations: tx.operations };
         tx.signature = k.B.bytesToHex(k.B.sign(new TextEncoder().encode(canon(d)), k.sk));
         const r = await c.ask("sendtx " + JSON.stringify(tx), 20000);
@@ -169,7 +170,8 @@ button.heart[aria-pressed="true"]{color:#ff6b8a}button.heart[aria-pressed="true"
   document.head.append(css);
   const start = () => { mount(); fetchCounts(); setInterval(() => { if (!document.hidden) fetchCounts(); }, 120000); if (Object.keys(PARTS).some(k => { const id = String(PARTS[k][0]); return !!want[id] !== !!(sent[id] && sent[id].on); })) timer = setTimeout(flush, 4000); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
-  window.TauHearts = { BOX, LIKE, UNLIKE, parts: PARTS, mount, counts: () => counts, fetch: fetchCounts,
+  window.TauHearts = { BOX, LIKE, UNLIKE, LEVEL, parts: PARTS, mount, counts: () => counts, fetch: fetchCounts,
     name: id => { const k = Object.keys(PARTS).find(p => String(PARTS[p][0]) === String(id)); return k ? PARTS[k][1] : null; },
-    decode: a => { const n = Number(a); return n > LIKE && n < LIKE + 100 ? { id: n - LIKE, on: true } : n > UNLIKE && n < UNLIKE + 100 ? { id: n - UNLIKE, on: false } : null; } };
+    decode: a => { const v = Number(a); if (!Number.isInteger(v)) return null; const l = Math.floor(v / LEVEL), n = v - LEVEL * l; if (l > 3) return null;
+      return n > LIKE && n < LIKE + 100 ? { id: n - LIKE, on: true, level: LV_OF[l] } : n > UNLIKE && n < UNLIKE + 100 ? { id: n - UNLIKE, on: false, level: LV_OF[l] } : null; } };
 })();
