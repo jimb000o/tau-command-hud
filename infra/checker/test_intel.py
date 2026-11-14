@@ -33,7 +33,9 @@ for case, kinds in intel.CASES.items():
     rules = [intel.deal(case, s) for s in SEEDS]
     check(all(r == intel.deal(case, s) for r, s in zip(rules, SEEDS)), f"{case}: the same seed gets the same rule")
     check({r["kind"] for r in rules} == set(kinds), f"{case}: deals {', '.join(kinds)} and nothing else")
-    check(all(r["a"] % 100 == 0 and 100 <= r["a"] <= intel.TOP for r in rules), f"{case}: amounts are round hundreds from 100 to {intel.TOP:,}")
+    check(all(r["a"] % 100 == 0 and 100 <= r["a"] <= intel.TOP for r in rules if r["kind"] != "reserve"), f"{case}: amounts are round hundreds from 100 to {intel.TOP:,}")
+    purse = [r for r in rules if r["kind"] in intel.PURSE]
+    check(all(r["b"] % 1000 == 0 and 5000 <= r["b"] <= 150000 for r in purse), f"{case}: a balance the rule asks for is a round thousand from 5,000 to 150,000")
     two = [r for r in rules if r["kind"] in ("band", "hole")]
     check(all(r["b"] % 100 == 0 and 500 <= r["b"] - r["a"] <= 5000 and r["b"] <= intel.TOP for r in two), f"{case}: a window or hole is 500 to 5,000 wide")
 check(len({tuple(intel.deal("i-blind", s).values()) for s in SEEDS}) > 300, "different seeds get different rules")
@@ -133,6 +135,37 @@ check(intel.answer(intel.parse({"case": "i-edge", "seed": seed, "probe": a}), la
 old = intel.round_of("i-edge", seed)
 intel.SECRET = b"another secret"
 check(intel.round_of("i-edge", seed) != old, "a new secret on the server: a new round, and the page starts the contract's probes over")
+
+
+# 5. the purse (i-purse): rules that read the balance, i2, as well as the amount
+PS = [{"kind": "reserve", "a": None, "b": 40000}, {"kind": "rich", "a": 3000, "b": 40000}, {"kind": "safe", "a": 3000, "b": 40000}]
+if RF:
+    for rule in PS:
+        pts = [(x, y) for x in (0, 2999, 3000, 3001, intel.MAX) for y in (0, 39999, 40000, 40001, intel.MAX)]
+        got = {p: RF.answer(intel.text(rule), {"i1": p[0], "i2": p[1]})["outcome"] == "pass" for p in pts}
+        check(got == {p: intel.passes2(rule, *p) for p in pts}, f"{rule['kind']}: the Tau text lets through what the purse says ({intel.words(rule)})")
+check(intel.words(PS[0]) == "passes only from a balance of 40,000 up" and intel.words(PS[2]) == "passes up to 3,000, and only from a balance of 40,000 up",
+      "the purse's rules in plain words")
+check(intel.same({"kind": "safe", "a": intel.MAX, "b": 40000}, PS[0]) and not intel.same(PS[1], PS[2]) and intel.same({"kind": "cap", "a": 3000}, {"kind": "rich", "a": 3000, "b": intel.MAX + 0}) is False,
+      "rules compared by what they let through, every amount at every balance")
+for bad, why in (({"case": "i-purse", "seed": S, "probe": 5}, "a purse probe without a balance"), ({"case": "i-purse", "seed": S, "final": 5}, "a one-shot edge at the purse"),
+                 ({"case": "i-purse", "seed": S, "name": {"kind": "rich", "a": 5}}, "rich without the balance")):
+    try:
+        intel.parse(bad)
+        check(False, f"refused: {why}")
+    except intel.BadRequest:
+        check(True, f"refused: {why}")
+check(intel.steps_of(intel.parse({"case": "i-purse", "seed": S, "probe": 500, "balance": 9000})) == [{"i1": "500", "i2": "9000"}], "a purse probe runs the amount and the balance")
+for kind in intel.PURSE:
+    ps = next(s for s in SEEDS if intel.deal("i-purse", s)["kind"] == kind)
+    pr = intel.deal("i-purse", ps)
+    run = lambda spec, steps, pr=pr: {"ok": True, "outputs": [{"out": {"o5": "1" if intel.passes2(pr, int(st["i1"]), int(st["i2"])) else "0"}} for st in steps]}
+    lo = intel.answer(intel.parse({"case": "i-purse", "seed": ps, "probe": 0, "balance": pr["b"] - 1}), run)
+    hi = intel.answer(intel.parse({"case": "i-purse", "seed": ps, "probe": 0, "balance": pr["b"]}), run)
+    check(lo["agrees"] and hi["agrees"] and hi["pass"] is True and lo["pass"] is (kind == "rich"), f"{kind}: probes at the balance edge answer as the rule reads")
+    check(intel.answer(intel.parse({"case": "i-purse", "seed": ps, "name": {k: v for k, v in pr.items()}}))["right"] is True, f"{kind}: named right, the rule is shown")
+    wrong = {**pr, "b": pr["b"] + 1000}
+    check(intel.answer(intel.parse({"case": "i-purse", "seed": ps, "name": wrong}))["right"] is False, f"{kind}: a balance off by a thousand is wrong")
 
 print("all intel tests passed" if not failed else f"{failed} intel checks failed")
 sys.exit(1 if failed else 0)

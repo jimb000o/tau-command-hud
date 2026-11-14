@@ -5,12 +5,17 @@ The rule is dealt here, from a small family, out of the player's seed and a serv
   band A B     from A to B                            hole A B     everything but A to B
   none         nothing passes: the clause that only says when to block (where a rule says nothing, the engine answers 0)
   above A      the clause that only says when to pass: above A it passes, at A and below it says nothing, so blocked
-The amounts are round hundreds up to 20,000. Each probe is one transfer the real Tau engine on this server judges
+The amounts are round hundreds up to 20,000. The purse (i-purse) also reads i2, the wallet's balance before the payment:
+  reserve R    nothing passes while the balance is below R; from R up, every amount
+  rich A R     up to A always; more than A only from a balance of R up
+  safe A R     up to A, and only while the balance is R or more
+R is a round thousand from 5,000 to 150,000. Its probes carry a balance as well as an amount. Each probe is one transfer the real Tau engine on this server judges
 with that rule (checker.py runs tau_sandbox.py, the engine /learn uses). The player names the behaviour, not the text:
 "above 4,000" is named floor 4,100. The text is shown once the rule is named, given up, or the one-shot edge is sent.
 
 POST /tau/intel  {"case": "<contract>", "seed": "<16 to 64 hex>", and one of}
   "probe": <amount>                       one transfer, judged by the engine     → {"ok", "pass", "round", "ms"}
+  "balance": <amount>                     with a probe of i-purse (needed there): the wallet's balance before it
   "final": <amount>                       the edge in one shot: it passes and one more does not
                                                                                  → {"ok", "pass", "edge", "round", "rule"}
   "name": {"kind", "a", "b"}              the player's guess, compared by behaviour → {"ok", "right", "round", "rule"?}
@@ -37,8 +42,10 @@ CASES = {                    # the rules each contract deals
     "i-edge": ("cap",),
     "i-band": ("band", "hole"),
     "i-blind": ("cap", "floor", "band", "hole", "none", "above"),
+    "i-purse": ("reserve", "rich", "safe"),
 }
-NAMES = ("cap", "floor", "band", "hole", "none")   # what a player may name
+PURSE = ("reserve", "rich", "safe")   # the rules that read the balance, i2
+NAMES = ("cap", "floor", "band", "hole", "none") + PURSE   # what a player may name
 LEADS = ("i-band", "i-blind")   # contracts where the crew's lookout read one number in the rule: a window or a hole is
                                 # found in a few probes around it, not by sweeping 20,000 amounts
 SEED = re.compile(r"^[0-9a-f]{16,64}$")
@@ -66,6 +73,11 @@ def deal(case: str, seed: str) -> dict:
         a = 100 * (1 + r % 150)                 # 100 to 15,000
         b = a + 100 * (5 + (r // 150) % 46)     # 500 to 5,000 wide, at most 20,000
         return {"kind": kind, "a": a, "b": b}
+    if kind in PURSE:
+        reserve = 1000 * (5 + (r // 200) % 146)   # 5,000 to 150,000
+        if kind == "reserve":
+            return {"kind": kind, "a": None, "b": reserve}
+        return {"kind": kind, "a": 100 * (1 + r % (TOP // 100)), "b": reserve}
     return {"kind": kind, "a": 100 * (1 + r % (TOP // 100)), "b": None}
 
 
@@ -89,13 +101,43 @@ def passes(rule: dict, amount: int) -> bool:
     return any(lo <= amount <= hi for lo, hi in passing(rule))
 
 
+def boxes(rule: dict) -> list:
+    """What a rule lets through, as boxes ((amount lo, hi), (balance lo, hi)): the purse's rules read the balance too."""
+    k, a, b = rule["kind"], rule.get("a"), rule.get("b")
+    every = (0, MAX)
+    if k == "reserve":
+        return [(every, (b, MAX))]
+    if k == "rich":
+        return [((0, a), every), (every, (b, MAX))]
+    if k == "safe":
+        return [((0, a), (b, MAX))]
+    return [(s, every) for s in passing(rule)]
+
+
+def passes2(rule: dict, amount: int, balance: int) -> bool:
+    return any(x[0] <= amount <= x[1] and y[0] <= balance <= y[1] for x, y in boxes(rule))
+
+
+def same(r1: dict, r2: dict) -> bool:
+    """Whether two rules let through the same payments, every amount at every balance: compared at each box edge."""
+    xs, ys = {0, MAX}, {0, MAX}
+    for x, y in boxes(r1) + boxes(r2):
+        for v in x:
+            xs |= {max(0, v - 1), v, min(MAX, v + 1)}
+        for v in y:
+            ys |= {max(0, v - 1), v, min(MAX, v + 1)}
+    return all(passes2(r1, x, y) == passes2(r2, x, y) for x in xs for y in ys)
+
+
 def text(rule: dict) -> str:
     """The rule in Tau, as a personal rule of the testnet (o5: 1 passes, 0 blocks)."""
     k, a, b = rule["kind"], rule.get("a"), rule.get("b")
-    i1, v = "i1[t]:bv[24]", (lambda n: f"{{ {n} }}:bv[24]")
+    i1, i2, v = "i1[t]:bv[24]", "i2[t]:bv[24]", (lambda n: f"{{ {n} }}:bv[24]")
     one, zero = "(o5[t]:bv[24] = { #x000001 }:bv[24])", "(o5[t]:bv[24] = { #x000000 }:bv[24])"
     cond = {"cap": f"({i1} <= {v(a)})", "floor": f"({i1} >= {v(a)})",
-            "band": f"(({i1} >= {v(a)}) && ({i1} <= {v(b)}))", "hole": f"(({i1} < {v(a)}) || ({i1} > {v(b)}))"}
+            "band": f"(({i1} >= {v(a)}) && ({i1} <= {v(b)}))", "hole": f"(({i1} < {v(a)}) || ({i1} > {v(b)}))",
+            "reserve": f"({i2} >= {v(b)})", "rich": f"(({i1} <= {v(a)}) || ({i2} >= {v(b)}))",
+            "safe": f"(({i1} <= {v(a)}) && ({i2} >= {v(b)}))"}
     if k in cond:
         return f"always ( {cond[k]} ? {one} : {zero} )."
     return f"always ( ({i1} > {v(a)}) -> {zero if k == 'none' else one} )."
@@ -103,6 +145,13 @@ def text(rule: dict) -> str:
 
 def words(rule: dict) -> str:
     """What the rule lets through, in plain words."""
+    k, a, b = rule["kind"], rule.get("a"), rule.get("b")
+    if k == "reserve":
+        return f"passes only from a balance of {b:,} up"
+    if k == "rich":
+        return f"passes up to {a:,}, and more from a balance of {b:,} up"
+    if k == "safe":
+        return f"passes up to {a:,}, and only from a balance of {b:,} up"
     s = passing(rule)
     if not s:
         return "nothing passes"
@@ -132,7 +181,13 @@ def parse(data) -> dict:
     req = {"case": case, "seed": seed}
     if "probe" in data:
         req["probe"] = _amount(data["probe"])
+        if case == "i-purse":
+            if "balance" not in data:
+                raise BadRequest("a probe of the purse needs a balance as well as an amount")
+            req["balance"] = _amount(data["balance"])
     elif "final" in data:
+        if case == "i-purse":
+            raise BadRequest("the purse is named, not shot at")
         req["final"] = _amount(data["final"])
         if req["final"] >= MAX:
             raise BadRequest("the edge needs one more above it")
@@ -141,9 +196,9 @@ def parse(data) -> dict:
         kind = str(g.get("kind", "")).lower()
         if kind not in NAMES:
             raise BadRequest("name one of " + ", ".join(NAMES))
-        a = _amount(g.get("a")) if kind != "none" else None
-        b = _amount(g.get("b")) if kind in ("band", "hole") else None
-        if b is not None and b < a:
+        a = _amount(g.get("a")) if kind not in ("none", "reserve") else None
+        b = _amount(g.get("b")) if kind in ("band", "hole") + PURSE else None
+        if b is not None and a is not None and kind in ("band", "hole") and b < a:
             raise BadRequest("the second number is the top: it cannot be below the first")
         req["name"] = {"kind": kind, "a": a, "b": b}
     elif data.get("reveal") is True:
@@ -158,7 +213,7 @@ def parse(data) -> dict:
 def steps_of(req: dict) -> list | None:
     """The engine run a request needs (as tau_sandbox steps), or None when it needs none."""
     if "probe" in req:
-        return [{"i1": str(req["probe"])}]
+        return [{"i1": str(req["probe"]), **({"i2": str(req["balance"])} if "balance" in req else {})}]
     if "final" in req:
         return [{"i1": str(req["final"])}, {"i1": str(req["final"] + 1)}]
     return None
@@ -177,7 +232,7 @@ def answer(req: dict, run=None) -> dict:
     out = {"ok": True, "round": round_of(req["case"], req["seed"])}
     shown = {"rule": text(rule), "says": words(rule), "dealt": rule}   # once named, given up or shot: the rule, its words, its numbers
     if "name" in req:
-        right = passing(req["name"]) == passing(rule)
+        right = same(req["name"], rule)
         return {**out, "right": right, **(shown if right else {})}
     if "reveal" in req:
         return {**out, **shown}
@@ -192,7 +247,8 @@ def answer(req: dict, run=None) -> dict:
         return {"ok": False, "error": "the engine's answer had no o5", "round": out["round"]}
     out["ms"] = res.get("ms")
     if "probe" in req:
-        return {**out, "pass": vals[0] != 0, "agrees": (vals[0] != 0) == passes(rule, req["probe"])}
+        want = passes2(rule, req["probe"], req["balance"]) if "balance" in req else passes(rule, req["probe"])
+        return {**out, "pass": vals[0] != 0, "agrees": (vals[0] != 0) == want}
     p, q = vals[0] != 0, vals[1] != 0
     return {**out, "pass": p, "edge": p and not q, **shown,
             "agrees": p == passes(rule, req["final"]) and q == passes(rule, req["final"] + 1)}
