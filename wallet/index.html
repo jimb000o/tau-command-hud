@@ -1441,7 +1441,7 @@ function renderPresets() {
   $("presets").replaceChildren(el("span", { class: "lbl", text: T("Ready-made") }), ...PRESETS.map(p => {
     const need = p.need ? p.need() : null, on = p.rule ? d.ok && sameRule(d.r, p.rule()) : BACKSET.on;
     return el("button", { class: "preset", type: "button", "aria-pressed": on ? "true" : "false", "aria-disabled": need ? "true" : "false",
-      "data-tip": T(p.name) + "\n" + T("Against: " + p.against) + "\n" + (need || T("Not against: " + p.not)), onclick: () => applyPreset(p) },
+      "data-tip": T(p.name) + "\n" + T("Guarded against: " + p.against) + "\n" + (need || T("Not guarded against: " + p.not)), onclick: () => applyPreset(p) },
       el("b", { text: T(p.name) }));
   }), el("a", { class: "preset words", href: "/builder/" + (SIM ? "?mode=sim" : ""), "data-tip": T("In plain words") + "\n" + T("Write what your wallet may do as a sentence. The rule builder turns it into these blocks, checks it and brings it back here to sign."), text: T("In plain words ›") }));
   const on = PRESETS.find(p => p.rule && d.ok && sameRule(d.r, p.rule())) || (BACKSET.on ? PRESETS[4] : null);
@@ -1450,7 +1450,7 @@ function renderPresets() {
   /* a grey chip says why on the screen, not only in its hover; the chosen one says what it does not keep off */
   const needs = PRESETS.filter(p => p.need && p.need());
   $("preshare").replaceChildren(...[needs.length ? el("span", { class: "fixit", style: "margin:0", text: "↳ " + needs.map(p => T(p.name)).join(", ") + ": " + needs[0].need() }) : null,
-    on ? el("span", { class: "not", text: T("Not against: " + on.not) }) : null,
+    on ? el("span", { class: "not", text: T("Not guarded against: " + on.not) }) : null,
     (on || BACKSET.on) ? el("button", { type: "button", text: T("Copy a link to this rule"), "data-tip": T("Copy a link to this rule") + "\n" + link + "\n" + T("Whoever opens it gets the same blocks filled in, nothing signed."),
       onclick: e => { navigator.clipboard && navigator.clipboard.writeText(link).then(() => { e.target.textContent = T("Copied"); setTimeout(() => { e.target.textContent = T("Copy a link to this rule"); }, 1500); }).catch(() => {}); } }) : null].filter(Boolean));
 }
@@ -2011,6 +2011,9 @@ document.addEventListener("mousemove", e => {
   tip.style.top = (e.clientY + 18 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 18) / z + "px";
 });
 document.addEventListener("mouseleave", () => { tip.hidden = true; });
+/* a phone: a tap on empty space closes the hover window, and so does scrolling */
+document.addEventListener("pointerdown", e => { if (!e.target.closest("[data-tip]")) tip.hidden = true; }, { passive: true });
+addEventListener("scroll", () => { if (!tip.hidden && matchMedia("(hover: none)").matches) tip.hidden = true; }, { passive: true });
 
 /* ---------- three wallets in one: the site's level (Beginner, Intermediate, Expert under the gear) decides how this page looks ----------
    Beginner: a guide on the left with three steps, four big cards instead of check boxes, the rule in plain sentences, one button;
@@ -2112,11 +2115,11 @@ function buildCards() {
     if (c.k === "co") ctl.push(el("label", { class: "bctl" }, el("span", { text: T("Above") }), el("input", { class: "in", id: "bCoAbove", type: "number", min: "1", step: "1", inputmode: "numeric" }), el("span", { text: T("test AGRS") })),
       el("label", { class: "bctl" }, el("span", { text: T("also signs:") }), el("select", { class: "in", id: "bCoWho" })));
     if (c.k === "only") ctl.push(el("div", { class: "bchips", id: "bOnly" }));
-    return el("div", { class: "bcard", id: "bc-" + c.k, "data-tip": T(c.t) + "\n" + T("Against: " + pre.against) + "\n" + T("Not against: " + pre.not) },
+    return el("div", { class: "bcard", id: "bc-" + c.k, "data-tip": T(c.t) + "\n" + T("Guarded against: " + pre.against) + "\n" + T("Not guarded against: " + pre.not) },
       el("button", { type: "button", class: "btog", "aria-pressed": "false", onclick: () => cardOn(c, !$(c.box).checked) },
         el("i", { class: "bx", "aria-hidden": "true" }), el("b", { text: T(c.t) }), el("span", { class: "bfit", hidden: "", text: T("Fits this week's challenge") })),
       el("div", { class: "bctls" }, ...ctl),
-      el("div", { class: "bkeep" }, el("span", { text: T("Against: " + pre.against) }), el("span", { class: "not", text: T("Not against: " + pre.not) })),
+      el("div", { class: "bkeep" }, el("span", { text: T("Guarded against: " + pre.against) }), el("span", { class: "not", text: T("Not guarded against: " + pre.not) })),
       el("div", { class: "fixit", id: "bfx-" + c.k }));
   };
   $("bPick").replaceChildren(el("div", { class: "bgate", id: "bGate", role: "status", "aria-live": "polite" }), el("div", { class: "bhead" }, el("h3", { text: T("What should your rule do?") }),

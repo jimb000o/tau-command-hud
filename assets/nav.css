@@ -182,6 +182,11 @@ header.trail .chip.unoff.sim.soon { animation: navSoon 1.6s ease-in-out infinite
   header.trail #tnNet, header.trail #tnRev, header.trail #tnFee { display: none; }
   :is(.tnav, header.trail, header.rail) .seg > a, :is(.tnav, header.trail, header.rail) .seg > button { font-size: 11px; padding: 0 12px; min-height: 44px; }
   .tour:not(.top) { bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
+  /* the Live/Simulation switch, Online and Crew fit one row on a phone, so Crew stands right of Online; on the narrowest
+     screens Online and Crew wrap together */
+  :is(.tnav, header.trail, header.rail) .seg > a, :is(.tnav, header.trail, header.rail) .seg > button { padding: 0 9px; letter-spacing: .07em; }
+  :is(header.trail, header.rail) .chips { gap: 6px; }
+  :is(header.trail, header.rail) .chips > .chip { padding: 4px 8px; letter-spacing: .02em; align-self: center; }
 }
 
 /* View · Simple / Technical on subpages: .vt is developer detail (hashes, sequence numbers, raw data), .vp is its plain-language stand-in */
@@ -360,6 +365,16 @@ span.tn-real { display: block; margin-top: 4px; }
   html.tn-lift header.trail + nav.tnav { position: absolute; top: 4px; right: 0; margin: 0; width: auto; }
   html.tn-lift header.trail + nav.tnav .tnav-r { gap: 6px; }
   html.tn-quiet header.trail .chips { display: none; }
+  /* the brand row is as tall as the icons and level with them, logo and name centred on one line; the page title and the
+     unofficial note start below the icons, and the name keeps clear of them */
+  html.tn-lift header.trail .brand { min-height: 44px; margin-top: 4px; align-items: center; padding-right: 196px; box-sizing: border-box; }
+}
+@media (max-width: 379px) and (orientation: portrait) {
+  html.tn-lift header.trail + nav.tnav .tnav-r { gap: 4px; }
+  html.tn-lift header.trail .brand { gap: 6px; padding-right: 184px; }
+  html.tn-lift header.trail .brand .bn { font-size: 15px; letter-spacing: .03em; }
+  header.trail .unoff { max-width: 100%; white-space: normal; box-sizing: border-box; }
+  html.tn-lift header.trail .brand svg { width: 22px; height: 22px; }
 }
 /* phones: the rows of thin marks are 44 px tall so a finger lands in the row; nav.js picks the nearest mark */
 @media (pointer: coarse) {
@@ -411,3 +426,14 @@ span.tn-real { display: block; margin-top: 4px; }
 .tn-support { margin: 10px 0 0; font: 400 12.5px/1.5 var(--mono, ui-monospace, monospace); color: var(--u-dim, #9aa5a0); }
 .tn-support a { color: var(--ok, #39ff8a); white-space: nowrap; }
 .tn-piece { display: flex; align-items: center; gap: 10px; text-align: left; } .tn-piece img { flex: none; width: 66px; height: auto; border-radius: 4px; } .tn-piece span { min-width: 0; }
+
+/* a phone: the Live/Simulation switch is narrower, so Online and Crew stand beside it in one row */
+@media (max-width: 700px) {
+  :is(header.trail, header.rail) .chips > .seg.tn-src { margin-right: 0; }
+  :is(header.trail, header.rail) .chips > .seg.tn-src > button { padding: 5px 6px; letter-spacing: .02em; }
+}
+/* too narrow for all three: the switch takes the whole row, Online and Crew stand together below it */
+@media (max-width: 379px) {
+  :is(header.trail, header.rail) .chips > .seg.tn-src { flex: 1 1 100%; display: grid; grid-template-columns: 1fr 1fr; }
+  :is(header.trail, header.rail) .chips > .seg.tn-src > button { justify-content: center; text-align: center; }
+}
