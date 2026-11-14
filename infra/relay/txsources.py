@@ -68,7 +68,7 @@ GROUPS = ("agorzilla", "tauhud", "rabbit", "nomemo", "cruise", "nmsrv", "hack", 
 AUTO = ("cruise", "nmsrv", "hack", "bot")   # our own server's automated senders: real transactions, but not users'
 OURS = ("agorzilla", "tauhud", "rabbit", "nomemo")   # our two sites, with White Rabbit Key and No Memo on tauhud.com counted apart
 SENT_MAX = 50000
-# Agorzilla's addresses (agorilla repo assets/core.js: BOWL, BOXES, ASKS)
+# Agorzilla's addresses (agorilla repo assets/core.js: BOWL, BOXES, ASKS, ASKS_V6)
 AGORZILLA = frozenset({
     "947c2b8988769f9fb7ada19021e27c51f5d855e4e05ad258d2ca2322821987dbff93e0425f281edded5c372b97e6a108",
     "931c4e3b949dd5a77c226e2409f617aa9603f15075f20902c849855f24fb5439113afa3869fc415a3786fe5f30321392",
@@ -80,6 +80,24 @@ AGORZILLA = frozenset({
     "992d87e93030634c581fc3e6c574af0da06c70798d49f82135d8231147b79c071e277616d84fb6175dbeae2264377071",
     "b09ad0b1742efd5a4a4e7fa93a52b9f5954466ca2f694db9dfda4d593d9c15a73dfdd9055ad286e8f11f76b0f69395cf",
     "8dbae75034a8cdc776e462f004dd686c8d0a32dbedd400483a026a01db4ce1f78b9d6450d2c832d8116d47a315fd8973",   # Déjà's bowl
+    # rules v6 (from 17 Nov 2026): a question box for every other look question (ASKS_V6), a meal's wish
+    "b6ce40aa496db1a3236e8f626cb900cbb1e13a2c190926ff9ab971adf632f70a0680e327d5b894c020f6c9ae05fe1bc4",
+    "a782db7a721c6b963b36c8e318f40189efc9fe9a4a792f10157f4eba16c09ffa6146c9813a094f587bb38bb4d99aa6f7",
+    "a27b8240aabbf00acbbf84764f62b31cc079d3147ea59f84bb8251a0fe47a88b4d34844320dc2410e7f699beea376da2",
+    "99959a59f400780d22ad08eaa3f2f87a88a0469b087ab0a7a53c3a4c30ecca9af0c910f00fcfffb4342bbe20aee5d048",
+    "986ebf569a3a5b9987d99bbaaaf58ef7f6fd9da5799832163b2905a91fb8e2c47e6cb30f10f4e0e6275a5beb94ae9898",
+    "8969dc66e2b58da15bfaabef811ba2fd72f5d762705030cb1ebd0bfc59086070444cf2632ca016a2612e62301b3e3aed",
+    "9867ce6324eed510a7aa328e2e9d5a14aeb07e8960e90501ec7f57d0f96910801b8561621e11d920bdf7b1bf079a5d92",
+    "8f67712dfa373924cbad1761842995296cf684419394a98e747dcbf2286a73bc8e3b632a556c1a71ce86bf68a2e7d2d9",
+    "87b56330aa2929171837d79e92c5959e9bb61f1b2de780c0e409f07abc6fe6f5703fc67d9f256f3f3f8b56b38839602d",
+    "8a69fa9a8108c04c10960f7e519592dc8e7f42e7d2bbfa359b8cec48c0b5f9f61b66f36ded977c6d4c48acbe0773bda2",
+    "aea3ef50bca50fcb910c5424e09ec059a9db913c44db322a94b2c4ea93c3a02dd891c824f179ef47d66db98e5123f3d7",
+    "a69788708b156ba9ea1dff0154e29ccea68f5be740ac8a29f548f61ad17a5bb5fa6461b9abd94ab4bd0431bf03264daa",
+    "a3ce03875eb8751fcca681f60c5daf656167029e28f4ec8af64bccf588c6c407ec38ae33a5dc2dbecf45f04f8c6e8d7a",
+    "9450a23b818bfc93d7681b21956c087fea8c6cf8c5d8d9a2d9fe9d9e3fa41230b0f73edaead7cb88a1196ecac094d9ac",
+    "a8d28b6237294b23052699290184581a4cffcaf2e716949a45007afd09d4fd373190dc9e2414f53625e74dad27354b38",
+    "86a6c99c425ee55ae20b7f13d88a287fcdce8092c683fcc9630de53bfbd130431c94b28313883b63d3e278ccad8feabb",
+    "84342f2bb371b9c1518a322d7b31d99c89f6d0d363ab7e8d2b67676b453fe8d85617ed804eb749be1fb2cb17992456a9",
 })
 DEJA = "8dbae75034a8cdc776e462f004dd686c8d0a32dbedd400483a026a01db4ce1f78b9d6450d2c832d8116d47a315fd8973"   # agorilla assets/cat.js
 DEJA_BORN = 1793383200   # her first day began 2026-10-30 18:00 UTC; a day runs 18:00 to 18:00 UTC (agorilla assets/cat.js)

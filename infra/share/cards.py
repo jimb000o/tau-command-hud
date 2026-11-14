@@ -552,8 +552,12 @@ def agorzilla(c: dict, photo: str | None) -> bytes:
     y += 112
     if won:   # the parts of it this wallet chose, as pills
         x, yy, fp, fc = x0, y - 4, font(SORA, 15, 600), font(SORA, 13, 500)
-        for p in won[:6]:
-            cat, val = str(p.get("category") or ""), str(p.get("pick") or "")
+        same: dict[tuple[str, str], int] = {}   # the same part won twice: one pill, ×2
+        for p in won:
+            k = (str(p.get("category") or ""), str(p.get("pick") or ""))
+            same[k] = same.get(k, 0) + 1
+        for (cat, val), k in list(same.items())[:6]:
+            val = f"{val} ×{k}" if k > 1 else val
             wpx = tlen(d, cat, fc) + tlen(d, val, fp) + 34
             if x + wpx > x1:
                 x, yy = x0, yy + 38

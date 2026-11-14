@@ -2735,6 +2735,7 @@ TauI18n.add({ strings: {
   "Tau HUD's piggy bank": "Tau HUD 的存钱罐",
   "Tau HUD's four-eyes wallet": "Tau HUD 的四眼钱包",
   "Tau HUD's Agorzilla feeding fund": "Tau HUD 的 Agorzilla 喂食基金",
+  "Agorzilla’s feeder card: a part your picks won twice now shows once with ×2, and the card’s picture shows Agorzilla whole again.": "Agorzilla 喂养卡：你的选择两次赢得的同一部分现在只显示一次并标注 ×2，卡片上的图片也重新完整显示 Agorzilla。",
   "Tau HUD's co-signer": "Tau HUD 的共同签名人",
   "Tau HUD showcase wallet": "Tau HUD 展示钱包",
   "one of Tau HUD’s showcase wallets: a personal rule, and once a day a payment that rule forbids, on purpose": "Tau HUD 的展示钱包之一：一条个人规则，每天一次故意尝试一笔该规则禁止的付款",
