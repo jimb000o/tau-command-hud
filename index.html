@@ -157,7 +157,7 @@ body[data-tour] .spot:not(.panel) { outline: 1px solid var(--ok); outline-offset
 body[data-tour] .panel:not(.spot) { opacity: .45; }
 body[data-tour] .panel { transition: opacity .35s, box-shadow .35s; }
 #rain.off, body[data-tour] #rain, body:has(.modal:not([hidden])) #rain { display: none; }
-#ovl { position: fixed; z-index: 70; max-width: min(520px, 90vw); padding: 8px 12px; white-space: pre-line; background: #151517; border: 1px solid var(--hair); border-radius: 6px; font: 12px/1.5 var(--mono); color: var(--text); overflow-wrap: anywhere; white-space: pre-wrap; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; }
+#ovl { position: fixed; z-index: 70; box-sizing: border-box; max-width: min(520px, calc(100vw - 16px)); max-height: calc(100vh - 16px); overflow: hidden; padding: 8px 12px; white-space: pre-line; background: #151517; border: 1px solid var(--hair); border-radius: 6px; font: 12px/1.5 var(--mono); color: var(--text); overflow-wrap: anywhere; white-space: pre-wrap; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; }
 #ovl[hidden] { display: none; }
 /* a hover that judges the state opens with a status light and one verdict line: green normal, amber watch or in progress, red only for a real problem */
 #ovl .hvh { margin: 0 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--hair); white-space: normal; }
@@ -989,7 +989,7 @@ html.wide .logp .log { max-height: 60px; }
 /* 1080p class screens (wide but not ultra-wide): the comparison strip gets its label above the track, every word whole */
 html.wide.tall .contrast .crow { grid-template-columns: minmax(0, 1fr); gap: 4px; }
 html.wide.tall .contrast .who { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: 8px; }
-html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z)) calc(12px * var(--z)); max-width: calc(min(520px, 60vw) * var(--z)); }
+html.wide #ovl { font-size: calc(12px * var(--z)); padding: calc(8px * var(--z)) calc(12px * var(--z)); max-width: min(calc(520px * var(--z)), 60vw); }
 /* the validators column must shrink with the screen instead of overflowing it */
 .statep .scroll { min-height: 40px; flex: 1 1 auto; overflow: auto; }
 /* below the wide layout the column has one grid row only: its panels take the height their content needs, nothing is clipped, the page scrolls instead */
@@ -4774,7 +4774,18 @@ $("chipFeeWrap").dataset.ex = exKey(() => `Base fee: ${S.fee} AGRS per transacti
   const find = t => { if (!(t instanceof Element)) return null; if (t.closest(".info")) return null; const full = t.closest("[data-full], [data-ex]"); if (full) return full; let el = t; for (let i = 0; el && el !== document.body && i < 5; i++, el = el.parentElement) { const cs = getComputedStyle(el); if (cs.textOverflow === "ellipsis" && clipped(el)) return el; } return null; };
   let cur = null, touch = matchMedia("(hover: none)").matches;
   document.addEventListener("pointerdown", e => { touch = e.pointerType === "touch"; }, true);
-  const place = (x, y) => { const w = ovl.offsetWidth, h = ovl.offsetHeight; ovl.style.left = Math.max(8, Math.min(innerWidth - w - 8, x + 14)) + "px"; ovl.style.top = (y + 18 + h > innerHeight ? y - h - 10 : y + 18) + "px"; };
+  /* the text always stays whole on screen: measured at its natural width (not squeezed against the edge it stood at before), beside the
+     pointer where it fits, else flipped to the other side, and finally clamped inside the visible area (without the scrollbar) */
+  let at = null;
+  const place = (x, y) => {
+    at = [x, y]; const W = document.documentElement.clientWidth || innerWidth, H = document.documentElement.clientHeight || innerHeight;
+    ovl.style.left = "0px"; ovl.style.top = "0px"; const w = ovl.offsetWidth, h = ovl.offsetHeight;
+    let l = x + 14; if (l + w > W - 8) l = x - w - 14; l = Math.max(8, Math.min(W - w - 8, l));
+    let t = y + 18; if (t + h > H - 8) t = y - h - 10; t = Math.max(8, Math.min(H - h - 8, t));
+    ovl.style.left = l + "px"; ovl.style.top = t + "px";
+  };
+  /* if the text grows after it was placed (a font arrives late, a line is translated), it is placed again */
+  if (window.ResizeObserver) new ResizeObserver(() => { if (!ovl.hidden && at) place(at[0], at[1]); }).observe(ovl);
   let shownAt = 0;
   /* every hover reads the same way: the element's name first, with its status light next to it, then the one verdict, then at most a few
      short lines. The name is the start of the first line up to its colon ("Outer rim: …"), or a short first line of its own ("Validator 2 of 5") */

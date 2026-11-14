@@ -976,14 +976,17 @@
   function hoverTips() {
     const css = el("style"); css.textContent = `header.trail .chip[data-tnt] { cursor: help; } header.trail a.chip[data-tnt] { cursor: pointer; } header.trail div.chip[data-tnt]:hover { border-color: rgba(255,255,255,.45); color: #d6d6dc; }
       header.trail .chip .sh { display: none; } @media (max-width: 1899px) { header.trail .chip .lg { display: none; } header.trail .chip .sh { display: inline; } }
-      .tn-tip { position: fixed; z-index: 90; max-width: min(420px, 90vw); padding: 8px 11px; background: #151517; border: 1px solid rgba(255,255,255,.16); border-radius: 6px; font: 12px/1.5 "JetBrains Mono", ui-monospace, Menlo, monospace; color: #ececf0; white-space: pre-wrap; overflow-wrap: anywhere; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; letter-spacing: 0; text-transform: none; } .tn-tip[hidden] { display: none; }`; document.head.append(css);
+      .tn-tip { position: fixed; z-index: 90; box-sizing: border-box; max-width: min(420px, calc(100vw - 16px)); padding: 8px 11px; background: #151517; border: 1px solid rgba(255,255,255,.16); border-radius: 6px; font: 12px/1.5 "JetBrains Mono", ui-monospace, Menlo, monospace; color: #ececf0; white-space: pre-wrap; overflow-wrap: anywhere; box-shadow: 0 16px 40px -10px rgba(0,0,0,.9); pointer-events: none; letter-spacing: 0; text-transform: none; } .tn-tip[hidden] { display: none; }`; document.head.append(css);
     const box = el("div", "tn-tip"); box.hidden = true; box.setAttribute("role", "tooltip"); document.body.append(box);
     let cur = null, touch = matchMedia("(hover: none)").matches;
     const find = t => { const e = t instanceof Element ? t.closest("[data-tnt]") : null; return e && e.getAttribute("aria-expanded") === "true" ? null : e; };   // an open menu needs no hover text over its first row
     /* measured from the top left corner (a box left near the right edge would shrink to one word), and in the page's own
        zoom: donate, guardian and challenge zoom the body by 1.3 on big screens, which scales a fixed box's left/top too */
     const place = (x, y) => { box.style.left = box.style.top = "0px"; const z = parseFloat(getComputedStyle(document.body).zoom) || 1, r = box.getBoundingClientRect(), w = r.width, h = r.height;
-      box.style.left = Math.max(8, Math.min(innerWidth - w - 8, x + 14)) / z + "px"; box.style.top = (y + 18 + h > innerHeight ? Math.max(8, y - h - 10) : y + 18) / z + "px"; };
+      const W = document.documentElement.clientWidth || innerWidth, H = document.documentElement.clientHeight || innerHeight;   // without the scrollbar
+      let l = x + 14; if (l + w > W - 8) l = x - w - 14; l = Math.max(8, Math.min(W - w - 8, l));
+      let tp = y + 18; if (tp + h > H - 8) tp = y - h - 10; tp = Math.max(8, Math.min(H - h - 8, tp));
+      box.style.left = l / z + "px"; box.style.top = tp / z + "px"; };
     const show = (t, x, y) => { cur = t; box.textContent = t.dataset.tnt; box.hidden = false; place(x, y); };
     const hide = () => { cur = null; box.hidden = true; };
     document.addEventListener("pointerdown", e => { touch = e.pointerType === "touch"; }, true);
