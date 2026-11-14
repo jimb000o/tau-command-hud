@@ -365,6 +365,16 @@ span.tn-real { display: block; margin-top: 4px; }
   html.tn-lift header.trail + nav.tnav { position: absolute; top: 4px; right: 0; margin: 0; width: auto; }
   html.tn-lift header.trail + nav.tnav .tnav-r { gap: 6px; }
   html.tn-quiet header.trail .chips { display: none; }
+  /* the brand row is as tall as the icons and level with them, logo and name centred on one line; the page title and the
+     unofficial note start below the icons, and the name keeps clear of them */
+  html.tn-lift header.trail .brand { min-height: 44px; margin-top: 4px; align-items: center; padding-right: 196px; box-sizing: border-box; }
+}
+@media (max-width: 379px) and (orientation: portrait) {
+  html.tn-lift header.trail + nav.tnav .tnav-r { gap: 4px; }
+  html.tn-lift header.trail .brand { gap: 6px; padding-right: 184px; }
+  html.tn-lift header.trail .brand .bn { font-size: 15px; letter-spacing: .03em; }
+  header.trail .unoff { max-width: 100%; white-space: normal; box-sizing: border-box; }
+  html.tn-lift header.trail .brand svg { width: 22px; height: 22px; }
 }
 /* phones: the rows of thin marks are 44 px tall so a finger lands in the row; nav.js picks the nearest mark */
 @media (pointer: coarse) {
