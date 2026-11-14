@@ -936,15 +936,83 @@
     const fx = LAWS[id].fx, parts = Object.keys(fx).map(k => (fx[k] > 0 ? "+" : "−") + " " + T(TOPICS[k]));
     return LAWS[id].open ? T("everyone reads the Book more often") : parts.join("  ");
   }
+  /* ---------- the clean-hands pledge: a real rule on the player's own wallet (IDNI tau-testnet 5ad1bb7, 13 November 2026:
+     every wallet may carry one rule of its own, a transaction of its own whose operation "0" writes o5). The pledge stops
+     the wallet paying either embassy's till (i4 is where a payment goes), so taking an embassy's money, which is a move
+     paid to its till, is refused by the chain itself. The node's own dry run (checktx) asks before the deal; nothing is
+     spent on a refusal. The rule that says o5 = 1 and nothing else lifts it: at the election, or when the player takes
+     the pledge back. One rule per wallet: signing it replaces any rule the wallet had ---------- */
+  const ALLOW_O5 = "(o5[t]:bv[24] = { #x000001 }:bv[24])", BLOCK_O5 = "(o5[t]:bv[24] = { #x000000 }:bv[24])", NEUTRAL = "always ( " + ALLOW_O5 + " ).";
+  const PLEDGE = "always ( (i4[t]:bv[384] = { #x" + TILL.north + " }:bv[384] || i4[t]:bv[384] = { #x" + TILL.south + " }:bv[384]) ? " + BLOCK_O5 + " : " + ALLOW_O5 + " ).";
+  async function ruleTx(text) {
+    if (CHAIN.busy) return { ok: false, busy: true };
+    CHAIN.busy = true;
+    try { return await ruleSend(text); } catch (e) { return { ok: false }; } finally { CHAIN.busy = false; if (CHAIN.q.length) setTimeout(pump, 400); }
+  }
+  async function ruleSend(text) {
+    const k = myKey(); if (!k) return { ok: false };
+    if (CHAIN.fee == null) { const g = await ask("getgovernance"); const m = /o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)/.exec((g && g.data && g.data.consensus_rules) || ""); CHAIN.fee = m ? parseInt(m[1], 16) : 10; }
+    const st = await ask("getsequence " + k.pk); if (!st || st.status !== "ok") return { ok: false };
+    const seq = Math.max(st.data.sequence_number || 0, CHAIN.next), tip = st.data.tip_height || 0;
+    const tx = { tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: seq, expiration_time: Math.floor(Date.now() / 1000) + 600, expire_at_height: tip + 1000, fee_limit: String(CHAIN.fee * 5), operations: { "0": text } };
+    const d = { sender_pubkey: tx.sender_pubkey, sequence_number: tx.sequence_number, expiration_time: tx.expiration_time, fee_limit: tx.fee_limit, tx_type: tx.tx_type, expire_at_height: tx.expire_at_height, operations: tx.operations };
+    tx.signature = window.TauBLS.bytesToHex(window.TauBLS.sign(new TextEncoder().encode(canon(d)), k.sk));
+    await ask("via rabbit");
+    const r = await ask("sendtx " + JSON.stringify(tx));
+    if (r && r.status === "ok" && !(r.data && r.data.ok === false)) { CHAIN.next = seq + 1; return { ok: true, hash: (r.data && r.data.tx_hash) || null, at: tip }; }
+    return { ok: false, r };
+  }
+  async function pledgeSign() {
+    if (!G || G.pledge) return;
+    toast(T("Signing your pledge into the testnet …"));
+    const res = await ruleTx(PLEDGE);
+    if (!res.ok) { toast(res.busy ? T("A move is still on its way to the testnet. Try again in a moment.") : res.r ? T("The testnet did not take the pledge just now. Try again later.") : T("The testnet is out of reach just now; the game goes on.")); return; }
+    G.pledge = { day: G.day, hash: res.hash, at: res.at }; save();
+    if (res.hash) txNote(res.hash, T("Clean-hands pledge: a rule on your own wallet"), 0);
+    bump(G.me, p => p.reads, 4);
+    write(G.me, T("signed a clean-hands pledge on the testnet: their wallet pays no embassy until the election"), "fact", "book");
+    toast(T("Signed. From the next block on, the testnet itself refuses any payment from your wallet to an embassy."));
+    if (UI.card) closeCard();
+  }
+  async function pledgeLift(why, tries = 0) {
+    if (!G || !G.pledge || G.pledge.off) return;
+    const res = await ruleTx(NEUTRAL);
+    if (res.busy && tries < 8) { setTimeout(() => pledgeLift(why, tries + 1), 4000); return; }
+    if (!res.ok) { toast(T("The pledge could not be lifted just now; it stays on your wallet until you try again (or remove it in your wallet).")); return; }
+    G.pledge.off = why; save();
+    if (res.hash) txNote(res.hash, T("Pledge lifted: your wallet carries no rule of its own"), 0);
+    if (why === "back") { bump(G.me, p => p.reads, -8); write(G.me, T("took back the clean-hands pledge before the election"), "down", "book"); toast(T("Pledge taken back. The island reads it in the Book, and on the chain.")); }
+    else toast(T("The election is over: your pledge is lifted. Your wallet carries no rule of its own now."));
+  }
+  /* the deal at an embassy while the pledge is in force: the node's dry run of the move's payment to its till decides */
+  async function pledgeDeal(e, go) {
+    const k = myKey(); if (!k) return go();
+    const st = await ask("getsequence " + k.pk);
+    if (!st || st.status !== "ok") return go();
+    const tx = { tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: Math.max(st.data.sequence_number || 0, CHAIN.next), expiration_time: Math.floor(Date.now() / 1000) + 600, expire_at_height: (st.data.tip_height || 0) + 1000, fee_limit: String((CHAIN.fee || 10) * 5), operations: { "1": [[k.pk, TILL[e], "1"]] } };
+    const d = { sender_pubkey: tx.sender_pubkey, sequence_number: tx.sequence_number, expiration_time: tx.expiration_time, fee_limit: tx.fee_limit, tx_type: tx.tx_type, expire_at_height: tx.expire_at_height, operations: tx.operations };
+    tx.signature = window.TauBLS.bytesToHex(window.TauBLS.sign(new TextEncoder().encode(canon(d)), k.sk));
+    const r = await ask("checktx " + JSON.stringify(tx));
+    const own = r && /own policy clause|user policy \(o5\)/i.test(JSON.stringify(r));
+    if (!own) { if (r && r.status === "ok" && !(r.data && r.data.ok === false)) toast(T("Your pledge is not in force on the chain yet, so nothing stopped you.")); return go(); }
+    G.pledge.held = (G.pledge.held || 0) + 1; save();
+    bump(G.me, p => p.reads, 2);
+    write(G.me, F("reached for the {x}’s money; the testnet refused the payment: the clean-hands pledge holds", { x: T(EMB[e].name) }), "fact", "book");
+    SND.sfx("no"); toast(T("The testnet said no: your own pledge stops your wallet paying an embassy. No coins, no promise."));
+    spend(); if (UI.card) openCard(e, PLACE[e]);
+  }
   function embassy(box, e) {
     const E = EMB[e], took = G.deals.find(d => d.by === G.me && d.emb === e);
     /* what they pay for is law already (last week's island law, or passed this week): there is nothing left to promise, so no coins */
     if (!took && inForce(E.wants)) return scene(box, E.who, T(E.name), F(E.done || "“{x}” is law already, so we have nothing to ask of you today. An unusual feeling. We do not care for it.", { x: LAWS[E.wants].t }), [btn(T("Leave"), () => closeCard())]);
     const line = took ? F(E.remind || "We are counting on you for “{x}”. We would hate to remind the island in public.", { x: LAWS[E.wants].t }) : F(E.offer || "{n} coins, today. All we ask is that you propose “{x}” before the election. A small thing between friends.", { n: E.coins, x: LAWS[E.wants].t });
     scene(box, E.who, T(E.name), line, took ? [btn(T("Leave"), () => closeCard())] : [
-      btn(F("Take the {n} coins and promise", { n: E.coins }), () => { deal(G.me, e); SND.sfx("coin"); toast(T("The promise is in the Book now.")); spend(); if (UI.card) openCard(e, PLACE[e]); }, { off: !movesLeft(), sub: F("people who care about {x} will not like it", { x: Object.keys(LAWS[E.wants].fx).filter(k => LAWS[E.wants].fx[k] < 0).map(k => T(TOPICS[k])).join(", ") }) }),
+      btn(F("Take the {n} coins and promise", { n: E.coins }), () => { const take = () => { deal(G.me, e); SND.sfx("coin"); toast(T("The promise is in the Book now.")); spend(); if (UI.card) openCard(e, PLACE[e]); };
+        if (G.pledge && !G.pledge.off && G.onchain) pledgeDeal(e, take); else take(); }, { off: !movesLeft(), sub: F("people who care about {x} will not like it", { x: Object.keys(LAWS[E.wants].fx).filter(k => LAWS[E.wants].fx[k] < 0).map(k => T(TOPICS[k])).join(", ") }) }),
       btn(T("Politely decline"), () => closeCard()),
-    ]);
+      G.onchain && !G.pledge ? btn(T("Sign a clean-hands pledge on the testnet"), () => pledgeSign(), { sub: T("a rule on your own wallet: it pays no embassy until the election; it replaces any rule your wallet has") }) : null,
+      G.pledge && !G.pledge.off ? btn(T("Take the pledge back"), () => pledgeLift("back"), { warn: true, sub: T("the chain lifts it; the island reads it in the Book") }) : null,
+    ].filter(Boolean));
   }
   function doPropose(id) {
     const r = propose(G.me, id);
@@ -1040,6 +1108,7 @@
   }
   /* on a new real day the waiting campaign goes on; a campaign whose week has passed was decided without you */
   function resume() {
+    if (G && G.over && G.pledge && !G.pledge.off && G.onchain) setTimeout(() => pledgeLift("election"), 5000);
     if (!G || G.over) return;
     if (!FREE && G.week && G.week !== weekId()) return decideLate();
     if (G.waiting) { if (FREE || todayIdx() > G.day) nextDay(); else nightCard(); }
@@ -2201,6 +2270,7 @@
     toast(T("The front page is saved as a picture."));
   }
   function ending() {
+    if (G && G.pledge && !G.pledge.off) setTimeout(() => pledgeLift("election"), 3000);
     if (!G.over.read) return edition();
     const o = G.over, me = G.me, won = o.win === me;
     if (o.late && !o.lateSaid) { o.lateSaid = true; save(); setTimeout(() => toast(T("The week ended before your campaign did: the islanders voted on Sunday without you. This one is not counted for the island.")), 1200); }
