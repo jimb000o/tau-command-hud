@@ -120,6 +120,10 @@ and plan where that matters. The change from the ship before is the news of the 
 dek when it is real (for example a ship that stayed the whole time after one that left early). Where "the ship before" \
 has a "note" that its unanswered sends were counted as refusals by the rule of the time, the node refused none of them: \
 write "sends without an answer, counted as refusals by the old rule", never "the node refused them".
+- When the facts have "the testnet started over": the old chain ended and a new one began; tell it as a restart of \
+the testnet, never as a stall, and say that payments on the old chain went with it. Where "left early" says our node \
+had no working connection to the network, the testnet itself may have kept running: never write that the testnet \
+stalled then, write that no new block reached our node.
 - Never write a line for a thing that did not happen or was not tried (no "0 bookings were checked" on a day without \
 bookings); leave it out.
 - Length: 300 to 500 English words in body.
@@ -208,6 +212,11 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
         f["minutes in port"] = f["left early"]["minutes in port"]
     elif landed:
         f["minutes in port"] = 90   # the whole planned call
+    restart = next((e for e in rows if e.get("kind") == "chain restarted"), None)
+    if restart:   # the testnet started over during or soon after the call (relay/cruise.py chain_restarted): not a stall
+        f["the testnet started over"] = {"noticed at": clock(restart["t"]), "old chain ended at block": restart.get("old_tip"),
+                                         "new chain began at": clock(restart["new_chain_began"]) if restart.get("new_chain_began") else None,
+                                         "what it means": restart.get("note")}
     f["sent and accepted"] = {k: v for k, v in (s.get("sent") or {}).items() if v} or \
         dict(Counter(e["kind"] for e in sends if e.get("ok") is True))
     refused = {k: v for k, v in (s.get("refused") or {}).items() if v} or \
@@ -313,7 +322,8 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
         f["next ship"] = {"name": nxt.get("name"), "date": day(nxt["t0"]), "time": clock(nxt["t0"])}
     f["the ship's brakes"] = {"at most transactions a minute": 12,
                               "it leaves when the node refuses": "5 of the last 20 passenger transactions",
-                              "strained testnet": "half pace", "stalled testnet": "it leaves at once",
+                              "strained testnet": "half pace",
+                              "no new block on our node for over ten minutes with payments waiting": "it leaves at once, and says whether our node still had a working connection to the network",
                               "our node does not answer a send within 20 seconds": "no refusal: the ship waits 30 seconds, then half pace for 10 minutes",
                               "our node cannot take a passenger's new wallet": "no refusal: that passenger is left out for the rest of the call"}
     f["answered sends"] = len(answered)

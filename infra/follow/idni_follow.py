@@ -431,7 +431,6 @@ def node_env() -> dict:
     env = {k: str(v) for k, v in env.items() if v is not None}
     env.pop("TAU_ANNOUNCE_ADDRS", None)
     env["TAU_MINING_ENABLED"] = "false"
-    env["TAU_BOOTNODE_LOST_RESTART"] = "0"  # the trial has no restart policy: an exit would only end it early
     return env
 
 

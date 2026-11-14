@@ -23,10 +23,6 @@ services:
       # bug, IDNI #82), and a peer that bootstraps from us would dial itself
       # after a restart. Override in .env when the server's address changes.
       TAU_ANNOUNCE_ADDRS: ${TAU_ANNOUNCE_ADDRS:-/ip4/2.31.101.42/tcp/4001}
-      # node/patches/bootnode-watchdog.py: restart the node when no bootstrap peer
-      # has been connected this many seconds (2026-11-14: two hours on a dead chain
-      # after a testnet restart until a manual restart). Backs off; 0 switches it off.
-      TAU_BOOTNODE_LOST_RESTART: ${TAU_BOOTNODE_LOST_RESTART:-600}
       # Validator mode, off unless .env sets TAU_VALIDATOR=true (README:
       # "Validator seat"). Only proposes once the key is in the validator set.
       TAU_MINING_ENABLED: ${TAU_VALIDATOR:-false}
