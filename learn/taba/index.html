@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../../assets/i18n.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Tau's math in plain words</title>
+<meta name="description" content="Five ideas from Ohad Asor's draft book on Boolean algebras, the math under Tau Language, in plain words, each with what it means for a rule. Unofficial, not affiliated with IDNI.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Tau's math in plain words">
+<meta property="og:description" content="Five ideas from the book under Tau Language, in plain words, with questions for a real Tau engine.">
+<meta property="og:image" content="https://tauhud.com/assets/og/hud.png">
+<meta property="og:url" content="https://tauhud.com/learn/taba/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as the HUD: black and white, phosphor green as the one accent. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; max-width: 1280px; display: flex; flex-direction: column; gap: 10px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 4px 0 2px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+header nav a { color: var(--dim); font: 12px var(--mono); text-decoration: none; display: inline-block; padding: 8px 0; }
+header nav a:hover { color: #fff; }
+.lead { margin: 4px 0 0; font: 500 clamp(20px, 2.4vw, 28px)/1.25 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); }
+.cards { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.card { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.card > p:not(.ch):not(.ans) { font-size: 12.5px; line-height: 1.45; }
+.card.go { border-color: rgba(57,255,138,.28); }
+.ch { margin: 0; font: 600 10.5px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.card.go .ch { color: var(--ok); }
+.card h2 { margin: 0; font: 600 15px/1.3 var(--display); color: #fff; }
+.card p { margin: 0; }
+.why { border-left: 2px solid var(--hair); padding-left: 10px; color: var(--dim); font-size: 11.5px; line-height: 1.4; }
+.why b { display: block; color: var(--text); font: 600 10.5px var(--display); letter-spacing: .14em; text-transform: uppercase; }
+.why p { margin: 0; }
+.ask { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding-top: 2px; }
+.ask code { color: #b9ffd6; font: 12px var(--mono); font-variant-ligatures: none; word-break: break-word; }
+.ans { color: var(--dim); font-size: 11.5px; }
+.b { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--text); background: none; border: 1px solid var(--hair); border-radius: 6px; padding: 0 12px; min-height: 32px; display: inline-flex; align-items: center; text-decoration: none; cursor: pointer; }
+.b:hover { border-color: #fff; color: #fff; }
+.b.ok { border-color: var(--ok); color: var(--ok); }
+.b.ok:hover { background: rgba(57,255,138,.08); }
+.foot { display: grid; gap: 4px; border-top: 1px solid var(--line); padding-top: 8px; }
+.fine { color: var(--dim); font-size: 11.5px; margin: 0; }
+.refs { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 0; }
+.refs a { color: var(--text); font-size: 12px; text-decoration: none; display: inline-block; padding: 2px 0; }
+.refs a:hover { color: var(--ok); }
+[hidden] { display: none !important; }
+@media (min-width: 2200px) and (min-height: 1200px) { body { zoom: 1.3; } }
+@media (max-width: 1100px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .cards { grid-template-columns: minmax(0, 1fr); } .b { min-height: 44px; } body { font-size: 12px; } .why, .ans, .fine, .refs a, .ch, .why b { font-size: 11px; } .refs a { padding: 12px 0; } header nav a { padding: 12px 0; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Tau's math in plain words</span></a>
+    <nav aria-label="Pages"><a href="../">← Learn Tau Language</a></nav>
+  </header>
+  <div>
+    <p class="lead">The math under Tau, in plain words.</p>
+    <p class="sub">Five ideas from Ohad Asor's draft book on Boolean algebras, the math under Tau Language, and what each means for a rule.</p>
+  </div>
+  <!-- Every question on this page is a lesson try in ../lessons.json (same op and spec), so `up tau` checks its answer. -->
+  <main class="cards">
+    <article class="card go">
+      <p class="ch">Chapter 1.2 · Boolean equations</p>
+      <h2>A sure test, no searching</h2>
+      <p>Any set of “must be 0” conditions merges into one equation, f(x) = 0. Boole: it has a solution exactly when f(0) · f(1) = 0, and then the solutions fill one range, from f(0) to the complement of f(1).</p>
+      <div class="why"><b>For a rule</b><p>An impossible rule is caught by arithmetic, no search.</p></div>
+      <div class="ask"><a class="b ok" href="../#q=eyJvcCI6InNhdCIsInNwZWMiOiJ4ID0gMCAmJiB4ID0gMSJ9">Ask Tau ›</a><code translate="no">x = 0 &amp;&amp; x = 1</code></div>
+      <p class="ans">Tau answers F: here f(0) = f(1) = 1.</p>
+    </article>
+    <article class="card go">
+      <p class="ch">Chapter 2 · Quantifier elimination</p>
+      <h2>“For all” and “there is” can go</h2>
+      <p>In an atomless Boolean algebra every nonzero value splits into smaller nonzero parts. There, “for all” and “there is” can always be rewritten away. Equations merge into one; “not 0” conditions do not.</p>
+      <div class="why"><b>For a rule</b><p>The core of how a Tau engine decides, not guesses.</p></div>
+      <div class="ask"><a class="b ok" href="../#q=eyJvcCI6InNhdCIsInNwZWMiOiJhbGwgeCBleCB5IHggJiB5ID0gMCAmJiB4IHwgeSA9IDEifQ">Ask Tau ›</a><code translate="no">all x ex y x &amp; y = 0 &amp;&amp; x | y = 1</code></div>
+      <p class="ans">Tau answers T: every x has a complement.</p>
+    </article>
+    <article class="card">
+      <p class="ch">Chapter 6 · NSO</p>
+      <h2>A logic that can name its own sentences</h2>
+      <p>Sentences, counted as equal when they say the same, form a Boolean algebra too. NSO uses them as values, so a formula can speak about formulas of its own language without Tarski's old trap: it reads their meaning, never their text. It stays decidable when its base logics are.</p>
+      <div class="why"><b>For a rule</b><p>A running spec can carry its next version as a value.</p></div>
+    </article>
+    <article class="card go">
+      <p class="ch">Chapter 7 · GSSOTC</p>
+      <h2>Time without peeking ahead</h2>
+      <p>A spec runs step by step, reading now and a set number of steps back, never ahead. sat asks: whatever the inputs, is there always an output, forever? The engine repeats one check until nothing changes: a fixed point.</p>
+      <div class="why"><b>For a rule</b><p>A rule that would get stuck later is caught now.</p></div>
+      <div class="ask"><a class="b ok" href="../#q=eyJvcCI6InNhdCIsInNwZWMiOiJvMVt0XTpidlsyXSA-IG8xW3QtMV06YnZbMl0ifQ">Ask Tau ›</a><code translate="no">o1[t]:bv[2] &gt; o1[t-1]:bv[2]</code></div>
+      <p class="ans">Tau answers F: a 2-bit output cannot grow forever.</p>
+    </article>
+    <article class="card">
+      <p class="ch">Chapter 8.3 · Pointwise revision</p>
+      <h2>Change the rules, keep the rest</h2>
+      <p>An update need not restate the whole program. The new spec always holds; among the outputs it allows, the engine prefers those the old spec allows too. So the old behaviour stays wherever the new spec leaves room for it.</p>
+      <div class="why"><b>For a rule</b><p>We did not check how the testnet applies changes.</p></div>
+    </article>
+    <article class="card go">
+      <p class="ch">After the book · ocLTL, 2026</p>
+      <h2>Until and since</h2>
+      <p>A 2026 paper by Ohad Asor shows how to decide whether a program exists for specs with all LTL time operators, past ones too, over data like Tau's. Our engine already has until, since, weak_until, release and trigger. Lessons 13 and 14 show two.</p>
+      <div class="ask"><a class="b ok" href="../#q=eyJvcCI6InNhdCIsInNwZWMiOiIobzFbdF0gPSAwKSB1bnRpbCAoaTFbdF0gPSAxKSJ9">Ask Tau: until ›</a><a class="b" href="../#q=eyJvcCI6InJ1biIsInNwZWMiOiJhbHdheXMgKCAoKGkyW3RdOmJ2WzhdID0geyAwIH06YnZbOF0pIHNpbmNlIChpMVt0XTpidls4XSA9IHsgMSB9OmJ2WzhdKSkgPyAobzFbdF06YnZbOF0gPSB7IDEgfTpidls4XSkgOiAobzFbdF06YnZbOF0gPSB7IDAgfTpidls4XSkgKS4iLCJpbiI6ImkxID0gMCwgMSwgMCwgMCwgMDsgaTIgPSAwLCAwLCAwLCAxLCAwIn0">Run: since ›</a></div>
+      <p class="ans">until on an input: F. since: a switch with a memory.</p>
+    </article>
+  </main>
+  <footer class="foot">
+    <p class="refs"><a href="https://github.com/IDNI/tau-lang/blob/main/docs/Theories-and-Applications-of-Boolean-Algebras-0.25.pdf" target="_blank" rel="noopener">Theories and Applications of Boolean Algebras ↗</a> <a href="https://arxiv.org/abs/2605.12539" target="_blank" rel="noopener">The ocLTL paper on arXiv ↗</a> <a href="https://arxiv.org/abs/2407.06214" target="_blank" rel="noopener">Guarded Successor ↗</a></p>
+    <p class="fine">Our own summary in plain words; the book is the exact text and is right wherever we simplify. Chapters as in draft 0.25 on IDNI's GitHub. The book's methods are patented and protected from commercial use; this page is education. Every question is one of our lessons, which our server checks against the engine. Unofficial, not affiliated with IDNI.</p>
+  </footer>
+</div>
+</body>
+</html>
