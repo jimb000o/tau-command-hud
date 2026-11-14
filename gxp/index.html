@@ -104,6 +104,67 @@ footer a { color: var(--dim); }
 .legend small { grid-column: 3; color: var(--dim); font-size: 12px; }
 .plain { margin: 0; padding-left: 18px; display: grid; gap: 4px; color: var(--text); }
 .plain b { color: #fff; font-weight: 500; }
+.views { margin: 0 0 2px; }
+.views button { font: 600 12px var(--display); letter-spacing: .06em; border-radius: 6px; padding: 4px 12px; }
+.fix { margin-top: 8px; padding-top: 7px; border-top: 1px dashed var(--hair); color: var(--text); font-size: 12px; }
+.fix b { font: 600 10px/1.6 var(--display); letter-spacing: .12em; text-transform: uppercase; margin-right: 6px; }
+.who { display: inline-flex; flex-wrap: wrap; gap: 2px 6px; margin: 0 0 3px; }
+.who .tag { font: 600 10px/1.7 var(--display); letter-spacing: .1em; text-transform: uppercase; border-radius: 4px; padding: 0 6px; background: rgba(255,255,255,.08); color: #fff; }
+.who .tag.you { background: rgba(57,255,138,.14); color: var(--ok); }
+.who button.tag { border: 0; cursor: pointer; font: 600 10px/1.7 var(--display); }
+.who button.tag:hover { background: #fff; color: #000; }
+.route { display: flex; flex-direction: column; gap: 10px; }
+.route .intro { margin: 0; color: var(--dim); max-width: 120ch; }
+.sum { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: baseline; color: var(--text); }
+.sum b { font: 600 20px var(--display); color: #fff; margin-right: 4px; }
+.start { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; border: 1px solid var(--ok); border-radius: 8px; padding: 10px 12px; background: rgba(57,255,138,.06); }
+.start .k { font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--ok); }
+.start .t { flex: 1 1 320px; color: #fff; }
+.start .t b { font: 600 14px var(--display); }
+details.step { background: rgba(16,16,18,.9); border: 1px solid var(--line); border-radius: 8px; scroll-margin-top: 8px; }
+details.step[open] { border-color: var(--hair); }
+details.step.hl { border-color: var(--ok); }
+details.step > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 0 12px; align-items: start; padding: 10px 12px; }
+details.step > summary::-webkit-details-marker { display: none; }
+details.step > summary:hover h4 { text-decoration: underline; text-underline-offset: 3px; }
+.step .n { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--hair); display: grid; place-items: center; font: 600 13px var(--display); color: #fff; }
+.step.you .n { border-color: var(--ok); color: var(--ok); }
+.step h4 { margin: 0; font: 600 14px/1.35 var(--display); color: #fff; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.step h4 small { font: 500 11px var(--mono); color: var(--dim); }
+.step .meta { margin-top: 3px; font-size: 11px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 2px 14px; }
+.step .meta .got { color: var(--ok); }
+.step .open { font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--hair); border-radius: 6px; padding: 3px 8px; white-space: nowrap; }
+details.step[open] .open { color: #000; background: #fff; border-color: #fff; }
+.step .body { padding: 0 12px 12px 58px; display: grid; gap: 10px; }
+.step .body p { margin: 0; }
+.step h5 { margin: 0 0 4px; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.dl { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.dl li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 0 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; }
+.dl .ic { font: 600 13px var(--mono); color: var(--dim); }
+.dl li.found .ic { color: var(--ok); }
+.dl b { color: #fff; font: 600 13px var(--display); }
+.dl .w { color: var(--text); }
+.dl .dn { color: var(--dim); font-size: 12px; }
+.dl .lv { font-size: 11px; color: var(--dim); }
+.dl li.found .lv { color: var(--ok); }
+.mv { display: grid; gap: 6px; }
+details.ans { border: 1px solid var(--line); border-radius: 6px; }
+details.ans > summary { cursor: pointer; padding: 5px 8px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+details.ans > summary:hover span.q { text-decoration: underline; text-underline-offset: 3px; }
+details.ans .rate { margin: 0; font-size: 10px; }
+details.ans span.q { color: #fff; }
+details.ans .tw { color: var(--dim); display: inline-block; transition: transform .15s; }
+details.ans[open] .tw { transform: rotate(90deg); }
+details.ans > summary { list-style: none; }
+details.ans > summary::-webkit-details-marker { display: none; }
+details.ans .in { padding: 0 8px 8px; display: grid; gap: 6px; }
+details.ans .fix { margin: 0; }
+.left { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-size: 11px; color: var(--dim); }
+.left .bar { flex: 1 1 auto; margin: 0; height: 6px; max-width: 240px; }
+.left .bar i { background: var(--ok); }
+.lnk { background: none; border: 0; padding: 0; color: #fff; font: inherit; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; justify-self: start; }
+.fact.hl { border-color: var(--ok); }
+@media (max-width: 999px) { .step .body { padding-left: 12px; } details.step > summary { grid-template-columns: 34px minmax(0, 1fr); } .step .open { display: none; } }
 [hidden] { display: none !important; }
 @media (min-width: 1000px) { .cols { grid-template-columns: minmax(0, 1fr) 400px; } }
 /* laptop and up, landscape: one screen; the answers and the side panels scroll inside, the page does not */
@@ -141,6 +202,10 @@ footer a { color: var(--dim); }
   </div>
   <div class="cols">
     <main>
+      <ul class="chips views" id="views" aria-label="View">
+        <li><button type="button" data-v="answers" aria-pressed="true">Answers</button></li>
+        <li><button type="button" data-v="route" aria-pressed="false">Route to ready</button></li>
+      </ul>
       <ul class="chips" id="chips" aria-label="Topics"></ul>
       <div class="list" id="list" aria-live="polite"><p class="quiet">Loading the answers…</p></div>
     </main>
@@ -170,6 +235,7 @@ footer a { color: var(--dim); }
         <h2 id="hChange">What would change the answer</h2>
         <ul class="plain" id="change"></ul>
         <p class="note" id="changeNote" translate="no"></p>
+        <div class="acts"><button type="button" class="btn" id="toRoute">See the route to ready</button></div>
       </section>
       <section class="panel" aria-labelledby="hOther">
         <h2 id="hOther">Other uses, other decisions</h2>
@@ -197,7 +263,7 @@ const T = s => (window.TauI18n ? TauI18n.t(s) : s);
 const LANG = window.TauI18n && TauI18n.lang ? TauI18n.lang : "en";
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const pick = o => (o && (o[LANG] || o.en)) || "";
-const CACHE_KEY = "tauhud.gxp.gh", CACHE_MS = 10 * 60000;
+const CACHE_KEY = "tauhud.gxp.gh2", CACHE_MS = 10 * 60000;
 /* The outcome of one answer, in the words of the assessment kit. "Evidence requirement not met" is about the evidence,
    not about the supplier: nothing was obtained, which does not show that the practice is absent. */
 const RATE = { gap: "Confirmed gap", enm: "Evidence requirement not met", cond: "Acceptable with conditions", ok: "Acceptable" };
@@ -208,7 +274,8 @@ const MEANS = {
   ok: "Shown by the sources for this use.",
 };
 const ORDER = ["gap", "enm", "cond", "ok"];
-const S = { data: null, gh: null, ok: null, topic: "all", use: P.get("use") === "net" ? "net" : "lang" };
+const S = { data: null, gh: null, ok: null, topic: "all", use: P.get("use") === "net" ? "net" : "lang", view: P.get("view") === "route" ? "route" : "answers", hl: null, open: new Set(), opened: false };
+const EFFORT = { days: "Days", weeks: "Weeks", months: "Months" };
 /* the page answers the same questions for two intended uses; ?use=net opens the second one */
 const use = () => S.data && (S.data.uses.find(u => u.id === S.use) || S.data.uses[0]);
 
@@ -224,6 +291,106 @@ function changed(item) {
   return false;
 }
 
+/* the way to close an open answer: a fix IDNI would publish (with its step on the route), or a condition the company can meet today */
+function fixHtml(d, x) {
+  if (!x.fix) return "";
+  const st = x.step && (d.route || []).findIndex(s => s.id === x.step);
+  const tags = x.step
+    ? `<span class="tag" translate="no">${esc(T("Needs IDNI"))}</span><button type="button" class="tag" data-step="${esc(x.step)}" translate="no">${esc(T(`Step ${st + 1} of the route`))}</button>`
+    : `<span class="tag you" translate="no">${esc(T("Your side, possible today"))}</span>`;
+  return `<div class="fix"><span class="who">${tags}</span><div translate="no"><b>${esc(T("To close it"))}</b>${esc(pick(x.fix))}</div></div>`;
+}
+
+/* is a deliverable visible on IDNI's GitHub? "found" (a file or release is there: to read, not proof of quality), "missing", or null when GitHub was not read */
+function liveState(l) {
+  const g = S.gh; if (!l) return "manual"; if (!g) return null;
+  const rl = l.repo === "IDNI/tau-lang" ? g.tl : g.tn;
+  const after = r => !!(r && r.tag && r.tag !== "v0.7-alpha");
+  if (l.k === "file") { const f = g.files && g.files[l.repo]; if (!f) return null; return l.names.some(n => f.includes(n.toLowerCase())) ? "found" : "missing"; }
+  if (l.k === "rel") return after(rl) ? "found" : "missing";
+  if (l.k === "asset") return after(rl) && (rl.assets || []).some(a => new RegExp(l.re, "i").test(a)) ? "found" : "missing";
+  if (l.k === "stable") return after(rl) && !/alpha/i.test(rl.tag + " " + (rl.name || "")) ? "found" : "missing";
+  if (l.k === "issue") { const x = g[l.key]; if (!x) return null; return x.state === "closed" ? "found" : "missing"; }
+  return null;
+}
+const LIVE_TXT = { found: "Found on IDNI's GitHub: to read", missing: "Not seen on IDNI's GitHub yet", manual: "Not checked automatically" };
+
+function ansHtml(x) {
+  const src = x.src.map(([lab, url]) => `<a href="${esc(url)}" target="_blank" rel="noopener" translate="no">${esc(lab)}</a>`).join("");
+  return `<details class="ans"${S.open.has("a-" + x.id) ? " open" : ""} data-o="a-${esc(x.id)}"><summary><span class="tw" aria-hidden="true">▸</span><span class="rate ${esc(x.r)}" translate="no">${esc(T(RATE[x.r] || ""))}</span><span class="q" translate="no">${esc(pick(x.q))}</span></summary>` +
+    `<div class="in"><p translate="no">${esc(pick(x.a))}</p><div class="fix"><div translate="no"><b>${esc(T("To close it"))}</b>${esc(pick(x.fix))}</div></div>` +
+    `<div class="src"><span translate="no">${esc(x.ref)}</span>${src}</div><button type="button" class="lnk" data-card="${esc(x.id)}">${esc(T("Open the card"))}</button></div></details>`;
+}
+
+/* the shortest route: first what the company can do today, then IDNI's steps from quick documents to independent reviews.
+   Each step opens into what to deliver (with a live check where GitHub can show it) and the answers it moves. */
+function routeHtml(d) {
+  const open = d.items.filter(x => x.r !== "ok" && x.fix);
+  const you = open.filter(x => !x.step);
+  const all = d.route.flatMap(s => s.do || []);
+  const checkable = all.filter(x => x.live), found = checkable.filter(x => liveState(x.live) === "found");
+  const stepDone = s => (s.do || []).every(x => liveState(x.live) === "found");
+  const next = d.route.find(s => !stepDone(s));
+  if (!S.opened) { S.opened = true; if (next && !S.hl) S.open.add(next.id); }
+  let left = open.length;
+  const leftHtml = () => `<div class="left"><span class="bar"><i style="width:${(100 * (open.length - left) / (open.length || 1)).toFixed(1)}%"></i></span><span translate="no">${esc(T(`Still open after this step: ${left} of ${open.length}`))}</span></div>`;
+  const step = (id, n, cls, title, effort, desc, items, mv, extra) => {
+    const isOpen = S.open.has(id) || S.hl === id;
+    const got = items.filter(x => liveState(x.live) === "found").length;
+    return `<details class="step${cls}${S.hl === id ? " hl" : ""}" id="step-${esc(id)}" data-o="${esc(id)}"${isOpen ? " open" : ""}><summary><span class="n">${n}</span><div>` +
+      `<h4 translate="no">${esc(title)}<small>${esc(effort)}</small></h4><div class="meta">` +
+      (items.length ? `<span>${esc(T(`${items.length} to deliver`))}</span>` + (got ? `<span class="got">${esc(T(`${got} found on GitHub`))}</span>` : "") : "") +
+      `<span>${esc(T(mv.length === 1 ? "moves 1 answer" : `moves ${mv.length} answers`))}</span></div>${leftHtml()}</div><span class="open">${esc(T(isOpen ? "Close" : "Open"))}</span></summary>` +
+      `<div class="body"><p translate="no">${esc(desc)}</p>` +
+      (items.length ? `<div><h5>${esc(T("What to deliver"))}</h5><ul class="dl">` + items.map(x => {
+        const st = liveState(x.live);
+        return `<li class="${st || ""}"><span class="ic" aria-hidden="true">${st === "found" ? "✓" : x.live ? "○" : "·"}</span><div><b translate="no">${esc(pick(x.t))}</b>` +
+          `<div class="w" translate="no">${esc(pick(x.w))}</div><div class="dn" translate="no">${esc(T("Done when:"))} ${esc(pick(x.done))}</div>` +
+          `<div class="lv">${esc(T(st ? LIVE_TXT[st] : "GitHub not read"))}</div></div></li>`;
+      }).join("") + `</ul></div>` : "") +
+      `<div><h5>${esc(T("Answers this step moves"))}</h5><div class="mv">${mv.map(ansHtml).join("")}</div></div>` + (extra || "") + `</div></details>`;
+  };
+  let h = `<div class="route"><p class="intro">${esc(T("Open a step to see what to deliver, when it counts as done, and which answers it moves. Open an answer to see what is missing today."))}</p>`;
+  if (next) {
+    const ni = d.route.indexOf(next) + 1, nm = open.filter(x => x.step === next.id).length;
+    h += `<div class="start"><span class="k">${esc(T("Start here"))}</span><span class="t"><b translate="no">${esc(T(`Step ${ni}`))}: ${esc(pick(next.t))}</b> · ${esc(T(EFFORT[next.effort] || ""))} · ${esc(T(`${(next.do || []).length} to deliver`))} · ${esc(T(nm === 1 ? "moves 1 answer" : `moves ${nm} answers`))}</span>` +
+      `<button type="button" class="btn" data-step="${esc(next.id)}">${esc(T("Open it"))}</button></div>`;
+  }
+  h += `<div class="sum"><span><b>${open.length}</b>${esc(T("open answers"))}</span><span><b>${you.length}</b>${esc(T("your company can meet today"))}</span><span><b>${open.length - you.length}</b>${esc(T(`need IDNI, in ${d.route.length} steps`))}</span>` +
+    `<span><b>${found.length}</b>${esc(T(`of ${checkable.length} checkable deliverables found on IDNI's GitHub`))}</span></div>`;
+  if (you.length) {
+    left -= you.length;
+    h += step("you", "0", " you", T("Your side, possible today"), T("Now"), T("Conditions the regulated company meets in its own procedure and validated system. They need nothing from IDNI."), [], you);
+  }
+  d.route.forEach((s, i) => {
+    const mv = open.filter(x => x.step === s.id);
+    left -= mv.length;
+    h += step(s.id, String(i + 1), "", pick(s.t), T(EFFORT[s.effort] || ""), pick(s.d), s.do || [], mv,
+      `<button type="button" class="lnk" data-copy="${esc(s.id)}">${esc(T("Copy this step as a checklist"))}</button>`);
+  });
+  return h + `<p class="intro">${esc(T("The shortest route we see from today's public sources to answers a quality unit can accept. Tau HUD's proposal, not IDNI's plan; the effort is our estimate. A step moves an answer up; whether a use is approved stays the decision of the company that relies on it."))}</p></div>`;
+}
+
+/* the step as Markdown, for IDNI or anyone to paste into their own tracker; nothing is sent anywhere */
+function stepMarkdown(d, id) {
+  const s = d.route.find(x => x.id === id); if (!s) return "";
+  const i = d.route.indexOf(s) + 1;
+  const mv = d.items.filter(x => x.step === id);
+  return [`## ${T(`Step ${i}`)}: ${pick(s.t)} (${T(EFFORT[s.effort] || "")})`, "", pick(s.d), "",
+    ...(s.do || []).map(x => `- [ ] **${pick(x.t)}**: ${pick(x.w)} ${T("Done when:")} ${pick(x.done)}`), "",
+    `${T("Answers this step moves")}: ${mv.map(x => pick(x.q)).join("; ")}`, "",
+    `${T("Source")}: https://tauhud.com/gxp/?view=route${S.use === "net" ? "&use=net" : ""} (${T("Tau HUD's proposal, not IDNI's plan")})`].join("\n");
+}
+
+function showStep(id) {
+  S.view = "route"; S.hl = id; S.open.add(id); render();
+  const el = $("step-" + id); if (el) el.scrollIntoView({ block: "start", behavior: "smooth" });
+}
+function showCard(id) {
+  S.view = "answers"; S.topic = "all"; S.hl = "card-" + id; render();
+  const el = $("card-" + id); if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
 function render() {
   const d = use(); if (!d) return;
   const all_topics = S.data.topics;
@@ -232,15 +399,18 @@ function render() {
   $("change").innerHTML = d.change.map(x => `<li translate="no">${esc(T(x))}</li>`).join("");
   $("changeNote").textContent = T(d.changeNote); $("liveNote").textContent = T(d.liveNote);
   $("other").innerHTML = d.other.map(([b, t]) => `<li translate="no"><b>${esc(T(b))}</b> ${esc(T(t))}</li>`).join("");
+  $("views").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === S.view)));
+  $("chips").hidden = S.view === "route";
   const topics = all_topics.filter(t => d.items.some(x => x.topic === t.id));
   $("chips").innerHTML = [`<li><button type="button" data-k="all" aria-pressed="${S.topic === "all"}">${esc(T("All"))}</button></li>`]
     .concat(topics.map(t => `<li><button type="button" data-k="${esc(t.id)}" aria-pressed="${S.topic === t.id}" translate="no">${esc(pick(t))}</button></li>`)).join("");
   $("list").innerHTML = topics.filter(t => S.topic === "all" || S.topic === t.id).map(t => `<section class="topic"><h3 translate="no">${esc(pick(t))}</h3><ul>` +
-    d.items.filter(x => x.topic === t.id).map(x => `<li class="fact"><span class="rate ${esc(x.r)}" translate="no">${esc(T(RATE[x.r] || ""))}</span>` +
+    d.items.filter(x => x.topic === t.id).map(x => `<li class="fact${S.hl === "card-" + x.id ? " hl" : ""}" id="card-${esc(x.id)}"><span class="rate ${esc(x.r)}" translate="no">${esc(T(RATE[x.r] || ""))}</span>` +
       `<h4 translate="no">${esc(pick(x.q))}</h4><p translate="no">${esc(pick(x.a))}</p><div class="src"><span translate="no">${esc(x.ref)}</span>` +
       x.src.map(([lab, url]) => `<a href="${esc(url)}" target="_blank" rel="noopener" translate="no">${esc(lab)}</a>`).join("") + `</div>` +
-      (changed(x) ? `<span class="stale" translate="no">${esc(T("Changed on IDNI's GitHub since: to check again"))}</span>` : "") + `</li>`).join("") +
+      (changed(x) ? `<span class="stale" translate="no">${esc(T("Changed on IDNI's GitHub since: to check again"))}</span>` : "") + fixHtml(d, x) + `</li>`).join("") +
     `</ul></section>`).join("");
+  if (S.view === "route") $("list").innerHTML = routeHtml(d);
   const n = r => d.items.filter(x => x.r === r).length;
   const all = d.items.length || 1;
   $("nChecked").textContent = S.data.checked || "–";
@@ -277,13 +447,16 @@ async function get(path) {
   return r.json();
 }
 async function loadGh() {
-  if (SAMPLE) return { tl: { tag: "v0.7-alpha", date: "" }, tn: null, i108: { state: "open" }, i106: { state: "open" }, pr93: { state: "open" } };
+  if (SAMPLE) return { tl: { tag: "v0.7-alpha", date: "", assets: [] }, tn: null, i108: { state: "open" }, i106: { state: "open" }, pr93: { state: "open" }, files: { "IDNI/tau-lang": [], "IDNI/tau-testnet": [] } };
   const hit = cached(); if (hit) return hit;
-  const rel = j => j && j.tag_name ? { tag: j.tag_name, date: String(j.published_at || "").slice(0, 10) } : null;
+  const rel = j => j && j.tag_name ? { tag: j.tag_name, name: j.name || "", date: String(j.published_at || "").slice(0, 10), assets: (j.assets || []).map(a => a.name) } : null;
+  const names = (...ls) => ls.every(l => !Array.isArray(l)) ? null : ls.flatMap(l => Array.isArray(l) ? l.map(f => String(f.name).toLowerCase()) : []);
   const iss = j => j ? { state: j.state, merged: !!(j.pull_request && j.pull_request.merged_at) } : null;
-  const [tl, tn, i108, i106, pr93] = await Promise.all([get("IDNI/tau-lang/releases/latest"), get("IDNI/tau-testnet/releases/latest"),
-    get("IDNI/tau-testnet/issues/108"), get("IDNI/tau-testnet/issues/106"), get("IDNI/tau-testnet/issues/93")]);
-  const gh = { tl: rel(tl), tn: rel(tn), i108: iss(i108), i106: iss(i106), pr93: iss(pr93) };
+  const soft = path => get(path).catch(() => null);   // a file listing is optional: the answers and releases still show without it
+  const [tl, tn, i108, i106, pr93, lr, lg, nr, ng] = await Promise.all([get("IDNI/tau-lang/releases/latest"), get("IDNI/tau-testnet/releases/latest"),
+    get("IDNI/tau-testnet/issues/108"), get("IDNI/tau-testnet/issues/106"), get("IDNI/tau-testnet/issues/93"),
+    soft("IDNI/tau-lang/contents/"), soft("IDNI/tau-lang/contents/.github"), soft("IDNI/tau-testnet/contents/"), soft("IDNI/tau-testnet/contents/.github")]);
+  const gh = { tl: rel(tl), tn: rel(tn), i108: iss(i108), i106: iss(i106), pr93: iss(pr93), files: { "IDNI/tau-lang": names(lr, lg), "IDNI/tau-testnet": names(nr, ng) } };
   try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), gh })); } catch (e) {}
   return gh;
 }
@@ -292,6 +465,30 @@ async function tick() {
   render(); renderLive();
 }
 
+$("views").addEventListener("click", e => {
+  const b = e.target.closest("button[data-v]"); if (!b || b.dataset.v === S.view) return;
+  S.view = b.dataset.v; S.hl = null;
+  const q = new URLSearchParams(location.search); if (S.view === "route") q.set("view", "route"); else q.delete("view");
+  try { history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash); } catch (err) {}
+  render(); $("list").scrollTop = 0;
+});
+$("list").addEventListener("click", e => {
+  const b = e.target.closest("button[data-step]"); if (b) { e.preventDefault(); showStep(b.dataset.step); return; }
+  const c = e.target.closest("button[data-card]"); if (c) { showCard(c.dataset.card); return; }
+  const k = e.target.closest("button[data-copy]");
+  if (k) {
+    const md = stepMarkdown(use(), k.dataset.copy), done = () => { k.textContent = T("Copied"); setTimeout(() => { k.textContent = T("Copy this step as a checklist"); }, 2000); };
+    if (navigator.clipboard) navigator.clipboard.writeText(md).then(done, () => window.prompt(T("Copy this step as a checklist"), md));
+    else window.prompt(T("Copy this step as a checklist"), md);
+  }
+});
+/* remember which steps and answers are open, so the 10-minute refresh does not fold them away */
+$("list").addEventListener("toggle", e => {
+  const el = e.target; if (!el.matches || !el.matches("details[data-o]")) return;
+  if (el.open) S.open.add(el.dataset.o); else S.open.delete(el.dataset.o);
+  const o = el.querySelector(":scope > summary .open"); if (o) o.textContent = T(el.open ? "Close" : "Open");
+}, true);
+$("toRoute").addEventListener("click", () => { S.view = "route"; S.hl = null; render(); $("list").scrollTop = 0; $("list").scrollIntoView({ block: "nearest" }); });
 $("chips").addEventListener("click", e => { const b = e.target.closest("button[data-k]"); if (b) { S.topic = b.dataset.k; render(); } });
 $("uses").addEventListener("click", e => {
   const b = e.target.closest("button[data-u]"); if (!b || b.dataset.u === S.use) return;

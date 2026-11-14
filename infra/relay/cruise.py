@@ -124,6 +124,10 @@ LOG_DAYS = 14
 LOG_KEEP = 20000           # logbook entries held in memory (more than LOG_DAYS of visits)
 INCIDENT_TAIL = 50
 INCIDENTS_MAX = 20
+# a testnet restart (relay._record_restart) is written into the logbook of the visit in port, or of the last one when it
+# ended this many hours before, so its report and article tell a restart, not a stall (14 Nov 2026: the Queen left when
+# no block came for ten minutes; the chain had started over and our node had lost its connection, not stalled)
+RESTART_NOTE_HOURS = 6
 RECENT = 30
 VISITS_KEEP = 30
 VERDICT_EVERY = 20         # seconds between two looks at the load verdict
@@ -345,15 +349,36 @@ def berlin_day(t: float) -> dt.date:
         return d
 
 
-def calls_near(now: float, days: int = 9) -> list[tuple[int, str]]:
-    """(arrival, ship) for every call from yesterday on, `days` days ahead, by time."""
-    d0 = berlin_day(now) - dt.timedelta(days=1)
+# Calls outside the timetable (German day, hour, ship), on top of the weekly ones: a make-up call after one that was cut
+# short. CRUISE_EXTRA adds more the same way: "2026-11-22 15 queen; 2026-11-25 17 dryrun".
+EXTRA_CALLS = [
+    ("2026-11-15", 15, "queen"),   # the Queen's call of 14 Nov ended after 12 minutes when the testnet started over
+]
+
+
+def extra_calls() -> list[tuple[dt.date, int, str]]:
     out = []
+    for day, hour, ship in EXTRA_CALLS + [tuple(x.split()) for x in os.environ.get("CRUISE_EXTRA", "").split(";") if len(x.split()) == 3]:
+        try:
+            if ship in SHIPS:
+                out.append((dt.date.fromisoformat(str(day)), int(hour), ship))
+        except ValueError:
+            log.warning("cruise: extra call %r not understood", (day, hour, ship))
+    return out
+
+
+def calls_near(now: float, days: int = 9) -> list[tuple[int, str]]:
+    """(arrival, ship) for every call from yesterday on, `days` days ahead, by time: the timetable and the extra calls."""
+    d0 = berlin_day(now) - dt.timedelta(days=1)
+    out = set()
     for i in range(days + 1):
         d = d0 + dt.timedelta(days=i)
         for k, s in SHIPS.items():
             if d.weekday() == s["weekday"]:
-                out.append((berlin_t(d, s["hour"]), k))
+                out.add((berlin_t(d, s["hour"]), k))
+        for day, hour, k in extra_calls():
+            if day == d:
+                out.add((berlin_t(d, hour), k))
     return sorted(out)
 
 
@@ -505,7 +530,7 @@ def where(acts: list[dict], now: float, end: float, ship: str | None = None) -> 
 class Cruise:
     def __init__(self, keys_path: str | None = None, log_path: str | None = None, state_path: str | None = None,
                  incidents_path: str | None = None, clock=time.time, enabled: bool | None = None,
-                 verdict=None, chain=None, budget=None, spend=None, background: bool = True):
+                 verdict=None, chain=None, budget=None, spend=None, background: bool = True, link=None):
         data = os.environ.get("CRUISE_DATA", "/data")
         self.keys_path = keys_path or os.environ.get("CRUISE_KEYS_PATH", os.path.join(data, "cruise.keys"))
         self.log_path = log_path or os.environ.get("CRUISE_LOG_PATH", os.path.join(data, "cruise-log.jsonl"))
@@ -518,6 +543,7 @@ class Cruise:
         self.clock = clock
         self.verdict_fn = verdict or (lambda: None)     # relay: the load verdict now (calm / busy / strained / stalled, None while syncing)
         self.chain_fn = chain or (lambda: {})           # relay: the newest block and the longest waiting transaction
+        self.link_fn = link or (lambda: {})             # relay: our node's connection to the network {"connected": peers}
         self.budget = budget or (lambda: True)          # relay: room left in the island's day budget
         self.spend = spend or (lambda: None)            # relay: one transaction taken from it
         self.on_tx = None                               # relay: the testnet load page counts it (ok) or a refusal
@@ -906,6 +932,40 @@ class Cruise:
             log.info("cruise: %s sails on without landing (%s)", v["id"], why)
             self.save_state()
 
+    def stall_why(self) -> str:
+        """Why the ship leaves when no new block came, said from what our node can tell: whether it still had a working
+        connection to the network. Without one, the testnet itself may have kept running (or started over)."""
+        try:
+            link = self.link_fn() or {}
+        except Exception:  # noqa: BLE001 - not known: say only what our node saw
+            link = {}
+        n = link.get("connected")
+        if n == 0:
+            return ("no new block reached our node for over ten minutes, and our node had no working connection to "
+                    "the network: the testnet itself may have kept running")
+        if isinstance(n, int) and n > 0:
+            return (f"no new block reached our node for over ten minutes while it was connected to the network "
+                    f"({n} peer{'s' if n != 1 else ''}): the testnet looked stalled")
+        return "no new block reached our node for over ten minutes"
+
+    def chain_restarted(self, now: float, old_tip, new_start=None):
+        """The testnet started over (relay._record_restart): a plain line in the logbook of the visit in port, or of the
+        last one if it ended within RESTART_NOTE_HOURS, so its report and its article tell a restart, not a stall."""
+        v = self.cur
+        vid, ship = (v["id"], v["ship"]) if v else (None, None)
+        if not v and self.visits:
+            last = self.visits[-1]
+            if now - (last.get("end") or 0) <= RESTART_NOTE_HOURS * 3600:
+                vid, ship = last["id"], last["ship"]
+        if not vid:
+            return
+        began = f" and the new chain began at {time.strftime('%H:%M UTC', time.gmtime(new_start))}" if new_start else ""
+        note = (f"The testnet started over: the old chain ended at block {old_tip}{began}. Balances, rules and history "
+                f"begin again; what the passengers paid on the old chain went with it.")
+        self.write({"t": int(now), "visit": vid, "ship": ship, "kind": "chain restarted", "old_tip": old_tip,
+                    "new_chain_began": int(new_start) if new_start else None, "note": note})
+        log.warning("cruise: %s: %s", vid, note)
+
     def leave(self, now: float, why: str, state: str | None):
         """The brake: the ship takes its passengers back at once; on a stall it writes an incident report."""
         v = self.cur
@@ -914,7 +974,7 @@ class Cruise:
         v.update(left=int(now), note="left early: " + why)
         self.write({"t": int(now), "visit": v["id"], "ship": v["ship"], "kind": "left", "verdict": state, "note": why})
         if state == "stalled":
-            self.incident(now, "stalled", "The testnet stalled while the ship was in port; the ship left at once.")
+            self.incident(now, "stalled", f"While the ship was in port, {why}; the ship left at once.")
         elif state == "refused":
             self.incident(now, "refused", "The node refused passenger transactions; the ship left at once. Each refusal and its answer is in the tail.")
         log.warning("cruise: %s leaves early: %s", v["id"], why)
@@ -1002,7 +1062,7 @@ class Cruise:
             return False
         state = self.verdict(now)
         if state == "stalled":
-            self.leave(now, "the testnet stalled", state)
+            self.leave(now, self.stall_why(), state)
             return False
         if state is None:
             return False

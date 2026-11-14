@@ -339,3 +339,31 @@ class KeptTest(unittest.TestCase):
 
     def test_no_card_for_a_kept_look(self):
         self.assertIsNone(A.evening_card(self.R))
+
+
+class WayTest(unittest.TestCase):
+    """Rules v7 on agorzilla.com: a way evening chooses which of three paintings a stage grows into."""
+    R = {"n": 30, "t": 1795197600, "kind": "way", "stage": "elder", "category": "The elder it becomes",
+         "options": ["Silverback in his prime", "Gentle giant", "Wild one"], "tally": [1, 2, 4], "winner": "Wild one", "tie": False, "feeders": 6}
+    L = {"stage_name": "Elder", "lived": 21,
+         "open": {"kind": "way", "stage": "ancient", "category": "The ancient it becomes", "options": ["Wise sage", "Mountain king", "Jungle spirit"]}}
+
+    def test_telegram(self):
+        t = A.text(self.R, self.L)
+        self.assertIn("the feeders chose the elder it becomes: <b>Wild one</b> (Silverback in his prime 1 / Gentle giant 2 / Wild one 4)", t)
+        self.assertIn("Tonight the feeders choose the ancient it becomes: Wise sage, Mountain king or Jungle spirit.", t)
+        self.assertNotIn("became", t)
+        self.assertIn("nobody chose the elder it becomes", A.text(dict(self.R, winner=None, tally=[0, 0, 0]), self.L))
+
+    def test_x(self):
+        self.assertTrue(A.x_worth(self.R))
+        self.assertFalse(A.x_worth(dict(self.R, winner=None)))
+        m = A.x_text(self.R, self.L)
+        self.assertTrue(m.startswith("🦍 6 wallets fed Agorzilla today, and they chose the elder it becomes: the Wild one (4 of 7 votes)."), m)
+        self.assertEqual(m.split("\n\n")[-2], "Tonight: which ancient will it become? Wise sage, Mountain king or Jungle spirit?")
+        self.assertNotIn("became", m)
+        self.assertLessEqual(__import__("alerts").x_len(m), 280)
+
+    def test_card_is_the_ballot(self):
+        png = A.evening_card(self.R)
+        self.assertTrue(png is None or png[:4] == b"\x89PNG")

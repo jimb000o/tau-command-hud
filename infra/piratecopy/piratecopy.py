@@ -471,7 +471,7 @@ def hold_reason(cfg: dict) -> str | None:
     if free < need:
         return f"only {free} MB of memory free, two copy nodes need {need}"
     if disk_free_gb() < 3:
-        return f"only {disk_free_gb():.1f} GB of disk free"
+        return f"only {disk_free_gb():.1f} GB of disk free (up cache now drops old build cache)"
     return None
 
 

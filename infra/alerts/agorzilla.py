@@ -80,6 +80,17 @@ def is_rule(r: dict | None) -> bool:
     return bool(r) and r.get("kind") == "rule"
 
 
+def is_way(r: dict | None) -> bool:
+    """A way evening (rules v7, from 19 Nov 2026): the feeders chose which of three paintings a stage grows into
+    (latest.json "kind": "way", "stage": "elder" or "ancient"); no keep, most votes win."""
+    return bool(r) and r.get("kind") == "way"
+
+
+def way_of(r: dict) -> str:
+    """ "the elder it becomes" in words, from the way evening's stage."""
+    return f"the {r.get('stage') or 'stage'} it becomes"
+
+
 def rule_said(r: dict, latest: dict) -> str:
     """The rule a rule evening asked about, in words, as it stands now (game_rules); "" when latest.json does not say."""
     return str(((latest.get("game_rules") or {}).get(r.get("rule")) or {}).get("says") or "")
@@ -98,6 +109,8 @@ def tonight(latest: dict, html: bool) -> str:
     if not o:
         return ""
     e = esc if html else str
+    if is_way(o):
+        return f"Tonight the feeders choose {e(way_of(o))}: {e(', '.join(o['options'][:-1]))} or {e(o['options'][-1])}."
     if is_rule(o) and o.get("question"):
         return f"Tonight is a rule evening, a vote on the rules of the game: {e(o['question'])} ({e(', '.join(o['options']))})."
     opts = [f"keep {o['keep']}" if o.get("keep") and k == 0 and v == o["keep"] else v for k, v in enumerate(o["options"])]   # rules v5: box 1 keeps it
@@ -134,6 +147,12 @@ def text(r: dict, latest: dict, was: str | None = None, foot: bool = True) -> st
     votes = sum(r.get("tally") or [])
     if is_rule(r):
         head = "\n".join(rule_head(r, latest, was, html=True))
+    elif is_way(r) and r.get("winner"):
+        tally = " / ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"]))
+        head = f"🦍 Agorzilla, evening {r['n'] + 1}: the feeders chose {esc(way_of(r))}: <b>{esc(r['winner'])}</b>"
+        head += f" ({esc(tally)}{', a tie settled by the state hash' if r.get('tie') else ''})."
+    elif is_way(r):
+        head = f"🦍 Agorzilla, evening {r['n'] + 1}: nobody chose {esc(way_of(r))}, so its way stays as it was."
     elif r.get("winner") and r.get("kept"):   # rules v5: "keep" won, or no other option had enough wallets
         tally = " / ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"]))
         head = f"🦍 Agorzilla, evening {r['n'] + 1}: {esc(r['category'])} stays <b>{esc(r['winner'])}</b>"
@@ -164,6 +183,9 @@ def invite(latest: dict) -> str:
     o = latest.get("open")
     if not o or not o.get("options"):
         return ""
+    if is_way(o):
+        opts = list(o["options"])
+        return f"Tonight: which {o.get('stage') or 'stage'} will it become? {', '.join(opts[:-1])} or {opts[-1]}?"
     if is_rule(o):
         return f"Tonight the feeders vote on a rule of the game: {o.get('question') or o.get('category')}"
     opts = list(o["options"])
@@ -210,6 +232,13 @@ def x_text(r: dict, latest: dict, was: str | None = None) -> str:
     fed = f"{plural(n, 'wallet', 'wallets')} fed Agorzilla today" if n else "Agorzilla's feeders voted today"
     part = str(r.get("category") or "look").lower()
     tally, total = list(r.get("tally") or []), sum(r.get("tally") or [])
+    if is_way(r) and r.get("winner"):
+        won = tally[r["options"].index(r["winner"])] if r["winner"] in r.get("options", []) else 0
+        tie = ", a tie the chain's state settled" if r.get("tie") else ""
+        head = f"🦍 {fed}, and they chose {way_of(r)}: the {r['winner']} ({won} of {plural(total, 'vote', 'votes')}{tie})."
+        why = "Its feeders decide how it grows up."
+        lived = f"It has lived {plural(latest['lived'], 'day', 'days')} on the testnet." if latest.get("lived") is not None else ""
+        return x_fit([head, why, picked_by(r), lived, invite(latest)])
     if r.get("winner") and r.get("kept"):
         won = tally[r["options"].index(r["winner"])] if r["winner"] in r.get("options", []) else 0
         head = f"🦍 {fed}. Its {part} stays {r['winner']}: only {total - won} of {plural(total, 'vote', 'votes')} wanted a change."
@@ -226,7 +255,7 @@ def x_text(r: dict, latest: dict, was: str | None = None) -> str:
 def x_worth(r: dict) -> bool:
     """Only an evening that changed the look goes to X (14 Nov 2026 X strategy): a kept look, a rule evening and an
     evening nobody voted on show nothing new to someone scrolling past; they go to the Telegram group only."""
-    return bool(r.get("winner")) and not r.get("kept") and not is_rule(r)
+    return bool(r.get("winner")) and not r.get("kept") and not is_rule(r)   # a way evening with a winner goes too
 
 
 def post_x(msg: str, state: dict, now: float | None = None, png: bytes | None = None) -> bool:
@@ -323,6 +352,10 @@ def evening_card(r: dict) -> bytes | None:
     A rule evening does not change the look: its card is the ballot (rule_card)."""
     if is_rule(r):
         return rule_card(r)
+    if is_way(r):   # the way shows on the creature only once it is painted: its card is the ballot
+        return rule_card(r, kicker="WHICH WAY IT GROWS", question=f"Which {r.get('stage') or 'stage'} will it become?",
+                         says=f"It grows into the {r['winner']}." if r.get("winner") else "",
+                         lead="The feeders choose how it grows up")
     if not r.get("winner") or r.get("kept"):   # a kept look has no before and after
         return None
     paths = shots_of(r)
@@ -380,7 +413,8 @@ def pair_card(paths: tuple[str, str], title: str, values: tuple, foot: str, colo
         return None
 
 
-def rule_card(r: dict) -> bytes | None:
+def rule_card(r: dict, kicker: str = "A RULE EVENING", question: str = "", says: str | None = None,
+              lead: str = "The feeders vote on the rules of the game too") -> bytes | None:
     """A rule evening's ballot on Agorzilla's dark green, 1600×900 PNG: the question, the three ways the rule can be with
     their votes (the winner in green), and the rule from now on. None when nobody voted (the text goes alone)."""
     if not r.get("winner") or not r.get("options"):
@@ -394,8 +428,8 @@ def rule_card(r: dict) -> bytes | None:
         im = Image.new("RGB", (W, H), bg)
         d = ImageDraw.Draw(im)
         font = lambda size: ImageFont.truetype(os.path.join(FONTS, "Sora.ttf"), size)  # noqa: E731
-        d.text((W // 2, 92), f"EVENING {r['n'] + 1} · A RULE EVENING", font=font(28), fill=green, anchor="mm")
-        d.text((W // 2, 170), r.get("question") or r.get("category") or "", font=font(54), fill=cream, anchor="mm")
+        d.text((W // 2, 92), f"EVENING {r['n'] + 1} · {kicker}", font=font(28), fill=green, anchor="mm")
+        d.text((W // 2, 170), question or r.get("question") or r.get("category") or "", font=font(54), fill=cream, anchor="mm")
         tally = list(r.get("tally") or [0] * len(r["options"]))
         most = max(tally + [1])
         bw, bh, x0, top, gap = 1040, 96, (W - 1040) // 2, 262, 26
@@ -406,12 +440,12 @@ def rule_card(r: dict) -> bytes | None:
                 d.rounded_rectangle((x0 + 4, y + 4, x0 + 4 + max(44, int((bw - 8) * t / most)), y + bh - 4), 19, fill="#123326" if win else "#0f2a1f")
             d.text((x0 + 34, y + bh // 2), o, font=font(36), fill=cream if win else muted, anchor="lm")
             d.text((x0 + bw - 34, y + bh // 2), plural(t, "vote", "votes"), font=font(30), fill=green if win else muted, anchor="rm")
-        says = r.get("says") or ""
+        says = (r.get("says") or "") if says is None else says
         if says:
             y = top + 3 * (bh + gap) + 34
-            for k, part in enumerate(textwrap.wrap(f"From now on: {says}", 70)[:2]):
+            for k, part in enumerate(textwrap.wrap(says if kicker != "A RULE EVENING" else f"From now on: {says}", 70)[:2]):
                 d.text((W // 2, y + k * 50), part, font=font(36), fill=cream, anchor="mm")
-        foot = f"The feeders vote on the rules of the game too{', a tie settled by the state hash' if r.get('tie') else ''} · test AGRS, no value · agorzilla.com"
+        foot = f"{lead}{', a tie settled by the state hash' if r.get('tie') else ''} · test AGRS, no value · agorzilla.com"
         d.text((W // 2, H - 50), foot, font=font(24), fill=muted, anchor="mm")
         out = io.BytesIO()
         im.save(out, "PNG", optimize=True)
@@ -648,7 +682,7 @@ def step(latest: dict, state: dict, send=post, send_x=post_x, now: float | None 
                 known[r["rule"]] = r["winner"]
             continue
         png = picture(r)
-        if not png and r.get("winner") and not is_rule(r) and r.get("t") and now - r["t"] < SHOTS_WAIT:
+        if not png and r.get("winner") and not is_rule(r) and not is_way(r) and r.get("t") and now - r["t"] < SHOTS_WAIT:
             break                      # its photographs are being made; next pass
         if not png and r.get("kept") and not is_rule(r) and picture is evening_card:
             png = kept_picture()

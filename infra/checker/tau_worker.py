@@ -125,6 +125,10 @@ def main():
             tau.set_colors(False)
         except Exception:
             pass
+        try:   # ltlsynt (until, since) gets less than the question's budget, so the engine stops it itself
+            tau.set_ltl_timeout_sec(max(1, int(float(os.environ.get("TAU_BUDGET", "5"))) - 1))
+        except Exception:
+            pass
         result = answer(tau, req)
     except Exception as exc:  # the engine's own error text is the useful part
         result = {"ok": False, "error": clean(exc)[:600] or exc.__class__.__name__}
