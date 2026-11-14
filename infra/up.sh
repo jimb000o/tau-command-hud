@@ -15,6 +15,10 @@
 #                            up bust --from infra/rabbit-art/imports/codex hana  takes pictures painted elsewhere
 #              up follow     the node following IDNI tau-testnet main by itself: its state; up follow now  one check at once,
 #                            up follow off / on  stops / starts it (nothing rebuilt, the node left alone)
+#              up copy       the pirate copy (piratecopy/piratecopy.py): the pirates attack a private copy of the testnet
+#                            once a week by themselves (Tuesday 19:15 UTC); its state and last voyage, nothing rebuilt,
+#                            the live node left alone; up copy now  one voyage at once (background, about an hour),
+#                            up copy last  the last voyage's findings in full, up copy log, up copy off / on
 #              up idni       what the next daily IDNI progress post would say now (its two services rebuilt, nothing posted);
 #                            up idni send  posts it now, up idni hold  keeps the next one back, up idni release  undoes that
 #                            up idni restart  what the post for the newest testnet restart would say (nothing posted)
@@ -609,6 +613,21 @@ if [ "${1:-}" = "follow" ]; then
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
+# the pirate copy (piratecopy/piratecopy.py, a systemd timer that every up installs, Tuesday 19:15 UTC): the pirates
+# attack a private copy of the testnet with two nodes of their own (never the live one); findings go privately to the
+# owner's Telegram. up copy  its state and the last voyage, up copy now  one voyage at once (in the background, about
+# an hour), up copy last  the last voyage in full, up copy log  its log, up copy off / on; nothing rebuilt
+if [ "${1:-}" = "copy" ]; then
+  echo "---------------- copy from here into the chat ----------------"
+  case "${2:-}" in
+    now|on|off) python3 piratecopy/piratecopy.py "$2" || true ;;
+    last|log) python3 piratecopy/piratecopy.py "$2"; echo "---------------- to here --------------------------------------"; exit 0 ;;
+    *) python3 piratecopy/piratecopy.py install >/dev/null 2>&1 || true ;;
+  esac
+  python3 piratecopy/piratecopy.py status
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 # the blog by hand, nothing rebuilt (alerts/blog.py): up blog  lists the drafts waiting and where to read them,
 # up blog publish <id>  puts one on the blog and posts it once, up blog draft <visit-id>  writes one anew,
 # up blog unpublish <id>  takes one off again, up blog pictures  makes every article's hero picture and link preview anew
@@ -723,6 +742,9 @@ PY
 # the node following IDNI main by itself (follow/idni_follow.py): its timer (made anew by every up), what it follows, held back
 python3 follow/idni_follow.py install >/dev/null 2>&1 || true
 python3 follow/idni_follow.py status 2>/dev/null | tee -a "$NOTE" || true
+# the pirate copy (piratecopy/piratecopy.py): its weekly timer (made anew by every up) and the last voyage
+python3 piratecopy/piratecopy.py install >/dev/null 2>&1 || true
+python3 piratecopy/piratecopy.py status 2>/dev/null | tee -a "$NOTE" || true
 # Tau today for AI assistants (alerts/knowledge.py): how many facts, which to check again because IDNI changed their source
 python3 - <<'PY' | tee -a "$NOTE"
 import json, time, urllib.request
