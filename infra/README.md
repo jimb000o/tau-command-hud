@@ -293,6 +293,36 @@ Turn it off: `up follow off` (or `IDNI_FOLLOW=0` in `.env` and `up`). The node s
 `up follow on`. One check now: `up follow now`. Back to the repo pin by hand: `up follow off`, then
 `rm /var/lib/tau-idni-follow/state.json` and `up`.
 
+## Pirate copy
+
+`piratecopy/piratecopy.py` lets the pirates attack the chain itself, on a private copy of the testnet on this server.
+The live testnet carries No Memo, Agorzilla, the showcase wallets and everyone else's work, so an attack that may split
+or stall a chain runs here first. Every `up` installs a systemd timer (`tau-pirate-copy.timer`, `PIRATE_COPY_WHEN`,
+default `Tue *-*-* 19:15:00 UTC`, after the pirates' Tuesday call). One voyage, about an hour:
+
+1. Holds back while a ship is in port or due within 45 minutes (relay `/cruise`), while the auto-follow runs (it takes
+   the same lock, `/var/lib/tau-idni-follow/lock`) or has its trial node up, with less than `PIRATE_COPY_MIN_FREE_MB`
+   (2000) of memory free, and when there is no attack file.
+2. Makes the copy: a docker network with no way out (`tau-copy`, `--internal`, 172.31.250.0/24), a genesis of its own
+   made with IDNI's `scripts/gen_genesis.py` from the image our live node runs (network id `tau-pirate-copy`, our own
+   validator key, approval slots, base fee 10, faucet 100,000, every pirate funded in genesis), node A sealing blocks,
+   node B following A (`PIRATE_COPY_MEMORY` 900m and `PIRATE_COPY_CPUS` 0.8 each, no published ports).
+3. Follows the attack file's plan: each stage runs inside node A and signs with IDNI's own wallet (`tau_testnet_cli`),
+   both nodes are compared after it (heads and the newest 40 block hashes); a restart restarts that node with its chain
+   kept. At the end node B starts again from nothing and must replay the copy chain to A's head.
+4. Lets the attack file judge the voyage (findings, and what the chain withstood), removes both nodes, their data, the
+   network and the copy's keys, keeps the result in `/var/lib/tau-pirate-copy/` (`last.json`, `runs/`, `log.txt`), and
+   tells the owner's private Telegram chat (`up owner`).
+
+**The attacks are not in this repository.** What they try stays private until IDNI knows what they found. The attack
+file lives on the server, `PIRATE_COPY_ATTACKS` (default `/opt/tau-bench/piratecopy/attacks.py`, copied there with the
+tau-bench folder), and names `ACCOUNTS`, `PLAN` and `judge(res)`; piped into node A with `STAGE=<name>` it runs one
+stage. Nothing of a voyage is public and nothing goes to IDNI from here; a finding becomes public only once IDNI knows it.
+
+`up copy` shows the timer and the last voyage (also in every `up` under `copy:`), `up copy now` starts one at once,
+`up copy last` the last voyage in full, `up copy log` its log, `up copy off` / `on` stops and starts it. The live node
+is never touched.
+
 ## Validator seat
 
 tau-testnet-v2 is proof of authority: only keys in the on-chain validator set propose
