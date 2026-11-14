@@ -393,5 +393,22 @@ _D.Draw(_b).text((10, 10), "→", font=_f, fill=(255, 255, 255))
 check(not blog_pics.has_glyph(_f, "→") and blog_pics.has_glyph(_f, "2") and _a.getbbox() and _a.tobytes() != _b.tobytes(),
       "2 → all on a hero: the arrow drawn from JetBrains Mono, not the box")
 
+# hand-written sections (blog_notes) go in before the draft's last section, once, in every language; a held draft
+# never publishes itself (14 Nov 2026: the stall research of the Queen's call)
+import blog_notes  # noqa: E402
+_own_notes = dict(blog_notes.NOTES)
+blog_notes.NOTES["2026-11-99-x-learnings"] = {"hold": "read first", "sections": {"en": "## Ours\n\nOur text.", "zh": "## 我们\n\n文", "ja": "## 私たち\n\n文"}}
+_d = {"id": "2026-11-99-x-learnings", "body": {"en": "## What happened\n\nA.\n\n## What is still open\n\nB.", "zh": "## 发生了什么\n\n甲\n\n## 待解\n\n乙", "ja": "## 何が\n\nA\n\n## 未解決\n\nB"}}
+_n1 = blog.with_notes(_d)
+_n2 = blog.with_notes(_n1)
+check(_n2["body"]["en"].index("## Ours") < _n2["body"]["en"].index("## What is still open") and _n2["body"]["en"].count("## Ours") == 1
+      and "## 我们" in _n2["body"]["zh"] and _n2["body_model"] == _d["body"], f"a note goes in before the last section, once {_n2['body']}")
+check(blog.held("2026-11-99-x-learnings") == "read first" and blog.held("2026-11-98-y-learnings") == "", "a held draft is known as held")
+blog_notes.NOTES.clear(); blog_notes.NOTES.update(_own_notes)
+for _id, _note in blog_notes.NOTES.items():
+    _s = _note.get("sections") or {}
+    check(set(_s) == {"en", "zh", "ja"} and all(v.lstrip().startswith("## ") for v in _s.values()) and not blog.BLAME.search(_s.get("en", "")) and not blog.HYPE.search(_s.get("en", "")),
+          f"note {_id}: three languages, starting with a heading, no blame or hype words")
+
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)
