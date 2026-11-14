@@ -40,6 +40,16 @@
   "i-cap": {"who": "look", "say": "A purse out there has a guard: a rule of its own, and nobody showed us the rule. It lets transfers through up to some amount, or from some amount up. Ask it with probes; nothing goes to the chain. Then tell me which, and where."},
   "i-edge": {"who": "qm", "say": "One shot at this one. The guard lets transfers through up to some amount. Probe all you like, but you name the edge once. Miss it, and the job is gone."},
   "i-band": {"who": "bosun", "say": "This guard lets only a window of amounts through, or everything but a hole. The Lookout made out one of its numbers. Find the other end, and say which it is."},
-  "i-blind": {"who": "bosun", "say": "A guard, and little else to go on. A cap, a floor, a window, a hole, or a rule that lets nothing through. Mind what a rule leaves unsaid. No hint from me."}
+  "i-blind": {"who": "bosun", "say": "A guard, and little else to go on. A cap, a floor, a window, a hole, or a rule that lets nothing through. Mind what a rule leaves unsaid. No hint from me."},
+  "r-pack": {"who": "qm", "say": "One parcel, two things in it: a payment and a rule. The chain will not take both together. Send them in one transaction and let it refuse the lot."},
+  "r-mix": {"who": "bosun", "say": "Two pens on one rule: it writes your wallet's own line and the chain's fee line at once. Send it alone. The chain refuses a rule that reaches past your own wallet."},
+  "r-long": {"who": "look", "say": "A wallet's rule may only be so long. Find the limit, then send the shortest rule that goes one past it, alone. The chain counts every comparison."},
+  "h-hands": {"who": "qm", "say": "This one is about your own hands. Put a rule on your wallet, let it stop you, then take it off. Nobody else can sign that rule, and nobody else can lift it."},
+  "g-set": {"who": "qm", "say": "First part. Put a cap on your own wallet, a rule of its own, without a payment."},
+  "g-hit": {"who": "qm", "say": "Second part. Now pay more than your own cap allows. Your rule must stop you before a coin moves."},
+  "g-off": {"who": "qm", "say": "Last part. Take the rule off again: the rule that changes nothing, sent alone."},
+  "s-four": {"who": "look", "say": "Tau HUD's four-eyes wallet carries a real rule on the testnet. Above some amount it needs a co-signer. Read the rule, then pay the drop the smallest amount that needs one."},
+  "s-piggy": {"who": "qm", "say": "Tau HUD's piggy bank is locked by time. Its rule reads the block's clock and lets nothing out before a certain moment. Read it and tell me the year it opens."},
+  "s-feed": {"who": "bosun", "say": "Tau HUD's feeding fund may only feed Agorzilla, and only so much a meal. Read its rule and feed the beast exactly that much, from your own wallet."}
  }
 }

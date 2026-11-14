@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import time
 import unittest
 
 import agorzilla as A
@@ -43,11 +44,12 @@ class Evening(unittest.TestCase):
         s, xs = {"last": -1}, []
         A.step(LATEST, s, send=lambda m: True, send_x=lambda m, st: xs.append(m) or True)
         A.step(LATEST, s, send=lambda m: True, send_x=lambda m, st: xs.append(m) or True)
-        self.assertEqual(len(xs), 2)
+        self.assertEqual(len(xs), 1)   # evening 2 changed nothing: Telegram only
         self.assertTrue(xs[0].startswith("🦍 7 wallets fed Agorzilla today, and its pendant light became Rose (9 of 15 votes)."), xs[0])
         self.assertTrue(xs[0].endswith("#TauNet"))
-        self.assertNotIn("http", xs[0] + xs[1])
-        self.assertNotIn("agorzilla.com", xs[0] + xs[1])
+        self.assertTrue(xs[0].split("\n\n")[-2] == "Tonight: Aura. Gold, Pearl or Ice?", xs[0])   # it ends with tonight's question
+        self.assertNotIn("http", xs[0])
+        self.assertNotIn("agorzilla.com", xs[0])
         self.assertNotIn("<b>", xs[0])
 
     def test_x_daily_cap(self):
@@ -66,6 +68,79 @@ class Evening(unittest.TestCase):
         self.assertTrue(m.startswith("🦍 Agorzilla grew into Young after 3 days lived\n\nIt was Little one until now."))
         self.assertEqual(len(xs), 1)
 
+    def test_growth_waits_for_a_photo_of_it_grown(self):
+        # 14 Nov 2026: "grew into Elder" went out with the baby painting; now it waits for the evening's photo
+        from PIL import Image
+        d, old = tempfile.mkdtemp(), A.SHOTS
+        A.SHOTS = d
+        try:
+            s, xs = {"stage": 3, "stage_name": "Grown"}, []
+            send = lambda m, st, png=None: xs.append((m, png)) or True  # noqa: E731
+            m = A.grow({"stage": 4, "stage_name": "Elder", "lived": 14}, s, send, now=time.time())
+            self.assertTrue(m.startswith("🦍 Agorzilla grew into Elder"))
+            self.assertEqual(xs, [])                        # no photo yet: it waits
+            Image.new("RGB", (8, 8), "green").save(os.path.join(d, "evening-14-after.jpg"))
+            A.grow({"stage": 4, "stage_name": "Elder", "lived": 14}, s, send, now=time.time() + 60)
+            self.assertEqual(len(xs), 1)
+            self.assertTrue(xs[0][1].startswith(b"\x89PNG"))   # with the photo of it grown
+            self.assertNotIn("growth", s)
+        finally:
+            A.SHOTS = old
+
+    def test_growth_shows_both_stages_side_by_side(self):
+        from PIL import Image
+        import io
+        d, old = tempfile.mkdtemp(), A.SHOTS
+        A.SHOTS = d
+        try:
+            s, xs = {"stage": "elder", "stage_name": "Elder"}, []
+            send = lambda m, st, png=None: xs.append((m, png)) or True  # noqa: E731
+            latest = {"stage": "ancient", "stage_name": "Ancient", "lived": 30, "rounds": [{"n": 40}, {"n": 41}],
+                      "open": {"n": 42, "category": "Muzzle", "options": ["Dark", "Ginger", "Snow white"], "keep": "Dark"}}
+            m = A.grow(latest, s, send, now=time.time())
+            self.assertEqual(xs, [])                        # the evening's photographs are not there yet
+            self.assertTrue(m.endswith("#TauNet") and "Tonight: Muzzle. Keep Dark, or Ginger or Snow white?" in m, m)
+            for side, colour in (("before", "gray"), ("after", "green")):
+                Image.new("RGB", (90, 100), colour).save(os.path.join(d, f"evening-41-{side}.jpg"))
+            A.grow(latest, s, send, now=time.time() + 60)
+            self.assertEqual(len(xs), 1)
+            self.assertEqual(Image.open(io.BytesIO(xs[0][1])).size, (1600, 900))   # the card with both, not one photo
+            self.assertEqual(s["growth"] if "growth" in s else None, None)
+        finally:
+            A.SHOTS = old
+
+    def test_countdown_two_lived_days_before_ancient_once(self):
+        s, xs = {}, []
+        send = lambda m, st, png=None: xs.append(m) or True  # noqa: E731
+        latest = {"stage": "elder", "lived": 27, "lived_needs": 2, "open": {"category": "Fur", "options": ["Moss", "Honey", "Silver"]}}
+        self.assertIsNone(A.countdown(latest, s, send))
+        latest["lived"] = 28
+        m = A.countdown(latest, s, send)
+        self.assertIn("Two more lived days and it grows into Ancient, its last stage.", m)
+        self.assertIn("A day counts as lived when at least 2 wallets feed it.", m)
+        self.assertIsNone(A.countdown(latest, s, send))   # once
+        self.assertEqual(len(xs), 1)
+
+    def test_x_names_the_wallets_that_picked_it(self):
+        from wordnames import words
+        ws = [f"0x{k:040x}" for k in range(5)]
+        r = dict(LATEST["rounds"][0], winners=ws[:2])
+        m = A.x_text(r, LATEST)
+        self.assertIn(f"Picked by {words(ws[0])} and {words(ws[1])}.", m)
+        m = A.x_text(dict(r, winners=ws), LATEST)
+        self.assertIn(f"Picked by {words(ws[0])}, {words(ws[1])}, {words(ws[2])} and 2 more.", m)
+        self.assertTrue(m.split("\n\n")[-2].startswith("Tonight: Aura."), m)   # the question survives, the lived line goes first
+        self.assertLessEqual(__import__("alerts").x_len(m), 280)
+
+    def test_word_names_match_the_feeder_card(self):
+        import wordnames
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "share", "cards.py"), encoding="utf-8") as f:
+            src = f.read()
+        self.assertIn("WORDS = (", src)
+        ns = {}
+        exec(src[src.index("WORDS = ("):src.index(").split()", src.index("WORDS = (")) + len(").split()")], ns)
+        self.assertEqual(ns["WORDS"], wordnames.WORDS)
+
     def test_first_evening_ever_is_posted(self):
         s, out = {}, []
         A.step(dict(LATEST, rounds=[]), s, send=lambda m, png=None: True, send_x=lambda m, st, png=None: True, picture=lambda r: None)
@@ -79,7 +154,7 @@ class Evening(unittest.TestCase):
         s, out, xs = {"last": 1}, [], []
         A.step(dict(LATEST, rounds=LATEST["rounds"] + old), s, send=lambda m, png=None: out.append(m) or True,
                send_x=lambda m, st, png=None: xs.append(m) or True, now=1000)
-        self.assertEqual((len(out), len(xs), s["last"], s["x_last"]), (1, 1, 5, 5))
+        self.assertEqual((len(out), len(xs), s["last"], s["x_last"]), (1, 0, 5, 5))   # evening 6 changed nothing: not on X
         self.assertIn("evening 6", out[0])
 
     def test_failed_send_retries_later(self):
@@ -94,7 +169,7 @@ class Evening(unittest.TestCase):
         A.step(LATEST, s, send=lambda m: False, send_x=lambda m, st: xs.append(m) or True)
         self.assertEqual(len(xs), 1)                              # not again while Telegram keeps failing
         A.step(LATEST, s, send=lambda m: tg.append(m) or True, send_x=lambda m, st: xs.append(m) or True)
-        self.assertEqual((s["last"], len(tg), len(xs)), (LATEST["rounds"][-1]["n"], len(LATEST["rounds"]), len(LATEST["rounds"])))
+        self.assertEqual((s["last"], len(tg), len(xs)), (LATEST["rounds"][-1]["n"], len(LATEST["rounds"]), 1))
 
 
     def test_evening_waits_for_its_picture_then_goes_alone(self):
@@ -168,7 +243,7 @@ class RuleEvenings(unittest.TestCase):
                       "(Never again, After 7 evenings, Any time). agorzilla.com", tg[0])
         self.assertNotIn("Tonight's choice", tg[0])
         self.assertIn("its temperament became Calm", xs[0])
-        self.assertIn("Tonight is a rule evening, a vote on the rules of the game: May a decided question come back?", xs[0])   # on X before the growth line
+        self.assertIn("Tonight the feeders vote on a rule of the game: May a decided question come back?", xs[0])
         self.assertLessEqual(__import__("alerts").x_len(xs[0]), 280)
 
     def test_a_changed_rule(self):
@@ -181,6 +256,8 @@ class RuleEvenings(unittest.TestCase):
                                          "The feeders changed it to <b>After 7 evenings</b> (Never again 1 / After 7 evenings 3 / Any time 0). "
                                          "From now on: A decided question can come back after 7 evenings.\n"), tg[0])
         self.assertIn("Tonight's choice: Fur (Moss, Honey, Silver)", tg[0])
+        self.assertEqual(xs, [])   # a rule evening goes to Telegram only (14 Nov 2026); its X text stays for a manual post
+        xs = [A.x_text(THU["rounds"][-1], THU, "Never again")]
         self.assertTrue(xs[0].startswith("🦍 Evening 7, a rule evening: May a decided question come back?\n\n"
                                          "The feeders changed it to After 7 evenings (3 of 4 votes). "
                                          "From now on: A decided question can come back after 7 evenings."), xs[0])
@@ -195,7 +272,8 @@ class RuleEvenings(unittest.TestCase):
         tg, xs = run(dict(THU, rounds=[LOOK5, kept], game_rules=GAME), s, T6 + 60)
         self.assertIn("The feeders kept <b>Never again</b> (Never again 3 / After 7 evenings 1 / Any time 0). "
                       "The rule stays: A decided question never comes back.", tg[0])
-        self.assertIn("The feeders kept Never again (3 of 4 votes). The rule stays: A decided question never comes back.", xs[0])
+        self.assertEqual(xs, [])
+        self.assertIn("The feeders kept Never again (3 of 4 votes). The rule stays: A decided question never comes back.", A.x_text(kept, THU, "Never again"))
 
     def test_nobody_voted(self):
         s = {"last": 4}
@@ -211,8 +289,8 @@ class RuleEvenings(unittest.TestCase):
     def test_telegram_retry_still_says_changed(self):
         s = {"last": 4}
         run(WED, s, T6 - 86400 + A.SHOTS_WAIT + 60)
-        tg, xs = run(THU, s, T6 + 60, ok=False)                 # Telegram refuses, the X copy goes
-        self.assertIn("changed it to After 7 evenings", xs[0])
+        tg, xs = run(THU, s, T6 + 60, ok=False)                 # Telegram refuses; a rule evening is not on X
+        self.assertEqual(xs, [])
         self.assertEqual(s["rules_known"]["repeat"], "Never again")
         tg, xs = run(THU, s, T6 + 700)                          # Telegram back: still a change, X not again
         self.assertIn("The feeders changed it to <b>After 7 evenings</b>", tg[0])
