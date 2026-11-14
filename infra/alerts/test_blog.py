@@ -403,6 +403,13 @@ _n1 = blog.with_notes(_d)
 _n2 = blog.with_notes(_n1)
 check(_n2["body"]["en"].index("## Ours") < _n2["body"]["en"].index("## What is still open") and _n2["body"]["en"].count("## Ours") == 1
       and "## 我们" in _n2["body"]["zh"] and _n2["body_model"] == _d["body"], f"a note goes in before the last section, once {_n2['body']}")
+blog_notes.NOTES["2026-11-99-x-learnings"].update({"title": {"en": "T2", "zh": "T2", "ja": "T2"}, "card": ["T2", "x"], "replace": [["en", "A.", "A2."]]})
+_n3 = blog.with_notes(blog.with_notes(dict(_d, title={"en": "T1"}, card=["T1"])))
+check(_n3["title"]["en"] == "T2" and _n3["card"] == ["T2", "x"] and _n3["as_drafted"]["title"] == {"en": "T1"} and "A2." in _n3["body"]["en"]
+      and _n3["body"]["en"].count("## Ours") == 1, f"title, card and words set by hand, the model's kept {_n3}")
+del blog_notes.NOTES["2026-11-99-x-learnings"]["title"]
+_n4 = blog.with_notes(_n3)
+check(_n4["title"] == {"en": "T1"} and "title" not in _n4.get("as_drafted", {}), "a title no longer set by hand is the model's again")
 check(blog.held("2026-11-99-x-learnings") == "read first" and blog.held("2026-11-98-y-learnings") == "", "a held draft is known as held")
 blog_notes.NOTES.clear(); blog_notes.NOTES.update(_own_notes)
 for _id, _note in blog_notes.NOTES.items():

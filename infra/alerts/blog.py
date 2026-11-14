@@ -777,23 +777,39 @@ def draft_url(st: dict, did: str) -> str:
 
 
 def with_notes(a: dict) -> dict:
-    """The draft with its hand-written sections (blog_notes.NOTES) put in before its last section, in every language.
-    The model's own text stays in body_model, so a changed note replaces the old one and is never put in twice."""
+    """The draft with its hand-written parts (blog_notes.NOTES): sections put in before its last section in every
+    language, words of the model's body replaced, and title, dek, why, card or x set by hand. What the model wrote stays
+    in as_drafted (body_model for the body), so a changed note replaces the old one and is never put in twice."""
     import blog_notes
     note = blog_notes.NOTES.get(str(a.get("id") or "")) or {}
-    secs = note.get("sections") or {}
-    if not secs:
+    fields = [k for k in ("title", "dek", "why", "card", "x") if note.get(k)]
+    secs, swaps = note.get("sections") or {}, note.get("replace") or []
+    if not (secs or swaps or fields):
         return a
     a = dict(a)
+    drafted = dict(a.get("as_drafted") or {})
+    for k in fields:
+        drafted.setdefault(k, a.get(k))
+        a[k] = note[k]
+    for k in [k for k in drafted if k not in fields]:   # a field no longer set by hand: the model's own again
+        a[k] = drafted.pop(k)
+    if drafted:
+        a["as_drafted"] = drafted
+    else:
+        a.pop("as_drafted", None)
     model = a.get("body_model") or a.get("body") or {}
     body = {}
     for k, text in (model or {}).items():
+        text = str(text)
+        for lang, old, new in swaps:
+            if lang == k:
+                text = text.replace(old, new)
         add = str(secs.get(k) or secs.get("en") or "").strip()
-        parts = re.split(r"\n(?=## )", str(text).rstrip())
+        parts = re.split(r"\n(?=## )", text.rstrip())
         if add and len(parts) > 1 and parts[-1].startswith("## "):
             body[k] = "\n".join(parts[:-1]).rstrip() + "\n\n" + add + "\n\n" + parts[-1]
         else:
-            body[k] = str(text).rstrip() + ("\n\n" + add if add else "")
+            body[k] = text.rstrip() + ("\n\n" + add if add else "")
     a["body_model"], a["body"] = model, body
     return a
 
@@ -816,9 +832,13 @@ def notes_tick() -> int:
         if not a:
             continue
         b = with_notes(a)
-        if b.get("body") != a.get("body"):
+        if b != a:
             write_json(path, b)
             n += 1
+            if b.get("card") != a.get("card"):   # a card set by hand: the hero picture is made anew (site_pictures)
+                st = state()
+                st.get("pics", {}).pop(did, None)
+                write_json(STATE, st)
     return n
 
 
@@ -1106,7 +1126,7 @@ def publish_cli(did: str, dry: bool, force: bool, post_late: bool = False, now: 
     if dry:
         print(f"would publish {did} at {SITE}/blog/?p={did}")
     else:
-        a = {k: v for k, v in with_notes(a).items() if k not in ("status", "model", "check", "body_model")}
+        a = {k: v for k, v in with_notes(a).items() if k not in ("status", "model", "check", "body_model", "as_drafted")}
         p["posts"] = [a] + [x for x in p["posts"] if x.get("id") != did]
         write_json(os.path.join(PUBLIC, "posts.json"), p)
         print(f"published: {SITE}/blog/?p={did}  (link preview: {share_page(a)})")
