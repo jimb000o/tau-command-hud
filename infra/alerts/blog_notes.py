@@ -20,7 +20,7 @@ NOTES: dict[str, dict] = {
 
 We checked this first, because a ship that slows the chain down would be our mistake to own.
 
-- The stall came on a calm chain. Blocks 1563 to 1568 reached our node about one a minute, from 12:55 UTC on. The last one, [block 1569](https://tauhud.com/explorer/?b=1569), was added at 13:01:56 UTC, shortly after the Queen arrived at 13:00. By then she had sent only a few payments, all while our node rated the load as calm. No block came after it while she was in port.
+- The stall came on a calm chain. Blocks 1563 to 1568 reached our node about one a minute, from 12:55 UTC on. The last one, [block 1569](https://tauhud.com/explorer/?b=1569), was made at 13:01:52 UTC, shortly after the Queen arrived at 13:00. Like the blocks before it, it was small: one transfer of 3 AGRS, where each of the three before held one or two. By then the Queen had sent only a few payments, all while our node rated the load as calm. No block came after it while she was in port, and at 15:00 UTC it was still the newest one.
 - [On 7 November](/blog/?p=2026-11-07-queen-learnings) the same ship sent more than 400 payments in 90 minutes, and the chain kept making blocks the whole time.
 - Our node stayed up through the stall and kept taking in transfers: 21 were waiting when the ship left. What stopped was new blocks arriving.
 - The ship did what it is built to do. When the newest block was more than ten minutes old with payments waiting, she left at once instead of adding more to a chain that stood still.
@@ -36,7 +36,7 @@ So the ship's load does not explain the stall. What does is still being checked,
 
 我们首先查的就是这一点，因为如果是船拖慢了链，那就是我们的错，应由我们承担。
 
-- 链停下时，网络很平静。从 UTC 12:55 起，第 1563 到 1568 号区块大约每分钟一个到达我们的节点。最后一个是[第 1569 号区块](https://tauhud.com/explorer/?b=1569)，在 UTC 13:01:56 加入，那时 Queen 13:00 刚到不久，只发出了很少几笔付款，我们的节点当时把负载评为平静。她停靠期间，之后再没有新区块。
+- 链停下时，网络很平静。从 UTC 12:55 起，第 1563 到 1568 号区块大约每分钟一个到达我们的节点。最后一个是[第 1569 号区块](https://tauhud.com/explorer/?b=1569)，在 UTC 13:01:52 产生，和之前的区块一样很小：只有一笔 3 AGRS 的转账，之前三个区块各有一到两笔。那时 Queen 13:00 刚到不久，只发出了很少几笔付款，我们的节点当时把负载评为平静。她停靠期间，之后再没有新区块；到 UTC 15:00，它仍是最新的区块。
 - [11 月 7 日](/blog/?p=2026-11-07-queen-learnings)，同一艘船在 90 分钟里发出了 400 多笔付款，链在整个过程中一直在出块。
 - 链停下期间，我们的节点一直在线，并继续接收转账：船离开时有 21 笔在等待。停下的是新区块的到来。
 - 船做了它被设计要做的事：当最新区块已超过十分钟、还有付款在等待时，它立刻离开，而不是继续给一条停住的链加负担。
@@ -52,7 +52,7 @@ So the ship's load does not explain the stall. What does is still being checked,
 
 まずこれを確かめました。船がチェーンを遅くしたのなら、それは私たちの責任だからです。
 
-- 停止は落ち着いたチェーンで起きました。UTC 12:55 から、ブロック 1563 から 1568 がほぼ 1 分に 1 つずつ私たちのノードに届きました。最後の[ブロック 1569](https://tauhud.com/explorer/?b=1569) が加わったのは UTC 13:01:56、Queen が 13:00 に着いて間もない頃です。その時点で送った支払いはわずかで、ノードは負荷を「落ち着いている」と判定していました。寄港中、その後のブロックは来ませんでした。
+- 停止は落ち着いたチェーンで起きました。UTC 12:55 から、ブロック 1563 から 1568 がほぼ 1 分に 1 つずつ私たちのノードに届きました。最後の[ブロック 1569](https://tauhud.com/explorer/?b=1569) が作られたのは UTC 13:01:52、Queen が 13:00 に着いて間もない頃です。それまでのブロックと同じく小さく、3 AGRS の送金が 1 件だけでした。その前の 3 つのブロックもそれぞれ 1〜2 件です。その時点で送った支払いはわずかで、ノードは負荷を「落ち着いている」と判定していました。寄港中、その後のブロックは来ませんでした。UTC 15:00 の時点でも、これが最新のブロックでした。
 - [11 月 7 日](/blog/?p=2026-11-07-queen-learnings)、同じ船は 90 分間で 400 件以上の支払いを送り、その間チェーンはずっとブロックを作り続けました。
 - 停止の間も私たちのノードは動き続け、送金を受け付けていました。船が去ったとき 21 件が待っていました。止まったのは新しいブロックの到着です。
 - 船は設計どおりに動きました。最新のブロックが 10 分以上前のもので支払いが待っているとき、止まったチェーンにさらに積み上げず、すぐに出航しました。
