@@ -127,6 +127,7 @@ html.fit .main > .panel { min-height: 0; overflow: auto; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/win.js" defer></script>
 </head>
 <body>
 <div class="wrap">
@@ -319,6 +320,15 @@ async function askEngine() {
   E.state = out.state; E.res = out.res || null; E.hold = out.hold || 0;
   if (E.res && E.res.tests) { E.runs = new Map(tests.map(([, i], k) => [i, E.res.tests[k]])); } else E.runs = new Map();
   render();
+  /* the moment a rule is right: the engine takes it and every test payment does what you said it should. Once per rule text,
+     so editing and checking again does not repeat it (assets/win.js) */
+  const runs = S.tests.map((t, i) => [t, E.runs.get(i)]).filter(([, r]) => r);
+  if (E.res && E.res.accepted && runs.length && runs.every(([t, r]) => agrees(t, r)) && E.won !== tau && window.TauWin) {
+    E.won = tau;
+    TauWin.moment({ key: "builder-ok", at: $("tests"), title: T("Your rule works: the Tau engine takes it"),
+      meaning: F("All {n} test payments did what you said they should. Next: sign it in your wallet, and it guards your account on the testnet.", { n: runs.length }),
+      proof: F("{n} of {n} test payments as expected", { n: runs.length }) + (E.res.ms != null ? " · " + E.res.ms + " ms" : "") });
+  }
 }
 function setEngine(on) {
   $("state").className = "state " + (on ? "ok" : "off");

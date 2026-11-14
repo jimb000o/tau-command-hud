@@ -905,6 +905,13 @@
     $("jobsCount").textContent = F("{a} of {b}", { a: Object.keys(S.done).length, b: CONTRACTS.length });
   }
   const BOARD = { data: null, at: 0 };
+  /* the points arrive where your standing is: a +n rises from it and it glows once, brighter for a new rank (14.11.2026) */
+  function gain(pts, up) {
+    const r = document.querySelector("#inst .row.rk"); if (!r || !S.fx || REDUCED) return;
+    r.classList.remove("gain", "rkup"); void r.offsetWidth; r.classList.add(up ? "rkup" : "gain");
+    const g = el("span", { class: "plus", text: "+" + pts }); r.append(g);
+    setTimeout(() => { g.remove(); r.classList.remove("gain", "rkup"); }, 1700);
+  }
   function instruments() {
     const box = $("inst"); if (!box) return;
     const pk = myPk(), tip = CHAIN.tip, left = traceLeft(), c = cur(), frac = traceFrac();
@@ -2024,10 +2031,12 @@
     if (h) say("ok", F("The heist is done: all {n} parts.", { n: h.heist.length }));
     say("ok", F("{x} settled: +{n}. Standing: {r}.", { x: jname(j), n: pts, r: rank() }));
     learnTopic(h ? kindOf(j).topic : j.topic);
-    if (rank() !== before) { snd.chapter(); crew("qm", F("New rank: {r}. Harder work comes to your inbox now.", { r: rank() }), "glad");
+    const up = rank() !== before;
+    if (up) say("ok", el("div", { class: "rankup" }, el("span", { text: T("New rank") }), el("b", { text: T(rank()) })));
+    if (up) { snd.chapter(); crew("qm", F("New rank: {r}. Harder work comes to your inbox now.", { r: rank() }), "glad");
       const g = Object.keys(GEAR_AT).find(k => GEAR_AT[k] === rank()); if (g) say("ok", F("New gear: {x}, {y}.", { x: g, y: T(GEAR.find(x => x[0] === g)[1]) }), btn(g, g)); }
     letters();
-    jobs(); instruments(); topbar(); chips(); jobTick(CHAIN.tip);
+    jobs(); instruments(); topbar(); chips(); jobTick(CHAIN.tip); gain(pts, up);
     const nx = S.inbox[0]; if (nx) say("sys", T("Next in the inbox:"), btn(F("read {x}", { x: jname(nx) }), "read " + jname(nx)));
   }
   function jobMiss(j) { archive(j, "missed", 0); mood(j.who, "sour"); jobs(); instruments(); topbar(); chips(); jobTick(CHAIN.tip); }

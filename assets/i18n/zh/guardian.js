@@ -1,5 +1,10 @@
 /* Simplified Chinese for the Guardian page (guardian/). Keys are the English text; {n} {e1} … are placeholders. */
 TauI18n.add({ strings: {
+  /* 14.11.2026: the moment you did something (assets/win.js) */
+  "Step 1 done: your authenticator app is connected": "第 1 步完成：你的验证器应用已连接",
+  "Its six-digit codes are now the second key for your test wallet.": "它的六位数验证码现在是你测试钱包的第二把钥匙。",
+  "Step 2 done: the Guardian rule is in force": "第 2 步完成：Guardian 规则已生效",
+  "A block holds it now. From here, payments it covers wait for a code from your app.": "现在已有区块保存它。从此，它涵盖的付款会等待你应用里的验证码。",
   "Guardian": "Guardian",
   "It can say yes to your payment, never send one": "它只能对你的付款说“同意”，永远不能自己发起付款",
   "Your test wallet": "你的测试钱包",

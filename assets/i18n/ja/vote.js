@@ -1,5 +1,9 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  /* 14.11.2026: the moment you did something (assets/win.js) */
+  "Your yes is counted": "あなたの賛成票が数えられました",
+  "That is how a validator agrees a rule change on Tau Net: the same commands, the same steps. Here it was the practice chain.": "Tau Net のバリデーターはこうしてルール変更に合意します。同じコマンド、同じ手順。ここでは練習用のチェーンでした。",
+  "practice · block #{a}": "練習 · ブロック #{a}",
   "Who may vote on a rule change is a setting of the network; the counter on the right says what it admits now.": "ルール変更に誰が投票できるかはネットワークの設定です。右のカウンターが今受け付けている範囲を示します。",
   "runs one with the network’s settings.": "がネットワークの設定どおりにノードを動かします。",
   "Who may vote.": "誰が投票できるか。",

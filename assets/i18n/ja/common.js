@@ -1,5 +1,9 @@
 /* Japanese for the shared header and strings used on several pages. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  /* 14.11.2026: the moment you did something (assets/win.js) */
+  "first time": "はじめて",
+  "Close": "閉じる",
+  "simulation": "シミュレーション",
   "Testnet health": "テストネットの健康",
   "Rather watch first?": "まず見てみますか？",
   "Guided tour of the HUD": "HUD のガイドツアー",

@@ -292,6 +292,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/win.js" defer></script>
 </head>
 <body>
 <div class="wrap">
@@ -463,6 +464,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
 const TAU_URL = "https://node.tauhud.com/tau", KEY = "tauhud-learn";
 const $ = id => document.getElementById(id);
 const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const store = { get() { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { return {}; } }, set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} } };
 const OPS = { sat: "Can this be true?", valid: "Is this true in every case?", why: "Which parts contradict each other?", run: "Feed inputs in, step by step, and read the outputs", unsat: "Can this never be true?", realizable: "Can the outputs always answer the inputs?" };
@@ -769,7 +771,16 @@ $("tCheck").addEventListener("click", async () => {
     document.querySelectorAll(".tn-support.learn").forEach(e => e.remove());
     const sup = !window.TauNav || !TauNav.support ? null : l.id === "rule" ? TauNav.piece("rule", "learn", "You just wrote a rule with always. A rule of the same kind is knitted into our Christmas sweater: always o1[t] = i1[t].") : cur === lessons.length - 1 ? TauNav.support("learn") : null;
     if (sup) { sup.classList.add("learn"); v.after(sup); }
+    const was = lessons.filter(x => x.id !== l.id && store.get()[x.id]).length, n = was + 1;
     chips();
+    /* the moment it is solved: the lesson's chip glows, one card says what you can do now and how far you are (assets/win.js) */
+    const chip = $("chips").children[cur];
+    if (chip && window.TauWin) {
+      if (!document.documentElement.matches("[data-level=pro]")) TauWin.glow(chip);
+      TauWin.moment({ key: "learn-" + l.id, at: $("tVerdict"), title: F("Lesson {a} solved: {x}", { a: cur + 1, x: T(l.title) }),
+        meaning: n === lessons.length ? T("Every lesson solved. You can read and write Tau rules like the ones the testnet runs.") : F("{a} of {b} lessons solved. Each one is a real answer from the Tau engine, not a quiz.", { a: n, b: lessons.length }),
+        proof: F("{a} of {b} solved", { a: n, b: lessons.length }) });
+    }
   } else {
     v.className = "verdict bad"; v.textContent = r.ok ? T("Not yet: Tau answered differently. Look at the answer on the left and try again.") : T("Tau could not read that. The error is on the left.");
   }

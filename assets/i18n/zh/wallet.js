@@ -1,5 +1,16 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. Addresses, hashes and Tau rule text stay as they are. */
 TauI18n.add({ strings: {
+  /* 14.11.2026: the moment you did something (assets/win.js) */
+  "It is final: every node now holds the same record of it.": "已经确定：每个节点现在都保存着同一份记录。",
+  "It waits for its release block. Until then you can still take it back under Activity.": "它在等待释放区块。在那之前，你仍可以在“动态”里撤回。",
+  "Your request is on the chain. It executes the moment your co-signer signs.": "你的请求已上链。共同签名人一签名就会执行。",
+  "A block counted it. Every node agrees it is there.": "一个区块计入了它。每个节点都认同它在那里。",
+  "Your account follows its own rule now: every payment from it is checked against it first.": "你的账户现在遵循它自己的规则：每笔付款都会先按它检查。",
+  "The other account now finds your rule in its inbox, to agree to or decline.": "对方账户现在会在收件箱里看到你的规则，可以同意或拒绝。",
+  "You agreed: that rule now runs on your account for every payment.": "你同意了：这条规则现在对你账户的每笔付款生效。",
+  "It never arrived: the test AGRS are back with you.": "它没有到达：测试 AGRS 回到了你这里。",
+  "All steps done: you sent a payment and took it back": "全部完成：你发出了一笔付款，又把它撤回了",
+  "On the chain only the sender can take a payment back, and only before the release block. You have now done both sides of it.": "在链上只有发送方能撤回付款，而且只能在释放区块之前。这两面你现在都做过了。",
   "Tau testnet wallet": "Tau 测试网钱包",
   "Wallet": "钱包",
   "A testnet account with its own rules: send, take back, co-sign, vote, form a Pakt": "一个带有自己规则的测试网账户：转账、撤回、共同签名、投票、结成盟约",

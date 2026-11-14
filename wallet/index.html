@@ -493,6 +493,7 @@ html.focus-feed #signFacts { display: none; }
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="vendor/tau-bls.min.js"></script>
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/win.js" defer></script>
 </head>
 <body>
 <div class="wrap">
@@ -966,14 +967,33 @@ function plain(env) {
   return F("The node refused it, nothing was sent: {x}", { x: (m || code || "no reason given").slice(0, 160) });
 }
 async function followLog() {   // queued → in a block, by tx hash
+  let landed = null;
   for (const x of W.log.filter(x => x.status === "queued" && x.hash).slice(0, 4)) {
     const m = await lookup(`gettxstatus ${x.hash}`);
     if (!m || m.status !== "ok") continue;
     const d = m.data || {}, s = String(d.status || d.state || "").toLowerCase();
-    if (d.block_number != null || /confirmed|included|mined|sealed|applied/.test(s)) { x.status = "in"; x.block = d.block_number ?? d.height ?? null; }
+    if (d.block_number != null || /confirmed|included|mined|sealed|applied/.test(s)) { x.status = "in"; x.block = d.block_number ?? d.height ?? null; landed = landed || x; }
     else if (/reject|fail|dropped|expired|invalid/.test(s)) { x.status = "out"; x.why = d.reason || d.error || s; }
   }
   if (W.pk) store.set(logKey(), JSON.stringify(W.log));
+  if (landed) landedMoment(landed);
+}
+/* the moment one of your transactions is in a block: what you did, what it means now, and the block as proof (assets/win.js) */
+const LANDED = {
+  pay: "It is final: every node now holds the same record of it.",
+  split: "It is final: every node now holds the same record of it.",
+  back: "It waits for its release block. Until then you can still take it back under Activity.",
+  cosign: "Your request is on the chain. It executes the moment your co-signer signs.",
+  vote: "A block counted it. Every node agrees it is there.",
+  rule: "Your account follows its own rule now: every payment from it is checked against it first.",
+  offer: "The other account now finds your rule in its inbox, to agree to or decline.",
+  accept: "You agreed: that rule now runs on your account for every payment.",
+  retract: "It never arrived: the test AGRS are back with you.",
+};
+function landedMoment(x) {
+  if (!window.TauWin || !LANDED[x.kind]) return;
+  TauWin.moment({ title: x.label, meaning: T(LANDED[x.kind]), key: "wallet-" + x.kind, at: $("log"),
+    proof: (x.block != null ? F("in block #{a}", { a: x.block }) : T("in a block")) + (x.hash ? " · tx " + short(x.hash) : "") + (SIM ? " · " + T("simulation") : ""), href: W.pk ? "/account/?a=" + W.pk : null });
 }
 
 /* ---------- rules: written for the testnet's user-policy stream o5 (docs/approvals.md in IDNI/tau-testnet) ----------
@@ -1894,6 +1914,7 @@ function renderWalk() {
   ];
   const done = steps.filter(x => x[0]).length;
   $("steps").hidden = false;
+  if (done === steps.length && window.TauWin && W.log.some(x => x.kind === "retract" && Date.now() - x.at < 9e5)) setTimeout(() => TauWin.moment({ once: true, key: "wallet-walk", title: T("All steps done: you sent a payment and took it back"), meaning: T("On the chain only the sender can take a payment back, and only before the release block. You have now done both sides of it."), at: $("steps") }), 2600);
   const line = T("I sent test money to a wrong address on Tau Testnet Alpha and took it back before it arrived. Five minutes, nothing to install:") + " https://tauhud.com/wallet/?walk=friend&ref=friend";   // the tag counts opens, nothing about who
   $("steps").replaceChildren(el("h3", { text: F("A payment you can take back · {a} of {b} done", { a: done, b: steps.length }) }),
     ...steps.map(([ok, t, x]) => el("div", { class: "step" + (ok ? " done" : "") }, el("span", { class: "ck", text: ok ? "✓" : "○" }), el("span", null, el("b", { text: T(t) }), " ", ok ? null : el("span", { text: T(x) })))),
