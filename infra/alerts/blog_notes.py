@@ -82,7 +82,7 @@ The ship only sees our node. It saw no new block for ten minutes with payments w
 
 ## What we learned and what we change
 
-- **A node that loses the network has to notice by itself.** We have built a watchdog: when our node cannot reach the network for ten minutes, it restarts itself, which is what fixed it this time. If that does not help, it waits longer before each next try. Today's two hours would have been about ten minutes.
+- **A node that loses the network has to notice by itself.** We have built a watchdog, and it has been running since the same afternoon: when our node cannot reach the network for ten minutes, it restarts itself, which is what fixed it this time. If that does not help, it waits longer before each next try. Today's two hours would have been about ten minutes.
 - **"No new blocks on our node" is not "the testnet stalled".** The ship will write a plain note in its logbook when the chain under it stops or starts over, and check our node's connection before it calls anything a stall.
 - **The brake stays as it is.** A test ship should not send while its node gets no new blocks, whatever the reason.
 - **A short call is a result too.** We show it as it was: 12 of 90 minutes, in amber, not in green.
@@ -116,7 +116,7 @@ Queen Mempool 在 UTC 13:00 到达 White Rabbit Key，计划停靠 90 分钟。�
 
 ## 我们学到了什么，要改什么
 
-- **失去网络的节点必须自己察觉。** 我们已经做好了一个看门程序：当我们的节点十分钟连不上网络时，它会自动重启（这次正是重启解决了问题）；如果重启没用，每次再试之前会等得更久。今天的两个小时，本来大约十分钟就能解决。
+- **失去网络的节点必须自己察觉。** 我们已经做好了一个看门程序，当天下午起就已在运行：当我们的节点十分钟连不上网络时，它会自动重启（这次正是重启解决了问题）；如果重启没用，每次再试之前会等得更久。今天的两个小时，本来大约十分钟就能解决。
 - **“我们的节点没有新区块”不等于“测试网停了”。** 当脚下的链停下或重新开始时，船会在日志里写下清楚的说明，并在把任何情况叫作停顿之前，先检查我们节点的连接。
 - **刹车保持不变。** 无论原因是什么，当节点收不到新区块时，测试船都不应该发送。
 - **短暂的停靠也是一个结果。** 我们如实展示：90 分钟里只有 12 分钟，用琥珀色，而不是绿色。
@@ -150,7 +150,7 @@ Queen Mempool は UTC 13:00 に White Rabbit Key に着き、90 分の寄港を�
 
 ## わかったこと、変えること
 
-- **ネットワークを失ったノードは、自分で気づかなければなりません。** 監視の仕組みを作りました。ノードが 10 分間ネットワークにつながらないとき、自分で再起動します。今回直したのも再起動でした。それでもだめなら、次に試すまでの間隔を延ばします。今日の 2 時間は、10 分ほどで済んだはずです。
+- **ネットワークを失ったノードは、自分で気づかなければなりません。** 監視の仕組みを作り、同じ日の午後から動いています。ノードが 10 分間ネットワークにつながらないとき、自分で再起動します。今回直したのも再起動でした。それでもだめなら、次に試すまでの間隔を延ばします。今日の 2 時間は、10 分ほどで済んだはずです。
 - **「私たちのノードに新しいブロックが来ない」は「テストネットが止まった」ではありません。** 足元のチェーンが止まったり最初からやり直しになったりしたとき、船は航海日誌にはっきり書き残し、停止と呼ぶ前にノードの接続を確かめます。
 - **ブレーキはこのままにします。** 理由が何であれ、ノードに新しいブロックが来ないうちは、テストの船は送るべきではありません。
 - **短い寄港も結果のひとつです。** そのまま見せます。90 分のうち 12 分、緑ではなく琥珀色で。
