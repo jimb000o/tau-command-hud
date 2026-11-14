@@ -130,29 +130,59 @@ def pirate_stand_in(m, ship):
     return mm, im
 
 
-def card(pic, lines):
+def fit(d, text, f, width):
+    """`text` in lines no wider than `width`, broken at words."""
+    out, cur = [], ""
+    for w in text.split():
+        t = (cur + " " + w).strip()
+        if cur and d.textlength(t, font=f) > width:
+            out.append(cur)
+            cur = w
+        else:
+            cur = t
+    return out + ([cur] if cur else [])
+
+
+def card(pic, lines, right=None):
     """Title, body lines, accent line last. A body line starting with "## " is a small heading (a gap above it),
-    one starting with "- " a point under it."""
+    one starting with "- " a point under it. With `right` the card ends at that x (the picture keeps that side for
+    something else, the radio host on a blog hero): longer lines then wrap, the title on up to two lines, and nothing
+    on the card runs under what stands beside it (14 Nov 2026: Rico covered the end of a title)."""
     title, *rest = lines
     body, accent = (rest[:-1], rest[-1]) if rest else ([], "")
     ft, fb, fh, fa = font(46), font(26, 500), font(22), font(26)
     d0 = ImageDraw.Draw(pic)
-    show = lambda t: "•  " + t[2:] if t.startswith("- ") else t[3:].upper() if t.startswith("## ") else t
-    fnt = lambda t: fh if t.startswith("## ") else fb
-    step = lambda t: 54 if t.startswith("## ") else 40
-    wid = max([d0.textlength(title, font=ft)] + [d0.textlength(show(t), font=fnt(t)) for t in body] + [d0.textlength(accent, font=fa)])
-    hgt = 34 + 64 + sum(step(t) for t in body) + (50 if accent else 0) + 18
+    show = lambda t: "\u2022  " + t[2:] if t.startswith("- ") else t[3:].upper() if t.startswith("## ") else t
+    room = (right - 56 - 72) if right else 10 ** 6
+    rows = []   # (x offset, text, font, colour, height of the row)
+    tl = fit(d0, title, ft, room)
+    if len(tl) > 2:   # a long title gets a smaller type rather than a third line
+        ft = font(40)
+        tl = fit(d0, title, ft, room)
+    for i, t in enumerate(tl):
+        rows.append((0, t, ft, (242, 242, 242, 255), 66 if i == len(tl) - 1 else 56))
+    for t in body:
+        if t.startswith("## "):
+            rows.append((0, "", fh, None, 14))
+            rows.append((0, show(t), fh, (120, 220, 140, 255), 40))
+        else:
+            parts = fit(d0, t[2:] if t.startswith("- ") else t, fb, room - (34 if t.startswith("- ") else 0))
+            for j, part in enumerate(parts):
+                txt = ("\u2022  " + part) if t.startswith("- ") and j == 0 else part
+                rows.append((34 if t.startswith("- ") and j else 0, txt, fb, (205, 214, 222, 255), 40 if j == len(parts) - 1 else 34))
+    if accent:
+        rows.append((0, "", fa, None, 10))
+        for part in fit(d0, accent, fa, room):
+            rows.append((0, part, fa, (150, 160, 170, 255), 40))
+    wid = max([d0.textlength(r[1], font=r[2]) + r[0] for r in rows if r[1]] or [0])
+    hgt = 30 + sum(r[4] for r in rows) + 18
     over = Image.new("RGBA", (W, H)); d = ImageDraw.Draw(over)
     d.rounded_rectangle([56, 56, 56 + wid + 72, 56 + hgt], radius=18, fill=(8, 12, 24, 225))
     y = 56 + 30
-    d.text((92, y), title, font=ft, fill=(242, 242, 242, 255)); y += 66
-    for t in body:
-        if t.startswith("## "):
-            y += 14; d.text((92, y), show(t), font=fh, fill=(120, 220, 140, 255)); y += 40
-        else:
-            d.text((92, y), show(t), font=fb, fill=(205, 214, 222, 255)); y += 40
-    if accent:
-        d.text((92, y + 10), accent, font=fa, fill=(150, 160, 170, 255))
+    for x, t, f, col, h in rows:
+        if t and col:
+            d.text((92 + x, y), t, font=f, fill=col)
+        y += h
     return Image.alpha_composite(pic, over)
 
 
@@ -185,7 +215,7 @@ def main(art, ships, texts, out):
         at = (x0 + px / ZOOM, y0 + py / ZOOM)
     pic = place_ship(pic, ship, m, at, x0, y0, ZOOM, big)
     if t.get("card"):
-        pic = card(pic, t["card"])
+        pic = card(pic, t["card"], t.get("card_right"))
     pic.convert("RGB").save(out, quality=90)
     print("made", out, "from", sc["island"], "and", m["src"], "at", anchor)
 
