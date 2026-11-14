@@ -675,6 +675,12 @@ def main(argv: list[str]) -> int:
         return 0
     if cmd == "now":
         install()
+        cfg = read_env()
+        why = hold_reason(cfg) or (None if os.path.isfile(attacks_path(cfg)) else
+                                   f"no attack file at {attacks_path(cfg)} (README: Pirate copy)")
+        if why:   # said here, not only in the log: the voyage would stop at once in the background
+            print(f"pirate copy: no voyage now, {why}")
+            return 0
         rc, out = sh(["systemctl", "start", "--no-block", UNIT + ".service"])
         print("pirate copy: a voyage started in the background, about an hour (up copy shows how it went)"
               if rc == 0 else out.strip())

@@ -72,6 +72,12 @@ p.disk_free_gb = lambda: 20.0
 check(p.hold_reason({}) is None and p.hold_reason({"PIRATE_COPY": "0"}).startswith("switched off"), "clear way; off means off")
 os.environ["PIRATE_COPY_ATTACKS"] = os.path.join(TMP, "missing.py")
 check("no usable attack file" in p.run_pass(), "no voyage without the private attack file")
+p.shutil.which = lambda name: None
+import contextlib, io  # noqa: E401,E402
+buf = io.StringIO()
+with contextlib.redirect_stdout(buf):
+    p.main(["piratecopy.py", "now"])
+check("no voyage now, no attack file" in buf.getvalue(), "up copy now says at once why no voyage starts")
 os.environ["PIRATE_COPY_ATTACKS"] = STUB
 
 # ---------------- the timer ----------------
