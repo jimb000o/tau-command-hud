@@ -170,6 +170,7 @@ tauhud.com's node:
 | `chain-reset` | The testnet gets restarted on the same genesis without notice (twice on 2026-10-27); the node detects that, wipes and resyncs. |
 | `validator-gate` | Never propose while the key is not in the active validator set. |
 | `bootstrap-redial` | Bootstrap peers were dialed at start only; a node that lost its last peer stayed peerless until a restart (2026-10-29, three hours). Now it dials them again every minute while it has no peer. |
+| `bootnode-watchdog` | After a testnet restart a running node failed every handshake with the bootnode and sat on the dead chain for two hours until a manual restart (2026-11-14). Now it restarts itself when no bootstrap peer has been connected for 10 minutes, waiting longer after each recent restart. |
 
 Two earlier patches, reading a whole sync reply and paging header sync until caught up, are
 in IDNI's code since tau-testnet e6c8f92 (IDNI issue #78) and were dropped.
