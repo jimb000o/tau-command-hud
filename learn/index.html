@@ -356,6 +356,7 @@ body.lv-new .main > .col:not(.gcol):not(.gside), body:not(.lv-new) .main > .gcol
       <section class="panel lesson" aria-labelledby="hLes">
         <h2 id="hLes">8 short lessons</h2>
         <p class="pro-note" id="newNote" hidden><button type="button" class="backg" id="gReturn">‹ Back to the step-by-step guide</button></p>
+        <p class="pro-note" id="tabaNote" hidden><a class="backg" href="taba/">‹ Back to Tau's math</a></p>
         <p class="pro-note" id="proNote" hidden>Lessons 1 to 4 are the basics, 5 to 8 are real testnet rules and their traps, 9 to 12 are for logic people: terms, quantifiers, how sat treats inputs and what a rule leaves open, and 13 and 14 add until and since. Then the <a href="/playground/">Rule Playground ›</a>.</p>
         <div class="chips"><span id="chips" role="tablist" aria-label="Lessons"></span><button type="button" id="lNext">Next ›</button></div>
         <h3 id="lTitle"></h3>
@@ -506,6 +507,10 @@ $("keepLvl").addEventListener("click", () => { applyLevel(level); });
 addEventListener("tau-level-set", e => { const l = LEARN_OF[e.detail]; if (l && l !== level) applyLevel(l, "site"); });   // the level changed under the gear while this page is open
 /* one tap: the level, and a first question Tau answers at once */
 let full = false;   // true for this visit only: a shared #q= link shows the box even to a beginner
+/* #try=<lesson id>.<n> (tauhud.com/learn/taba/ links here): that lesson opens and its try n is asked at once, with the
+   lesson's own explanation under the answer; a lesson of another level is shown for this visit too */
+const TRY = /^#try=([a-z0-9-]+)\.(\d{1,2})$/.exec(location.hash);
+let visit = TRY ? TRY[1] : "";
 const FIRST = { new: { op: "sat", spec: "x = 0", says: "That was your first Tau question: can x be 0? Yes. Lesson 1 on the right goes on from here.", lesson: 0 },
   code: { op: "sat", spec: "x = 0 || x = 1", says: "|| is or, && is and, = is equals: the cheat sheet under the box has the rest. Lesson 1 starts on the right.", lesson: 0 },
   pro: { op: "sat", spec: "sometimes o1[t] = i1[t]", says: "Streams and time work as you expect; sat quantifies inputs for all, outputs exists, step by step. Lesson 5 is the real testnet rule.", lesson: 4 } };
@@ -611,9 +616,9 @@ function show(q, r, says) {
     if (!core.length) line(`<span class="v t">${esc(T("No contradiction: Tau found nothing that rules this out."))}</span>`);
     else { line(esc(T("These parts already contradict each other:")), "v f"); core.forEach(c => line(`<span translate="no">  ${esc(c)}</span>`, "v")); }
   } else {
-    const yes = !!r.verdict;
-    line(`<span class="v ${yes ? "t" : "f"}">${yes ? "T" : "F"}</span> ${esc(T(VERDICT[q.op][yes ? 1 : 0]))}`);
-    echoed = `<span class="v ${yes ? "t" : "f"}">${yes ? "T" : "F"}</span> ${esc(T(VERDICT[q.op][yes ? 1 : 0]))}`;
+    const yes = !!r.verdict, words = (q.op === "sat" && /\[t/.test(q.spec) ? TIMED_SAT : VERDICT[q.op])[yes ? 1 : 0];
+    line(`<span class="v ${yes ? "t" : "f"}">${yes ? "T" : "F"}</span> ${esc(T(words))}`);
+    echoed = `<span class="v ${yes ? "t" : "f"}">${yes ? "T" : "F"}</span> ${esc(T(words))}`;
   }
   if (q.op === "run" && r.ok) echoed = `<span class="v t">${esc(T("ran {n} steps").replace("{n}", (r.outputs || []).length))}</span> · ` + (r.outputs || []).map(x => Object.entries(x.out || {}).map(([k, v]) => k + "=" + v).join(" ")).join(", ");
   if (q.op === "why" && r.ok) echoed = (r.core || []).length ? `<span class="v f">${esc(T("These parts already contradict each other:"))}</span> ${esc((r.core || []).join(" · "))}` : `<span class="v t">${esc(T("No contradiction: Tau found nothing that rules this out."))}</span>`;
@@ -630,6 +635,8 @@ const VERDICT = {
   valid: ["no, not in every case", "yes, true in every case"],
   realizable: ["no, some inputs leave the outputs stuck", "yes, the outputs can always answer"],
 };
+/* with streams, sat asks: for every input, step by step, can the outputs meet the spec forever? "never true" would be wrong */
+const TIMED_SAT = ["no, the outputs cannot meet this for every input, forever", "yes, the outputs can meet this for every input, forever"];
 
 /* one question to the engine on tauhud's server; never throws */
 async function engine(q) {
@@ -740,7 +747,7 @@ function openLesson(i) {
   $("lNext").hidden = cur === lessons.length - 1;
   $("lPlay").hidden = cur !== lessons.length - 1 && !["rule", "open", "cases", "reads"].includes(l.id);   // the rule lessons: the Playground's X-ray shows the same for any rule
   chips();
-  try { const u = new URL(location.href); if (!u.hash.startsWith("#q=")) { u.hash = "l" + (cur + 1); history.replaceState(null, "", u.href); } } catch (e) {}
+  try { const u = new URL(location.href); if (!u.hash.startsWith("#q=") && !u.hash.startsWith("#try=")) { u.hash = "l" + (cur + 1); history.replaceState(null, "", u.href); } } catch (e) {}
 }
 $("lNext").addEventListener("click", () => openLesson(cur + 1));
 $("tSolve").addEventListener("click", () => { const t = lessons[cur].task; load({ op: t.op, spec: t.solution, steps: t.steps }); $("tVerdict").textContent = T("A solution is in the box. Press Check my answer to run it."); $("tVerdict").className = "verdict"; });
@@ -775,7 +782,7 @@ $("tCheck").addEventListener("click", async () => {
 let guide = [], gAt = 0, gBusy = false, allLessons = [];
 /* lessons marked "level": "pro" are for people who picked logic or Tau */
 function pickLessons() {
-  lessons = allLessons.filter(l => !l.level || l.level === level);
+  lessons = allLessons.filter(l => !l.level || l.level === level || l.id === visit);
   cur = Math.min(cur, Math.max(0, lessons.length - 1));
   const pro = lessons.filter(l => l.level === "pro").length, base = lessons.length - pro;
   $("hLes").textContent = pro ? T(`${base} lessons, then ${pro} for logic people`) : T(`${base} short lessons`);
@@ -939,8 +946,9 @@ document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click
 /* ---- start ---- */
 setOp("sat");
 const h = location.hash;
-full = h.startsWith("#q=");
-if (store.get().level !== undefined || h.startsWith("#q=") || h.startsWith("#ask")) applyLevel(store.get().level || "");   // came back, or follows a shared link: no door
+full = h.startsWith("#q=") || !!TRY;
+if (new URLSearchParams(location.search).get("from") === "taba") $("tabaNote").hidden = false;
+if (store.get().level !== undefined || h.startsWith("#q=") || TRY || h.startsWith("#ask")) applyLevel(store.get().level || "");   // came back, or follows a shared link: no door
 else openDoor();
 fetch("lessons.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
   allLessons = d.lessons || []; pickLessons(); guide = d.guide || []; renderAsked(d.asked || []); gAt = Math.min(store.get().g || 0, guide.length);
@@ -948,7 +956,9 @@ fetch("lessons.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
   const m = /^#l(\d{1,2})$/.exec(h);
   const done = store.get();
   const first = lessons.findIndex(l => !done[l.id]);
-  openLesson(m ? +m[1] - 1 : level === "pro" && !done.rule && first === 0 ? 4 : (first < 0 ? 0 : first));
+  const at = TRY ? lessons.findIndex(l => l.id === TRY[1]) : -1, t = at < 0 ? null : lessons[at].tries[+TRY[2]];
+  openLesson(at >= 0 ? at : m ? +m[1] - 1 : level === "pro" && !done.rule && first === 0 ? 4 : (first < 0 ? 0 : first));
+  if (t) { load(t); ask({ op: t.op, spec: t.spec, steps: t.steps }, { expect: t.expect, text: t.says }); }
 }).catch(() => { $("lTitle").textContent = T("The lessons did not load. Reload the page to try again."); });
 if (h.startsWith("#q=")) {
   try { const q = JSON.parse(unb64(h.slice(3))); if (q && q.spec) { load({ op: q.op, spec: String(q.spec).slice(0, 2048), in: q.in }); ask(readQuestion()); } } catch (e) {}
