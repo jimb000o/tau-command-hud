@@ -13,10 +13,12 @@ Answer   {"ok": true, "op", "verdict": true|false, "core": [...] (why),
 """
 from __future__ import annotations
 
+import glob
 import json
 import os
 import re
 import resource
+import shutil
 import signal
 import subprocess
 import sys
@@ -38,6 +40,39 @@ MEMORY = int(os.environ.get("TAU_MEMORY_MB", "0"))
 REFUSED = re.compile(r"\b(ifile|ofile|file|console|nlang|include|load)\b|:=\s*(in|out)\b", re.I)
 STREAM_NAME = re.compile(r"^(i\w{0,15}|this)$")
 VALUE = re.compile(r"^[\w#{}:\[\]'. +-]{1,120}$")
+
+
+# Spot's ltlsynt: the engine runs it for every formula with until, since and the other full LTL operators. The
+# tau-lang build keeps it in its dependency store (<store>/store/spot/<id>/prefix/bin), which is not on PATH, so on
+# 14 Nov 2026 lessons 13 and 14 got "ltlsynt not found on PATH". Found once here and put first on PATH; every worker
+# inherits it (the engine looks on PATH before anything else).
+STORE = os.environ.get("TAU_STORE", "/root/.tau")
+SKIP_DIRS = {"include", "src", "share", "lib", "lib64", "doc", "docs", "man", "tests", "test"}
+
+
+def find_spot_bin(store: str = STORE) -> str:
+    """The directory holding ltlsynt, or "" when there is none."""
+    found = shutil.which("ltlsynt")
+    if found:
+        return os.path.dirname(found)
+    for pattern in ("store/spot/*/prefix/bin/ltlsynt", "store/spot/*/bin/ltlsynt", "spot*/bin/ltlsynt", "spot*/*/bin/ltlsynt"):
+        for path in sorted(glob.glob(os.path.join(store, pattern))):
+            if os.path.isfile(path) and os.access(path, os.X_OK):
+                return os.path.dirname(path)
+    # any other layout: a shallow walk that leaves out the big header and source trees (Boost, cvc5)
+    top_depth = store.rstrip(os.sep).count(os.sep)
+    for here, dirs, files in os.walk(store):
+        depth = here.count(os.sep) - top_depth
+        dirs[:] = [] if depth >= 6 else sorted(d for d in dirs if d not in SKIP_DIRS)
+        path = os.path.join(here, "ltlsynt")
+        if "ltlsynt" in files and os.path.basename(here) == "bin" and os.access(path, os.X_OK):
+            return here
+    return ""
+
+
+SPOT_BIN = find_spot_bin()
+if SPOT_BIN and SPOT_BIN not in os.environ.get("PATH", "").split(os.pathsep):
+    os.environ["PATH"] = SPOT_BIN + os.pathsep + os.environ.get("PATH", "")
 
 
 class BadRequest(ValueError):
@@ -90,6 +125,32 @@ def _limits():
             pass
 
 
+def kill_session(sid: int) -> int:
+    """SIGKILL every process left in session sid; returns how many.
+
+    The engine starts ltlsynt in a process group of its own, so killing the worker's group at the deadline would
+    leave ltlsynt running, and a visitor could pile up such strays. They all stay in the worker's session, though.
+    """
+    killed = 0
+    try:
+        entries = os.listdir("/proc")
+    except OSError:
+        return 0
+    for entry in entries:
+        if not entry.isdigit() or int(entry) == os.getpid():
+            continue
+        try:
+            with open(f"/proc/{entry}/stat", "rb") as f:
+                stat = f.read().decode("utf-8", "replace")
+            fields = stat[stat.rindex(")") + 2:].split()   # state, ppid, pgrp, session, ...
+            if int(fields[3]) == sid and fields[0] != "Z":   # a zombie is already dead; tini reaps it
+                os.kill(int(entry), signal.SIGKILL)
+                killed += 1
+        except (OSError, ValueError, IndexError):
+            continue
+    return killed
+
+
 def ask(req: dict, budget: float = BUDGET) -> dict:
     """Run one parsed request in a fresh worker. Always returns a dict with "ok" and "ms"."""
     started = time.monotonic()
@@ -112,6 +173,7 @@ def ask(req: dict, budget: float = BUDGET) -> dict:
                 os.killpg(proc.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
+        kill_session(proc.pid)   # an ltlsynt the worker left behind (its own process group, same session)
     ms = int((time.monotonic() - started) * 1000)
     try:
         result = json.loads(out.decode("utf-8", "replace") or "null")

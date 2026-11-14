@@ -103,7 +103,13 @@
               "test workflow, runs on pull requests",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/.github/workflows/test-release.yml#L3-L7"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Publish the development and release procedure that is already followed: reviews, required tests, who approves a release. A certificate is not needed for this; a written procedure that is followed is.",
+            "zh": "公开已经在执行的开发和发布流程：评审、必须通过的测试、谁批准发布。这里不需要认证证书，需要的是一份书面并被遵守的流程。",
+            "ja": "すでに実行している開発・リリース手順を公開する：レビュー、必須のテスト、リリースの承認者。ここで必要なのは認証ではなく、文書化され守られている手順である。"
+          },
+          "step": "s1"
         },
         {
           "id": "l-licence",
@@ -130,7 +136,13 @@
               "LICENSE.md, additional licence",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/LICENSE.md#L16"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Standard terms for use outside Tau Net, published, so a company can sign before its 30-day evaluation ends.",
+            "zh": "公开 Tau Net 之外用途的标准条款，让企业能在 30 天评估期结束前签署。",
+            "ja": "Tau Net 以外の用途の標準条件を公開し、企業が 30 日の評価期間内に署名できるようにする。"
+          },
+          "step": "s2"
         },
         {
           "id": "l-agreement",
@@ -157,7 +169,13 @@
               "LICENSE.md, liability",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/LICENSE.md#L36"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Maintenance and support in writing with the additional licence: response times, how long a version gets fixes, and liability terms a company can accept.",
+            "zh": "随附加许可提供书面的维护和支持：响应时间、一个版本会修复多久，以及企业可以接受的责任条款。",
+            "ja": "追加ライセンスに文書での保守とサポートを付ける：応答時間、一つのバージョンに修正が提供される期間、企業が受け入れられる責任の条件。"
+          },
+          "step": "s2"
         },
         {
           "id": "l-source",
@@ -184,7 +202,13 @@
               "LICENSE.md, terms can change",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/LICENSE.md#L18"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "A licence clause that allows keeping the source and the build of a licensed version for the retention period, and notice before the terms for that version change.",
+            "zh": "许可中加入条款：允许在保存期限内保留已许可版本的源代码和构建，并在该版本的条款变更前提前通知。",
+            "ja": "ライセンス済みバージョンのソースとビルドを保存期間中保持できる条項と、そのバージョンの条件変更前の通知をライセンスに加える。"
+          },
+          "step": "s2"
         },
         {
           "id": "l-versions",
@@ -212,7 +236,13 @@
               "CHANGELOG.md, note on completeness",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/CHANGELOG.md#L8-L11"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Tagged releases with release notes, so a company fixes a version and not a commit.",
+            "zh": "带发布说明的正式发布标签，让企业固定的是一个版本，而不是一个提交。",
+            "ja": "リリースノートつきのリリースタグ。企業はコミットではなくバージョンを固定できるようになる。"
+          },
+          "step": "s3"
         },
         {
           "id": "l-maturity",
@@ -235,7 +265,13 @@
               "README, work in progress",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L82-L84"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "IDNI's own statement that the checker use is no longer alpha, with its scope and how long it gets fixes.",
+            "zh": "IDNI 自己声明检查器这一用途不再是 alpha，并说明范围和修复期限。",
+            "ja": "チェッカー用途はもはやアルファではないという IDNI 自身の宣言。範囲と修正の提供期間を添える。"
+          },
+          "step": "s4"
         },
         {
           "id": "l-tests",
@@ -262,7 +298,13 @@
               "tests folder",
               "https://github.com/IDNI/tau-lang/tree/c3ea334cd1e6612930ea9f404933211858f0009f/tests"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "The test report of each release published as a document. The tests already exist and run; only the record of a run for a fixed commit is missing.",
+            "zh": "把每个发布版本的测试报告作为文档公开。测试已经存在并在运行，缺少的只是针对某个固定提交的运行记录。",
+            "ja": "各リリースのテスト報告を文書として公開する。テストはすでに存在し実行されている。足りないのは固定コミットに対する実行の記録だけである。"
+          },
+          "step": "s3"
         },
         {
           "id": "l-known",
@@ -289,7 +331,13 @@
               "README, bounded searches",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L4202-L4210"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "A known-issues list frozen with each release, so a company sees which limits apply to its version.",
+            "zh": "随每个发布版本冻结一份已知问题清单，让企业看到哪些限制适用于自己的版本。",
+            "ja": "リリースごとに既知の問題の一覧を固定し、企業が自分のバージョンにどの制約が当てはまるか分かるようにする。"
+          },
+          "step": "s3"
         },
         {
           "id": "l-meaning",
@@ -316,7 +364,13 @@
               "README, satisfiability",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L1317-L1320"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Possible today on your side: a second person reviews each translation of the procedure into rules, and rules you know to contradict confirm the set-up.",
+            "zh": "今天就可以由你方完成：由第二个人复核每一次把流程翻译成规则的工作，并用已知会矛盾的规则确认设置。",
+            "ja": "今日から自社で可能：手順をルールに翻訳するたびに別の人がレビューし、矛盾すると分かっているルールで設定を確認する。"
+          },
+          "step": null
         },
         {
           "id": "l-unknown",
@@ -343,7 +397,13 @@
               "README, limits and their defaults",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L1029-L1032"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Possible today on your side: the procedure counts only an explicit answer. UNKNOWN, an error or a stopped run means not checked.",
+            "zh": "今天就可以由你方完成：流程只认明确的答案。UNKNOWN、错误或中止的运行都表示未检查。",
+            "ja": "今日から自社で可能：手順では明示的な答えだけを数える。UNKNOWN、エラー、中断した実行は未検査とする。"
+          },
+          "step": null
         },
         {
           "id": "l-repeat",
@@ -370,7 +430,13 @@
               "README, experimental type",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L2566-L2570"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Possible today on your side: build without the natural-language type, and record the version and every option with each check.",
+            "zh": "今天就可以由你方完成：构建时不包含自然语言类型，并在每次检查时记录版本和每个选项。",
+            "ja": "今日から自社で可能：自然言語型を含めずにビルドし、検査ごとにバージョンとすべてのオプションを記録する。"
+          },
+          "step": null
         },
         {
           "id": "l-parts",
@@ -397,7 +463,13 @@
               "README, parts and what they need",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L241-L244"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "A list of components with their versions, published with each release. Until then you can derive it from the build files yourself.",
+            "zh": "随每个发布版本公开带版本号的组件清单。在此之前，你可以自己从构建文件中整理出来。",
+            "ja": "リリースごとにバージョンつきの構成要素一覧を公開する。それまではビルドファイルから自社で作成できる。"
+          },
+          "step": "s3"
         },
         {
           "id": "l-review",
@@ -420,7 +492,13 @@
               "README, theory",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L4180-L4184"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "An independent review of the implementation and a public known-answer test suite. Until then your own known-answer tests are the evidence.",
+            "zh": "对实现的独立评审，以及一套公开的已知答案测试集。在此之前，你自己的已知答案测试就是证据。",
+            "ja": "実装の独立レビューと、公開された既知解テスト集。それまでは自社の既知解テストが証拠となる。"
+          },
+          "step": "s5"
         },
         {
           "id": "l-records",
@@ -443,7 +521,13 @@
               "README, command line",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L3056-L3063"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Possible today on your side: keep the rule text, the engine version and options and the complete output in your validated system, where a named person signs the conclusion.",
+            "zh": "今天就可以由你方完成：在你已验证的系统中保存规则文本、引擎版本和选项以及完整输出，并由具名人员在那里签署结论。",
+            "ja": "今日から自社で可能：バリデーション済みのシステムにルール本文、エンジンのバージョンとオプション、完全な出力を保存し、氏名の明らかな担当者がそこで結論に署名する。"
+          },
+          "step": null
         },
         {
           "id": "l-support",
@@ -470,6 +554,357 @@
               "CONTRIBUTIONS.md",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/CONTRIBUTIONS.md#L3-L7"
             ]
+          ],
+          "fix": {
+            "en": "A security policy file with a contact, response times and how fixes are announced.",
+            "zh": "一份安全策略文件，写明联系方式、响应时间以及如何公布修复。",
+            "ja": "連絡先、応答時間、修正の告知方法を記したセキュリティポリシーのファイル。"
+          },
+          "step": "s1"
+        }
+      ],
+      "route": [
+        {
+          "id": "s1",
+          "effort": "days",
+          "t": {
+            "en": "Write down what already happens",
+            "zh": "把已经在做的事写下来",
+            "ja": "すでに行っていることを文書にする"
+          },
+          "d": {
+            "en": "Publish a security contact with response times, the development and release procedure that is already followed (who reviews, which tests must pass, who approves a release) and a version policy (what a version number promises, how long a version gets fixes).",
+            "zh": "公开一个带响应时间的安全联系方式；公开已经在执行的开发和发布流程（谁评审、哪些测试必须通过、谁批准发布）；公开版本策略（版本号意味着什么，一个版本会修复多久）。",
+            "ja": "応答時間つきのセキュリティ窓口、すでに実行している開発・リリース手順（誰がレビューし、どのテストに合格が必要で、誰がリリースを承認するか）、バージョン方針（バージョン番号が何を約束し、どれくらいの期間修正が提供されるか）を公開する。"
+          },
+          "do": [
+            {
+              "t": {
+                "en": "SECURITY.md in tau-lang",
+                "zh": "tau-lang 仓库中的 SECURITY.md",
+                "ja": "tau-lang の SECURITY.md"
+              },
+              "w": {
+                "en": "Where to report a vulnerability, how fast IDNI answers, and how fixes are announced.",
+                "zh": "在哪里报告漏洞、IDNI 多快答复、如何公布修复。",
+                "ja": "脆弱性の報告先、IDNI が回答するまでの時間、修正の告知方法。"
+              },
+              "done": {
+                "en": "The file is in the repository and the README links to it.",
+                "zh": "文件在仓库中，并且 README 链接到它。",
+                "ja": "ファイルがリポジトリにあり、README からリンクされている。"
+              },
+              "live": {
+                "k": "file",
+                "repo": "IDNI/tau-lang",
+                "names": [
+                  "SECURITY.md"
+                ]
+              }
+            },
+            {
+              "t": {
+                "en": "A written release procedure",
+                "zh": "书面的发布流程",
+                "ja": "文書化されたリリース手順"
+              },
+              "w": {
+                "en": "Who reviews a change, which tests must pass, who approves a release and how it is tagged. A section of an existing document is enough.",
+                "zh": "谁评审变更、哪些测试必须通过、谁批准发布、如何打标签。写成现有文档中的一节也可以。",
+                "ja": "変更を誰がレビューし、どのテストに合格が必要で、誰がリリースを承認し、どうタグを付けるか。既存文書の一節でもよい。"
+              },
+              "done": {
+                "en": "Published, and the next release follows it.",
+                "zh": "已公开，并且下一次发布按它执行。",
+                "ja": "公開され、次のリリースがそれに従っている。"
+              },
+              "live": {
+                "k": "file",
+                "repo": "IDNI/tau-lang",
+                "names": [
+                  "RELEASING.md",
+                  "RELEASE.md",
+                  "RELEASE_PROCESS.md"
+                ]
+              }
+            },
+            {
+              "t": {
+                "en": "A version policy",
+                "zh": "版本策略",
+                "ja": "バージョン方針"
+              },
+              "w": {
+                "en": "What a change in each part of the version number means, and how long a version gets fixes.",
+                "zh": "版本号每一部分的变化意味着什么，以及一个版本会修复多久。",
+                "ja": "バージョン番号の各部分の変化が何を意味するか、一つのバージョンにどれくらいの期間修正が提供されるか。"
+              },
+              "done": {
+                "en": "Published next to the changelog.",
+                "zh": "与更新日志放在一起公开。",
+                "ja": "変更履歴と並べて公開されている。"
+              },
+              "live": {
+                "k": "file",
+                "repo": "IDNI/tau-lang",
+                "names": [
+                  "VERSIONING.md",
+                  "VERSION_POLICY.md"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "effort": "weeks",
+          "t": {
+            "en": "Terms a company can sign",
+            "zh": "企业可以签署的条款",
+            "ja": "企業が署名できる条件"
+          },
+          "d": {
+            "en": "Publish the standard terms of the additional licence for use outside Tau Net: what the use covers, the right to keep the source and the build for as long as records must be kept, notice before the terms of a licensed version change, and maintenance and support with response times.",
+            "zh": "公开 Tau Net 之外用途的附加许可的标准条款：涵盖哪些用途；在记录必须保存的期限内保留源代码和构建的权利；已许可版本的条款变更前须提前通知；以及带响应时间的维护和支持。",
+            "ja": "Tau Net 以外の用途向け追加ライセンスの標準条件を公開する。対象となる用途、記録の保存期間中ソースとビルドを保持する権利、ライセンス済みバージョンの条件変更前の通知、応答時間つきの保守とサポート。"
+          },
+          "do": [
+            {
+              "t": {
+                "en": "Published terms for use outside Tau Net",
+                "zh": "公开 Tau Net 之外用途的条款",
+                "ja": "Tau Net 以外の用途の条件を公開"
+              },
+              "w": {
+                "en": "What the additional licence covers for a company that checks its own rules, how to get it, and that it can be signed before the 30-day evaluation ends. The price can stay on request.",
+                "zh": "附加许可对检查自身规则的企业涵盖哪些内容、如何获得，以及可以在 30 天评估期结束前签署。价格可以保持面议。",
+                "ja": "自社のルールを検査する企業に対して追加ライセンスが何を対象とするか、どう取得するか、30 日の評価期間内に署名できること。価格は個別見積もりのままでよい。"
+              },
+              "done": {
+                "en": "A company can read the terms before it asks.",
+                "zh": "企业在询问之前就能读到条款。",
+                "ja": "企業が問い合わせる前に条件を読める。"
+              }
+            },
+            {
+              "t": {
+                "en": "A retention and change clause",
+                "zh": "保留与变更条款",
+                "ja": "保持と変更の条項"
+              },
+              "w": {
+                "en": "The right to keep the source and the build of a licensed version for as long as records must be kept, and notice before the terms of that version change.",
+                "zh": "在记录必须保存的期限内保留已许可版本的源代码和构建的权利，以及该版本条款变更前的提前通知。",
+                "ja": "記録の保存期間中、ライセンス済みバージョンのソースとビルドを保持する権利と、そのバージョンの条件変更前の通知。"
+              },
+              "done": {
+                "en": "Part of the published terms.",
+                "zh": "写进已公开的条款。",
+                "ja": "公開された条件に含まれている。"
+              }
+            },
+            {
+              "t": {
+                "en": "Maintenance and support terms",
+                "zh": "维护和支持条款",
+                "ja": "保守とサポートの条件"
+              },
+              "w": {
+                "en": "Response times, how long a version gets fixes, how defects are reported, and liability terms a company can accept.",
+                "zh": "响应时间、一个版本会修复多久、如何报告缺陷，以及企业可以接受的责任条款。",
+                "ja": "応答時間、一つのバージョンに修正が提供される期間、欠陥の報告方法、企業が受け入れられる責任の条件。"
+              },
+              "done": {
+                "en": "Offered in writing with the licence.",
+                "zh": "随许可以书面形式提供。",
+                "ja": "ライセンスとともに文書で提示されている。"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "effort": "weeks",
+          "t": {
+            "en": "A release with its evidence",
+            "zh": "带证据的发布版本",
+            "ja": "証拠つきのリリース"
+          },
+          "d": {
+            "en": "Tag a release of the engine, not a nightly build, with release notes, the known issues of that release, the test report of that exact commit from the existing automated tests (including the memory checker) and a list of components with their versions.",
+            "zh": "为引擎打一个正式发布标签（不是每日构建），附上发布说明、该版本的已知问题、现有自动化测试（包括内存检查）针对这一确切提交的测试报告，以及带版本号的组件清单。",
+            "ja": "ナイトリービルドではなくエンジンの正式リリースにタグを付け、リリースノート、そのリリースの既知の問題、既存の自動テスト（メモリチェッカーを含む）によるそのコミットのテスト報告、バージョンつきの構成要素一覧を添える。"
+          },
+          "do": [
+            {
+              "t": {
+                "en": "A tagged release after v0.7-alpha",
+                "zh": "v0.7-alpha 之后的正式发布标签",
+                "ja": "v0.7-alpha 以降のリリースタグ"
+              },
+              "w": {
+                "en": "A release of the engine, not a nightly build, with release notes that list the changes since the last release.",
+                "zh": "引擎的正式发布（不是每日构建），附带列出自上次发布以来变更的发布说明。",
+                "ja": "ナイトリービルドではないエンジンのリリース。前回のリリース以降の変更を記したリリースノートつき。"
+              },
+              "done": {
+                "en": "On the releases page of tau-lang.",
+                "zh": "出现在 tau-lang 的发布页面上。",
+                "ja": "tau-lang のリリースページにある。"
+              },
+              "live": {
+                "k": "rel",
+                "repo": "IDNI/tau-lang"
+              }
+            },
+            {
+              "t": {
+                "en": "The test report of that release",
+                "zh": "该版本的测试报告",
+                "ja": "そのリリースのテスト報告"
+              },
+              "w": {
+                "en": "The output of the existing automated tests and the memory checker for the exact commit of the release.",
+                "zh": "现有自动化测试和内存检查针对该发布确切提交的输出。",
+                "ja": "リリースの正確なコミットに対する、既存の自動テストとメモリチェッカーの出力。"
+              },
+              "done": {
+                "en": "Attached to the release.",
+                "zh": "作为附件放在该发布中。",
+                "ja": "リリースに添付されている。"
+              },
+              "live": {
+                "k": "asset",
+                "repo": "IDNI/tau-lang",
+                "re": "test|report"
+              }
+            },
+            {
+              "t": {
+                "en": "Known issues of that release",
+                "zh": "该版本的已知问题",
+                "ja": "そのリリースの既知の問題"
+              },
+              "w": {
+                "en": "The known-issues list frozen in the release notes, so a company sees which limits apply to its version.",
+                "zh": "把已知问题清单冻结在发布说明中，让企业看到哪些限制适用于自己的版本。",
+                "ja": "既知の問題の一覧をリリースノートに固定し、企業が自分のバージョンに当てはまる制約を確認できるようにする。"
+              },
+              "done": {
+                "en": "In the release notes.",
+                "zh": "写在发布说明中。",
+                "ja": "リリースノートに記載されている。"
+              }
+            },
+            {
+              "t": {
+                "en": "A component list (SBOM)",
+                "zh": "组件清单（SBOM）",
+                "ja": "構成要素一覧（SBOM）"
+              },
+              "w": {
+                "en": "Every library the engine is built with, and its version, for that release.",
+                "zh": "该版本构建引擎时用到的每个库及其版本。",
+                "ja": "そのリリースでエンジンのビルドに使われたすべてのライブラリとそのバージョン。"
+              },
+              "done": {
+                "en": "Attached to the release, for example as an SPDX or CycloneDX file.",
+                "zh": "作为附件放在发布中，例如 SPDX 或 CycloneDX 文件。",
+                "ja": "リリースに添付されている（例：SPDX または CycloneDX のファイル）。"
+              },
+              "live": {
+                "k": "asset",
+                "repo": "IDNI/tau-lang",
+                "re": "sbom|spdx|cyclonedx"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s4",
+          "effort": "months",
+          "t": {
+            "en": "Leave alpha for this use",
+            "zh": "让这一用途脱离 alpha 阶段",
+            "ja": "この用途でアルファを卒業する"
+          },
+          "d": {
+            "en": "Declare a stable scope for the checker use, for example the command-line engine without the natural-language type, and state how long it gets fixes.",
+            "zh": "为检查器这一用途声明一个稳定范围，例如不含自然语言类型的命令行引擎，并说明会修复多久。",
+            "ja": "チェッカー用途の安定した範囲を宣言する（例：自然言語型を含まないコマンドライン版エンジン）。あわせて修正の提供期間を明示する。"
+          },
+          "do": [
+            {
+              "t": {
+                "en": "A stable scope for the checker use",
+                "zh": "检查器用途的稳定范围",
+                "ja": "チェッカー用途の安定した範囲"
+              },
+              "w": {
+                "en": "Which build is meant (for example the command line without the natural-language type), which features are excluded, and how long it gets fixes.",
+                "zh": "指的是哪种构建（例如不含自然语言类型的命令行）、排除哪些功能，以及会修复多久。",
+                "ja": "どのビルドを指すか（例：自然言語型を含まないコマンドライン版）、どの機能を除くか、修正がどれくらいの期間提供されるか。"
+              },
+              "done": {
+                "en": "A release that IDNI no longer calls alpha, with that scope in its notes.",
+                "zh": "一个 IDNI 不再称为 alpha 的版本，并在说明中写明该范围。",
+                "ja": "IDNI がもはやアルファと呼ばないリリースがあり、その範囲がノートに書かれている。"
+              },
+              "live": {
+                "k": "stable",
+                "repo": "IDNI/tau-lang"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s5",
+          "effort": "months",
+          "t": {
+            "en": "Independent evidence",
+            "zh": "独立的证据",
+            "ja": "独立した証拠"
+          },
+          "d": {
+            "en": "Have the engine's implementation reviewed by someone independent, and publish a known-answer test suite (rules whose answer was worked out beforehand by other means) that runs on every release.",
+            "zh": "请独立方评审引擎的实现，并公开一套已知答案的测试集（答案事先用其他方法算出的规则），在每次发布时运行。",
+            "ja": "エンジンの実装を独立した第三者にレビューしてもらい、既知解テスト集（別の方法で事前に答えを求めたルール群）を公開して、リリースごとに実行する。"
+          },
+          "do": [
+            {
+              "t": {
+                "en": "An independent review of the engine",
+                "zh": "对引擎的独立评审",
+                "ja": "エンジンの独立レビュー"
+              },
+              "w": {
+                "en": "A review of the implementation by someone outside IDNI, with its scope and findings.",
+                "zh": "由 IDNI 以外的人评审实现，写明范围和发现。",
+                "ja": "IDNI 外部の者による実装のレビュー。範囲と所見を含む。"
+              },
+              "done": {
+                "en": "The report, or a summary that names the reviewer, is public.",
+                "zh": "报告或注明评审方的摘要已公开。",
+                "ja": "報告書、またはレビュー者を明記した要約が公開されている。"
+              }
+            },
+            {
+              "t": {
+                "en": "A known-answer test suite",
+                "zh": "已知答案测试集",
+                "ja": "既知解テスト集"
+              },
+              "w": {
+                "en": "Rules whose answer was worked out beforehand by other means, run against the engine on every release.",
+                "zh": "答案事先用其他方法算出的规则，在每次发布时对引擎运行。",
+                "ja": "別の方法で事前に答えを求めたルール群を、リリースごとにエンジンで実行する。"
+              },
+              "done": {
+                "en": "In the repository, and its results in the release test report.",
+                "zh": "放在仓库中，结果写进发布测试报告。",
+                "ja": "リポジトリにあり、その結果がリリースのテスト報告に含まれている。"
+              }
+            }
           ]
         }
       ]
@@ -543,7 +978,13 @@
               "tau-lang at c3ea334",
               "https://github.com/IDNI/tau-lang/tree/c3ea334cd1e6612930ea9f404933211858f0009f"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Publish the development and release procedure that is already followed, for Tau Net and the engine.",
+            "zh": "公开 Tau Net 和引擎已经在执行的开发和发布流程。",
+            "ja": "Tau Net とエンジンについて、すでに実行している開発・リリース手順を公開する。"
+          },
+          "step": "s1"
         },
         {
           "id": "agreement",
@@ -574,7 +1015,13 @@
               "README, status",
               "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L12-L14"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "A service agreement for an operated network, with liability and change terms a company can accept.",
+            "zh": "针对有人运营的网络的服务协议，包含企业可以接受的责任和变更条款。",
+            "ja": "運営されるネットワーク向けのサービス契約。企業が受け入れられる責任と変更の条件を含む。"
+          },
+          "step": "s2"
         },
         {
           "id": "source",
@@ -601,7 +1048,13 @@
               "tau-lang LICENSE.md",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/LICENSE.md#L3-L16"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Licence terms that allow keeping the software and its build for the retention period, checked once for this use.",
+            "zh": "允许在保存期限内保留软件及其构建的许可条款，并针对这一用途做一次法律核查。",
+            "ja": "保存期間中ソフトウェアとそのビルドを保持できるライセンス条件。この用途について一度法的に確認する。"
+          },
+          "step": "s2"
         },
         {
           "id": "versions",
@@ -633,7 +1086,13 @@
               "tau-lang tags",
               "https://github.com/IDNI/tau-lang/tags"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Tau Net release tags with release notes and a version policy.",
+            "zh": "带发布说明和版本策略的 Tau Net 发布标签。",
+            "ja": "リリースノートとバージョン方針つきの Tau Net リリースタグ。"
+          },
+          "step": "s3"
         },
         {
           "id": "maturity",
@@ -660,7 +1119,13 @@
               "tau-lang README, alpha",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L82-L83"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "A release that IDNI no longer calls alpha, after the audits.",
+            "zh": "在审计之后，一个 IDNI 不再称为 alpha 的版本。",
+            "ja": "監査の後、IDNI がもはやアルファと呼ばないリリース。"
+          },
+          "step": "s6"
         },
         {
           "id": "proof",
@@ -691,7 +1156,13 @@
               "tau-lang README, bounded searches",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L4202-L4210"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Possible today on your side: review each rule's formula against the procedure, and never count an UNKNOWN or an error as a pass.",
+            "zh": "今天就可以由你方完成：对照流程复核每条规则的公式，并且绝不把 UNKNOWN 或错误算作通过。",
+            "ja": "今日から自社で可能：各ルールの式を手順と照らしてレビューし、UNKNOWN やエラーを合格として数えない。"
+          },
+          "step": null
         },
         {
           "id": "enginereview",
@@ -714,7 +1185,13 @@
               "tau-lang README, theory",
               "https://github.com/IDNI/tau-lang/blob/c3ea334cd1e6612930ea9f404933211858f0009f/README.md#L4180-L4184"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "An independent review of the engine's implementation and a public known-answer test suite.",
+            "zh": "对引擎实现的独立评审，以及一套公开的已知答案测试集。",
+            "ja": "エンジン実装の独立レビューと、公開された既知解テスト集。"
+          },
+          "step": "s6"
         },
         {
           "id": "templates",
@@ -742,7 +1219,13 @@
               "IDNI/tau-testnet #106",
               "https://github.com/IDNI/tau-testnet/issues/106"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "An answer to report #106: fixed with a regression test, or documented as intended together with a way to deploy rules that do not block their author.",
+            "zh": "回应报告 #106：要么修复并加入回归测试，要么说明这是设计如此，并给出部署不会阻塞作者的规则的方法。",
+            "ja": "報告 #106 への回答：回帰テストつきで修正するか、仕様どおりであると文書化したうえで作成者をブロックしないルールの配備方法を示す。"
+          },
+          "step": "s3"
         },
         {
           "id": "operators",
@@ -769,7 +1252,13 @@
               "README, quorum and activation",
               "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L502-L503"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Named operators and written governance for rule changes, for example in a permissioned deployment.",
+            "zh": "具名的运营方和书面的规则变更治理，例如在许可制部署中。",
+            "ja": "運営者の明示と、ルール変更の文書化された統治。例えば許可型の配備で。"
+          },
+          "step": "s5"
         },
         {
           "id": "finality",
@@ -792,7 +1281,13 @@
               "README, fork choice and finality",
               "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L764"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "A finality rule, for example checkpoints after a stated number of blocks, and a documented maximum depth for a reorganisation.",
+            "zh": "最终性规则，例如在规定数量的区块之后设置检查点，并写明重组的最大深度。",
+            "ja": "ファイナリティのルール（例：規定ブロック数の後のチェックポイント）と、再編成の最大深さの文書化。"
+          },
+          "step": "s4"
         },
         {
           "id": "reset",
@@ -824,7 +1319,13 @@
               "IDNI/tau-testnet #93",
               "https://github.com/IDNI/tau-testnet/pull/93"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "An upgrade path that keeps history: no new genesis for rule or software changes on a network that holds records.",
+            "zh": "保留历史的升级路径：在保存记录的网络上，规则或软件变更不需要新的创世区块。",
+            "ja": "履歴を保つアップグレード手順：記録を保持するネットワークでは、ルールやソフトウェアの変更に新しいジェネシスを使わない。"
+          },
+          "step": "s5"
         },
         {
           "id": "capacity",
@@ -848,7 +1349,13 @@
               "IDNI/tau-testnet #108",
               "https://github.com/IDNI/tau-testnet/issues/108"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Report #108 fixed with a regression test, and a stated capacity per node.",
+            "zh": "报告 #108 以回归测试修复，并写明每个节点的容量。",
+            "ja": "報告 #108 を回帰テストつきで修正し、ノードごとの容量を明示する。"
+          },
+          "step": "s3"
         },
         {
           "id": "why",
@@ -875,7 +1382,13 @@
               "admission.py, custom values",
               "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/consensus/admission.py#L359-L363"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "A field for a coded reason, or a documented way to link an entry to the record that holds the reason.",
+            "zh": "一个用于编码理由的字段，或一种有文档说明的、把记录项链接到保存理由的记录的方法。",
+            "ja": "コード化された理由のためのフィールド、またはエントリを理由を持つ記録に結び付ける文書化された方法。"
+          },
+          "step": "s4"
         },
         {
           "id": "tamper",
@@ -902,7 +1415,13 @@
               "README, no network binding",
               "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L471"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Signatures bound to one network, with a network identifier in what is signed. The audit follows in the last step.",
+            "zh": "签名只对一个网络有效：在被签名的内容中包含网络标识。审计在最后一步进行。",
+            "ja": "署名を一つのネットワークに結び付ける（署名対象にネットワーク識別子を含める）。監査は最後のステップで行う。"
+          },
+          "step": "s4"
         },
         {
           "id": "export",
@@ -925,7 +1444,13 @@
               "README, RPC and WebSocket",
               "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L774"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "A documented export of complete records with their signatures, and a tool that verifies a copy.",
+            "zh": "有文档说明的、带签名的完整记录导出，以及验证副本的工具。",
+            "ja": "署名つきの完全な記録の文書化されたエクスポートと、コピーを検証するツール。"
+          },
+          "step": "s4"
         },
         {
           "id": "time",
@@ -948,7 +1473,13 @@
               "README, block time stamp",
               "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L602"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "A tighter documented time rule, or a trusted time stamp from outside the chain recorded with the entry.",
+            "zh": "更严格且有文档的时间规则，或者把链外可信时间戳与记录项一起保存。",
+            "ja": "より厳密で文書化された時刻のルール、またはチェーン外の信頼できるタイムスタンプをエントリとともに記録する。"
+          },
+          "step": "s4"
         },
         {
           "id": "person",
@@ -971,7 +1502,13 @@
               "tx_signing.py, signed fields",
               "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/consensus/tx_signing.py#L127-L151"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "A signature layer: a register that links keys to named people, and a meaning such as approved carried in what is signed.",
+            "zh": "签名层：把密钥与具名人员关联的登记册，并在被签名的内容中携带诸如“已批准”的含义。",
+            "ja": "署名レイヤー：鍵と氏名の明らかな人物を結び付ける台帳と、署名対象に含める「承認」などの意味。"
+          },
+          "step": "s4"
         },
         {
           "id": "audit",
@@ -998,7 +1535,13 @@
               "README, known alpha risks",
               "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L776"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Independent audits of the cryptography and the consensus, published with their scope.",
+            "zh": "对密码学和共识的独立审计，并公开审计范围。",
+            "ja": "暗号とコンセンサスの独立監査を、範囲とともに公開する。"
+          },
+          "step": "s6"
         },
         {
           "id": "access",
@@ -1025,7 +1568,13 @@
               "README, no per-call authentication",
               "https://github.com/IDNI/tau-testnet/blob/6c32ee8a182c25c122cf1ab99be86ab64888640c/README.md#L774"
             ]
-          ]
+          ],
+          "fix": {
+            "en": "Authenticated access to the node with roles: who may read and who may submit.",
+            "zh": "节点访问需要认证并区分角色：谁可以读取，谁可以提交。",
+            "ja": "ノードへの認証つきアクセスと役割：誰が読めて、誰が送信できるか。"
+          },
+          "step": "s5"
         },
         {
           "id": "support",
@@ -1052,6 +1601,507 @@
               "IDNI/tau-testnet issues",
               "https://github.com/IDNI/tau-testnet/issues"
             ]
+          ],
+          "fix": {
+            "en": "A security policy file with a contact, response times and an advisory process. Support terms come with the agreement in step 2.",
+            "zh": "一份安全策略文件，写明联系方式、响应时间和安全公告流程。支持条款随第 2 步的协议提供。",
+            "ja": "連絡先、応答時間、アドバイザリー手順を記したセキュリティポリシーのファイル。サポート条件はステップ 2 の契約に含める。"
+          },
+          "step": "s1"
+        }
+      ],
+      "route": [
+        {
+          "id": "s1",
+          "effort": "days",
+          "t": {
+            "en": "Write down what already happens",
+            "zh": "把已经在做的事写下来",
+            "ja": "すでに行っていることを文書にする"
+          },
+          "d": {
+            "en": "For Tau Net and the engine: a security contact with response times and an advisory process, the development and release procedure that is already followed, and a version policy.",
+            "zh": "针对 Tau Net 和引擎：带响应时间和安全公告流程的安全联系方式、已经在执行的开发和发布流程，以及版本策略。",
+            "ja": "Tau Net とエンジンについて：応答時間とアドバイザリー手順を備えたセキュリティ窓口、すでに実行している開発・リリース手順、バージョン方針。"
+          },
+          "do": [
+            {
+              "t": {
+                "en": "SECURITY.md in tau-testnet",
+                "zh": "tau-testnet 仓库中的 SECURITY.md",
+                "ja": "tau-testnet の SECURITY.md"
+              },
+              "w": {
+                "en": "Where to report a vulnerability, how fast IDNI answers, and how fixes are announced, with an advisory process for node operators.",
+                "zh": "在哪里报告漏洞、IDNI 多快答复、如何公布修复，并为节点运营者提供安全公告流程。",
+                "ja": "脆弱性の報告先、IDNI が回答するまでの時間、修正の告知方法。ノード運営者向けのアドバイザリー手順も含む。"
+              },
+              "done": {
+                "en": "The file is in the repository and the README links to it.",
+                "zh": "文件在仓库中，并且 README 链接到它。",
+                "ja": "ファイルがリポジトリにあり、README からリンクされている。"
+              },
+              "live": {
+                "k": "file",
+                "repo": "IDNI/tau-testnet",
+                "names": [
+                  "SECURITY.md"
+                ]
+              }
+            },
+            {
+              "t": {
+                "en": "A written release procedure",
+                "zh": "书面的发布流程",
+                "ja": "文書化されたリリース手順"
+              },
+              "w": {
+                "en": "Who reviews a change, which tests must pass, who approves a release and how it is tagged. A section of an existing document is enough.",
+                "zh": "谁评审变更、哪些测试必须通过、谁批准发布、如何打标签。写成现有文档中的一节也可以。",
+                "ja": "変更を誰がレビューし、どのテストに合格が必要で、誰がリリースを承認し、どうタグを付けるか。既存文書の一節でもよい。"
+              },
+              "done": {
+                "en": "Published, and the next release follows it.",
+                "zh": "已公开，并且下一次发布按它执行。",
+                "ja": "公開され、次のリリースがそれに従っている。"
+              },
+              "live": {
+                "k": "file",
+                "repo": "IDNI/tau-testnet",
+                "names": [
+                  "RELEASING.md",
+                  "RELEASE.md",
+                  "RELEASE_PROCESS.md"
+                ]
+              }
+            },
+            {
+              "t": {
+                "en": "A version policy",
+                "zh": "版本策略",
+                "ja": "バージョン方針"
+              },
+              "w": {
+                "en": "What a change in each part of the version number means, and how long a version gets fixes.",
+                "zh": "版本号每一部分的变化意味着什么，以及一个版本会修复多久。",
+                "ja": "バージョン番号の各部分の変化が何を意味するか、一つのバージョンにどれくらいの期間修正が提供されるか。"
+              },
+              "done": {
+                "en": "Published next to the changelog.",
+                "zh": "与更新日志放在一起公开。",
+                "ja": "変更履歴と並べて公開されている。"
+              },
+              "live": {
+                "k": "file",
+                "repo": "IDNI/tau-testnet",
+                "names": [
+                  "VERSIONING.md",
+                  "VERSION_POLICY.md"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "effort": "weeks",
+          "t": {
+            "en": "Terms a company can sign",
+            "zh": "企业可以签署的条款",
+            "ja": "企業が署名できる条件"
+          },
+          "d": {
+            "en": "A service agreement for an operated network, liability and change terms a company can accept, and licence terms that allow keeping the software and its build for the retention period.",
+            "zh": "针对一个有人运营的网络的服务协议、企业可以接受的责任和变更条款，以及允许在保存期限内保留软件及其构建的许可条款。",
+            "ja": "運営されるネットワーク向けのサービス契約、企業が受け入れられる責任と変更の条件、保存期間中ソフトウェアとそのビルドを保持できるライセンス条件。"
+          },
+          "do": [
+            {
+              "t": {
+                "en": "A service agreement for an operated network",
+                "zh": "针对有人运营的网络的服务协议",
+                "ja": "運営されるネットワーク向けのサービス契約"
+              },
+              "w": {
+                "en": "Who runs the network, availability, notice before changes, liability, and how a company leaves with its records.",
+                "zh": "谁运营网络、可用性、变更前的通知、责任，以及企业如何带着自己的记录退出。",
+                "ja": "誰がネットワークを運営するか、可用性、変更前の通知、責任、企業が記録を持って離脱する方法。"
+              },
+              "done": {
+                "en": "A template a company can review.",
+                "zh": "一份企业可以审阅的模板。",
+                "ja": "企業がレビューできるひな形がある。"
+              }
+            },
+            {
+              "t": {
+                "en": "A retention and change clause",
+                "zh": "保留与变更条款",
+                "ja": "保持と変更の条項"
+              },
+              "w": {
+                "en": "The right to keep the software and its build for as long as records must be kept, and notice before the terms of that version change.",
+                "zh": "在记录必须保存的期限内保留软件及其构建的权利，以及该版本条款变更前的提前通知。",
+                "ja": "記録の保存期間中、ソフトウェアとそのビルドを保持する権利と、そのバージョンの条件変更前の通知。"
+              },
+              "done": {
+                "en": "Part of the published terms.",
+                "zh": "写进已公开的条款。",
+                "ja": "公開された条件に含まれている。"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "effort": "weeks",
+          "t": {
+            "en": "Releases, and fixes that are shown",
+            "zh": "发布版本，以及看得见的修复",
+            "ja": "リリースと、目に見える修正"
+          },
+          "d": {
+            "en": "Tagged Tau Net releases with release notes and test evidence, and each reported defect closed with its fix and a regression test (reports #106 and #108).",
+            "zh": "带发布说明和测试证据的 Tau Net 正式发布标签；每个已报告的缺陷都以修复和回归测试关闭（报告 #106 和 #108）。",
+            "ja": "リリースノートとテスト証拠つきの Tau Net リリースタグ。報告された欠陥は、修正と回帰テストを添えて閉じる（報告 #106 と #108）。"
+          },
+          "do": [
+            {
+              "t": {
+                "en": "A tagged Tau Net release",
+                "zh": "Tau Net 的正式发布标签",
+                "ja": "Tau Net のリリースタグ"
+              },
+              "w": {
+                "en": "Release notes, the test results of that commit and the engine commit it pins.",
+                "zh": "发布说明、该提交的测试结果，以及它固定的引擎提交。",
+                "ja": "リリースノート、そのコミットのテスト結果、固定しているエンジンのコミット。"
+              },
+              "done": {
+                "en": "On the releases page of tau-testnet.",
+                "zh": "出现在 tau-testnet 的发布页面上。",
+                "ja": "tau-testnet のリリースページにある。"
+              },
+              "live": {
+                "k": "rel",
+                "repo": "IDNI/tau-testnet"
+              }
+            },
+            {
+              "t": {
+                "en": "Report #106 answered",
+                "zh": "回应报告 #106",
+                "ja": "報告 #106 への回答"
+              },
+              "w": {
+                "en": "Fixed with a regression test, or documented as intended together with a way to deploy rules that do not block their author.",
+                "zh": "以回归测试修复，或者说明这是设计如此，并给出部署不会阻塞作者的规则的方法。",
+                "ja": "回帰テストつきで修正するか、仕様どおりと文書化したうえで作成者をブロックしないルールの配備方法を示す。"
+              },
+              "done": {
+                "en": "The issue is closed with that answer.",
+                "zh": "该问题以此答复关闭。",
+                "ja": "その回答とともに issue が閉じられている。"
+              },
+              "live": {
+                "k": "issue",
+                "key": "i106"
+              }
+            },
+            {
+              "t": {
+                "en": "Report #108 fixed",
+                "zh": "修复报告 #108",
+                "ja": "報告 #108 の修正"
+              },
+              "w": {
+                "en": "New addresses accepted whatever the size of a node's address table, with a regression test, and a stated capacity per node.",
+                "zh": "无论节点地址表多大都接受新地址，附回归测试，并写明每个节点的容量。",
+                "ja": "ノードのアドレス表の大きさにかかわらず新しいアドレスを受け付け、回帰テストを添え、ノードごとの容量を明示する。"
+              },
+              "done": {
+                "en": "The issue is closed with the fix.",
+                "zh": "该问题以修复关闭。",
+                "ja": "修正とともに issue が閉じられている。"
+              },
+              "live": {
+                "k": "issue",
+                "key": "i108"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s4",
+          "effort": "months",
+          "t": {
+            "en": "Make an entry a record",
+            "zh": "让一条记录项成为记录",
+            "ja": "エントリを記録にする"
+          },
+          "d": {
+            "en": "A finality rule, signatures bound to one network, a coded reason or a link to the record that holds it, a trusted time, a signature layer with name and meaning, and an export with signatures plus a tool that verifies a copy.",
+            "zh": "最终性规则；只对一个网络有效的签名；编码的理由或指向保存理由的记录的链接；可信时间；带姓名和含义的签名层；以及带签名的导出和验证副本的工具。",
+            "ja": "ファイナリティのルール、一つのネットワークに結び付いた署名、コード化された理由または理由を持つ記録へのリンク、信頼できる時刻、氏名と意味を持つ署名レイヤー、署名つきのエクスポートとコピーを検証するツール。"
+          },
+          "do": [
+            {
+              "t": {
+                "en": "A finality rule",
+                "zh": "最终性规则",
+                "ja": "ファイナリティのルール"
+              },
+              "w": {
+                "en": "Checkpoints, or a stated depth after which an entry cannot be replaced, and the largest reorganisation the node accepts.",
+                "zh": "检查点，或规定的深度（超过后记录项不能被替换），以及节点接受的最大重组。",
+                "ja": "チェックポイント、またはエントリが置き換えられなくなる深さの規定と、ノードが受け入れる最大の再編成。"
+              },
+              "done": {
+                "en": "Documented and enforced by the node.",
+                "zh": "有文档说明并由节点强制执行。",
+                "ja": "文書化され、ノードが強制している。"
+              }
+            },
+            {
+              "t": {
+                "en": "Signatures bound to one network",
+                "zh": "只对一个网络有效的签名",
+                "ja": "一つのネットワークに結び付いた署名"
+              },
+              "w": {
+                "en": "A network identifier in what is signed, so a signed transaction is not valid on another network.",
+                "zh": "在被签名的内容中包含网络标识，使已签名的交易在其他网络上无效。",
+                "ja": "署名対象にネットワーク識別子を含め、署名済みの取引が他のネットワークで有効にならないようにする。"
+              },
+              "done": {
+                "en": "Released, with a test.",
+                "zh": "已发布并附测试。",
+                "ja": "テストつきでリリースされている。"
+              }
+            },
+            {
+              "t": {
+                "en": "A reason for each entry",
+                "zh": "每条记录项的理由",
+                "ja": "各エントリの理由"
+              },
+              "w": {
+                "en": "A field for a coded reason, or a documented link from an entry to the record that holds the reason.",
+                "zh": "用于编码理由的字段，或从记录项到保存理由的记录的有文档说明的链接。",
+                "ja": "コード化された理由のフィールド、またはエントリから理由を持つ記録への文書化されたリンク。"
+              },
+              "done": {
+                "en": "Documented.",
+                "zh": "有文档说明。",
+                "ja": "文書化されている。"
+              }
+            },
+            {
+              "t": {
+                "en": "A trusted time",
+                "zh": "可信时间",
+                "ja": "信頼できる時刻"
+              },
+              "w": {
+                "en": "A tighter documented time rule, or a time stamp from outside the chain kept with the entry.",
+                "zh": "更严格且有文档的时间规则，或与记录项一起保存的链外时间戳。",
+                "ja": "より厳密で文書化された時刻のルール、またはエントリとともに保存されるチェーン外のタイムスタンプ。"
+              },
+              "done": {
+                "en": "Documented.",
+                "zh": "有文档说明。",
+                "ja": "文書化されている。"
+              }
+            },
+            {
+              "t": {
+                "en": "A signature with name and meaning",
+                "zh": "带姓名和含义的签名",
+                "ja": "氏名と意味を持つ署名"
+              },
+              "w": {
+                "en": "A register that links keys to named people, and a meaning such as approved in what is signed.",
+                "zh": "把密钥与具名人员关联的登记册，并在被签名的内容中包含诸如“已批准”的含义。",
+                "ja": "鍵と氏名の明らかな人物を結び付ける台帳と、署名対象に含める「承認」などの意味。"
+              },
+              "done": {
+                "en": "Specified, with a reference implementation.",
+                "zh": "有规范并附参考实现。",
+                "ja": "仕様と参照実装がある。"
+              }
+            },
+            {
+              "t": {
+                "en": "Export and verify",
+                "zh": "导出与验证",
+                "ja": "エクスポートと検証"
+              },
+              "w": {
+                "en": "An export of complete records with their signatures, and a tool that verifies a copy.",
+                "zh": "带签名的完整记录导出，以及验证副本的工具。",
+                "ja": "署名つきの完全な記録のエクスポートと、コピーを検証するツール。"
+              },
+              "done": {
+                "en": "Documented and released.",
+                "zh": "有文档说明并已发布。",
+                "ja": "文書化され、リリースされている。"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s5",
+          "effort": "months",
+          "t": {
+            "en": "A network a company can control",
+            "zh": "企业可以掌控的网络",
+            "ja": "企業が管理できるネットワーク"
+          },
+          "d": {
+            "en": "A permissioned or private deployment with named operators, written governance for rule changes, upgrades without a reset, and authenticated access to the node with roles.",
+            "zh": "一种许可制或私有的部署：运营方具名、规则变更有书面治理、升级无需重置，并且节点访问需要认证并区分角色。",
+            "ja": "許可型またはプライベートな配備：運営者が明示され、ルール変更の統治が文書化され、リセットなしでアップグレードでき、ノードへのアクセスは認証され役割で区別される。"
+          },
+          "do": [
+            {
+              "t": {
+                "en": "A permissioned deployment",
+                "zh": "许可制部署",
+                "ja": "許可型の配備"
+              },
+              "w": {
+                "en": "How to run a network with named operators that a company controls.",
+                "zh": "如何运行一个运营方具名、由企业掌控的网络。",
+                "ja": "企業が管理し、運営者が明示されたネットワークの運用方法。"
+              },
+              "done": {
+                "en": "A deployment guide is published.",
+                "zh": "部署指南已公开。",
+                "ja": "配備ガイドが公開されている。"
+              }
+            },
+            {
+              "t": {
+                "en": "Written governance",
+                "zh": "书面治理",
+                "ja": "文書化された統治"
+              },
+              "w": {
+                "en": "Who may propose and approve rule changes, and how a change is announced.",
+                "zh": "谁可以提出和批准规则变更，以及如何公布变更。",
+                "ja": "誰がルール変更を提案・承認でき、変更をどう告知するか。"
+              },
+              "done": {
+                "en": "Published.",
+                "zh": "已公开。",
+                "ja": "公開されている。"
+              }
+            },
+            {
+              "t": {
+                "en": "Upgrades without a reset",
+                "zh": "无需重置的升级",
+                "ja": "リセットなしのアップグレード"
+              },
+              "w": {
+                "en": "Rule and software changes that keep the chain's history, with no new genesis.",
+                "zh": "保留链历史的规则和软件变更，不需要新的创世区块。",
+                "ja": "チェーンの履歴を保つルールとソフトウェアの変更。新しいジェネシスを使わない。"
+              },
+              "done": {
+                "en": "Documented, and the next upgrade uses it.",
+                "zh": "有文档说明，并且下一次升级按此进行。",
+                "ja": "文書化され、次のアップグレードがそれを使っている。"
+              }
+            },
+            {
+              "t": {
+                "en": "Access with roles",
+                "zh": "按角色的访问",
+                "ja": "役割によるアクセス"
+              },
+              "w": {
+                "en": "Authentication for the node's interfaces, with separate rights to read and to submit.",
+                "zh": "节点接口需要认证，读取和提交的权限分开。",
+                "ja": "ノードのインターフェースに認証を設け、読み取りと送信の権限を分ける。"
+              },
+              "done": {
+                "en": "Released.",
+                "zh": "已发布。",
+                "ja": "リリースされている。"
+              }
+            }
+          ]
+        },
+        {
+          "id": "s6",
+          "effort": "months",
+          "t": {
+            "en": "Audits and a stable release",
+            "zh": "审计和稳定版本",
+            "ja": "監査と安定版"
+          },
+          "d": {
+            "en": "Independent audits of the cryptography, the consensus and the engine, published with their scope, and a release that IDNI no longer calls alpha.",
+            "zh": "对密码学、共识和引擎进行独立审计并公开审计范围，以及一个 IDNI 不再称为 alpha 的版本。",
+            "ja": "暗号、コンセンサス、エンジンの独立監査を範囲とともに公開し、IDNI がもはやアルファと呼ばないリリースを出す。"
+          },
+          "do": [
+            {
+              "t": {
+                "en": "Audits of cryptography and consensus",
+                "zh": "密码学和共识的审计",
+                "ja": "暗号とコンセンサスの監査"
+              },
+              "w": {
+                "en": "By someone outside IDNI, with scope and findings.",
+                "zh": "由 IDNI 以外的人进行，写明范围和发现。",
+                "ja": "IDNI 外部の者による。範囲と所見を含む。"
+              },
+              "done": {
+                "en": "Published.",
+                "zh": "已公开。",
+                "ja": "公開されている。"
+              }
+            },
+            {
+              "t": {
+                "en": "An independent review of the engine",
+                "zh": "对引擎的独立评审",
+                "ja": "エンジンの独立レビュー"
+              },
+              "w": {
+                "en": "A review of the implementation by someone outside IDNI, with its scope and findings.",
+                "zh": "由 IDNI 以外的人评审实现，写明范围和发现。",
+                "ja": "IDNI 外部の者による実装のレビュー。範囲と所見を含む。"
+              },
+              "done": {
+                "en": "The report, or a summary that names the reviewer, is public.",
+                "zh": "报告或注明评审方的摘要已公开。",
+                "ja": "報告書、またはレビュー者を明記した要約が公開されている。"
+              }
+            },
+            {
+              "t": {
+                "en": "A release that is no longer alpha",
+                "zh": "不再是 alpha 的版本",
+                "ja": "アルファではないリリース"
+              },
+              "w": {
+                "en": "A Tau Net release that IDNI does not call alpha, for a stated use.",
+                "zh": "一个 IDNI 不称为 alpha、并写明用途的 Tau Net 版本。",
+                "ja": "IDNI がアルファと呼ばない、用途を明示した Tau Net のリリース。"
+              },
+              "done": {
+                "en": "On the releases page of tau-testnet.",
+                "zh": "出现在 tau-testnet 的发布页面上。",
+                "ja": "tau-testnet のリリースページにある。"
+              },
+              "live": {
+                "k": "stable",
+                "repo": "IDNI/tau-testnet"
+              }
+            }
           ]
         }
       ]

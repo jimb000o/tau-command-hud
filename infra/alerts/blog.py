@@ -49,7 +49,7 @@ SHIPS = os.environ.get("BLOG_SHIPS", "/ships")  # the painted ships (rabbit/art/
 IMG = os.path.join(PUBLIC, "img")               # hero pictures and charts, node.tauhud.com/blog/img/
 SHARE = os.path.join(PUBLIC, "a")               # one small page per article for link previews, node.tauhud.com/blog/a/<id>.html
 EVERY = 600
-PICS_VERSION = 5   # raise when the hero picture changes: every article's picture is made anew once (2: numbers and Rico, 3: one story on refusals, 4: a whole clause of the title, 5: tile labels in two lines)
+PICS_VERSION = 6   # raise when the hero picture changes: every article's picture is made anew once (2: numbers and Rico, 3: one story on refusals, 4: a whole clause of the title, 5: tile labels in two lines, 6: card ends before Rico, an early leave in amber)
 DESK_VERSION = 2   # the same for the heroes without island art (blog_pics.desk_hero): IDNI news, Q&As, testnet learnings
 CHECK_WAIT = 3 * 3600      # a visit whose bookings were never checked is drafted this long after it ended
 RETRY_AFTER = 2 * 3600
@@ -120,6 +120,10 @@ and plan where that matters. The change from the ship before is the news of the 
 dek when it is real (for example a ship that stayed the whole time after one that left early). Where "the ship before" \
 has a "note" that its unanswered sends were counted as refusals by the rule of the time, the node refused none of them: \
 write "sends without an answer, counted as refusals by the old rule", never "the node refused them".
+- When the facts have "the testnet started over": the old chain ended and a new one began; tell it as a restart of \
+the testnet, never as a stall, and say that payments on the old chain went with it. Where "left early" says our node \
+had no working connection to the network, the testnet itself may have kept running: never write that the testnet \
+stalled then, write that no new block reached our node.
 - Never write a line for a thing that did not happen or was not tried (no "0 bookings were checked" on a day without \
 bookings); leave it out.
 - Length: 300 to 500 English words in body.
@@ -208,6 +212,11 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
         f["minutes in port"] = f["left early"]["minutes in port"]
     elif landed:
         f["minutes in port"] = 90   # the whole planned call
+    restart = next((e for e in rows if e.get("kind") == "chain restarted"), None)
+    if restart:   # the testnet started over during or soon after the call (relay/cruise.py chain_restarted): not a stall
+        f["the testnet started over"] = {"noticed at": clock(restart["t"]), "old chain ended at block": restart.get("old_tip"),
+                                         "new chain began at": clock(restart["new_chain_began"]) if restart.get("new_chain_began") else None,
+                                         "what it means": restart.get("note")}
     f["sent and accepted"] = {k: v for k, v in (s.get("sent") or {}).items() if v} or \
         dict(Counter(e["kind"] for e in sends if e.get("ok") is True))
     refused = {k: v for k, v in (s.get("refused") or {}).items() if v} or \
@@ -313,7 +322,8 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
         f["next ship"] = {"name": nxt.get("name"), "date": day(nxt["t0"]), "time": clock(nxt["t0"])}
     f["the ship's brakes"] = {"at most transactions a minute": 12,
                               "it leaves when the node refuses": "5 of the last 20 passenger transactions",
-                              "strained testnet": "half pace", "stalled testnet": "it leaves at once",
+                              "strained testnet": "half pace",
+                              "no new block on our node for over ten minutes with payments waiting": "it leaves at once, and says whether our node still had a working connection to the network",
                               "our node does not answer a send within 20 seconds": "no refusal: the ship waits 30 seconds, then half pace for 10 minutes",
                               "our node cannot take a passenger's new wallet": "no refusal: that passenger is left out for the rest of the call"}
     f["answered sends"] = len(answered)
@@ -776,6 +786,73 @@ def draft_url(st: dict, did: str) -> str:
     return f"{SITE}/blog/?draft={st['drafts'][did]}"
 
 
+def with_notes(a: dict) -> dict:
+    """The draft with its hand-written parts (blog_notes.NOTES): sections put in before its last section in every
+    language, words of the model's body replaced, and title, dek, why, card or x set by hand. What the model wrote stays
+    in as_drafted (body_model for the body), so a changed note replaces the old one and is never put in twice."""
+    import blog_notes
+    note = blog_notes.NOTES.get(str(a.get("id") or "")) or {}
+    fields = [k for k in ("title", "dek", "why", "card", "x") if note.get(k)]
+    secs, swaps = note.get("sections") or {}, note.get("replace") or []
+    if not (secs or swaps or fields or note.get("body")):
+        return a
+    a = dict(a)
+    drafted = dict(a.get("as_drafted") or {})
+    for k in fields:
+        drafted.setdefault(k, a.get(k))
+        a[k] = note[k]
+    for k in [k for k in drafted if k not in fields]:   # a field no longer set by hand: the model's own again
+        a[k] = drafted.pop(k)
+    if drafted:
+        a["as_drafted"] = drafted
+    else:
+        a.pop("as_drafted", None)
+    model = a.get("body_model") or a.get("body") or {}
+    body = {}
+    own = note.get("body") or {}   # a body written by hand in place of the model's (the model's stays in body_model)
+    for k, text in ({**(model or {}), **own} if own else (model or {})).items():
+        text = str(own.get(k) or text)
+        for lang, old, new in swaps:
+            if lang == k:
+                text = text.replace(old, new)
+        add = str(secs.get(k) or secs.get("en") or "").strip()
+        parts = re.split(r"\n(?=## )", text.rstrip())
+        if add and len(parts) > 1 and parts[-1].startswith("## "):
+            body[k] = "\n".join(parts[:-1]).rstrip() + "\n\n" + add + "\n\n" + parts[-1]
+        else:
+            body[k] = text.rstrip() + ("\n\n" + add if add else "")
+    a["body_model"], a["body"] = model, body
+    return a
+
+
+def held(did: str) -> str:
+    """Why this draft waits for a read before it may publish itself (blog_notes.NOTES "hold"), or ""."""
+    import blog_notes
+    return str((blog_notes.NOTES.get(did) or {}).get("hold") or "")
+
+
+def notes_tick() -> int:
+    """Every waiting draft with a note gets its hand-written sections (the preview link shows them at once)."""
+    st, n = state(), 0
+    live = {p["id"] for p in posts()["posts"]}
+    for did, name in list(st["drafts"].items()):
+        if did in live:
+            continue
+        path = os.path.join(PUBLIC, "drafts", str(name) + ".json")
+        a = read_json(path, {})
+        if not a:
+            continue
+        b = with_notes(a)
+        if b != a:
+            write_json(path, b)
+            n += 1
+            if b.get("card") != a.get("card"):   # a card set by hand: the hero picture is made anew (site_pictures)
+                st = state()
+                st.get("pics", {}).pop(did, None)
+                write_json(STATE, st)
+    return n
+
+
 def write_draft(vid: str, now: float | None = None) -> str:
     now = now or time.time()
     log_ = get(f"/cruise/log?visit={vid}&n=2000")
@@ -799,6 +876,7 @@ def write_draft(vid: str, now: float | None = None) -> str:
     st["drafts"][a["id"]], st["drafted"][vid] = name, a["id"]
     st.setdefault("drafted_at", {})[a["id"]] = round(now)
     a["status"] = "draft"
+    a = with_notes(a)
     write_json(os.path.join(PUBLIC, "drafts", name + ".json"), a)
     write_json(STATE, st)
     return a["id"]
@@ -866,7 +944,7 @@ def auto_publish(now: float | None = None) -> str | None:
     st = state()
     live = {p["id"] for p in posts()["posts"]} | set(st.get("announced") or [])
     for did, at in sorted((st.get("drafted_at") or {}).items(), key=lambda kv: kv[1]):
-        if did in live or did not in st["drafts"] or now - at < AUTO_PUBLISH_HOURS * 3600:
+        if did in live or did not in st["drafts"] or now - at < AUTO_PUBLISH_HOURS * 3600 or held(did):
             continue
         a = read_json(os.path.join(PUBLIC, "drafts", st["drafts"][did] + ".json"), {})
         chk = a.get("check") or {}
@@ -913,6 +991,8 @@ def auto_note(st: dict, did: str, a: dict) -> str:
     chk = a.get("check") or {}
     if not at:
         return "never by itself: written before drafts published themselves, only by hand"
+    if held(did):
+        return "never by itself, held: " + held(did)
     if chk.get("unknown_numbers") or chk.get("hype"):
         return "never by itself: the check marked numbers or wording (up blog publish --force after a read)"
     when = at + AUTO_PUBLISH_HOURS * 3600
@@ -939,6 +1019,10 @@ def drafts_cli() -> int:
             print(line)
     except Exception as e:  # noqa: BLE001
         print(f"report:  not read ({e})")
+    try:
+        notes_tick()
+    except Exception as e:  # noqa: BLE001
+        print(f"blog:    hand-written sections not put in ({e})")
     st = state()
     live = {p["id"] for p in posts()["posts"]}
     waiting = [d for d in st["drafts"] if d not in live]
@@ -1053,7 +1137,7 @@ def publish_cli(did: str, dry: bool, force: bool, post_late: bool = False, now: 
     if dry:
         print(f"would publish {did} at {SITE}/blog/?p={did}")
     else:
-        a = {k: v for k, v in a.items() if k not in ("status", "model", "check")}
+        a = {k: v for k, v in with_notes(a).items() if k not in ("status", "model", "check", "body_model", "as_drafted")}
         p["posts"] = [a] + [x for x in p["posts"] if x.get("id") != did]
         write_json(os.path.join(PUBLIC, "posts.json"), p)
         print(f"published: {SITE}/blog/?p={did}  (link preview: {share_page(a)})")
@@ -1136,6 +1220,7 @@ def main(argv: list[str]) -> int:
             except Exception as e:  # noqa: BLE001
                 log.warning("news article: %s", e)
             try:
+                notes_tick()
                 site_pictures()
                 tick()
                 auto_publish()

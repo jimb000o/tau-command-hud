@@ -409,7 +409,7 @@ class Relay:
         self.load = Load()       # how hard the testnet works, minute by minute: GET /load (load.py)
         self.island.on_tx = lambda: self.load.sent("bot")
         # White Rabbit Key: cruise ships whose simulated passengers send real test transactions in the bot's free slots (cruise.py)
-        self.cruise = Cruise(verdict=self.load_word, chain=self.chain_view, spend=self.island_spend,
+        self.cruise = Cruise(verdict=self.load_word, chain=self.chain_view, spend=self.island_spend, link=self.link_view,
                              budget=lambda: self.island.today + len(self.island.queue) < self.island.daily // 2)
         self.cruise.on_tx = lambda ok: self.load.sent("cruise" if ok else "refused")
         # the hack of the week, replayed on the testnet with our own wallets, after the ships in the bot's free slots (hackweek.py)
@@ -785,6 +785,12 @@ class Relay:
         self.state["restarts"].append({"detected_at": round(time.time()), "old": old, "new_block1_ts": new_block1_ts})
         self.state["restarts"] = self.state["restarts"][-EVENTS_MAX:]
         self._save_state()
+        cruise = getattr(self, "cruise", None)
+        if cruise is not None:   # a ship in port (or just gone) tells the restart in its logbook, not a stall
+            try:
+                cruise.chain_restarted(time.time(), old.get("tip"), new_block1_ts)
+            except Exception as exc:  # noqa: BLE001 - the restart is recorded all the same
+                log.warning("cruise restart note: %r", exc)
         if getattr(self, "chainhist", None):   # a chain that ended while the relay was away: at least its tip
             self.chainhist.seed(self.state["restarts"][-1:])
             self.history_text = None
@@ -1167,6 +1173,14 @@ class Relay:
     def load_word(self) -> str | None:
         """calm / busy / strained / stalled for the cruise ships' brake; None while the relay is still syncing."""
         return self.load_snapshot().get("state") if "getblocks" in self.updated else None
+
+    def link_view(self) -> dict:
+        """Our node's connection to the network for a cruise ship's brake: how many peers the node says it is connected
+        to now ({} before the node has told us its peers)."""
+        book = (getattr(self, "peer_book", None) or {}).get("peers") or {}
+        if not book or time.time() - getattr(self, "peers_noted_at", 0) > 300:   # not told lately: not known
+            return {}
+        return {"connected": sum(1 for r in book.values() if r.get("connected"))}
 
     def chain_view(self) -> dict:
         """For a cruise ship's incident report: the newest block the relay holds and the transaction waiting longest."""
@@ -1648,6 +1662,7 @@ class Relay:
                 live.add(pid)
         for pid, row in book.items():
             row["connected"] = pid in live
+        self.peers_noted_at = now   # link_view: the connection flags are fresh
         cutoff = now - PEERS_KEEP_DAYS * 86400
         for pid in [k for k, r in book.items() if max(r["last_direct"] or 0, r["last_heard"] or 0, r["first_seen"]) < cutoff]:
             del book[pid]

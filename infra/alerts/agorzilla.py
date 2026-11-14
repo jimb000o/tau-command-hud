@@ -11,6 +11,12 @@ post 13 times dearer) with the creature on a dark card, at most
 AGORZILLA_X_DAILY_CAP posts a day. X never holds Telegram up: one try each.
 X also gets a post when the creature reaches a new growth stage.
 
+X strategy (14 Nov 2026): only an evening that changed the look goes to X, with
+the wallets that picked it by their three word names and tonight's question as
+the last line; kept looks, rule evenings and evenings nobody voted on go to
+Telegram only. A growth shows the old and the new stage side by side, and two
+lived days before Ancient there is one countdown post.
+
 Rule evenings (agorzilla.com rules v4, from 4 November 2026): every few evenings the
 feeders vote on a rule of the game instead of a look (latest.json marks such an evening
 "kind": "rule", with its "question" and "says", the winning rule in words). Its post says
@@ -74,6 +80,17 @@ def is_rule(r: dict | None) -> bool:
     return bool(r) and r.get("kind") == "rule"
 
 
+def is_way(r: dict | None) -> bool:
+    """A way evening (rules v7, from 19 Nov 2026): the feeders chose which of three paintings a stage grows into
+    (latest.json "kind": "way", "stage": "elder" or "ancient"); no keep, most votes win."""
+    return bool(r) and r.get("kind") == "way"
+
+
+def way_of(r: dict) -> str:
+    """ "the elder it becomes" in words, from the way evening's stage."""
+    return f"the {r.get('stage') or 'stage'} it becomes"
+
+
 def rule_said(r: dict, latest: dict) -> str:
     """The rule a rule evening asked about, in words, as it stands now (game_rules); "" when latest.json does not say."""
     return str(((latest.get("game_rules") or {}).get(r.get("rule")) or {}).get("says") or "")
@@ -92,6 +109,8 @@ def tonight(latest: dict, html: bool) -> str:
     if not o:
         return ""
     e = esc if html else str
+    if is_way(o):
+        return f"Tonight the feeders choose {e(way_of(o))}: {e(', '.join(o['options'][:-1]))} or {e(o['options'][-1])}."
     if is_rule(o) and o.get("question"):
         return f"Tonight is a rule evening, a vote on the rules of the game: {e(o['question'])} ({e(', '.join(o['options']))})."
     opts = [f"keep {o['keep']}" if o.get("keep") and k == 0 and v == o["keep"] else v for k, v in enumerate(o["options"])]   # rules v5: box 1 keeps it
@@ -128,6 +147,12 @@ def text(r: dict, latest: dict, was: str | None = None, foot: bool = True) -> st
     votes = sum(r.get("tally") or [])
     if is_rule(r):
         head = "\n".join(rule_head(r, latest, was, html=True))
+    elif is_way(r) and r.get("winner"):
+        tally = " / ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"]))
+        head = f"🦍 Agorzilla, evening {r['n'] + 1}: the feeders chose {esc(way_of(r))}: <b>{esc(r['winner'])}</b>"
+        head += f" ({esc(tally)}{', a tie settled by the state hash' if r.get('tie') else ''})."
+    elif is_way(r):
+        head = f"🦍 Agorzilla, evening {r['n'] + 1}: nobody chose {esc(way_of(r))}, so its way stays as it was."
     elif r.get("winner") and r.get("kept"):   # rules v5: "keep" won, or no other option had enough wallets
         tally = " / ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"]))
         head = f"🦍 Agorzilla, evening {r['n'] + 1}: {esc(r['category'])} stays <b>{esc(r['winner'])}</b>"
@@ -152,10 +177,53 @@ def text(r: dict, latest: dict, was: str | None = None, foot: bool = True) -> st
     return "\n".join(lines)
 
 
+def invite(latest: dict) -> str:
+    """Tonight's vote as a question, the last line of every post on X (14 Nov 2026 X strategy: each post asks people in):
+    "Tonight: Muzzle. Keep Dark, or Ginger or Snow white?" ("" when nothing is open)."""
+    o = latest.get("open")
+    if not o or not o.get("options"):
+        return ""
+    if is_way(o):
+        opts = list(o["options"])
+        return f"Tonight: which {o.get('stage') or 'stage'} will it become? {', '.join(opts[:-1])} or {opts[-1]}?"
+    if is_rule(o):
+        return f"Tonight the feeders vote on a rule of the game: {o.get('question') or o.get('category')}"
+    opts = list(o["options"])
+    if o.get("keep") and opts[0] == o["keep"]:   # rules v5: box 1 keeps it
+        return f"Tonight: {o['category']}. Keep {opts[0]}, or {' or '.join(opts[1:])}?"
+    return f"Tonight: {o['category']}. {', '.join(opts[:-1])} or {opts[-1]}?" if len(opts) > 1 else f"Tonight: {o['category']}. {opts[0]}?"
+
+
+def picked_by(r: dict, most: int = 3) -> str:
+    """The wallets that picked the winner, by the three word names of their feeder cards (wallets, not people):
+    "Picked by ember · gravel · paddle and cedar · brook · yak." ("" when latest.json does not list them)."""
+    from wordnames import words
+    w = [words(a) for a in r.get("winners") or []]
+    if not w:
+        return ""
+    shown = w[:most] + ([f"{len(w) - most} more"] if len(w) > most else [])
+    return "Picked by " + (shown[0] if len(shown) == 1 else ", ".join(shown[:-1]) + " and " + shown[-1]) + "."
+
+
+def x_fit(lines: list[str]) -> str:
+    """One post on X with every line whole, the question last: the later middle lines go first when it is too long."""
+    head, mid, last = lines[0], [x for x in lines[1:-1] if x], lines[-1] if len(lines) > 1 else ""
+    while True:
+        out = [head] + mid + ([last] if last else [])
+        msg = x_post(out, keep=len(out), foot=X_FOOT, tag=X_TAG)
+        if all(" ".join(x.split()) in msg for x in out) or not (mid or last):
+            return msg
+        if mid:
+            mid.pop()
+        else:
+            last = ""
+
+
 def x_text(r: dict, latest: dict, was: str | None = None) -> str:
     """The evening on X for people who do not follow along (12 Nov 2026: "Evening 13 · Rose 3 · Green 0 · White 1" was
     insider talk): the people first (how many wallets fed it), what they decided in words, then tonight's vote;
-    no link, no HTML."""
+    no link, no HTML. Since 14 Nov 2026 only an evening that changed the look goes to X (step()); it names the wallets
+    that picked it and ends with tonight's question."""
     if is_rule(r):
         head, body = rule_head(r, latest, was, html=False)
         later = [tonight(latest, html=False)]
@@ -164,6 +232,13 @@ def x_text(r: dict, latest: dict, was: str | None = None) -> str:
     fed = f"{plural(n, 'wallet', 'wallets')} fed Agorzilla today" if n else "Agorzilla's feeders voted today"
     part = str(r.get("category") or "look").lower()
     tally, total = list(r.get("tally") or []), sum(r.get("tally") or [])
+    if is_way(r) and r.get("winner"):
+        won = tally[r["options"].index(r["winner"])] if r["winner"] in r.get("options", []) else 0
+        tie = ", a tie the chain's state settled" if r.get("tie") else ""
+        head = f"🦍 {fed}, and they chose {way_of(r)}: the {r['winner']} ({won} of {plural(total, 'vote', 'votes')}{tie})."
+        why = "Its feeders decide how it grows up."
+        lived = f"It has lived {plural(latest['lived'], 'day', 'days')} on the testnet." if latest.get("lived") is not None else ""
+        return x_fit([head, why, picked_by(r), lived, invite(latest)])
     if r.get("winner") and r.get("kept"):
         won = tally[r["options"].index(r["winner"])] if r["winner"] in r.get("options", []) else 0
         head = f"🦍 {fed}. Its {part} stays {r['winner']}: only {total - won} of {plural(total, 'vote', 'votes')} wanted a change."
@@ -173,10 +248,14 @@ def x_text(r: dict, latest: dict, was: str | None = None) -> str:
         head = f"🦍 {fed}, and its {part} became {r['winner']} ({won} of {plural(total, 'vote', 'votes')}{tie})."
     else:
         head = f"🦍 {fed}. Nobody voted on its {part}, so it stays as it was."
-    later = [tonight(latest, html=False)]
-    if latest.get("lived") is not None:
-        later.append(f"It has lived {plural(latest['lived'], 'day', 'days')} on the testnet, shaped only by the wallets that feed it.")
-    return x_post([head] + later, foot=X_FOOT, tag=X_TAG)
+    lived = f"It has lived {plural(latest['lived'], 'day', 'days')} on the testnet, shaped only by the wallets that feed it." if latest.get("lived") is not None else ""
+    return x_fit([head, picked_by(r) if r.get("winner") and not r.get("kept") else "", lived, invite(latest)])
+
+
+def x_worth(r: dict) -> bool:
+    """Only an evening that changed the look goes to X (14 Nov 2026 X strategy): a kept look, a rule evening and an
+    evening nobody voted on show nothing new to someone scrolling past; they go to the Telegram group only."""
+    return bool(r.get("winner")) and not r.get("kept") and not is_rule(r)   # a way evening with a winner goes too
 
 
 def post_x(msg: str, state: dict, now: float | None = None, png: bytes | None = None) -> bool:
@@ -189,7 +268,7 @@ def post_x(msg: str, state: dict, now: float | None = None, png: bytes | None = 
     if state["x_n"] >= X_DAILY_CAP:
         log.info("x: daily cap reached, left out")
         return False
-    png = png or card()
+    png = png or now_picture() or card()
     media = X_OUT.upload(png, "agorzilla.png")[0] if png else None
     ok, _, err = X_OUT.send_text(msg, media)
     if ok:
@@ -227,6 +306,29 @@ def card() -> bytes | None:
     return _card[0]
 
 
+def shot_png(p: str | None) -> bytes | None:
+    """An agorzilla-shots photograph as PNG; None when there is none."""
+    if not p:
+        return None
+    try:
+        import io
+
+        from PIL import Image
+        out = io.BytesIO()
+        Image.open(p).convert("RGB").save(out, "PNG", optimize=True)
+        return out.getvalue()
+    except Exception as e:  # noqa: BLE001
+        log.info("no photograph (%s)", e)
+        return None
+
+
+def now_picture() -> bytes | None:
+    """Agorzilla as it looks now: the newest evening's after-picture from agorzilla-shots (the service photographs every
+    evening again whenever the page's look changes). 14 Nov 2026: posts without their own picture showed the base baby
+    painting (card()), so "grew into Elder" went out with a baby. The static card stays only for when no photo exists."""
+    return shot_png(newest_shot(0))
+
+
 def shots_of(r: dict) -> tuple[str, str] | None:
     """The paths of the evening's two photographs, when both are there."""
     if not SHOTS:
@@ -250,11 +352,26 @@ def evening_card(r: dict) -> bytes | None:
     A rule evening does not change the look: its card is the ballot (rule_card)."""
     if is_rule(r):
         return rule_card(r)
+    if is_way(r):   # the way shows on the creature only once it is painted: its card is the ballot
+        return rule_card(r, kicker="WHICH WAY IT GROWS", question=f"Which {r.get('stage') or 'stage'} will it become?",
+                         says=f"It grows into the {r['winner']}." if r.get("winner") else "",
+                         lead="The feeders choose how it grows up")
     if not r.get("winner") or r.get("kept"):   # a kept look has no before and after
         return None
     paths = shots_of(r)
     if not paths:
         return None
+    info = shot_info(r)
+    tally = " · ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"]))
+    return pair_card(paths, f"Evening {r['n'] + 1} · {r['category']} became {r['winner']}",
+                     (info.get("before_value"), info.get("after_value") or r["winner"]),
+                     f"{tally} wallets{', a tie settled by the state hash' if r.get('tie') else ''} · test AGRS, no value · agorzilla.com",
+                     (info.get("before_color"), info.get("after_color")))
+
+
+def pair_card(paths: tuple[str, str], title: str, values: tuple, foot: str, colours: tuple = (None, None)) -> bytes | None:
+    """Two photographs, before and after, side by side on Agorzilla's dark green, 1600×900 PNG, a chip with each one's
+    value (and colour) at its foot; None when it cannot be made."""
     try:
         import io
 
@@ -263,8 +380,7 @@ def evening_card(r: dict) -> bytes | None:
         im = Image.new("RGB", (W, H), bg)
         d = ImageDraw.Draw(im)
         font = lambda size: ImageFont.truetype(os.path.join(FONTS, "Sora.ttf"), size)  # noqa: E731
-        info = shot_info(r)
-        d.text((W // 2, 60), f"Evening {r['n'] + 1} · {r['category']} became {r['winner']}", font=font(46), fill=cream, anchor="mm")
+        d.text((W // 2, 60), title, font=font(46), fill=cream, anchor="mm")
         box_w, box_h, top, gap = 660, 680, 112, 100
         for k, (path, side) in enumerate(zip(paths, ("before", "after"))):
             x = (W - 2 * box_w - gap) // 2 + k * (box_w + gap)
@@ -274,9 +390,9 @@ def evening_card(r: dict) -> bytes | None:
             im.paste(pic, (x, top), mask)
             d.rounded_rectangle((x, top, x + box_w - 1, top + box_h - 1), 26, outline=green if k else "#2a4a3b", width=3)
             d.text((x + 28, top + 26), side.upper(), font=font(24), fill=green if k else muted)
-            value = info.get(side + "_value") or (r["winner"] if k else None)
-            if value:   # a chip at the foot of the photograph: the part's value then, with its colour when it has one
-                f, colour = font(28), info.get(side + "_color")
+            value = values[k]
+            if value:   # a chip at the foot of the photograph: the value then, with its colour when it has one
+                f, colour = font(28), colours[k]
                 tw = d.textlength(value, font=f) + (34 if colour else 0)
                 cx, cy = x + box_w // 2, top + box_h - 46
                 d.rounded_rectangle((cx - tw / 2 - 22, cy - 26, cx + tw / 2 + 22, cy + 26), 26, fill="#0b1f17", outline=green if k else "#2a4a3b", width=2)
@@ -288,18 +404,17 @@ def evening_card(r: dict) -> bytes | None:
         ax, ay = W // 2, top + box_h // 2   # an arrow from before to after
         d.line((ax - 30, ay, ax + 22, ay), fill=cream, width=6)
         d.polygon([(ax + 34, ay), (ax + 12, ay - 18), (ax + 12, ay + 18)], fill=cream)
-        tally = " · ".join(f"{o} {t}" for o, t in zip(r["options"], r["tally"]))
-        foot = f"{tally} wallets{', a tie settled by the state hash' if r.get('tie') else ''} · test AGRS, no value · agorzilla.com"
         d.text((W // 2, H - 50), foot, font=font(24), fill=muted, anchor="mm")
         out = io.BytesIO()
         im.save(out, "PNG", optimize=True)
         return out.getvalue()
     except Exception as e:  # noqa: BLE001 - no picture, the text goes alone
-        log.info("evening card: not made (%s)", e)
+        log.info("card: not made (%s)", e)
         return None
 
 
-def rule_card(r: dict) -> bytes | None:
+def rule_card(r: dict, kicker: str = "A RULE EVENING", question: str = "", says: str | None = None,
+              lead: str = "The feeders vote on the rules of the game too") -> bytes | None:
     """A rule evening's ballot on Agorzilla's dark green, 1600×900 PNG: the question, the three ways the rule can be with
     their votes (the winner in green), and the rule from now on. None when nobody voted (the text goes alone)."""
     if not r.get("winner") or not r.get("options"):
@@ -313,8 +428,8 @@ def rule_card(r: dict) -> bytes | None:
         im = Image.new("RGB", (W, H), bg)
         d = ImageDraw.Draw(im)
         font = lambda size: ImageFont.truetype(os.path.join(FONTS, "Sora.ttf"), size)  # noqa: E731
-        d.text((W // 2, 92), f"EVENING {r['n'] + 1} · A RULE EVENING", font=font(28), fill=green, anchor="mm")
-        d.text((W // 2, 170), r.get("question") or r.get("category") or "", font=font(54), fill=cream, anchor="mm")
+        d.text((W // 2, 92), f"EVENING {r['n'] + 1} · {kicker}", font=font(28), fill=green, anchor="mm")
+        d.text((W // 2, 170), question or r.get("question") or r.get("category") or "", font=font(54), fill=cream, anchor="mm")
         tally = list(r.get("tally") or [0] * len(r["options"]))
         most = max(tally + [1])
         bw, bh, x0, top, gap = 1040, 96, (W - 1040) // 2, 262, 26
@@ -325,12 +440,12 @@ def rule_card(r: dict) -> bytes | None:
                 d.rounded_rectangle((x0 + 4, y + 4, x0 + 4 + max(44, int((bw - 8) * t / most)), y + bh - 4), 19, fill="#123326" if win else "#0f2a1f")
             d.text((x0 + 34, y + bh // 2), o, font=font(36), fill=cream if win else muted, anchor="lm")
             d.text((x0 + bw - 34, y + bh // 2), plural(t, "vote", "votes"), font=font(30), fill=green if win else muted, anchor="rm")
-        says = r.get("says") or ""
+        says = (r.get("says") or "") if says is None else says
         if says:
             y = top + 3 * (bh + gap) + 34
-            for k, part in enumerate(textwrap.wrap(f"From now on: {says}", 70)[:2]):
+            for k, part in enumerate(textwrap.wrap(says if kicker != "A RULE EVENING" else f"From now on: {says}", 70)[:2]):
                 d.text((W // 2, y + k * 50), part, font=font(36), fill=cream, anchor="mm")
-        foot = f"The feeders vote on the rules of the game too{', a tie settled by the state hash' if r.get('tie') else ''} · test AGRS, no value · agorzilla.com"
+        foot = f"{lead}{', a tie settled by the state hash' if r.get('tie') else ''} · test AGRS, no value · agorzilla.com"
         d.text((W // 2, H - 50), foot, font=font(24), fill=muted, anchor="mm")
         out = io.BytesIO()
         im.save(out, "PNG", optimize=True)
@@ -343,7 +458,25 @@ def rule_card(r: dict) -> bytes | None:
 def growth_x(old: str, latest: dict) -> str:
     lived = latest.get("lived")
     head = f"🦍 Agorzilla grew into {latest.get('stage_name', '')}" + (f" after {plural(lived, 'day', 'days')} lived" if lived is not None else "")
-    return x_post([head, f"It was {old} until now. The wallets that feed it every day decide how it looks."], foot=X_FOOT, tag=X_TAG)
+    return x_fit([head, f"It was {old} until now. The wallets that feed it every day decide how it looks.", invite(latest)])
+
+
+COUNTDOWN = {"elder": ("Ancient", 30)}   # 14 Nov 2026 X strategy: a post two lived days before the last stage
+
+
+def countdown(latest: dict, state: dict, send_x=None) -> str | None:
+    """Once, when it has lived two days less than the next stage needs: "Two more lived days and it grows into Ancient"."""
+    nxt = COUNTDOWN.get(latest.get("stage"))
+    lived = latest.get("lived")
+    if not nxt or lived is None or lived != nxt[1] - 2 or state.get("countdown") == latest["stage"]:
+        return None
+    state["countdown"] = latest["stage"]
+    need = latest.get("lived_needs")
+    msg = x_fit([f"🦍 Agorzilla has lived {lived} days. Two more lived days and it grows into {nxt[0]}, its last stage.",
+                 f"A day counts as lived when at least {need} wallets feed it." if need else "", invite(latest)])
+    png = now_picture()
+    (send_x or post_x)(msg, state, png=png) if png else (send_x or post_x)(msg, state)
+    return msg
 
 
 GROW_PROMPT = ("A friendly hand-drawn creature on its rock among plants, as a living picture. The camera is completely "
@@ -355,19 +488,7 @@ GROW_WAIT = 30 * 60   # the growth post waits this long for its clip at most, th
 def kept_picture() -> bytes | None:
     """An evening that kept the look has no before and after; it shows the creature as it looks now: the newest
     after-picture, as PNG (11 Nov 2026: kept evenings went out as bare text). None when there is none."""
-    p = newest_shot(0)
-    if not p:
-        return None
-    try:
-        import io
-
-        from PIL import Image
-        out = io.BytesIO()
-        Image.open(p).convert("RGB").save(out, "PNG", optimize=True)
-        return out.getvalue()
-    except Exception as e:  # noqa: BLE001 - the text alone
-        log.info("kept evening: no picture (%s)", e)
-        return None
+    return now_picture()
 
 
 def newest_shot(since: float) -> str | None:
@@ -380,6 +501,33 @@ def newest_shot(since: float) -> str | None:
     best = max(names, key=lambda n: int(n.split("-")[1]) if n.split("-")[1].isdigit() else -1, default=None)
     p = os.path.join(SHOTS, best) if best else None
     return p if p and os.path.getmtime(p) >= since else None
+
+
+def growth_card(g: dict) -> bytes | None:
+    """The stage before and after side by side: the photographs of the evening that made it grow (just before it closed,
+    just after). None without them (a rule evening is not photographed)."""
+    if g.get("evening") is None or not g.get("from"):
+        return None
+    paths = shots_of({"n": g["evening"]})
+    return pair_card(paths, f"Agorzilla grew into {g['to']}", (g["from"], g["to"]),
+                     "Grown by days lived, fed by wallets on Tau Testnet Alpha · test AGRS, no value · agorzilla.com") if paths else None
+
+
+def grown_x(send_x, g: dict, state: dict) -> bool:
+    """The growth post as a picture: old and new stage side by side, else the first photograph taken after it grew (it
+    shows the new stage), else as it looks now."""
+    png = growth_card(g) or shot_png(newest_shot(g["since"] - 3600)) or now_picture()
+    return (send_x or post_x)(g["msg"], state, png=png) if png else (send_x or post_x)(g["msg"], state)
+
+
+def grow_still(state: dict, send_x, now: float) -> str | None:
+    """Without a clip the growth post waits (at most GROW_WAIT) for the evening's photographs, which show the grown stage."""
+    g = state["growth"]
+    if (shots_of({"n": g["evening"]}) if g.get("evening") is not None else newest_shot(g["since"] - 3600)) or now - g["since"] > GROW_WAIT:
+        grown_x(send_x, g, state)
+        state.pop("growth", None)
+        return g["msg"]
+    return None
 
 
 def grow_clip(state: dict, send_x, now: float) -> str | None:
@@ -402,21 +550,21 @@ def grow_clip(state: dict, send_x, now: float) -> str | None:
             video = kling.web(j["file"], j["file"].replace(".mp4", "-post.mp4"), w=-2, h=-2)
             post = {"x": g["msg"], "account": "agorzilla"}
             if j.get("draft"):
-                (send_x or post_x)(g["msg"], state)
+                grown_x(send_x, g, state)
                 url = kling.draft(g["key"], video, post)
                 kling.tell(kling.draft_note(g["key"], "agorzilla", url, "Agorzilla's growth as a video, for @Agorzilla"))
             else:
                 said = kling.post_video(video, post)
                 log.info("growth clip: %s", "; ".join(said))
                 if not any(x.startswith("x: https") for x in said):
-                    (send_x or post_x)(g["msg"], state)
+                    grown_x(send_x, g, state)
         except Exception as e:  # noqa: BLE001 - the picture instead
             log.warning("growth clip: %s", e)
-            (send_x or post_x)(g["msg"], state)
+            grown_x(send_x, g, state)
         state.pop("growth", None)
         return g["msg"]
     if j.get("status") in ("failed", "capped", "off", "error", "none") and g.get("key") or now - g["since"] > GROW_WAIT:
-        (send_x or post_x)(g["msg"], state)
+        grown_x(send_x, g, state)
         state.pop("growth", None)
         return g["msg"]
     return None
@@ -429,10 +577,10 @@ def grow(latest: dict, state: dict, send_x=None, now: float | None = None) -> st
     done = None
     if state.get("growth"):
         try:
-            done = grow_clip(state, send_x, now)
+            done = grow_still(state, send_x, now) if state["growth"].get("still") else grow_clip(state, send_x, now)
         except Exception as e:  # noqa: BLE001
             log.warning("growth clip: %s", e)
-            (send_x or post_x)(state["growth"]["msg"], state)
+            grown_x(send_x, state["growth"], state)
             done = state.pop("growth")["msg"]
     stage, name = latest.get("stage"), latest.get("stage_name")
     if stage is None:
@@ -443,14 +591,19 @@ def grow(latest: dict, state: dict, send_x=None, now: float | None = None) -> st
     if last is None or last == stage:
         return done
     msg = growth_x(prev or "smaller", latest)
+    rounds = [r["n"] for r in latest.get("rounds") or [] if "n" in r]   # it grows when an evening closes: that evening's photographs show both stages
+    extra = {"evening": max(rounds) if rounds else None, "from": prev, "to": name}
     try:
         import kling
         clip = kling.enabled("agorzilla") and bool(SHOTS)
     except Exception:  # noqa: BLE001
         clip = False
     if clip:
-        state["growth"] = {"msg": msg, "stage": stage, "since": round(now)}
+        state["growth"] = {"msg": msg, "stage": stage, "since": round(now), **extra}
         return grow_clip(state, send_x, now) or msg
+    if os.path.isdir(SHOTS):   # wait for the evening's photographs, which show it grown
+        state["growth"] = {"msg": msg, "stage": stage, "since": round(now), "still": True, **extra}
+        return grow_still(state, send_x, now) or msg
     (send_x or post_x)(msg, state)
     return msg
 
@@ -529,7 +682,7 @@ def step(latest: dict, state: dict, send=post, send_x=post_x, now: float | None 
                 known[r["rule"]] = r["winner"]
             continue
         png = picture(r)
-        if not png and r.get("winner") and not is_rule(r) and r.get("t") and now - r["t"] < SHOTS_WAIT:
+        if not png and r.get("winner") and not is_rule(r) and not is_way(r) and r.get("t") and now - r["t"] < SHOTS_WAIT:
             break                      # its photographs are being made; next pass
         if not png and r.get("kept") and not is_rule(r) and picture is evening_card:
             png = kept_picture()
@@ -551,7 +704,9 @@ def step(latest: dict, state: dict, send=post, send_x=post_x, now: float | None 
                     state["foot_at"] = now
         if r["n"] > state["x_last"]:
             state["x_last"] = r["n"]
-            if png:
+            if not x_worth(r):
+                pass                   # Telegram only
+            elif png:
                 send_x(x_text(r, latest, was), state, png=png)
             else:
                 send_x(x_text(r, latest, was), state)
@@ -592,6 +747,8 @@ def main():
                 log.info("posted: %s", msg.splitlines()[0])
             if grow(latest, state):
                 log.info("growth: %s", latest.get("stage_name"))
+            if countdown(latest, state):
+                log.info("countdown posted")
             save(state)
         except Exception as e:  # noqa: BLE001
             log.warning("pass failed: %s", e)

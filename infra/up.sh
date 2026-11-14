@@ -15,6 +15,13 @@
 #                            up bust --from infra/rabbit-art/imports/codex hana  takes pictures painted elsewhere
 #              up follow     the node following IDNI tau-testnet main by itself: its state; up follow now  one check at once,
 #                            up follow off / on  stops / starts it (nothing rebuilt, the node left alone)
+#              up copy       the pirate copy (piratecopy/piratecopy.py): the pirates attack a private copy of the testnet
+#                            once a week by themselves (Tuesday 19:15 UTC); its state and last voyage, nothing rebuilt,
+#                            the live node left alone; up copy now  one voyage at once (background, about an hour),
+#                            up copy last  the last voyage's findings in full, up copy log, up copy off / on
+#              up cache      docker's build cache: its size, the tau-lang stage it never drops, the last clean-up (any up
+#                            starts one in the background, at most once a day); up cache now  one at once,
+#                            up cache plan  what it would drop (nothing rebuilt, the node left alone, safe any time)
 #              up idni       what the next daily IDNI progress post would say now (its two services rebuilt, nothing posted);
 #                            up idni send  posts it now, up idni hold  keeps the next one back, up idni release  undoes that
 #                            up idni restart  what the post for the newest testnet restart would say (nothing posted)
@@ -74,6 +81,10 @@
 set -e
 cd "$(dirname "$(readlink -f "$0")")"
 ln -sf "$(pwd)/up.sh" /usr/local/bin/up 2>/dev/null && chmod +x up.sh 2>/dev/null || true
+# Build cache (buildcache/buildcache.py): builds leave layers behind (15.7 GB of them with 1.4 GB of disk free on
+# 14.11.2026). At most once a day any up drops, in the background, what no build used for 3 days, oldest first, until the
+# cache is below 6 GB; never the tau-lang stage of the node image (building that again takes hours).
+[ "${1:-}" = "cache" ] || (setsid nohup python3 buildcache/buildcache.py daily >/dev/null 2>&1 &) || true
 if [ "$1" != "--pulled" ]; then
   git -C .. pull --ff-only
   exec sh "$(pwd)/up.sh" --pulled "$@"
@@ -609,6 +620,33 @@ if [ "${1:-}" = "follow" ]; then
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
+# docker's build cache (buildcache/buildcache.py): up cache  its size, the tau-lang stage it keeps and the last clean-up,
+# up cache now  a clean-up at once (never the tau-lang stage), up cache plan  what one would drop; nothing rebuilt
+if [ "${1:-}" = "cache" ]; then
+  echo "---------------- copy from here into the chat ----------------"
+  case "${2:-}" in
+    now) python3 buildcache/buildcache.py now || true ;;
+    plan) python3 buildcache/buildcache.py plan || true ;;
+  esac
+  python3 buildcache/buildcache.py status || true
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# the pirate copy (piratecopy/piratecopy.py, a systemd timer that every up installs, Tuesday 19:15 UTC): the pirates
+# attack a private copy of the testnet with two nodes of their own (never the live one); findings go privately to the
+# owner's Telegram. up copy  its state and the last voyage, up copy now  one voyage at once (in the background, about
+# an hour), up copy last  the last voyage in full, up copy log  its log, up copy off / on; nothing rebuilt
+if [ "${1:-}" = "copy" ]; then
+  echo "---------------- copy from here into the chat ----------------"
+  case "${2:-}" in
+    now|on|off) python3 piratecopy/piratecopy.py "$2" || true ;;
+    last|log) python3 piratecopy/piratecopy.py "$2"; echo "---------------- to here --------------------------------------"; exit 0 ;;
+    *) python3 piratecopy/piratecopy.py install >/dev/null 2>&1 || true ;;
+  esac
+  python3 piratecopy/piratecopy.py status
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 # the blog by hand, nothing rebuilt (alerts/blog.py): up blog  lists the drafts waiting and where to read them,
 # up blog publish <id>  puts one on the blog and posts it once, up blog draft <visit-id>  writes one anew,
 # up blog unpublish <id>  takes one off again, up blog pictures  makes every article's hero picture and link preview anew
@@ -723,6 +761,11 @@ PY
 # the node following IDNI main by itself (follow/idni_follow.py): its timer (made anew by every up), what it follows, held back
 python3 follow/idni_follow.py install >/dev/null 2>&1 || true
 python3 follow/idni_follow.py status 2>/dev/null | tee -a "$NOTE" || true
+# the pirate copy (piratecopy/piratecopy.py): its weekly timer (made anew by every up) and the last voyage
+python3 piratecopy/piratecopy.py install >/dev/null 2>&1 || true
+python3 piratecopy/piratecopy.py status 2>/dev/null | tee -a "$NOTE" || true
+# the build cache: its size and the tau-lang stage it keeps (the daily clean-up started above)
+python3 buildcache/buildcache.py status 2>/dev/null | tee -a "$NOTE" || true
 # Tau today for AI assistants (alerts/knowledge.py): how many facts, which to check again because IDNI changed their source
 python3 - <<'PY' | tee -a "$NOTE"
 import json, time, urllib.request

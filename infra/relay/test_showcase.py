@@ -108,10 +108,16 @@ check(re.search(r"i18\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]{8,})", four).group(1) == 
       and re.search(r"i[12]\[t\][^<>]*[<>]=?\s*\{\s*(#x[0-9a-fA-F]+|\d+)", four).group(1) == "#x000064",
       "four-eyes wallet: above 100 the co-signer's vote in slot i18")
 check(re.search(r"i4\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]{8,})", feed).group(1) == showcase.BOWL
-      and "i1[t]:bv[24] > { #x000014 }" in feed and "i2[t]:bv[24] < { #x015f90 }" in feed,
-      "feeding fund: only Agorzilla's bowl (i4), at most 20 a meal (i1), nothing below 90,000 (i2)")
-check("i2[t]:bv[24] < { #x015f90 }" in four and four.count("i18[t]") == 1,
-      "four-eyes: below 90,000 every payment needs the co-signer too (one co-signer guard, far from IDNI #111's 10)")
+      and "i1[t]:bv[24] > { #x000014 }" in feed and "!(" + showcase.short_of_floor() + ")" in feed,
+      "feeding fund: only Agorzilla's bowl (i4), at most 20 a meal (i1), nothing that would leave less than 90,000")
+check("(i2[t]:bv[24] - i1[t]:bv[24]) < { #x015f90 }:bv[24]" in four and "i1[t]:bv[24] > i2[t]:bv[24]" in four
+      and four.count("i18[t]") == 1,
+      "four-eyes: a payment that would leave less than 90,000 needs the co-signer (i2 - i1, wrap guarded, one co-signer guard)")
+check("i2[t]:bv[24] < {" not in four + feed,
+      "no floor on the balance before the payment any more (90,050 minus 100 used to go through)")
+for r in (four, feed):
+    check(len(re.findall(r"(?<![<>!])(?:<|>|=)(?!=)", r.replace("o5[t]:bv[24] =", ""))) <= 32,
+          "at most 32 comparisons")
 for r in (pig, four, feed):
     check(r.startswith("always ( ") and r.endswith(" ).") and "o5[t]:bv[24]" in r and "i12" not in r and r.count("(") == r.count(")"),
           "one always unit writing o5, no i12, balanced: " + r[:40] + "…")

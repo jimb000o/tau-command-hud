@@ -152,13 +152,19 @@ def hero(art: str, ships: str, card: list[str], ship: str, out: str, stats: list
     as in the game, looking on from the sea beside the card: the game's art and the data in one picture."""
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import cruise_pic
+    bust = portrait(art, host) if host else None
+    if bust is not None:
+        h = 430
+        bust = bust.resize((round(bust.width * h / bust.height), h), Image.LANCZOS)
+    bx = W - bust.width - 24 if bust is not None else W
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
-        json.dump({"ship": ship, "ship_scale": 3, "card": card}, f)
+        # the card ends a gap before the radio host: nothing of him stands over its text
+        json.dump({"ship": ship, "ship_scale": 3, "card": card, **({"card_right": bx - 28} if bust is not None else {})}, f)
     try:
         cruise_pic.main(art, ships, f.name, out)
     finally:
         os.unlink(f.name)
-    if not stats and not host:
+    if not stats and bust is None:
         return out
     pic = Image.open(out).convert("RGBA")
     d = draw(pic)
@@ -168,18 +174,14 @@ def hero(art: str, ships: str, card: list[str], ship: str, out: str, stats: list
         if sum(pic.getpixel((70, y))[:3]) > 120:
             card_bottom = y
             break
-    if host:
-        bust = portrait(art, host)
-        if bust is not None:
-            h = 430
-            bust = bust.resize((round(bust.width * h / bust.height), h), Image.LANCZOS)
-            x = W - bust.width - 24
-            pic.alpha_composite(bust, (x, 18))
-            tag = "Rico · Radio Coco" if host == "rico" else host.title()
-            ft = font(22, 600)
-            tw = d.textlength(tag, font=ft)
-            d.rounded_rectangle([x + bust.width / 2 - tw / 2 - 14, 18 + h - 6, x + bust.width / 2 + tw / 2 + 14, 18 + h + 30], radius=14, fill=(8, 12, 24, 230))
-            d.text((x + bust.width / 2 - tw / 2, 18 + h - 1), tag, font=ft, fill=(235, 235, 238, 255))
+    if bust is not None:
+        h = bust.height
+        pic.alpha_composite(bust, (bx, 18))
+        tag = "Rico · Radio Coco" if host == "rico" else host.title()
+        ft = font(22, 600)
+        tw = d.textlength(tag, font=ft)
+        d.rounded_rectangle([bx + bust.width / 2 - tw / 2 - 14, 18 + h - 6, bx + bust.width / 2 + tw / 2 + 14, 18 + h + 30], radius=14, fill=(8, 12, 24, 230))
+        d.text((bx + bust.width / 2 - tw / 2, 18 + h - 1), tag, font=ft, fill=(235, 235, 238, 255))
     if stats:
         over = Image.new("RGBA", pic.size)
         od = draw(over)
@@ -188,9 +190,10 @@ def hero(art: str, ships: str, card: list[str], ship: str, out: str, stats: list
         x0, y0 = 56, max(card_bottom + 24, H - 56 - 2 * th - gap)
         for i, (num, label) in enumerate(tiles):
             x, y = x0 + (i % 2) * (tw + gap), y0 + (i // 2) * (th + gap)
-            od.rounded_rectangle([x, y, x + tw, y + th], radius=16, fill=(8, 12, 24, 228), outline=(57, 255, 138, 110), width=2)
+            col = first_tile_colour(num) if i == 0 else None
+            od.rounded_rectangle([x, y, x + tw, y + th], radius=16, fill=(8, 12, 24, 228), outline=(*(col or OK), 110), width=2)
             fn = font(54 if len(str(num)) <= 5 else 40, 700)
-            od.text((x + 20, y + 18), str(num), font=fn, fill=(57, 255, 138, 255) if i == 0 else (242, 242, 242, 255))
+            od.text((x + 20, y + 18), str(num), font=fn, fill=(*col, 255) if col else (242, 242, 242, 255))
             size, lines = 21, wrap(od, str(label), font(21, 500), tw - 36)
             if len(lines) > 2:   # a longer label gets a smaller type rather than losing its last word
                 size, lines = 18, wrap(od, str(label), font(18, 500), tw - 36)
@@ -199,6 +202,16 @@ def hero(art: str, ships: str, card: list[str], ship: str, out: str, stats: list
         pic = Image.alpha_composite(pic, over)
     pic.convert("RGB").save(out, quality=90)
     return out
+
+
+def first_tile_colour(num) -> tuple:
+    """The lead tile (minutes in port) in the site's colours: green when the ship stayed its whole call, amber, the site's
+    warning colour, when it left before (14 Nov 2026: "12/90" in green read as a good result; it was not)."""
+    try:
+        a, b = (float(x) for x in str(num).split("/"))
+        return OK if a >= b else AMBER
+    except ValueError:
+        return OK
 
 
 def desk_hero(card: list[str], out: str, stats: list | None = None, kicker: str = "") -> str:

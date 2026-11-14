@@ -255,6 +255,27 @@ T[0] = SAT + 95 * 60
 asyncio.run(C3.step(ask, gov))
 check(C3.tried["bill"] is None, "a visit that ended in a stall does not count its new kind as tried")
 
+# 14 Nov 2026: no block for ten minutes can be our node cut off from the network, or a testnet that started over; the
+# ship says what our node could tell, and a restart goes into the visit's logbook as a restart, not as a stall
+C3.link_fn = lambda: {"connected": 0}
+check("no working connection" in C3.stall_why() and "may have kept running" in C3.stall_why(), "no peer: the ship says the testnet may have kept running")
+C3.link_fn = lambda: {"connected": 2}
+check("connected to the network (2 peers)" in C3.stall_why(), "with peers: the testnet looked stalled")
+C3.link_fn = lambda: {}
+check(C3.stall_why() == "no new block reached our node for over ten minutes", "not known: only what our node saw")
+_vid = C3.visits[-1]["id"] if C3.visits else C3.cur["id"]
+C3.chain_restarted(T[0] + 60, 1569, 1763125500)
+_r = [e for e in C3.logbook if e.get("kind") == "chain restarted"]
+check(_r and _r[-1]["visit"] == _vid and "ended at block 1569" in _r[-1]["note"] and "began at" in _r[-1]["note"],
+      f"a restart soon after a call goes into that visit's logbook {_r[-1:]}")
+_n = len(_r)
+# a make-up call outside the timetable (EXTRA_CALLS): Sunday 15 Nov 2026, 15:00 German time, the Queen
+_sun = cruise.berlin_t(cruise.dt.date(2026, 11, 15), 15)
+check((_sun, "queen") in cruise.calls_near(_sun - 3600) and cruise.visit_id(_sun, "queen") == "2026-11-15-queen", "the Queen's make-up call is on the timetable")
+check(len([c for c in cruise.calls_near(_sun - 3600) if c[0] == _sun]) == 1, "and only once")
+C3.chain_restarted(T[0] + 7 * 3600, 2000)
+check(len([e for e in C3.logbook if e.get("kind") == "chain restarted"]) == _n, "a restart long after the last call is not written to it")
+
 # ---------- the node refuses again and again (a changed or restarted testnet): the ship leaves ----------
 C4 = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s4"), "log_path": os.path.join(d, "l4"), "incidents_path": os.path.join(d, "i4")}, clock=clock,
                    enabled=True, verdict=lambda: "calm", background=False)
