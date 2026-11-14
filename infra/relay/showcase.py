@@ -86,6 +86,7 @@ OFFER_WINDOW = 100      # blocks an offer of ours stays open
 IGNORED_WINDOW = 15     # blocks the unanswered offer lives (about 12 minutes at ~48 s a block)
 VISITOR_WINDOW = 1000   # blocks a visitor has to answer the starter rule (about half a day)
 STORY_GIVE_UP = 45 * 60
+STORY_TRIES = 2       # an offer that never reached a block is sent once more the same day
 STARTER_MAX = 1000      # the starter rule a visitor's wallet is offered: at most this much per payment
 DESK_PER_DAY = 40       # starter offers a day, all visitors together
 DESK_PER_IP = 3         # per address a day
@@ -470,16 +471,18 @@ class Showcase:
         for story, hour in STORIES.items():
             s = self.st["stories"].setdefault(story, {})
             offerer, to = self.PARTS[story]
-            if s.get("day") != day:
+            if s.get("day") != day or s.get("retry"):
                 if now < berlin_t(berlin_day(now), hour) or not self.w(to).get("in_force") and to in WALLETS:
                     continue
+                tries = (s.get("tries") or 0) + 1 if s.get("retry") and s.get("day") == day else 1
                 res, tx = await self.send(offerer, ask, gov, kind="rule_offer", to=self.pk[to], rule=self.story_rule(story),
                                           window=IGNORED_WINDOW if story == "ignored" else OFFER_WINDOW)
                 if tx is None or res is None:
                     return tx is not None
                 ok = self.took(res)
-                self.st["stories"][story] = {"day": day, "t": int(now), "expire": tx["expire_at_height"],
-                                             "phase": "wait" if ok and story != "ignored" else "done",
+                self.st["stories"][story] = {"day": day, "t": int(now), "expire": tx["expire_at_height"], "tries": tries,
+                                             "hash": str(((res or {}).get("data") or {}).get("tx_hash") or ""),
+                                             "phase": "wait" if ok else "done",
                                              "result": ("offered" if ok else "the node refused the offer")}
                 self.note(offerer, ("offered: " if ok else "offer refused: ") + self.story_words(story) + ("" if ok else " · " + self.said(res)))
                 self.on_tx and self.on_tx(ok)
@@ -487,8 +490,17 @@ class Showcase:
             if s.get("phase") != "wait":
                 continue
             if now - s.get("t", now) > STORY_GIVE_UP:
-                s.update(phase="done", result="the offer never showed up in a block in time")
-                self.note(to, "gave up waiting for the offer: " + story)
+                # ask the node what became of the offer's transaction, so the status line says why, then try once more
+                why = ""
+                if re.fullmatch(r"[0-9a-f]{64}", s.get("hash") or ""):
+                    r = await ask(f"gettxstatus {s['hash']}")
+                    d = (r or {}).get("data") or {}
+                    why = " · ".join(str(d[k]) for k in ("status", "reason", "detail") if d.get(k))[:200]
+                again = (s.get("tries") or 1) < STORY_TRIES
+                s.update(phase="done", retry=again,
+                         result="the offer never showed up in a block in time" + (f" (node: {why})" if why else "")
+                         + ("; trying once more" if again else ""))
+                self.note(to, f"gave up waiting for the offer: {story}" + (f" · node: {why}" if why else ""))
                 continue
             if now - self.last_story_look < 30:
                 return False
@@ -505,6 +517,9 @@ class Showcase:
                 s.update(phase="done", result=str(o.get("status")))
                 continue
             s["offer_id"] = o.get("offer_id")
+            if story == "ignored":   # it reached a block; nobody answers, so it expires by itself
+                s.update(phase="done", result="offered, in a block; nobody answers, it expires by itself")
+                continue
             if story == "gift":
                 res, tx = await self.send(to, ask, gov, kind="rule_offer_accept", offer_id=o.get("offer_id"), rule=self.story_rule(story))
                 what = "accepted the rule Tau HUD's piggy bank offered"
