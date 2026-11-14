@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import time
 import unittest
 
 import agorzilla as A
@@ -65,6 +66,25 @@ class Evening(unittest.TestCase):
         m = A.grow({"stage": 2, "stage_name": "Young", "lived": 3}, s, send)
         self.assertTrue(m.startswith("🦍 Agorzilla grew into Young after 3 days lived\n\nIt was Little one until now."))
         self.assertEqual(len(xs), 1)
+
+    def test_growth_waits_for_a_photo_of_it_grown(self):
+        # 14 Nov 2026: "grew into Elder" went out with the baby painting; now it waits for the evening's photo
+        from PIL import Image
+        d, old = tempfile.mkdtemp(), A.SHOTS
+        A.SHOTS = d
+        try:
+            s, xs = {"stage": 3, "stage_name": "Grown"}, []
+            send = lambda m, st, png=None: xs.append((m, png)) or True  # noqa: E731
+            m = A.grow({"stage": 4, "stage_name": "Elder", "lived": 14}, s, send, now=time.time())
+            self.assertTrue(m.startswith("🦍 Agorzilla grew into Elder"))
+            self.assertEqual(xs, [])                        # no photo yet: it waits
+            Image.new("RGB", (8, 8), "green").save(os.path.join(d, "evening-14-after.jpg"))
+            A.grow({"stage": 4, "stage_name": "Elder", "lived": 14}, s, send, now=time.time() + 60)
+            self.assertEqual(len(xs), 1)
+            self.assertTrue(xs[0][1].startswith(b"\x89PNG"))   # with the photo of it grown
+            self.assertNotIn("growth", s)
+        finally:
+            A.SHOTS = old
 
     def test_first_evening_ever_is_posted(self):
         s, out = {}, []

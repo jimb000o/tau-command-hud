@@ -189,7 +189,7 @@ def post_x(msg: str, state: dict, now: float | None = None, png: bytes | None = 
     if state["x_n"] >= X_DAILY_CAP:
         log.info("x: daily cap reached, left out")
         return False
-    png = png or card()
+    png = png or now_picture() or card()
     media = X_OUT.upload(png, "agorzilla.png")[0] if png else None
     ok, _, err = X_OUT.send_text(msg, media)
     if ok:
@@ -225,6 +225,29 @@ def card() -> bytes | None:
         return None
     _card.append(out.getvalue())
     return _card[0]
+
+
+def shot_png(p: str | None) -> bytes | None:
+    """An agorzilla-shots photograph as PNG; None when there is none."""
+    if not p:
+        return None
+    try:
+        import io
+
+        from PIL import Image
+        out = io.BytesIO()
+        Image.open(p).convert("RGB").save(out, "PNG", optimize=True)
+        return out.getvalue()
+    except Exception as e:  # noqa: BLE001
+        log.info("no photograph (%s)", e)
+        return None
+
+
+def now_picture() -> bytes | None:
+    """Agorzilla as it looks now: the newest evening's after-picture from agorzilla-shots (the service photographs every
+    evening again whenever the page's look changes). 14 Nov 2026: posts without their own picture showed the base baby
+    painting (card()), so "grew into Elder" went out with a baby. The static card stays only for when no photo exists."""
+    return shot_png(newest_shot(0))
 
 
 def shots_of(r: dict) -> tuple[str, str] | None:
@@ -355,19 +378,7 @@ GROW_WAIT = 30 * 60   # the growth post waits this long for its clip at most, th
 def kept_picture() -> bytes | None:
     """An evening that kept the look has no before and after; it shows the creature as it looks now: the newest
     after-picture, as PNG (11 Nov 2026: kept evenings went out as bare text). None when there is none."""
-    p = newest_shot(0)
-    if not p:
-        return None
-    try:
-        import io
-
-        from PIL import Image
-        out = io.BytesIO()
-        Image.open(p).convert("RGB").save(out, "PNG", optimize=True)
-        return out.getvalue()
-    except Exception as e:  # noqa: BLE001 - the text alone
-        log.info("kept evening: no picture (%s)", e)
-        return None
+    return now_picture()
 
 
 def newest_shot(since: float) -> str | None:
@@ -380,6 +391,22 @@ def newest_shot(since: float) -> str | None:
     best = max(names, key=lambda n: int(n.split("-")[1]) if n.split("-")[1].isdigit() else -1, default=None)
     p = os.path.join(SHOTS, best) if best else None
     return p if p and os.path.getmtime(p) >= since else None
+
+
+def grown_x(send_x, g: dict, state: dict) -> bool:
+    """The growth post as a picture: the first photograph taken after it grew (it shows the new stage), else as it looks now."""
+    png = shot_png(newest_shot(g["since"] - 3600)) or now_picture()
+    return (send_x or post_x)(g["msg"], state, png=png) if png else (send_x or post_x)(g["msg"], state)
+
+
+def grow_still(state: dict, send_x, now: float) -> str | None:
+    """Without a clip the growth post waits (at most GROW_WAIT) for the evening's photographs, which show the grown stage."""
+    g = state["growth"]
+    if newest_shot(g["since"] - 3600) or now - g["since"] > GROW_WAIT:
+        grown_x(send_x, g, state)
+        state.pop("growth", None)
+        return g["msg"]
+    return None
 
 
 def grow_clip(state: dict, send_x, now: float) -> str | None:
@@ -402,21 +429,21 @@ def grow_clip(state: dict, send_x, now: float) -> str | None:
             video = kling.web(j["file"], j["file"].replace(".mp4", "-post.mp4"), w=-2, h=-2)
             post = {"x": g["msg"], "account": "agorzilla"}
             if j.get("draft"):
-                (send_x or post_x)(g["msg"], state)
+                grown_x(send_x, g, state)
                 url = kling.draft(g["key"], video, post)
                 kling.tell(kling.draft_note(g["key"], "agorzilla", url, "Agorzilla's growth as a video, for @Agorzilla"))
             else:
                 said = kling.post_video(video, post)
                 log.info("growth clip: %s", "; ".join(said))
                 if not any(x.startswith("x: https") for x in said):
-                    (send_x or post_x)(g["msg"], state)
+                    grown_x(send_x, g, state)
         except Exception as e:  # noqa: BLE001 - the picture instead
             log.warning("growth clip: %s", e)
-            (send_x or post_x)(g["msg"], state)
+            grown_x(send_x, g, state)
         state.pop("growth", None)
         return g["msg"]
     if j.get("status") in ("failed", "capped", "off", "error", "none") and g.get("key") or now - g["since"] > GROW_WAIT:
-        (send_x or post_x)(g["msg"], state)
+        grown_x(send_x, g, state)
         state.pop("growth", None)
         return g["msg"]
     return None
@@ -429,10 +456,10 @@ def grow(latest: dict, state: dict, send_x=None, now: float | None = None) -> st
     done = None
     if state.get("growth"):
         try:
-            done = grow_clip(state, send_x, now)
+            done = grow_still(state, send_x, now) if state["growth"].get("still") else grow_clip(state, send_x, now)
         except Exception as e:  # noqa: BLE001
             log.warning("growth clip: %s", e)
-            (send_x or post_x)(state["growth"]["msg"], state)
+            grown_x(send_x, state["growth"], state)
             done = state.pop("growth")["msg"]
     stage, name = latest.get("stage"), latest.get("stage_name")
     if stage is None:
@@ -451,6 +478,9 @@ def grow(latest: dict, state: dict, send_x=None, now: float | None = None) -> st
     if clip:
         state["growth"] = {"msg": msg, "stage": stage, "since": round(now)}
         return grow_clip(state, send_x, now) or msg
+    if os.path.isdir(SHOTS):   # wait for the evening's photographs, which show it grown
+        state["growth"] = {"msg": msg, "stage": stage, "since": round(now), "still": True}
+        return grow_still(state, send_x, now) or msg
     (send_x or post_x)(msg, state)
     return msg
 
