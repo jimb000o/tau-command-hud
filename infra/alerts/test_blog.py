@@ -413,7 +413,7 @@ check(_n4["title"] == {"en": "T1"} and "title" not in _n4.get("as_drafted", {}),
 check(blog.held("2026-11-99-x-learnings") == "read first" and blog.held("2026-11-98-y-learnings") == "", "a held draft is known as held")
 blog_notes.NOTES.clear(); blog_notes.NOTES.update(_own_notes)
 for _id, _note in blog_notes.NOTES.items():
-    _s = _note.get("sections") or {}
+    _s = _note.get("sections") or _note.get("body") or {}
     check(set(_s) == {"en", "zh", "ja"} and all(v.lstrip().startswith("## ") for v in _s.values()) and not blog.BLAME.search(_s.get("en", "")) and not blog.HYPE.search(_s.get("en", "")),
           f"note {_id}: three languages, starting with a heading, no blame or hype words")
 

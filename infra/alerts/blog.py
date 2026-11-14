@@ -784,7 +784,7 @@ def with_notes(a: dict) -> dict:
     note = blog_notes.NOTES.get(str(a.get("id") or "")) or {}
     fields = [k for k in ("title", "dek", "why", "card", "x") if note.get(k)]
     secs, swaps = note.get("sections") or {}, note.get("replace") or []
-    if not (secs or swaps or fields):
+    if not (secs or swaps or fields or note.get("body")):
         return a
     a = dict(a)
     drafted = dict(a.get("as_drafted") or {})
@@ -799,8 +799,9 @@ def with_notes(a: dict) -> dict:
         a.pop("as_drafted", None)
     model = a.get("body_model") or a.get("body") or {}
     body = {}
-    for k, text in (model or {}).items():
-        text = str(text)
+    own = note.get("body") or {}   # a body written by hand in place of the model's (the model's stays in body_model)
+    for k, text in ({**(model or {}), **own} if own else (model or {})).items():
+        text = str(own.get(k) or text)
         for lang, old, new in swaps:
             if lang == k:
                 text = text.replace(old, new)
