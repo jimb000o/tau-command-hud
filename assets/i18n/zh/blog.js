@@ -5,6 +5,7 @@ TauI18n.add({ strings: {
   "No article yet.": "还没有文章。",
   "All articles": "所有文章",
   "Cruise ship": "游轮",
+  "Testnet week": "测试网本周",
   "News": "快讯",
   "Learnings": "经验",
   "Why it matters": "为什么重要",

@@ -1,7 +1,7 @@
 """The Tau HUD blog (tauhud.com/blog/): learnings articles drafted from our own data, published by hand (or, with
 BLOG_AUTO_PUBLISH_HOURS, a clean draft by itself after that many hours); the loop also runs the cruise ships' automatic
-announcements and reports (cruise_crier.py), the hack of the week's posts (hack_crier.py) and the weekly report for
-IDNI (idni_report.py).
+announcements and reports (cruise_crier.py), the hack of the week's posts (hack_crier.py) and the weekly testnet post
+as a draft for the owner (testnet_week.py).
 
   python blog.py loop                 every 10 minutes: a cruise ship visit that is over (and whose bookings were
                                       checked) gets one draft; nothing is published
@@ -948,8 +948,8 @@ def auto_publish(now: float | None = None) -> str | None:
             continue
         a = read_json(os.path.join(PUBLIC, "drafts", st["drafts"][did] + ".json"), {})
         chk = a.get("check") or {}
-        if not a or chk.get("unknown_numbers") or chk.get("hype"):
-            continue   # waits for a look and up blog publish (--force)
+        if not a or chk.get("unknown_numbers") or chk.get("hype") or a.get("by_hand"):
+            continue   # waits for a look and up blog publish (--force); the weekly testnet post always waits for the owner's OK
         if not too_late_to_post(a, now) and gap_left(now):
             return None   # the channels posted lately: the article and its post wait for the room (alerts.POST_GAP_MINUTES)
         publish_cli(did, False, False)
@@ -993,6 +993,8 @@ def auto_note(st: dict, did: str, a: dict) -> str:
         return "never by itself: written before drafts published themselves, only by hand"
     if held(did):
         return "never by itself, held: " + held(did)
+    if a.get("by_hand"):
+        return "never by itself: it waits for your OK (up blog publish " + did + ")"
     if chk.get("unknown_numbers") or chk.get("hype"):
         return "never by itself: the check marked numbers or wording (up blog publish --force after a read)"
     when = at + AUTO_PUBLISH_HOURS * 3600
@@ -1014,11 +1016,11 @@ def drafts_cli() -> int:
     except Exception as e:  # noqa: BLE001
         print(f"hack:    not read ({e})")
     try:
-        import idni_report
-        for line in idni_report.status_lines():
+        import testnet_week
+        for line in testnet_week.status_lines():
             print(line)
     except Exception as e:  # noqa: BLE001
-        print(f"report:  not read ({e})")
+        print(f"week:    not read ({e})")
     try:
         notes_tick()
     except Exception as e:  # noqa: BLE001
@@ -1086,7 +1088,7 @@ def announce(a: dict, dry: bool) -> None:
     why it matters, the link."""
     import alerts
     link = f"{SITE}/blog/?p={a['id']}"
-    nums = numbers_of(a.get("facts") or {})
+    nums = a.get("numbers") or numbers_of(a.get("facts") or {})   # the weekly testnet post brings its own (testnet_week.py)
     parts = [f"📝 <b>{alerts.html.escape(a['title']['en'])}</b>", alerts.html.escape(a["dek"]["en"])]
     if nums:
         parts.append("<b>In numbers</b>\n" + "\n\n".join("• " + alerts.html.escape(n) for n in nums))
@@ -1210,10 +1212,10 @@ def main(argv: list[str]) -> int:
             except Exception as e:  # noqa: BLE001
                 log.warning("hack crier: %s", e)
             try:
-                import idni_report   # the weekly report for IDNI, Sunday 18:00 to the owner's private chat (never filed by itself)
-                idni_report.step()
+                import testnet_week   # the testnet this week as a blog draft, Sunday 18:00, the owner's OK publishes it
+                testnet_week.step()   # (it took the place of the weekly report for IDNI on 15 November 2026; up report still shows that)
             except Exception as e:  # noqa: BLE001
-                log.warning("idni report: %s", e)
+                log.warning("testnet week: %s", e)
             try:
                 import news_article   # big IDNI news (the daily IDNI post marks it): a draft that goes deeper, as a ship's article
                 news_article.tick()

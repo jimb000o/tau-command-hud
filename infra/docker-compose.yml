@@ -282,9 +282,11 @@ services:
       BLOG_POST_MAX_HOURS: ${BLOG_POST_MAX_HOURS:-30}
       # room between two posts on Telegram or X (minutes): the article, the pirates' clip and the hack post wait for it
       POST_GAP_MINUTES: ${POST_GAP_MINUTES:-120}
-      # the weekly report for IDNI (alerts/idni_report.py): counted from our public data, written as an unlisted page with
-      # a pre-filled issue link for IDNI/tau-testnet and told to the owner's private chat (Sunday 18:00 German time);
-      # never filed by itself. IDNI_REPORT=false stops it; up report shows it any time
+      # the testnet this week as a blog post (alerts/testnet_week.py): counted from our public data, written as a draft and
+      # told to the owner's private chat on IDNI_REPORT_WEEKDAY at IDNI_REPORT_HOUR (Sunday 18:00 German time); never
+      # published by itself (up blog publish testnet-week-<year>-w<week>). TESTNET_WEEK=false stops it; up week shows it.
+      # The weekly report for IDNI (alerts/idni_report.py, a pre-filled issue) is only made by hand since: up report
+      TESTNET_WEEK: ${TESTNET_WEEK:-true}
       IDNI_REPORT: ${IDNI_REPORT:-true}
       IDNI_REPORT_WEEKDAY: ${IDNI_REPORT_WEEKDAY:-6}
       IDNI_REPORT_HOUR: ${IDNI_REPORT_HOUR:-18}

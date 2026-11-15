@@ -179,7 +179,7 @@ footer p { margin: 0; }
   const okHref = u => /^\/[\w\/-]*(\?[\w=&;.-]*)?(#[\w-]+)?$/.test(u) || /^https:\/\/(node\.)?tauhud\.com(\/[\w\/?=&;.-]*)?$/.test(u) || /^https:\/\/agorzilla\.com\/?$/.test(u) || /^https:\/\/tau-hud-shop\.fourthwall\.com\/[\w\/?=&;.-]*$/.test(u);
   const away = u => /^https:\/\/(agorzilla\.com|tau-hud-shop\.fourthwall\.com)\//.test(u) ? ' target="_blank" rel="noopener"' : "";
   let linked = new Set();
-  const KIND = { cruise: "Cruise ship", news: "News" };   /* the label above an article; anything else is Learnings */
+  const KIND = { cruise: "Cruise ship", news: "News", week: "Testnet week" };   /* the label above an article; anything else is Learnings */
   const place = h => {
     for (const [name, href] of PLACES) {
       if (linked.has(href + name) || linked.has(href)) continue;

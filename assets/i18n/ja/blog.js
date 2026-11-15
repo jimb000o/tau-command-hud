@@ -5,6 +5,7 @@ TauI18n.add({ strings: {
   "No article yet.": "まだ記事はありません。",
   "All articles": "すべての記事",
   "Cruise ship": "クルーズ船",
+  "Testnet week": "今週のテストネット",
   "News": "ニュース",
   "Learnings": "学び",
   "Why it matters": "なぜ大事か",
