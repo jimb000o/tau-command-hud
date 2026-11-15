@@ -12,7 +12,7 @@ TauI18n.add({ strings: {
   "In force. Pick another change to vote again.": "施行中。もう一度投票するには、別の変更を選んでください。",
   ", most likely run by IDNI), so the quorum is 1. Whether other accounts’ votes count is a network setting that the Vote page reads live; open admission was switched off on 1 November 2026. Here the seat is simulated and only validators vote, which is the code’s default. Counting, quorum and the delay before a change takes effect work as on the real node.": "、おそらく IDNI が運用）なので、定足数は 1 です。ほかのアカウントの票が数えられるかはネットワークの設定で、投票ページがライブで読み取ります。オープン参加は 2026 年 11 月 1 日にオフになりました。ここでは席はシミュレーションで、投票するのはバリデーターだけです。これがコードのデフォルトです。集計、定足数、変更が有効になるまでの遅れは、本物のノードと同じように働きます。",
   ". Personal rules may look at the current step [t] only; one rule reading another step would break every account’s outputs after each rule change.": "。個人ルールが読めるのは現在のステップ [t] だけです。あるルールが別のステップを読むと、ルール変更のたびにすべてのアカウントの出力が壊れてしまいます。",
-  ". Unofficial community page, not affiliated with IDNI. ·": "。非公式のコミュニティページで、IDNI とは無関係です。·",
+  ". Unofficial community page, not run by IDNI. ·": "。非公式のコミュニティページで、IDNI が運営するものではありません。·",
   "1 · Size": "1 · サイズ",
   "1 · Your transfer rule": "1 · あなたの送金ルール",
   "10 AGRS per step": "1 ステップあたり 10 AGRS",

@@ -157,6 +157,9 @@ X_DAILY_CAP = int(os.environ.get("X_DAILY_CAP", 5))   # 13 Nov 2026: up to 5 a d
 # the site's news (new pages and features) carry their link on X ($0.20 instead of $0.015): X shows the page's own preview
 # card, so the post goes without an uploaded picture (X refuses a picture and a link together). X_SITE_LINK=false: as before.
 X_SITE_LINK = os.environ.get("X_SITE_LINK", "true").lower() in ("1", "true", "yes")
+# The Monday post with a new Daily Consensus carries the link to tauhud.com/gazette/ on X too; the page's preview card
+# stands in for the uploaded recap picture (X refuses a picture and a link together). X_PAPER_LINK=false: as before.
+X_PAPER_LINK = os.environ.get("X_PAPER_LINK", "true").lower() in ("1", "true", "yes")
 X_MONTHLY_CAP = int(os.environ.get("X_MONTHLY_CAP", 240))
 X_RESERVE = int(os.environ.get("X_RESERVE", 1))
 X_SIM = os.environ.get("X_SIM", "false").lower() in ("1", "true", "yes")
@@ -800,7 +803,7 @@ def recap_x(r: dict) -> str:
         return x_post([f"📊 Tau testnet weekly recap · {recap.period(r)}"] + week, f"{SITE}/stats/")
     teaser = (e.get("teaser") or {}).get("en") or ""
     return x_post([f"📰 The Daily Consensus No. {e.get('no')} is out", f"“{e['banner']['en']}”", sentences(teaser, 1)] + week[:2],
-                  f"{SITE}/gazette/", keep=2)
+                  f"{SITE}/gazette/", keep=2, with_link=X_PAPER_LINK or None)
 
 
 def crew_tail() -> str:
@@ -2085,7 +2088,7 @@ def costs_text(costs: dict | None, don: dict | None, gemini: dict | None = None,
                    + (f", {e(tot)}" if tot else "") + ". Thank you.")
     else:
         out.append("No donations yet.")
-    out.append("Tau HUD is a community project, not affiliated with IDNI. Every bill is listed on the donation page.")
+    out.append("Tau HUD is a community project, not run by IDNI. Every bill is listed on the donation page.")
     return "\n".join(out)
 
 
@@ -2279,6 +2282,8 @@ class X(Outlet):
         return (media_id, None, "") if media_id else (None, None, "media upload: no id")
 
     def send_photo(self, png, r):
+        if X_PAPER_LINK and paper_out(r):   # the new edition: its link and preview card, no uploaded picture
+            return self.send_text(recap_x(r), None)
         media_id, retry, err = self.upload(png, "recap.png")
         if not media_id:
             return False, retry, err
@@ -3829,7 +3834,9 @@ class Watcher:
         same = next((x for x in index if x.get("date") == date), None)
         no = same["no"] if same else max((x.get("no", 0) for x in index), default=0) + 1
         chess = self.chess(r["end"])
-        e = gazette.edition(r, props, days, no, printed_at, chess)
+        # every edition is its own: no front-page headline printed twice (gazette.fresh), the same day's reprint aside
+        seen = {(x.get("banner") or {}).get("en") for x in index if x.get("date") != date} - {None}
+        e = gazette.edition(r, props, days, no, printed_at, chess, seen)
         e["chess"] = chess and {k: chess.get(k) for k in ("date", "played")}
         e["drops"] = self.drops(printed_at)
         prev = next((x for x in index if x.get("date") != date), None)

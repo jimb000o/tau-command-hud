@@ -12,7 +12,8 @@
    wallet (tauhud.com/wallet/, the same key the game plays with) can choose its look here: the choice is a real
    transaction of LOOK + code test AGRS to the hearts box, which has no key behind it; the newest one counts.
    ?islander=1 opens the choice at once. Test params: ?walkers=demo shows made-up walkers (marked as such).
-   window.ISLE_WALKERS = { figure, look, open, board, choose } */
+   Your own islander walks where you click (goTo), and every page sees it walk (remote, relay steer.py).
+   window.ISLE_WALKERS = { figure, look, open, board, choose, goTo, remote, mine } */
 (() => {
   "use strict";
   const SC = window.COVE_SCENE; if (!SC || !SC.extra) return;
@@ -162,6 +163,98 @@
     const p = SC.places[id] || SC.places.market || SC.places.hall; if (!p) return [800, 600];
     return [p.x + (Math.random() - 0.5) * 90, p.y + 10 + Math.random() * 22];
   }
+  /* on a painting whose ways are traced (paths.js) a walker keeps to them: it stands about a place's door and walks
+     there along paths, beaches, bridges and stairs, never through a house, over a roof, a cliff or water */
+  const ways = () => (SC.ways ? SC.ways() : null);
+  function onWays(w, N) {   // a walker that came before the painting (or stood on another one) steps onto the ways
+    const home = w.d && w.d.home != null ? N.door(w.d.home) : null;
+    w.node = home != null ? home : N.near(w.x, w.y); [w.x, w.y] = N.stand(w.node); w.tx = w.x; w.ty = w.y; w.route = null; w.N = N;
+  }
+  function setOff(w, N) {   // where next: its home place more often than not, else one of three places picked at random, the nearest
+    const ids = placeIds().filter(id => N.door(id) != null), home = w.d.home != null ? N.door(w.d.home) : null;
+    let to = home != null && Math.random() < 0.55 ? home : null;
+    if (to == null && ids.length) {
+      let bd = Infinity;
+      for (let k = 0; k < 3; k++) { const n = N.door(ids[Math.floor(Math.random() * ids.length)]), p = N.node(n), d = Math.hypot(p[0] - w.x, p[1] - w.y); if (d < bd) { bd = d; to = n; } }
+    }
+    if (to == null) to = w.node;
+    w.route = N.route(w.x, w.y, w.node, to, w.lane); w.ri = 1; w.node = to;
+    if (!w.route) w.wait = 3000;   // no way there: it stays a while and picks again
+  }
+  /* ---------- your own islander: it walks where you click, and every page on the island sees it walk ----------
+     The browser's own test wallet (tauhud.com/wallet/, the key the game plays with) steers its walker: a click on the
+     island walks it to the nearest spot it can reach on foot, a click on a place walks it to the door first (the game
+     opens the place when it arrives, never more than about three seconds). The relay passes the walk to every page
+     (infra/relay/steer.py: start, end, how long ago; the wallet says hello once a day with a signature of its key), and
+     every page works out the same way along the paths (paths.js way(), no randomness), so all show it in one place.
+     A steered walker stays where it was walked for half an hour, then wanders again. */
+  const STEER = { hello: null, cbT: 0, mark: null, mine: 0 }, HOLD = 30 * 60 * 1000, ROUND = v => Math.round(v * 10) / 10;
+  const mineW = () => W.list.find(w => w.me) || null;
+  function walk(w, go, age) {   // go = { f: [x, y], t: [x, y], p }; age: ms since it was asked
+    const N = ways(); if (!N) { w.later = { go, age, at: performance.now() }; return null; }
+    const wy = N.way(go.f[0], go.f[1], go.t[0], go.t[1]); if (!wy) return null;
+    const t0 = performance.now() - (age || 0);
+    w.go = { pts: wy.pts, len: wy.len, v: Math.max(0.06, wy.len / 3000), t0, until: t0 + HOLD, node: wy.node, to: wy.to, key: go.f.join() + "|" + go.t.join() };
+    w.route = null; w.wait = 0; w.N = N; w.later = null;
+    return w.go;
+  }
+  function steered(w, N, dt) {   // a walker someone walks: where it is now on its way, the same in every browser
+    const g = w.go, now = performance.now(), s = (now - g.t0) * g.v;
+    if (s >= g.len) {
+      [w.x, w.y] = g.pts[g.pts.length - 1]; w.node = g.node; w.wait = 1e9;   // there: it stands
+      if (now > g.until) { w.go = null; w.wait = 2000 + Math.random() * 4000; }
+      return;
+    }
+    let rest = s;
+    for (let k = 1; k < g.pts.length; k++) {
+      const a = g.pts[k - 1], b = g.pts[k], d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (rest <= d || k === g.pts.length - 1) { const f = d ? Math.min(1, rest / d) : 1; w.x = a[0] + (b[0] - a[0]) * f; w.y = a[1] + (b[1] - a[1]) * f; if (Math.abs(b[0] - a[0]) > 0.05) w.face = b[0] < a[0] ? -1 : 1; break; }
+      rest -= d;
+    }
+    w.wait = 0; w.ph += dt * 0.012 * 1.6;   // a brisk step
+  }
+  /* walk your own islander to (x, y), or to a place's door; done() once it is there. false: nothing to walk here */
+  function goTo(x, y, place, done) {
+    const w = mineW(), N = ways(); if (!w || !N) return false;
+    const to = place ? N.doorSpot(place, w.a) : [ROUND(x), ROUND(y)]; if (!to) return false;
+    const go = { f: [ROUND(w.x), ROUND(w.y)], t: to, p: place || "-" }, g = walk(w, go, 0); if (!g) return false;
+    if (W.sel === w.a) W.sel = null;
+    STEER.mine = performance.now(); STEER.mark = { x: g.to[0], y: g.to[1], t0: performance.now() };
+    clearTimeout(STEER.cbT);
+    if (done) STEER.cbT = setTimeout(done, Math.min(3200, g.len / g.v) + 150);
+    tell(w.a, go);
+    return true;
+  }
+  function myKey() {
+    const B = window.TauBLS; try { const s = JSON.parse(store.get(WKEY) || "null"); if (B && s && /^[0-9a-f]{64}$/.test(s.sk)) return { sk: B.hexToBytes(s.sk), pk: (s.pk || B.bytesToHex(B.pubOf(B.hexToBytes(s.sk)))).toLowerCase() }; } catch (e) {}
+    return null;
+  }
+  async function tell(a, go) {   // the relay passes it to every page (nothing happens if it is out of reach)
+    const game = window.COVE_GAME; if (!game || !game.ask || W.demo) return;
+    const k = myKey(); if (!k || k.pk !== a) return;
+    const line = ["walker go", a, go.f[0], go.f[1], go.t[0], go.t[1], go.p].join(" ");
+    for (let tries = 0; tries < 2; tries++) {
+      const day = new Date().toISOString().slice(0, 10);
+      if (!STEER.hello || STEER.hello !== game.socket() + day) {
+        const sig = window.TauBLS.bytesToHex(window.TauBLS.sign(new TextEncoder().encode("tauhud.com walker " + a + " " + day), k.sk));
+        const h = await game.ask(["walker hello", a, day, sig].join(" "), 15000);
+        if (!h || h.status !== "ok") return;
+        STEER.hello = game.socket() + day;
+      }
+      const r = await game.ask(line, 8000);
+      if (r && r.status === "ok") return;
+      if (!(r && r.error && /hello/.test(String(r.error.message || r.error)))) return;
+      STEER.hello = null;   // the socket was new: say hello again, once
+    }
+  }
+  /* a walk someone asked for (pushed by the relay, or in GET /walkers for a page opened later) */
+  function remote(go) {
+    if (!go || typeof go.a !== "string" || !Array.isArray(go.f) || !Array.isArray(go.t) || !(go.age < HOLD)) return;
+    const w = W.by.get(go.a); if (!w) return;
+    if (w.me && STEER.mine && performance.now() - STEER.mine < HOLD) return;   // this page walks it itself
+    if ((w.go && w.go.key === go.f.join() + "|" + go.t.join()) || (w.later && w.later.go.f.join() + "|" + w.later.go.t.join() === go.f.join() + "|" + go.t.join())) return;
+    walk(w, go, go.age || 0);
+  }
   function demo() {
     const T0 = Math.floor(Date.now() / 1000), hx = n => Array.from({ length: 96 }, (_, i) => "0123456789abcdef"[(n * 7 + i * 13 + (i * n) % 11) % 16]).join("");
     const sets = [["nightowl", "feeder", "lawmaker"], ["winner", "politician", "voter"], ["guardian", "lawmaker", "regular"], ["hacker", "allrounder"], ["catfriend", "hearts", "earlybird"], ["newcomer"], ["veteran", "connector", "bigspender"], ["quiet"], ["busy", "regular"]];
@@ -187,7 +280,7 @@
       let w = W.by.get(d.a);
       if (!w) {
         const [x, y] = spot(d.home && SC.places[d.home] ? d.home : placeIds()[Math.floor(Math.random() * placeIds().length)]);
-        w = { a: d.a, x, y, tx: x, ty: y, wait: Math.random() * 3000, ph: Math.random() * 6, face: 1, ping: 0 };
+        w = { a: d.a, x, y, tx: x, ty: y, wait: Math.random() * 3000, ph: Math.random() * 6, face: 1, ping: 0, lane: (Math.random() - 0.5) * 5 };
       } else if (d.last > w.d.last) w.ping = performance.now();   // it just sent another transaction
       w.d = d; w.me = d.a === me;
       const code = w.me && myLook() != null ? myLook() : d.look;
@@ -195,13 +288,30 @@
       keep.set(d.a, w);
     }
     W.by = keep; W.list = [...keep.values()];
+    (Array.isArray(j.go) ? j.go : []).forEach(remote);   // the walks wallets asked for lately (steer.py)
     if (W.sel && !keep.has(W.sel)) W.sel = null;
   }
 
   /* ---------- walking, drawn with the island's people in depth order ---------- */
   function step(w, dt) {
-    if (W.sel === w.a) return;   // the one whose card is open stands still
+    if (W.sel === w.a && !w.go) return;   // the one whose card is open stands still (a steered one keeps to its shared way)
+    const N = ways();
+    if (N && w.later) { const L = w.later; w.later = null; walk(w, L.go, L.age + performance.now() - L.at); }
+    if (N && w.go) { steered(w, N, dt); return; }
+    if (N && w.N !== N) onWays(w, N); else if (!N && w.N) { w.N = null; w.route = null; }
     if (w.wait > 0) { w.wait -= dt; return; }
+    if (N) {
+      if (!w.route) { setOff(w, N); if (!w.route) return; }
+      let v = w.speed * dt;
+      while (v > 0 && w.ri < w.route.length) {
+        const [px, py] = w.route[w.ri], dx = px - w.x, dy = py - w.y, d = Math.hypot(dx, dy);
+        if (Math.abs(dx) > 0.05) w.face = dx < 0 ? -1 : 1;
+        if (d <= v) { w.x = px; w.y = py; v -= d; w.ri++; } else { w.x += dx / d * v; w.y += dy / d * v; v = 0; }
+      }
+      w.ph += dt * 0.012;
+      if (w.ri >= w.route.length) { w.route = null; w.wait = 1800 + Math.random() * 5200; }
+      return;
+    }
     const dx = w.tx - w.x, dy = w.ty - w.y, d = Math.hypot(dx, dy), v = w.speed * dt;
     if (d < 1.5) {
       w.wait = 1800 + Math.random() * 5200;
@@ -241,6 +351,9 @@
       }]);
     }
     if (W.total) { const [bx, by] = boardSpot(); items.push([by, () => drawBoard(g, bx, by)]); }
+    const mk = STEER.mark, ma = mk ? (now - mk.t0) / 1400 : 1;   // where your islander is going: a ring, for a moment
+    if (ma < 1) items.push([mk.y - 1, () => { g.strokeStyle = `rgba(57,255,138,${(1 - ma) * 0.9})`; g.lineWidth = 1.4; g.beginPath(); g.ellipse(mk.x, mk.y, 5 + ma * 9, 1.8 + ma * 3, 0, 0, Math.PI * 2); g.stroke(); }]);
+    else STEER.mark = null;
   }, (x, y, tol) => {
     let best = null, bd = Math.max(5, tol);
     for (const w of W.list) { const d = Math.hypot(x - w.x, (y - (w.y - 13)) * 0.6); if (d < bd + 6) { bd = d - 6; best = "walker:" + w.a; } }
@@ -380,7 +493,7 @@
     finally { if (c) c.close(); if (b) b.disabled = false; }
   }
 
-  window.ISLE_WALKERS = { figure, look, gear, tip, open, board, choose, traits: TRAITS };
+  window.ISLE_WALKERS = { figure, look, gear, tip, open, board, choose, traits: TRAITS, goTo, remote, mine: () => !!(mineW() && ways()), at: a => { const w = W.by.get(a); return w ? [w.x, w.y] : null; } };
   poll(); setInterval(poll, 60000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
   if (Q.get("islander") === "1") { const go = () => (G() ? setTimeout(choose, 600) : setTimeout(go, 500)); go(); }

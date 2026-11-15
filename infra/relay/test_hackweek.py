@@ -44,7 +44,7 @@ for n, sk in (("victim", 11), ("twin", 12), ("friend", pair[0]), ("poisoner", pa
 
 # ---------- a fake node with an escrow book ----------
 T = [float(THU)]
-MODE = {"impostor_ok": False, "retract_late": False, "down": 0}
+MODE = {"impostor_ok": False, "retract_late": False, "down": 0, "full": False}
 PARKS, BY_HASH, SEQ, BAL, BLOCK, TXS = {}, {}, {}, {}, [100], {}
 
 
@@ -76,6 +76,8 @@ async def ask(cmd: str):
         tx = json.loads(rest)
         h = hashlib.sha256(rest.encode()).hexdigest()
         snd = tx["sender_pubkey"]
+        if MODE["full"]:   # 12 Nov 2026: our node's address list was full, every wallet it had not seen was refused
+            return {"status": "error", "error": {"code": "ADMISSION_UNAVAILABLE", "message": "Transaction validation is temporarily unavailable; please resubmit."}}
         if tx["tx_type"] == "retract_transfer":
             p = PARKS.get(tx["retractable_id"])
             if not p or p["status"] != "open":
@@ -187,6 +189,47 @@ H6 = fresh("f")
 T[0] = THU
 run_week(H6, THU + hackweek.WINDOW + 30 * 60)
 check(H6.runs[-1]["result"] == "held", f"two unanswered sends are tried again: {H6.runs[-1]['result']}")
+
+# 12 Nov 2026 again: our node refuses every new wallet; incomplete, and the why names the reason per step
+MODE["full"] = True
+H7 = fresh("g")
+T[0] = THU
+run_week(H7, THU + hackweek.WINDOW + 30 * 60)
+r = H7.runs[-1]
+check(r["result"] == "incomplete" and "habit (our node had no room for a new wallet address" in r["why"]
+      and "catch (no payment in escrow to work with)" in r["why"], f"a full node: incomplete, with the reason per step: {r.get('why')}")
+MODE["full"] = False
+
+# a rehearsal: at once, shorter, never public, never near a ship, one at a time
+SAT = THU + 86400 + 3 * 3600   # Friday 13 November, 14:00, no ship near
+H8 = fresh("h")
+T[0] = SAT
+t = H8.route("/hack/try", internal=False)
+check(t.get("error") and not H8.runs, "a rehearsal only from inside the server")
+t = H8.route("/hack/try", internal=True)
+check(t.get("started") == "2026-11-13-poisoning-try" and 15 <= t["minutes"] <= 25, f"up hack try starts one: {t}")
+check(H8.start_try().get("error", "").startswith("a run is under way"), "never two at once")
+sent = run_week(H8, SAT + 40 * 60)
+r = H8.runs[-1]
+check(r["status"] == "done" and r["result"] == "held" and sent == 8, f"the rehearsal plays every step and the payment comes back: {r.get('result')} ({r.get('why')}), {sent} sent")
+check(r["steps"]["catch"]["t"] - SAT <= 20 * 60 and r["park"]["release_at"] - r["steps"]["slip"]["t"] == hackweek.TRY_WINDOW, "on the shorter clock")
+check(r["settled"] - SAT <= 25 * 60, "done in under 25 minutes")
+pub = H8.route("/hack")
+check(not pub["runs"] and pub["last_try"]["result"] == "held", "never in the public run list; up status reads it as the last rehearsal")
+check(H8.start_try()["started"] == "2026-11-13-poisoning-try2", "a second one the same day gets its own name")
+H9 = fresh("i")
+T[0] = WED
+check("MS Dry Run" in H9.start_try().get("error", ""), "never near a cruise ship's call")
+T[0] = THU - 1800
+check("due within the hour" in H9.start_try().get("error", ""), "never just before the weekly replay")
+
+# the testnet starts over during a run: ends as "restart", not as the replay's result
+H10 = fresh("j")
+T[0] = THU
+run_week(H10, THU + 400)
+check(H10.runs[-1]["status"] == "running", "the replay is under way")
+check(H10.chain_restarted(T[0]) == "2026-11-12-poisoning" and H10.runs[-1]["result"] == "restart", "a chain restart ends it as restart")
+check(run_week(H10, THU + 3600) == 0, "and nothing more is sent for it")
 
 print("\n" + ("all ok" if not failed else f"{failed} FAILED"))
 sys.exit(1 if failed else 0)

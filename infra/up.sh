@@ -38,6 +38,9 @@
 #                            node left alone, safe any time), then this month's clips; up kling test  one 5 s clip of the
 #                            live island to look at (proves the key), up kling list  every clip, up kling send <key>  posts
 #                            a draft, up kling off island  the island still again (until the next painting)
+#              up x          feature posts on X: drafts with their films come to your Telegram by themselves, nothing posts
+#                            without you; up x  the drafts, up x send <id>  posts one, up x drop <id>, up x film <id>,
+#                            up x text <id> "new words", up x week  this week's posts
 #              up shots      the post pictures of Tau HUD's pages taken anew in Live mode and checked (node left alone):
 #                            which pages have a picture, why the others have none; up shots rules status  only these
 #              up escrow     the relay alone restarted with the code just pulled (not while a ship is due), then the
@@ -48,9 +51,13 @@
 #              up hack       the hack of the week (relay/hackweek.py, Thursdays 11:00): next replay, last runs step by step
 #                            (nothing rebuilt, nothing sent); up hack preview  the last replay's post texts and picture;
 #                            up hack release 2026-11-12-poisoning  shows a held-back finding in public (after IDNI knows)
+#                            up hack try  a rehearsal now (same steps, about 20 minutes, never posted); then up hack
+#              up week       the testnet this week as a blog post (alerts/testnet_week.py, node left alone): how it reads now;
+#                            up week last  last week's; up week draft  writes the draft and tells your Telegram (it comes by
+#                            itself every Sunday 18:00 as a draft; only up blog publish testnet-week-<year>-w<week> puts it up)
 #              up report     the weekly report for IDNI as it stands (nothing filed; blog + nodelog rebuilt, node left alone): its text, a page
 #                            and a pre-filled GitHub issue link; up report last  last week's; up report send  also to
-#                            your Telegram (it comes there by itself every Sunday 18:00)
+#                            your Telegram (only by hand since 15.11.2026: the weekly blog post took its place)
 #              up guardian   the Guardian (tauhud.com/guardian/) started or restarted with the code just pulled, and Caddy
 #                            given its door; nothing rebuilt, the node left alone; up guardian status  only its numbers
 #              up services   the relay rebuilt with the code just pulled (tauhud.com/services/ reads it), the node left alone;
@@ -173,6 +180,15 @@ print('released:', ', '.join(r))
   docker compose logs -t --since 72h relay 2>&1 | grep -E "(upstream|sender) sendtx failed" | awk '{print substr($3,1,13)}' | sort | uniq -c | sed 's/^/  /'
   exit 0
 fi
+# up restarts [days]: what our ships sent right before each testnet restart, and every call side by side (read only,
+# nothing rebuilt; infra/restart-report.py), in English, ready to paste for IDNI
+if [ "${1:-}" = "restarts" ]; then
+  docker compose cp restart-report.py relay:/tmp/restart-report.py >/dev/null
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T relay python /tmp/restart-report.py ${2:-}
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 # the pirates' clip after each Tuesday call (alerts/trick_clip.py, posted by itself), nothing rebuilt: up clip  the newest
 # pirate visit's clip to look at (a SAMPLE, marked on every frame, before the first one), posts nothing;
 # up clip send 2026-11-10-pirates  posts that visit's clip now, once (never one where a trick got through)
@@ -187,6 +203,24 @@ if [ "${1:-}" = "clip" ]; then
     echo "look: https://node.tauhud.com/rico/art/drafts/trick-clip.mp4"
   fi
   exit 0
+fi
+# Feature posts on X, never without the owner (alerts/xfeatures.py, films by agorzilla-shots/film.mjs), the node left
+# alone, safe any time: up x  both services built and started with the code just pulled, then every draft and what it
+# waits for; up x send <id>  posts it (caps, 2 h room and ship hours first; --now sets room and ship hours aside),
+# up x drop <id>, up x film <id>  filmed again, up x text <id> "new words"  (\n for a line break), up x week  this week's
+# posts, up x check  the plan read against the rules. Drafts come to the owner's Telegram by themselves (up owner).
+if [ "${1:-}" = "x" ]; then
+  shift
+  if [ -z "${1:-}" ]; then
+    docker compose up -d --build --no-deps xfeatures films >/dev/null 2>&1 || docker compose up -d --build --no-deps xfeatures films
+  else
+    docker compose up -d --no-deps xfeatures films >/dev/null 2>&1 || true
+  fi
+  echo "---------------- copy from here into the chat ----------------"
+  [ $# -gt 0 ] || set -- list
+  rc=0; docker compose exec -T xfeatures python xfeatures.py "$@" || rc=$?
+  echo "---------------- to here --------------------------------------"
+  exit $rc
 fi
 # The post pictures of Tau HUD's own pages (agorzilla-shots/site-shots.mjs), the node left alone: the picture service
 # built and started, Caddy given /pageshots/*, one round at once, then which pages have a checked picture and why the
@@ -247,6 +281,16 @@ json.dump(r, open(p, 'w'))
 print('released:', ', '.join(r))
 " "$3"
     echo "copy into the chat: hack release $3 done"
+    exit 0
+  fi
+  if [ "${2:-}" = "try" ]; then
+    docker compose exec -T relay python -c 'import json,urllib.request
+d=json.load(urllib.request.urlopen("http://127.0.0.1:8080/hack/try", timeout=20))
+if d.get("started"):
+    print("hack:    rehearsal %s started (about %s minutes, nothing posted)" % (d["started"], d["minutes"]))
+    print("         in %s minutes: ssh root@node.tauhud.com \"cd /opt/tau-command-hud && sh infra/up.sh hack\"" % d["minutes"])
+else:
+    print("hack:    no rehearsal: %s" % d.get("error"))' 2>&1 || echo "relay /hack/try not answering (needs the relay with this change: up escrow)"
     exit 0
   fi
   if [ "${2:-}" = "preview" ]; then
@@ -361,6 +405,18 @@ if [ "${1:-}" = "idni" ]; then
     exit $?
   fi
   docker compose exec -T devpulse python devpulse.py --digest "$@"
+  exit $?
+fi
+# the testnet this week as a blog post (alerts/testnet_week.py), the blog service and the node-log reader rebuilt with the
+# code just pulled (the node left alone, safe any time): up week  how this week's post reads now (nothing written),
+# up week last  last week's, up week draft  writes the draft now (anew, same address) and tells your Telegram; it comes
+# by itself every Sunday 18:00 and never goes up without up blog publish testnet-week-<year>-w<week>;
+# up week repaint  only the draft's picture made anew, its text stays as you read it
+if [ "${1:-}" = "week" ]; then
+  shift
+  docker compose up -d --build --no-deps blog nodelog >/dev/null 2>&1 || docker compose up -d --build --no-deps blog nodelog || true
+  docker compose exec -T nodelog python -c 'import node_logs; node_logs.keep()' >/dev/null 2>&1 || true
+  docker compose exec -T blog python testnet_week.py "$@"
   exit $?
 fi
 # the weekly report for IDNI, nothing filed (alerts/idni_report.py): the blog service and the node-log reader
@@ -688,7 +744,8 @@ if [ "${1:-}" = "copy" ]; then
   exit 0
 fi
 # the blog by hand, nothing rebuilt (alerts/blog.py): up blog  lists the drafts waiting and where to read them,
-# up blog publish <id>  puts one on the blog and posts it once, up blog draft <visit-id>  writes one anew,
+# up blog publish <id>  puts one on the blog and posts it once (--at=2026-11-16T08:00Z: by itself at that time, UTC;
+# --at=off takes it back), up blog draft <visit-id>  writes one anew,
 # up blog unpublish <id>  takes one off again, up blog pictures  makes every article's hero picture and link preview anew
 if [ "${1:-}" = "blog" ]; then
   shift
@@ -917,4 +974,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up cost, up crewlog, up earnings, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up follow, up idni, up week, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up cost, up crewlog, up earnings, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"

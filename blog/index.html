@@ -152,7 +152,7 @@ footer p { margin: 0; }
   </main>
 
   <footer>
-    <p>Tau HUD is a community project, not affiliated with IDNI. The articles are drafted from our logbooks with the help of a language model and read by a person before they go up. <a href="https://node.tauhud.com/cruise/log" target="_blank" rel="noopener">Ship logbook</a> · <a href="/load/">Testnet load</a> · <a href="/findings/">Findings</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BBlog%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+    <p>Tau HUD is a community project, not run by IDNI. The articles are drafted from our logbooks with the help of a language model and read by a person before they go up. <a href="https://node.tauhud.com/cruise/log" target="_blank" rel="noopener">Ship logbook</a> · <a href="/load/">Testnet load</a> · <a href="/findings/">Findings</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BBlog%5D%20" target="_blank" rel="noopener">Feedback</a></p>
   </footer>
 </div>
 
@@ -176,10 +176,10 @@ footer p { margin: 0; }
     ["strained", "/load/"], ["吃紧", "/load/"], ["逼迫", "/load/"],
   ];
   /* a link the text writes itself: only to our own pages */
-  const okHref = u => /^\/[\w\/-]*(\?[\w=&;.-]*)?(#[\w-]+)?$/.test(u) || /^https:\/\/(node\.)?tauhud\.com(\/[\w\/?=&;.-]*)?$/.test(u) || /^https:\/\/agorzilla\.com\/?$/.test(u) || /^https:\/\/tau-hud-shop\.fourthwall\.com\/[\w\/?=&;.-]*$/.test(u);
-  const away = u => /^https:\/\/(agorzilla\.com|tau-hud-shop\.fourthwall\.com)\//.test(u) ? ' target="_blank" rel="noopener"' : "";
+  const okHref = u => /^\/[\w\/-]*(\?[\w=&;.-]*)?(#[\w-]+)?$/.test(u) || /^https:\/\/(node\.)?tauhud\.com(\/[\w\/?=&;.-]*)?$/.test(u) || /^https:\/\/agorzilla\.com\/?$/.test(u) || /^https:\/\/tau-hud-shop\.fourthwall\.com\/[\w\/?=&;.-]*$/.test(u) || /^https:\/\/x\.com\/\w{1,15}\/status\/\d+$/.test(u);
+  const away = u => /^https:\/\/(agorzilla\.com|tau-hud-shop\.fourthwall\.com|x\.com)\//.test(u) ? ' target="_blank" rel="noopener"' : "";
   let linked = new Set();
-  const KIND = { cruise: "Cruise ship", news: "News" };   /* the label above an article; anything else is Learnings */
+  const KIND = { cruise: "Cruise ship", news: "News", week: "Testnet week" };   /* the label above an article; anything else is Learnings */
   const place = h => {
     for (const [name, href] of PLACES) {
       if (linked.has(href + name) || linked.has(href)) continue;

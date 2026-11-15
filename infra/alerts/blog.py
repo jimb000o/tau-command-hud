@@ -1,7 +1,7 @@
 """The Tau HUD blog (tauhud.com/blog/): learnings articles drafted from our own data, published by hand (or, with
 BLOG_AUTO_PUBLISH_HOURS, a clean draft by itself after that many hours); the loop also runs the cruise ships' automatic
-announcements and reports (cruise_crier.py), the hack of the week's posts (hack_crier.py) and the weekly report for
-IDNI (idni_report.py).
+announcements and reports (cruise_crier.py), the hack of the week's posts (hack_crier.py) and the weekly testnet post
+as a draft for the owner (testnet_week.py).
 
   python blog.py loop                 every 10 minutes: a cruise ship visit that is over (and whose bookings were
                                       checked) gets one draft; nothing is published
@@ -9,6 +9,8 @@ IDNI (idni_report.py).
   python blog.py draft <visit-id>     write the draft of that visit (anew, if there is one)
   python blog.py publish <id> [--dry] put the draft on the blog and post it once to Telegram and X (--dry: show only;
                                       a call older than BLOG_POST_MAX_HOURS is not posted, --post posts it anyway)
+  python blog.py publish <id> --at=2026-11-16T08:00Z   the draft goes up by itself at that time (UTC), as by hand;
+                                      --at=off takes the time back
   python blog.py unpublish <id>       take a published article off the blog again (the posts stay)
   python blog.py pictures             make the hero pictures and link-preview pages of all articles anew
 
@@ -87,7 +89,7 @@ except Exception:  # noqa: BLE001 - no tz data: UTC, and the facts say so
     TZ = None
 
 SYSTEM = """You write the blog of Tau HUD (tauhud.com), an unofficial community dashboard for Tau Testnet Alpha, made \
-by people not affiliated with IDNI, the team behind Tau. On the site, White Rabbit Key is an island game, and cruise \
+independently, not by IDNI, the team behind Tau. On the site, White Rabbit Key is an island game, and cruise \
 ships call there by a timetable: their passengers are openly simulated, but every stop they make is a real, paced test \
 transaction on the testnet. After each visit you write one short article: what happened and what we learned.
 
@@ -154,6 +156,8 @@ each that say at a glance why it matters (for the community, for IDNI, and what 
 Answer with JSON only, no other text:
 {"title":{"en":"","zh":"","ja":""},"dek":{"en":"","zh":"","ja":""},"why":[{"en":"","zh":"","ja":""}],\
 "body":{"en":"","zh":"","ja":""},"x":"","card":{"line":"","why":["","",""]}}"""
+import blog_rules  # noqa: E402  (the house rules for every article, editor.py checks them too)
+SYSTEM += blog_rules.FOR_WRITERS
 
 
 # ---------- reading ----------
@@ -564,6 +568,11 @@ def three(d, cap: int) -> dict | None:
 BLAME = re.compile(r"\b(IDNI|Tau|the testnet|the chain)(['’]s)?\s+(is |was |were )?(at fault|to blame|fault|failed us|broke|broken|"
                    r"unreliable|unstable|buggy|bug|let us down)\b", re.I)
 HYPE = re.compile(r"\b(huge|exciting|revolutionary|game[- ]chang\w*|moon|pump|to the moon|finally|incredible)\b|!", re.I)
+# bold safety promises are a regulatory risk and nothing we can stand behind (Kilian, 15 November 2026): marked like hype
+SAFETY = re.compile(r"\b(can ?not lose|can't lose|never lose|risk[- ]free|no risk|zero risk|without (any )?risk|guaranteed|"
+                    r"completely safe|totally safe|perfectly safe|100% safe|always safe|can ?not be stolen|can't be stolen|"
+                    r"unhackable|impossible to (hack|steal|lose))\b", re.I)
+HYPE = re.compile(HYPE.pattern + "|" + SAFETY.pattern, re.I)
 
 
 def article(facts: dict, out: dict, now: float) -> dict:
@@ -608,7 +617,7 @@ def card_of(c, title: str) -> list[str]:
     why = [short(w, 56) for w in (c.get("why") or [])[:3] if w]
     if why:
         lines += ["## Why it matters"] + ["- " + w for w in why]
-    return lines + ["Tau HUD blog · community project, not affiliated with IDNI"]
+    return lines + ["Tau HUD blog · community project, not run by IDNI"]
 
 
 # ---------- pictures ----------
@@ -948,8 +957,8 @@ def auto_publish(now: float | None = None) -> str | None:
             continue
         a = read_json(os.path.join(PUBLIC, "drafts", st["drafts"][did] + ".json"), {})
         chk = a.get("check") or {}
-        if not a or chk.get("unknown_numbers") or chk.get("hype"):
-            continue   # waits for a look and up blog publish (--force)
+        if not a or chk.get("unknown_numbers") or chk.get("hype") or a.get("by_hand") or a.get("editor"):
+            continue   # waits for a look and up blog publish (--force); the weekly testnet post always waits for the owner's OK
         if not too_late_to_post(a, now) and gap_left(now):
             return None   # the channels posted lately: the article and its post wait for the room (alerts.POST_GAP_MINUTES)
         publish_cli(did, False, False)
@@ -972,6 +981,8 @@ def call_time(a: dict) -> float | None:
 
 def too_late_to_post(a: dict, now: float) -> float | None:
     """The hours since the call when that is more than POST_MAX_HOURS (the article then goes out without a post), else None."""
+    if a.get("kind") == "week":
+        return None   # the weekly post tells its own news: it is posted whenever it goes up, never "too old"
     t0 = call_time(a)
     if POST_MAX_HOURS <= 0 or t0 is None:
         return None
@@ -993,6 +1004,13 @@ def auto_note(st: dict, did: str, a: dict) -> str:
         return "never by itself: written before drafts published themselves, only by hand"
     if held(did):
         return "never by itself, held: " + held(did)
+    if (st.get("publish_at") or {}).get(did):
+        t = st["publish_at"][did]
+        return f"goes up by itself {dt.datetime.fromtimestamp(t, dt.timezone.utc):%a %d.%m. %H:%M} UTC, the time you set (--at=off takes it back)"
+    if a.get("by_hand"):
+        return "never by itself: it waits for your OK (up blog publish " + did + ")"
+    if a.get("editor"):
+        return f"never by itself: the second read against our rules has {len(a['editor'])} note(s) (python editor.py {did} shows them)"
     if chk.get("unknown_numbers") or chk.get("hype"):
         return "never by itself: the check marked numbers or wording (up blog publish --force after a read)"
     when = at + AUTO_PUBLISH_HOURS * 3600
@@ -1014,11 +1032,11 @@ def drafts_cli() -> int:
     except Exception as e:  # noqa: BLE001
         print(f"hack:    not read ({e})")
     try:
-        import idni_report
-        for line in idni_report.status_lines():
+        import testnet_week
+        for line in testnet_week.status_lines():
             print(line)
     except Exception as e:  # noqa: BLE001
-        print(f"report:  not read ({e})")
+        print(f"week:    not read ({e})")
     try:
         notes_tick()
     except Exception as e:  # noqa: BLE001
@@ -1086,7 +1104,7 @@ def announce(a: dict, dry: bool) -> None:
     why it matters, the link."""
     import alerts
     link = f"{SITE}/blog/?p={a['id']}"
-    nums = numbers_of(a.get("facts") or {})
+    nums = a.get("numbers") or numbers_of(a.get("facts") or {})   # the weekly testnet post brings its own (testnet_week.py)
     parts = [f"📝 <b>{alerts.html.escape(a['title']['en'])}</b>", alerts.html.escape(a["dek"]["en"])]
     if nums:
         parts.append("<b>In numbers</b>\n" + "\n\n".join("• " + alerts.html.escape(n) for n in nums))
@@ -1156,6 +1174,68 @@ def publish_cli(did: str, dry: bool, force: bool, post_late: bool = False, now: 
     return 0
 
 
+def publish_at(text: str, now: float | None = None) -> float | None:
+    """The time of --at=…: an ISO day and time in UTC (2026-11-16T08:00Z), or off; None when it does not read."""
+    t = str(text or "").strip().upper().removesuffix("Z").removesuffix("UTC").strip()
+    try:
+        d = dt.datetime.fromisoformat(t.replace(" ", "T"))
+    except ValueError:
+        return None
+    return (d if d.tzinfo else d.replace(tzinfo=dt.timezone.utc)).timestamp()
+
+
+def schedule_cli(did: str, at: str, now: float | None = None) -> int:
+    """up blog publish <id> --at=2026-11-16T08:00Z: the draft goes up by itself then (blog + its one post), as if
+    published by hand at that time; --at=off takes the time back. The owner's OK for that one draft only."""
+    now = now or time.time()
+    st = state()
+    sch = st.setdefault("publish_at", {})
+    if at.strip().lower() == "off":
+        print(f"{did}: no time set any more" if sch.pop(did, None) else f"{did} had no time set")
+        write_json(STATE, st)
+        return 0
+    if did not in st["drafts"]:
+        print(f"no draft {did}; waiting: {', '.join(st['drafts']) or 'none'}")
+        return 1
+    t = publish_at(at)
+    if t is None or t <= now:
+        print(f"not set: {at!r} is no time to come (write it in UTC: --at=2026-11-16T08:00Z)")
+        return 1
+    sch[did] = round(t)
+    write_json(STATE, st)
+    print(f"{did} goes up by itself at {dt.datetime.fromtimestamp(t, dt.timezone.utc):%a %d.%m. %H:%M} UTC "
+          f"({local(t):%H:%M} German time), with its one post on Telegram and X; the draft until then: {draft_url(st, did)}"
+          f"\ntake it back: up blog publish {did} --at=off")
+    return 0
+
+
+def scheduled_publish(now: float | None = None) -> list[str]:
+    """The drafts whose --at time has come go up, once each; the owner hears on Telegram how it went."""
+    now = now or time.time()
+    st = state()
+    due = [did for did, t in (st.get("publish_at") or {}).items() if t <= now]
+    done = []
+    for did in due:
+        st = state()
+        st.get("publish_at", {}).pop(did, None)   # once: a refusal is told, not tried again every ten minutes
+        write_json(STATE, st)
+        import contextlib
+        import io
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = publish_cli(did, False, False, now=now)
+        said = out.getvalue().strip()
+        log.info("timed publish %s: %s", did, said)
+        try:
+            import tickerwatch
+            tickerwatch.tell(("Published at the set time: " if rc == 0 else "NOT published at the set time: ") + did + "\n" + said[:1500])
+        except Exception as e:  # noqa: BLE001
+            log.warning("timed publish %s, telling: %s", did, e)
+        if rc == 0:
+            done.append(did)
+    return done
+
+
 def unpublish_cli(did: str) -> int:
     p = posts()
     keep = [x for x in p["posts"] if x.get("id") != did]
@@ -1182,6 +1262,8 @@ def main(argv: list[str]) -> int:
         did = write_draft(args[0])
         print(f"draft {did} written")
         return drafts_cli()
+    if cmd == "publish" and args and ID_RE.match(args[0]) and any(a.startswith("--at=") for a in argv):
+        return schedule_cli(args[0], next(a for a in argv if a.startswith("--at="))[5:])
     if cmd == "publish" and args and ID_RE.match(args[0]):
         return publish_cli(args[0], "--dry" in argv, "--force" in argv, "--post" in argv)
     if cmd == "unpublish" and args and ID_RE.match(args[0]):
@@ -1210,10 +1292,10 @@ def main(argv: list[str]) -> int:
             except Exception as e:  # noqa: BLE001
                 log.warning("hack crier: %s", e)
             try:
-                import idni_report   # the weekly report for IDNI, Sunday 18:00 to the owner's private chat (never filed by itself)
-                idni_report.step()
+                import testnet_week   # the testnet this week as a blog draft, Sunday 18:00, the owner's OK publishes it
+                testnet_week.step()   # (it took the place of the weekly report for IDNI on 15 November 2026; up report still shows that)
             except Exception as e:  # noqa: BLE001
-                log.warning("idni report: %s", e)
+                log.warning("testnet week: %s", e)
             try:
                 import news_article   # big IDNI news (the daily IDNI post marks it): a draft that goes deeper, as a ship's article
                 news_article.tick()
@@ -1223,6 +1305,7 @@ def main(argv: list[str]) -> int:
                 notes_tick()
                 site_pictures()
                 tick()
+                scheduled_publish()   # a draft the owner gave a time to (up blog publish <id> --at=…)
                 auto_publish()
             except Exception as e:  # noqa: BLE001 - the relay may be restarting
                 log.warning("tick: %s", e)

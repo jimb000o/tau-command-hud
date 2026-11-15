@@ -69,6 +69,7 @@ services:
       CHAT_AI_MODEL: ${CHAT_AI_MODEL:-claude-haiku-5-5}
       CHAT_AI_DAILY: ${CHAT_AI_DAILY:-3000}   # at most this many AI checks per UTC day
       ROADMAP_ENABLED: ${ROADMAP_ENABLED:-1}   # comments on tauhud.com/roadmap/ (relay/roadmap.py, moderated with the troll box); 0 closes them, reading stays
+      CRUISE_EXTRA: ${CRUISE_EXTRA:-}   # calls outside the timetable, "2026-11-22 15 queen; 2026-11-25 17 dryrun" (German day and hour)
       CRUISE_ENABLED: ${CRUISE_ENABLED:-1}   # cruise ships at White Rabbit Key (relay/cruise.py): simulated passengers, real test transactions; 0 keeps them away
       HACK_ENABLED: ${HACK_ENABLED:-1}   # the hack of the week replayed on the testnet, Thursdays 11:00 German time (relay/hackweek.py); 0 stops it
       NOMEMO_ENABLED: ${NOMEMO_ENABLED:-1}   # No Memo's crew purse (relay/nomemo.py): pays the chapters' shares back; 0 switches it off
@@ -286,9 +287,11 @@ services:
       BLOG_POST_MAX_HOURS: ${BLOG_POST_MAX_HOURS:-30}
       # room between two posts on Telegram or X (minutes): the article, the pirates' clip and the hack post wait for it
       POST_GAP_MINUTES: ${POST_GAP_MINUTES:-120}
-      # the weekly report for IDNI (alerts/idni_report.py): counted from our public data, written as an unlisted page with
-      # a pre-filled issue link for IDNI/tau-testnet and told to the owner's private chat (Sunday 18:00 German time);
-      # never filed by itself. IDNI_REPORT=false stops it; up report shows it any time
+      # the testnet this week as a blog post (alerts/testnet_week.py): counted from our public data, written as a draft and
+      # told to the owner's private chat on IDNI_REPORT_WEEKDAY at IDNI_REPORT_HOUR (Sunday 18:00 German time); never
+      # published by itself (up blog publish testnet-week-<year>-w<week>). TESTNET_WEEK=false stops it; up week shows it.
+      # The weekly report for IDNI (alerts/idni_report.py, a pre-filled issue) is only made by hand since: up report
+      TESTNET_WEEK: ${TESTNET_WEEK:-true}
       IDNI_REPORT: ${IDNI_REPORT:-true}
       IDNI_REPORT_WEEKDAY: ${IDNI_REPORT_WEEKDAY:-6}
       IDNI_REPORT_HOUR: ${IDNI_REPORT_HOUR:-18}
@@ -458,6 +461,51 @@ services:
     command: ["node", "site-shots.mjs"]
     environment:
       PAGESHOTS_DIR: /out/pageshots
+    volumes:
+      - alerts_public:/out
+    shm_size: 256m
+    mem_limit: 768m
+    restart: unless-stopped
+    logging: *logging
+
+  # Feature posts on X, never without the owner (alerts/xfeatures.py, 15 Nov 2026): a planned post (an "x" field in
+  # assets/updates.json, or assets/x-features.json) becomes a draft on its day; the films service below films the live page
+  # for it, this one cuts the film and sends it with the text to the owner's private Telegram chat (up owner). It posts
+  # nothing by itself: only `up x send <id>` does, within the caps (@TauHUDcom 1 a day / 3 a week, @Agorzilla 2 a week,
+  # 2 h after the last post, not while a cruise ship is due). up x  lists the drafts.
+  xfeatures:
+    build: ./alerts
+    command: ["python", "xfeatures.py", "loop"]
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
+      X_API_KEY: ${X_API_KEY:-}
+      X_API_SECRET: ${X_API_SECRET:-}
+      X_ACCESS_TOKEN: ${X_ACCESS_TOKEN:-}
+      X_ACCESS_SECRET: ${X_ACCESS_SECRET:-}
+      AGORZILLA_X_API_KEY: ${AGORZILLA_X_API_KEY:-}
+      AGORZILLA_X_API_SECRET: ${AGORZILLA_X_API_SECRET:-}
+      AGORZILLA_X_ACCESS_TOKEN: ${AGORZILLA_X_ACCESS_TOKEN:-}
+      AGORZILLA_X_ACCESS_SECRET: ${AGORZILLA_X_ACCESS_SECRET:-}
+      X_DAILY_CAP: ${X_DAILY_CAP:-5}
+      AGORZILLA_X_DAILY_CAP: ${AGORZILLA_X_DAILY_CAP:-2}
+      POST_GAP_MINUTES: ${POST_GAP_MINUTES:-120}
+      CRUISE_ENABLED: ${CRUISE_ENABLED:-1}
+      FILMS_DIR: /public/xfilms
+    volumes:
+      - alerts_state:/state     # /state/xfeatures.json: the drafts and what was sent; reads alerts.json, agorzilla.json, last-posts.json
+      - alerts_public:/public   # /public/xfilms/: the films asked for and made
+    mem_limit: 256m        # ffmpeg cuts a 12 s film a few times a week
+    restart: unless-stopped
+    logging: *logging
+
+  # The films for those drafts (agorzilla-shots/film.mjs, the same Chromium image as the pictures): a job in
+  # /out/xfilms/want/ is filmed once, 1280x720, with a drawn pointer and a slow zoom onto what changed.
+  films:
+    build: ./agorzilla-shots
+    command: ["node", "film.mjs"]
+    environment:
+      FILMS_DIR: /out/xfilms
     volumes:
       - alerts_public:/out
     shm_size: 256m

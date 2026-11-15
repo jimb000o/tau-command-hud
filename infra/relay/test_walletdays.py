@@ -101,4 +101,31 @@ check(w.history(D0)["players"]["days"].get("2026-11-01") == [1, 1], "the first p
 
 check(walletdays.WalletDays(os.path.join(tempfile.mkdtemp(), "none.json")).history(D0)["days"] == {}, "no file: empty history")
 
+# which of our apps a visitor's wallet came from (GET /wallets/tags "apps")
+from txsources import DEJA  # noqa: E402
+NEWHUD, NEWNM, NEWCAT, OLDHUD, ELSE = "f1" * 48, "f2" * 48, "f3" * 48, "f4" * 48, "f5" * 48
+w4 = walletdays.WalletDays(os.path.join(tempfile.mkdtemp(), "a.json"))
+w4.bots = {BOT}
+sent = {"x1": "", "x2": "|nomemo", "x3": "|wallet", "x4": "|start", "x5": "", "x6": "agorzilla"}
+w4.add_blocks([block(D0 + 10, tx(OLDHUD, h="x1"), tx(BOT, h="x5"), tx(IDNI, BOWL))], sent)   # the record's first day
+w4.add_blocks([block(D0 + DAY, tx(NEWHUD, h="x3"), tx(NEWNM, h="x2"), tx(NEWCAT, DEJA), tx(ELSE)),
+               block(D0 + DAY + 60, tx(NEWHUD, BOWL), tx(NEWHUD, RABBIT_COUNCIL, h="x4"), tx(ELSE, h="x6"))], sent)
+ap = w4.app_list()
+check(ap.get(NEWHUD) == {"b": "tauhud", "d": "2026-11-02", "u": ["tauhud", "agorzilla", "rabbit"]},
+      "a wallet new to the record: started in Tau HUD, then fed Agorzilla and played White Rabbit Key")
+check(ap.get(NEWNM, {}).get("b") == "nomemo" and ap.get(NEWCAT, {}).get("b") == "deja", "No Memo and Déjà start a wallet too")
+check(ap.get(OLDHUD) == {"u": ["tauhud"]}, "a wallet from the record's first day used Tau HUD, but no start is claimed")
+check(ap.get(ELSE) == {"u": ["agorzilla"]}, "a wallet that started elsewhere: no start, then a send from agorzilla.com")
+check(BOT not in ap and IDNI not in ap, "never our own server's wallets or IDNI's")
+w4.save(D0 + 2 * DAY, force=True)
+check(walletdays.WalletDays(w4.path).app_list() == ap, "apps kept in the file")
+with open(w4.path) as f:
+    old = json.load(f)
+del old["apps"], old["born"]
+with open(w4.path, "w") as f:
+    json.dump(old, f)
+back = walletdays.WalletDays(w4.path).app_list()
+check(back.get(OLDHUD) == {"u": ["tauhud"]} and back.get(NEWHUD) == {"u": ["rabbit"]} and "b" not in back.get(NEWCAT, {}),
+      "an older file: the app its tag names, no start claimed")
+
 sys.exit(1 if failed else 0)

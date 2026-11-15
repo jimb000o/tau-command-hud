@@ -18,6 +18,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 W, H = 1600, 900
 BG, DECK, LINE, DIM, TEXT, OK, AMBER = (9, 9, 10), (18, 18, 20), (44, 44, 50), (138, 138, 148), (235, 235, 238), (57, 255, 138), (255, 177, 59)
+RED = (255, 77, 109)
+TONES = {"ok": OK, "amber": AMBER, "bad": RED}   # a tile's tone: good, a caution, bad; no tone = neutral grey
 FONTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
 
 
@@ -96,7 +98,7 @@ def frame(title: str, sub: str = "") -> tuple[Image.Image, ImageDraw.ImageDraw]:
     d.text((80, 70), title, font=font(52, 700), fill=TEXT)
     if sub:
         d.text((80, 146), sub, font=font(28, 400), fill=DIM)
-    d.text((80, H - 64), "tauhud.com/blog · community project, not affiliated with IDNI", font=font(22, 400, mono=True), fill=DIM)
+    d.text((80, H - 64), "tauhud.com/blog · community project, not run by IDNI", font=font(22, 400, mono=True), fill=DIM)
     return im, d
 
 
@@ -232,7 +234,7 @@ def desk_hero(card: list[str], out: str, stats: list | None = None, kicker: str 
     im = Image.alpha_composite(im, glow)
     d = draw(im)
     lines = [str(c) for c in (card or []) if c]
-    foot = lines.pop() if lines and "not affiliated" in lines[-1] else "Tau HUD blog · community project, not affiliated with IDNI"
+    foot = lines.pop() if lines and "not affiliated" in lines[-1] else "Tau HUD blog · community project, not run by IDNI"
     title = lines.pop(0) if lines else ""
     sub = lines.pop(0) if lines and not lines[0].startswith(("#", "-")) else ""
     why = [c[1:].strip() for c in lines if c.startswith("-")]
@@ -267,11 +269,14 @@ def desk_hero(card: list[str], out: str, stats: list | None = None, kicker: str 
     if stats:
         tw, th, gap = 300, 196, 20
         sx, sy = W - 80 - 2 * tw - gap, 120
-        for i, (num, label) in enumerate(stats[:4]):
+        toned = any(len(t) > 2 for t in stats[:4])   # tiles with a tone: each outline says what its number means
+        for i, tile in enumerate(stats[:4]):
+            num, label = tile[0], tile[1]
             tx, ty = sx + (i % 2) * (tw + gap), sy + (i // 2) * (th + gap)
-            d.rounded_rectangle([tx, ty, tx + tw, ty + th], radius=18, fill=(14, 18, 22), outline=(57, 255, 138) if i == 0 else LINE, width=2)
+            col = TONES.get(tile[2] if len(tile) > 2 else None) if toned else (OK if i == 0 else None)
+            d.rounded_rectangle([tx, ty, tx + tw, ty + th], radius=18, fill=(14, 18, 22), outline=col or LINE, width=3 if col else 2)
             fn = font(76 if len(str(num)) <= 4 else 54, 700)
-            d.text((tx + 26, ty + 20), str(num), font=fn, fill=OK if i == 0 else TEXT)
+            d.text((tx + 26, ty + 20), str(num), font=fn, fill=col or TEXT)
             for j, part in enumerate(wrap(d, str(label), font(24, 500), tw - 52)[:2]):
                 d.text((tx + 26, ty + 120 + j * 31), part, font=font(24, 500), fill=(190, 196, 204))
     # the chain along the foot: blocks linked left to right, the newest one lit

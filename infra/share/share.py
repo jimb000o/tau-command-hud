@@ -71,6 +71,12 @@ AGZ_BORN, MEAL_COOLDOWN = 1793296800, 3600   # 29 Oct 2026 18:00 UTC
 # writes every 10 minutes: feeders.json, each wallet's meals and votes, worked out by the creature's own rules. The picture
 # is the newest evening photograph (agorzilla-shots), or the painting from the site's checkout.
 AGZ_LIVE = os.environ.get("AGZ_LIVE", "/agz")
+# Déjà, the café cat on agorzilla.com/cat/ (agorilla assets/cat.js): a wallet agrees to feed her by paying her bowl at least
+# 1 test AGRS; a day runs from 18:00 to 18:00 UTC, and she eats on a day once three different wallets agreed. The first
+# three are the ones who fed her; the third is the one whose agreement made it hold. Her inputs from earlier testnet runs
+# come from the archive (chain/archive.json, cat.inputs); this chain adds the newest.
+DEJA_BOWL = "8dbae75034a8cdc776e462f004dd686c8d0a32dbedd400483a026a01db4ce1f78b9d6450d2c832d8116d47a315fd8973"
+DEJA_BORN, DEJA_DAY, DEJA_AGREE = 1793383200, 86400, 3   # 30 Oct 2026 18:00 UTC
 AGZ_SHOTS = os.environ.get("AGZ_SHOTS", "/shots")
 AGZ_ART = os.environ.get("AGZ_ART", "/agzrepo/assets/agorilla.webp")
 AGZ_SITE = os.environ.get("AGZ_SITE", "https://agorzilla.com").rstrip("/")
@@ -358,7 +364,59 @@ def card_numbers(a: str) -> dict:
                     c["agz_votes"] += 1
     c["rules"] = c["own"] + c["offered"] + c["proposed"]
     c["votes"] = c["rule_votes"] + c["agz_votes"]
+    c.update(deja_numbers(a))
     return c
+
+
+_arch: dict = {"mtime": None, "cat": []}
+_deja: dict = {"key": None, "days": {}}
+
+
+def deja_days() -> dict:
+    """Each day of Déjà's life: the wallets that agreed that day, in order (archive first, then this chain; one tx counted once)."""
+    f = os.path.join(AGZ_LIVE, "chain", "archive.json")
+    try:
+        m = os.path.getmtime(f)
+        if m != _arch["mtime"]:
+            with open(f, encoding="utf-8") as fh:
+                _arch["cat"], _arch["mtime"] = ((json.load(fh).get("cat") or {}).get("inputs") or []), m
+    except (OSError, ValueError, AttributeError):
+        pass
+    key = (_arch["mtime"], CHAIN.head)
+    if _deja["key"] == key:
+        return _deja["days"]
+    seen, xs = set(), []
+    for x in _arch["cat"]:
+        if isinstance(x, dict) and x.get("tx") and num(x.get("fed")) >= 1 and x["tx"] not in seen:
+            seen.add(x["tx"])
+            xs.append((num(x.get("t")), num(x.get("era")), num(x.get("h")), num(x.get("i")), low(x.get("from"))))
+    for h in range(0, CHAIN.head + 1):
+        b = CHAIN.blocks.get(h) or {}
+        ids = b.get("tx_ids") or []
+        for i, t in enumerate(b.get("transactions") or []):
+            if not isinstance(t, dict):
+                continue
+            a = low(t.get("sender_pubkey"))
+            fed = sum(num(v) for f, to, v in (x[:3] for x in transfers(t)) if low(f) == a and low(to) == DEJA_BOWL and num(v) >= 1)
+            tx = str(ids[i]) if i < len(ids) else ""
+            if fed >= 1 and tx not in seen:
+                seen.add(tx)
+                xs.append((ts_of(b) or 0, 1e9, h, i, a))
+    days: dict[int, list[str]] = {}
+    for t, _e, _h, _i, a in sorted(xs):
+        if t < DEJA_BORN:
+            continue
+        d = days.setdefault(int((t - DEJA_BORN) // DEJA_DAY), [])
+        if a not in d:
+            d.append(a)
+    _deja.update(key=key, days=days)
+    return days
+
+
+def deja_numbers(a: str) -> dict:
+    """deja: days she ate with this wallet among the three who fed her; deja_third: of those, the days it was the third."""
+    fed = [d[:DEJA_AGREE] for d in deja_days().values() if len(d) >= DEJA_AGREE]
+    return {"deja": sum(a in d for d in fed), "deja_third": sum(d[-1] == a for d in fed)}
 
 
 _agz: dict = {"mtime": None, "data": {}}

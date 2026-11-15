@@ -1,0 +1,87 @@
+{
+ "about": "Feature posts on X, drafted by the server and posted only by the owner (infra/alerts/xfeatures.py, up x). Items here are for features whose news has no entry of its own in updates.json (Agorzilla) or that go live later; a feature with an entry carries the same object as its \"x\" field.",
+ "posts": [
+  {
+   "id": "agorzilla-wish-list",
+   "account": "agorzilla",
+   "from": "2026-11-16T18:30:00Z",
+   "text": "Since tonight, the feeders decide what Agorzilla gets asked.\n\n17 new questions join the 5 from the start: its build, its crown, a toy, a friend, the weather around its rock.\n\nFeed it from a testnet wallet and wish for one. The most-wished question comes next.\n\n#TauNet",
+   "film": {
+    "url": "https://agorzilla.com/",
+    "check": false,
+    "seconds": 12,
+    "settle": 3000,
+    "steps": [
+     [
+      "click?",
+      "button:has-text('Not now')"
+     ],
+     [
+      "wait",
+      1000
+     ],
+     [
+      "click?",
+      ".askrow button.more"
+     ],
+     [
+      "wait",
+      800
+     ],
+     [
+      "zoom",
+      ".askrow",
+      1.4,
+      2200
+     ],
+     [
+      "move",
+      ".askrow button:nth-of-type(7)",
+      1400
+     ],
+     [
+      "wait",
+      2500
+     ]
+    ]
+   }
+  },
+  {
+   "id": "agorzilla-v8-questions",
+   "account": "agorzilla",
+   "from": "2026-11-20T18:30:00Z",
+   "text": "Agorzilla won't run out of questions.\n\nFrom tonight a new one joins every week, from a pool of 24. Colours can be ones nobody picked before, drawn from the hash, like Teal 187°. And from 1 December: winter questions.\n\n#TauNet",
+   "film": {
+    "url": "https://agorzilla.com/",
+    "check": false,
+    "seconds": 12,
+    "settle": 3000,
+    "steps": [
+     [
+      "click?",
+      "button:has-text('Not now')"
+     ],
+     [
+      "wait",
+      1000
+     ],
+     [
+      "zoom",
+      "#options",
+      1.45,
+      2200
+     ],
+     [
+      "move",
+      "#options > *:nth-child(3)",
+      1400
+     ],
+     [
+      "wait",
+      2500
+     ]
+    ]
+   }
+  }
+ ]
+}

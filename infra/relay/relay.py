@@ -45,18 +45,20 @@ from simvotes import SimVotes, name_of
 from simwallet import SimWallet
 from cruise import Cruise
 from hackweek import HackWeek
-from showcase import Showcase
+from showcase import Showcase, offer_id
+from ruledays import KINDS as RULE_KINDS, WHO as WHO_RULES, RuleDays, offers as rule_offers, kinds as rule_kinds
 from island import Island
 from isle import Isle
 from nomemo import NoMemo
 from vaults import Vaults
 from nomemo_feedback import Feedback as NoMemoFeedback
 from load import Load
-from txsources import TxSources, deja as deja_day
+from txsources import GENESIS, TxSources, deja as deja_day
 from walletdays import WalletDays
 from chainhist import ChainHistory
 from hearts import Hearts
 from walkers import Walkers
+from steer import Steer
 from services import Services
 from nodehist import NodeHistory
 from setupfunnel import SetupFunnel
@@ -122,6 +124,9 @@ EVENTS_PATH = os.environ.get("EVENTS_PATH", "/data/events.json")
 # Every block of the current chain, one JSON line each, so history survives
 # relay restarts (the node only hands out its newest ~900 KB of blocks).
 CHAIN_PATH = os.environ.get("CHAIN_PATH", "/data/chain.jsonl")
+CHAIN_END_DIR = os.environ.get("CHAIN_END_DIR", "/data/chain-ends")   # a dead chain's last blocks, one file per restart
+CHAIN_END_BLOCKS = 80
+CHAIN_END_KEEP = 40
 EVENTS_MAX = 5000
 # Availability history for /uptime (the status page): one sample a minute,
 # folded into hourly buckets, plus a list of outages. Kept for 31 days.
@@ -176,7 +181,7 @@ LOOKUPS = {
 # lists them, so the relay takes the candidates from the blocks it keeps (senders of an o5 rule, acceptors of an offer)
 # and asks the node for each, at most RULES_MAX_CHECKS of them.
 RULES_POLL = _env_float("RULES_POLL_SECONDS", 300)
-RULES_MAX_CHECKS = _env_int("RULES_MAX_CHECKS", 40)
+RULES_MAX_CHECKS = _env_int("RULES_MAX_CHECKS", 80)
 NEUTRAL_O5 = "(o5[t]:bv[24]={#x000001}:bv[24])"
 # /rulewall: every personal rule in the kept blocks, for the rules wall on tauhud.com/rules/
 RULEWALL_MAX = _env_int("RULEWALL_MAX", 200)
@@ -490,6 +495,7 @@ class Relay:
         self.walkers.add_blocks(self.ordered_blocks(), self.walker_ours())
         self.walkers.save(force=True)
         self.walkers_text, self.walkers_at = None, 0.0
+        self.steer = Steer()     # your own islander: where a wallet walks its walker, pushed to every page (steer.py)
         self.wallets_text, self.wallets_at = None, 0.0
         # what every chain held per hour and day, kept across testnet restarts, for /history (chainhist.py)
         self.chainhist = ChainHistory()
@@ -524,6 +530,11 @@ class Relay:
         self.summary_data: dict | None = None
         self.summary_at = 0.0
         self.rules_text: str | None = None      # /rules, refreshed by poll_rules
+        self.rule_bodies: dict[str, str] = {}   # holder -> rule text in force, from the same check
+        self.rule_balances: dict[str, int] = {}   # holder -> test AGRS at that check
+        self.ruledays = RuleDays()              # /rules/numbers: rules in force per day, across chain restarts (ruledays.py)
+        self.rulenums_text: str | None = None
+        self.rulenums_at = 0.0
         # last: the cruise ships' passenger wallets are made in the background; tagged as simulated once known
         self.cruise.on_ready = self.tag_passengers
         self.hack.on_ready = self.tag_passengers
@@ -581,6 +592,7 @@ class Relay:
             reset = True
             self.showcase.recheck()   # the showcase wallets' rules are gone with the old chain: set them again
             self.vaults.recheck()
+            self.ruledays.restart()
         elif full and self.blocks and self._other_chain(fetched):
             # typically right after a relay start: the blocks on disk are from a chain that is gone
             log.warning("held blocks belong to an earlier chain; dropping them")
@@ -589,6 +601,7 @@ class Relay:
             dropped = True
             self.showcase.recheck()
             self.vaults.recheck()
+            self.ruledays.restart()
             if self.state.get("chain"):
                 self._record_restart(self.state["chain"])
                 self.state["chain"] = None
@@ -652,11 +665,27 @@ class Relay:
         blocks = self.ordered_blocks()
         if not blocks:
             return
+        self._keep_chain_end(blocks)
         try:
             self.chainhist.observe(blocks, force=True, sources=self.sources.by_day(blocks))
         except Exception:
             log.exception("could not archive the chain before a restart")
         self.history_text = self.sources_text = None
+
+    def _keep_chain_end(self, blocks: list[dict]):
+        """The dying chain's last CHAIN_END_BLOCKS blocks, kept in CHAIN_END_DIR (infra/restart-report.py reads them):
+        what was in the blocks right before a testnet restart, to find a pattern ("when X is sent, it restarts")."""
+        try:
+            os.makedirs(CHAIN_END_DIR, exist_ok=True)
+            tail = blocks[-CHAIN_END_BLOCKS:]
+            name = os.path.join(CHAIN_END_DIR, f"{self._ts(tail[-1]) or 0}-{self._height(tail[-1])}.json")
+            with open(name, "w") as f:
+                json.dump({"kept_at": round(time.time()), "blocks": tail}, f, separators=(",", ":"))
+            old = sorted(os.listdir(CHAIN_END_DIR))[:-CHAIN_END_KEEP]
+            for n in old:
+                os.remove(os.path.join(CHAIN_END_DIR, n))
+        except (OSError, TypeError, ValueError) as exc:
+            log.warning("could not keep the end of the chain: %r", exc)
 
     def _other_chain(self, fetched: list[dict]) -> bool:
         """True when the node's blocks contradict the ones loaded from disk
@@ -806,6 +835,12 @@ class Relay:
                 cruise.chain_restarted(time.time(), old.get("tip"), new_block1_ts)
             except Exception as exc:  # noqa: BLE001 - the restart is recorded all the same
                 log.warning("cruise restart note: %r", exc)
+        hack = getattr(self, "hack", None)
+        if hack is not None:   # a hack replay under way ends as "restart": its payments went with the old chain
+            try:
+                hack.chain_restarted(time.time())
+            except Exception as exc:  # noqa: BLE001
+                log.warning("hack restart note: %r", exc)
         if getattr(self, "chainhist", None):   # a chain that ended while the relay was away: at least its tip
             self.chainhist.seed(self.state["restarts"][-1:])
             self.history_text = None
@@ -1099,9 +1134,69 @@ class Relay:
                                             separators=(",", ":"))
         return self.rulewall_text
 
+    def rule_who(self):
+        """pk -> people / ours / idni, for the rule numbers (ruledays.py)."""
+        ours = self.walker_ours()
+        return lambda pk: "ours" if pk in ours else "idni" if pk in GENESIS else "people"
+
+    def rule_numbers(self) -> dict:
+        """GET /rules/numbers: the rules in force by kind and by who holds them, how each holder got its rule and where
+        it was sent from, rule offers and their outcome, the size of each rule, and the day history (ruledays.py)."""
+        who = self.rule_who()
+        blocks = self.ordered_blocks()
+        how: dict[str, tuple] = {}   # holder -> (own/offer, tx hash) of its newest rule in the kept blocks
+        for b in blocks:
+            ids = b.get("tx_ids") or []
+            for i, t in enumerate(b.get("transactions") or []):
+                if not isinstance(t, dict):
+                    continue
+                kind = t.get("tx_type") or "user_tx"
+                ops = t.get("operations") if isinstance(t.get("operations"), dict) else {}
+                pk = str(t.get("sender_pubkey") or "").lower()
+                if kind == "user_tx" and isinstance(ops.get("0"), str) and "o5" in ops["0"]:
+                    how[pk] = ("own", str(ids[i] if i < len(ids) else t.get("tx_hash") or "").lower())
+                elif kind == "rule_offer_accept":
+                    how[pk] = ("offer", "")
+        ways = {w: {"own": 0, "offer": 0, "unknown": 0} for w in WHO_RULES}
+        sent = {w: {"tauhud": 0, "elsewhere": 0} for w in WHO_RULES}
+        pages: dict[str, int] = {}
+        sizes = {w: [] for w in WHO_RULES}
+        for pk, body in self.rule_bodies.items():
+            w = who(pk)
+            way, h = how.get(pk, ("unknown", ""))
+            ways[w][way] += 1
+            sizes[w].append(rule_kinds(body)["size"])
+            if way == "own":
+                site = self.sources.sent.get(h)
+                s_, _, via = (site or "").partition("|")
+                if site is not None and not s_:
+                    sent[w]["tauhud"] += 1
+                    if w == "people":
+                        pages[via or "wallet"] = pages.get(via or "wallet", 0) + 1
+                else:
+                    sent[w]["elsewhere"] += 1
+        try:
+            rules = json.loads(self.rules_text) if self.rules_text else {}
+        except ValueError:
+            rules = {}
+        snap = self.ruledays.snapshot(self.rule_bodies, who, self.rule_balances)
+        return {"now": {**snap, "how": ways, "sent": sent, "pages": pages, "sizes": sizes,
+                        "checked": rules.get("checked"), "candidates": rules.get("candidates"), "checked_at": rules.get("checked_at")},
+                "offers": rule_offers(blocks, self.height(), offer_id, who),
+                "texts": len(self.rulewall()), "kinds": list(RULE_KINDS), "who": list(WHO_RULES), "max_comparisons": 32,
+                "history": self.ruledays.history(), "height": self.height(), "oldest": self._height(blocks[0]) if blocks else None,
+                "generated_at": round(time.time())}
+
+    def rule_numbers_json(self) -> str:
+        now = time.time()
+        if self.rulenums_text is None or now - self.rulenums_at >= 60:
+            self.rulenums_at = now
+            self.rulenums_text = json.dumps(self.rule_numbers(), separators=(",", ":"))
+        return self.rulenums_text
+
     async def poll_rules(self):
-        holders = []
-        for i, a in enumerate(self.rule_candidates()[:RULES_MAX_CHECKS]):
+        holders, bodies, balances, cands = [], {}, {}, self.rule_candidates()
+        for i, a in enumerate(cands[:RULES_MAX_CHECKS]):
             if i:
                 await asyncio.sleep(2.5)   # getruleoffers is in the node's expensive tier (0.5/s)
             msg = await self.upstream.request(f"getruleoffers {a} in")
@@ -1111,10 +1206,20 @@ class Relay:
             for c in data.get("accepted_clauses") or []:
                 if str(c.get("target_stream")) in ("5", "o5") and re.sub(r"\s+", "", str(c.get("clause_body") or "")) not in (NEUTRAL_O5, NEUTRAL_O5[1:-1]):
                     holders.append(a)
+                    bodies[a] = str(c.get("clause_body") or "")
+                    bal = await self.upstream.request(f"getbalance {a}")   # the AGRS behind a rule (/rules/numbers)
+                    try:
+                        balances[a] = int(((bal or {}).get("data") or {}).get("balance") or 0) if (bal or {}).get("status") == "ok" else 0
+                    except (TypeError, ValueError):
+                        balances[a] = 0
                     break
         self.rules_text = json.dumps({"holders": holders, "taken": len(holders), "limit": None,
-                                      "checked": min(len(self.rule_candidates()), RULES_MAX_CHECKS),
+                                      "checked": min(len(cands), RULES_MAX_CHECKS), "candidates": len(cands),
                                       "checked_at": round(time.time())}, separators=(",", ":"))
+        self.rule_bodies, self.rule_balances = bodies, balances
+        self.ruledays.record(bodies, set(cands[:RULES_MAX_CHECKS]), self.rule_who(), balances=balances)
+        self.ruledays.save()
+        self.rulenums_text = None
 
     @staticmethod
     def _tx_summary(t: dict) -> dict:
@@ -1124,6 +1229,13 @@ class Relay:
             kind = "rule_deploy"
         return {"type": str(kind)[:40], "sender": str(t.get("sender_pubkey") or t.get("sender") or "")[:200]}
 
+    def held_by_rule(self, sender: str, reason: str):
+        """A payment refused because the sender's own rule (o5) said no, as the node words it: counted per day."""
+        if re.search(r"o5|own (policy|rule)", str(reason or ""), re.I) and HEX.match(str(sender or "")):
+            self.ruledays.held(self.rule_who()(str(sender).lower()))
+            self.ruledays.save()
+            self.rulenums_text = None
+
     def note_refused(self, entry: dict):
         """A transaction the node refused at the door, before any queue (the showcase wallets' daily try): listed with the
         dropped ones, so the HUD's feed shows it with the node's reason, like one that left the queue without a block."""
@@ -1131,6 +1243,7 @@ class Relay:
         self.state["dropped"] = self.state["dropped"][-EVENTS_MAX:]
         self.stats_text = None
         self._save_state()
+        self.held_by_rule(entry.get("sender") or "", entry.get("reason") or "")
 
     def track_mempool(self, data: dict):
         """A transaction that leaves the mempool and never shows up in a block
@@ -1258,7 +1371,9 @@ class Relay:
             if self.walkers_text is None or time.monotonic() - self.walkers_at >= 30:
                 self.walkers_at = time.monotonic()
                 self.walkers_text = json.dumps(self.walkers.active(ours=self.walker_ours(), extra=self.walker_extra), separators=(",", ":"))
-            return json.loads(self.walkers_text)
+            j = json.loads(self.walkers_text)
+            j["go"] = self.steer.recent({w.get("a") for w in j.get("walkers") or []})   # the walks their wallets asked for lately
+            return j
         pk = path[len("/walkers/"):].lower()
         if not re.match(r"^[0-9a-f]{96}$", pk) or pk in self.walker_ours():
             return {"error": "not a walker"}
@@ -1477,6 +1592,9 @@ class Relay:
         if cmd == "isle":   # White Rabbit Key's shared island day (isle.py)
             return self.isle_command(args, ip, ws)
 
+        if cmd == "walker":   # White Rabbit Key: a wallet walks its own islander, every page sees it (steer.py)
+            return await self.walker_command(args, ip, ws)
+
         if cmd == "islandmove":   # White Rabbit Key: a rival's move in a visitor's game, sent by the island bot (island.py)
             if len(args) not in (2, 3):
                 return envelope_error(cmd, "Usage: islandmove <candidate> <kind> [place]", "INVALID_PARAMS")
@@ -1504,7 +1622,7 @@ class Relay:
                                      self.via.get(ws, "") if ws else "")
 
         return envelope_error(cmd, "Not allowed here. Allowed: getblocks, getblockrange, getmempool, getgovernance, "
-                              "gettaustate, presence, report, via, islandmove, islandpay, isle, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
+                              "gettaustate, presence, report, via, islandmove, islandpay, isle, walker, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
                               + " (a transaction signed in your browser)", "FORBIDDEN")
 
     async def wallet(self, cmd: str, raw: str, ip: str, site: str = "", via: str = "") -> str:
@@ -1535,6 +1653,14 @@ class Relay:
             msg = await self.explain_new_wallet(msg, tx, way)
         if cmd == "sendtx":
             self.load.sent("sent" if msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False else "refused")
+            if msg.get("status") == "error" or (msg.get("data") or {}).get("ok") is False:
+                try:
+                    why, parsed = json.dumps(msg.get("error") or msg.get("data") or {}), json.loads(tx)
+                    ops = parsed.get("operations") if isinstance(parsed.get("operations"), dict) else {}
+                    if ops.get("1") and not ops.get("0"):   # a payment, not a rule that failed its own checks
+                        self.held_by_rule(str(parsed.get("sender_pubkey") or ""), why)
+                except (ValueError, AttributeError):
+                    pass
         if cmd == "sendtx" and msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False:
             self.sources.note((msg.get("data") or {}).get("tx_hash"), site, via)   # for "where the transactions come from"
             self.island.saw_tx(ip)   # White Rabbit Key may pay this address for the move
@@ -1922,8 +2048,9 @@ class Relay:
     @staticmethod
     def badge(left: str, right: str, on: bool, zh: bool = False) -> str:
         """Shields-style two-part badge in the site's colours: black, white,
-        phosphor green when the value is good news (red with ?lang=zh, as on the Chinese site)."""
-        bg, fg = (("#ff3b52" if zh else "#39ff8a"), "#000") if on else ("#2a2a2e", "#ebebee")
+        phosphor green when the value is good news. Green also with ?lang=zh: live and OK are status, not a price
+        rise, so the Chinese site keeps green for them too (zh is still accepted, for old embeds)."""
+        bg, fg = ("#39ff8a", "#000") if on else ("#2a2a2e", "#ebebee")
         # Verdana 11px averages about 6.6 px per character; padding 6 px each side
         lw, rw = int(len(left) * 6.6) + 12, int(len(right) * 6.6) + 12
         esc = lambda t: t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
@@ -2043,6 +2170,20 @@ class Relay:
 
     def presence_envelope(self) -> str:
         return envelope_ok("presence", {"online": self.online(), "sites": self.online_sites(), "playing": {"rabbit": self.playing()}, "pushed": True})
+
+    async def walker_command(self, args: list[str], ip: str, ws: ServerConnection | None) -> str:
+        """walker hello <wallet> <day> <signature> | walker go <wallet> <fx> <fy> <tx> <ty> [place] (steer.py)"""
+        sub, a = (args[0].lower(), args[1:]) if args else ("", [])
+        if sub == "hello" and len(a) == 3:
+            ok, data = await self.steer.hello(ws, ip, *a)
+        elif sub == "go":
+            ok, data = self.steer.go(ws, ip, a, self.isle.signed)
+            if ok:   # every page on the island walks it there too
+                broadcast([w for w in self.isle.subs if w is not ws], envelope_ok("walker", {"go": data, "push": True}))
+                data = {"go": data}
+        else:
+            ok, data = False, "Usage: walker hello <wallet> <day> <signature> | walker go <wallet> <fx> <fy> <tx> <ty> [place]"
+        return envelope_ok("walker", data) if ok else envelope_error("walker", data, "INVALID_PARAMS")
 
     def isle_command(self, args: list[str], ip: str, ws: ServerConnection | None) -> str:
         """The shared island: join / leave / move / end (isle.py has the rules)."""
@@ -2248,7 +2389,7 @@ class Relay:
             return Response(code.value, code.phrase, headers, json.dumps(sim[1], separators=(",", ":")).encode())
         # GET /showcase: the showcase wallets, their rules in words, the last daily tries, the rule-sharing stories;
         # GET /showcase/offer?to=<address>: the rule desk offers that wallet a starter rule (showcase.py)
-        isl = self.showcase.route(path, query, ip) if path.startswith("/showcase") else self.nomemo_feedback.route(path, query, ip) if path == "/nomemo/feedback" else self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.hack.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/hack") else self.vaults.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/vaults") else self.nomemo.route(path, query) if path.startswith("/nomemo") else self.isle.route(path)
+        isl = self.showcase.route(path, query, ip, not request.headers.get("X-Forwarded-For")) if path.startswith("/showcase") else self.nomemo_feedback.route(path, query, ip) if path == "/nomemo/feedback" else self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.hack.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/hack") else self.vaults.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/vaults") else self.nomemo.route(path, query) if path.startswith("/nomemo") else self.isle.route(path)
         if isl is not None:
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, json.dumps(isl, separators=(",", ":")).encode())
@@ -2338,6 +2479,11 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "public, max-age=60")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.rulewall_json().encode())
+        if path == "/rules/numbers":
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=60")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.rule_numbers_json().encode())
         if path == "/rules":
             ready = self.rules_text is not None
             headers = Headers([("Content-Type", "application/json"),
@@ -2362,7 +2508,8 @@ class Relay:
                             json.dumps(self.summary(), separators=(",", ":")).encode())
         if path == "/wallets/tags":   # which known app or owner each wallet belongs to, for the chain core (walletdays.py)
             if getattr(self, "wtags_text", None) is None or time.monotonic() - self.wtags_at >= 60:
-                self.wtags_text = json.dumps({"tags": self.wallets.known(), "via": self.sources.games()}, separators=(",", ":"))
+                self.wtags_text = json.dumps({"tags": self.wallets.known(), "via": self.sources.games(),
+                                              "apps": self.wallets.app_list()}, separators=(",", ":"))
                 self.wtags_at = time.monotonic()
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),
@@ -2456,6 +2603,7 @@ class Relay:
             self.chat_subs.discard(ws)
             self.road_subs.discard(ws)
             self.isle.subs.discard(ws)
+            self.steer.forget(ws)
             self.viewers.pop(ws, None)
             self.via.pop(ws, None)
             self.per_ip[ip] -= 1

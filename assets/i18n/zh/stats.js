@@ -58,7 +58,7 @@ TauI18n.add({ strings: {
   "Chain": "链",
   "Chain height": "链高度",
   "Chain restarts": "链重启",
-  "Chain restarts: when the testnet started over from its genesis. Each restart loses the chain’s whole history. Green: current chain. Grey: earlier chain. Hollow: from our notes.": "链重启：测试网从创世区块重新开始的时刻。每次重启都会丢失整条链的历史。红色：当前链。灰色：较早的链。空心：来自我们的记录。",
+  "Chain restarts: when the testnet started over from its genesis. Each restart loses the chain’s whole history. Green: current chain. Grey: earlier chain. Hollow: from our notes.": "链重启：测试网从创世区块重新开始的时刻。每次重启都会丢失整条链的历史。绿色：当前链。灰色：较早的链。空心：来自我们的记录。",
   "Changes to the network’s own rules that reached agreement,": "已达成同意的网络自身规则变更，",
   "Changes to the network’s own rules that reached agreement, plus the ones still open or that missed quorum.": "已达成同意的网络自身规则变更，以及仍待决或未达法定票数的变更。",
   "Changes to the network’s own rules that reached agreement, plus the ones still open or that missed quorum. Covers: this chain.": "已达成同意的网络自身规则变更，以及仍待决或未达法定票数的变更。范围：这条链。",

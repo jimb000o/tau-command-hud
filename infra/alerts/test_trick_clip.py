@@ -71,7 +71,7 @@ check(tc.tally(only)["kinds"] == 2, "tricks without a try are left out of the cl
 # ---------- texts ----------
 t = tc.texts(tc.tally(visit()))
 check("http" not in t["x"] and len(t["x"]) <= 280, "X: no link, fits")
-check("24 refused" in t["telegram"] and "not affiliated with IDNI" in t["telegram"] and f"visit={V}" in t["telegram"], "Telegram: numbers, foot, logbook")
+check("24 refused" in t["telegram"] and "not run by IDNI" in t["telegram"] and f"visit={V}" in t["telegram"], "Telegram: numbers, foot, logbook")
 check(len(t["telegram"]) <= 1024, "Telegram caption within 1024")
 t = tc.texts(tc.tally(visit([{"t": T0 + 902, "visit": V, "kind": "trick", "trick": "giant", "ok": False, "right": False, "code": "TX_REJECTED"}])))
 check("24 with the answer it should give, 1 with another" in t["telegram"], "another answer named in the text")

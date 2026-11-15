@@ -151,7 +151,7 @@ p = fw.load()["post"]
 check(p["status"] == "draft" and p["ns"] == [85, 108] and p["by"] == "model" and len(told) == 1 and "up idni fixed send" in told[0]
       and "Two reports solved by IDNI" in told[0], "one post for both, as a draft to the owner first")
 tg = fw.tg_text(p)
-check(tg.startswith("🎉 <b>Two reports solved by IDNI</b>") and "• <b>#85</b> Every account" in tg and "not affiliated with IDNI" in tg
+check(tg.startswith("🎉 <b>Two reports solved by IDNI</b>") and "• <b>#85</b> Every account" in tg and "not run by IDNI" in tg
       and "tauhud.com/findings/" in tg, "Telegram: what is solved now, thanks, the Findings page, not affiliated")
 x = alerts.x_post(fw.x_lines(p), foot=fw.X_FOOT, keep=2)
 check("http" not in x and alerts.x_len(x) <= 280 and x.startswith("🎉 Two reports"), "X: no link, under 280")

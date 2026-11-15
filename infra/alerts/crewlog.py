@@ -153,7 +153,7 @@ def compose(r: dict, lines: list[str], period: str, updates: list | None, costs:
         p.append(f"<p>{'You are' if crew == 1 else 'You are one of'} {'the first member' if crew == 1 else str(crew) + ' in the crew'}. Thank you for keeping the lights on.</p>")
     else:
         p.append("<p>Thank you for keeping the lights on.</p>")
-    p.append("<p>Tau HUD is a community project, not affiliated with IDNI.</p>")
+    p.append("<p>Tau HUD is a community project, not run by IDNI.</p>")
     return f"Ship log · {period}", "".join(p)
 
 

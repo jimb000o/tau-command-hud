@@ -97,7 +97,7 @@ TauI18n.add({ strings: {
   "Transaction as stored in block #{x1}": "存储在区块 #{x1} 中的交易",
   "Transactions ({n})": "交易（{n}）",
   "Transactions per block": "每个区块的交易数",
-  "transactions per block (green: carries a vote or proposal)": "每个区块的交易数（红色：包含投票或提案）",
+  "transactions per block (green: carries a vote or proposal)": "每个区块的交易数（绿色：包含投票或提案）",
   "Update id": "更新 ID",
   "validator —": "验证者 —",
   "validators only": "仅验证者",

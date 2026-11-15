@@ -97,11 +97,13 @@ class Walkers:
     def __init__(self, path: str | None = None):
         self.path = path if path is not None else os.environ.get("WALKERS_PATH", "/data/walkers.json")
         self.w: dict[str, dict] = {}
+        self.since = 0          # when this record began: a wallet first seen in its first day may be much older
         self.dirty = False
         self.saved_at = 0.0
         try:
             with open(self.path) as f:
                 st = json.load(f)
+            self.since = int(st.get("since") or 0)
             for k, v in (st.get("w") or {}).items():
                 if HEX.match(str(k)) and isinstance(v, dict):
                     r = blank()
@@ -115,6 +117,9 @@ class Walkers:
     # ---------- reading the blocks ----------
     def add_blocks(self, blocks: list[dict], ours: set | frozenset = frozenset()) -> bool:
         changed = False
+        if not self.since:
+            self.since = int(time.time())
+            self.dirty = True
         for b in blocks:
             hd = b.get("header") or {}
             try:
@@ -252,8 +257,8 @@ class Walkers:
         age = (now - r["f"]) / 86400 if r["f"] else 0
         if age >= 14:
             add("veteran", int(age))
-        elif r["f"] >= now - WINDOW:
-            add("newcomer", 0)
+        elif r["f"] >= now - WINDOW and r["f"] >= self.since + WINDOW:
+            add("newcomer", 0)   # only once the record is a day old: before that, "first seen" is only "first read here"
         if not out:
             add("quiet", n)
         return out
@@ -307,7 +312,7 @@ class Walkers:
         tmp = self.path + ".tmp"
         try:
             with open(tmp, "w") as f:
-                json.dump({"w": self.w}, f, separators=(",", ":"))
+                json.dump({"w": self.w, "since": self.since}, f, separators=(",", ":"))
             os.replace(tmp, self.path)
             self.dirty = False
         except OSError as exc:

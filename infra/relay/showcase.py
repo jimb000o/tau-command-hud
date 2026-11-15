@@ -38,6 +38,10 @@ own inbox on the node (getapprovalrequests <co-signer> in) and signs it (transfe
 from that address, names the co-signer and moves at most COSIGN_MAX. A player's friend can sign instead, from their own
 No Memo (cosign).
 
+GET /showcase/demo?wallet=piggy   (only from inside the server: no X-Forwarded-For) one more forbidden try of that
+                wallet, for a film of the refusal (our video service): the same try as the daily one, said to be a test in
+                its reason, at most DEMO_PER_DAY a day and one every DEMO_GAP seconds; the daily try is left as it is.
+
 GET /showcase   the four wallets with their names, each rule in words and whether it is in force, the last tries
 """
 from __future__ import annotations
@@ -65,6 +69,8 @@ RULE_WAIT = 10 * 60   # a rule sent and not yet in force: wait this long before 
 QUIET = 60            # after a send the node did not answer: wait this long
 TRIES_PER_DAY = 3     # unanswered tries of one wallet before its day is given up
 LOG_KEEP = 40
+DEMO_GAP = 10 * 60    # an extra try for a film: at most one every ten minutes
+DEMO_PER_DAY = 8
 
 BLOCK = "(o5[t]:bv[24] = { #x000000 }:bv[24])"
 ALLOW = "(o5[t]:bv[24] = { #x000001 }:bv[24])"
@@ -202,6 +208,7 @@ class Showcase:
         self.last_send = 0.0
         self.last_look = 0.0
         self.hold_until = 0.0
+        self.demand: dict | None = None   # a try asked for by our video service (ask_demo)
         self.st: dict = {"wallets": {}, "log": [], "stories": {}, "desk": {"day": "", "n": 0, "ips": {}, "to": {}}}
         self.queue: list[dict] = []   # visitors' wallets waiting for the desk's starter offer
         self.last_vote_look = 0.0
@@ -393,19 +400,25 @@ class Showcase:
         self.on_tx and self.on_tx(self.took(res))
         return True
 
-    async def try_forbidden(self, name: str, ask, gov, day: str) -> bool:
+    async def try_forbidden(self, name: str, ask, gov, day: str, demo: bool = False) -> bool:
         c = WALLETS[name]
         w = self.w(name)
         res, tx = await self.send(name, ask, gov, to=self.pk[c["to"]], amount=c["amount"])
         if tx is None:
             return False
-        if res is None:
+        if demo:                        # an extra try for a film: it neither counts as the day's try nor gives the day up
+            self.demand = None
+            if res is None:
+                self.note(name, "a try for a film: our node did not answer")
+                return True
+        elif res is None:
             w["tries"] = w.get("tries", 0) + 1
             if w["tries"] >= TRIES_PER_DAY:
                 w["tried"] = day
                 self.note(name, f"daily try given up: our node did not answer {TRIES_PER_DAY} times")
             return True
-        w["tried"], w["tries"] = day, 0
+        if not demo:
+            w["tried"], w["tries"] = day, 0
         now = int(self.clock())
         h = hashlib.sha256(json.dumps(tx, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         if self.took(res):
@@ -415,11 +428,13 @@ class Showcase:
         else:
             said = self.said(res)
             own = "own policy" in said or "o5" in said
-            w["last"] = {"t": now, "outcome": "stopped" if own else "refused", "what": self.try_words(name), "node_said": said}
+            w["last"] = {"t": now, "outcome": "stopped" if own else "refused", "what": self.try_words(name), "node_said": said,
+                         **({"demo": True} if demo else {})}
             self.note(name, ("stopped by its own rule: " if own else "refused for another reason: ") + self.try_words(name))
             if own and self.on_refused:
                 self.on_refused({"tx_hash": h, "type": "user_tx", "sender": self.pk[name], "seen": now, "left": now,
-                                 "reason": f"o5 = 0 · its own rule said no: {self.try_words(name)} (a daily test of the rule)",
+                                 "reason": f"o5 = 0 · its own rule said no: {self.try_words(name)} "
+                                           f"({'our test of the rule, filmed for a video' if demo else 'a daily test of the rule'})",
                                  "showcase": name})
         self.on_tx and self.on_tx(self.took(res))
         return True
@@ -454,7 +469,12 @@ class Showcase:
                 sent = await self.set_rule(name, ask, gov)
                 self.save_state()
                 return sent
-            # 3. the daily try, from its German hour on
+            # 3. a try asked for by our video service (route /showcase/demo), while its rule is in force
+            if self.demand and self.demand.get("name") == name and not self.opened(name, now):
+                sent = await self.try_forbidden(name, ask, gov, day, demo=True)
+                self.save_state()
+                return sent
+            # 4. the daily try, from its German hour on
             if w.get("tried") == day or self.opened(name, now) or now < berlin_t(berlin_day(now), c["at"]):
                 continue
             sent = await self.try_forbidden(name, ask, gov, day)
@@ -711,7 +731,31 @@ class Showcase:
                 "piggy_until": piggy_until(),
                 "log": [{k: v for k, v in x.items() if k != "answer"} for x in self.st["log"][-20:]]}
 
-    def route(self, path: str, query: str = "", ip: str = "") -> dict | None:
+    def ask_demo(self, name: str) -> dict:
+        """One extra forbidden try of this wallet, for a film of the refusal. The try goes out in the island bot's next
+        free slot (step), usually within a minute; GET /showcase then shows it as that wallet's last_try (demo: true)."""
+        if name not in WALLETS:
+            return {"error": "wallet is one of " + ", ".join(WALLETS)}
+        now = self.clock()
+        if not self.ready or not self.w(name).get("in_force") or self.opened(name, now):
+            return {"error": f"{WALLETS[name]['name']} has no rule in force right now"}
+        day = berlin_day(now).isoformat()
+        d = self.st.setdefault("demo", {})
+        if d.get("day") != day:
+            d.clear()
+            d.update(day=day, n=0, at=0)
+        if self.demand:
+            return {"queued": True, "since": self.demand["at"]}
+        if now - d.get("at", 0) < DEMO_GAP:
+            return {"error": f"one try for a film every {DEMO_GAP // 60} minutes", "again_at": int(d["at"] + DEMO_GAP)}
+        if d["n"] >= DEMO_PER_DAY:
+            return {"error": f"{DEMO_PER_DAY} tries for films today already"}
+        d["n"], d["at"] = d["n"] + 1, int(now)
+        self.demand = {"name": name, "at": int(now)}
+        self.save_state()
+        return {"queued": True, "since": int(now)}
+
+    def route(self, path: str, query: str = "", ip: str = "", internal: bool = False) -> dict | None:
         """GET /showcase; GET /showcase/offer?to=<address>: the rule desk offers that wallet a starter rule (the owner
         accepts or declines it in their own wallet); GET /showcase/cosign?id=<request_id>&from=<address>: the co-signer
         signs a No Memo player's approval request (ask_vote)."""
@@ -720,6 +764,11 @@ class Showcase:
         if path == "/showcase/offer":
             from urllib.parse import parse_qs
             return self.ask_offer((parse_qs(query or "").get("to") or [""])[0], ip)
+        if path == "/showcase/demo":
+            if not internal:
+                return {"error": "only from inside the server"}
+            from urllib.parse import parse_qs
+            return self.ask_demo((parse_qs(query or "").get("wallet") or ["piggy"])[0])
         if path == "/showcase/cosign":
             from urllib.parse import parse_qs
             q = parse_qs(query or "")

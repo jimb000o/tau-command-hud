@@ -61,6 +61,7 @@
     agorzilla:  { t: "Agorzilla", d: "One creature the whole testnet feeds: give it a meal, choose tomorrow's change", i: `<img src="${ROOT}${agzPic}" alt="">`, h: "https://agorzilla.com", ext: true, live: true },
     deja:       { t: "Déjà, the café cat", d: "Agorzilla's café cat: she eats when three wallets each send her 1 test AGRS in a day, and runs across at every rule change", i: `<img src="${ROOT}assets/deja.webp" alt="">`, h: "https://agorzilla.com/cat/", ext: true, live: true },
     rules:      { t: "Rules wall", d: "The rules people gave their own accounts; take one for yours to agree", i: "▤", h: "rules/" },
+    rulenums:   { t: "Rules in numbers", d: "What personal rules check, who holds them, offers and how rules grow over time, read from the chain", i: "▥", h: "rules/numbers/" },
     builder:    { t: "Rule builder", d: "Say what your wallet may do in plain words; see what the rule really does, checked by the real Tau engine, before you sign", i: "✐", h: "builder/" },
     wallet:     { t: "Wallet", d: "A testnet account with its own rules: send, take back, co-sign, vote, form a Pakt; and your wallet on one picture, ready to post", i: "◈", h: "wallet/" },
     vote:       { t: "Vote for real", d: "Vote on the real testnet yourself: node, key, ready commands, practised first", i: "✔", h: "vote/" },
@@ -92,7 +93,7 @@
     road:      ["Road to mainnet", [["roadmap", "Roadmap"], ["findings"], ["devpulse"], ["gxp", "GxP"]]],
     read:      ["Read", [["gazette"], ["blog"], ["chronicle"]]],
     wallet:    ["Wallet", [["wallet"], ["card"]]],
-    wrules:    ["Wallet rules", [["builder", "In words"], ["playground", "In Tau"], ["rules", "From others"], ["challenge", "This week"]]],
+    wrules:    ["Wallet rules", [["builder", "In words"], ["playground", "In Tau"], ["rules", "From others"], ["rulenums", "In numbers"], ["challenge", "This week"]]],
     practise:  ["Practise voting", [["missions"], ["seat"], ["whatif"]]],
     /* 13 Nov: About had ten entries. Support and Donations answer one question (how to help), Developers, Press kit and
        Tau facts another (how to reuse what is here); each pair is now one entry with tabs, no address changed */
@@ -571,7 +572,7 @@
     const lang = new URLSearchParams(location.search).get("lang"); brand.href = ROOT + (lang ? "?lang=" + encodeURIComponent(lang) : ""); brand.dataset.tnt = "Back to the HUD";
     /* the game's moves are real test transactions in either mode, so its header keeps the plain note instead of the simulation badge */
     const gameSim = SIM && page === "rabbit";
-    const unoff = el("a", SIM && !gameSim ? "chip unoff sim" : "unoff q", SIM && !gameSim ? "Simulation · no real chain data" : "Unofficial community project · not affiliated with IDNI"); unoff.href = ROOT + "#about"; unoff.dataset.tnt = gameSim ? "Your moves in the game are real test transactions, whatever the chain chips show; the chips follow the simulation." : SIM ? TIPS.simBadge : TIPS.unoff;
+    const unoff = el("a", SIM && !gameSim ? "chip unoff sim" : "unoff q", SIM && !gameSim ? "Simulation · no real chain data" : "Unofficial community project · not run by IDNI"); unoff.href = ROOT + "#about"; unoff.dataset.tnt = gameSim ? "Your moves in the game are real test transactions, whatever the chain chips show; the chips follow the simulation." : SIM ? TIPS.simBadge : TIPS.unoff;
     const chips = el("div", "chips");
     const chip = (tag, id, cls, html, t) => { const c = el(tag, "chip" + (cls ? " " + cls : ""), html); c.id = id; c.dataset.tnt = t; return c; };
     chips.append(
@@ -761,11 +762,14 @@
     const fit = () => {
       const vw = document.documentElement.clientWidth, pad = vw <= 720 ? 12 : 16;
       els.forEach(e => {
-        e.style.width = e.style.maxWidth = e.style.marginLeft = e.style.zoom = "";
+        e.style.width = e.style.maxWidth = e.style.marginLeft = e.style.marginRight = e.style.zoom = "";
         const r = e.getBoundingClientRect(), scale = e.offsetWidth ? r.width / e.offsetWidth : 1;
         if (scale > 1.02 || scale < 0.98) { e.style.zoom = String(1 / scale); return; }
         if (r.width >= vw - 2 * pad - 60) return;
         e.style.width = e.style.maxWidth = (vw - 2 * pad) + "px"; e.style.marginLeft = (pad - r.left) + "px";
+        // the right margin gives the width back, so the row still counts as the column's width: in a grid column
+        // (cruise logbook, …) the track would otherwise grow to the screen and push every other row to the right
+        e.style.marginRight = (r.right - (vw - pad)) + "px";
       });
     };
     const later = () => { clearTimeout(t); t = setTimeout(fit, 60); };

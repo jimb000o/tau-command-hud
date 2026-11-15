@@ -17,7 +17,7 @@ TauI18n.add({ strings: {
   "Connecting": "连接中",
   "Where this terminal talks to. Every contract is a transaction signed in this browser and sent to Tau Testnet Alpha through our node at node.tauhud.com.": "这个终端连向哪里。每个任务都是在此浏览器中签名、经我们的节点 node.tauhud.com 发到 Tau Testnet Alpha 的一笔交易。",
   "You and the other players are real: everybody here plays together, and the game is the testnet itself. Every contract is a real test transaction on Tau Testnet Alpha from your own test wallet, signed in this browser. The crew are game characters; test AGRS have no value.": "你和其他玩家都是真实的人：大家在这里一起玩，而游戏本身就是测试网。每个任务都是从你自己的测试钱包、在此浏览器中签名、发到 Tau Testnet Alpha 的一笔真实测试交易。船员是游戏角色；测试 AGRS 没有价值。",
-  "Unofficial, not affiliated with IDNI. A game on the public testnet: your test wallet is the one": "非官方，与 IDNI 无关。一个公共测试网上的游戏：你的测试钱包就是",
+  "Unofficial, not run by IDNI. A game on the public testnet: your test wallet is the one": "非官方，并非由 IDNI 运营。一个公共测试网上的游戏：你的测试钱包就是",
   "the wallet page": "钱包页面",
   "and": "和",
   "White Rabbit Key": "白兔礁",

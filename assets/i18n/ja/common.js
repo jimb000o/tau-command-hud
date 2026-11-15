@@ -242,7 +242,7 @@ TauI18n.add({ strings: {
   "turning point": "転換点",
   "unchanged": "変更なし",
   "unofficial": "非公式",
-  "Unofficial community project · not affiliated with IDNI": "非公式のコミュニティプロジェクト · IDNI とは無関係",
+  "Unofficial community project · not run by IDNI": "非公式のコミュニティプロジェクト · IDNI の運営ではありません",
   "until {x}": "{x} まで",
   "Updates": "更新情報",
   "Uptime, outages, sync gaps and restarts of the community node": "コミュニティノードの稼働率、障害、同期の遅れ、再起動",
@@ -811,5 +811,20 @@ TauI18n.add({ strings: {
   "INSUFFICIENT_FUNDS. Nearly everyone on the testnet gets this answer once; now you have it too. It also comes as a tee.": "INSUFFICIENT_FUNDS。テストネットではほとんど誰もが一度はこの応答を受け取ります。あなたも仲間入りです。T シャツにもなっています。",
   "Or something to wear, from the testnet:": "あるいは、テストネット発の着られるものを：",
   "What you love most": "みんなが一番好きなもの",
-  "Every heart on Tau HUD is a real testnet transaction; which parts visitors love most, read from the chain": "Tau HUD のハートはどれも本物のテストネット取引。訪問者が一番好きな部分をチェーンから読み取ります"
+  "Every heart on Tau HUD is a real testnet transaction; which parts visitors love most, read from the chain": "Tau HUD のハートはどれも本物のテストネット取引。訪問者が一番好きな部分をチェーンから読み取ります",
+  /* menu: Rules in numbers */
+  "Rules in numbers": "ルールの数字",
+  "What personal rules check, who holds them, offers and how rules grow over time, read from the chain": "個人ルールが何を確認するか、誰が持つか、提案、そして時間とともにどう増えるか。チェーンから読み取り",
+  "Cruise logbook": "クルーズ航海日誌",
+  /* wallets from our apps (assets/origins.js app) */
+  "Started in {w}": "{w} で開始",
+  "Uses {w}": "{w} を利用",
+  "Started in Tau HUD: its first transaction we know of was signed in tauhud.com’s wallet, on {d}.": "Tau HUD で開始：私たちが知る最初の取引は tauhud.com のウォレットで署名されました（{d}）。",
+  "Started in No Memo: its first transaction we know of was a move in No Memo on tauhud.com, on {d}.": "No Memo で開始：私たちが知る最初の取引は tauhud.com の No Memo での一手でした（{d}）。",
+  "Started in White Rabbit Key: its first transaction we know of was a move on the island, on {d}.": "White Rabbit Key で開始：私たちが知る最初の取引は島での一手でした（{d}）。",
+  "Started in Agorzilla: its first transaction we know of was a meal or a vote on agorzilla.com, on {d}.": "Agorzilla で開始：私たちが知る最初の取引は agorzilla.com での食事か投票でした（{d}）。",
+  "Started with Déjà: its first transaction we know of fed Agorzilla’s café cat, on {d}.": "Déjà で開始：私たちが知る最初の取引は Agorzilla のカフェの猫にごはんをあげるものでした（{d}）。",
+  "Also sent through: {w}.": "その後の送信先：{w}。",
+  "Sent through: {w}.": "送信に使ったアプリ：{w}。",
+  "Read from our own server's record of what it sent and from the public blocks. A wallet is a key, not a person.": "私たちのサーバーが送った取引の記録と公開ブロックから読み取っています。ウォレットは鍵であり、人ではありません。",
 } });

@@ -11,6 +11,8 @@ offered or sold. Visitor names are the anonymous two-word names of the simulatio
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from datetime import datetime, timezone
 
@@ -950,12 +952,34 @@ def cafe(r: dict, props: list[dict], days: list[dict], no: int, banner: dict, de
     }
 
 
-def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: float, chess: dict | None = None) -> dict:
-    """One weekly edition. r: recap.build(); props: proposals.json "proposals"; days: sim_day() of the week."""
+def fresh(ranked: list[dict], seen: set[str], no: int) -> tuple[dict, dict]:
+    """(lead story, banner) so that no two editions carry the same front-page headline (Kilian, 2026-11-15: every
+    episode of the paper is its own; the café's archive room lists them all by headline). The most newsworthy story
+    still leads; when its banner was printed before, it says "again" (true: it happened before), and if that was
+    printed too, it names the edition. seen: the English banners of the editions before."""
+    top = ranked[0]
+    b = top["banner"]
+    for v in (b, t(f"{b['en']}, again", f"{b['zh']}，又一次", f"{b['ja']}、再び"),
+              t(f"{b['en']} · No. {no}", f"{b['zh']} · 第 {no} 期", f"{b['ja']} · 第 {no} 号")):
+        if v["en"] not in seen:
+            break
+    return top, v
+
+
+def signature(e: dict) -> str:
+    """What makes an edition its own, without its number and dates: the front page and the café talk."""
+    keep = {k: e.get(k) for k in ("banner", "big", "line", "lead", "figures", "stories", "cafe")}
+    return hashlib.sha1(json.dumps(keep, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:16]
+
+
+def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: float, chess: dict | None = None,
+            seen: set[str] | None = None) -> dict:
+    """One weekly edition. r: recap.build(); props: proposals.json "proposals"; days: sim_day() of the week;
+    seen: the English banners of the editions already printed (none repeats, see fresh())."""
     waiting = [p for p in props if p.get("status") == "agreed" and (p.get("activate_at") or 0) > (r.get("head") or 0)]
     ranked = news(r, waiting, days, props)
-    top = ranked[0]
-    banner, h2, deck, kind = top["banner"], top["h2"], top["deck"], top["kind"]
+    top, banner = fresh(ranked, seen or set(), no)
+    h2, deck, kind = top["h2"], top["deck"], top["kind"]
     kick = {"active": t("Testnet Alpha · rule change", "Testnet Alpha · 规则变更", "テストネット Alpha · ルール変更"),
             "agreed": t("Testnet Alpha · the ballot is counted", "Testnet Alpha · 计票完毕", "テストネット Alpha · 開票終了"),
             "restart": t("Testnet Alpha · a fresh start", "Testnet Alpha · 重新开始", "テストネット Alpha · 再出発"),
@@ -983,7 +1007,7 @@ def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: f
 
 def summary(e: dict) -> dict:
     """The few fields the HUD's notice and the archive list need."""
-    return {"no": e["no"], "date": e["date"], "printed": e["printed"], "period": e["period"], "banner": e["banner"], "teaser": e["teaser"],
+    return {"no": e["no"], "date": e["date"], "printed": e["printed"], "period": e["period"], "banner": e["banner"], "teaser": e["teaser"], "sig": signature(e),
             "kind": e["kind"], "url": e["url"], "drops": e.get("drops"), "number": e["no"], "headline": e["banner"]["en"], "headline_zh": e["banner"]["zh"],
             "headline_ja": e["banner"].get("ja", ""), "deck": e["teaser"]["en"], "deck_zh": e["teaser"]["zh"], "deck_ja": e["teaser"].get("ja", "")}
 

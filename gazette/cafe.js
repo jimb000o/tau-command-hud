@@ -1,6 +1,7 @@
 /* The Daily Consensus: the café around the paper, to walk through. "Look up" lays the paper down and the
-   café opens around the reader: the window table, the counter, the wire corner, the back room and the door,
-   each reached through the left or right edge, each with a regular to talk to. Every regular stamps the café
+   café opens around the reader: the window table, the counter, the wire corner, the back room, the archive and the
+   door, each reached through the left or right edge, each but the archive with a regular to talk to. The archive keeps
+   every edition of the paper (the server's /recap/gazette/editions.json), each one to open and read. Every regular stamps the café
    ticket; with four stamps the door leads out onto Market Street, and an Extra! lands at the reader's feet.
    Everything is drawn and voiced here in the browser (no photographs, no recordings), in the paper's sepia.
    Words: CAFE_EN below; cafe-zh.js and cafe-ja.js carry the same keys. */
@@ -28,7 +29,11 @@
     thisWeek: "this week", more: "Click to go on", stamped: "{name} stamped your ticket: {what}", stampFor: { mae: "Agreement", elias: "Chain", prof: "Logic", sully: "Testnet" }, full: "Your ticket is full. The door is open to you.",
     gold: { t: "Golden ticket", sub: "The Daily Consensus · Café", admit: "Admits one reader who knows how rules change by agreement.", at: "Turned gold at block {n}", purr: "Déjà looks at the ticket, then at you, and purrs." },
     sep: ", ", and: " and ",
-    places: { window: "Your table by the window", counter: "The counter", wire: "The wire corner", back: "The back room", door: "The door" },
+    places: { window: "Your table by the window", counter: "The counter", wire: "The wire corner", back: "The back room", archive: "The archive", door: "The door" },
+    arch: { sign: "Back Issues", title: "Back issues of The Daily Consensus", sub: "Every edition since No. 1, one each Monday. Pick one to read it.",
+      no: "No. {n}", read: "Read this front page ›", all: "‹ All editions", newer: "‹ Newer", older: "Older ›", page: "{a} of {b}", here: "on your table now",
+      wait: "Opening the drawers…", none: "No edition has been printed yet. The first one comes out on a Monday.", fail: "The drawers are stuck: the archive could not be reached. Try again in a minute.",
+      open: "Open the archive", close: "Close" },
     board: ["House Rules", "1. Mind the cups.", "2. Anyone may propose a rule.", "3. The regulars vote.", "4. Most hands carry it.", "5. Rule 4 may be voted on, too.", "Proposed: pie on Fridays", "Carried"],
     clocks: ["New York", "London", "Berlin", "Tokyo"], wireSign: "Wire Service · Telegrams",
     tape: h => h != null ? `BLOCK ${h.toLocaleString("en-US")} … LINKED TO ${(h - 1).toLocaleString("en-US")} … ` : "BLOCK … LINKED TO THE ONE BEFORE … ",
@@ -107,6 +112,7 @@
       coats: "The regulars' hats and coats. One of them has hung here since 1919.",
       bell: "A little brass bell over the door. It rings when somebody leaves.",
       bundle: "This morning's papers, still tied with string.",
+      cabinet: "The card drawers: one card for every edition.", volumes: "Every edition, bound and shelved.", stacks: "Every edition, bound and shelved.",
     },
     end: {
       lines: ["The bell over the door rings once behind you.", "Market Street is louder than you remember: the streetcars, the newsboys, everyone hurrying to work as if nothing had changed.", "But you know something now.", "Somewhere out there, rules are being written that the people who live by them can vote on.", "And for once, you are early."],
@@ -584,6 +590,60 @@
       props: [{ id: "gramophone", X: -2.4, Y: 1.3, z: 4.7, w: 0.9, h: 1.0 }, { id: "books", X: 2.5, Y: 1.6, z: ZB - 0.3, w: 2.0, h: 2.6 }, { id: "slate", X: 0, Y: 2.0, z: ZB, w: 1.8, h: 1.0 }],
     },
 
+    /* the archive: every edition of the paper, bound on the shelves and carded in the drawers (the list itself: ARCH below) */
+    archive: {
+      mix: { street: 0.2, music: 1.1 },
+      layers: [
+        { z: ZB, draw(g, G) {
+          walls(g, G, { pools: [[0, 3.6, 1.15], [-2.4, 4.6, 0.6]], seed: 73, lamps: [[0, 3.8, 2.7, 1.1], [-2.4, 4.8, 2.9, 0.6]], wain: 0.95 });
+          const { P } = G, zs = ZB - 0.3;
+          /* shelves to both sides, floor to ceiling: bound volumes (dark spines, a gilt band and a year) and stacks of
+             back issues lying flat, their pale edges catching the lamp */
+          for (const [a, b] of [[-3.8, -1.25], [1.25, 3.8]]) { quad(g, P, [[a, 0, zs], [b, 0, zs], [b, 3.1, zs], [a, 3.1, zs]], tone(0.05));
+            const R = rnd(Math.round(a * 10 + 90));
+            for (let Y = 0.12, row = 0; Y < 2.85; Y += 0.46, row++) { quad(g, P, [[a + 0.05, Y, zs - 0.02], [b - 0.05, Y, zs - 0.02], [b - 0.05, Y + 0.035, zs - 0.02], [a + 0.05, Y + 0.035, zs - 0.02]], tone(0.22));
+              for (let X = a + 0.08; X < b - 0.12;) {
+                if (R() < 0.3) { /* a stack of papers lying flat */ const w = 0.36 + R() * 0.12, h = 0.12 + R() * 0.2; if (X + w > b - 0.08) break;
+                  quad(g, P, [[X, Y + 0.035, zs - 0.03], [X + w, Y + 0.035, zs - 0.03], [X + w, Y + 0.035 + h, zs - 0.03], [X, Y + 0.035 + h, zs - 0.03]], tone(0.5 + R() * 0.12));
+                  g.strokeStyle = tone(0.28, 0.6); g.lineWidth = 0.7; for (let k = 0.018; k < h; k += 0.02) { const [x0, y0] = P(X, Y + 0.035 + k, zs - 0.03), [x1] = P(X + w, 0, zs - 0.03); g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y0); g.stroke(); }
+                  X += w + 0.02; continue; }
+                const w = 0.07 + R() * 0.05, h = 0.32 + R() * 0.06, c = 0.08 + R() * 0.12;
+                quad(g, P, [[X, Y + 0.035, zs - 0.03], [X + w, Y + 0.035, zs - 0.03], [X + w, Y + 0.035 + h, zs - 0.03], [X, Y + 0.035 + h, zs - 0.03]], tone(c));
+                quad(g, P, [[X, Y + 0.035 + h * 0.72, zs - 0.035], [X + w, Y + 0.035 + h * 0.72, zs - 0.035], [X + w, Y + 0.035 + h * 0.78, zs - 0.035], [X, Y + 0.035 + h * 0.78, zs - 0.035]], "rgba(214,178,110,.55)");
+                X += w + 0.006; } } }
+          /* the painted sign over the drawers */
+          { const [x, y] = P(0, 2.45, ZB), s = G.s(ZB); g.fillStyle = tone(0.06); g.fillRect(x - s * 1.0, y - s * 0.17, s * 2.0, s * 0.34);
+            g.strokeStyle = "rgba(214,178,110,.6)"; g.lineWidth = Math.max(1, s * 0.012); g.strokeRect(x - s * 0.95, y - s * 0.13, s * 1.9, s * 0.26);
+            text(g, TX.arch.sign.toUpperCase(), x, y + s * 0.005, s * 0.15, { fill: "rgba(232,204,140,.92)", face: "'Limelight', 'Old Standard TT', Georgia, 'Noto Serif SC', serif", max: s * 1.75 }); }
+          /* a reading desk at the side with a bound volume open on it */
+          box(g, G, 1.6, 2.6, 0, 0.82, 4.3, 4.9, { front: tone(0.09), top: tone(0.3) });
+          quad(g, P, [[1.75, 0.84, 4.45], [2.1, 0.86, 4.45], [2.1, 0.86, 4.75], [1.75, 0.84, 4.75]], tone(0.74));
+          quad(g, P, [[2.1, 0.86, 4.45], [2.45, 0.84, 4.45], [2.45, 0.84, 4.75], [2.1, 0.86, 4.75]], tone(0.66));
+          glow(g, ...P(2.1, 0.9, 4.6), G.s(4.6) * 0.5, 0.12);
+        } },
+        { z: 4.5, draw(g, G) {
+          /* the card cabinet under the lamp: rows of little drawers, each with a brass pull and a card in its frame */
+          const { P } = G, X0 = -0.95, X1 = 0.95, Y1 = 1.3, z0 = 4.3, z1 = 4.8;
+          box(g, G, X0, X1, 0, Y1, z0, z1, { front: tone(0.13), top: tone(0.34), side: tone(0.05) });
+          const cols = 5, rows = 5, dw = (X1 - X0 - 0.08) / cols, dh = (Y1 - 0.18) / rows;
+          for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) { const x = X0 + 0.04 + c * dw, y = 0.12 + r * dh;
+            quad(g, P, [[x + 0.012, y + 0.012, z0 - 0.005], [x + dw - 0.012, y + 0.012, z0 - 0.005], [x + dw - 0.012, y + dh - 0.012, z0 - 0.005], [x + 0.012, y + dh - 0.012, z0 - 0.005]], tone(0.2));
+            quad(g, P, [[x + dw * 0.32, y + dh * 0.58, z0 - 0.01], [x + dw * 0.68, y + dh * 0.58, z0 - 0.01], [x + dw * 0.68, y + dh * 0.82, z0 - 0.01], [x + dw * 0.32, y + dh * 0.82, z0 - 0.01]], tone(0.7, 0.9));
+            const [px, py] = P(x + dw / 2, y + dh * 0.36, z0 - 0.01), ps = G.s(z0); g.fillStyle = "#b8955a"; g.beginPath(); g.ellipse(px, py, ps * 0.035, ps * 0.016, 0, 0, 7); g.fill(); }
+          /* one drawer pulled out a little, a card standing up in it */
+          { const x = X0 + 0.04 + 2 * dw, y = 0.12 + 3 * dh; box(g, G, x + 0.01, x + dw - 0.01, y + 0.01, y + dh - 0.02, z0 - 0.22, z0, { front: tone(0.24), top: tone(0.4), side: tone(0.1) });
+            quad(g, P, [[x + 0.05, y + dh - 0.02, z0 - 0.12], [x + dw - 0.05, y + dh - 0.02, z0 - 0.12], [x + dw - 0.05, y + dh + 0.07, z0 - 0.12], [x + 0.05, y + dh + 0.07, z0 - 0.12]], tone(0.82)); }
+        } },
+        { z: 1.5, draw(g, G) {
+          /* the rolling ladder of the shelves, close by on the right and out of focus */
+          const [x, y] = G.P(1.9, 0, 1.5), s = G.s(1.5), top = G.P(0, 3.4, 1.5)[1]; g.save(); g.fillStyle = tone(0.05);
+          g.fillRect(x - s * 0.18, top, s * 0.035, y - top); g.fillRect(x + s * 0.16, top, s * 0.035, y - top);
+          for (let k = 0; k < 9; k++) { const ry = y - (k + 0.6) * s * 0.3; if (ry < top) break; g.fillRect(x - s * 0.18, ry, s * 0.375, s * 0.03); } g.restore();
+        } },
+      ],
+      props: [{ id: "cabinet", X: 0, Y: 0.65, z: 4.3, w: 1.9, h: 1.3 }, { id: "volumes", X: -2.5, Y: 1.55, z: ZB - 0.3, w: 2.5, h: 3.0 }, { id: "stacks", X: 2.5, Y: 1.95, z: ZB - 0.3, w: 2.5, h: 2.2 }],
+    },
+
     door: {
       mix: { street: 1.25, music: 0.6 },
       layers: [
@@ -642,7 +702,7 @@
     },
   };
   const DOOR = { x0: -1.5, x1: -0.3 };
-  const ORDER = ["window", "counter", "wire", "back", "door"];
+  const ORDER = ["window", "counter", "wire", "back", "archive", "door"];
   const PEOPLE = { mae: "counter", elias: "wire", prof: "back", sully: "door" };
 
   /* ============ sound: everything through the café's own mixer, so Off / Quiet / Lively rule it ============ */
@@ -870,20 +930,21 @@
           setTimeout(() => $(".cafe-edge.r").focus({ preventScroll: true }), 300); }, rest); }); });
   }
   function leave() {
-    if (!ST.on) return; ST.on = false; PREP = null; waitShow(false); desk.classList.remove("cafe-wait"); closeTalk(); END.on = false; $(".cafe-end").hidden = true; $(".ce-paper").hidden = true;
+    if (!ST.on) return; ST.on = false; PREP = null; waitShow(false); ARCH.hide(); desk.classList.remove("cafe-wait"); closeTalk(); END.on = false; $(".cafe-end").hidden = true; $(".ce-paper").hidden = true;
     desk.classList.remove("cafe-on", "cafe-away"); ui.hidden = true; S.amb.mix({ street: 1, open: 0, music: 1 }); bIn.focus({ preventScroll: true });
   }
   const mix = () => S.amb.mix(Object.assign({ open: 0 }, AREAS[ST.area].mix));
-  /* the café is walked in order: rightward only once the regular here has stamped the ticket, back any time, never round
-     the corner from the window to the door */
+  /* the café is walked in order: rightward only once the regular here has stamped the ticket (the archive has nobody to
+     ask), back any time, never round the corner from the window to the door. The archive sits between the back room and
+     the door: from the door the left edge leads into it, and from the archive the right edge back to the door. */
   const IDX = () => ORDER.indexOf(ST.area), HOST = { counter: "mae", wire: "elias", back: "prof", door: "sully" };
-  const canGo = d => d < 0 ? IDX() > 0 : IDX() < ORDER.length - 1 && (ST.area === "window" || ST.stamps.has(HOST[ST.area]));
+  const canGo = d => d < 0 ? IDX() > 0 : IDX() < ORDER.length - 1 && (!HOST[ST.area] || ST.stamps.has(HOST[ST.area]));
   function walk(d) {
     if (!ST.on || ST.pan || END.on || ST.busy) return;
     if (!canGo(d)) { if (d > 0 && HOST[ST.area] && IDX() < ORDER.length - 1) { const who = HOST[ST.area]; flash(TX.people[who].wait); for (let k = 0; k < 6; k++) setTimeout(() => AUDIO.syllable(who, !k), k * 110); } return; } closeTalk(); const to = nb(d), slow = RM || small();
     /* a room not drawn yet (a quick walker): the card for a moment, then the step */
     if (!ready(to)) { ST.busy = true; const card = setTimeout(() => waitShow(true, 0), 150); prep([to], (n, t) => waitShow(!wait.hidden, n / t)).then(() => { clearTimeout(card); waitShow(false); ST.busy = false; if (ST.on) walk(d); }); return; }
-    catPut(to, catOpen(to) ? "exit" : "wait");
+    catPut(to, catOpen(to) ? "exit" : "wait"); ARCH.hide();
     ST.pan = { from: ST.area, to, dir: d, t0: performance.now(), d: slow ? 450 : 950, fade: slow }; ST.area = to; ST.zoomT = 1; ST.hover = null;
     if (!ST.walked) { ST.walked = true; clearTimeout(ST.callT); hintEl.classList.remove("on"); $(".cafe-edge.r").classList.remove("call"); $(".cafe-call").classList.remove("on"); }
     desk.classList.toggle("cafe-away", to !== "window"); AUDIO.steps(slow ? 2 : 3); note.classList.remove("on"); place(); mix(); bake(to); loop();
@@ -892,9 +953,9 @@
      on is open, pads to it and sits again looking back over its shoulder. When a rule is carried it walks by
      twice, the very same way. Spots are fractions of the room: [x, y of the paws, sitting height]. ----- */
   const CAT_AT = { window: { wait: [0.47, 0.79, 0.17], exit: [0.925, 0.79, 0.17] }, counter: { wait: [0.11, 0.7, 0.13], exit: [0.92, 0.7, 0.13] },
-    wire: { wait: [0.08, 0.8, 0.11], exit: [0.92, 0.8, 0.11] }, back: { wait: [0.08, 0.8, 0.11], exit: [0.92, 0.8, 0.11] }, door: { wait: [0.88, 0.8, 0.11], exit: [0.44, 0.77, 0.09] } };
+    wire: { wait: [0.08, 0.8, 0.11], exit: [0.92, 0.8, 0.11] }, back: { wait: [0.08, 0.8, 0.11], exit: [0.92, 0.8, 0.11] }, archive: { wait: [0.08, 0.82, 0.11], exit: [0.92, 0.82, 0.11] }, door: { wait: [0.88, 0.8, 0.11], exit: [0.44, 0.77, 0.09] } };
   const CAT = { room: "window", spot: "wait", x: 0.47, y: 0.79, s: 0.17, walk: null, face: 1, look: 0, mew: 0, n: -1, box: null };
-  const catOpen = r => r === "door" ? ST.stamps.size === 4 : r === "window" || ST.stamps.has(HOST[r]);
+  const catOpen = r => r === "door" ? ST.stamps.size === 4 : r === "window" || !HOST[r] || ST.stamps.has(HOST[r]);
   function catPut(room, spot) { const a = CAT_AT[room][spot]; Object.assign(CAT, { room, spot, x: a[0], y: a[1], s: a[2], walk: null, gl: null, hide: false, face: room === "door" ? -1 : 1, look: 1 }); }
   function catGo(spot, ms, then) { const a = CAT_AT[CAT.room][spot], d = Math.hypot(a[0] - CAT.x, (a[1] - CAT.y) * 0.6);
     CAT.walk = { x0: CAT.x, y0: CAT.y, s0: CAT.s, a, t0: performance.now(), d: ms || Math.max(1100, d * 5600), then }; CAT.spot = spot; CAT.face = a[0] >= CAT.x ? 1 : -1; }
@@ -1011,7 +1072,7 @@
   function catClick() { const L = TX.cat.lines; CAT.n = (CAT.n + 1) % L.length; if (CAT.n % 2) AUDIO.purr(); else catMew(true); CAT.mew = performance.now(); flash(L[CAT.n], CAT.box);
     /* the first line is the one about her food, and that rule is real: her bowl is on the testnet */
     if (CAT.n === 0) { const a = document.createElement("a"); a.href = "https://agorzilla.com/cat/"; a.target = "_blank"; a.rel = "noopener"; a.textContent = TX.cat.bowl; note.appendChild(a); clearTimeout(flashT); flashT = setTimeout(() => note.classList.remove("on"), 9000); } }
-  function arrived() { ST.arriveAt = performance.now(); if (ST.area === "wire") AUDIO.ticker(); keep(); prep([nb(1), nb(-1)]); }
+  function arrived() { ST.arriveAt = performance.now(); if (ST.area === "wire") AUDIO.ticker(); if (ST.area === "archive") ARCH.show(); keep(); prep([nb(1), nb(-1)]); }
 
   /* ----- talking ----- */
   let TYPE = null;
@@ -1192,6 +1253,60 @@
   }
   function lookOff() { if (!LOOK) return false; clearInterval(LOOK.tick); LOOK = null; if (look.contains(document.activeElement)) document.activeElement.blur(); look.classList.remove("on"); setTimeout(() => { if (!LOOK) look.hidden = true; }, 260); return true; }
   look.addEventListener("click", e => { e.stopPropagation(); lookOff(); });
+
+  /* ----- the archive: every edition of the paper, newest first, a page of them at a time (never a scrolling list);
+     one opens to its headline and teaser and a link to read that whole front page (gazette/?edition=<date>) ----- */
+  const ARCH = (() => {
+    const el = document.createElement("div"); el.className = "cafe-arch"; el.setAttribute("role", "dialog"); el.hidden = true;
+    el.innerHTML = `<div class="ca-top"><b class="ca-h"></b><button class="ca-x" data-a="x"></button></div><p class="ca-sub"></p><div class="ca-body"></div><div class="ca-pg"></div>`;
+    ui.appendChild(el);
+    const EDS = { list: null, at: 0, busy: null, err: false }, V = { page: 0, open: null };
+    const $a = q => el.querySelector(q);
+    const load = () => { if (EDS.list && Date.now() - EDS.at < 600000) return Promise.resolve(EDS.list); if (EDS.busy) return EDS.busy;
+      const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 6000);
+      return EDS.busy = fetch("https://node.tauhud.com/recap/gazette/editions.json", { cache: "no-store", signal: ctl.signal }).then(r => r.ok ? r.json() : Promise.reject(r.status))
+        .then(a => { /* one entry per date and per number, newest first: a list read twice never shows an edition twice */
+          const seen = new Set(), out = []; for (const x of Array.isArray(a) ? a : []) { if (!x || !/^\d{4}-\d{2}-\d{2}$/.test(x.date || "") || seen.has(x.date) || seen.has("n" + x.no)) continue; seen.add(x.date); seen.add("n" + x.no); out.push(x); }
+          out.sort((p, q) => (q.no || 0) - (p.no || 0) || (q.date > p.date ? 1 : -1)); EDS.list = out; EDS.at = Date.now(); EDS.err = false; return out; })
+        .catch(() => { EDS.err = true; return null; }).finally(() => { clearTimeout(to); EDS.busy = null; }); };
+    const when = x => { const d = new Date(x.date + "T12:00:00Z"); return d.toLocaleDateString(LANG === "en" ? "en-US" : LANG, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }); };
+    const onTable = x => { const w = window.GAZETTE_WEEK; return !!(w && w.date === x.date); };
+    /* how many editions fit on a page: the rows are at least 44 px tall, the panel never reaches past the screen */
+    const perPage = () => { const r = el.getBoundingClientRect(), b = $a(".ca-body").getBoundingClientRect(), room = (desk.clientHeight - 24) - (b.top - desk.getBoundingClientRect().top) - 64;
+      return Math.max(2, Math.min(8, Math.floor(room / (small() ? 50 : 54)))) || 4; };
+    function draw() {
+      const A = TX.arch, body = $a(".ca-body"), pg = $a(".ca-pg");
+      $a(".ca-h").textContent = A.title; $a(".ca-sub").textContent = A.sub; $a(".ca-x").textContent = "✕"; $a(".ca-x").setAttribute("aria-label", A.close); el.setAttribute("aria-label", A.title);
+      body.innerHTML = ""; pg.innerHTML = "";
+      const list = EDS.list;
+      if (!list) { body.innerHTML = `<p class="ca-msg">${esc(EDS.err ? A.fail : A.wait)}</p>`; return; }
+      if (!list.length) { body.innerHTML = `<p class="ca-msg">${esc(A.none)}</p>`; return; }
+      const x = V.open && list.find(e => e.date === V.open);
+      if (x) {   /* one edition, opened */
+        const href = "?edition=" + x.date + (LANG !== "en" ? "&lang=" + LANG : "");
+        body.innerHTML = `<div class="ca-one"><p class="ca-meta">${esc(fmt(A.no, { n: x.no }))} · ${esc(tr(x.printed) || when(x))}${x.period ? " · " + esc(tr(x.period)) : ""}</p>
+          <h3 class="ca-head">${esc(tr(x.banner) || x.headline || "")}</h3><p class="ca-deck">${esc(tr(x.teaser) || x.deck || "")}</p></div>`;
+        pg.innerHTML = `<button data-a="all">${esc(A.all)}</button><a class="ca-read" href="${href}">${esc(A.read)}</a>`;
+        pg.querySelector(".ca-read").focus({ preventScroll: true }); return; }
+      const n = perPage(), pages = Math.max(1, Math.ceil(list.length / n)); V.page = Math.max(0, Math.min(pages - 1, V.page));
+      const ul = document.createElement("ol"); ul.className = "ca-list";
+      for (const e of list.slice(V.page * n, V.page * n + n)) { const li = document.createElement("li"), b = document.createElement("button"); b.dataset.d = e.date; b.className = onTable(e) ? "here" : "";
+        b.innerHTML = `<span class="ca-no">${esc(fmt(A.no, { n: e.no }))}<i>${esc(when(e))}</i></span><span class="ca-t">${esc(tr(e.banner) || e.headline || "")}${onTable(e) ? `<em>${esc(A.here)}</em>` : ""}</span>`;
+        li.appendChild(b); ul.appendChild(li); }
+      body.appendChild(ul);
+      if (pages > 1) pg.innerHTML = `<button data-a="newer"${V.page ? "" : " disabled"}>${esc(A.newer)}</button><span>${esc(fmt(A.page, { a: V.page + 1, b: pages }))}</span><button data-a="older"${V.page < pages - 1 ? "" : " disabled"}>${esc(A.older)}</button>`;
+    }
+    el.addEventListener("click", e => { e.stopPropagation(); const b = e.target.closest("button"); if (!b) return;
+      const a = b.dataset.a; if (a === "x") return hide(); if (a === "all") { V.open = null; draw(); const f = el.querySelector(".ca-list button"); f && f.focus({ preventScroll: true }); return; }
+      if (a === "newer") V.page--; else if (a === "older") V.page++; else if (b.dataset.d) { V.open = b.dataset.d; AUDIO.rustle(); } draw(); });
+    el.addEventListener("keydown", e => { if (e.key === "Escape") return;
+      if (/^Arrow(Up|Down)$/.test(e.key)) { const bs = [...el.querySelectorAll("button:not([disabled]), a")], i = bs.indexOf(document.activeElement); if (!bs.length) return; e.preventDefault();
+        bs[(i + (e.key === "ArrowDown" ? 1 : -1) + bs.length) % bs.length].focus({ preventScroll: true }); } });
+    function show() { if (ST.area !== "archive" || END.on) return; lookOff(); note.classList.remove("on"); hintEl.classList.remove("on"); el.hidden = false; requestAnimationFrame(() => el.classList.add("on"));
+      draw(); load().then(() => { if (!el.hidden) { draw(); if (!V.open) { const f = el.querySelector(".ca-list button.here") || el.querySelector(".ca-list button"); f && f.focus({ preventScroll: true }); } } }); }
+    function hide() { if (el.hidden) return false; if (el.contains(document.activeElement)) document.activeElement.blur(); el.classList.remove("on"); el.hidden = true; V.open = null; return true; }
+    return { show, hide, on: () => !el.hidden, ids: new Set(["cabinet", "volumes", "stacks"]) };
+  })();
   const at = e => { const r = cv.getBoundingClientRect(); let x = e.clientX - r.left, y = e.clientY - r.top; if (ST.zoom > 1.001) { x = (x - ST.zx) / ST.zoom + ST.zx; y = (y - ST.zy) / ST.zoom + ST.zy; } return [x, y]; };
   const inside = (b, [x, y]) => b && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
   function pick(e) {
@@ -1216,6 +1331,7 @@
     if (h.person) return talk(h.person);
     if (h.prop.id === "board" && ST.task === "chalk") return chalkIn();
     if (h.prop.id === "door") { if (["mae", "elias", "prof", "sully"].every(k => ST.stamps.has(k))) return outside(); return flash(TX.people.sully.shut, h.prop); }
+    if (ARCH.ids.has(h.prop.id)) { AUDIO.rustle(); return ARCH.show(); }
     lookAt(h.prop.id, h.prop); });
   cv.addEventListener("click", e => e.stopPropagation());
   cv.addEventListener("pointermove", e => { if (!ST.on) return; const r = cv.getBoundingClientRect(); if (!touch && !RM) ST.camT = ((e.clientX - r.left) / r.width - 0.5) * 0.36;
@@ -1226,7 +1342,8 @@
   /* the keyboard: arrows walk, Enter and Space go on, numbers choose, Escape steps back */
   addEventListener("keydown", e => { if (!ST.on) return; if (e.target.closest && e.target.closest("input, textarea, select")) return;
     e.stopImmediatePropagation();
-    if (e.key === "Escape") { e.preventDefault(); return lookOff() || (ST.talk ? closeTalk() : leave()); }
+    if (e.key === "Escape") { e.preventDefault(); return lookOff() || ARCH.hide() || (ST.talk ? closeTalk() : leave()); }
+    if (ARCH.on() && e.target.closest && e.target.closest(".cafe-arch")) return;   /* keys inside the archive belong to its buttons */
     if (LOOK) { if (e.key === "Enter" || e.key === " " || /^Arrow/.test(e.key)) { e.preventDefault(); lookOff(); } return; }
     if (END.on) { if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") { if (!(e.target.closest && e.target.closest(".ce-paper"))) { e.preventDefault(); nextCard(); } } return; }
     if (ST.task === "chalk" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); return chalkIn(); }
@@ -1241,7 +1358,7 @@
       e.preventDefault(); ST.kProp = ST.hoverProp = things[i < 0 ? (e.shiftKey ? things.length - 1 : 0) : j].id; return; }
     if (e.key === "ArrowLeft") { e.preventDefault(); ST.kProp = null; walk(-1); } else if (e.key === "ArrowRight") { e.preventDefault(); ST.kProp = null; walk(1); }
     else if ((e.key === "Enter" || e.key === " ") && !(e.target.closest && e.target.closest("button"))) { const k = ST.kProp && things.find(q => q.id === ST.kProp);
-      if (k) { e.preventDefault(); if (k.id === "door") return outside(); if (k.id === "board" && ST.task === "chalk") return chalkIn(); return lookAt(k.id, k); }
+      if (k) { e.preventDefault(); if (k.id === "door") return outside(); if (k.id === "board" && ST.task === "chalk") return chalkIn(); if (ARCH.ids.has(k.id)) return ARCH.show(); return lookAt(k.id, k); }
       if (AREAS[ST.area].person) { e.preventDefault(); talk(AREAS[ST.area].person.id); } } }, true);
 
   /* ============ the ending: out through the door onto Market Street ============ */
@@ -1302,12 +1419,12 @@
   let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { labels(); if (ST.on) { size(); loop(); } }, 160); }).observe(desk);
 
   /* other languages come in their own small file */
-  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=11`; s.onload = labels; document.head.appendChild(s); }
+  if ((LANG === "zh" && !window.CAFE_ZH) || (LANG === "ja" && !window.CAFE_JA)) { const s = document.createElement("script"); s.src = `cafe-${LANG}.js?v=16`; s.onload = labels; document.head.appendChild(s); }
   labels();
   /* ?walk (the shared link) opens the café straight away */
   if (/[?&]walk\b/.test(location.search)) setTimeout(() => enter(), 600);
   /* ?cafe=<room> opens the café there (and ?cafe-talk=<who>&cafe-line=<n> for pictures) */
-  { const m = /[?&]cafe=(\w+)/.exec(location.search); if (m) window.CAFE_CAT = () => CAT.seen; if (m) setTimeout(() => { enter(); if (AREAS[m[1]] && m[1] !== "window") { ST.area = m[1]; catPut(m[1], "wait"); desk.classList.add("cafe-away"); place(); mix(); }
+  { const m = /[?&]cafe=(\w+)/.exec(location.search); if (m) window.CAFE_CAT = () => CAT.seen; if (m) setTimeout(() => { enter(); if (AREAS[m[1]] && m[1] !== "window") { ST.area = m[1]; catPut(m[1], "wait"); desk.classList.add("cafe-away"); place(); mix(); if (m[1] === "archive") setTimeout(ARCH.show, 900); }
     const lk = /[?&]cafe-look=(\w+)/.exec(location.search); if (lk) setTimeout(() => { const b = (ST.boxes.props || []).find(q => q.id === lk[1]); lookAt(lk[1], b); }, 1200);
     const tk = /[?&]cafe-talk=(\w+)/.exec(location.search); if (tk) setTimeout(() => { if (tk[1] === "end") { ["mae", "elias", "prof", "sully"].forEach(k => ST.stamps.add(k)); ticket(); outside(); } else if (tk[1] === "gold") { ["mae", "elias", "prof"].forEach(k => ST.stamps.add(k)); ticket(); talk("sully"); } else talk(tk[1]); }, 400); }, 300); }
 })();

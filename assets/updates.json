@@ -2981,7 +2981,7 @@
   {"tag": "Wallet", "on": "2026-11-13", "link": "/wallet/#rules-mine", "html": "Personal rules for every wallet: IDNI lifted the testnet's limit of two accounts with a rule, so the wallet, the Guardian and Start here drop the two rule places and the waiting line. Freeze now reads the amount, because a rule that only says “block” is refused; the wallet checks the node's new limits before you sign, and the Playground checks the new rule shape and lets a rule read your balance."},
   {"tag": "Blog", "on": "2026-11-13", "link": "/blog/", "html": "Blog: big news from IDNI now gets its own article. When IDNI’s changes bring something every user of the Tau Net testnet can try, our server writes an article that goes deeper than the daily post: what changed, what it gives you, where it stops and what is still open, written only from IDNI’s changes and documentation. It waits as a draft first and goes on the blog by itself only when every number in it is found in IDNI’s changes."},
   {"tag": "Blog", "on": "2026-11-13", "link": "/blog/?p=2026-11-13-personal-rules-for-everyone", "html": "Blog: every account on the Tau Net testnet can now have its own payment rule. A new article explains what a personal rule is, what changed on 12 November, what it gives you (limits, co-signers, a floor under your balance), where it stops, and where to try one on tauhud.com.", "major": {"id": "blog-personal-rules-for-everyone", "title": "Every account on the Tau Net testnet can now have its own payment rule", "text": "IDNI changed personal rules on 12 November: every account can now hold its own. What a rule gives you, where it stops, and where to try one.", "link": "/blog/?p=2026-11-13-personal-rules-for-everyone", "image": "/assets/shots/blog-personal-rules-for-everyone.png"}},
-  {"tag": "Shop", "on": "2026-11-13", "link": "https://tau-hud-shop.fourthwall.com/", "html": "Shop: the Tau HUD shop at Fourthwall has its first products. Three knitted Christmas sweaters, five tees that quote real answers of a testnet node, a sticker sheet and a mug, each made to order. Crew members get 10 or 20 % off at checkout. On the HUD, a shop notice now stands where the newspaper clipping was; The Daily Consensus stays in the menu under Read. The news line and the Crew page point to the shop too. Fan merchandise, not affiliated with IDNI."},
+  {"tag": "Shop", "on": "2026-11-13", "link": "https://tau-hud-shop.fourthwall.com/", "html": "Shop: the Tau HUD shop at Fourthwall has its first products. Three knitted Christmas sweaters, five tees that quote real answers of a testnet node, a sticker sheet and a mug, each made to order. Crew members get 10 or 20 % off at checkout. On the HUD, a shop notice now stands where the newspaper clipping was; The Daily Consensus stays in the menu under Read. The news line and the Crew page point to the shop too. Fan merchandise, not run by IDNI."},
   {
     "tag": "HUD",
     "on": "2026-11-13",
@@ -3072,7 +3072,67 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-15",
     "link": "/rabbit/",
-    "html": "White Rabbit Key: every wallet that sent a real transaction on Tau Net testnet in the last day now walks on the island by itself. Hover one to see it is a real wallet, click it for what the chain says about it: its rules, Agorzilla meals, votes, No Memo chapters, island elections, read as traits like night owl or rule writer, and it carries what it earned. Your own test wallet can choose its look with one transaction."
+    "html": "White Rabbit Key: every wallet that sent a real transaction on Tau Net testnet in the last day now walks on the island by itself. Hover one to see it is a real wallet, click it for what the chain says about it: its rules, Agorzilla meals, votes, No Memo chapters, island elections, read as traits like night owl or rule writer, and it carries what it earned. Your own test wallet can choose its look with one transaction.",
+    "x": {"id": "rabbit-walkers", "account": "hud", "from": "2026-11-16T11:00:00Z", "text": "Every wallet that used Tau Net testnet in the last 24 hours now walks on the White Rabbit Key island.\n\nHover one: it's a real wallet. Click it: its rules, votes and Agorzilla meals, read from the chain.\n\nYours can pick its look with one transaction.\n\n#TauNet", "film": {"url": "https://tauhud.com/rabbit/", "seconds": 13, "settle": 3000, "steps": [["js", "window.ISLE_WALKERS && ISLE_WALKERS.open('board')"], ["wait", 1200], ["click?", ".wk-card button:has-text('More')"], ["wait", 900], ["click?", ".wk-row"], ["wait", 1000], ["zoom", ".wk-card", 1.3, 1800], ["wait", 2500]]}}
+  },
+  {
+    "tag": "Chinese",
+    "on": "2026-11-15",
+    "html": "Chinese: green and red mean the same as everywhere again. Green is live, OK and accepted, red is offline, an error or a refusal. Only where money moves does the Chinese market custom apply: a balance that rises shows red, one that falls shows green (Explorer, account pages). Badges with ?lang=zh stay green when live."
+  },
+  {
+    "tag": "Cruise logbook",
+    "on": "2026-11-15",
+    "link": "/cruise/",
+    "html": "Cruise logbook: on wide screens the page sits centred again instead of in the right half, and the node’s answer to an escrow or a skipped line stays on its own row. On laptops those short notes now show too."
+  },
+  {
+    "tag": "Newspaper",
+    "on": "2026-11-15",
+    "link": "/gazette/?cafe=archive",
+    "html": "Newspaper: the café walk has a new room between the back room and the door, the archive. It keeps every edition of The Daily Consensus, newest first: open one to see its headline and teaser, then read that whole front page. From the door, go left to get in. And no two editions ever print the same headline."
+  },
+  {
+    "tag": "Rules in numbers",
+    "on": "2026-11-15",
+    "link": "/rules/numbers/",
+    "html": "Rules in numbers: a new page shows what personal rules check (a most per payment, chosen addresses, a time lock, a second signature, a reserve, a freeze), who holds them with our own wallets counted apart, how they got them, rule offers and how many were accepted, and a day-by-day history kept across chain restarts. Each kind says what it guards against and what it cannot do. On the HUD, the “Worth a look” line now opens the wallet whose rule held a payment back, the refused list and the block, and says when that rule has the exact shape Tau HUD’s builder writes."
+  },
+  {
+    "tag": "Rules in numbers",
+    "on": "2026-11-15",
+    "link": "/rules/numbers/",
+    "html": "Rules in numbers: two more numbers. How many test AGRS the wallets with a rule hold, and how many payments our node refused each day because the sender’s own rule said no (only what passed our node; refusals at other nodes never reach it)."
+  },
+  {
+    "tag": "Rule offers",
+    "on": "2026-11-15",
+    "link": "/",
+    "html": "Rule offers on the HUD: click an offer and the offerer and recipient open their accounts. The popup says who they are where we know it (a showcase wallet, an IDNI genesis wallet, a game player), the rule each holds now, and how many offers each made and received. A rule that keeps a reserve ((i2 − i1) ≥ X) was shown as a spending limit; it now reads as a balance floor."
+  },
+  {
+    "tag": "My Tau card",
+    "on": "2026-11-15",
+    "link": "/card/",
+    "html": "My Tau card counts Déjà too: the meals tile shows Agorzilla’s meals and the days Déjà, the café cat on agorzilla.com/cat/, ate with your wallet among the three that agreed, and in green how often yours was the third, the one that made her agreement hold."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/",
+    "html": "White Rabbit Key: the islanders talk about Tau Net today. They notice the wallets that walk on the island (newcomers, night owls, Agorzilla’s feeders, rule writers, IDNI’s grey accounts) and the personal rules on the chain (a most per payment, a time lock, a second signature, a reserve, a freeze, rule offers, a payment a wallet’s own rule refused today, a restart that took every rule with it). The lines follow the live numbers. New free questions: who the walkers are, what a personal rule is, what a guardian protects against, whether a pact can be written on the chain."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/",
+    "html": "White Rabbit Key: the islanders walk like people now. They keep to the paths, beaches, piers, rope bridges and stairs, and no longer cross houses, roofs, cliffs or water. If your test wallet walks on the island, it is yours to walk: click anywhere and your islander goes to the nearest spot it can reach on foot; click a place and it walks to the door first, and the place opens as it arrives. Everyone on the island sees it walk the same way. Only your wallet can walk it: your browser signs with its key once a day."
+  },
+  {
+    "tag": "Wallets",
+    "on": "2026-11-16",
+    "link": "/account/",
+    "html": "Wallets from our apps: where the HUD and the account page show a wallet, they now say when it came from one of our apps. A wallet whose first transaction we know of was signed in Tau HUD, No Memo, White Rabbit Key or Agorzilla reads “Started in Tau HUD” and so on, with the day; one that only sent through them later reads “Uses …”. It shows next to a rule holder, in a rule offer’s popup, in Worth a look and as a tag on the account page. Only for visitors’ wallets, never for IDNI’s or our own, and only when our server saw it: a wallet from before its record began never gets a start. A wallet is a key, not a person."
   },
   {"tag": "No Memo", "on": "2026-11-16", "link": "/nomemo/", "html": "No Memo: the vaults. Five wallets Tau HUD runs on the testnet, played as if their keys had leaked: our server signs any plain payment a player asks for and never changes a vault’s rule, so each vault’s real rule on the chain is its only lock. Read the rule in Tau and drain what it lets through: the till caps each payment, the reserve keeps a floor, the window lets only a narrow band of amounts out, the clock opens for half an hour a week. The keeper takes a rule you write for it if it passes its checklist of test payments, judged by the real Tau engine, and then it is yours to drain for ten minutes. New rules every Monday; a refused try costs nothing. Type vaults."}
 ]

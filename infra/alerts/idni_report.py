@@ -12,7 +12,8 @@ Every number comes from our own public data, counted here, never written by a la
 Wording: our own trouble (our node not answering, behind, our relay down, our timeouts) stands under "On our side",
 in our words; what the testnet did right is credited; nothing blames IDNI or the testnet; no hype; no names.
 
-Once a week (REPORT_WEEKDAY/REPORT_HOUR, Sunday 18:00 German time) the blog loop writes the week's report as an
+Since 15 November 2026 the week goes to the blog instead (testnet_week.py, a draft the owner publishes); this report is
+only made by hand (up report). Before, once a week (REPORT_WEEKDAY/REPORT_HOUR, Sunday 18:00 German time) the blog loop wrote the week's report as an
 unlisted page, node.tauhud.com/idni-report/<week>-<code>.html: the text, a button that opens the pre-filled issue on
 GitHub (title and text in the link, editable before it is sent) and a copy button; and tells the owner's private
 Telegram chat (tickerwatch.tell, `up owner` sets it), never the channel. Nothing is ever filed by itself.
@@ -50,7 +51,7 @@ NEW_ISSUE = f"https://github.com/{REPO}/issues/new"
 URL_MAX = 8000          # GitHub refuses longer new-issue links; the report gets shorter until it fits
 RETRY = 3600
 UP = 'ssh root@node.tauhud.com "sh /opt/tau-command-hud/infra/up.sh {}"'
-NOT_AFFILIATED = "Tau HUD is a community project, not affiliated with IDNI."
+NOT_AFFILIATED = "Tau HUD is a community project, not run by IDNI."
 PATCHES = "https://github.com/jimb000o/tau-command-hud/tree/main/infra/node/patches"
 DAY = 86400
 

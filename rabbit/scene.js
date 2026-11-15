@@ -1254,10 +1254,33 @@
      a new layout moves them. The anchor sits high enough that the hull stays clear of the radio bar on a small laptop (1280×720) */
   const SPOT = { beam: [300, 445], blink: [1112, 299], gather: [790, 640], cat: [370, 700, 1180, 712], anchor: [1395, 780], stand: {}, over: {}, crowd: 1,
     jungle: [[760, 235], [985, 205], [455, 440], [1180, 560], [330, 285]] };   // where the legend may look out of the leaves
+  /* the ways of the painted island (paths.js), null on a painting without traced ways and on the drawn island */
+  const ways = () => (painted("island") && window.ISLE_PATHS ? ISLE_PATHS.of(ART.img.island.f) : null);
   function rabbitStep(dt, t) {
+    const N = ways();
+    if (N && RB.N !== N) { RB.N = N; RB.node = N.near(RB.x, RB.y); RB.way = null; if (RB.goal) toPlace(RB.goal); else { [RB.x, RB.y] = N.stand(RB.node); RB.tx = RB.x; RB.ty = RB.y; } }
+    if (RB.way && Math.hypot(RB.tx - RB.x, RB.ty - RB.y) <= 2) {   // on its way along the paths: the next bend
+      if (RB.wi < RB.way.length) { [RB.tx, RB.ty] = RB.way[RB.wi]; RB.wi += 1; } else RB.way = null;
+    }
     const d = Math.hypot(RB.tx - RB.x, RB.ty - RB.y);
     if (d > 2) { RB.hop += dt * 0.012; const v = Math.min(d, dt * 0.11); RB.x += (RB.tx - RB.x) / d * v; RB.y += (RB.ty - RB.y) / d * v; RB.dir = RB.tx > RB.x ? 1 : -1; }
-    else { RB.hop = 0; if (t > RB.next && !RB.goal) { RB.next = t + 5000 + Math.random() * 7000; RB.tx = RB.x + (Math.random() - 0.5) * 40; RB.ty = RB.y + (Math.random() - 0.5) * 10; } }
+    else {
+      RB.hop = 0;
+      if (t > RB.next && !RB.goal) {
+        RB.next = t + 5000 + Math.random() * 7000;
+        if (RB.N) [RB.tx, RB.ty] = RB.N.stand(RB.node);   // a hop about where it is, never into a wall
+        else { RB.tx = RB.x + (Math.random() - 0.5) * 40; RB.ty = RB.y + (Math.random() - 0.5) * 10; }
+      }
+    }
+  }
+  /* the rabbit goes to a place: along the paths where the painting has them, else straight to beside it */
+  function toPlace(id) {
+    const N = ways(), n = N ? N.door(id) : null;
+    if (N && n != null) {
+      const from = RB.node != null ? RB.node : N.near(RB.x, RB.y), way = N.route(RB.x, RB.y, from, n, 0);
+      RB.N = N; RB.node = n; if (way) { RB.way = way; RB.wi = 1; RB.tx = RB.x; RB.ty = RB.y; return; }
+    }
+    const p = PLACES[id]; RB.way = null; RB.tx = p.x + (id === "book" ? 46 : 0) + (p.x > 800 ? -40 : 40); RB.ty = p.y + 16;
   }
   function rabbit(g, t) {
     const up = RB.hop ? Math.abs(Math.sin(RB.hop * Math.PI)) * 7 : 0, x = RB.x, y = RB.y - up, ear = Math.sin(t * 0.004) > 0.96 ? 0.35 : 0;
@@ -2274,7 +2297,7 @@
     requestAnimationFrame(frame);
   }
   window.COVE_SCENE = {
-    mount, hit, focus, places: PLACES, toScreen, canPan: () => canPan(),
+    mount, hit, focus, places: PLACES, toScreen, toWorld, canPan: () => canPan(),
     setHour(h, now) { if (!LIGHT.game) return; S.hourT = h; if (now) S.hour = h; },   // the light follows the clock in Germany (see CLOCK)
     clock: () => { const m = Math.floor(berlinMinutes()); return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); },
     host(fn, tall) { S.hostFn = fn; S.hostTall = !!tall; },
@@ -2290,7 +2313,9 @@
     ship(v) { SHIP.s = v || null; },
     ping(id) { if (PLACES[id] && SHIP.pings.length < 40) SHIP.pings.push({ id, t0: performance.now() + Math.random() * 400 }); },
     /* the rabbit hops to a place and waits beside it (null: it wanders) */
-    rabbit(id) { RB.goal = id; if (id && PLACES[id]) { const p = PLACES[id]; RB.tx = p.x + (id === "book" ? 46 : 0) + (p.x > 800 ? -40 : 40); RB.ty = p.y + 16; } },
+    rabbit(id) { RB.goal = id; if (id && PLACES[id]) toPlace(id); },
+    /* where people can walk on the painting that shows (paths.js), or null */
+    ways,
     get hour() { return S.hour; },
     plate, art: ART,
   };

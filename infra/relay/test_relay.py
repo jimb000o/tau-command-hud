@@ -10,6 +10,7 @@ import asyncio
 import json
 import os
 import sys
+import re
 import tempfile
 import time
 import urllib.request
@@ -22,7 +23,7 @@ with open(EVENTS, "w") as f:
 CHAIN = os.path.join(os.path.dirname(EVENTS), "chain.jsonl")
 BOARD = os.path.join(os.path.dirname(EVENTS), "community.json")
 PEERS = os.path.join(os.path.dirname(EVENTS), "peers.json")
-os.environ.update(PEERS_PATH=PEERS, BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, SENT_PATH=EVENTS + ".sent", CHAT_PATH=EVENTS + ".chat", CHAT_KEY_PATH=EVENTS + ".chatkey", ROADMAP_PATH=EVENTS + ".roadmap", CHAINHIST_PATH=EVENTS + ".chainhist", DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
+os.environ.update(PEERS_PATH=PEERS, BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, SENT_PATH=EVENTS + ".sent", CHAT_PATH=EVENTS + ".chat", CHAT_KEY_PATH=EVENTS + ".chatkey", ROADMAP_PATH=EVENTS + ".roadmap", CHAINHIST_PATH=EVENTS + ".chainhist", RULEDAYS_PATH=EVENTS + ".ruledays", DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
 os.environ["KNOWN_NODES_PROBE"] = "0"   # no TCP checks of real addresses from a test
 os.environ.update(UPSTREAM_URL="ws://127.0.0.1:18765", LISTEN_HOST="127.0.0.1", LISTEN_PORT="18766",
                   TRUST_PROXY="1", MAX_PER_IP="3", CLIENT_BURST="20", LOOKUP_CACHE_SECONDS="10", GOV_POLL_SECONDS="4", TAU_GOVERNANCE_OPEN_ADMISSION="true")
@@ -135,6 +136,9 @@ async def mock_node(ws):
             await ws.send(relay.envelope_ok(cmd, {"offer_id": parts[1], "verdict": "clean", "layers": []}))
         elif cmd in ("sendtx", "checktx"):
             tx = json.loads(msg[len(cmd):])
+            if cmd == "sendtx" and tx.get("fee_limit") == "11":   # a payment the sender's own rule says no to
+                await ws.send(relay.envelope_error(cmd, "Transaction rejected: the sender's own policy clause blocked transfer #1 (o5 = 0)", "POLICY_REJECTED"))
+                continue
             await ws.send(relay.envelope_ok(cmd, {"ok": True, "tx_hash": "cd" * 32, "seen_type": tx["tx_type"]}))
         else:
             await ws.send(relay.envelope_error(cmd, "should never reach the node", "UNKNOWN_COMMAND"))
@@ -250,6 +254,22 @@ async def main():
             rules = json.loads(body)
             check(ctype == "application/json" and "places" not in rules and rules["limit"] is None and rules["holders"] == [BOB] and rules["taken"] == 1,
                   f"/rules counts BOB, not CAROL's neutral rule {rules}")
+            # /rules/numbers: BOB's rule sorted by kind, written down for today, kept in a file across restarts
+            ctype, body = await get("/rules/numbers")
+            nums = json.loads(body)
+            today = time.strftime("%Y-%m-%d", time.gmtime())
+            check(ctype == "application/json" and nums["now"]["holders"]["people"] == 1 and sum(nums["now"]["kinds"]["people"].values()) >= 1
+                  and nums["history"]["days"][today]["new"]["people"] == 1 and nums["now"]["how"]["people"]["own"] == 1
+                  and nums["offers"]["by"]["people"]["made"] == 0, f"/rules/numbers counts BOB's rule {nums}")
+            with open(EVENTS + ".ruledays") as f:
+                check(BOB in json.load(f)["last"], "the rule record is on disk")
+            check(nums["now"]["agrs"]["people"] == 100000, f"the AGRS behind the rules {nums['now'].get('agrs')}")
+            pay = {**good, "fee_limit": "11", "operations": {"1": [["ab" * 48, "cd" * 48, "5"]]}}
+            check((await ask(ws, "sendtx " + json.dumps(pay)))["status"] == "error", "a payment its own rule refuses")
+            ruled = {**good, "fee_limit": "11"}   # a rule that fails, with a payment beside it: not counted as held back
+            await ask(ws, "sendtx " + json.dumps(ruled))
+            _, body = await get("/rules/numbers")
+            check(json.loads(body)["history"]["days"][today]["held"]["people"] == 1, "held back by its own rule: counted once, per day")
             sent = [x for x in mock["commands"] if x.startswith("sendtx ")][-1]
             check(json.loads(sent[7:])["operations"]["0"] == good["operations"]["0"], "rule text with spaces arrives intact")
             # /rulewall: one entry per rule text, the neutral clause left out
@@ -643,7 +663,8 @@ async def main():
               and api["status"] in ("synced", "catching_up"), f"/api/v1/summary {api['status']} {api['height']}")
         ctype, svg = await get("/api/v1/badge/height.svg")
         check(ctype.startswith("image/svg+xml") and "Tau block" in svg, "height badge over HTTP")
-        check("#39ff8a" not in (await get("/api/v1/badge/height.svg?lang=zh"))[1], "?lang=zh badge never green")
+        zsvg = (await get("/api/v1/badge/height.svg?lang=zh"))[1]
+        check(re.findall(r'fill="(#[0-9a-f]+)"', zsvg) == re.findall(r'fill="(#[0-9a-f]+)"', svg) and "#ff3b52" not in zsvg, "?lang=zh badge the same colours as without (status, not price)")
 
         minter.cancel()
         runner.cancel()

@@ -353,6 +353,7 @@ def berlin_day(t: float) -> dt.date:
 # short. CRUISE_EXTRA adds more the same way: "2026-11-22 15 queen; 2026-11-25 17 dryrun".
 EXTRA_CALLS = [
     ("2026-11-15", 15, "queen"),   # the Queen's call of 14 Nov ended after 12 minutes when the testnet started over
+    ("2026-11-16", 15, "queen"),   # and the make-up call of 15 Nov after 8 minutes, again with a testnet restart (IDNI: outages expected after a big update)
 ]
 
 

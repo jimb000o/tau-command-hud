@@ -176,7 +176,7 @@ header.trail .chip.unoff.sim.soon { animation: navSoon 1.6s ease-in-out infinite
   header.trail .brand .bn { font-size: 19px; }
   header.trail .brand h1.bt { font-size: 11px; letter-spacing: .14em; line-height: 1.3; white-space: normal; }
   header.trail .chip.unoff { order: 2; font-size: 0; letter-spacing: 0; padding: 4px 9px; }
-  header.trail .chip.unoff::after { content: "Unofficial · not affiliated with IDNI"; font-size: 11px; letter-spacing: .03em; }
+  header.trail .chip.unoff::after { content: "Unofficial · not run by IDNI"; font-size: 11px; letter-spacing: .03em; }
   header.trail .chips { order: 3; flex: 1 1 100%; width: 100%; flex-wrap: wrap; gap: 6px; margin: 0; }
   header.trail .chip { font-size: 11px; padding: 4px 9px; letter-spacing: .04em; }
   header.trail #tnNet, header.trail #tnRev, header.trail #tnFee { display: none; }

@@ -34,7 +34,7 @@ TauI18n.add({ strings: {
   "no landing": "未登陆",
   "left": "离开",
   "the ship’s own events, with the testnet’s state at that moment.": "是船自身的事件，附带当时测试网的状态。",
-  "Unofficial, not affiliated with IDNI. The ships send only when the island bot is quiet and never past half of the island’s daily budget; a strained testnet halves their pace, a stalled one sends them away.": "非官方，与 IDNI 无关。船只在岛上机器人空闲时才发送，且不会超过岛上每日预算的一半；测试网吃紧时速度减半，停滞时船只离开。",
+  "Unofficial, not run by IDNI. The ships send only when the island bot is quiet and never past half of the island’s daily budget; a strained testnet halves their pace, a stalled one sends them away.": "非官方，并非由 IDNI 运营。船只在岛上机器人空闲时才发送，且不会超过岛上每日预算的一半；测试网吃紧时速度减半，停滞时船只离开。",
   "Raw data (JSON)": "原始数据（JSON）",
   "Testnet load": "测试网负载",
   "White Rabbit Key": "白兔礁",

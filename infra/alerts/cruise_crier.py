@@ -50,7 +50,7 @@ REPORTS = os.path.join(os.path.dirname(STATE), "cruise-reports")
 LOGBOOK = f"{blog.NODE}/cruise/log"
 GAME = f"{blog.SITE}/rabbit/"
 UP = 'ssh root@node.tauhud.com "sh /opt/tau-command-hud/infra/up.sh {}"'
-FOOT = "White Rabbit Key · community project, not affiliated with IDNI"
+FOOT = "White Rabbit Key · community project, not run by IDNI"
 
 # what each ship is, as the timetable has it (relay/cruise.py SHIPS); the words of the posts of 4 and 7 November 2026
 SHIPS = {
@@ -454,7 +454,7 @@ def held_text(e: dict, inc: dict | None) -> str:
     tx = json.dumps(e.get("tx") or {}, indent=1)[:2500]
     title = f"Testnet accepted a transaction it should refuse: a payment that {what}"
     body = "\n".join([
-        "While testing Tau Testnet Alpha with simulated wallets (a community dashboard, not affiliated with IDNI), our node accepted a",
+        "While testing Tau Testnet Alpha with simulated wallets (a community dashboard, not run by IDNI), our node accepted a",
         f"transaction it should have refused: the sender {what}. We expected one of: {', '.join(e.get('expect') or [])}.",
         "", f"- when: {blog.day(e['t'])} {blog.clock(e['t'])} German time, chain height about {e.get('height', '?')}",
         f"- tx hash: {e.get('hash') or '?'}", "", "Signed transaction as sent:", "```json", tx, "```",
@@ -492,7 +492,7 @@ def edge_text(e: dict) -> str:
                 f"the network's fee rule asks {fee} for it as we read it (tx {str(hash_ or '?')[:16]}…).")
         fact = f"accepted a user_tx of {amount} with fee_limit {sent}, although the consensus fee rule (o9) gives a fee of {fee} for that amount:"
     body = "\n".join([
-        "While testing Tau Testnet Alpha with simulated wallets (a community dashboard, not affiliated with IDNI), our node " + fact,
+        "While testing Tau Testnet Alpha with simulated wallets (a community dashboard, not run by IDNI), our node " + fact,
         "", "```", rule, "```",
         "", f"- when: {blog.day(e['t'])} {blog.clock(e['t'])} German time, chain height about {e.get('height', '?')}",
         f"- tx hash: {hash_}" if hash_ else "- refused, so no tx hash", "", "Signed transaction as sent:", "```json", json.dumps(tx, indent=1)[:2500], "```",
@@ -531,7 +531,21 @@ def tell_draft(did: str, url: str) -> None:
     if did in st["drafts_told"]:
         return
     hours = float(os.environ.get("BLOG_AUTO_PUBLISH_HOURS", "0") or 0)
-    msg = f"Blog draft ready: {did}\nRead it: {url}\n" + (
+    notes = []
+    try:   # a second read against our rules (editor.py); notes keep the draft from publishing itself
+        import editor
+        bst = blog.state()
+        path = os.path.join(blog.PUBLIC, "drafts", bst["drafts"][did] + ".json")
+        a = blog.read_json(path, {})
+        if a:
+            a["editor"] = editor.review(a)
+            blog.write_json(path, a)
+            notes = editor.lines(a)
+            if a["editor"]:
+                hours = 0
+    except Exception as e:  # noqa: BLE001 - the message goes out without the notes
+        log.warning("editor for %s: %s", did, e)
+    msg = f"Blog draft ready: {did}\nRead it: {url}\n" + ("\n".join(notes).strip() + "\n\n" if notes else "") + (
         f"It goes on the blog by itself in {hours:g} hours (with one post on Telegram and X) if its numbers and wording check out.\n"
         "If it is not good, tell a thread before then. Publish it now instead:\n" if hours > 0 else
         "Publish it (blog + one post on Telegram and X):\n") + UP.format(f"blog publish {did}")

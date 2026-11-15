@@ -35,7 +35,7 @@ STATE = os.environ.get("HACK_CRIER_STATE", os.path.join(os.path.dirname(blog.STA
 PAGE = f"{blog.NODE}/hack"
 UP = 'ssh root@node.tauhud.com "sh /opt/tau-command-hud/infra/up.sh {}"'
 IDNI_REPO = "IDNI/tau-testnet"
-FOOT = "simulated wallets, real test transactions · community project, not affiliated with IDNI"
+FOOT = "simulated wallets, real test transactions · community project, not run by IDNI"
 
 
 def state() -> dict:
@@ -169,7 +169,7 @@ def finding_text(run: dict, snap_held: dict) -> str:
     title = f"Testnet: {what}"
     body = "\n".join([
         "While replaying an address poisoning attack on Tau Testnet Alpha with our own simulated wallets (a community dashboard,",
-        f"not affiliated with IDNI), we saw this: {what}.", "",
+        f"not run by IDNI), we saw this: {what}.", "",
         f"- when: {blog.day(f.get('t') or run.get('t0') or time.time())} {blog.clock(f.get('t') or run.get('t0') or time.time())} German time",
         f"- details: {json.dumps({k: v for k, v in f.items() if k not in ('tx', 'answer', 'what')})[:600]}",
         f"- node answer: {json.dumps(f.get('answer'))[:400]}" if f.get("answer") else "",
@@ -259,6 +259,9 @@ def status_lines() -> list[str]:
     r = (s.get("runs") or [None])[0]
     if r:
         out.append(f"         last {r['id']}: {r.get('result')}" + (f" ({r.get('why')})" if r.get("why") else ""))
+    tr = s.get("last_try")
+    if tr:
+        out.append(f"         rehearsal {tr['id']}: {tr.get('result') or tr.get('status')}" + (f" ({tr.get('why')})" if tr.get("why") else ""))
     return out
 
 
