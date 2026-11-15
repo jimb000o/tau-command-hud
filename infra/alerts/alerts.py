@@ -3829,7 +3829,9 @@ class Watcher:
         same = next((x for x in index if x.get("date") == date), None)
         no = same["no"] if same else max((x.get("no", 0) for x in index), default=0) + 1
         chess = self.chess(r["end"])
-        e = gazette.edition(r, props, days, no, printed_at, chess)
+        # every edition is its own: no front-page headline printed twice (gazette.fresh), the same day's reprint aside
+        seen = {(x.get("banner") or {}).get("en") for x in index if x.get("date") != date} - {None}
+        e = gazette.edition(r, props, days, no, printed_at, chess, seen)
         e["chess"] = chess and {k: chess.get(k) for k in ("date", "played")}
         e["drops"] = self.drops(printed_at)
         prev = next((x for x in index if x.get("date") != date), None)
