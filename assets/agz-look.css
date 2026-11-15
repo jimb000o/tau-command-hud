@@ -22,3 +22,7 @@
 [data-agz-look] img.agz-muz { opacity: var(--agz-muz, 0); filter: var(--agz-muzf, none);
   -webkit-mask-image: radial-gradient(11% 6% at 69% 42.5%, #000 35%, transparent 100%), radial-gradient(9% 5% at 49% 22%, #000 0%, transparent 100%), radial-gradient(8% 5% at 78% 18%, #000 0%, transparent 100%);
   mask-image: radial-gradient(11% 6% at 69% 42.5%, #000 35%, transparent 100%), radial-gradient(9% 5% at 49% 22%, #000 0%, transparent 100%), radial-gradient(8% 5% at 78% 18%, #000 0%, transparent 100%); }
+/* agorzilla.com's paintings: the build widens or narrows the whole figure, head included, as there (15.11.2026); only the trunk
+   drawn wider let the body slide out beside the head */
+[data-agz-look][data-agz-paint] :is(.bod, .puppet) { scale: var(--agz-bw, 1) 1; transform-origin: 56% 66%; }
+[data-agz-look][data-agz-paint] :is(.trunk, .agz-pl, img.agz-back) { scale: 1; }
