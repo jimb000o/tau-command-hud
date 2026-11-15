@@ -6,6 +6,7 @@ a translation with a number the English does not hold is left out.
 Run: python test_testnet_week.py
 """
 import os
+import json
 import re
 import sys
 import tempfile
@@ -68,10 +69,12 @@ check("1 of them came while one of our cruise ships was sending" in b and "not r
 check("ended at block 1457, during or shortly after the visit of our cruise ship Queen Mempool" in b, "the restart next to its visit")
 check(b.count("during or shortly after") == 1, "the other restart is not tied to a ship")
 check("Our cruise ships are paused for now." in b, "ships paused said")
-check("- Agorzilla: 21" in b and "- Tau HUD: 14" in b and "- players in No Memo: 7" in b and "IDNI): 700" in b and "999" not in b,
+check("- Users of [Agorzilla](https://agorzilla.com/): 21" in b and "- Users of [Tau HUD](/): 14" in b and "- Players in [No Memo](/nomemo/): 7" in b
+      and "IDNI uses for testing (not counted as users): 700" in b and "999" not in b,
       "sources of this week's days only, labels as on the site")
 check("Our own server sent 245 more" in b and "simulated passengers: 210" in b and "the island bot: 35" in b, "our automated senders counted apart")
-check("742 transactions came from wallets" in e["why"][1] and "our test traffic not counted" in e["stats"][2][1], "users never include our own traffic")
+check("Users of our apps sent 42 transactions" in e["why"][1] and e["stats"][2] == ["42", "transactions by users of our apps"],
+      "users: only our apps' users, never IDNI's testing or our own traffic; the tile reads as plain English")
 check("Queen Mempool: 200 accepted, 0 refused, 4 sends our own node did not answer in time" in b and "cruise/log?visit=2026-11-07-queen" in b, "ship visit")
 check("in sync 99.7%" in b and "fell more than 2 blocks behind 1 time, 30 min" in b and "3 warnings about syncing or peers, in 2 kinds" in b, "on our side")
 check("The Queen stayed" in b and "Last week" not in b, "written up: this week's articles, not last week's post")
@@ -89,7 +92,7 @@ check("On X" not in w.text(w.week_facts(dict(quiet, x=[]), MON, SUN18))["body"],
 check("## Chain restarts" not in q["body"] and "No chain restart this week" in q["why"][0] and "paused" not in q["body"], "a week without restarts")
 
 # ---------- translations ----------
-good = {lang: {"title": "T 2–8 Nov 2026", "dek": "D 9,720", "why": ["a", "b", "c"], "body": "B 742"} for lang in ("zh", "ja")}
+good = {lang: {"title": "T 2–8 Nov 2026", "dek": "D 9,720", "why": ["a", "b", "c"], "body": "B 42"} for lang in ("zh", "ja")}
 bad = dict(good, ja={"title": "T 4242", "dek": "D", "why": ["a", "b", "c"], "body": "B"})
 w.blog.AI_KEY = "k"
 import json as _j  # noqa: E402
@@ -136,6 +139,61 @@ check(blog.publish_cli(did, False, False, now=SUN18 + 3600) == 0 and blog.posts(
 check(sent and sent[0]["numbers"][0].startswith("9,720 blocks") and "cause unknown" in sent[0]["numbers"][1], "the post's numbers")
 pub = blog.posts()["posts"][0]
 check("by_hand" in pub and "status" not in pub and "check" not in pub, "published without draft fields")
+
+# ---------- the model writes from the counted facts ----------
+mf = w.model_facts(f)
+mm = mf["what the numbers mean"]
+check(mf["transactions by users of our apps, in all"] == 42 and mf["transactions by IDNI's genesis accounts (IDNI tests with them; not users)"] == 700,
+      "facts for the writer: users apart from IDNI's testing")
+check(mm["blocks the testnet's own pace would give in these hours"] == 9720 and mm["share of those blocks that were made"] == "100%", "meaning: blocks against the testnet's pace")
+check(mm["restarts during or within an hour after one of our ship visits"] == 1 and mm["longest stretch without a restart, hours"] > 0, "meaning: restarts")
+check(mm["share of all counted transactions by users of our apps"] == "4%", "meaning: users' share")
+raw_b = dict(raw, history=dict(hist, hours=hist["hours"] + [[MON - 7 * 86400 + i * 3600, 1, 30, 1] + [0] * 8 for i in range(168)],
+                               chains=[{"n": 1, "start": MON - 9 * 86400}, {"n": 2, "start": MON - 3 * 86400}]),
+             sources=dict(src, days=dict(src["days"], **{"2026-10-28": {"agorzilla": [10, 1, 0, 0, 0]}})))
+fb = w.week_facts(raw_b, MON, SUN18)
+check(fb["before"] == {"blocks": 5100, "txs": 267, "hours": 169, "restarts": 1, "app txs": 1009}, "the week before: blocks, transactions, restarts, app users")
+cb = w.model_facts(fb)["what the numbers mean"]["change against the week before"]
+check(cb["blocks"] == "+4,620 (+91%)" and cb["chain restarts"] == "2 after 1" and cb["transactions by users of our apps"] == "-967 (-96%)", "change against the week before")
+L3 = lambda t: {"en": t, "zh": t, "ja": t}
+answer = {"title": L3("Two restarts reset the testnet this week"), "dek": L3("Balances went back to zero twice; users of our apps sent 42 transactions."),
+          "why": [L3("Every wallet started again at zero."), L3("42 transactions by users of our apps."), L3("Cause unknown.")],
+          "body": L3("## What the week meant\n\nThe chain started over 2 times and made 9,720 blocks, 100% of its pace. 77 more."),
+          "x": "Two restarts this week.", "card": {"line": "Balances went back to zero twice", "why": ["a", "b", "c"]}}
+seen = []
+did2 = w.write_draft(fb, "2026-w45", SUN18 + 900, ask_=lambda facts: (seen.append(facts) or answer))
+a2 = blog.read_json(os.path.join(TMP, "blog", "drafts", blog.state()["drafts"][did2] + ".json"), {})
+check(seen and "what the numbers mean" in seen[0], "the model gets the facts with their meaning")
+check(a2["title"]["en"] == "Two restarts reset the testnet this week" and a2["model"] != "script", "the model's article")
+check(a2["check"]["unknown_numbers"] == ["77"], f"a number not in the facts is marked ({a2['check']['unknown_numbers']})")
+check("## On X this week" in a2["body"]["en"] and "## 本周在 X 上" in a2["body"]["zh"] and "not affiliated with IDNI" in a2["body"]["en"], "link lists and the closing line in every language")
+check(a2["stats"][2] == ["42", "transactions by users of our apps"] and a2["numbers"][0].startswith("9,720 blocks"), "tiles and post numbers stay the script's")
+figs = {os.path.basename(x["src"]): x for x in a2.get("figures") or []}
+check(set(figs) == {did2 + "-days.png", did2 + "-sources.png", did2 + "-before.png"} and all(os.path.exists(os.path.join(TMP, "blog", "img", k)) for k in figs),
+      "three charts: blocks per day, where transactions came from, the week before")
+check(figs[did2 + "-sources.png"]["link"] == "/meta/" and figs[did2 + "-days.png"]["after"] == 99 and figs[did2 + "-days.png"]["caption"]["zh"], "charts link their live page, captions in three languages")
+w.blog.AI_KEY = ""
+check(w.write_draft(fb, "2026-w45", SUN18 + 950, ask_=lambda facts: {"title": {}}) == did2
+      and "Every Sunday we write down" in blog.read_json(os.path.join(TMP, "blog", "drafts", blog.state()["drafts"][did2] + ".json"), {})["body"]["en"],
+      "a broken answer: the script's text instead")
+
+# ---------- the second read against our rules ----------
+import editor  # noqa: E402
+reply = {"content": [{"type": "text", "text": json.dumps({"notes": [{"quote": "transactions, our test traffic not counted", "rule": 8,
+                                                                     "fix": "transactions by users of our apps"}, {"quote": "x", "fix": ""}]})}]}
+notes = editor.review(a2, post=lambda body: (check("Tau Net" in body["system"] and "TITLE: " in body["messages"][0]["content"], "editor reads the draft with our rules") or reply))
+check(notes == [{"quote": "transactions, our test traffic not counted", "rule": 8, "fix": "transactions by users of our apps"}], "editor: notes kept, empty ones dropped")
+check(editor.lines({"editor": notes})[1].startswith("Second read against our rules, 1 note") and editor.lines({"editor": []})[1].endswith("nothing to change.")
+      and editor.lines({}) == [], "editor lines for the owner")
+check(editor.review(a2) == [], "no key: no notes")
+st_ = blog.state()
+p2 = os.path.join(TMP, "blog", "drafts", st_["drafts"][did2] + ".json")
+ship = dict(blog.read_json(p2, {}), id="2026-11-07-queen-learnings", by_hand=False, editor=notes)
+st_["drafts"]["2026-11-07-queen-learnings"] = "q-1"
+st_["drafted_at"]["2026-11-07-queen-learnings"] = SUN18 - 3 * 86400
+blog.write_json(os.path.join(TMP, "blog", "drafts", "q-1.json"), ship)
+blog.write_json(blog.STATE, st_)
+check(blog.auto_publish(SUN18) is None and "second read" in blog.auto_note(blog.state(), "2026-11-07-queen-learnings", ship), "a draft with editor notes never publishes itself")
 
 # ---------- once a week to the owner ----------
 told = []
