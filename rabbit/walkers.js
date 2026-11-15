@@ -162,6 +162,24 @@
     const p = SC.places[id] || SC.places.market || SC.places.hall; if (!p) return [800, 600];
     return [p.x + (Math.random() - 0.5) * 90, p.y + 10 + Math.random() * 22];
   }
+  /* on a painting whose ways are traced (paths.js) a walker keeps to them: it stands about a place's door and walks
+     there along paths, beaches, bridges and stairs, never through a house, over a roof, a cliff or water */
+  const ways = () => (SC.ways ? SC.ways() : null);
+  function onWays(w, N) {   // a walker that came before the painting (or stood on another one) steps onto the ways
+    const home = w.d && w.d.home != null ? N.door(w.d.home) : null;
+    w.node = home != null ? home : N.near(w.x, w.y); [w.x, w.y] = N.stand(w.node); w.tx = w.x; w.ty = w.y; w.route = null; w.N = N;
+  }
+  function setOff(w, N) {   // where next: its home place more often than not, else one of three places picked at random, the nearest
+    const ids = placeIds().filter(id => N.door(id) != null), home = w.d.home != null ? N.door(w.d.home) : null;
+    let to = home != null && Math.random() < 0.55 ? home : null;
+    if (to == null && ids.length) {
+      let bd = Infinity;
+      for (let k = 0; k < 3; k++) { const n = N.door(ids[Math.floor(Math.random() * ids.length)]), p = N.node(n), d = Math.hypot(p[0] - w.x, p[1] - w.y); if (d < bd) { bd = d; to = n; } }
+    }
+    if (to == null) to = w.node;
+    w.route = N.route(w.x, w.y, w.node, to, w.lane); w.ri = 1; w.node = to;
+    if (!w.route) w.wait = 3000;   // no way there: it stays a while and picks again
+  }
   function demo() {
     const T0 = Math.floor(Date.now() / 1000), hx = n => Array.from({ length: 96 }, (_, i) => "0123456789abcdef"[(n * 7 + i * 13 + (i * n) % 11) % 16]).join("");
     const sets = [["nightowl", "feeder", "lawmaker"], ["winner", "politician", "voter"], ["guardian", "lawmaker", "regular"], ["hacker", "allrounder"], ["catfriend", "hearts", "earlybird"], ["newcomer"], ["veteran", "connector", "bigspender"], ["quiet"], ["busy", "regular"]];
@@ -187,7 +205,7 @@
       let w = W.by.get(d.a);
       if (!w) {
         const [x, y] = spot(d.home && SC.places[d.home] ? d.home : placeIds()[Math.floor(Math.random() * placeIds().length)]);
-        w = { a: d.a, x, y, tx: x, ty: y, wait: Math.random() * 3000, ph: Math.random() * 6, face: 1, ping: 0 };
+        w = { a: d.a, x, y, tx: x, ty: y, wait: Math.random() * 3000, ph: Math.random() * 6, face: 1, ping: 0, lane: (Math.random() - 0.5) * 5 };
       } else if (d.last > w.d.last) w.ping = performance.now();   // it just sent another transaction
       w.d = d; w.me = d.a === me;
       const code = w.me && myLook() != null ? myLook() : d.look;
@@ -201,7 +219,21 @@
   /* ---------- walking, drawn with the island's people in depth order ---------- */
   function step(w, dt) {
     if (W.sel === w.a) return;   // the one whose card is open stands still
+    const N = ways();
+    if (N && w.N !== N) onWays(w, N); else if (!N && w.N) { w.N = null; w.route = null; }
     if (w.wait > 0) { w.wait -= dt; return; }
+    if (N) {
+      if (!w.route) { setOff(w, N); if (!w.route) return; }
+      let v = w.speed * dt;
+      while (v > 0 && w.ri < w.route.length) {
+        const [px, py] = w.route[w.ri], dx = px - w.x, dy = py - w.y, d = Math.hypot(dx, dy);
+        if (Math.abs(dx) > 0.05) w.face = dx < 0 ? -1 : 1;
+        if (d <= v) { w.x = px; w.y = py; v -= d; w.ri++; } else { w.x += dx / d * v; w.y += dy / d * v; v = 0; }
+      }
+      w.ph += dt * 0.012;
+      if (w.ri >= w.route.length) { w.route = null; w.wait = 1800 + Math.random() * 5200; }
+      return;
+    }
     const dx = w.tx - w.x, dy = w.ty - w.y, d = Math.hypot(dx, dy), v = w.speed * dt;
     if (d < 1.5) {
       w.wait = 1800 + Math.random() * 5200;
