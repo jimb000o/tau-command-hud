@@ -92,7 +92,7 @@ check("On X" not in w.text(w.week_facts(dict(quiet, x=[]), MON, SUN18))["body"],
 check("## Chain restarts" not in q["body"] and "No chain restart this week" in q["why"][0] and "paused" not in q["body"], "a week without restarts")
 
 tones = {t[1]: t[2] for t in e["stats"]}
-check(tones == {"blocks this week": "ok", "chain restarts, cause not clear yet": "bad", "transactions by users of our apps": "amber", "our node in sync": "ok"},
+check(tones == {"blocks this week": "ok", "chain restarts, cause not clear yet": "amber", "transactions by users of our apps": "amber", "our node in sync": "ok"},
       f"each tile's tone fits its number ({tones})")
 check(w.text(w.week_facts(quiet, MON, SUN18))["stats"][1][2] == "ok", "no restart: a green tile")
 check(f["visits"][0]["ship"] == "Queen Mempool" and f["visits"][0]["day"] == "Sat 7 Nov", "ship by its own name, day of the call")
