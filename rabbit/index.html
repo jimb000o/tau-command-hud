@@ -306,6 +306,26 @@ html.rk-full #cvFull { border-color: var(--ok); }
 .cv-card.paper.extra .cv-acts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 479px) { .cv-card.paper.extra .cv-acts { gap: 6px; } .cv-card.paper.extra .cv-acts .cv-b { font-size: 12px; white-space: normal; line-height: 1.25; padding-left: 8px; padding-right: 8px; } }   /* two by two on a phone too: one under the other, the Japanese extra ran 95 px past the plate and hid its ✕ (9.11) */
 .cv-who { display: flex; gap: 12px; align-items: center; padding-right: 40px; }
+/* the wallets that walk on the island (walkers.js): their card, the list of today's walkers, choosing your own look */
+#cvTip { max-width: min(320px, 80vw); white-space: normal; }
+.cv-who .wk-face { flex: none; border-radius: 12px; background: radial-gradient(circle at 50% 35%, rgba(57,255,138,.14), rgba(255,255,255,.03)); border: 1px solid var(--line); }
+.wk-card .cv-help li b { color: #fff; }
+.wk-card .wk-facts { color: var(--dim); }
+.wk-note { margin: 6px 0 0; color: var(--dim); font-size: 11.5px; line-height: 1.45; }
+.wk-list { max-height: none; }
+.wk-row { display: grid; grid-template-columns: 26px auto 1fr; gap: 8px; align-items: center; width: 100%; min-height: 34px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); background: rgba(255,255,255,.03); color: var(--text); font: 12px var(--mono); text-align: left; cursor: pointer; }
+.wk-row:hover, .wk-row:focus-visible { border-color: var(--ok); }
+.wk-row .wk-face { border: 0; background: none; }
+.wk-row span:last-child { color: var(--dim); font-family: var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wk-pickrow { display: flex; gap: 14px; align-items: flex-start; margin: 4px 0; }
+.wk-pv .wk-face { border-radius: 12px; border: 1px solid var(--line); background: radial-gradient(circle at 50% 35%, rgba(57,255,138,.14), rgba(255,255,255,.03)); }
+.wk-o { padding: 0; display: grid; place-items: center; overflow: hidden; }
+.wk-opts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 6px; }
+.wk-opts small { width: 100%; color: var(--dim); font-size: 11.5px; }
+.wk-o { width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--hair); background: rgba(255,255,255,.04); color: var(--text); font: 600 12px var(--display); cursor: pointer; }
+.wk-o.on { outline: 2px solid var(--ok); outline-offset: 1px; }
+@media (pointer: fine) and (min-width: 760px) { .wk-o { width: 32px; height: 32px; } }
+@media (pointer: coarse) { .wk-row { min-height: 44px; } }
 .cv-who .face { flex: none; border-radius: 12px; background: radial-gradient(circle at 50% 35%, rgba(255,214,160,.18), rgba(255,255,255,.03)); border: 1px solid var(--line); }
 .cv-who b { display: block; font: 700 17px var(--display); color: #fff; }
 .cv-who small { color: var(--dim); font-size: 11.5px; }
@@ -578,5 +598,6 @@ html.rk-full .wire { left: max(8px, env(safe-area-inset-left, 0px)); bottom: cal
 <script src="talk.js"></script>
 <script src="rico.js"></script>
 <script src="game.js"></script>
+<script src="walkers.js"></script>
 </body>
 </html>
