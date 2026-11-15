@@ -2081,6 +2081,7 @@
       else { const a = Math.min(1, f * 6, (1 - f) * 6); items.push([z.y, () => { z.box = creature(w, ART.img.agorzilla, z.x, z.y + (1 - a) * 8, 48, a); }]); }
     }
     if (SHIP.s && !wait) shipItems(items, w, t, sky);
+    if (S.extra && !wait) S.extra(w, t, S.still ? 0 : dt, items, sky.light);   // the wallets that walk on the island (walkers.js)
     items.sort((a, b) => a[0] - b[0]).forEach(([, d]) => d());
     if (SHIP.pings.length && !wait) shipPings(w, t);
     /* the light of the hour */
@@ -2194,6 +2195,7 @@
     const [x, y] = toWorld(px, py);
     if (RARE.zilla && inBox(RARE.zilla.box, x, y)) return "agorzilla";
     if (Math.abs(x - RB.x) < 16 && y < RB.y + 6 && y > RB.y - 30) return "rabbit";
+    if (S.extraHit) { const w = S.extraHit(x, y, 14 / (fitScale() * S.cam.z)); if (w) return w; }
     if (shipAt(x, y)) return "cruise";   // the cruise ship in port or coming in: aboard to her captain (game.js aboard)
     for (const id in PLACES) {
       if (S.locked.has(id)) continue;
@@ -2281,6 +2283,8 @@
     gather(v) { S.gather = v; },
     cat(twice) { S.cat = { t0: performance.now(), d: 9000, x0: SPOT.cat[0], y0: SPOT.cat[1], x1: SPOT.cat[2], y1: SPOT.cat[3], twice: !!twice }; },
     onFrame(f) { S.onFrame = f; },
+    /* more people in depth order: draw(g, t, dt, items, light) pushes [y, fn]; hit(x, y, tolerance) in world units → an id or null */
+    extra(draw, hit) { S.extra = draw; S.extraHit = hit; },
     /* the cruise ship in port or coming in (relay cruise.py: {name, style, phase, t0, end, at}), null when there is none;
        ping(place): one of its passengers' transactions was sealed there */
     ship(v) { SHIP.s = v || null; },

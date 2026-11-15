@@ -55,6 +55,7 @@ from txsources import TxSources, deja as deja_day
 from walletdays import WalletDays
 from chainhist import ChainHistory
 from hearts import Hearts
+from walkers import Walkers
 from services import Services
 from nodehist import NodeHistory
 from setupfunnel import SetupFunnel
@@ -479,6 +480,11 @@ class Relay:
         self.hearts = Hearts()
         self.hearts.add_blocks(self.ordered_blocks())
         self.hearts.save(force=True)
+        # the wallets that walk on White Rabbit Key: everyone's counts from the public blocks, never our own (walkers.py)
+        self.walkers = Walkers()
+        self.walkers.add_blocks(self.ordered_blocks(), self.walker_ours())
+        self.walkers.save(force=True)
+        self.walkers_text, self.walkers_at = None, 0.0
         self.wallets_text, self.wallets_at = None, 0.0
         # what every chain held per hour and day, kept across testnet restarts, for /history (chainhist.py)
         self.chainhist = ChainHistory()
@@ -614,6 +620,8 @@ class Relay:
         self.note_chain()
         if self.hearts.add_blocks(fresh):
             self.hearts.save()
+        if self.walkers.add_blocks(fresh, self.walker_ours()):
+            self.walkers.save()
         if self.wallets.add_blocks(fresh, self.sources.sent):   # before a restart can drop them: days only grow
             self.wallets.save()
         if self.chainhist.due() or rewrite:
@@ -1217,6 +1225,40 @@ class Relay:
         if await self.nomemo.step(ask, gov):
             return True
         return await self.showcase.step(ask, gov)
+
+    def walker_ours(self) -> set:
+        """Our own server's wallets, never walkers on the island: the island bot and its purses, the cruise passengers,
+        the hack of the week's, No Memo's and the showcase wallets."""
+        return {k.lower() for k in (*self.wallets.bots, *self.wallets.cruise, *self.simulated())}
+
+    def walker_extra(self, pk: str) -> tuple:
+        """(White Rabbit Key, No Memo) for one wallet's traits and card."""
+        try:
+            rb = self.isle.wallet(pk)
+        except Exception:
+            rb = None
+        try:
+            nm = self.nomemo.wallet_view(pk) if pk in self.nomemo.wallets else None
+        except Exception:
+            nm = None
+        return rb, nm
+
+    def walkers_route(self, path: str) -> dict | None:
+        """GET /walkers and GET /walkers/<address> (walkers.py)."""
+        if path == "/walkers":
+            if self.walkers_text is None or time.monotonic() - self.walkers_at >= 30:
+                self.walkers_at = time.monotonic()
+                self.walkers_text = json.dumps(self.walkers.active(ours=self.walker_ours(), extra=self.walker_extra), separators=(",", ":"))
+            return json.loads(self.walkers_text)
+        pk = path[len("/walkers/"):].lower()
+        if not re.match(r"^[0-9a-f]{96}$", pk) or pk in self.walker_ours():
+            return {"error": "not a walker"}
+        rb, nm = self.walker_extra(pk)
+        try:
+            holders = set((json.loads(self.rules_text) or {}).get("holders") or []) if self.rules_text else None
+        except ValueError:
+            holders = None
+        return self.walkers.card(pk, rabbit=rb, nomemo=nm, in_force=None if holders is None else pk in holders) or {"error": "not seen"}
 
     def island_spend(self):
         self.island.today += 1   # a passenger's transaction comes out of the island's day budget (ISLAND_DAILY)
@@ -2221,6 +2263,12 @@ class Relay:
                                ("Cache-Control", f"public, max-age={int(STATS_CACHE_SECONDS)}")])
             code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
             return Response(code.value, code.phrase, headers, body)
+        if path == "/walkers" or path.startswith("/walkers/"):   # the wallets that walk on White Rabbit Key (walkers.py)
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=30")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers,
+                            json.dumps(self.walkers_route(path), separators=(",", ":")).encode())
         if path == "/hearts":   # the hearts visitors gave parts of tauhud.com, one per wallet and part (hearts.py)
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),
@@ -2433,6 +2481,7 @@ class Relay:
             server.close()
         self.visits.save(force=True)
         self.hearts.save(force=True)
+        self.walkers.save(force=True)
         for t in tasks:
             t.cancel()
 

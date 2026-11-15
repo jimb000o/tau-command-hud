@@ -3075,12 +3075,13 @@
       if (UI.card) { tip.hidden = true; cv.style.cursor = SC.hit(...where(e)) === "deja" ? "pointer" : "default"; return; }
       const id = SC.hit(...where(e)); cv.style.cursor = id ? "pointer" : "default";   // only the name and the hand: the painting itself never lights up under the mouse
       UI.q = false;
+      if (id && id.startsWith("walker:")) { tipAt(e, window.ISLE_WALKERS ? ISLE_WALKERS.tip(id) : ""); return; }   // a wallet walking on the island (walkers.js)
       if (!id) { if (SC.lockedAt(...where(e))) tipAt(e, "?"); else tip.hidden = true; return; }   // a quarter not open yet: only a "?"
       tipAt(e, id === "cruise" ? F("{x}: go aboard", { x: (SHIPV.v || {}).name || T("the ship") }) : id === "rabbit" ? T("The white rabbit: follow it") : id === "agorzilla" ? T("Something moves in the jungle") : id === "deja" ? T("Déjà, the café cat") : T(SC.places[id].name));
     });
     function tipAt(e, text) {   // the label next to the pointer
       tip.hidden = false; tip.textContent = text;
-      const r = $("cvStage").getBoundingClientRect(); tip.style.left = Math.min(r.width - 180, e.clientX - r.left + 14) + "px"; tip.style.top = (e.clientY - r.top + 14) + "px";
+      const r = $("cvStage").getBoundingClientRect(); tip.style.left = Math.max(4, Math.min(r.width - Math.max(180, tip.offsetWidth + 8), e.clientX - r.left + 14)) + "px"; tip.style.top = (e.clientY - r.top + 14) + "px";
     }
     cv.addEventListener("pointerleave", () => { tip.hidden = true; });
     cv.addEventListener("pointerdown", e => { UI.touch = e.pointerType !== "mouse"; });
@@ -3094,6 +3095,7 @@
       if (!id && SC.lockedAt(...where(e))) { tipAt(e, "?"); if (UI.touch) { UI.q = true; clearTimeout(UI.qt); UI.qt = setTimeout(() => { if (UI.q) tip.hidden = true; }, 1400); } return; }
       if (id === "rabbit") { if (G.over || G.move >= MOVES) return; const [to, line] = hint(); toast(line); SND.sfx("tap"); setTimeout(() => openCard(to, PLACE[to]), 700); return; }
       if (id === "agorzilla") { legend(); return; }
+      if (id && id.startsWith("walker:") && window.ISLE_WALKERS) { ISLE_WALKERS.open(id.slice(7)); return; }
       if (id === "cruise") { aboard(); return; }
       if (id && PLACE[id]) openCard(id, PLACE[id]);
     });
@@ -3166,6 +3168,7 @@
     if (q.get("voice") === "check") voiceCheck();
   }
   setTimeout(readBallot, 1200);
-  window.COVE_GAME = { get state() { return G; }, begin, endDay, face, ending, open: p => openCard(p, PLACE[p]) };
+  window.COVE_GAME = { get state() { return G; }, begin, endDay, face, ending, open: p => openCard(p, PLACE[p]),
+    card: openCard, closeCard, btn, el };   // card/closeCard/btn/el: the walkers' cards (walkers.js)
   wire();
 })();
