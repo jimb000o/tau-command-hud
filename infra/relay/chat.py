@@ -24,6 +24,8 @@ WebSocket commands (relay.py hands them over; replies and pushes have command "c
   chat leave                                    no more pushes
   chat say <token> <a> <b> <c> <text, %-encoded> post a message
   chat report <id> <token>                      report a message
+  chat islander <id> <wallet> <day> <signature> the message just sent is said by this wallet's islander on White Rabbit
+                                                Key (relay.py checks the wallet's daily signature, steer.py)
 HTTP:
   GET /chat                                     the last messages as JSON (read only)
   GET /chat/admin?key=<key>                     the owner's page: the last 24 hours with Hide buttons, and today's strikes
@@ -57,6 +59,7 @@ PER_HOUR = 40
 ROOM_PER_MIN = 30
 REPEAT_WINDOW = 300     # seconds in which the same text from anyone is refused
 REPORTS_TO_HIDE = 3
+CLAIM_FOR = 120         # seconds after sending in which a message can be said by its writer's islander
 SOFT_PER_STRIKE = 3     # soft refusals that make one strike
 FLOOD_SLOW = 5          # slow-mode refusals within a minute that count as one soft refusal
 # strike -> (seconds out, what the visitor is told); None = until the day changes
@@ -221,6 +224,9 @@ class Chat:
         self.msgs: list[dict] = []          # {id, ts, a, b, c, text}; stored
         self.writer: dict[int, str] = {}    # message id -> person, memory only
         self.reports: dict[int, set] = {}   # message id -> persons who reported it, memory only
+        # message id -> the wallet whose islander says it on White Rabbit Key; memory only, never on disk, so the
+        # bubble over an islander goes with the next restart (the message itself stays in the troll box)
+        self.islander: dict[int, str] = {}
         self.sent: dict[str, list] = {}     # person -> recent send times, memory only
         self.last_text: dict[str, str] = {}
         # moderation, memory only and keyed by the daily person hash: strikes, soft refusals, mutes, bans, last name used
@@ -284,6 +290,7 @@ class Chat:
             live = {m["id"] for m in self.msgs}
             self.writer = {k: v for k, v in self.writer.items() if k in live}
             self.reports = {k: v for k, v in self.reports.items() if k in live}
+            self.islander = {k: v for k, v in self.islander.items() if k in live}
             self._save()
         self.muted = {p: t for p, t in self.muted.items() if t > now}
         if any(t <= now for t in self.banned.values()):
@@ -394,6 +401,28 @@ class Chat:
             self.last_text = {p: v for p, v in self.last_text.items() if p in self.sent}
         self._save()
         return {"ok": True, "msg": self.public(m)}
+
+    def claim(self, person: str, mid: int, wallet: str) -> dict | None:
+        """The writer of message mid says it is their islander's (the wallet was checked by the caller): the message,
+        else None (not theirs, gone or hidden, or sent too long ago)."""
+        m = self._find(mid)
+        if m is None or self.writer.get(mid) != person or self.clock() - m["ts"] > CLAIM_FOR:
+            return None
+        self.islander[mid] = wallet
+        return self.said_one(m)
+
+    def said_one(self, m: dict) -> dict:
+        return {**self.public(m), "w": self.islander[m["id"]]}
+
+    def said(self, wallets=None) -> list[dict]:
+        """For each islander, its latest message that is still in the troll box (not hidden, not older than a day)."""
+        self._expire(self.clock())
+        last: dict[str, dict] = {}
+        for m in self.msgs:
+            w = self.islander.get(m["id"])
+            if w and not m.get("hidden") and (wallets is None or w in wallets):
+                last[w] = m
+        return [self.said_one(m) for m in last.values()]
 
     def _find(self, mid: int) -> dict | None:
         return next((m for m in self.msgs if m["id"] == mid and not m.get("hidden")), None)

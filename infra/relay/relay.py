@@ -443,7 +443,7 @@ class Relay:
         self.chat_subs: set[ServerConnection] = set()
         self.chatai = ChatAI()   # optional second look by Claude (chatai.py); off without CHAT_AI_KEY
         self.chat_checks: set[asyncio.Task] = set()
-        self.chat.on_hide = lambda mid: broadcast(self.chat_subs, envelope_ok("chat", {"hide": [mid]}))
+        self.chat.on_hide = self.chat_hidden
         self.roadmap = Roadmap(self.chat)   # comments on the road-to-mainnet page, same moderation (roadmap.py)
         self.road_subs: set[ServerConnection] = set()
         self.roadmap.on_hide = lambda cid: broadcast(self.road_subs, envelope_ok("roadmap", {"hide": [cid]}))
@@ -1376,7 +1376,9 @@ class Relay:
                 self.walkers_at = time.monotonic()
                 self.walkers_text = json.dumps(self.walkers.active(ours=self.walker_ours(), extra=self.walker_extra), separators=(",", ":"))
             j = json.loads(self.walkers_text)
-            j["go"] = self.steer.recent({w.get("a") for w in j.get("walkers") or []})   # the walks their wallets asked for lately
+            here = {w.get("a") for w in j.get("walkers") or []}
+            j["go"] = self.steer.recent(here)   # the walks their wallets asked for lately
+            j["said"] = self.chat.said(here)    # what their islanders last said in the troll box (chat.py)
             return j
         if path.startswith("/walkers/face/"):   # who chose this face first (walkers.py faces)
             sig = path[len("/walkers/face/"):]
@@ -1564,6 +1566,8 @@ class Relay:
         if cmd == "presence":
             return self.presence_envelope()
 
+        if cmd == "chat" and args and args[0].lower() == "islander":   # the islander on White Rabbit Key says it too
+            return await self.chat_islander(args[1:], ip, ws)
         if cmd == "chat":
             return self.chat_command(args, ws)
 
@@ -2252,6 +2256,30 @@ class Relay:
             r = self.chat.report(person, int(args[1]), args[2])
             return envelope_ok("chat", {"reported": int(args[1]), "hidden": r.get("hidden", False)}) if r.get("ok") else envelope_error("chat", r["message"], "BAD")
         return envelope_error("chat", "Usage: chat join | leave | say <token> <a> <b> <c> <text> | report <id> <token>", "INVALID_PARAMS")
+
+    def chat_hidden(self, mid: int):
+        """A troll box message was hidden: gone from every open troll box, and from over its islander's head."""
+        broadcast(self.chat_subs, envelope_ok("chat", {"hide": [mid]}))
+        broadcast(self.isle.subs, envelope_ok("walker", {"unsaid": mid, "push": True}))
+
+    async def chat_islander(self, args: list[str], ip: str, ws: ServerConnection | None) -> str:
+        """chat islander <id> <wallet> <day> <signature>: the writer of a message just sent says it is their wallet's
+        islander on White Rabbit Key; the wallet proves itself as for walking (steer.py hello: a daily signature of its
+        key, checked once a day), and every page on the island shows the message over that islander's head
+        (always an ok answer, {"islander": id} or {"islander": 0, "why": ...}: the troll box shows no error for it)."""
+        no = lambda why: envelope_ok("chat", {"islander": 0, "why": why})  # noqa: E731
+        if len(args) != 4 or not args[0].isdigit():
+            return no("Usage: chat islander <id> <wallet> <day> <signature>")
+        wallet = args[1].lower()
+        ok, why = await self.steer.hello(ws, ip, wallet, args[2], args[3])
+        if not ok:
+            return no(why)
+        ip_, ua = (self.viewers.get(ws) or ("?", ""))[:2] if ws is not None else ("?", "")
+        m = self.chat.claim(self.visits.person(ip_, ua), int(args[0]), wallet)
+        if m is None:
+            return no("not your message, or too long ago")
+        broadcast(self.isle.subs, envelope_ok("walker", {"said": m, "push": True}))
+        return envelope_ok("chat", {"islander": m["id"]})
 
     def roadmap_command(self, args: list[str], ws: ServerConnection | None) -> str:
         """Comments on the road-to-mainnet page: join / leave / get / say / report / delete / agree (roadmap.py has the rules)."""
