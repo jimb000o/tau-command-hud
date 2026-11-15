@@ -51,7 +51,7 @@
   const ZH = lang === "zh";
   html.lang = ZH ? "zh-CN" : "ja"; html.classList.add("i18n-" + lang, "i18n-cjk", "i18n-wait");
   /* CJK glyphs come from the system fonts (no extra webfont); wide Latin letter-spacing reads badly between ideographs */
-  document.write(`<style id="i18n-css">html.i18n-wait body{visibility:hidden}html.i18n-cjk body *:not(svg *){letter-spacing:.03em!important}@media (max-width:700px){html.i18n-cjk header.trail .chip.unoff::after{content:"${ZH ? "非官方 · 与 IDNI 无关" : "非公式 · IDNI とは無関係"}"}}</style>`);
+  document.write(`<style id="i18n-css">html.i18n-wait body{visibility:hidden}html.i18n-cjk body *:not(svg *){letter-spacing:.03em!important}${ZH ? "html.i18n-zh .mv-up{color:#ff3b52!important}html.i18n-zh .mv-down{color:#39ff8a!important}" : ""}@media (max-width:700px){html.i18n-cjk header.trail .chip.unoff::after{content:"${ZH ? "非官方 · 与 IDNI 无关" : "非公式 · IDNI とは無関係"}"}}</style>`);
   for (const f of ["common", page]) document.write(`<script src="${ROOT.href}assets/i18n/${lang}/${f}.js"><\/script>`);
 
   const debug = q.get("i18n") === "missing", missing = window.__i18nMissing = new Set();
@@ -179,79 +179,34 @@
     if (root.hasAttributes()) attrs(root);
     block(root);
     const w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeType === 1 && SKIP.has(n.nodeName) ? (n.nodeName === "TEXTAREA" && attrs(n), NodeFilter.FILTER_REJECT) : NodeFilter.FILTER_ACCEPT });
-    for (let n = w.nextNode(); n; n = w.nextNode()) { if (n.nodeType === 3) text(n); else { if (n.hasAttributes()) { attrs(n); colorEl(n); } block(n); } }
-    colorEl(root);
+    for (let n = w.nextNode(); n; n = w.nextNode()) { if (n.nodeType === 3) text(n); else { if (n.hasAttributes()) attrs(n); block(n); } }
   }
 
-  /* ---------- colours (Chinese only): green ↔ red, so red is the positive accent and green means offline or down; amber stays ---------- */
-  const SWAP = { "57,255,138": "255,59,82", "255,77,109": "57,255,138", "185,255,214": "255,190,198", "230,255,240": "255,232,235", "22,192,96": "214,40,64", "229,72,77": "48,164,108" };
-  const HEX = { "39ff8a": "ff3b52", "ff4d6d": "39ff8a", "b9ffd6": "ffbec6", "16c060": "d62840", "e5484d": "30a46c" };
-  const COLOR_RE = /#(39ff8a|ff4d6d|b9ffd6|16c060|e5484d)\b|rgba?\(\s*(57\s*,\s*255\s*,\s*138|255\s*,\s*77\s*,\s*109|185\s*,\s*255\s*,\s*214|230\s*,\s*255\s*,\s*240|22\s*,\s*192\s*,\s*96|229\s*,\s*72\s*,\s*77)\s*([,/][^)]*)?\)/gi;
-  const swap = s => !ZH || typeof s !== "string" || !s ? s : s.replace(COLOR_RE, (m, hex, rgb, rest) => {
-    if (hex) return "#" + HEX[hex.toLowerCase()];
-    const k = rgb.replace(/\s+/g, ""); return (rest ? "rgba(" : "rgb(") + SWAP[k] + (rest || "") + ")";
-  });
-  const mine = new WeakMap();   // element → style/fill values we wrote, so our own write is not swapped back
-  function colorEl(el) {
-    if (!ZH) return;
-    for (const a of ["style", "fill", "stroke", "stop-color", "color"]) {
-      const v = el.getAttribute(a); if (!v) continue;
-      const seen = mine.get(el); if (seen && seen[a] === v) continue;
-      const s = swap(v); if (s !== v) { el.setAttribute(a, s); (mine.get(el) || mine.set(el, {}).get(el))[a] = s; }
-    }
-  }
-  const doneSheets = new WeakSet();
-  function rules(list) {
-    for (const r of list) {
-      if (r.style) for (let i = 0; i < r.style.length; i++) {
-        const p = r.style[i], v = r.style.getPropertyValue(p), s = swap(v);
-        if (s !== v) r.style.setProperty(p, s, r.style.getPropertyPriority(p));
-      }
-      if (r.cssRules) rules(r.cssRules);
-    }
-  }
-  function sheets() {
-    if (!ZH) return;
-    for (const sh of document.styleSheets) {
-      if (doneSheets.has(sh)) continue;
-      let list; try { list = sh.cssRules; } catch (e) { continue; }   // cross-origin font sheets
-      if (!list) continue;
-      doneSheets.add(sh); rules(list);
-    }
-  }
-  // canvas drawings (chain core, rain, charts) pass their colours as strings
+  /* ---------- colours: one meaning everywhere, also in Chinese ----------
+     Green = live, OK, accepted; red = offline, error, refused; amber = watch. Only a price or balance movement follows the
+     Chinese market convention (rise red, fall green): a page marks such a number with class "mv-up" or "mv-down" and the
+     style written above recolours it. Nothing else is swapped. */
   const C2 = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
-  if (C2 && ZH) for (const p of ["fillStyle", "strokeStyle", "shadowColor"]) {
-    const d = Object.getOwnPropertyDescriptor(C2, p); if (!d || !d.set) continue;
-    Object.defineProperty(C2, p, { configurable: true, enumerable: d.enumerable, get: d.get, set(v) { d.set.call(this, swap(v)); } });
-  }
   if (C2) for (const f of ["fillText", "strokeText", "measureText"]) {   // labels drawn on canvas (the core's watermark and ring labels)
     const orig = C2[f];
     C2[f] = function (t, ...rest) { if (typeof t === "string" && /[A-Za-z]{2}/.test(t)) { const r = tr(t); if (r != null) t = r; } return orig.call(this, t, ...rest); };
   }
-  if (window.CanvasGradient && ZH) { const add = CanvasGradient.prototype.addColorStop; CanvasGradient.prototype.addColorStop = function (o, c) { return add.call(this, o, swap(c)); }; }
-  const icon = () => ZH && document.querySelectorAll('link[rel~="icon"][type="image/svg+xml"]').forEach(l => {
-    if (l.dataset.zh) return; l.dataset.zh = "1";
-    l.href = "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#09090a"/><circle cx="32" cy="32" r="23" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3.5"/><path d="M14 33 H23 L27.5 24 L34.5 43 L39 33 H50" fill="none" stroke="#ff3b52" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`);
-  });
 
   const obs = new MutationObserver(list => {
     if (document.readyState === "loading") return;   // the parser can hand over half a text node; the full pass runs at DOMContentLoaded
-    let css = false;
     for (const m of list) {
       if (m.type === "characterData") { if (!block(m.target.parentElement)) text(m.target); }
-      else if (m.type === "attributes") { if (ATTRS.includes(m.attributeName)) { const v = m.target.getAttribute(m.attributeName); if (v && /[A-Za-z]/.test(v)) { const r = tr(v); if (r != null && r !== v) m.target.setAttribute(m.attributeName, r); } } else colorEl(m.target); }
-      else { if (m.addedNodes.length) block(m.target); for (const n of m.addedNodes) { walk(n); if (n.nodeName === "STYLE" || n.nodeName === "LINK") css = true; } }
+      else if (m.type === "attributes") { if (ATTRS.includes(m.attributeName)) { const v = m.target.getAttribute(m.attributeName); if (v && /[A-Za-z]/.test(v)) { const r = tr(v); if (r != null && r !== v) m.target.setAttribute(m.attributeName, r); } } }
+      else { if (m.addedNodes.length) block(m.target); for (const n of m.addedNodes) { walk(n); } }
     }
-    if (css) sheets();
   });
   const start = () => {
     if (document.title) { const r = tr(document.title); if (r) document.title = r; }
-    walk(document.body); sheets(); icon();
+    walk(document.body);
     html.classList.remove("i18n-wait");
   };
-  obs.observe(html, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS.concat(["style", "fill", "stroke", "stop-color"]) });
+  obs.observe(html, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
   document.addEventListener("DOMContentLoaded", start);
-  addEventListener("load", () => { sheets(); html.classList.remove("i18n-wait"); });
+  addEventListener("load", () => html.classList.remove("i18n-wait"));
   setTimeout(() => html.classList.remove("i18n-wait"), 2500);   // never leave a page hidden
 })();

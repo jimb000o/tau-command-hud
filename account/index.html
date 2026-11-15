@@ -146,6 +146,7 @@ ul.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
 ul.list li > button:not(.btn), ul.list li > a.row { all: unset; box-sizing: border-box; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; width: 100%; padding: 5px 8px; border-left: 2px solid var(--line); background: rgba(255,255,255,.025); cursor: pointer; font: 13px/1.45 var(--mono); color: var(--text); }
 ul.list li > button:hover, ul.list li > button:focus-visible, ul.list li > a.row:hover, ul.list li > a.row:focus-visible { background: rgba(255,255,255,.07); }
 ul.list li.in > button { border-left-color: var(--ok); }
+html.i18n-zh ul.list li.in > button { border-left-color: #ff3b52; }   /* money coming in: red in Chinese, as a rise on a market screen */
 ul.list li.out > button { border-left-color: #fff; }
 ul.list li.refuse > button { border-left-color: var(--bad); }
 ul.list li.gov > button { border-left-color: var(--hair); }
@@ -1045,7 +1046,7 @@ function renderOffers(ro) {
 function rowHtml(e) {
   const i = M.ev.indexOf(e);
   const cls = e.cat === "refusal" ? "refuse" : e.dir === "in" ? "in" : e.dir === "out" ? "out" : "gov";
-  const amt = e.amt != null && e.dir !== "self" ? `<span class="amt ${e.dir === "in" ? "in" : ""}">${e.dir === "in" ? "+" : "−"}${fmtA(e.amt)}</span>` : e.cat === "refusal" ? `<span class="amt no">no</span>` : `<span class="amt"></span>`;
+  const amt = e.amt != null && e.dir !== "self" ? `<span class="amt ${e.dir === "in" ? "in mv-up" : ""}">${e.dir === "in" ? "+" : "−"}${fmtA(e.amt)}</span>` : e.cat === "refusal" ? `<span class="amt no">no</span>` : `<span class="amt"></span>`;
   return `<li class="${cls}"><button type="button" data-ev="${i}"><span class="h">${e.h != null ? `#${fmtN(e.h)}` : "queue"}</span><span class="d">${e.text}</span>${amt}</button></li>`;
 }
 function renderActivity() {
