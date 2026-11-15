@@ -384,7 +384,7 @@ def text(f: dict) -> dict:
         pace = cc[0] / (((f["to"] - f["from"]) / f["block seconds"]) or 1) if f.get("block seconds") else None
         stats.append([n(cc[0]), "blocks this week", None if pace is None else "ok" if pace >= 0.95 else "amber" if pace >= 0.8 else "bad"])
     stats.append([str(len(rs)), ("chain restart" if len(rs) == 1 else "chain restarts") + (", cause not clear yet" if rs else ""),
-                  "ok" if not rs else "amber" if len(rs) == 1 else "bad"])
+                  "ok" if not rs else "amber"])   # restarts are a caution, never red: red reads as "super bad" (Kilian, 15 Nov)
     if src.get("apps"):
         bf = (f.get("before") or {}).get("app txs")
         stats.append([n(people), "transactions by users of our apps", None if not bf else "ok" if people >= bf else "amber"])
