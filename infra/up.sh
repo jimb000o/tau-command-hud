@@ -207,6 +207,11 @@ fi
 # Kling's clips (alerts/kling.py, kling_island.py), the node left alone: the blog and agorzilla services rebuilt with the
 # code just pulled, Caddy given /kling/*, then: up kling  this month's clips, up kling test  a 5 s test clip (waits up to
 # 10 min), up kling list, up kling send <key>  a draft posted, up kling off island
+# Private parts of the stack live in their own checkout under /opt/private/<name> with their own up.sh and a
+# docker-compose.override.yml linked into this folder (ignored by git); "up <name>" hands over to them.
+if [ -n "${1:-}" ] && [ -f "/opt/private/$1/up.sh" ]; then
+  exec sh "/opt/private/$1/up.sh" "$@"
+fi
 if [ "${1:-}" = "kling" ]; then
   docker compose up -d --no-deps --build blog agorzilla >/dev/null 2>&1 || docker compose up -d --no-deps --build blog agorzilla
   docker compose up -d --no-deps --force-recreate caddy >/dev/null 2>&1 || true
