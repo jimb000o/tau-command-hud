@@ -3129,18 +3129,16 @@
     "html": "White Rabbit Key: the islanders walk like people now. They keep to the paths, beaches, piers, rope bridges and stairs, and no longer cross houses, roofs, cliffs or water. If your test wallet walks on the island, it is yours to walk: click anywhere and your islander goes to the nearest spot it can reach on foot; click a place and it walks to the door first, and the place opens as it arrives. Everyone on the island sees it walk the same way. Only your wallet can walk it: your browser signs with its key once a day."
   },
   {
-<<<<<<< HEAD
-    "tag": "White Rabbit Key",
-    "on": "2026-11-16",
-    "link": "/rabbit/?islander=1",
-    "html": "Islander studio on White Rabbit Key: every wallet’s islander is now made of 17 parts (build, hair, clothes, face shape, eyes, brows, nose, mouth, beard, glasses …), from its key until you change them, worn with one transaction to the hearts box. Earned pieces (a rule writer’s sash, No Memo goggles …) open only through your own transactions. The first wallet to choose a face is its first wearer. Islanders wave when their transaction lands, sit down while the chain rests, and a hover or click now tells what each wallet did on Tau HUD. Islander pass picture to save or share; “Your islander” on the wallet page."
-  }
-=======
     "tag": "Wallets",
     "on": "2026-11-16",
     "link": "/account/",
     "html": "Wallets from our apps: where the HUD and the account page show a wallet, they now say when it came from one of our apps. A wallet whose first transaction we know of was signed in Tau HUD, No Memo, White Rabbit Key or Agorzilla reads “Started in Tau HUD” and so on, with the day; one that only sent through them later reads “Uses …”. It shows next to a rule holder, in a rule offer’s popup, in Worth a look and as a tag on the account page. Only for visitors’ wallets, never for IDNI’s or our own, and only when our server saw it: a wallet from before its record began never gets a start. A wallet is a key, not a person."
   },
-  {"tag": "No Memo", "on": "2026-11-16", "link": "/nomemo/", "html": "No Memo: the vaults. Five wallets Tau HUD runs on the testnet, played as if their keys had leaked: our server signs any plain payment a player asks for and never changes a vault’s rule, so each vault’s real rule on the chain is its only lock. Read the rule in Tau and drain what it lets through: the till caps each payment, the reserve keeps a floor, the window lets only a narrow band of amounts out, the clock opens for half an hour a week. The keeper takes a rule you write for it if it passes its checklist of test payments, judged by the real Tau engine, and then it is yours to drain for ten minutes. New rules every Monday; a refused try costs nothing. Type vaults."}
->>>>>>> origin/main
+  {"tag": "No Memo", "on": "2026-11-16", "link": "/nomemo/", "html": "No Memo: the vaults. Five wallets Tau HUD runs on the testnet, played as if their keys had leaked: our server signs any plain payment a player asks for and never changes a vault’s rule, so each vault’s real rule on the chain is its only lock. Read the rule in Tau and drain what it lets through: the till caps each payment, the reserve keeps a floor, the window lets only a narrow band of amounts out, the clock opens for half an hour a week. The keeper takes a rule you write for it if it passes its checklist of test payments, judged by the real Tau engine, and then it is yours to drain for ten minutes. New rules every Monday; a refused try costs nothing. Type vaults."},
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/?islander=1",
+    "html": "Islander studio on White Rabbit Key: every wallet’s islander is now made of 17 parts (build, hair, clothes, face shape, eyes, brows, nose, mouth, beard, glasses …), from its key until you change them, worn with one transaction to the hearts box. Earned pieces (a rule writer’s sash, No Memo goggles …) open only through your own transactions. The first wallet to choose a face is its first wearer. Islanders wave when their transaction lands, sit down while the chain rests, and a hover or click now tells what each wallet did on Tau HUD. Islander pass picture to save or share; “Your islander” on the wallet page."
+  }
 ]
