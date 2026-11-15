@@ -178,6 +178,7 @@
   const meshes = [];
   let meshed = false;
   async function build() {
+    if (window.AgzLook && AgzLook.paint) return;   // an older stage is a painting of its own (agorzilla.com): drawn flat, its mouth is not the baby's
     const parts = [[q(".gaze > img.face"), { rh: 640, step: 8, jaw: true }], [q("img.trunk"), { rh: H, step: 16 }]];
     try {
       await Promise.all(parts.map(([img]) => img.decode ? img.decode() : Promise.resolve()));
@@ -286,6 +287,6 @@
   apply();
   if (window.WebGLRenderingContext) { if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", build); else build(); }
   // he grew up (assets/agz-look.js swapped in the stage's pictures): the meshes take the new ones
-  addEventListener("agz-stage", () => { if (meshed) { undo(); build(); } });
+  addEventListener("agz-stage", () => { if (meshed) undo(); if (window.WebGLRenderingContext) build(); });   // a painted stage stays flat (build)
   requestAnimationFrame(frame);
 })();
