@@ -77,3 +77,49 @@ assert "newcomer" not in [k for k, _ in fresh.card(A, NOW)["traits"]]
 fresh.since = NOW - 3 * 86400
 assert "newcomer" in [k for k, _ in fresh.card(A, NOW)["traits"]]
 print("walkers ok")
+
+# ---------- the islander, part by part ----------
+from walkers import PART, STRIDE, NS, face_sig, key_part, parts_of
+
+P = "ee" * 48
+w2 = Walkers(os.path.join(tempfile.mkdtemp(), "walkers.json"))
+w2.since = NOW - 10 * 86400
+# one transaction, three parts: eyes 3, mouth 6, earned piece 1 (a rule writer's sash); an amount past a part's choices is ignored
+w2.add_blocks([{"header": {"timestamp": NOW - 500, "block_number": 50}, "transactions": [
+    {"tx_type": "user_tx", "sender_pubkey": P, "operations": {"1": [[P, BOX, str(PART + 9 * STRIDE + 3)], [P, BOX, str(PART + 12 * STRIDE + 6)],
+                                                                  [P, BOX, str(PART + 16 * STRIDE + 1)], [P, BOX, str(PART + 0 * STRIDE + 7)]]}}]}])
+r = w2.w[P]
+assert r["pt"][9] == 3 and r["pt"][12] == 6 and r["pt"][16] == 1 and r["pt"][0] is None, r["pt"]
+assert r["heart"] == 0   # part payments are not hearts
+row = next(x for x in w2.active(NOW)["walkers"] if x["a"] == P)
+assert row["pt"][9] == 3 and row["pt"][0] == key_part(P, 0)
+assert row["pt"][16] == 0, "the sash is shown only to a rule writer"
+assert row.get("first") is True   # the first wallet to choose this face
+sig = face_sig(parts_of(P, r["pt"]))
+assert w2.face(sig)["first"] == P
+# a later wallet choosing the same face is not the first; an older look payment still sets four parts
+Q = "ef" * 48
+same = [[Q, BOX, str(PART + i * STRIDE + v)] for i, v in enumerate(parts_of(P, r["pt"])) if i != 16]
+w2.add_blocks([{"header": {"timestamp": NOW - 400, "block_number": 51}, "transactions": [
+    {"tx_type": "user_tx", "sender_pubkey": Q, "operations": {"1": same}}]}])
+assert w2.face(sig)["first"] == P and not next(x for x in w2.active(NOW)["walkers"] if x["a"] == Q).get("first")
+w2.add_blocks([{"header": {"timestamp": NOW - 300, "block_number": 52}, "transactions": [
+    {"tx_type": "user_tx", "sender_pubkey": Q, "operations": {"1": [[Q, BOX, str(LOOK + 2 * 64 + 3 * 8 + 5)]]}}]}])
+assert w2.w[Q]["pt"][1] == 4 and w2.w[Q]["pt"][2] == 3 and w2.w[Q]["pt"][5] == 5 and w2.w[Q]["look"] == 2 * 64 + 29
+# a rule writer may wear the sash
+w2.add_blocks([rule(NOW - 200, 53, P, "always ( (o5[t]:bv[24] = { #x000001 }:bv[24]) ).")])
+assert next(x for x in w2.active(NOW)["walkers"] if x["a"] == P)["pt"][16] == 1
+card = w2.card(P, NOW)
+assert card["face"]["mine"] and 1 in card["earned"] and card["pt"][16] == 1
+# the chain: the newest block, a restart (newer, far lower), a refusal by the wallet's own rule
+assert w2.active(NOW)["chain"]["height"] == 53
+w2.add_blocks([blk(NOW - 100, 2, (P, C, 1))])
+ch = w2.active(NOW)["chain"]
+assert ch["restart"] == NOW - 100 and ch["height"] == 2
+w2.held(P, NOW - 60)
+assert next(x for x in w2.active(NOW)["walkers"] if x["a"] == P)["held"] == NOW - 60
+# kept across a relay restart
+w2.save(force=True)
+w3 = Walkers(w2.path)
+assert w3.faces == w2.faces and w3.restart == NOW - 100 and w3.w[P]["pt"][9] == 3
+print("walkers parts ok")
