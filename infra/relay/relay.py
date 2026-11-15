@@ -1234,6 +1234,9 @@ class Relay:
         """A payment refused because the sender's own rule (o5) said no, as the node words it: counted per day."""
         if re.search(r"o5|own (policy|rule)", str(reason or ""), re.I) and HEX.match(str(sender or "")):
             self.ruledays.held(self.rule_who()(str(sender).lower()))
+            if getattr(self, "walkers", None) is not None:
+                self.walkers.held(str(sender).lower())   # its islander shakes its head on White Rabbit Key for a while
+                self.walkers_text = None
             self.ruledays.save()
             self.rulenums_text = None
 
@@ -1375,6 +1378,9 @@ class Relay:
             j = json.loads(self.walkers_text)
             j["go"] = self.steer.recent({w.get("a") for w in j.get("walkers") or []})   # the walks their wallets asked for lately
             return j
+        if path.startswith("/walkers/face/"):   # who chose this face first (walkers.py faces)
+            sig = path[len("/walkers/face/"):]
+            return self.walkers.face(sig) if re.match(r"^\d{1,2}(-\d{1,2}){10}$", sig) else {"error": "not a face"}
         pk = path[len("/walkers/"):].lower()
         if not re.match(r"^[0-9a-f]{96}$", pk) or pk in self.walker_ours():
             return {"error": "not a walker"}

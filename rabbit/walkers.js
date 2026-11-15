@@ -8,16 +8,19 @@
    wallets); IDNI's genesis accounts walk in grey. Nobody plays a walker: they walk by themselves, to the places
    that fit what their wallet does (the Council Hall for the island's politicians, the lighthouse for rule writers …).
 
-   The look: without a choice, a wallet's islander is drawn from its key, always the same. The browser's own test
-   wallet (tauhud.com/wallet/, the same key the game plays with) can choose its look here: the choice is a real
-   transaction of LOOK + code test AGRS to the hearts box, which has no key behind it; the newest one counts.
-   ?islander=1 opens the choice at once. Test params: ?walkers=demo shows made-up walkers (marked as such).
+   The look (islander.js): seventeen parts, from the wallet's key until it chooses them in the islander studio
+   (studio.js) with one real transaction to the hearts box, which has no key behind it. Each islander has a name made
+   from its key's syllables (never on the chain). The islanders live with the chain: one waves when its wallet's
+   transaction lands in a block, shakes its head when its own rule refused a payment, and they all sit down while
+   the chain pauses (no new block for five minutes).
+   ?islander=1 opens the studio at once. Test params: ?walkers=demo shows made-up walkers (marked as such).
    Your own islander walks where you click (goTo), and every page sees it walk (remote, relay steer.py).
-   window.ISLE_WALKERS = { figure, look, open, board, choose, goTo, remote, mine } */
+   window.ISLE_WALKERS = { figure, look, open, board, choose, goTo, remote, mine, find, me, cardOf, traits } */
 (() => {
   "use strict";
   const SC = window.COVE_SCENE; if (!SC || !SC.extra) return;
-  const RELAY = "https://node.tauhud.com", WS = "wss://node.tauhud.com", WKEY = "tauhud-wallet-key", MINE = "tauhud-islander-look";
+  const RELAY = "https://node.tauhud.com", WS = "wss://node.tauhud.com", WKEY = "tauhud-wallet-key", MINE = "tauhud-islander-look", MINE2 = "tauhud-islander-parts";
+  const IS = window.ISLANDER; if (!IS) return;
   const T = s => (window.TauI18n ? TauI18n.t(s) : s);
   const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));   // filled in first: the dictionaries match the whole sentence
   const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
@@ -25,15 +28,14 @@
   const phone = () => innerWidth < 760;
   const INK = "#22303a";
 
-  /* ---------- the look: skin, hair or hat, shirt (code = skin * 64 + hair * 8 + shirt) ---------- */
-  const SKINS = ["#f1c27d", "#e0ac69", "#c68642", "#a8693f", "#8d5524", "#5a3620"];
-  const HAIRS = ["Short hair", "Long hair", "Bun", "Straw hat", "Cap", "Bandana", "Beanie", "Flower"];
-  const SHIRTS = ["#e85d4a", "#f2b134", "#3aa6a0", "#f4f1ea", "#e86fa0", "#6fa8ff", "#a3e05a", "#c9a0ff"];
-  const HAIRC = ["#1d1410", "#3b2416", "#6b4423", "#111", "#9a9aa0", "#c98c3c"];
+  /* ---------- the look: the islander's parts (islander.js); an older choice (1,200 + code) still counts ---------- */
   const LOOKS = 384;
   let BASE = 1200, BOX = "a43259757c7e5a26dae5dde9ce22ecafe2d7570c93e71ccf65756691d57e7a512e7fdfbfc78e9ce3bfd608b71e286a0b";
-  const keyCode = a => parseInt(String(a || "0").slice(2, 10), 16) % LOOKS;
-  const look = (code, a) => { const c = Number.isInteger(code) && code >= 0 && code < LOOKS ? code : keyCode(a); return { code: c, skin: Math.floor(c / 64), hair: Math.floor(c / 8) % 8, shirt: c % 8, hc: HAIRC[(c * 7 + 3) % HAIRC.length] }; };
+  const look = (code, a) => IS.parts(a, IS.fromLook(code));
+  const partsOf = d => (Array.isArray(d.pt) && d.pt.length === IS.N.length ? d.pt.map(Number) : look(d.look, d.a));
+  /* what this browser chose last, until the relay has read it from a block (half an hour at most) */
+  const pending = () => { try { const v = JSON.parse(store.get(MINE2) || "null"); return v && Array.isArray(v.p) && Date.now() - v.at < 1800000 ? v : null; } catch (e) { return null; } };
+  const WALK_SPEED = [1, 1.05, 1.12, 0.78, 0.95];
 
   /* ---------- what a wallet's traits mean, and what its islander carries ---------- */
   const TRAITS = {
@@ -74,56 +76,10 @@
   }
   const title = k => T((TRAITS[k] || TRAITS.quiet)[0]);
 
-  /* ---------- drawing an islander: feet at (x, y), s = scale (1: about 28 world units tall) ---------- */
+  /* ---------- drawing an islander: feet at (x, y), s = scale (1: about 28 world units tall); what it carries on top ---------- */
   function figure(g, x, y, s, lk, o = {}) {
-    const t = o.t || 0, ph = o.ph || 0, go = o.walk ? 1 : 0, face = o.face || 1, grey = !!o.idni, gr = o.gear || {};
-    const sw = Math.sin(ph) * 2.2 * go, bob = Math.abs(Math.sin(ph)) * 0.9 * go;
-    const skin = SKINS[lk.skin], shirt = grey ? "#8d9097" : SHIRTS[lk.shirt], hc = grey ? "#2d2f33" : lk.hc;
-    g.save(); g.translate(x, y); g.scale(s * face, s); g.lineCap = "round"; g.lineJoin = "round";
-    g.fillStyle = "rgba(20,34,40,.28)"; g.beginPath(); g.ellipse(0, 0.5, 6, 1.8, 0, 0, Math.PI * 2); g.fill();
-    if (gr.buddy === "cat") {   // a small cat at its heels
-      const cx = -9, cy = 0, hop = Math.abs(Math.sin(ph * 1.3)) * 0.8 * go;
-      g.fillStyle = "#3a3a3a"; g.strokeStyle = INK; g.lineWidth = 0.6;
-      g.beginPath(); g.ellipse(cx, cy - 2.4 - hop, 3, 1.7, 0, 0, Math.PI * 2); g.fill();
-      g.beginPath(); g.arc(cx + 2.8, cy - 4 - hop, 1.4, 0, Math.PI * 2); g.fill();
-      g.beginPath(); g.moveTo(cx + 2.2, cy - 5.1 - hop); g.lineTo(cx + 2.5, cy - 6.3 - hop); g.lineTo(cx + 3, cy - 5.2 - hop); g.moveTo(cx + 3.2, cy - 5.1 - hop); g.lineTo(cx + 3.8, cy - 6.2 - hop); g.lineTo(cx + 4, cy - 4.9 - hop); g.fill();
-      g.strokeStyle = "#3a3a3a"; g.lineWidth = 0.8; g.beginPath(); g.moveTo(cx - 2.8, cy - 2.6 - hop); g.quadraticCurveTo(cx - 5, cy - 5, cx - 4, cy - 6.5 - hop); g.stroke();
-    }
-    g.translate(0, -bob);
-    if (gr.back) {   // a backpack or a satchel behind
-      g.fillStyle = gr.back === "backpack" ? "#7a5a3a" : "#b08850"; g.strokeStyle = INK; g.lineWidth = 0.7;
-      g.beginPath(); g.roundRect ? g.roundRect(-6.6, -18, 3.4, gr.back === "backpack" ? 7 : 5, 1) : g.rect(-6.6, -18, 3.4, 6); g.fill(); g.stroke();
-    }
-    g.strokeStyle = INK; g.lineWidth = 1.8;   // legs
-    g.beginPath(); g.moveTo(-1.6, -9); g.lineTo(-1.6 + sw, 0); g.moveTo(1.6, -9); g.lineTo(1.6 - sw, 0); g.stroke();
-    g.fillStyle = shirt; g.lineWidth = 0.9;   // body
-    g.beginPath(); g.moveTo(-4.6, -8.5); g.lineTo(-3.6, -18.5); g.lineTo(3.6, -18.5); g.lineTo(4.6, -8.5); g.closePath(); g.fill(); g.stroke();
-    g.lineWidth = 1.5; g.strokeStyle = skin;   // arms
-    g.beginPath(); g.moveTo(-3.7, -17); g.lineTo(-5.3 - sw * 0.4, -10.5); g.moveTo(3.7, -17); g.lineTo(5.6 + sw * 0.4, -11); g.stroke();
-    if (gr.chest === "heart") { g.fillStyle = "#e8436a"; g.beginPath(); g.moveTo(1.2, -12.6); g.bezierCurveTo(-0.6, -14, 0.1, -15.6, 1.2, -14.6); g.bezierCurveTo(2.3, -15.6, 3, -14, 1.2, -12.6); g.fill(); }
-    if (gr.chest === "rosette") { g.fillStyle = "#e9b44c"; g.beginPath(); g.arc(1.6, -15, 1.3, 0, Math.PI * 2); g.fill(); g.fillStyle = "#c0533f"; g.fillRect(1, -13.8, 0.6, 1.8); g.fillRect(1.8, -13.8, 0.6, 1.8); }
-    g.fillStyle = skin; g.strokeStyle = INK; g.lineWidth = 0.9;   // head
-    g.beginPath(); g.arc(0, -22, 3.7, 0, Math.PI * 2); g.fill(); g.stroke();
-    g.fillStyle = INK; g.beginPath(); g.arc(1.4, -22.4, 0.45, 0, Math.PI * 2); g.fill();
-    hair(g, grey ? 4 : lk.hair, hc);
-    if (gr.head === "crown") { g.fillStyle = "#f2c94c"; g.strokeStyle = INK; g.lineWidth = 0.6; g.beginPath(); g.moveTo(-3, -25.2); g.lineTo(-3, -28); g.lineTo(-1.5, -26.6); g.lineTo(0, -28.6); g.lineTo(1.5, -26.6); g.lineTo(3, -28); g.lineTo(3, -25.2); g.closePath(); g.fill(); g.stroke(); }
-    if (gr.head === "visor") { g.fillStyle = "rgba(57,255,138,.9)"; g.fillRect(-1.2, -23.3, 4.6, 1.4); g.shadowColor = "#39ff8a"; g.shadowBlur = 4; g.fillRect(-1.2, -23.3, 4.6, 1.4); g.shadowBlur = 0; }
-    hand(g, gr.hand, 5.6 + sw * 0.4, -11, t, o.light || 0);
-    g.restore();
-  }
-  function hair(g, h, c) {
-    g.fillStyle = c; g.strokeStyle = INK; g.lineWidth = 0.6;
-    const cap = (col, brim) => { g.fillStyle = col; g.beginPath(); g.arc(0, -23, 3.9, Math.PI, 0); g.fill(); g.stroke(); if (brim) { g.beginPath(); g.ellipse(2.6, -23, 2.8, 0.7, 0, 0, Math.PI * 2); g.fill(); g.stroke(); } };
-    switch (h) {
-      case 0: g.beginPath(); g.arc(0, -22.8, 3.9, Math.PI * 1.05, Math.PI * 1.95); g.fill(); break;
-      case 1: g.beginPath(); g.arc(0, -22.8, 4, Math.PI, Math.PI * 2); g.lineTo(3.4, -18.6); g.lineTo(2.4, -21); g.lineTo(-3.2, -21); g.lineTo(-4.2, -18); g.closePath(); g.fill(); break;
-      case 2: g.beginPath(); g.arc(0, -22.8, 3.9, Math.PI * 1.05, Math.PI * 1.95); g.fill(); g.beginPath(); g.arc(-1.4, -27, 1.9, 0, Math.PI * 2); g.fill(); break;
-      case 3: g.fillStyle = "#e3c26a"; g.beginPath(); g.ellipse(0, -24.6, 6.4, 1.4, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.beginPath(); g.arc(0, -24.8, 3.2, Math.PI, 0); g.fill(); g.stroke(); g.fillStyle = "#c0533f"; g.fillRect(-3.1, -25.6, 6.2, 0.8); break;
-      case 4: cap("#284b63", true); break;
-      case 5: cap("#c0533f", false); g.fillStyle = "#c0533f"; g.beginPath(); g.moveTo(-3.6, -22.6); g.lineTo(-6, -21.2); g.lineTo(-5.4, -23.4); g.fill(); break;
-      case 6: cap("#2c8c88", false); g.fillStyle = "#f4f1ea"; g.beginPath(); g.arc(0, -27, 1.1, 0, Math.PI * 2); g.fill(); break;
-      default: g.beginPath(); g.arc(0, -22.8, 3.9, Math.PI * 1.05, Math.PI * 1.95); g.fill(); g.fillStyle = "#e86fa0"; for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2; g.beginPath(); g.arc(-2.6 + Math.cos(a) * 1, -25 + Math.sin(a) * 1, 0.8, 0, Math.PI * 2); g.fill(); } g.fillStyle = "#f2c94c"; g.beginPath(); g.arc(-2.6, -25, 0.6, 0, Math.PI * 2); g.fill();
-    }
+    const at = IS.figure(g, x, y, s, lk, o);
+    if (o.gear && o.gear.hand && !o.wave) { g.save(); g.translate(x, y); g.scale(s * (o.face || 1), s); hand(g, o.gear.hand, at.hx, at.hy, o.t || 0, o.light || 0); g.restore(); }
   }
   function hand(g, it, x, y, t, light) {
     if (!it) return;
@@ -158,7 +114,9 @@
   const W = { list: [], by: new Map(), total: 0, idni: 0, at: 0, sel: null, bubble: null, nextBubble: 0, board: null, ok: false };
   const myPk = () => { try { const k = JSON.parse(store.get(WKEY) || "null"); return k && k.pk ? String(k.pk).toLowerCase() : null; } catch (e) { return null; } };
   const myLook = () => { const v = parseInt(store.get(MINE) || "", 10); return v >= 0 && v < LOOKS ? v : null; };
+  const myParts = (d, pk) => { const q = pending(); if (q && q.pk === pk) return q.p; return d ? partsOf(d) : myLook() != null ? look(myLook(), pk) : IS.parts(pk); };
   const placeIds = () => Object.keys(SC.places).filter(id => SC.places[id] && Number.isFinite(SC.places[id].x));
+  const NAMES = new Map(), nameOf = a => { if (!NAMES.has(a)) NAMES.set(a, IS.name(a)); return NAMES.get(a); };
   function spot(id) {
     const p = SC.places[id] || SC.places.market || SC.places.hall; if (!p) return [800, 600];
     return [p.x + (Math.random() - 0.5) * 90, p.y + 10 + Math.random() * 22];
@@ -259,7 +217,8 @@
     const T0 = Math.floor(Date.now() / 1000), hx = n => Array.from({ length: 96 }, (_, i) => "0123456789abcdef"[(n * 7 + i * 13 + (i * n) % 11) % 16]).join("");
     const sets = [["nightowl", "feeder", "lawmaker"], ["winner", "politician", "voter"], ["guardian", "lawmaker", "regular"], ["hacker", "allrounder"], ["catfriend", "hearts", "earlybird"], ["newcomer"], ["veteran", "connector", "bigspender"], ["quiet"], ["busy", "regular"]];
     return { total: sets.length, idni: 1, walkers: [...sets.map((t, i) => ({ a: hx(i + 3), look: i % 3 ? null : i * 37 % LOOKS, idni: false, last: T0 - i * 400, n24: 3 + i, traits: t, home: "" })),
-      { a: hx(99), look: null, idni: true, last: T0, n24: 40, traits: ["idni", "busy"], home: "hall" }] };
+      { a: hx(99), look: null, idni: true, last: T0, n24: 40, traits: ["idni", "busy"], home: "hall" }].map((w, i) => ({ ...w, first: i === 1 || undefined, held: i === 2 ? T0 - 120 : undefined })),
+      chain: { tip: Q.get("chain") === "paused" ? T0 - 900 : T0 - 20, height: 4200, restart: Q.get("chain") === "restart" ? T0 - 600 : 0 } };
   }
   async function poll() {
     if (document.hidden && W.ok) return;
@@ -270,6 +229,7 @@
     if (!j || !Array.isArray(j.walkers)) return;
     W.ok = true;
     if (j.look) { BOX = j.look.box || BOX; BASE = j.look.base || BASE; }
+    W.chain = j.chain || null; W.polled = Date.now() / 1000;
     const me = myPk(), cap = phone() ? 12 : 30;
     const rows = j.walkers.filter(w => w && /^[0-9a-f]{96}$/.test(w.a));
     const mine = rows.find(w => w.a === me), rest = rows.filter(w => w.a !== me && !w.idni), idni = rows.filter(w => w.idni && w.a !== me);
@@ -283,8 +243,8 @@
         w = { a: d.a, x, y, tx: x, ty: y, wait: Math.random() * 3000, ph: Math.random() * 6, face: 1, ping: 0, lane: (Math.random() - 0.5) * 5 };
       } else if (d.last > w.d.last) w.ping = performance.now();   // it just sent another transaction
       w.d = d; w.me = d.a === me;
-      const code = w.me && myLook() != null ? myLook() : d.look;
-      w.lk = look(code, d.a); w.gear = gear(d.traits); w.speed = (d.traits.includes("busy") ? 0.03 : d.traits.includes("veteran") ? 0.011 : 0.016) * (0.85 + Math.random() * 0.3);
+      w.lk = w.me ? myParts(d, me) : partsOf(d); w.gear = gear(d.traits); w.name = nameOf(d.a);
+      w.speed = (d.traits.includes("busy") ? 0.03 : d.traits.includes("veteran") ? 0.011 : 0.016) * (0.85 + Math.random() * 0.3) * WALK_SPEED[w.lk[7]];
       keep.set(d.a, w);
     }
     W.by = keep; W.list = [...keep.values()];
@@ -293,8 +253,12 @@
   }
 
   /* ---------- walking, drawn with the island's people in depth order ---------- */
+  /* the chain pauses (no new block for five minutes): everyone sits down; it started over in the last half hour: the board says so */
+  const paused = () => { const c = W.chain; return !!(c && c.tip && (W.polled || Date.now() / 1000) - c.tip > 300); };
+  const restarted = () => { const c = W.chain; return !!(c && c.restart && Date.now() / 1000 - c.restart < 1800); };
+  const heldNow = w => w.d.held && Date.now() / 1000 - w.d.held < 900;
   function step(w, dt) {
-    if (W.sel === w.a && !w.go) return;   // the one whose card is open stands still (a steered one keeps to its shared way)
+    if ((W.sel === w.a && !w.go) || paused()) return;   // the one whose card is open stands still (a steered one keeps to its shared way); everyone sits while the chain rests
     const N = ways();
     if (N && w.later) { const L = w.later; w.later = null; walk(w, L.go, L.age + performance.now() - L.at); }
     if (N && w.go) { steered(w, N, dt); return; }
@@ -327,26 +291,35 @@
     g.fillRect(-1.6, -22, 3.2, 22); g.strokeRect(-1.6, -22, 3.2, 22);
     g.fillStyle = "#f3e7c9"; g.fillRect(-22, -44, 44, 24); g.strokeRect(-22, -44, 44, 24);
     g.fillStyle = "#39ff8a"; g.shadowColor = "#39ff8a"; g.shadowBlur = 4; g.beginPath(); g.arc(-15, -38.5, 1.8, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0;
-    figure(g, -11, -23.5, 0.62, look(0, "00"), { idni: true });
+    IS.figure(g, -11, -23.5, 0.62, IS.parts("00"), { idni: true });
     g.fillStyle = INK; g.font = "800 13px Sora, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(W.total), 6, -31.5);
+    if (paused() || restarted()) {   // amber, never red: a pause or a fresh start is the testnet's normal life
+      g.fillStyle = "#ffb13b"; g.shadowColor = "#ffb13b"; g.shadowBlur = 5; g.beginPath(); g.arc(17, -41, 3.2, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0;
+      g.fillStyle = "#09090a"; g.font = "800 5px Sora, sans-serif"; g.fillText("!", 17, -40.8);
+    }
     g.restore(); W.board = [x - 23, y - 45, 46, 45];
   }
   SC.extra((g, t, dt, items, light) => {
     if (!W.list.length) { W.board = null; return; }
     const now = performance.now();
-    if (now > W.nextBubble) { const c = W.list[Math.floor(Math.random() * W.list.length)]; W.bubble = { a: c.a, until: now + 3600 }; W.nextBubble = now + 6500 + Math.random() * 5000; }
+    if (now > W.nextBubble) { const held = W.list.filter(heldNow), c = held.length && Math.random() < 0.6 ? held[Math.floor(Math.random() * held.length)] : W.list[Math.floor(Math.random() * W.list.length)]; W.bubble = { a: c.a, until: now + 3600 }; W.nextBubble = now + 6500 + Math.random() * 5000; }
     for (const w of W.list) {
       step(w, dt);
       items.push([w.y, () => {
-        const moving = W.sel !== w.a && w.wait <= 0, s = 1.25;
-        figure(g, w.x, w.y, s, w.lk, { t, ph: w.ph, walk: moving, face: w.face, idni: w.d.idni, gear: w.gear, light });
+        const sit = paused(), moving = W.sel !== w.a && w.wait <= 0 && !sit, s = 1.25, waving = now - w.ping < 3500 || (W.find && W.find.a === w.a && now < W.find.until);
+        figure(g, w.x, w.y, s, w.lk, { t, ph: w.ph, walk: moving, face: w.face, idni: w.d.idni, gear: w.gear, light, wave: waving, shake: heldNow(w) && W.bubble && W.bubble.a === w.a, sit });
         const top = w.y - 31 * s;
         g.fillStyle = w.d.idni ? "#b8bcc4" : "#39ff8a"; g.shadowColor = g.fillStyle; g.shadowBlur = 4;   // a real wallet: the green dot (IDNI's: grey)
         g.beginPath(); g.arc(w.x, top, 1.6, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0;
         const pa = (now - w.ping) / 4000;   // it just sent a transaction: a ring goes out
         if (pa >= 0 && pa < 1) { g.strokeStyle = `rgba(57,255,138,${1 - pa})`; g.lineWidth = 1.2; g.beginPath(); g.ellipse(w.x, w.y, 6 + pa * 22, 2 + pa * 7, 0, 0, Math.PI * 2); g.stroke(); }
         if (W.sel === w.a) { g.strokeStyle = "#39ff8a"; g.lineWidth = 1.2; g.beginPath(); g.ellipse(w.x, w.y + 0.5, 8, 2.6, 0, 0, Math.PI * 2); g.stroke(); }
-        const label = w.me ? T("you") : W.bubble && W.bubble.a === w.a && now < W.bubble.until ? title(w.d.traits[0]) : null;
+        if (W.find && W.find.a === w.a && now < W.find.until) {   // "find me": a beacon over your islander
+          const k = (now % 1200) / 1200; g.strokeStyle = `rgba(57,255,138,${1 - k})`; g.lineWidth = 1.6; g.beginPath(); g.ellipse(w.x, w.y, 8 + k * 30, 2.6 + k * 10, 0, 0, Math.PI * 2); g.stroke();
+          g.fillStyle = "#39ff8a"; g.beginPath(); const ay = top - 16 - Math.abs(Math.sin(now * 0.006)) * 5; g.moveTo(w.x - 4, ay - 6); g.lineTo(w.x + 4, ay - 6); g.lineTo(w.x, ay); g.fill();
+        }
+        const mine = W.bubble && W.bubble.a === w.a && now < W.bubble.until;
+        const label = w.me ? T("you") + " · " + w.name : mine ? (heldNow(w) ? T("My rule said no") : sit ? T("The chain is resting") : w.name + " · " + title(w.d.traits[0])) : null;
         if (label) bubble(g, w.x, top - 4, label, w.me);
       }]);
     }
@@ -370,49 +343,91 @@
   }
 
   /* ---------- hover and cards ---------- */
+  /* how a wallet relates to Tau HUD, from its traits: which of our apps it uses (a wallet can also use Tau Net elsewhere) */
+  const APPS = [["No Memo", "/nomemo/", ["hacker"]], ["Agorzilla", "https://agorzilla.com", ["feeder", "voter"]], ["White Rabbit Key", "/rabbit/", ["politician", "winner"]],
+    ["Déjà's café", "https://agorzilla.com/cat/", ["catfriend"]], ["its own rule", "/rules/", ["lawmaker", "guardian", "vault", "picky", "capped", "frozen"]], ["hearts on Tau HUD", "/hearts/", ["hearts"]]];
+  const appsOf = traits => APPS.filter(a => a[2].some(k => (traits || []).includes(k)));
+  function kind(d) {   // one line: who this wallet is on Tau HUD
+    if (d.idni) return T("An IDNI test account: one of the accounts the testnet started with.");
+    const a = appsOf(d.traits).filter(x => x[1] !== "/rules/"), rule = appsOf(d.traits).some(x => x[1] === "/rules/");
+    if (!a.length && !rule) return T("Sends payments on Tau Net testnet; it has not used a Tau HUD app yet.");
+    if (!a.length) return T("On Tau HUD it wrote its own rule for its wallet.");
+    return F("On Tau HUD it uses {x}.", { x: a.map(x => T(x[0])).join(", ") }) + (rule ? " " + T("It also wrote its own rule for its wallet.") : "");
+  }
+  const ago = ts => { const m = Math.max(1, Math.round((Date.now() / 1000 - ts) / 60)); return m < 60 ? F("{n} min ago", { n: m }) : F("{n} h ago", { n: Math.round(m / 60) }); };
   function tip(id) {
-    if (id === "walker:board") return F("{n} real wallets on Tau Net testnet were active today", { n: W.total });
+    if (id === "walker:board") return F("{n} real wallets on Tau Net testnet were active today", { n: W.total }) + (paused() ? " · " + T("the chain is resting: no new block for a few minutes") : restarted() ? " · " + T("the testnet started over in the last half hour") : "");
     const w = W.by.get(id.slice(7)); if (!w) return "";
-    return (w.me ? T("You") : title(w.d.traits[0])) + " · " + (w.d.idni ? T("an IDNI test account on Tau Net testnet, active today") : T("a real wallet on Tau Net testnet, active today"));
+    const ap = appsOf(w.d.traits), a = ap.filter(x => x[1] !== "/rules/").map(x => T(x[0])), rule = ap.length > a.length;
+    const what = [a.length ? F("uses {x}", { x: a.join(", ") }) : "", rule ? T("has its own rule") : ""].filter(Boolean).join(" · ");
+    return (w.me ? T("You") + " · " + w.name : w.name + " · " + title(w.d.traits[0])) + " · " + (w.d.idni ? T("IDNI test account") : what || T("plain payments, no Tau HUD app yet")) + " · " + F("last transaction {x}", { x: ago(w.d.last) }) + " · " + T("click for its story");
   }
   const G = () => window.COVE_GAME;
   const short = a => a.slice(0, 6) + "…" + a.slice(-4);
   const day = s => { try { return new Intl.DateTimeFormat(window.TauI18n && TauI18n.lang === "zh" ? "zh-CN" : window.TauI18n && TauI18n.lang === "ja" ? "ja-JP" : "en-GB", { day: "numeric", month: "short", timeZone: "Europe/Berlin" }).format(new Date(s * 1000)); } catch (e) { return ""; } };
+  /* a portrait: the face (islander.js bust) from 44 px up, the whole small figure below that */
   function portrait(lk, traits, idni, size) {
     const c = document.createElement("canvas"), r = Math.min(2, devicePixelRatio || 1); c.width = c.height = size * r; c.className = "wk-face"; c.style.width = c.style.height = size + "px";
-    const g = c.getContext("2d"); g.scale(r, r); figure(g, size / 2 + 2, size - 6, (size - 12) / 30, lk, { gear: gear(traits), idni, t: 0 }); return c;
+    const g = c.getContext("2d"); g.scale(r, r);
+    if (size >= 44) IS.bust(g, 0, 0, size, lk, { idni }); else figure(g, size / 2 + 2, size - 6, (size - 12) / 30, lk, { gear: gear(traits), idni, t: 0 });
+    return c;
   }
   function open(id) {
     const game = G(); if (!game) return;
     if (id === "board") return board();
-    const w = W.by.get(id) || { a: id, d: (W.all || []).find(x => x.a === id) || { a: id, traits: [], look: null } };
+    const w = W.by.get(id) || { a: id, name: nameOf(id), d: (W.all || []).find(x => x.a === id) || { a: id, traits: [], look: null } };
     W.sel = id;
-    const lk = w.lk || look(w.d.look, id), el = game.el, size = innerHeight < 520 ? 44 : phone() ? 64 : 92;
+    const lk = w.lk || partsOf(w.d), el = game.el, size = innerHeight < 520 ? 52 : phone() ? 72 : 104, me = w.me || id === myPk();
     game.card(null, box => {
       box.classList.add("wk-card");
       const who = el("div", { class: "cv-who" }, portrait(lk, w.d.traits, w.d.idni, size),
-        el("div", null, el("b", { text: w.me ? T("You") : title(w.d.traits[0]) }), el("small", { translate: "no", text: short(id) })));
-      const line = el("p", { class: "cv-line", text: (w.d.traits || []).slice(0, 3).map(title).join(" · ") }), list = el("ul", { class: "cv-help" }, el("li", { text: T("Reading the chain…") }));
+        el("div", null, el("b", { text: (me ? T("You") + " · " : "") + (w.name || nameOf(id)) }), el("small", { text: (w.d.traits || []).length ? title(w.d.traits[0]) : "" }), el("small", { translate: "no", text: short(id) })));
+      const line = el("p", { class: "cv-line", text: kind(w.d) + (w.d.last ? " " + F("Last transaction {x}.", { x: ago(w.d.last) }) : "") }), list = el("ul", { class: "cv-help" }, el("li", { text: T("Reading the chain…") }));
       const acts = el("div", { class: "cv-acts" },
         game.btn(T("In the Explorer"), () => window.open("/explorer/?a=" + id, "_blank", "noopener")),
-        w.me ? game.btn(T("Choose your look"), () => choose()) : null,
+        me ? game.btn(T("Islander studio"), () => choose()) : null,
         game.btn(T("Back to the island"), () => game.closeCard(), { go: true }));
-      box.append(who, line, list, el("p", { class: "wk-note", text: T("A real wallet on Tau Net testnet. Wallets, not people: one person can hold many, and nothing here knows who.") }), acts);
+      box.append(who, line, list, el("p", { class: "wk-note", text: T("A real wallet on Tau Net testnet. Wallets, not people: one person can hold many, and nothing here knows who. The name comes from the key's letters; it is not on the chain.") }), acts);
       card(id, list, acts, game, w);
     });
     watchClose();
   }
-  async function card(id, list, acts, game, w) {
+  /* GET /walkers/<address>, kept a minute (the studio and the pass card read it too) */
+  const CARDS = new Map();
+  async function cardOf(id, fresh) {
+    const k = CARDS.get(id); if (k && !fresh && Date.now() - k.at < 60000) return k.c;
     let c = null;
-    await new Promise(r => setTimeout(r, 0));   // the card is on the page once its builder returns
-    if (W.demo) c = { traits: w.d.traits.map((k, i) => [k, 3 + i * 4]), first: Date.now() / 1000 - 86400 * 9, txs: 41, days: 6, rule: { deploys: 1, parts: ["co"], in_force: true }, idni: w.d.idni };
+    const d = (W.all || []).find(x => x.a === id);
+    if (W.demo) c = d ? { traits: d.traits.map((k, i) => [k, 3 + i * 4]), first: Date.now() / 1000 - 86400 * 9, txs: 41, days: 6, idni: d.idni, ...((t => ({ meals: t("feeder") ? 7 : 0, votes: t("voter") ? 3 : 0, deja: t("catfriend") ? 4 : 0, hearts: t("hearts") ? 5 : 0, rabbit: { moves: t("politician") ? 12 : 0, played: t("politician") ? 2 : 0, won: t("winner") ? 1 : 0 }, nomemo: { chapters: t("hacker") ? 3 : 0 }, rule: t("lawmaker") || t("guardian") ? { deploys: 2, parts: t("guardian") ? ["co", "cap"] : ["only"], in_force: true } : { deploys: 0 } }))(k => d.traits.includes(k))),
+      pt: partsOf(d), chosen: null, earned: d.traits.map(t => IS.EARN.indexOf(t)).filter(i => i > 0), face: { first: d.first ? id : null, mine: !!d.first } } : null;
     else try { const r = await fetch(RELAY + "/walkers/" + id, { cache: "no-store" }); if (r.ok) c = await r.json(); } catch (e) {}
+    if (c && !c.error) CARDS.set(id, { c, at: Date.now() });
+    return c && !c.error ? c : null;
+  }
+  async function card(id, list, acts, game, w) {
+    await new Promise(r => setTimeout(r, 0));   // the card is on the page once its builder returns
+    const c = await cardOf(id);
     if (!list.isConnected) return;
-    if (!c || c.error) { list.replaceChildren(game.el("li", { text: T("The chain's reading of this wallet is out of reach just now.") })); return; }
-    const el = game.el, L = [];
-    for (const [k, n] of c.traits || []) if (TRAITS[k]) L.push(el("li", null, el("b", { text: title(k) + ": " }), document.createTextNode(k === "connector" && n >= 64 ? T("Paid 64 or more different wallets.") : F(TRAITS[k][1], { n }))));
+    if (!c) { list.replaceChildren(game.el("li", { text: T("The chain's reading of this wallet is out of reach just now.") })); return; }
+    const el = game.el, L = [], rb = c.rabbit || {}, nm = c.nomemo || {};
+    /* what it did on Tau HUD, app by app, from its own transactions on the chain */
+    const did = (app, url, text) => L.push(el("li", null, el("b", null, el("a", { href: url, target: url.startsWith("http") ? "_blank" : null, rel: "noopener", text: T(app) }), document.createTextNode(": ")), document.createTextNode(text)));
+    if (nm.chapters) did("No Memo", "/nomemo/", F("cracked {n} chapters of the hacker game, with real transactions.", { n: nm.chapters }));
+    if (c.meals || c.votes || c.asks) did("Agorzilla", "https://agorzilla.com", [c.meals ? F("fed it {n} times", { n: c.meals }) : "", c.votes ? F("voted {n} times", { n: c.votes }) : "", c.asks ? F("asked it {n} questions", { n: c.asks }) : ""].filter(Boolean).join(", ") + ".");
+    if (rb.moves || rb.played || rb.lines || rb.ballots || rb.won) did("White Rabbit Key", "/rabbit/", [rb.played ? F("played {n} games", { n: rb.played }) : "", rb.moves ? F("{n} moves", { n: rb.moves }) : "", rb.won ? F("won {n} elections", { n: rb.won }) : "", rb.ballots ? F("{n} ballots", { n: rb.ballots }) : ""].filter(Boolean).join(", ") + ".");
+    if (c.deja) did("Déjà's café", "https://agorzilla.com/cat/", F("put food in the cat's bowl {n} times.", { n: c.deja }));
+    if (c.hearts) did("hearts on Tau HUD", "/hearts/", F("gave {n} hearts to parts of the site.", { n: c.hearts }));
+    if (c.rule && c.rule.deploys) {
+      const words = { co: T("a second signature for bigger payments"), only: T("pays only addresses it trusts"), cap: T("a cap on every payment"), from: T("money locked until a date"), balance: T("keeps a floor under its balance"), freeze: T("stops every payment") };
+      const parts = (c.rule.parts || []).map(p => words[p]).filter(Boolean);
+      did("Its own rule", "/account/?a=" + id, (parts.length ? parts.join(", ") + "." + " " : "") + (c.rule.in_force === true ? T("In force now.") : c.rule.in_force === false ? T("Not in force now.") : F("Written {n} times.", { n: c.rule.deploys })));
+    }
+    if (!L.length && !c.idni) L.push(el("li", { text: T("No Tau HUD app yet: its transactions are plain payments between wallets, sent from Tau HUD's wallet or elsewhere.") }));
+    for (const [k, n] of c.traits || []) if (TRAITS[k] && !APPS.some(a => a[2].includes(k))) L.push(el("li", null, el("b", { text: title(k) + ": " }), document.createTextNode(k === "connector" && n >= 64 ? T("Paid 64 or more different wallets.") : F(TRAITS[k][1], { n }))));
     L.push(el("li", { class: "wk-facts", text: F("First seen {d} · {n} transactions · active on {m} days", { d: day(c.first), n: c.txs, m: c.days }) }));
-    if (c.rule && c.rule.deploys) L.push(el("li", { text: c.rule.in_force === true ? T("A personal rule is in force for this wallet now.") : c.rule.in_force === false ? T("No personal rule is in force for it now.") : T("It wrote a personal rule.") }));
+    if (c.face && c.face.mine) L.push(el("li", { class: "wk-first", text: T("First to wear this face: no wallet chose it on the chain before.") }));
+    else if (c.face && c.face.first && c.face.first !== id) L.push(el("li", { class: "wk-facts", text: F("Its face was first chosen by {x}.", { x: nameOf(c.face.first) }) }));
+    if (heldNow(w)) L.push(el("li", { text: T("Its own rule refused one of its payments a few minutes ago: the rule did its job.") }));
     list.replaceChildren(...L);
     if (c.rule && c.rule.deploys) acts.prepend(game.btn(T("Its rules"), () => window.open("/account/?a=" + id, "_blank", "noopener")));
   }
@@ -421,80 +436,35 @@
   }
   function board() {
     const game = G(); if (!game) return;
-    const el = game.el, rows = (W.all || []).slice(0, phone() ? 8 : 14);
+    const el = game.el, rows = (W.all || []).slice(0, phone() ? 8 : 14), me = myPk();
     game.card(null, box => {
       box.classList.add("wk-card");
       box.append(el("h3", { text: F("{n} real wallets walk the island today", { n: W.total }) }),
         el("p", { class: "cv-line", text: T("Every wallet that sent a transaction on Tau Net testnet in the last day walks here by itself. Click one to see what the chain says about it: its rules, Agorzilla, No Memo, the island.") + (W.demo ? " " + T("(made-up walkers for a test)") : "") }),
-        el("ul", { class: "cv-help wk-list" }, rows.map(d => el("li", null, el("button", { type: "button", class: "wk-row", onclick: () => open(d.a) }, portrait(look(d.a === myPk() && myLook() != null ? myLook() : d.look, d.a), d.traits, d.idni, 26), el("span", { translate: "no", text: short(d.a) }), el("span", { text: (d.traits || []).slice(0, 2).map(title).join(" · ") }))))),
+        paused() ? el("p", { class: "wk-amber", text: T("The chain is resting: no new block for a few minutes, so the islanders sat down. They get up with the next block.") })
+          : restarted() ? el("p", { class: "wk-amber", text: T("The testnet started over in the last half hour. The islanders keep their looks: the relay remembers what the old chain said.") }) : null,
+        el("ul", { class: "cv-help wk-list" }, rows.map(d => el("li", null, el("button", { type: "button", class: "wk-row", onclick: () => open(d.a) }, portrait(d.a === me ? myParts(d, me) : partsOf(d), d.traits, d.idni, 26), el("span", { translate: "no", text: nameOf(d.a) }), el("span", { text: (d.traits || []).slice(0, 2).map(title).join(" · ") }))))),
         el("p", { class: "wk-note", text: T("Our own server's wallets never walk here: the cruise passengers and the island's bot are made up. IDNI's test accounts walk in grey.") }),
-        el("div", { class: "cv-acts" }, game.btn(T("Choose your look"), () => choose()), game.btn(T("Back to the island"), () => game.closeCard(), { go: true })));
+        el("div", { class: "cv-acts" }, game.btn(T("Islander studio"), () => choose()), me && W.by.has(me) ? game.btn(T("Find me"), () => { game.closeCard(); find(); }) : null, game.btn(T("Back to the island"), () => game.closeCard(), { go: true })));
     });
   }
+  /* ---------- your own islander ---------- */
+  function find() {   // a beacon over your islander for ten seconds (it waves)
+    const me = myPk(); if (!me || !W.by.has(me)) return false;
+    W.find = { a: me, until: performance.now() + 10000 }; return true;
+  }
+  const mine = () => { const me = myPk(); return me ? { pk: me, w: W.by.get(me) || null, parts: myParts((W.all || []).find(x => x.a === me), me), name: nameOf(me) } : null; };
+  /* after a choice was sent: this browser's islander wears it at once; the island shows it to everyone once a block holds it */
+  function wear(pk, p) {
+    try { store.set(MINE2, JSON.stringify({ pk, p, at: Date.now() })); } catch (e) {}
+    const w = W.by.get(pk); if (w) { w.lk = p.slice(); w.ping = performance.now(); }
+    CARDS.delete(pk);
+  }
+  function choose() { if (window.ISLE_STUDIO) ISLE_STUDIO.open(); }
 
-  /* ---------- choosing your own look: one real transaction ---------- */
-  function choose() {
-    const game = G(); if (!game) return;
-    const el = game.el, pk = myPk(), now = look(myLook() != null ? myLook() : (W.by.get(pk) || {}).d ? W.by.get(pk).d.look : null, pk || "00");
-    const pick = { skin: now.skin, hair: now.hair, shirt: now.shirt };
-    const code = () => pick.skin * 64 + pick.hair * 8 + pick.shirt;
-    game.card(null, box => {
-      box.classList.add("wk-card", "wk-pick");
-      const pv = el("div", { class: "wk-pv" }), msg = el("p", { class: "wk-note", role: "status" });
-      const draw = () => { const lk = look(code(), pk); lk.hc = now.hc; pv.replaceChildren(portrait(lk, (W.by.get(pk) || { d: { traits: [] } }).d.traits, false, phone() ? 64 : 92)); };
-      const icon = i => { const c = document.createElement("canvas"), r = Math.min(2, devicePixelRatio || 1); c.width = c.height = 30 * r; c.style.width = c.style.height = "30px"; const g = c.getContext("2d"); g.scale(r, r); const lk = look(pick.skin * 64 + i * 8 + pick.shirt, pk); lk.hc = now.hc; figure(g, 15, 15 + 22 * 1.7, 1.7, lk, {}); return c; };
-      const row = (label, n, key, sw) => el("div", { class: "wk-opts", role: "radiogroup", "aria-label": label }, el("small", { text: label }),
-        Array.from({ length: n }, (_, i) => el("button", { type: "button", class: "wk-o" + (pick[key] === i ? " on" : ""), role: "radio", "aria-checked": String(pick[key] === i), title: sw ? null : T(HAIRS[i]), "aria-label": sw ? String(i + 1) : T(HAIRS[i]),
-          style: sw ? "background:" + sw[i] : null, onclick: e => { pick[key] = i; e.currentTarget.parentNode.querySelectorAll(".wk-o").forEach((b, j) => { b.classList.toggle("on", j === i); b.setAttribute("aria-checked", String(j === i)); }); draw(); } }, sw ? null : icon(i))));
-      box.append(el("h3", { text: T("Your islander") }),
-        el("div", { class: "wk-pickrow" }, pv, el("div", null, row(T("Skin"), 6, "skin", SKINS), row(T("Hair or hat"), 8, "hair"), row(T("Shirt"), 8, "shirt", SHIRTS))),
-        el("p", { class: "cv-line", text: T("Your look is a real transaction from the test wallet in this browser: 1,200 to 1,583 test AGRS (no value) to the hearts box, which has no key. No account, no name; public on the chain, and a new choice replaces it. What your islander carries, it earns on the chain.") }),
-        msg,
-        el("div", { class: "cv-acts" }, game.btn(T("Sign and send"), e => send(code(), msg, e.currentTarget), { go: true }), game.btn(T("Back to the island"), () => game.closeCard())));
-      draw();
-    });
-  }
-  const canon = o => Array.isArray(o) ? "[" + o.map(canon).join(",") + "]" : o === null || typeof o !== "object" ? JSON.stringify(o).replace(/[\u007f-￿]/g, c => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")) : "{" + Object.keys(o).sort().map(k => JSON.stringify(k) + ":" + canon(o[k])).join(",") + "}";
-  function socket() {
-    return new Promise(res => {
-      let ws; try { ws = new WebSocket(WS); } catch (e) { return res(null); }
-      const wait = new Map();
-      ws.onmessage = ev => { let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; } const q = wait.get(m.command); if (q && q.length) q.shift()(m); };
-      ws.onerror = ws.onclose = () => res(null);
-      ws.onopen = () => {
-        ws.send("hello version=1");
-        const ask = (cmd, ms = 12000) => new Promise(r => { const c = cmd.split(" ")[0]; if (!wait.has(c)) wait.set(c, []); const q = wait.get(c); q.push(r); try { ws.send(cmd); } catch (e) { r(null); } setTimeout(() => { const i = q.indexOf(r); if (i >= 0) { q.splice(i, 1); r(null); } }, ms); });
-        setTimeout(() => res({ ask, close: () => { try { ws.close(); } catch (e) {} } }), 150);
-      };
-    });
-  }
-  async function send(code, msg, b) {
-    const B = window.TauBLS; let k = null;
-    try { const s = JSON.parse(store.get(WKEY) || "null"); if (B && s && /^[0-9a-f]{64}$/.test(s.sk)) k = { sk: B.hexToBytes(s.sk), pk: s.pk || B.bytesToHex(B.pubOf(B.hexToBytes(s.sk))) }; } catch (e) {}
-    if (!k) { msg.textContent = T("This browser has no test wallet yet: start a campaign on the island or open tauhud.com/wallet/ first."); return; }
-    if (b) b.disabled = true; msg.textContent = T("Signing…");
-    const c = await socket();
-    try {
-      if (!c) throw new Error("relay");
-      const gv = await c.ask("getgovernance"), m = /o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)/.exec((gv && gv.data && gv.data.consensus_rules) || ""), fee = m ? parseInt(m[1], 16) : 10;
-      await c.ask("via islander");
-      const st = await c.ask("getsequence " + k.pk); if (!st || st.status !== "ok") throw new Error("seq");
-      if (st.data && st.data.balance != null && Number(st.data.balance) < BASE + LOOKS + fee * 5) { msg.textContent = T("Your test wallet needs a few more test AGRS first: the wallet page gets them from the faucet."); return; }
-      const tx = { tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: st.data.sequence_number || 0, expiration_time: Math.floor(Date.now() / 1000) + 600,
-        expire_at_height: (st.data.tip_height || 0) + 1000, fee_limit: String(fee * 5), operations: { "1": [[k.pk, BOX, String(BASE + code)]] } };
-      const d = { sender_pubkey: tx.sender_pubkey, sequence_number: tx.sequence_number, expiration_time: tx.expiration_time, fee_limit: tx.fee_limit, tx_type: tx.tx_type, expire_at_height: tx.expire_at_height, operations: tx.operations };
-      tx.signature = B.bytesToHex(B.sign(new TextEncoder().encode(canon(d)), k.sk));
-      const r = await c.ask("sendtx " + JSON.stringify(tx), 20000);
-      if (!(r && r.status === "ok" && !(r.data && r.data.ok === false))) throw new Error("refused");
-      store.set(MINE, String(code));
-      const w = W.by.get(k.pk.toLowerCase()); if (w) { w.lk = look(code, w.a); w.ping = performance.now(); }
-      msg.textContent = T("Sent. Your islander wears it now; the island shows it to everyone once a block holds the transaction.");
-    } catch (e) { msg.textContent = T("The testnet did not take it just now. Try again in a minute."); }
-    finally { if (c) c.close(); if (b) b.disabled = false; }
-  }
-
-  window.ISLE_WALKERS = { figure, look, gear, tip, open, board, choose, traits: TRAITS, goTo, remote, mine: () => !!(mineW() && ways()), at: a => { const w = W.by.get(a); return w ? [w.x, w.y] : null; } };
+  window.ISLE_WALKERS = { figure, look, gear, tip, open, board, choose, find, me: mine, wear, cardOf, portrait, title, nameOf, relay: () => ({ RELAY, WS, WKEY, BOX }), traits: TRAITS, get demo() { return W.demo; },
+    goTo, remote, mine: () => !!(mineW() && ways()), at: a => { const w = W.by.get(a); return w ? [w.x, w.y] : null; } };
   poll(); setInterval(poll, 60000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
-  if (Q.get("islander") === "1") { const go = () => (G() ? setTimeout(choose, 600) : setTimeout(go, 500)); go(); }
+  if (Q.get("islander") === "1") { const go = () => (G() && window.ISLE_STUDIO ? setTimeout(choose, 600) : setTimeout(go, 500)); go(); }
 })();
