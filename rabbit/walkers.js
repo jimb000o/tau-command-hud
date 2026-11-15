@@ -274,6 +274,7 @@
     else if (window.TauSim && TauSim.on) j = null;   // the simulation has no real wallets to show
     else try { const r = await fetch(RELAY + "/walkers", { cache: "no-store" }); if (r.ok) j = await r.json(); } catch (e) {}
     if (!j || !Array.isArray(j.walkers)) return;
+    hudLoad();
     W.ok = true;
     if (j.look) { BOX = j.look.box || BOX; BASE = j.look.base || BASE; }
     W.chain = j.chain || null; W.polled = Date.now() / 1000;
@@ -400,10 +401,19 @@
   const APPS = [["No Memo", "/nomemo/", ["hacker"]], ["Agorzilla", "https://agorzilla.com", ["feeder", "voter"]], ["White Rabbit Key", "/rabbit/", ["politician", "winner"]],
     ["Déjà's café", "https://agorzilla.com/cat/", ["catfriend"]], ["its own rule", "/rules/", ["lawmaker", "guardian", "vault", "picky", "capped", "frozen"]], ["hearts on Tau HUD", "/hearts/", ["hearts"]]];
   const appsOf = traits => APPS.filter(a => a[2].some(k => (traits || []).includes(k)));
+  /* whether a wallet sent through Tau HUD's own wallet, from our relay's record of what it sent (GET /wallets/tags "apps",
+     walletdays.py). A plain payment on the chain does not say which wallet app signed it, so the blocks alone cannot tell */
+  const HUD = { map: new Map(), at: 0 };
+  async function hudLoad() {
+    if (DEMO || Date.now() - HUD.at < 300000) return;
+    HUD.at = Date.now();
+    try { const r = await fetch(RELAY + "/wallets/tags", { cache: "no-store" }); if (r.ok) { const j = await r.json(); if (j && j.apps && typeof j.apps === "object") HUD.map = new Map(Object.entries(j.apps)); } } catch (e) {}
+  }
+  const hudOf = a => { const e = HUD.map.get(a); return e && (e.b === "tauhud" || (e.u || []).includes("tauhud")) ? e : null; };
   function kind(d) {   // one line: who this wallet is on Tau HUD
     if (d.idni) return T("An IDNI test account: one of the accounts the testnet started with.");
     const a = appsOf(d.traits).filter(x => x[1] !== "/rules/"), rule = appsOf(d.traits).some(x => x[1] === "/rules/");
-    if (!a.length && !rule) return T("Sends payments on Tau Net testnet; it has not used a Tau HUD app yet.");
+    if (!a.length && !rule) return hudOf(d.a) ? T("Sends payments on Tau Net testnet through Tau HUD's wallet.") : T("Sends plain payments on Tau Net testnet. A plain payment does not show which wallet app signed it.");
     if (!a.length) return T("On Tau HUD it wrote its own rule for its wallet.");
     return F("On Tau HUD it uses {x}.", { x: a.map(x => T(x[0])).join(", ") }) + (rule ? " " + T("It also wrote its own rule for its wallet.") : "");
   }
@@ -413,7 +423,7 @@
     const w = W.by.get(id.slice(7)); if (!w) return "";
     const ap = appsOf(w.d.traits), a = ap.filter(x => x[1] !== "/rules/").map(x => T(x[0])), rule = ap.length > a.length;
     const what = [a.length ? F("uses {x}", { x: a.join(", ") }) : "", rule ? T("has its own rule") : ""].filter(Boolean).join(" · ");
-    return (w.me ? T("You") + " · " + w.name : w.name + " · " + title(w.d.traits[0])) + " · " + (w.d.idni ? T("IDNI test account") : what || T("plain payments, no Tau HUD app yet")) + " · " + F("last transaction {x}", { x: ago(w.d.last) }) + " · " + T("click for its story");
+    return (w.me ? T("You") + " · " + w.name : w.name + " · " + title(w.d.traits[0])) + " · " + (w.d.idni ? T("IDNI test account") : what || (hudOf(w.a) ? T("pays through Tau HUD's wallet") : T("plain payments so far"))) + " · " + F("last transaction {x}", { x: ago(w.d.last) }) + " · " + T("click for its story");
   }
   const G = () => window.COVE_GAME, OF = () => window.ISLE_OFFERS;   // offers.js: rules proposed between wallets
   const short = a => a.slice(0, 6) + "…" + a.slice(-4);
@@ -479,7 +489,9 @@
       const parts = (c.rule.parts || []).map(p => words[p]).filter(Boolean);
       did("Its own rule", "/account/?a=" + id, (parts.length ? parts.join(", ") + "." + " " : "") + (c.rule.in_force === true ? T("In force now.") : c.rule.in_force === false ? T("Not in force now.") : F("Written {n} times.", { n: c.rule.deploys })));
     }
-    if (!L.length && !c.idni) L.push(el("li", { text: T("No Tau HUD app yet: its transactions are plain payments between wallets, sent from Tau HUD's wallet or elsewhere.") }));
+    const hud = !c.idni && hudOf(id);
+    if (hud) did("Tau HUD's wallet", "/wallet/", hud.b === "tauhud" && hud.d ? F("sent through tauhud.com's wallet; its first transaction we know of came from there, on {x}.", { x: day(Date.parse(hud.d + "T12:00:00Z") / 1000) }) : T("sent through tauhud.com's wallet."));
+    if (!L.length && !c.idni) L.push(el("li", { text: T("Plain payments so far. A plain payment does not show which wallet app signed it, so it may come from Tau HUD's wallet or from anywhere else; our server has no record of it sending through ours.") }));
     for (const [k, n] of c.traits || []) if (TRAITS[k] && !APPS.some(a => a[2].includes(k))) L.push(el("li", null, el("b", { text: title(k) + ": " }), document.createTextNode(k === "connector" && n >= 64 ? T("Paid 64 or more different wallets.") : F(TRAITS[k][1], { n }))));
     L.push(el("li", { class: "wk-facts", text: F("First seen {d} · {n} transactions · active on {m} days", { d: day(c.first), n: c.txs, m: c.days }) }));
     if (c.face && c.face.mine) L.push(el("li", { class: "wk-first", text: T("First to wear this face: no wallet chose it on the chain before.") }));
