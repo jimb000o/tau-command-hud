@@ -44,7 +44,7 @@ TauI18n.add({ strings: {
   "The box:": "箱：",
   "open it in the account view ›": "アカウント表示で開く ›",
   "The same numbers as data:": "同じ数字をデータで：",
-  "Unofficial community project, not affiliated with IDNI.": "非公式のコミュニティプロジェクト。IDNI とは無関係です。",
+  "Unofficial community project, not run by IDNI.": "非公式のコミュニティプロジェクト。IDNI が運営するものではありません。",
   "Our relay is out of reach just now; the hearts show here once it answers.": "いまリレーに届きません。応答があればここにハートが表示されます。",
   "No hearts yet. Open the HUD and give one to the part you like best.": "まだハートはありません。HUD を開いて、一番好きな部分にハートを付けてください。",
   "1 wallet": "1 つのウォレット",

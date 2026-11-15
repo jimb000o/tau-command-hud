@@ -34,7 +34,7 @@ ART = os.environ.get("BLOG_ART", "/art")
 MAX_MOVING = 0.5       # more than half the picture moving is not "a little life", it is a painter's mistake
 FRESH = 3 * 86400      # a painting kept this recently gets its trailer when this runs for the first time
 GAME = os.environ.get("SITE_URL", "https://tauhud.com").rstrip("/") + "/rabbit/"
-FOOT = "White Rabbit Key · community project, not affiliated with IDNI"
+FOOT = "White Rabbit Key · community project, not run by IDNI"
 
 LOOP_PROMPT = (
     "A hand-painted tropical island seen from above, as a living painting. The camera is completely still: no zoom, "

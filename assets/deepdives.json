@@ -1,5 +1,5 @@
 {
-  "about": "A closer look at one page of Tau HUD a day, in this order, each once. The alerts service (infra/alerts/alerts.py, maybe_deepdive) reads this file from the site every 10 minutes and posts the next one not yet posted at 13:00 UTC on Telegram; every second one also goes to X. Add new pages at the end; an id is posted once, ever. Texts are plain (no HTML; the bot escapes them); x = the lines of the X post, trimmed to 280 by the bot, which adds the footer and #TauNet $AGRS. Nothing here is affiliated with IDNI; test AGRS have no value.",
+  "about": "A closer look at one page of Tau HUD a day, in this order, each once. The alerts service (infra/alerts/alerts.py, maybe_deepdive) reads this file from the site every 10 minutes and posts the next one not yet posted at 13:00 UTC on Telegram; every second one also goes to X. Add new pages at the end; an id is posted once, ever. Texts are plain (no HTML; the bot escapes them); x = the lines of the X post, trimmed to 280 by the bot, which adds the footer and #TauNet. Nothing here is run by IDNI; test AGRS have no value.",
   "posts": [
     {
       "id": "start",
@@ -254,9 +254,9 @@
     {
       "id": "press",
       "title": "The press kit: facts, logo, video, free to use",
-      "text": "The one-paragraph description of Tau HUD, the facts, the Tau in 60 seconds video, logo files, screenshots and embeds, free to use. Unofficial: Tau HUD is not affiliated with IDNI and says so on every page.\nIf you write about Tau and need a picture of the chain changing its rules, it is here.",
+      "text": "The one-paragraph description of Tau HUD, the facts, the Tau in 60 seconds video, logo files, screenshots and embeds, free to use. Unofficial: Tau HUD is not run by IDNI and says so on every page.\nIf you write about Tau and need a picture of the chain changing its rules, it is here.",
       "try": "download the screenshot pack.",
-      "x": ["🔎 A closer look: the press kit", "The one-paragraph description of Tau HUD, the facts, the Tau in 60 seconds video, logo files, screenshots and embeds, free to use. Not affiliated with IDNI."],
+      "x": ["🔎 A closer look: the press kit", "The one-paragraph description of Tau HUD, the facts, the Tau in 60 seconds video, logo files, screenshots and embeds, free to use. Not run by IDNI."],
       "link": "/press/",
       "button": "📎 Press kit",
       "image": "/assets/og/press.png"

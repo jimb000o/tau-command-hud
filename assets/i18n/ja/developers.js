@@ -60,7 +60,7 @@ TauI18n.add({ strings: {
   "Tau proposals badge": "Tau 提案バッジ",
   "Tau status badge": "Tau 状態バッジ",
   "Tau validators badge": "Tau バリデーターバッジ",
-  "Testnet data from one community node, without warranty. Not affiliated with IDNI.": "1 つのコミュニティノードからのテストネットのデータで、保証はありません。IDNI とは無関係です。",
+  "Testnet data from one community node, without warranty. Not run by IDNI.": "1 つのコミュニティノードからのテストネットのデータで、保証はありません。IDNI が運営するものではありません。",
   "Testnet health 0 to 100 with every factor behind it and its history.": "テストネットの健全性 0〜100 と、その背後のすべての要因と履歴。",
   "Testnet health score, 0 to 100": "テストネットの健全性スコア、0〜100",
   "The badges on this page: status, height, proposals, validators, health.": "このページのバッジ：状態、高さ、提案、バリデーター、健全性。",

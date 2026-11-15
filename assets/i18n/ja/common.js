@@ -242,7 +242,7 @@ TauI18n.add({ strings: {
   "turning point": "転換点",
   "unchanged": "変更なし",
   "unofficial": "非公式",
-  "Unofficial community project · not affiliated with IDNI": "非公式のコミュニティプロジェクト · IDNI とは無関係",
+  "Unofficial community project · not run by IDNI": "非公式のコミュニティプロジェクト · IDNI の運営ではありません",
   "until {x}": "{x} まで",
   "Updates": "更新情報",
   "Uptime, outages, sync gaps and restarts of the community node": "コミュニティノードの稼働率、障害、同期の遅れ、再起動",

@@ -90,7 +90,7 @@ TauI18n.add({ strings: {
   "Time from our notes.": "時刻は私たちの記録から。",
   "New tag {x}": "新しいタグ {x}",
   "The git history could not be read right now. It comes back by itself.": "いま git 履歴を読み込めませんでした。自動で戻ります。",
-  "Unofficial, not affiliated with IDNI. Counted from the public git history of": "非公式、IDNI とは無関係。公開 git 履歴から集計：",
+  "Unofficial, not run by IDNI. Counted from the public git history of": "非公式、IDNI の運営ではありません。公開 git 履歴から集計：",
   "and": "と",
   ", refreshed every 30 minutes. A commit count says how often code was saved, not how much work was done.": "、30 分ごとに更新。コミット数はコードが保存された頻度を示すもので、作業量を示すものではありません。",
   "within the hour": "1 時間以内",

@@ -44,5 +44,5 @@ TauI18n.add({ strings: {
   "The live part is regenerated every 30 minutes from our node:": "实时部分每 30 分钟由我们的节点重新生成：",
   "A wrong or missing fact?": "发现错误或缺漏？",
   "Tell us": "告诉我们",
-  "Tau HUD is a community project, not affiliated with IDNI.": "Tau HUD 是社区项目，与 IDNI 无关。",
+  "Tau HUD is a community project, not run by IDNI.": "Tau HUD 是社区项目，并非由 IDNI 运营。",
 } });

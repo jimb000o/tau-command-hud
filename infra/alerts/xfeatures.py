@@ -6,7 +6,7 @@ assets/updates.json, or (Agorzilla, whose changes live in another repository, or
 assets/x-features.json {"posts": [...]}. Both read the same:
 
   {"id": "rabbit-walkers", "account": "hud" | "agorzilla", "from": "2026-11-16T11:00:00Z",
-   "text": "the post, at most 280, link-free, #TauNet $AGRS on hud, #TauNet on agorzilla",
+   "text": "the post, at most 280, link-free, ends with #TauNet (no $AGRS cashtag on any account)",
    "film": {"url": "https://tauhud.com/rabbit/", "seconds": 12, "settle": 3000, "steps": [...]}}
 
 What happens by itself (the xfeatures service, every 5 minutes):
@@ -66,7 +66,7 @@ SLOP = ["excited to announce", "thrilled", "game-changer", "game changer", "revo
 BOLD = ["cannot lose", "can't lose", "can not lose", "never lose", "risk-free", "risk free", "no risk", "zero risk",
         "guaranteed", "guarantee", "completely safe", "totally safe", "100% safe", "fully safe", "perfectly safe",
         "cannot be stolen", "can't be stolen", "can never be stolen", "unhackable", "impossible to hack", "always safe"]
-TAGS = {"hud": ["#TauNet", "$AGRS"], "agorzilla": ["#TauNet"]}
+TAGS = {"hud": ["#TauNet"], "agorzilla": ["#TauNet"]}   # $AGRS dropped 15 Nov 2026: posts are about the testnet, not the token
 
 
 # ---------------- reading the plan ----------------
@@ -143,8 +143,8 @@ def problems(p: dict) -> list[str]:
         if t not in text:
             out.append(f"text: ends with {' '.join(TAGS[acc])}")
             break
-    if acc == "agorzilla" and "$AGRS" in text:
-        out.append("text: no $AGRS on Agorzilla's account")
+    if "$AGRS" in text:
+        out.append("text: no $AGRS cashtag (posts are about the testnet, not the token)")
     if "\n\n" not in text.strip():
         out.append("text: a blank line after the first line")
     if text.count("#") > 2:

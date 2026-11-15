@@ -34,7 +34,7 @@ TauI18n.add({ strings: {
   "Whoever holds your wallet key can still change or remove the rule. The Guardian guards against a mistaken or tricked payment, not against a stolen key.": "ウォレットの鍵を持つ人は、今もルールを変えたり外したりできます。Guardian が防ぐのは間違いやだまされた支払いで、盗まれた鍵ではありません。",
   "Tau Testnet Alpha holds personal rules for 2 accounts at a time, so the Guardian guards at most two accounts at once for now.": "Tau Testnet Alpha が同時に持てる個人ルールは 2 アカウント分なので、Guardian も今は同時に最大 2 アカウントまでです。",
   "Built on the reference approver bot that IDNI ships with the testnet ({e1}) and the co-signature rules of {e2}. A testnet prototype: Tau HUD is a community project, {e3}.": "IDNI がテストネットと一緒に提供している参照用の承認ボット（{e1}）と、{e2} の共同署名ルールの上に作られています。テストネットの試作です。Tau HUD はコミュニティのプロジェクトで、{e3}。",
-  "not affiliated with IDNI": "IDNI とは無関係です",
+  "not run by IDNI": "IDNI が運営するものではありません",
   "Live": "ライブ",
   "Simulation": "シミュレーション",
   "Our node is not reachable right now": "今はノードにつながりません",

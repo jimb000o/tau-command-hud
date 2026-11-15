@@ -30,7 +30,7 @@ TauI18n.add({ strings: {
   "Add a name and a link.": "加上名称和链接。",
   "Open a pre-filled request with your key; we add the name once your link shows that key.": "用你的密钥打开一个预填好的请求；只要你的链接上显示了这个密钥，我们就加上名称。",
   "Request a name": "申请名称",
-  "A listing says what the chain shows, not who runs an account or whether it is safe. Testnet only, test AGRS have no value. Not affiliated with IDNI.": "列出只代表链上显示的内容，不代表谁在运营这个账户，也不代表它是否安全。仅限测试网，测试 AGRS 没有价值。与 IDNI 无关。",
+  "A listing says what the chain shows, not who runs an account or whether it is safe. Testnet only, test AGRS have no value. Not run by IDNI.": "列出只代表链上显示的内容，不代表谁在运营这个账户，也不代表它是否安全。仅限测试网，测试 AGRS 没有价值。并非由 IDNI 运营。",
   "By tauhud.com": "来自 tauhud.com",
   "by tauhud.com": "tauhud.com 出品",
   "Found on the chain": "在链上发现",

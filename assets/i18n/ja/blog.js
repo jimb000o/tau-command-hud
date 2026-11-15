@@ -17,7 +17,7 @@ TauI18n.add({ strings: {
   "Words to check:": "確認する言葉：",
   "The facts the article was written from": "記事の元になった事実",
   "This draft is not there (any more). Published articles are listed on the blog.": "この下書きは（もう）ありません。公開済みの記事はブログに一覧があります。",
-  "Tau HUD is a community project, not affiliated with IDNI. The articles are drafted from our logbooks with the help of a language model and read by a person before they go up.": "Tau HUD はコミュニティのプロジェクトで、IDNI とは関係ありません。記事はログブックをもとに言語モデルの助けを借りて下書きし、公開前に人が読んで確かめます。",
+  "Tau HUD is a community project, not run by IDNI. The articles are drafted from our logbooks with the help of a language model and read by a person before they go up.": "Tau HUD はコミュニティのプロジェクトで、IDNI が運営するものではありません。記事はログブックをもとに言語モデルの助けを借りて下書きし、公開前に人が読んで確かめます。",
   "Ship logbook": "船のログブック",
   "Testnet load": "テストネット負荷",
   "Findings": "発見事項",

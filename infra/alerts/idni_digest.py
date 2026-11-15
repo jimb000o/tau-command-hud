@@ -191,7 +191,7 @@ def gather(paths: dict, branches: dict, start: int, end: int, pin: str | None, n
 
 
 SYSTEM = """You write one daily post for the Telegram channel and the X account of Tau HUD (tauhud.com), an unofficial \
-community dashboard for Tau Testnet Alpha, made by people not affiliated with IDNI, the team that builds Tau. Readers \
+community dashboard for Tau Testnet Alpha, made independently, not by IDNI, the team that builds Tau. Readers \
 are the Tau community and the IDNI team itself: curious people, node runners, testers; many never read code.
 
 You get everything IDNI merged into the testnet's code in one window (usually one day): each change with its message, \
@@ -388,11 +388,11 @@ def tg_text(d: dict) -> str:
     parts = [head, f"<b>{e(d['title'])}</b>", *("• " + e(p) for p in d["points"]),
              f"<b>Why it matters:</b> {e(d['why'])}", e(node_line(d)),
              f'<a href="{e(d["url"])}">IDNI\'s commits</a> · <a href="{SITE}/devpulse/">Build pulse on Tau HUD</a>',
-             "<i>Merged by IDNI. Tau HUD is a community project, not affiliated with IDNI.</i>"]
+             "<i>Merged by IDNI. Tau HUD is a community project, not run by IDNI.</i>"]
     return "\n\n".join(parts)
 
 
-X_FOOT = "🛠 Tau HUD build watch, not affiliated with IDNI"
+X_FOOT = "🛠 Tau HUD build watch, not run by IDNI"
 
 
 def x_lines(d: dict) -> list[str]:

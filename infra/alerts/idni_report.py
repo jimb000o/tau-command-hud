@@ -51,7 +51,7 @@ NEW_ISSUE = f"https://github.com/{REPO}/issues/new"
 URL_MAX = 8000          # GitHub refuses longer new-issue links; the report gets shorter until it fits
 RETRY = 3600
 UP = 'ssh root@node.tauhud.com "sh /opt/tau-command-hud/infra/up.sh {}"'
-NOT_AFFILIATED = "Tau HUD is a community project, not affiliated with IDNI."
+NOT_AFFILIATED = "Tau HUD is a community project, not run by IDNI."
 PATCHES = "https://github.com/jimb000o/tau-command-hud/tree/main/infra/node/patches"
 DAY = 86400
 
