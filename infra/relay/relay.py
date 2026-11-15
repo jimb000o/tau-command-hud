@@ -826,6 +826,12 @@ class Relay:
                 cruise.chain_restarted(time.time(), old.get("tip"), new_block1_ts)
             except Exception as exc:  # noqa: BLE001 - the restart is recorded all the same
                 log.warning("cruise restart note: %r", exc)
+        hack = getattr(self, "hack", None)
+        if hack is not None:   # a hack replay under way ends as "restart": its payments went with the old chain
+            try:
+                hack.chain_restarted(time.time())
+            except Exception as exc:  # noqa: BLE001
+                log.warning("hack restart note: %r", exc)
         if getattr(self, "chainhist", None):   # a chain that ended while the relay was away: at least its tip
             self.chainhist.seed(self.state["restarts"][-1:])
             self.history_text = None

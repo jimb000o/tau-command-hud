@@ -51,6 +51,7 @@
 #              up hack       the hack of the week (relay/hackweek.py, Thursdays 11:00): next replay, last runs step by step
 #                            (nothing rebuilt, nothing sent); up hack preview  the last replay's post texts and picture;
 #                            up hack release 2026-11-12-poisoning  shows a held-back finding in public (after IDNI knows)
+#                            up hack try  a rehearsal now (same steps, about 20 minutes, never posted); then up hack
 #              up week       the testnet this week as a blog post (alerts/testnet_week.py, node left alone): how it reads now;
 #                            up week last  last week's; up week draft  writes the draft and tells your Telegram (it comes by
 #                            itself every Sunday 18:00 as a draft; only up blog publish testnet-week-<year>-w<week> puts it up)
@@ -277,6 +278,16 @@ json.dump(r, open(p, 'w'))
 print('released:', ', '.join(r))
 " "$3"
     echo "copy into the chat: hack release $3 done"
+    exit 0
+  fi
+  if [ "${2:-}" = "try" ]; then
+    docker compose exec -T relay python -c 'import json,urllib.request
+d=json.load(urllib.request.urlopen("http://127.0.0.1:8080/hack/try", timeout=20))
+if d.get("started"):
+    print("hack:    rehearsal %s started (about %s minutes, nothing posted)" % (d["started"], d["minutes"]))
+    print("         in %s minutes: ssh root@node.tauhud.com \"cd /opt/tau-command-hud && sh infra/up.sh hack\"" % d["minutes"])
+else:
+    print("hack:    no rehearsal: %s" % d.get("error"))' 2>&1 || echo "relay /hack/try not answering (needs the relay with this change: up escrow)"
     exit 0
   fi
   if [ "${2:-}" = "preview" ]; then

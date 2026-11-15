@@ -33,8 +33,15 @@ for IDNI (alerts/hack_crier.py reads /hack/held from inside the server), until `
 
 What it does NOT protect against is part of every post (HACKS "not"): the setting is the wallet's, not a chain rule.
 
-GET /hack        the catalogue, the next run, the last runs (findings masked), the four wallets
+A rehearsal (`up hack try`, GET /hack/try from inside the server) plays the same steps at once on a shorter clock
+(TRY_STEPS, a TRY_WINDOW take-back window, about 20 minutes in all): never near a cruise ship, never public, never posted.
+It also puts the four wallets on the chain ahead of Thursday, so the replay itself starts with wallets the chain knows.
+A testnet restart during a run (relay._record_restart) ends it as "restart": its payments went with the old chain.
+A step that did not go through says why in the run's "why" (`up hack`, `up status`), e.g. our node's full address list.
+
+GET /hack        the catalogue, the next run, the last runs (findings masked, rehearsals left out), the four wallets
 GET /hack/held   only from inside the server: runs with a finding, in full
+GET /hack/try    only from inside the server: start a rehearsal now
 """
 from __future__ import annotations
 
@@ -85,6 +92,30 @@ HACKS = {
     },
 }
 NEEDED = ("habit", "poison", "slip", "catch")   # without these the replay says nothing
+# the rehearsal: the same transactions, closer together, with a take-back window of TRY_WINDOW (the take-back still
+# goes out more than RETRACT_MARGIN before the release, the sends stay GAP apart)
+TRY_STEPS = [("habit", 0), ("habit_twin", 0), ("poison", 60), ("poison_twin", 60), ("slip", 120), ("slip_twin", 120),
+             ("impostor", 240), ("peek", 270), ("catch", 300)]
+TRY_WINDOW = 12 * 60
+# Our node keeps a limited list of wallet addresses (IDNI tau-testnet #108); when it is full it answers
+# ADMISSION_UNAVAILABLE to a wallet it has not seen yet (cruise.NEW_WALLET_CODE). 12 Nov 2026: all four of our wallets
+# were new to the node then, so every step was refused that way.
+FULL_CODE = "ADMISSION_UNAVAILABLE"
+FULL_TEXT = "temporarily unavailable"
+FULL_WHY = "our node had no room for a new wallet address (IDNI tau-testnet #108)"
+
+
+def why_not(s: dict) -> str:
+    """Why one step did not go through, in a few words (for `up hack`, `up status` and the owner's note)."""
+    if s.get("code") == FULL_CODE and FULL_TEXT in str(s.get("err") or "").lower():
+        return FULL_WHY
+    if s.get("code"):
+        return str(s["code"])
+    if s.get("note"):
+        return str(s["note"])
+    if s.get("err"):
+        return str(s["err"])[:80]
+    return "not sent"
 
 
 def short(pk: str) -> str:
@@ -322,6 +353,7 @@ class HackWeek:
         from island import base_fee
         s = r["steps"].setdefault(step, {})
         who, kind, f = self.plan_of(r, step)
+        window = int(r.get("window") or WINDOW)
         if kind == "retract" and not f.get("rid"):
             rid = await self.park_id(r, ask)
             if not rid:
@@ -340,7 +372,7 @@ class HackWeek:
             return False
         rel = None
         if kind == "park":
-            rel = int(self.clock()) + WINDOW
+            rel = int(self.clock()) + window
             r["park"] = {"release_at": rel}
         tx = await asyncio.to_thread(self.build, who, kind, seq, tip, base_fee(gov()), f.get("to"), f.get("amount", 0),
                                      rel or f.get("rel"), f.get("rid"))
@@ -407,7 +439,8 @@ class HackWeek:
                 self.note(r, f"started on a {v} testnet")
                 self.save_state()
             elif now >= r["t0"] + START_WAIT:
-                r.update(status="done", result="skipped", why="the testnet was not calm enough to start; next week again")
+                r.update(status="done", result="skipped", why="the testnet was not calm enough to start; "
+                         + ("try again later" if r.get("dry") else "next week again"))
                 self.note(r, r["why"])
                 self.save_state()
                 return False
@@ -424,7 +457,7 @@ class HackWeek:
 
     async def advance(self, r: dict, ask, gov, now: float) -> bool:
         base = r["started"]
-        steps = HACKS[r["hack"]]["steps"]
+        steps = TRY_STEPS if r.get("dry") else HACKS[r["hack"]]["steps"]
         rel = (r.get("park") or {}).get("release_at")
         for name, off in steps:
             s = r["steps"].setdefault(name, {})
@@ -491,7 +524,8 @@ class HackWeek:
         if r.get("findings"):
             res, why = "finding", r["findings"][0]["what"]
         elif missing:
-            res, why = "incomplete", "these steps did not go through: " + ", ".join(missing)
+            res, why = "incomplete", "these steps did not go through: " + ", ".join(
+                f"{k} ({why_not(r['steps'].get(k) or {})})" for k in missing)
         elif (out.get("victim") or {}).get("status") == "retracted":
             res, why = "held", "the payment came back to the victim"
         elif (out.get("victim") or {}).get("status") == "released":
@@ -500,6 +534,49 @@ class HackWeek:
             res, why = "incomplete", "the chain did not tell what became of the payment"
         r.update(status="done", result=res, why=why, settled=int(now))
         self.note(r, f"outcome: {res} ({why})")
+
+    def chain_restarted(self, now: float | None = None) -> str | None:
+        """The testnet started over (relay._record_restart): a run under way ends here, its payments went with the old
+        chain (a restart, not our replay's result). Returns the run's id, if one was under way."""
+        now = self.clock() if now is None else now
+        r = next((x for x in self.runs if x["status"] in ("running", "settling")), None)
+        if not r:
+            return None
+        r.update(status="done", result="restart", settled=int(now),
+                 why="the testnet started over during the replay; its payments went with the old chain")
+        self.note(r, r["why"])
+        self.save_state()
+        return r["id"]
+
+    def start_try(self, now: float | None = None) -> dict:
+        """A rehearsal now (`up hack try`): the same steps on a shorter clock, never public, never posted."""
+        from cruise import berlin_day
+        now = self.clock() if now is None else now
+        if not self.enabled:
+            return {"error": "the hack of the week is switched off (HACK_ENABLED=0)"}
+        if not self.ready:
+            return {"error": "the four wallets are not ready yet" + (" (being made, a few minutes)" if self.making else "")}
+        busy = next((x for x in self.runs if x["status"] != "done"), None)
+        if busy:
+            return {"error": f"a run is under way: {busy['id']} ({busy['status']})"}
+        t = next_slot(now)
+        if t - 3600 < now:
+            return {"error": "the weekly replay is due within the hour; no rehearsal now"}
+        ship = ship_near(now)
+        if ship:
+            return {"error": f"{ship} calls near this time: one ship at a time, try again later"}
+        hack = hack_of(t)
+        base = berlin_day(now).isoformat() + "-" + hack + "-try"
+        rid, n = base, 2
+        while self.run_of(rid):
+            rid, n = f"{base}{n}", n + 1
+        r = {"id": rid, "hack": hack, "t0": int(now), "status": "waiting", "steps": {}, "result": None, "dry": True,
+             "window": TRY_WINDOW}
+        self.runs.append(r)
+        self.runs = self.runs[-RUNS_KEEP:]
+        self.note(r, "rehearsal asked for from inside the server")
+        self.save_state()
+        return {"started": rid, "minutes": (TRY_STEPS[-1][1] + TRY_WINDOW + SETTLE_AFTER) // 60 + 2}
 
     # ---------- what pages see ----------
     def released(self) -> set:
@@ -526,7 +603,9 @@ class HackWeek:
                 "hacks": {k: {x: v[x] for x in ("name", "news", "how", "rule", "rule_what", "not")} for k, v in HACKS.items()},
                 "window_minutes": WINDOW // 60,
                 "wallets": {k: {"address": v, "short": short(v)} for k, v in self.pk.items()},
-                "runs": [self.public(r) for r in self.runs[::-1]]}
+                "runs": [self.public(r) for r in self.runs[::-1] if not r.get("dry")],
+                "last_try": next(({k: r.get(k) for k in ("id", "t0", "status", "result", "why")}
+                                  for r in self.runs[::-1] if r.get("dry") and not r.get("findings")), None)}
 
     def held(self) -> dict:
         rel = self.released()
@@ -542,6 +621,8 @@ class HackWeek:
             return snap
         if path == "/hack/held":
             return self.held() if internal else {"error": "only from inside the server"}
+        if path == "/hack/try":
+            return self.start_try() if internal else {"error": "only from inside the server"}
         return None
 
 
