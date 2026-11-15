@@ -18,6 +18,11 @@ STATS = "/stats/"                                   # chain restarts, read from 
 BEFORE = "/blog/?p=2026-11-07-queen-learnings"      # the Queen's call of 7 November
 
 NOTES: dict[str, dict] = {
+    # 15 Nov 2026, the Queen's make-up call: the testnet started over again 8 minutes after she landed (old chain ended at
+    # #1457, 14:07:54 UTC), the second time in two days during her call; the ships are paused. Its draft waits for Kilian.
+    "2026-11-15-queen-learnings": {
+        "hold": "the testnet restarted during this call too; read it and decide with Kilian before anything goes out",
+    },
     # 14 Nov 2026, Queen call (rewritten by hand on Kilian's ask): the old chain ended at #1569 (13:01:52 UTC), a new one
     # began ~13:05-13:10 UTC (estimated from the block rate); our node stayed on the old chain until restarted at 15:03 UTC
     # (it did not reconnect on its own; a node restart fixed it, why is still open). Why IDNI restarted: unknown. The explorer shows the new
