@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
 <script src="../assets/sim.js"></script>
+<script src="../assets/origins.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>Tau Account View</title>
@@ -952,6 +953,12 @@ function tile(label, value, sub, tipText, unit) {
 }
 // a t.me link that opens @tauhud_alerts_bot with this address (or "p" + rule change id) filled in, base64url to fit Telegram's 64 characters (infra/alerts/follow.py)
 const tgAlerts = (hex, rule) => "https://t.me/tauhud_alerts_bot?start=" + (rule ? "p" : "") + btoa(String.fromCharCode(...hex.match(/../g).map(x => parseInt(x, 16)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+/* the app a visitor's wallet came from, when our relay saw it (assets/origins.js app, relay walletdays.py); nothing otherwise */
+function appTag(a) {
+  const ap = !SAMPLE && !SIM && window.TauOrigin && TauOrigin.app ? TauOrigin.app(a) : null;
+  return ap ? `<span class="tag g app" data-tip="${esc(ap.line || ap.short)}\nRead from our own server's record of what it sent and from the public blocks. A wallet is a key, not a person.">${esc(ap.short)}</span>` : "";
+}
+if (window.TauOrigin && TauOrigin.ready) TauOrigin.ready().then(() => { const el = $("roles"); if (S.addr && el && !$("acct").hidden && !el.querySelector(".tag.g.app") && appTag(S.addr)) renderAccount(); });
 function renderAccount() {
   show("acct");
   const a = S.addr, st = S.lookups.getaccountstate, gb = S.lookups.getbalance, ro = S.lookups.getruleoffers, sq = S.lookups.getsequence;
@@ -965,6 +972,7 @@ function renderAccount() {
     isValidator(a) ? `<span class="tag g" data-tip="In the active validator set: may propose blocks and vote on network rule changes.">validator</span>` : "",
     M.proposed ? `<span class="tag w">proposed ${plural(M.proposed, "block")}</span>` : "",
     M.firstSeen ? `<span class="tag">first seen ${esc(fmtWhen(M.firstSeen))}</span>` : "",
+    appTag(a),
     !known && (C.ready || SAMPLE) ? `<span class="tag a">no activity on this chain yet</span>` : "",
   ].join("");
 

@@ -35,8 +35,16 @@ GET /wallets/tags
              idni, bot, cruise, rabbit, agorzilla (tauhud.com's chain core marks their transactions, assets/origins.js).
   via        {tx hash: page} the newest transactions sent from one of our games with a page of its own (txsources
              GAME_VIA: "nomemo"). A wallet's tag says what it did first; this says which game a transaction came from.
-             "tauhud" stays out: it comes from the relay's own note of what it sent, which is only ever shown as totals.
-Only counts leave the relay. The file keeps sender keys per day; they are public in the blocks anyway.
+             "tauhud" stays out of tags: it comes from the relay's own note of what it sent.
+  apps       {pubkey: {"b": app, "d": day, "u": [apps]}} which of our apps a visitor's wallet came from, so a page can say
+             that a wallet started in Tau HUD. Only wallets that are not IDNI's and not our own server's.
+             b = the app its first transaction we know of came from, d = that day (UTC). Written only when the wallet was
+             new to a record that already ran on an earlier day, so a wallet from before the record began never gets one.
+             u = every app it has sent through since (and, for wallets recorded before apps were kept, the app its tag names).
+             Apps: tauhud (sent through this relay's wallet door from a tauhud.com page), nomemo (the same, from No Memo),
+             rabbit (a White Rabbit Key move, line or ballot), agorzilla (paid one of Agorzilla's addresses, or sent from
+             agorzilla.com), deja (fed Déjà, Agorzilla's café cat). A wallet is a key, not a person.
+Only counts leave the relay, and the apps above. The file keeps sender keys per day; they are public in the blocks anyway.
 """
 from __future__ import annotations
 
@@ -46,7 +54,7 @@ import logging
 import os
 import time
 
-from txsources import GENESIS, group, rabbit
+from txsources import AGORZILLA, DEJA, GAME_VIA, GENESIS, group, rabbit
 
 log = logging.getLogger("relay.walletdays")
 
@@ -56,6 +64,28 @@ PUBLIC = ("idni", "bot", "cruise", "rabbit", "agorzilla")   # tags anyone could 
 WINDOWS = (1, 7, 30, 90)
 KEEP_DAYS = 400
 SAVE_SECONDS = 60
+APPS = ("tauhud", "nomemo", "rabbit", "agorzilla", "deja")   # our apps a visitor's wallet can come from (GET /wallets/tags "apps")
+NOT_VISITOR = ("idni", "bot", "cruise")   # IDNI's genesis wallets and our own server's: never a visitor's app
+
+
+def app_of(tx: dict, tx_hash: str, sent: dict) -> str | None:
+    """Which of our apps this transaction came from, read from the transaction itself or from the relay's note of what
+    it sent; None when nothing says so."""
+    ops = tx.get("operations") if isinstance(tx.get("operations"), dict) else {}
+    to = {str(op[1]).lower() for op in ops.get("1") or [] if isinstance(op, (list, tuple)) and len(op) >= 2}
+    if DEJA in to:
+        return "deja"
+    if to & AGORZILLA:
+        return "agorzilla"
+    if rabbit(tx, {}):
+        return "rabbit"
+    note = sent.get(tx_hash)
+    if note is None:
+        return None
+    site, _, via = note.partition("|")
+    if site:
+        return site if site in APPS else None
+    return "nomemo" if via in GAME_VIA else "tauhud"
 
 
 def day_of(ts: float) -> str:
@@ -74,6 +104,8 @@ class WalletDays:
         self.tag: list[str] = []           # tag per key
         self.days: dict[str, set[int]] = {}
         self.play: dict[int, str] = {}     # key -> first day it made a White Rabbit Key transaction
+        self.born: dict[int, tuple[str, str]] = {}   # key -> (app, day) its first transaction we know of came from
+        self.apps: dict[int, list[str]] = {}         # key -> our apps it sent through
         self.bots: set[str] = set()        # filled by the relay: the island bot's and purses' keys
         self.cruise: set[str] = set()      # filled by the relay once cruise ships run: their passengers' keys
         self.dirty = False
@@ -90,6 +122,13 @@ class WalletDays:
             self.days = {str(d): {int(i) for i in v if isinstance(i, int) and 0 <= i < n}
                          for d, v in (st.get("days") or {}).items()}
             self.play = {int(i): str(d) for i, d in (st.get("play") or {}).items() if str(i).isdigit() and int(i) < n}
+            self.born = {int(i): (str(v[0]), str(v[1])) for i, v in (st.get("born") or {}).items()
+                         if str(i).isdigit() and int(i) < n and isinstance(v, list) and len(v) == 2 and v[0] in APPS}
+            self.apps = {int(i): [a for a in v if a in APPS] for i, v in (st.get("apps") or {}).items()
+                         if str(i).isdigit() and int(i) < n and isinstance(v, list)}
+            if "apps" not in st:   # a record from before apps were kept: the app its tag names, nothing more
+                self.apps = {i: [t] for i, t in enumerate(self.tag) if t in ("rabbit", "agorzilla", "tauhud")}
+                self.dirty = bool(self.apps)
         except FileNotFoundError:
             pass
         except (OSError, ValueError, TypeError, AttributeError) as exc:
@@ -130,14 +169,20 @@ class WalletDays:
                     continue
                 h = str(ids[i] if i < len(ids) else tx.get("tx_hash") or "").lower()
                 t = self.classify(tx, h, sent)
+                app = None if t in NOT_VISITOR else app_of(tx, h, sent)
                 k = self.index.get(s)
                 if k is None:
                     k = self.index[s] = len(self.keys)
                     self.keys.append(s)
                     self.tag.append(t)
                     changed = True
+                    if app and self.days and min(self.days) < day:   # new to a record that already ran before this day
+                        self.born[k] = (app, day)
                 elif RANK[t] < RANK[self.tag[k]]:
                     self.tag[k] = t
+                    changed = True
+                if app and app not in self.apps.get(k, ()):
+                    self.apps.setdefault(k, []).append(app)
                     changed = True
                 if rabbit(tx, {}) and (k not in self.play or day < self.play[k]):
                     self.play[k] = day
@@ -163,6 +208,23 @@ class WalletDays:
         """{pubkey: tag} for the public tags (PUBLIC), for GET /wallets/tags."""
         return {k: t for k, t in zip(self.keys, self.tag) if t in PUBLIC}
 
+    def app_list(self) -> dict:
+        """{pubkey: {"b": app, "d": day, "u": [apps]}} for visitors' wallets we know an app of, for GET /wallets/tags."""
+        out = {}
+        for k in sorted(set(self.born) | set(self.apps)):
+            if self.tag[k] in NOT_VISITOR:
+                continue
+            e, used = {}, list(self.apps.get(k, []))
+            if k in self.born:
+                e["b"], e["d"] = self.born[k]
+                if e["b"] not in used:
+                    used.insert(0, e["b"])
+            if used:
+                e["u"] = used
+            if e:
+                out[self.keys[k]] = e
+        return out
+
     def save(self, now: float | None = None, force: bool = False):
         now = time.time() if now is None else now
         if not self.dirty or (not force and now - self.saved_at < SAVE_SECONDS):
@@ -176,7 +238,9 @@ class WalletDays:
             with open(tmp, "w") as f:
                 json.dump({"keys": self.keys, "tag": self.tag,
                            "days": {d: sorted(v) for d, v in sorted(self.days.items())},
-                           "play": {str(k): d for k, d in self.play.items()}}, f, separators=(",", ":"))
+                           "play": {str(k): d for k, d in self.play.items()},
+                           "born": {str(k): list(v) for k, v in self.born.items()},
+                           "apps": {str(k): v for k, v in self.apps.items()}}, f, separators=(",", ":"))
             os.replace(tmp, self.path)
             self.dirty = False
         except OSError as exc:

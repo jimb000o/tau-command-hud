@@ -3127,5 +3127,11 @@
     "on": "2026-11-16",
     "link": "/rabbit/",
     "html": "White Rabbit Key: the islanders walk like people now. They keep to the paths, beaches, piers, rope bridges and stairs, and no longer cross houses, roofs, cliffs or water. If your test wallet walks on the island, it is yours to walk: click anywhere and your islander goes to the nearest spot it can reach on foot; click a place and it walks to the door first, and the place opens as it arrives. Everyone on the island sees it walk the same way. Only your wallet can walk it: your browser signs with its key once a day."
+  },
+  {
+    "tag": "Wallets",
+    "on": "2026-11-16",
+    "link": "/account/",
+    "html": "Wallets from our apps: where the HUD and the account page show a wallet, they now say when it came from one of our apps. A wallet whose first transaction we know of was signed in Tau HUD, No Memo, White Rabbit Key or Agorzilla reads “Started in Tau HUD” and so on, with the day; one that only sent through them later reads “Uses …”. It shows next to a rule holder, in a rule offer’s popup, in Worth a look and as a tag on the account page. Only for visitors’ wallets, never for IDNI’s or our own, and only when our server saw it: a wallet from before its record began never gets a start. A wallet is a key, not a person."
   }
 ]
