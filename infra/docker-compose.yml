@@ -461,6 +461,51 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  # Feature posts on X, never without the owner (alerts/xfeatures.py, 15 Nov 2026): a planned post (an "x" field in
+  # assets/updates.json, or assets/x-features.json) becomes a draft on its day; the films service below films the live page
+  # for it, this one cuts the film and sends it with the text to the owner's private Telegram chat (up owner). It posts
+  # nothing by itself: only `up x send <id>` does, within the caps (@TauHUDcom 1 a day / 3 a week, @Agorzilla 2 a week,
+  # 2 h after the last post, not while a cruise ship is due). up x  lists the drafts.
+  xfeatures:
+    build: ./alerts
+    command: ["python", "xfeatures.py", "loop"]
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
+      X_API_KEY: ${X_API_KEY:-}
+      X_API_SECRET: ${X_API_SECRET:-}
+      X_ACCESS_TOKEN: ${X_ACCESS_TOKEN:-}
+      X_ACCESS_SECRET: ${X_ACCESS_SECRET:-}
+      AGORZILLA_X_API_KEY: ${AGORZILLA_X_API_KEY:-}
+      AGORZILLA_X_API_SECRET: ${AGORZILLA_X_API_SECRET:-}
+      AGORZILLA_X_ACCESS_TOKEN: ${AGORZILLA_X_ACCESS_TOKEN:-}
+      AGORZILLA_X_ACCESS_SECRET: ${AGORZILLA_X_ACCESS_SECRET:-}
+      X_DAILY_CAP: ${X_DAILY_CAP:-5}
+      AGORZILLA_X_DAILY_CAP: ${AGORZILLA_X_DAILY_CAP:-2}
+      POST_GAP_MINUTES: ${POST_GAP_MINUTES:-120}
+      CRUISE_ENABLED: ${CRUISE_ENABLED:-1}
+      FILMS_DIR: /public/xfilms
+    volumes:
+      - alerts_state:/state     # /state/xfeatures.json: the drafts and what was sent; reads alerts.json, agorzilla.json, last-posts.json
+      - alerts_public:/public   # /public/xfilms/: the films asked for and made
+    mem_limit: 256m        # ffmpeg cuts a 12 s film a few times a week
+    restart: unless-stopped
+    logging: *logging
+
+  # The films for those drafts (agorzilla-shots/film.mjs, the same Chromium image as the pictures): a job in
+  # /out/xfilms/want/ is filmed once, 1280x720, with a drawn pointer and a slow zoom onto what changed.
+  films:
+    build: ./agorzilla-shots
+    command: ["node", "film.mjs"]
+    environment:
+      FILMS_DIR: /out/xfilms
+    volumes:
+      - alerts_public:/out
+    shm_size: 256m
+    mem_limit: 768m
+    restart: unless-stopped
+    logging: *logging
+
   agorzilla-shots:
     build: ./agorzilla-shots
     volumes:

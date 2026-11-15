@@ -38,6 +38,9 @@
 #                            node left alone, safe any time), then this month's clips; up kling test  one 5 s clip of the
 #                            live island to look at (proves the key), up kling list  every clip, up kling send <key>  posts
 #                            a draft, up kling off island  the island still again (until the next painting)
+#              up x          feature posts on X: drafts with their films come to your Telegram by themselves, nothing posts
+#                            without you; up x  the drafts, up x send <id>  posts one, up x drop <id>, up x film <id>,
+#                            up x text <id> "new words", up x week  this week's posts
 #              up shots      the post pictures of Tau HUD's pages taken anew in Live mode and checked (node left alone):
 #                            which pages have a picture, why the others have none; up shots rules status  only these
 #              up escrow     the relay alone restarted with the code just pulled (not while a ship is due), then the
@@ -184,6 +187,24 @@ if [ "${1:-}" = "clip" ]; then
     echo "look: https://node.tauhud.com/rico/art/drafts/trick-clip.mp4"
   fi
   exit 0
+fi
+# Feature posts on X, never without the owner (alerts/xfeatures.py, films by agorzilla-shots/film.mjs), the node left
+# alone, safe any time: up x  both services built and started with the code just pulled, then every draft and what it
+# waits for; up x send <id>  posts it (caps, 2 h room and ship hours first; --now sets room and ship hours aside),
+# up x drop <id>, up x film <id>  filmed again, up x text <id> "new words"  (\n for a line break), up x week  this week's
+# posts, up x check  the plan read against the rules. Drafts come to the owner's Telegram by themselves (up owner).
+if [ "${1:-}" = "x" ]; then
+  shift
+  if [ -z "${1:-}" ]; then
+    docker compose up -d --build --no-deps xfeatures films >/dev/null 2>&1 || docker compose up -d --build --no-deps xfeatures films
+  else
+    docker compose up -d --no-deps xfeatures films >/dev/null 2>&1 || true
+  fi
+  echo "---------------- copy from here into the chat ----------------"
+  [ $# -gt 0 ] || set -- list
+  rc=0; docker compose exec -T xfeatures python xfeatures.py "$@" || rc=$?
+  echo "---------------- to here --------------------------------------"
+  exit $rc
 fi
 # The post pictures of Tau HUD's own pages (agorzilla-shots/site-shots.mjs), the node left alone: the picture service
 # built and started, Caddy given /pageshots/*, one round at once, then which pages have a checked picture and why the
