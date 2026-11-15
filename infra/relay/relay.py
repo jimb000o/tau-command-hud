@@ -122,6 +122,9 @@ EVENTS_PATH = os.environ.get("EVENTS_PATH", "/data/events.json")
 # Every block of the current chain, one JSON line each, so history survives
 # relay restarts (the node only hands out its newest ~900 KB of blocks).
 CHAIN_PATH = os.environ.get("CHAIN_PATH", "/data/chain.jsonl")
+CHAIN_END_DIR = os.environ.get("CHAIN_END_DIR", "/data/chain-ends")   # a dead chain's last blocks, one file per restart
+CHAIN_END_BLOCKS = 80
+CHAIN_END_KEEP = 40
 EVENTS_MAX = 5000
 # Availability history for /uptime (the status page): one sample a minute,
 # folded into hourly buckets, plus a list of outages. Kept for 31 days.
@@ -652,11 +655,27 @@ class Relay:
         blocks = self.ordered_blocks()
         if not blocks:
             return
+        self._keep_chain_end(blocks)
         try:
             self.chainhist.observe(blocks, force=True, sources=self.sources.by_day(blocks))
         except Exception:
             log.exception("could not archive the chain before a restart")
         self.history_text = self.sources_text = None
+
+    def _keep_chain_end(self, blocks: list[dict]):
+        """The dying chain's last CHAIN_END_BLOCKS blocks, kept in CHAIN_END_DIR (infra/restart-report.py reads them):
+        what was in the blocks right before a testnet restart, to find a pattern ("when X is sent, it restarts")."""
+        try:
+            os.makedirs(CHAIN_END_DIR, exist_ok=True)
+            tail = blocks[-CHAIN_END_BLOCKS:]
+            name = os.path.join(CHAIN_END_DIR, f"{self._ts(tail[-1]) or 0}-{self._height(tail[-1])}.json")
+            with open(name, "w") as f:
+                json.dump({"kept_at": round(time.time()), "blocks": tail}, f, separators=(",", ":"))
+            old = sorted(os.listdir(CHAIN_END_DIR))[:-CHAIN_END_KEEP]
+            for n in old:
+                os.remove(os.path.join(CHAIN_END_DIR, n))
+        except (OSError, TypeError, ValueError) as exc:
+            log.warning("could not keep the end of the chain: %r", exc)
 
     def _other_chain(self, fetched: list[dict]) -> bool:
         """True when the node's blocks contradict the ones loaded from disk
