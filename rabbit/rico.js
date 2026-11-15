@@ -778,7 +778,7 @@
     nodeNew: ["nd1", "nd2", "nd3", "nd4", "nd5"], nodeMany: ["ndm1", "ndm2", "ndm3", "ndm4"], nodeGone: ["ngo1", "ngo2", "ngo3"], nodeGoneMany: ["ngm1"],
     /* the Night Line opens at eleven (nlo2 says "the next hour": only for the one-off EXTRA hours), names the hour as it
        turns (nlH0-4, also the welcome for whoever tunes in after eleven), and closes at five (nlc1/nlc2 named midnight) */
-    nlOpen: ["nlo1", "nlo3"], nlRing: ["nlr1", "nlr2", "nlr3", "nlr4"], nlBye: ["nlb1", "nlb2", "nlb3", "nlb4", "nlb5"], nlClose: ["nlc3", "nlc4", "nlc5"],
+    nlOpen: ["nlo1", "nlo3"], nlRing: ["nlr1", "nlr2", "nlr3", "nlr4"], nlBye: ["nlb1", "nlb2", "nlb3", "nlb4", "nlb5"], nlClose: ["nlc3", "nlc5"],   // nlc4 says good morning: not at five
     nlH0: ["nlh0a"], nlH1: ["nlh1a"], nlH2: ["nlh2a"], nlH3: ["nlh3a"], nlH4: ["nlh4a"],
     nlTalk: ["nlt1", "nlt2", "nlt3", "nlt4", "nlt6", "nlt9", "nlt10", "nlt11", "nlt13", "nlt16", "nlt22", "nlt24"],
     lagoon: ["bld1", "bld2", "bld3", "idea1", "idea2", "idea3", "idea4", "idea5", "idea6"], dunno: ["dk1", "dk2"],
@@ -1634,12 +1634,17 @@
     const p = (who, s) => (who === "rico" ? { t: tr(s), v: s } : { t: tr(s), v: s, who });
     return [p("rico", L[ring]), ...c.say.map((s, i) => p(i % 2 ? "rico" : c.who, s)), ...(c.cut ? [] : [p("rico", L[bye])])];
   }
-  /* the show's opener for the hour of the day (or one of the ones for any hour) */
+  /* the show's opener for the hour of the day (or one of the ones for any hour). Never a morning or a wake-up call
+     before six (Kilian 16.11: no "good morning" at one in the night): the any-hour "wake-up call" (wake2) waits for
+     the day, the night's "Midnight on the island" (wakeNt3) keeps to the hours around midnight, and when the hour's
+     own openers have no voice yet only the any-hour ones stand in, never another hour's */
   function wake(hr = new Date().getHours()) {
-    const set = Math.random() < 0.35 ? "wake" : hr >= 5 && hr < 11 ? "wakeAm" : hr >= 11 && hr < 17 ? "wakePm" : hr >= 17 && hr < 22 ? "wakeEv" : "wakeNt";
-    const ok = SETS[set].filter(k => voiced(k) !== false), any = ["wakeAm", "wakePm", "wakeEv", "wakeNt", "wake"].flatMap(x => SETS[x]).filter(k => voiced(k) !== false);
+    const own = hr >= 6 && hr < 11 ? "wakeAm" : hr >= 11 && hr < 17 ? "wakePm" : hr >= 17 && hr < 22 ? "wakeEv" : "wakeNt";
+    const fits = k => !(k === "wake2" && (hr >= 22 || hr < 6)) && !(k === "wakeNt3" && hr >= 2 && hr < 23);
+    const set = Math.random() < 0.35 ? "wake" : own;
+    const ok = SETS[set].filter(k => fits(k) && voiced(k) !== false), any = [own, "wake"].flatMap(x => SETS[x]).filter(k => fits(k) && voiced(k) !== false);
     const from = ok.length ? ok : any.length ? any : VOICED.l ? SETS.open.filter(k => voiced(k)) : [];   // no opener voiced yet: an ordinary hello that is
-    const list = from.length ? from : SETS[set];
+    const list = from.length ? from : SETS[set].filter(fits).length ? SETS[set].filter(fits) : SETS.open;
     return list[Math.floor(Math.random() * list.length)];
   }
   /* between two songs the band stops (music.js onbreak) and Rico says what fits: most often a line on the song that
@@ -1712,7 +1717,7 @@
       const x = BREAK[from + ">" + to], pair = x ? Object.keys(L).filter(k => k.startsWith("sb" + x)) : [];
       if (pair.length && Math.random() < 0.65) { const k = pick(pair); return { k, parts: [line(k)] }; }
       if (Math.random() < 0.12) { const k = pick(SETS.salado); return { k, parts: [line(k), ...next()] }; }   // the wellness investor, now and then
-      const set = Math.random() < 0.25 ? "sbAny" : hr >= 5 && hr < 11 ? "sbAm" : hr >= 11 && hr < 17 ? "sbPm" : hr >= 17 && hr < 22 ? "sbEv" : "sbNt", k = pick(SETS[set]);
+      const set = Math.random() < 0.25 ? "sbAny" : hr >= 6 && hr < 11 ? "sbAm" : hr >= 11 && hr < 17 ? "sbPm" : hr >= 17 && hr < 22 ? "sbEv" : "sbNt", k = pick(SETS[set]);
       return { k, parts: [line(k), ...next()] };
     }
   }

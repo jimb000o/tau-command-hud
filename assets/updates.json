@@ -3164,5 +3164,11 @@
     "on": "2026-11-16",
     "link": "/rabbit/",
     "html": "White Rabbit Key: when an islander’s wallet writes in the troll box (on the HUD or in The Coconut Wire on the island), the message pops up as a speech bubble over that islander’s head: right away for a few seconds, then now and then for a moment, at the same moments for everyone on the island. Only the latest message that is still in the troll box shows; a hidden one or one older than a day is gone from over the head too. Your browser signs once a day that the wallet is yours."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/",
+    "html": "White Rabbit Key and Radio Coco: no more good mornings in the middle of the night. Rico's morning openers and morning words now start at 06:00 (were 05:00), his “wake-up call” opener and “Midnight on the island” keep to their hours, the Night Line no longer says good morning when it closes at five, and the islanders greet you with “Morning!” only between 06:00 and noon, whatever day of the game it is. At other hours they say something else they know."
   }
 ]
