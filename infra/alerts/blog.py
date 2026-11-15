@@ -154,6 +154,8 @@ each that say at a glance why it matters (for the community, for IDNI, and what 
 Answer with JSON only, no other text:
 {"title":{"en":"","zh":"","ja":""},"dek":{"en":"","zh":"","ja":""},"why":[{"en":"","zh":"","ja":""}],\
 "body":{"en":"","zh":"","ja":""},"x":"","card":{"line":"","why":["","",""]}}"""
+import blog_rules  # noqa: E402  (the house rules for every article, editor.py checks them too)
+SYSTEM += blog_rules.FOR_WRITERS
 
 
 # ---------- reading ----------
@@ -564,6 +566,11 @@ def three(d, cap: int) -> dict | None:
 BLAME = re.compile(r"\b(IDNI|Tau|the testnet|the chain)(['’]s)?\s+(is |was |were )?(at fault|to blame|fault|failed us|broke|broken|"
                    r"unreliable|unstable|buggy|bug|let us down)\b", re.I)
 HYPE = re.compile(r"\b(huge|exciting|revolutionary|game[- ]chang\w*|moon|pump|to the moon|finally|incredible)\b|!", re.I)
+# bold safety promises are a regulatory risk and nothing we can stand behind (Kilian, 15 November 2026): marked like hype
+SAFETY = re.compile(r"\b(can ?not lose|can't lose|never lose|risk[- ]free|no risk|zero risk|without (any )?risk|guaranteed|"
+                    r"completely safe|totally safe|perfectly safe|100% safe|always safe|can ?not be stolen|can't be stolen|"
+                    r"unhackable|impossible to (hack|steal|lose))\b", re.I)
+HYPE = re.compile(HYPE.pattern + "|" + SAFETY.pattern, re.I)
 
 
 def article(facts: dict, out: dict, now: float) -> dict:
