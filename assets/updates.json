@@ -3103,5 +3103,11 @@
     "on": "2026-11-15",
     "link": "/rules/numbers/",
     "html": "Rules in numbers: two more numbers. How many test AGRS the wallets with a rule hold, and how many payments our node refused each day because the sender’s own rule said no (only what passed our node; refusals at other nodes never reach it)."
+  },
+  {
+    "tag": "Rule offers",
+    "on": "2026-11-15",
+    "link": "/",
+    "html": "Rule offers on the HUD: click an offer and the offerer and recipient open their accounts. The popup says who they are where we know it (a showcase wallet, an IDNI genesis wallet, a game player), the rule each holds now, and how many offers each made and received. A rule that keeps a reserve ((i2 − i1) ≥ X) was shown as a spending limit; it now reads as a balance floor."
   }
 ]
