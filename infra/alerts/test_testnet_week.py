@@ -229,5 +229,33 @@ check(w.step(SUN18 + 7 * 86400 + 60) == "testnet-week-2026-w46" and len(told) ==
 check(w.status_lines(SUN18 + 7 * 86400 + 120)[0].startswith("week:    weekly testnet post as a draft for you Sun 22.11. 18:00"), "status: next one a week later")
 check(w.main(["bogus"]) == 2, "unknown argument: usage")
 
+# ---------- only the picture made anew; the owner's time to publish ----------
+W46 = "testnet-week-2026-w46"
+pw = os.path.join(TMP, "blog", "drafts", blog.state()["drafts"][W46] + ".json")
+d0 = blog.read_json(pw, {})
+d0["stats"] = [list(x) for x in d0.get("stats") or []] + [["3", "chain restarts, cause not clear yet", "bad"]]   # as drafted before the amber rule
+blog.write_json(pw, d0)
+check(w.main(["repaint"]) == 0, "repaint: the last week drafted")
+d1 = blog.read_json(pw, {})
+check([x for x in d1["stats"] if "restart" in x[1]][-1][2] == "amber" and d1["body"] == d0["body"] and d1["title"] == d0["title"]
+      and os.path.exists(os.path.join(TMP, "blog", "img", W46 + "-hero.jpg")), "repaint: restarts amber, the text word for word as before")
+check(w.restart_tone(0) == "ok" and w.restart_tone(3) == "amber", "restarts: green with none, amber with any, never red")
+NOW = SUN18 + 7 * 86400 + 300
+AT = blog.publish_at("2026-11-23T08:00Z")
+check(AT == 1795420800 and blog.publish_at("2026-11-23 08:00") == AT and blog.publish_at("tomorrow") is None, "--at reads a UTC time")
+check(blog.schedule_cli(W46, "2026-11-01T08:00Z", now=NOW) == 1 and blog.schedule_cli("testnet-week-2026-w99", "2026-11-23T08:00Z", now=NOW) == 1,
+      "no time in the past, no unknown draft")
+check(blog.schedule_cli(W46, "2026-11-23T08:00Z", now=NOW) == 0 and blog.state()["publish_at"][W46] == AT, "the time is kept")
+check("goes up by itself Mon 23.11. 08:00 UTC" in blog.auto_note(blog.state(), W46, d1), "the drafts list says when")
+sent = []
+blog.announce = lambda a, dry: sent.append(a["id"])
+told.clear()
+check(blog.scheduled_publish(AT - 60) == [] and not sent and W46 not in {x["id"] for x in blog.posts()["posts"]}, "not before its time")
+check(blog.scheduled_publish(AT + 30) == [W46] and sent == [W46] and W46 in {x["id"] for x in blog.posts()["posts"]}
+      and told and told[-1].startswith("Published at the set time: " + W46), "at its time: on the blog, its one post, the owner told")
+check(blog.scheduled_publish(AT + 700) == [] and sent == [W46] and not blog.state()["publish_at"], "once")
+check(blog.schedule_cli(did2, "2026-12-01T08:00Z", now=NOW) == 0 and blog.schedule_cli(did2, "off", now=NOW) == 0
+      and did2 not in blog.state()["publish_at"], "--at=off takes the time back")
+
 print("\n" + ("all ok" if not failed else f"{failed} failed"))
 sys.exit(1 if failed else 0)

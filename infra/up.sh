@@ -387,7 +387,8 @@ fi
 # the testnet this week as a blog post (alerts/testnet_week.py), the blog service and the node-log reader rebuilt with the
 # code just pulled (the node left alone, safe any time): up week  how this week's post reads now (nothing written),
 # up week last  last week's, up week draft  writes the draft now (anew, same address) and tells your Telegram; it comes
-# by itself every Sunday 18:00 and never goes up without up blog publish testnet-week-<year>-w<week>
+# by itself every Sunday 18:00 and never goes up without up blog publish testnet-week-<year>-w<week>;
+# up week repaint  only the draft's picture made anew, its text stays as you read it
 if [ "${1:-}" = "week" ]; then
   shift
   docker compose up -d --build --no-deps blog nodelog >/dev/null 2>&1 || docker compose up -d --build --no-deps blog nodelog || true
@@ -688,7 +689,8 @@ if [ "${1:-}" = "copy" ]; then
   exit 0
 fi
 # the blog by hand, nothing rebuilt (alerts/blog.py): up blog  lists the drafts waiting and where to read them,
-# up blog publish <id>  puts one on the blog and posts it once, up blog draft <visit-id>  writes one anew,
+# up blog publish <id>  puts one on the blog and posts it once (--at=2026-11-16T08:00Z: by itself at that time, UTC;
+# --at=off takes it back), up blog draft <visit-id>  writes one anew,
 # up blog unpublish <id>  takes one off again, up blog pictures  makes every article's hero picture and link preview anew
 if [ "${1:-}" = "blog" ]; then
   shift
