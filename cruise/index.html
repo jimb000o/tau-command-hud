@@ -41,7 +41,8 @@ body {
   background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
 }
 a { color: #fff; }
-.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 12px; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+@media (min-width: 1800px) { .wrap { max-width: 1560px; } }   /* wide screens: a wider centred column, fewer wrapped lines */
 .wrap > * { min-width: 0; }
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
@@ -91,10 +92,10 @@ td a { color: var(--dim); } td a:hover { color: #fff; }
 .bk.back b { color: #fff; } .bk.back { border-color: var(--hair); }
 .bk.bad { border-color: rgba(255,77,109,.45); } .bk.bad b { color: var(--bad); }
 .bk a { color: var(--dim); } .bk a:hover { color: #fff; }
-.note { margin: 10px 0 0; color: var(--dim); font-size: 12px; max-width: 110ch; }
+p.note { margin: 10px 0 0; color: var(--dim); font-size: 12px; max-width: 110ch; }   /* p only: the notes inside the logbook cells keep no margin, or the answer drops below its row */
 footer { color: var(--dim); font-size: 12px; padding: 4px 0 0; }
 footer a { color: var(--dim); }
-@media (min-width: 900px) and (max-height: 860px) { .sub { display: none; } .note { display: none; } .wrap { gap: 8px; } .tile { min-height: 0; padding: 7px 12px; } .tile b { font-size: 17px; } th, td { padding: 4px 8px; } }
+@media (min-width: 900px) and (max-height: 860px) { .sub { display: none; } p.note { display: none; } .wrap { gap: 8px; } .tile { min-height: 0; padding: 7px 12px; } .tile b { font-size: 17px; } th, td { padding: 4px 8px; } }
 @media (max-width: 700px) {
   body { padding-top: 8px; }
   .sub { font-size: 12px; }
