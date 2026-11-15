@@ -41,7 +41,7 @@ body {
   background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
 }
 a { color: #fff; }
-.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 12px; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }   /* one column held to the page width: the nav widens the top bar to the window, which must not widen the column with it */
 .wrap > * { min-width: 0; }
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
@@ -73,7 +73,7 @@ th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line
 th { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
 td.n { text-align: right; font-variant-numeric: tabular-nums; }
 td .ok { color: var(--ok); } td .no { color: var(--bad); } td .skip { color: var(--behind); } td .ev { color: #fff; font-weight: 600; }
-td .note { color: var(--dim); white-space: normal; max-width: 44ch; display: inline-block; }
+td .note { color: var(--dim); white-space: normal; max-width: 44ch; display: inline-block; margin: 0; vertical-align: top; }   /* margin 0: the page note’s 10px top margin must not push an answer’s note below its line */
 td.trick { white-space: normal; min-width: 26ch; max-width: 40ch; }   /* a pirate's trick in words wraps, so the node's answer stays in view */
 td a { color: var(--dim); } td a:hover { color: #fff; }
 .more { margin: 10px 0 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -91,10 +91,11 @@ td a { color: var(--dim); } td a:hover { color: #fff; }
 .bk.back b { color: #fff; } .bk.back { border-color: var(--hair); }
 .bk.bad { border-color: rgba(255,77,109,.45); } .bk.bad b { color: var(--bad); }
 .bk a { color: var(--dim); } .bk a:hover { color: #fff; }
-.note { margin: 10px 0 0; color: var(--dim); font-size: 12px; max-width: 110ch; }
+p.note { margin: 10px 0 0; color: var(--dim); font-size: 12px; max-width: 110ch; }   /* p only: the notes inside the logbook cells keep no margin, or the answer drops below its row */
+@media (min-width: 1800px) { .wrap { max-width: 1560px; } }   /* wide screens: a wider centred column, fewer wrapped lines */
 footer { color: var(--dim); font-size: 12px; padding: 4px 0 0; }
 footer a { color: var(--dim); }
-@media (min-width: 900px) and (max-height: 860px) { .sub { display: none; } .note { display: none; } .wrap { gap: 8px; } .tile { min-height: 0; padding: 7px 12px; } .tile b { font-size: 17px; } th, td { padding: 4px 8px; } }
+@media (min-width: 900px) and (max-height: 860px) { .sub { display: none; } p.note { display: none; } .wrap { gap: 8px; } .tile { min-height: 0; padding: 7px 12px; } .tile b { font-size: 17px; } th, td { padding: 4px 8px; } }
 @media (max-width: 700px) {
   body { padding-top: 8px; }
   .sub { font-size: 12px; }
