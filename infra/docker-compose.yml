@@ -73,6 +73,8 @@ services:
       HACK_ENABLED: ${HACK_ENABLED:-1}   # the hack of the week replayed on the testnet, Thursdays 11:00 German time (relay/hackweek.py); 0 stops it
       NOMEMO_ENABLED: ${NOMEMO_ENABLED:-1}   # No Memo's crew purse (relay/nomemo.py): pays the chapters' shares back; 0 switches it off
       NOMEMO_TRACER: ${NOMEMO_TRACER:-1}   # the Tracer: dust from a lookalike of the drop after the first chapter; 0 keeps it quiet
+      VAULTS_ENABLED: ${VAULTS_ENABLED:-1}   # No Memo's vaults (relay/vaults.py): drain them by reading or writing the right rule; 0 closes them
+      CHECKER_URL: http://checker:8090   # the vaults' keeper asks the Rule Playground checker to judge a player's rule (POST /check)
       SENDER_CONNECTION: ${SENDER_CONNECTION:-1}   # island bot + cruise ships send through their own node connection (relay.py Relay.sender); 0 = share the visitors one as before
     volumes:
       # chain restarts and dropped transactions for /stats (relay.py EVENTS_PATH),
@@ -80,6 +82,8 @@ services:
       - relay_data:/data
       - ai_usage:/ai-usage   # what the troll box's AI check costs (ai_meter.py), read by the monthly costs post
     depends_on: [tau-node]
+    # default: the node and the world; checker: the vaults' keeper asks the checker (internal, no way out from there)
+    networks: [default, checker]
     restart: unless-stopped
     logging: *logging
 

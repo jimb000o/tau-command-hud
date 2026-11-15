@@ -3073,5 +3073,6 @@
     "on": "2026-11-15",
     "link": "/rabbit/",
     "html": "White Rabbit Key: every wallet that sent a real transaction on Tau Net testnet in the last day now walks on the island by itself. Hover one to see it is a real wallet, click it for what the chain says about it: its rules, Agorzilla meals, votes, No Memo chapters, island elections, read as traits like night owl or rule writer, and it carries what it earned. Your own test wallet can choose its look with one transaction."
-  }
+  },
+  {"tag": "No Memo", "on": "2026-11-16", "link": "/nomemo/", "html": "No Memo: the vaults. Five wallets Tau HUD runs on the testnet, played as if their keys had leaked: our server signs any plain payment a player asks for and never changes a vault’s rule, so each vault’s real rule on the chain is its only lock. Read the rule in Tau and drain what it lets through: the till caps each payment, the reserve keeps a floor, the window lets only a narrow band of amounts out, the clock opens for half an hour a week. The keeper takes a rule you write for it if it passes its checklist of test payments, judged by the real Tau engine, and then it is yours to drain for ten minutes. New rules every Monday; a refused try costs nothing. Type vaults."}
 ]
