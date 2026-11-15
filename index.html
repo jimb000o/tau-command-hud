@@ -43,6 +43,7 @@
 <script src="assets/rulediff.js" defer></script>
 <link rel="stylesheet" href="assets/ticker.css">
 <script src="assets/ticker.js" defer></script>
+<script src="assets/cruisebar.js" defer></script>
 <script src="assets/hearts.js" defer></script>
 <link rel="stylesheet" href="assets/agz-look.css">
 </head>
@@ -2186,7 +2187,8 @@ if (CORE_ONLY) { let told = 0; setInterval(() => {
    today's meals and its stage; until that file may be read from here, the hover says what it is */
 const AGZ = { at: 0, d: null, room: 0, fail: 0 };
 function placeAgz() {   // two anchors: the header's bottom line is his ground, the Live status chip is what he watches; he never covers a control
-  const a = $("agz"), rail = document.querySelector("header.rail"), mode = document.querySelector("header.rail .chips > .seg") || $("chipMode"), u = document.querySelector(".rail .unoff"); if (!a || !rail || !mode || !u) return;   // he watches the Live/Simulation switch (header v2)
+  const a = $("agz"), rail = document.querySelector("header.rail"), mode = document.querySelector("header.rail .chips > .seg") || $("chipMode"), u0 = document.querySelector(".rail .unoff"), cc = $("chipCruise"); if (!a || !rail || !mode || !u0) return;
+  const u = cc && !cc.hidden && cc.getBoundingClientRect().right > u0.getBoundingClientRect().right ? cc : u0;   // the cruise chip (assets/cruisebar.js) after the notice: he keeps clear of it too   // he watches the Live/Simulation switch (header v2)
   if (getComputedStyle(a).display === "none") return;
   // measured on screen, placed in the scaled layout (wide screens scale the whole page, so screen px are not layout px)
   const op = a.offsetParent || document.body, opr = op.getBoundingClientRect(), z = op.offsetWidth ? opr.width / op.offsetWidth : 1;
@@ -2209,6 +2211,7 @@ function placeAgz() {   // two anchors: the header's bottom line is his ground, 
 /* while the page builds itself (header, chips filling with data, the level's layout) he is placed every frame and shown
    once his spot has held for 0.3 s; after 6 s he shows wherever he is */
 (function agzSettle() { const a = $("agz"); if (a && a.classList.contains("placed")) return; placeAgz(); if (performance.now() > 6000) { if (a) a.classList.add("placed"); } else requestAnimationFrame(agzSettle); })();
+window.placeAgz = placeAgz;   // assets/cruisebar.js asks him again when its chip changes width
 addEventListener("resize", placeAgz); addEventListener("load", placeAgz); addEventListener("tau-level", () => requestAnimationFrame(placeAgz)); setInterval(placeAgz, 2000);
 try { const ro = new ResizeObserver(() => placeAgz()); ["chipMode", "chipNext"].forEach(id => $(id) && ro.observe($(id))); ro.observe(document.querySelector("header.rail")); document.fonts && document.fonts.ready.then(placeAgz); } catch (e) {}   // the chips change width as data arrives; he follows at once
 async function pollAgz(force) {   // agorzilla.com's archive, written every 30 min; read every 5 min and again on hover after a minute
