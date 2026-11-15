@@ -104,6 +104,9 @@ check("IDNI said that an update is under way" in w.text(fc)["body"] and w.model_
       "what IDNI said this week, as said")
 del w.CONTEXT["2026-w45"]
 import blog_rules  # noqa: E402
+check(all(blog.HYPE.search(t) for t in ("You cannot lose anything", "a risk-free way", "completely safe", "funds cannot be stolen", "guaranteed"))
+      and not blog.HYPE.search("free test coins with no value; there is no guarantee"), "bold safety promises are marked, plain limits are not")
+check("No bold safety promises" in blog_rules.RULES, "the rule is in the house rules")
 check(blog_rules.RULES in w.WEEK_SYSTEM and blog_rules.RULES in blog.SYSTEM and "Natural spoken English" in blog_rules.RULES, "every writer gets the house rules")
 
 # ---------- translations ----------

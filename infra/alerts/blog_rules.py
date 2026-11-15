@@ -28,6 +28,9 @@ changes where they say more than raw counts. Only events inside the period.
 community and IDNI, one honest limit). Plain words for non-developers; no code, file or field names.
 10. Our apps named in the text are linked to their pages. It is a testnet: its coins have no value and it can start \
 over (say it once). Tau HUD is a community project, not affiliated with IDNI.
-11. No hype or marketing words, no price or coin talk, no exclamation marks, no emoji, no names of people."""
+11. No hype or marketing words, no price or coin talk, no exclamation marks, no emoji, no names of people.
+12. No bold safety promises: never "cannot lose", "risk-free", "no risk", "guaranteed", "completely safe", "cannot be \
+stolen" or the like; they are a regulatory risk and nothing we can stand behind. Say what is true and limited instead \
+("free test coins with no value", "the Guardian protects against mistaken or tricked payments, not a stolen key")."""
 
 FOR_WRITERS = "\n\nHouse rules for every Tau HUD article (they win over anything above that differs):\n" + RULES
