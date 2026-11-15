@@ -160,6 +160,8 @@
     salado: { w: 27, h: 27, jaw: 0.8, nose: "round", bg: "#d9653f" }, lola: { w: 22, h: 26, jaw: 0.35, nose: "button", bg: "#2c8c88" },
     sam: { w: 24, h: 28, jaw: 0.6, nose: "long", bg: "#5c9a4c" },
   };
+  /* the cruise ships' captains (captain.js): drawn like the islanders until painted busts ("bust-<id>") exist */
+  if (window.RABBIT_CAPTAIN) for (const C of Object.values(RABBIT_CAPTAIN.CAPTAINS)) { FOLK[C.id] = Object.assign({ name: C.name, role: C.role }, C.look); HEADS[C.id] = C.head; }
   /* a painted portrait (infra/rabbit-art paint.py busts) in place of the drawn face: it breathes, blinks, and its mouth
      moves while it talks (the -talk and -blink frames, laid over the still picture where they differ) */
   const bustOf = id => !/[?&]art=drawn/.test(location.search) && SC.art && SC.art.img["bust-" + id];
@@ -821,6 +823,7 @@
       scene(box, G.me === "tobias" ? "sam" : "tobias", T("The pier"), T("Boats, gulls and a black cat that sometimes walks past twice. Nothing to do here but think. Tau Testnet Alpha is out there too: the Book on this island works a lot like its blocks."), [
         btn(T("Watch the sea"), () => { SC.cat(Math.random() < 0.5); setTimeout(() => SND.sfx("meow"), 1200); closeCard(); }),
         btn(T("Read how it works"), () => help()),
+        captainsLogBtn(),
       ]);
     },
     /* ---- the other quarters of the painted island ---- */
@@ -1916,9 +1919,106 @@
           n || v.phase !== "approach" ? el("li", { text: shipSoFar(S, K, true) }) : null,
           where ? el("li", { text: where }) : null),
         el("div", { class: "cv-acts" },
+          v.phase !== "gone" && window.RABBIT_CAPTAIN ? btn(T("Go aboard"), () => aboard(), { go: true, sub: T("the captain tells you what the test is doing right now") }) : null,
           btn(T("The logbook"), () => window.open("/cruise/", "_blank", "noopener")),
           btn(T("Testnet load"), () => window.open("/load/", "_blank", "noopener")),
           btn(T("Back to the island"), () => closeCard(), { go: true })));
+    });
+  }
+  /* ---------- aboard: the captain of the ship in port, live (captain.js) ----------
+     A click on the ship (or "Go aboard" on her card) brings the visitor to her captain, who talks like a live broadcast:
+     what the logbook just wrote (relay GET /cruise/log?visit=, every 20 s while aboard), where the visit stands (GET
+     /cruise) and why the test matters, in turns; a question asked gets its answer first. The captains say first that
+     they and their passengers are made up; what the passengers send is real. A preview (?ship=) has a made-up logbook. */
+  const CAP = window.RABBIT_CAPTAIN;
+  const AB = { box: null, timer: 0, seen: new Set(), queue: [], k: 0, next: 0, poll: 0, st: 0, mn: 0, visit: null };
+  const capLine = l => (l.v ? F(l.s, l.v) : T(l.s));
+  /* names filled in stay English: the whole line is translated with them (a filled-in Chinese word would stop it) */
+  const capCtx = () => ({ place: id => (SC.places[id] || {}).name || SHIPAT[id] || id, time: berlinHM, day: shipDay });
+  const shipKey = v => v.ship || (v.style === "pirate" ? "pirates" : v.style === "expedition" ? "dryrun" : "queen");
+  const entryKey = e => [e.t, e.kind, e.i, e.p, e.trick || "", e.status || ""].join(":");
+  function aboardNews(entries, first) {
+    const v = SHIPV.v, ship = v && shipKey(v), ctx = capCtx();
+    const fresh = entries.filter(e => !AB.seen.has(entryKey(e)));
+    fresh.forEach(e => AB.seen.add(entryKey(e)));
+    /* on boarding only the newest few are news; older ones are in the logbook */
+    const pick = (first ? fresh.slice(0, 3) : fresh).map(e => ({ e, l: CAP.event(ship, e, ctx), w: CAP.weight(e) })).filter(x => x.l);
+    AB.queue.push(...pick); AB.queue.sort((a, b) => b.w - a.w || b.e.t - a.e.t); AB.queue = AB.queue.slice(0, 8);
+  }
+  function aboardPoll(first) {
+    const v = SHIPV.v; if (!v) return;
+    if (v.preview) { if (first) aboardNews(CAP.previewLog(shipKey(v), Date.now() / 1000), true); return; }
+    shipFetch();
+    fetch("https://node.tauhud.com/cruise/log?n=40&visit=" + encodeURIComponent(v.visit), { cache: "no-store" }).then(r => (r.ok ? r.json() : null))
+      .then(j => { if (j && Array.isArray(j.entries) && UI.card === AB.box) aboardNews(j.entries, first); }, () => {});
+  }
+  /* the next line on air: news first (a plain payment only now and then), else where the visit stands and why it matters, in turns */
+  function aboardLine() {
+    const v = SHIPV.v, ship = v && shipKey(v); if (!v) return null;
+    AB.k++;
+    const q = AB.queue.findIndex(x => x.w > 1 || AB.k % 3 === 0);
+    if (q >= 0) return AB.queue.splice(q, 1)[0].l;
+    if (AB.k % 2) { const S = CAP.status(ship, v, v.preview ? { state: "busy", waiting: 14, sealed: 820 } : SHIPLIVE.load, capCtx()); if (S.length) return S[AB.st++ % S.length]; }
+    const M = CAP.meaning(ship); return M[AB.mn++ % M.length];
+  }
+  function onAir(text) {
+    const box = AB.box; if (!box || UI.card !== box || !box._line) return;
+    box._line.textContent = text; say(box._f, Math.min(9000, 600 + text.length * 38));
+    AB.next = performance.now() + Math.max(9000, readMs(text) + 3500);
+    fitCard(box);
+  }
+  function aboardStrip() {
+    const v = SHIPV.v, s = AB.box && AB.box._strip; if (!v || !s) return;
+    const S = v.sent || {}, n = Object.values(S).reduce((a, b) => a + (Number(b) || 0), 0), L = !v.preview && SHIPLIVE.load;
+    s.textContent = "● " + T("ON AIR") + " · " + (v.style === "pirate" ? F("{n} tricks refused", { n: (v.tricks || {}).stopped || 0 }) : F("{n} sent, {m} refused", { n, m: v.refused || 0 }))
+      + (L ? " · " + F("testnet {x}", { x: L.state }) : "") + (v.end && v.phase !== "gone" ? " · " + F("in port until {t}", { t: berlinHM(v.end) }) : "");
+  }
+  function aboard() {
+    const v = SHIPV.v; if (!v || !CAP) return;
+    const ship = shipKey(v), C = CAP.CAPTAINS[ship]; if (!C) return shipCard();
+    if (AB.visit !== (v.visit || v.ship)) { AB.seen.clear(); AB.queue = []; AB.visit = v.visit || v.ship; }
+    clearInterval(AB.timer);
+    openCard(null, box => {
+      AB.box = box; box.classList.add("aboard");
+      const hello = CAP.hello(ship);
+      box._strip = el("p", { class: "cv-onair", "aria-live": "off" });
+      scene(box, C.id, v.name + (v.preview ? " · " + T("preview") : ""), [{ t: capLine(hello), v: null }], [
+        ...CAP.asks(ship).slice(0, 3).map(a => btn(T(a.q), () => { onAir(T(a.a)); AB.next += 6000; }, { ask: true })),
+        ship === "pirates" ? btn(T("Play along in No Memo"), () => window.open("/nomemo/", "_blank", "noopener"), { sub: T("the same tricks, from the crew terminal") }) : null,
+        btn(T("About this ship"), () => shipCard(), { sub: T("its logbook, its limits") }),
+        btn(T("Back to the island"), () => closeCard(), { go: true }),
+      ], box._strip);
+      box._line.setAttribute("aria-live", "polite");
+      aboardStrip();
+      AB.next = performance.now() + Math.max(10000, readMs(box._line.textContent) + 3000);
+    });
+    aboardPoll(true); AB.poll = performance.now();
+    AB.timer = setInterval(() => {
+      if (!AB.box || UI.card !== AB.box) { clearInterval(AB.timer); AB.box = null; return; }
+      const now = performance.now();
+      if (now - AB.poll > 20000 && !document.hidden) { AB.poll = now; aboardPoll(false); }
+      aboardStrip();
+      if (now < AB.next) return;
+      const l = aboardLine(); if (l) onAir(capLine(l));
+    }, 1000);
+  }
+  /* at the pier, with no ship in: the captain of the last call, recorded after she or he left (relay /cruise last_of) */
+  function captainsLogBtn() {
+    if (!CAP || (SHIPV.v && SHIPV.v.phase !== "gone")) return null;
+    const last = Object.values(SHIPV.lastOf || {}).filter(s => s && s.ship && s.t0).sort((a, b) => b.t0 - a.t0)[0];
+    if (!last) return null;
+    return btn(T("The captains’ log"), () => captainsLog(last), { sub: F("{x}, after the last call", { x: last.name }) });
+  }
+  function captainsLog(s) {
+    const C = CAP.CAPTAINS[s.ship]; if (!C) return;
+    const lines = CAP.debrief(s.ship, s, capCtx()).map(capLine);
+    openCard("pier", box => {
+      scene(box, C.id, s.name, [{ t: lines[0] + " " + (lines[1] || ""), v: null }], [
+        btn(T("The logbook"), () => window.open("/cruise/", "_blank", "noopener")),
+        btn(T("Back to the island"), () => closeCard(), { go: true }),
+      ], el("ul", { class: "cv-help" },
+        lines.slice(2).map(t => el("li", { text: t })),
+        SHIPV.next ? el("li", { text: F("The next call: {x}, {y} at {t}, German time.", { x: SHIPV.next.name, y: shipDay(SHIPV.next.t0), t: berlinHM(SHIPV.next.t0) }) }) : null));
     });
   }
   function readChain(done) {
@@ -2977,7 +3077,7 @@
       UI.q = false;
       if (id && id.startsWith("walker:")) { tipAt(e, window.ISLE_WALKERS ? ISLE_WALKERS.tip(id) : ""); return; }   // a wallet walking on the island (walkers.js)
       if (!id) { if (SC.lockedAt(...where(e))) tipAt(e, "?"); else tip.hidden = true; return; }   // a quarter not open yet: only a "?"
-      tipAt(e, id === "rabbit" ? T("The white rabbit: follow it") : id === "agorzilla" ? T("Something moves in the jungle") : id === "deja" ? T("Déjà, the café cat") : T(SC.places[id].name));
+      tipAt(e, id === "cruise" ? F("{x}: go aboard", { x: (SHIPV.v || {}).name || T("the ship") }) : id === "rabbit" ? T("The white rabbit: follow it") : id === "agorzilla" ? T("Something moves in the jungle") : id === "deja" ? T("Déjà, the café cat") : T(SC.places[id].name));
     });
     function tipAt(e, text) {   // the label next to the pointer
       tip.hidden = false; tip.textContent = text;
@@ -2996,6 +3096,7 @@
       if (id === "rabbit") { if (G.over || G.move >= MOVES) return; const [to, line] = hint(); toast(line); SND.sfx("tap"); setTimeout(() => openCard(to, PLACE[to]), 700); return; }
       if (id === "agorzilla") { legend(); return; }
       if (id && id.startsWith("walker:") && window.ISLE_WALKERS) { ISLE_WALKERS.open(id.slice(7)); return; }
+      if (id === "cruise") { aboard(); return; }
       if (id && PLACE[id]) openCard(id, PLACE[id]);
     });
     /* places by keyboard: the list under the scene, one button each */
