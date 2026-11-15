@@ -1,2 +1,4 @@
 tests/out/
 node_modules/
+# private parts of the server stack (see infra/up.sh)
+infra/docker-compose.override.yml

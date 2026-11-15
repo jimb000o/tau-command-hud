@@ -461,65 +461,6 @@ services:
     restart: unless-stopped
     logging: *logging
 
-  # Tau HUD's YouTube channel (alerts/yt.py): each video answers one question with real pictures of tauhud.com in Live
-  # mode and the owner's own (cloned) voice. A brief is checked first (yt_brief.py: every number against its facts, our
-  # own test ships never as users), then the film service below pictures the pages, yt_cut.py cuts them, and the video
-  # goes to YouTube as a PRIVATE draft; the owner gets the line that makes it public (up yt send <id>). The five answer
-  # videos always wait for that line; the first YT_REVIEW_WEEKLY weekly videos and YT_REVIEW_SHORTS shorts too, later ones
-  # that passed every check go public by themselves. Nothing is filmed while a cruise ship is due. YT=false stops it.
-  # Sign-in once: the guide in alerts/YOUTUBE.md, then up yt login.
-  yt:
-    build: ./alerts
-    command: ["python", "yt.py", "loop"]
-    init: true
-    environment:
-      RELAY_HTTP: http://relay:8080
-      NEWS_AI_KEY: ${NEWS_AI_KEY:-}
-      NEWS_AI_MODEL: ${NEWS_AI_MODEL:-claude-sonnet-5-5}
-      YT_AI_MODEL: ${YT_AI_MODEL:-}
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
-      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-@tauHUDchat}
-      TELEGRAM_NEWS_TOPIC: ${TELEGRAM_NEWS_TOPIC:-}
-      TICKER_OWNER_CHAT: ${TICKER_OWNER_CHAT:-}
-      YT: ${YT:-true}
-      YT_CLIENT_ID: ${YT_CLIENT_ID:-}
-      YT_CLIENT_SECRET: ${YT_CLIENT_SECRET:-}
-      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}   # the same key as the island's voices (rico/make.py)
-      YT_VOICE_ID: ${YT_VOICE_ID:-}
-      YT_VOICE_RICO: ${YT_VOICE_RICO:-}
-      YT_VOICE_OWN: ${YT_VOICE_OWN:-true}     # the owner's own cloned voice: no "altered or synthetic" label needed
-      YT_VOICE_MONTH: ${YT_VOICE_MONTH:-60000}
-      YT_REVIEW_WEEKLY: ${YT_REVIEW_WEEKLY:-4}
-      YT_REVIEW_SHORTS: ${YT_REVIEW_SHORTS:-3}
-      YT_SHORTS_WEEK: ${YT_SHORTS_WEEK:-3}
-      YT_CROSSPOST: ${YT_CROSSPOST:-telegram}
-    volumes:
-      - alerts_state:/state     # /state/yt.json, /state/yt-token.json (the sign-in, mode 600), /state/yt-voice.json
-      - alerts_public:/public   # /public/yt/drafts/: each draft to look at (node.tauhud.com/yt/drafts/<id>.mp4)
-      - ai_usage:/ai-usage      # what the weekly writer costs (ai_meter.py)
-      - yt_work:/work           # film jobs and pictures shared with the film service, voice clips, the cut's scratch
-      - ../assets/age:/app/yt_art:ro   # Agorzilla on the preview pictures
-    depends_on: [relay]
-    mem_limit: 768m        # ffmpeg cutting 1080p for a few minutes a video
-    restart: unless-stopped
-    logging: *logging
-
-  # The YouTube videos' camera (agorzilla-shots/film.mjs, the same Chromium image as the post pictures): takes the film
-  # jobs yt writes into yt_work and pictures each page in Live mode; a page that shows the simulation is not filmed.
-  film:
-    build: ./agorzilla-shots
-    command: ["node", "film.mjs"]
-    user: "10002"          # the same user as yt, so each side can clear the other's pictures
-    environment:
-      FILM_DIR: /work/film
-      HOME: /tmp
-    volumes:
-      - yt_work:/work
-    shm_size: 256m
-    mem_limit: 1g
-    restart: unless-stopped
-    logging: *logging
-
   agorzilla-shots:
     build: ./agorzilla-shots
     volumes:
@@ -633,7 +574,6 @@ volumes:
   alerts_public:
   ai_usage:
   agorzilla_shots:
-  yt_work:
   guardian_data:
   caddy_data:
   caddy_config:
