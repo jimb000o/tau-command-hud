@@ -3164,5 +3164,11 @@
     "on": "2026-11-16",
     "link": "/rabbit/",
     "html": "White Rabbit Key: when an islander’s wallet writes in the troll box (on the HUD or in The Coconut Wire on the island), the message pops up as a speech bubble over that islander’s head: right away for a few seconds, then now and then for a moment, at the same moments for everyone on the island. Only the latest message that is still in the troll box shows; a hidden one or one older than a day is gone from over the head too. Your browser signs once a day that the wallet is yours."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/",
+    "html": "White Rabbit Key: a walker’s card no longer says a wallet “has not used a Tau HUD app yet” when we simply do not know. A plain payment does not show which wallet app signed it, so the card now says “plain payments so far”, and names Tau HUD’s wallet when our server saw the wallet send through it, with the day its first transaction came from there."
   }
 ]
