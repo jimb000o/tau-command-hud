@@ -133,6 +133,17 @@ def main():
     Image.new("RGB", (1800, 2000), (30, 60, 40)).save(os.path.join(TMP, "shots", "evening-7-after.jpg"))
     with open(os.path.join(TMP, "shots", "evenings.json"), "w") as f:
         json.dump([{"n": 6, "after": "evening-6-after.jpg"}, {"n": 7, "after": "evening-7-after.jpg"}], f)
+    # Déjà's inputs in agorzilla.com's archive: day 0 D is the third (she eats), day 1 only two agree,
+    # day 2 D is fourth (she eats, but without D), day 3 D is first of three (she eats with D); a repeated tx counts once
+    X, Y, B = share.DEJA_BORN, share.DEJA_DAY, []
+    def inp(day, sec, who, tx):
+        B.append({"era": 1, "h": day * 100 + sec, "t": X + day * Y + sec, "i": 0, "tx": tx, "from": who, "fed": 1})
+    for day, order in [(0, [A, B2, D]), (1, [A, D]), (2, [A, B2, C3, D]), (3, [D, D, A, C3])]:
+        for k, w in enumerate(order):
+            inp(day, k + 1, w, f"{day}-{k}")
+    B.append(dict(B[0]))
+    with open(os.path.join(TMP, "agz", "chain", "archive.json"), "w") as f:
+        json.dump({"cat": {"inputs": B}}, f)
     threading.Thread(target=run_relay, daemon=True).start()
     time.sleep(0.3)
     threading.Thread(target=share.main, daemon=True).start()
@@ -157,10 +168,12 @@ def main():
     assert share.address_numbers(B2)["received"] == 1 and share.address_numbers(VAL)["sealed"] == 329
     c = share.card_numbers(D)
     assert (c["rules"], c["own"], c["offered"], c["votes"], c["rule_votes"], c["agz_votes"], c["meals"], c["first_h"]) == (2, 1, 1, 2, 1, 1, 1, 323), c
+    assert (c["deja"], c["deja_third"]) == (2, 1), c
+    assert (share.card_numbers(A)["deja"], share.card_numbers(A)["deja_third"], share.card_numbers(C3)["deja_third"]) == (3, 0, 2)
     code, ctype, body = get(f"/og/card/{D}.json")
-    assert code == 200 and json.loads(body)["meals"] == 1
+    assert code == 200 and json.loads(body)["meals"] == 1 and json.loads(body)["deja"] == 2
     card = get(f"/s/card/{D}?c=3")[2].decode()
-    assert f"https://tauhud.com/card/?a={D}&amp;c=3" in card and "This wallet wrote 2 rules, cast 2 votes and fed Agorzilla once." in card, card
+    assert f"https://tauhud.com/card/?a={D}&amp;c=3" in card and "This wallet wrote 2 rules, cast 2 votes, fed Agorzilla once and helped Déjà eat on 2 days." in card, card
     assert f"/og/card/{D}.png?c=3" in card
     z = share.agz_numbers(D)
     assert (z["meals"], z["voted"], [p["pick"] for p in z["won"]]) == (6, 4, ["Sturdy", "Cherry blossom"]), z

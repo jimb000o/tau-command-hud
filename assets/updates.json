@@ -3111,6 +3111,12 @@
     "html": "Rule offers on the HUD: click an offer and the offerer and recipient open their accounts. The popup says who they are where we know it (a showcase wallet, an IDNI genesis wallet, a game player), the rule each holds now, and how many offers each made and received. A rule that keeps a reserve ((i2 − i1) ≥ X) was shown as a spending limit; it now reads as a balance floor."
   },
   {
+    "tag": "My Tau card",
+    "on": "2026-11-15",
+    "link": "/card/",
+    "html": "My Tau card counts Déjà too: the meals tile shows Agorzilla’s meals and the days Déjà, the café cat on agorzilla.com/cat/, ate with your wallet among the three that agreed, and in green how often yours was the third, the one that made her agreement hold."
+  },
+  {
     "tag": "White Rabbit Key",
     "on": "2026-11-16",
     "link": "/rabbit/",

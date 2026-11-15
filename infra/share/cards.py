@@ -447,6 +447,8 @@ def card_line(c: dict) -> str:
         parts.append(f"cast {plural(c['votes'], 'vote')}")
     if c.get("meals"):
         parts.append("fed Agorzilla " + ("once" if c['meals'] == 1 else f"{c['meals']} times"))
+    if c.get("deja"):
+        parts.append("helped Déjà eat " + ("on one day" if c["deja"] == 1 else f"on {c['deja']} days"))
     if not parts:
         return "Just arrived on Tau Testnet Alpha."
     return "This wallet " + ", ".join(parts[:-1]) + (" and " if len(parts) > 1 else "") + parts[-1] + "."
@@ -483,7 +485,16 @@ def my_card(c: dict, stamps: int = 0) -> bytes:
     stat(d, (xs[0], y0, xs[0] + w, y1), "Rules written", fmt_n(c.get("rules") or 0), None, " · ".join(rn) or "own rules, offers, changes")
     stat(d, (xs[1], y0, xs[1] + w, y1), "Votes cast", fmt_n(c.get("votes") or 0), None,
          f"{c.get('rule_votes') or 0} on rules · {c.get('agz_votes') or 0} for Agorzilla")
-    stat(d, (xs[2], y0, xs[2] + w, y1), "Agorzilla meals", fmt_n(c.get("meals") or 0), None, "one counts per hour")
+    # meals: Agorzilla's on the left, on the right the days Déjà ate with this wallet among the three (and how often it was the third)
+    panel(d, (xs[2], y0, xs[2] + w, y1), "Meals")
+    half = w / 2
+    for k, (val, note) in enumerate([(c.get("meals") or 0, "Agorzilla"), (c.get("deja") or 0, "days Déjà ate")]):
+        x = xs[2] + 20 + k * half
+        text(d, x, y0 + 38, fmt_n(val), font(SORA, 40, 600), WHITE if val else (74, 74, 82))
+        text(d, x, y0 + 102, note, font(MONO, 13), DIM)
+    if c.get("deja_third"):
+        t3 = f"{c['deja_third']}× the third"
+        text(d, xs[2] + 20 + half, y0 + 122, t3, fit(d, t3, MONO, 13, 400, half - 24), OK)
     panel(d, (xs[3], y0, xs[3] + w, y1), "Café stamps")
     step = (w - 40 - 56) / 3
     for i, k in enumerate("ACLT"):   # Agreement, Chain, Logic, Testnet: the café ticket
