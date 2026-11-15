@@ -3005,6 +3005,106 @@
  },
  {
   "who": "rico",
+  "text": "Midnight on Radio Coco. The Night Line stays open until five. Phones are on, voices are low.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "One o'clock. The Night Line, still on air. If you just tuned in: islanders call, Rico listens, the songs play in between.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Two o'clock. The quietest hour on the island. More songs now, and a caller now and then. Until five.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Three o'clock. Even the crabs are asleep. The Night Line isn't. Call if you need to.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Four o'clock. One more hour of the Night Line. The fishermen are up, and the coffee is on.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Night Line, still here. If you can't sleep, you're in good company: the validator never does.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Somewhere a block was just sealed. Nobody clapped. It doesn't mind.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "A small reminder from the night desk: your wallet key belongs on paper, in a drawer. Not in a chat.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "The lagoon is flat, the lighthouse turns, and the chain counts another block. Rico counts sheep. The chain is faster.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Late-night fact: the chain doesn't know your name. It knows your wallet. Keep it that way.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Night thought: a rule you write for your own wallet is a promise to yourself, and the whole network helps you keep it.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "For everyone on the night shift, at the Coconut Works, at the lighthouse, at the keyboard: this one's for you.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Still awake? Drink some water. Rico has a coconut. Same idea.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "If someone you've never met offers to double your coins tonight, the answer is goodnight.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "A test network is where mistakes are cheap. Make yours tonight, and keep them cheap.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "The ferry to the mainland didn't come tonight either. Rico checked. Twice.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "An address is safe to share. A key is not. If you only remember one thing from tonight, make it that one.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Five o'clock. The Night Line closes. Thank you for every call tonight. The sun is coming, the bakery is open, and Radio Coco goes back to the usual nonsense.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "That's five, and that's the Night Line. If you stayed up all night, go to bed. If you just woke up, good morning. Either way, keep your keys safe.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "The night is over on the lagoon. The Night Line is back tonight at eleven. Rico is going to find some coffee.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
   "text": "On Radio Coco now: Coco Calypso, the island's own tune. If you can't hum it yet, you will by Thursday."
  },
  {
@@ -5490,6 +5590,866 @@
  {
   "who": "pearl",
   "text": "Ha. Okay. Thanks, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "dom",
+  "text": "Rico, it's Dom. Can't sleep, so I went to the faucet for more coins. It gave me nothing. Not even a drip.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Is there anything in your wallet, Dom?",
+  "how": "night"
+ },
+ {
+  "who": "dom",
+  "text": "Forty coins. Left over from last week.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Then that's why. The faucet only pours into an empty wallet. A hundred thousand test coins, to a wallet that has nothing.",
+  "how": "night"
+ },
+ {
+  "who": "dom",
+  "text": "So I have to spend my forty to get a hundred thousand?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Or make a new wallet. But be honest, Dom. What are you going to do with a hundred thousand coins at this hour?",
+  "how": "night"
+ },
+ {
+  "who": "dom",
+  "text": "Count them, probably. Fair point. Night, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "zia",
+  "text": "Rico, it's Zia. Quick question, then I'm going to sleep. I sent my brother ten coins for the kite, but where do I write 'for the kite'?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Nowhere, Zia. A transfer on this chain says three things: who sends, who gets, and how much. No note.",
+  "how": "night"
+ },
+ {
+  "who": "zia",
+  "text": "Then how does he know it's for the kite?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "You tell him. At breakfast. The chain keeps the coins honest. The talking is still your job.",
+  "how": "night"
+ },
+ {
+  "who": "zia",
+  "text": "Okay. And now I'm going to sleep. Really. Bye, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "pearl",
+  "text": "Rico, Pearl. I want a rule for my wallet: never more than a hundred coins a day. The chain won't take it.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "On the testnet as it runs now, Pearl, a rule can't count what you sent today. That part is switched off.",
+  "how": "night"
+ },
+ {
+  "who": "pearl",
+  "text": "So no limits at all?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Other limits. A rule can look at your balance. Always keep at least five hundred: that's a rule the chain understands.",
+  "how": "night"
+ },
+ {
+  "who": "pearl",
+  "text": "A floor instead of a fence.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "A floor instead of a fence. You'll never go below it, however late it gets.",
+  "how": "night"
+ },
+ {
+  "who": "pearl",
+  "text": "I like floors. Thanks, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "gus",
+  "text": "Rico, Gus. My nephew put a guardian on my wallet. He says now nothing bad can ever happen.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Your nephew means well, Gus. A guardian has to agree to your bigger payments. That helps when you make a mistake, or when somebody talks you into one.",
+  "how": "night"
+ },
+ {
+  "who": "gus",
+  "text": "That's me after nine o'clock.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "But it doesn't help if somebody steals your key. So the key still goes somewhere safe.",
+  "how": "night"
+ },
+ {
+  "who": "gus",
+  "text": "Mistakes and tricksters, yes. Thieves, no. I'll tell my nephew he was half right.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Half right at this hour is a very good score, Gus.",
+  "how": "night"
+ },
+ {
+  "who": "gus",
+  "text": "Ha. Night, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "lola",
+  "text": "Rico, it's Lola. Bar's closed, chairs are up. Question: can I paint my wallet address on the tip jar?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "You can, Lola. An address is safe to show. It only lets people send to you.",
+  "how": "night"
+ },
+ {
+  "who": "lola",
+  "text": "And the key?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "The key never goes on a jar, a napkin or a wall. The address is your letterbox. The key is the house.",
+  "how": "night"
+ },
+ {
+  "who": "lola",
+  "text": "So tips in, nothing out. I like that business plan.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Just remember they're test coins. Your rent still wants the real kind.",
+  "how": "night"
+ },
+ {
+  "who": "lola",
+  "text": "Ha. Goodnight, Rico. Keep it down, I've got customers asleep on the beach.",
+  "how": "night"
+ },
+ {
+  "who": "tess",
+  "text": "Rico, it's Tess. I put the same wallet key on my phone and on my laptop. Is that two wallets now?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "One wallet, Tess, in two places. The key is the wallet, wherever you type it. And every extra place is one more place it can leak.",
+  "how": "night"
+ },
+ {
+  "who": "tess",
+  "text": "But I can send from either?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "From either. Just not from both at the same moment. Each transfer takes the wallet's next number, and two devices can pick the same one.",
+  "how": "night"
+ },
+ {
+  "who": "tess",
+  "text": "And then?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Then only one of them goes through. Send from one, wait for the block, then use the other.",
+  "how": "night"
+ },
+ {
+  "who": "tess",
+  "text": "One wallet, one queue. Night, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "frost",
+  "text": "Good evening. North Wind Embassy. We wish to send a payment that nobody else can see.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Not on this chain, ambassador. Every transfer is there for anybody to read.",
+  "how": "night"
+ },
+ {
+  "who": "frost",
+  "text": "Anybody? Even the South Current?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Even the South Current. They'll see that one wallet sent coins to another. Not who you are, unless somebody tells them.",
+  "how": "night"
+ },
+ {
+  "who": "frost",
+  "text": "Then nobody must tell them.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Then don't paint your address on the embassy door.",
+  "how": "night"
+ },
+ {
+  "who": "frost",
+  "text": "Noted. This call never happened.",
+  "how": "night"
+ },
+ {
+  "who": "vik",
+  "text": "Rico, Vik. My cousin says I can mine coins at night while I sleep. Is my laptop fan supposed to be this loud?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Switch it off, Vik. There's no mining on Tau Net. Nobody earns coins here by burning electricity.",
+  "how": "night"
+ },
+ {
+  "who": "vik",
+  "text": "Then who makes the blocks?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "The validators seal them. Right now that's one, and it isn't your laptop.",
+  "how": "night"
+ },
+ {
+  "who": "vik",
+  "text": "Then what is my laptop doing?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Whatever your cousin gave you. Switch it off, and look at that program tomorrow, in daylight, with somebody you trust.",
+  "how": "night"
+ },
+ {
+  "who": "vik",
+  "text": "Oh no. Okay. Thanks, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "ama",
+  "text": "Rico, this is Ama. My grandson explained blocks to me. Then he fell asleep before I understood. What is a block?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "A page in the island's book, Ama. Every little while a new page is written with the latest transfers on it, and sealed.",
+  "how": "night"
+ },
+ {
+  "who": "ama",
+  "text": "And when it is sealed?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Then nobody changes it. Each new page carries a mark of the one before, so the pages stay in order.",
+  "how": "night"
+ },
+ {
+  "who": "ama",
+  "text": "A book where you cannot tear out a page.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "That's it exactly. Your grandson can explain it again tomorrow. Now he has to.",
+  "how": "night"
+ },
+ {
+  "who": "ama",
+  "text": "Good. Goodnight, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "tobias",
+  "text": "Rico, Tobias, harbour master. My transfer waited behind a fisherman's. Surely the harbour master goes first?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Not on this chain, Tobias. Every wallet follows the same rules. Nobody goes first because of who they are.",
+  "how": "night"
+ },
+ {
+  "who": "tobias",
+  "text": "Even with my hat?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "The chain can't see hats. It sees a wallet, a signature, and an amount.",
+  "how": "night"
+ },
+ {
+  "who": "tobias",
+  "text": "Then what is the point of the hat?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Morale, Tobias. Pure morale.",
+  "how": "night"
+ },
+ {
+  "who": "tobias",
+  "text": "Correct. Goodnight.",
+  "how": "night"
+ },
+ {
+  "who": "salado",
+  "text": "Rico, Salado, from the resort. I'm launching Night Coins. Guests buy them now and sleep better. Can you announce it?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "No, Salado. Test coins aren't for sale, and nobody should pay real money for them.",
+  "how": "night"
+ },
+ {
+  "who": "salado",
+  "text": "They're not test coins. They're wellness coins.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "On this island they're the same coins in a bathrobe. The faucet gives them away for free.",
+  "how": "night"
+ },
+ {
+  "who": "salado",
+  "text": "Free is a terrible price point.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "And it's the honest one. Goodnight, Salado.",
+  "how": "night"
+ },
+ {
+  "who": "salado",
+  "text": "You'll regret this when I'm on the mainland.",
+  "how": "night"
+ },
+ {
+  "who": "nell",
+  "text": "Rico, Nell. Somebody paid me for fish with one of those transfers that can be pulled back. Is it mine yet?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Don't count it as yours yet, love. Until its release time, the sender can still pull it back.",
+  "how": "night"
+ },
+ {
+  "who": "nell",
+  "text": "And after?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "After the release it's yours, and nobody can take it back.",
+  "how": "night"
+ },
+ {
+  "who": "nell",
+  "text": "So I keep the fish until then.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Or you hand it over and trust them. That's between you and your customer. The chain only tells you when it's final.",
+  "how": "night"
+ },
+ {
+  "who": "nell",
+  "text": "Fish first, coins later? Not at my stall. Night, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "bert",
+  "text": "Rico, Bertie. A new rule for the whole island, I say: no wallet may send more than ten thousand coins at once.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "A rule for everybody is a network rule, Bertie. The validators have to agree to it.",
+  "how": "night"
+ },
+ {
+  "who": "bert",
+  "text": "They'd agree with me, surely.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Maybe not. You're a man ringing a radio station in the middle of the night about other people's money.",
+  "how": "night"
+ },
+ {
+  "who": "bert",
+  "text": "Ha. Fair. Then I'll write it for my own wallet.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "That one only needs you. Read it twice before you send it, because every node will hold you to it.",
+  "how": "night"
+ },
+ {
+  "who": "bert",
+  "text": "Aye. Like the wife. Night, lad.",
+  "how": "night"
+ },
+ {
+  "who": "sam",
+  "text": "Rico, it's Sam at the lighthouse. The blocks are still full of transfers. Who sends coins at this hour?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Half the world, Sam. Somewhere it's lunchtime. And some of it is programs that send on a schedule, all night long.",
+  "how": "night"
+ },
+ {
+  "who": "sam",
+  "text": "Programs. Like the lighthouse lamp.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Exactly like your lamp. Nobody stays up to turn it. It just turns.",
+  "how": "night"
+ },
+ {
+  "who": "sam",
+  "text": "I stay up to turn it.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Then you're the human part of the network, Sam. Every chain needs one.",
+  "how": "night"
+ },
+ {
+  "who": "sam",
+  "text": "That's kind. Goodnight, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "hana",
+  "text": "Rico, Hana. I'm marking homework, and the children's rules are better than mine. Where does a grown-up learn to write Tau?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Same place the children did, Hana. Tau HUD has free lessons, one small step at a time.",
+  "how": "night"
+ },
+ {
+  "who": "hana",
+  "text": "Is it hard?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "It's logic. True, false, and, or, not. You already teach all of that. You just call it behaving.",
+  "how": "night"
+ },
+ {
+  "who": "hana",
+  "text": "And the rule really runs on the chain?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Send it for your wallet, and every node checks your transfers against it. Your homework, enforced.",
+  "how": "night"
+ },
+ {
+  "who": "hana",
+  "text": "Now I'm a little scared. Goodnight, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "pim",
+  "text": "Rico, it's Pim, the surveyor. I've counted the characters in my wallet address twice. It looks like a cat walked over a keyboard.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "It's made from your public key, Pim. Long and random on purpose, so nobody can guess it or make one that looks like yours.",
+  "how": "night"
+ },
+ {
+  "who": "pim",
+  "text": "Couldn't it be shorter? Pim One, for example?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Then somebody else would want Pim One. On the chain, wallets don't get names. Only those long strings.",
+  "how": "night"
+ },
+ {
+  "who": "pim",
+  "text": "Wallets, not people.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Exactly. You can tell your friends which one is yours. The chain won't.",
+  "how": "night"
+ },
+ {
+  "who": "pim",
+  "text": "Very well. I shall survey something else. Goodnight.",
+  "how": "night"
+ },
+ {
+  "who": "zia",
+  "text": "Rico, it's Zia. There's a storm. What if lightning hits the computer that makes the blocks?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Then the island would have no new blocks for a while, Zia. Like the bakery when the power is out.",
+  "how": "night"
+ },
+ {
+  "who": "zia",
+  "text": "And the old blocks?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Every node keeps a copy of every block. One storm can't wash them away.",
+  "how": "night"
+ },
+ {
+  "who": "zia",
+  "text": "Not even the very first block?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Not even that one. Now close the window and get under the blanket.",
+  "how": "night"
+ },
+ {
+  "who": "gus",
+  "text": "Rico, it's Gus. I wrote my first rule tonight. My wallet must always keep a hundred coins. And it worked!",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Gus! Congratulations. How do you know it worked?",
+  "how": "night"
+ },
+ {
+  "who": "gus",
+  "text": "I tried to send everything to my sister. The chain said no. I've never been so happy to hear no.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "That's the feeling, Gus. A promise you made yourself, kept by every node.",
+  "how": "night"
+ },
+ {
+  "who": "gus",
+  "text": "Should I tell my sister?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Tell her. And then send her five coins. The rule lets you.",
+  "how": "night"
+ },
+ {
+  "who": "gus",
+  "text": "It does! Night, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "rudy",
+  "text": "Rico, Rudy again. I asked a chatbot to help me with a transfer, and it wants my wallet key. Is that normal?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Normal for a trap, Rudy. A real helper can explain every step without ever seeing your key.",
+  "how": "night"
+ },
+ {
+  "who": "rudy",
+  "text": "But it's a computer. It won't steal.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "You don't know who built it, or who reads what you type. A key typed anywhere is a key to treat as gone.",
+  "how": "night"
+ },
+ {
+  "who": "rudy",
+  "text": "I didn't send it yet.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Then you win tonight. Paste the question, never the key.",
+  "how": "night"
+ },
+ {
+  "who": "rudy",
+  "text": "Question yes, key no. Night, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "tess",
+  "text": "Rico, Tess. I started my own node this evening. It's thousands of blocks behind the explorer. Is it broken?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "It's catching up, Tess. A new node reads the whole chain from the beginning, one block after the other.",
+  "how": "night"
+ },
+ {
+  "who": "tess",
+  "text": "All of them? Why not just the latest?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Because it doesn't take anybody's word for it. It checks every block itself. That's what makes it a node and not a rumour.",
+  "how": "night"
+ },
+ {
+  "who": "tess",
+  "text": "So I wait.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "You sleep. When you wake up it'll most likely be at the newest block, with the rest of the island.",
+  "how": "night"
+ },
+ {
+  "who": "tess",
+  "text": "A node, not a rumour. Night, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "ozzie",
+  "text": "Rico, Ozzie. I heard there's a creature in the jungle that eats transactions. Is it safe to feed him at night?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Agorzilla. Perfectly safe, Ozzie. Every test payment to his wallet is a meal.",
+  "how": "night"
+ },
+ {
+  "who": "ozzie",
+  "text": "Does he sleep?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Rico has never caught him at it. And the chain delivers all night.",
+  "how": "night"
+ },
+ {
+  "who": "ozzie",
+  "text": "What does he eat, exactly?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Test coins, a few at a time. He grows from what the island feeds him, not from what it promises him.",
+  "how": "night"
+ },
+ {
+  "who": "ozzie",
+  "text": "Fair dinkum. I'll send him a midnight snack. Cheers!",
+  "how": "night"
+ },
+ {
+  "who": "dom",
+  "text": "Rico, Dom from the hammock. New theory. The blockchain is just a spreadsheet with extra steps.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Half right, Dom. It is a list. But a spreadsheet has an owner who can quietly change last Tuesday.",
+  "how": "night"
+ },
+ {
+  "who": "dom",
+  "text": "And the chain?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Every node keeps its own copy and checks every new page. Change last Tuesday on one copy, and all the others say no.",
+  "how": "night"
+ },
+ {
+  "who": "dom",
+  "text": "So it's a spreadsheet everybody can check.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "With extra steps, yes. The steps are the point.",
+  "how": "night"
+ },
+ {
+  "who": "dom",
+  "text": "Respect. Theory upgraded. Night, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "mae",
+  "text": "Rico dear, Auntie Mae. My grandson says I shouldn't keep my wallet key in my email. But that's where I keep everything.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "He's right, Auntie. Anything in your email is one stolen password away from somebody else.",
+  "how": "night"
+ },
+ {
+  "who": "mae",
+  "text": "Where then? Under the flour jar?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "On paper, written clearly, kept somewhere dry. Two copies, in two places. And not on napkins. Vik learned that one.",
+  "how": "night"
+ },
+ {
+  "who": "mae",
+  "text": "And the flour jar?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "The flour jar is fine. Just don't bake with the key.",
+  "how": "night"
+ },
+ {
+  "who": "mae",
+  "text": "Ha! Goodnight, dear.",
+  "how": "night"
+ },
+ {
+  "who": "sam",
+  "text": "Rico, Sam again, up at the lighthouse. No new block for a long time now. Has the island fallen asleep?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Sometimes the chain stands still, Sam. On a test network that happens, and the builders are busy making it handle more.",
+  "how": "night"
+ },
+ {
+  "who": "sam",
+  "text": "And the transfers people sent?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Whatever is already in a block stays there. Whatever was still waiting may have to be sent again when the blocks come back.",
+  "how": "night"
+ },
+ {
+  "who": "sam",
+  "text": "So I keep the lamp on.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Keep the lamp on. That's what lighthouses are for. Test networks too.",
+  "how": "night"
+ },
+ {
+  "who": "sam",
+  "text": "Goodnight, Rico.",
+  "how": "night"
+ },
+ {
+  "who": "bert",
+  "text": "Rico, Bertie. Can't sleep for wondering. Why does a transfer cost anything at all? They're only test coins.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Because the fee keeps the island tidy, Bertie. If sending were free, somebody would send a million transfers just to watch the queue.",
+  "how": "night"
+ },
+ {
+  "who": "bert",
+  "text": "Like the gulls at the fish stall.",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "Exactly like the gulls. A small fee for each one, and the gulls think twice.",
+  "how": "night"
+ },
+ {
+  "who": "bert",
+  "text": "And who sets the price?",
+  "how": "night"
+ },
+ {
+  "who": "rico",
+  "text": "The rules on the chain. Not Rico, and not the validator's mood.",
+  "how": "night"
+ },
+ {
+  "who": "bert",
+  "text": "Good. I don't trust moods. Night, lad.",
   "how": "night"
  },
  {

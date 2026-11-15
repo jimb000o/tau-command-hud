@@ -1439,7 +1439,7 @@
   const unsaid = keys => { const k = keys.filter(x => !SAID.includes(x)); return k.length ? k : [keys.slice().sort((a, b) => SAID.indexOf(a) - SAID.indexOf(b))[0]]; };
   /* with the sound on, Rico picks among the lines that already have his voice (new lines wait for theirs, shown as text only otherwise) */
   const pickLine = keys => { const v = SND.on && RICO.voiced ? keys.filter(x => RICO.voiced(x) !== false) : keys, k = unsaid(v.length ? v : keys); return k[Math.floor(Math.random() * k.length)]; };
-  const markSaid = k => { const i = SAID.indexOf(k); if (i >= 0) SAID.splice(i, 1); SAID.push(k); SAID.splice(0, Math.max(0, SAID.length - 120)); store.set("rabbit-dj-said", JSON.stringify(SAID)); };
+  const markSaid = k => { const i = SAID.indexOf(k); if (i >= 0) SAID.splice(i, 1); SAID.push(k); SAID.splice(0, Math.max(0, SAID.length - 400)); store.set("rabbit-dj-said", JSON.stringify(SAID)); };
   const one = (set, ...more) => { const k = pickLine(RICO.SETS[set]); return { k, parts: [V(k), ...more] }; };
   /* what Rico can say about the game as it stands, and a few lines from the island's habits */
   function djLines() {
@@ -2243,7 +2243,7 @@
   if (QS.get("rico") === "sources") window.__sources = { sources, share, call, SRC, RADAR, story, nextLine, markSaid, shipStage, shipOdds, shipLine, shipPick, SHIPLIVE, SHIPV, ROT };   // the headless check (tests)
   setInterval(() => {
     if (!G || G.over || G.counting || away() || performance.now() < DJ.next || SND.gap) return;
-    /* the Night Line's hour belongs to the callers between the songs (the show's opener still comes first) */
+    /* the Night Line's hours (23-05) belong to the breaks between the songs (the show's opener still comes first) */
     if (ROT.n > 0 && RICO.night && RICO.night()) return;
     /* the show waits for the sound to come on (the first tap), so the opener is heard, not just read; after a while it goes on in text */
     if (ROT.n === 0 && !SND.on && performance.now() < 90000) return;
@@ -2255,7 +2255,7 @@
     onAir(l.parts, false, l.call);
   }, 2000);
   /* between two songs the band stops and Rico says a word that fits (rico.js brk): the song that ended and the one
-     coming, or the hour; in the Night Line's hour a listener with a problem. He names the next song, so it is not
+     coming, or the hour; in the Night Line's hours a listener with a problem. He names the next song, so it is not
      announced again once it plays. */
   if (RICO.brk) SND.onbreak = ({ from, to }) => {
     if (!G || G.over || G.counting) return 0;
