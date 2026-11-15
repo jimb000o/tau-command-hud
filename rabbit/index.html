@@ -306,6 +306,50 @@ html.rk-full #cvFull { border-color: var(--ok); }
 .cv-card.paper.extra .cv-acts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 479px) { .cv-card.paper.extra .cv-acts { gap: 6px; } .cv-card.paper.extra .cv-acts .cv-b { font-size: 12px; white-space: normal; line-height: 1.25; padding-left: 8px; padding-right: 8px; } }   /* two by two on a phone too: one under the other, the Japanese extra ran 95 px past the plate and hid its ✕ (9.11) */
 .cv-who { display: flex; gap: 12px; align-items: center; padding-right: 40px; }
+/* the islander studio (studio.js): the face large and the figure walking on the left, the parts on the right; never scrolls on a laptop */
+.wk-studio { position: absolute; z-index: 7; inset: 10px; display: grid; grid-template-columns: minmax(230px, 300px) 1fr; gap: 18px; padding: 16px 18px; border-radius: 14px; background: rgba(8,12,16,.94); border: 1px solid var(--hair); box-shadow: 0 30px 80px -30px rgba(0,0,0,.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); animation: pop .3s cubic-bezier(.2,.8,.2,1); overflow: hidden; }
+.wk-studio .cv-x { position: absolute; top: 8px; right: 8px; }
+.st-prev { display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 0; text-align: center; }
+.st-stage { position: relative; display: flex; align-items: flex-end; justify-content: center; gap: 4px; width: 100%; border-radius: 12px; background: radial-gradient(circle at 45% 40%, rgba(255,214,120,.16), rgba(57,255,138,.05) 55%, rgba(255,255,255,.02)); border: 1px solid var(--line); padding: 6px 0 0; }
+.st-walk { position: absolute; right: 6px; bottom: 4px; }
+.st-name { font: 800 24px var(--display); color: #fff; }
+.st-sub { color: var(--dim); font-size: 11.5px; line-height: 1.45; }
+.st-first { margin: 0; min-height: 1.4em; color: var(--dim); font-size: 12px; line-height: 1.4; }
+.st-first.ok { color: var(--amber); }
+.st-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; }
+.st-main h3 { margin: 0; font: 700 18px var(--display); padding-right: 40px; }
+.st-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.st-tab { min-height: 34px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--hair); background: rgba(255,255,255,.04); color: var(--text); font: 600 13px var(--display); cursor: pointer; }
+.st-tab.on { border-color: var(--ok); color: #09090a; background: var(--ok); }
+.st-parts { display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; }
+.st-row small { display: block; margin-bottom: 4px; color: var(--dim); font-size: 11.5px; }
+.st-opts { display: flex; flex-wrap: wrap; gap: 5px; }
+.st-o { position: relative; width: var(--sz, 40px); height: var(--sz, 40px); padding: 0; display: grid; place-items: center; overflow: hidden; border-radius: 9px; border: 1px solid var(--hair); background: rgba(255,255,255,.05); cursor: pointer; }
+.st-o.sw { border-color: rgba(255,255,255,.25); }
+.st-o.on { outline: 2px solid var(--ok); outline-offset: 1px; }
+.st-o:hover, .st-o:focus-visible { border-color: var(--ok); }
+.st-o.locked canvas { opacity: .28; filter: grayscale(1); }
+.st-lock { position: absolute; right: 2px; bottom: 1px; font-size: 11px; }
+.st-earn { margin: 4px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 4px 14px; font-size: 12px; line-height: 1.4; color: var(--dim); }
+.st-earn li.ok, .st-earn li b { color: var(--text); }
+.st-earn li.ok b { color: var(--ok); }
+.st-cost { margin: 0; color: var(--text); font-size: 12px; line-height: 1.45; }
+.st-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.st-acts .cv-b { flex: 1 1 auto; min-height: 38px; text-decoration: none; text-align: center; }
+.st-pass { width: 100%; max-height: calc(100% - 130px); object-fit: contain; border-radius: 10px; border: 1px solid var(--line); }
+.wk-amber { margin: 0; color: var(--amber); font-size: 12px; line-height: 1.45; }
+.wk-card .wk-first { color: var(--amber); }
+@media (max-width: 759px), (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+  .wk-studio { inset: 0; border-radius: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px; overflow: auto; }
+  .st-prev, .st-main, .st-parts { flex: none; min-height: auto; }
+  .st-prev { flex-direction: row; flex-wrap: wrap; text-align: left; align-items: center; }
+  .st-stage { width: auto; flex: none; padding: 4px 64px 0 4px; }
+  .st-prev > b, .st-prev > small, .st-prev > p { flex: 1 1 140px; }
+  .st-sub { display: none; }
+  .st-tab { min-height: 44px; }
+  .st-acts .cv-b { min-height: 44px; }
+  .st-parts { overflow: visible; }
+}
 /* the wallets that walk on the island (walkers.js): their card, the list of today's walkers, choosing your own look */
 #cvTip { max-width: min(320px, 80vw); white-space: normal; }
 .cv-who .wk-face { flex: none; border-radius: 12px; background: radial-gradient(circle at 50% 35%, rgba(57,255,138,.14), rgba(255,255,255,.03)); border: 1px solid var(--line); }
@@ -601,6 +645,8 @@ html.rk-full .wire { left: max(8px, env(safe-area-inset-left, 0px)); bottom: cal
 <script src="rico.js"></script>
 <script src="captain.js"></script>
 <script src="game.js"></script>
+<script src="islander.js"></script>
 <script src="walkers.js"></script>
+<script src="studio.js"></script>
 </body>
 </html>

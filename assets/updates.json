@@ -3109,5 +3109,11 @@
     "on": "2026-11-15",
     "link": "/",
     "html": "Rule offers on the HUD: click an offer and the offerer and recipient open their accounts. The popup says who they are where we know it (a showcase wallet, an IDNI genesis wallet, a game player), the rule each holds now, and how many offers each made and received. A rule that keeps a reserve ((i2 − i1) ≥ X) was shown as a spending limit; it now reads as a balance floor."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/?islander=1",
+    "html": "Islander studio on White Rabbit Key: every wallet’s islander is now made of 17 parts (build, hair, clothes, face shape, eyes, brows, nose, mouth, beard, glasses …), from its key until you change them, worn with one transaction to the hearts box. Earned pieces (a rule writer’s sash, No Memo goggles …) open only through your own transactions. The first wallet to choose a face is its first wearer. Islanders wave when their transaction lands, sit down while the chain rests, and a hover or click now tells what each wallet did on Tau HUD. Islander pass picture to save or share; “Your islander” on the wallet page."
   }
 ]
