@@ -1,0 +1,72 @@
+{
+ "id": "answer-watch-the-chain",
+ "kind": "answer",
+ "audience": "People who have heard of Tau Net or hold AGRS and want to see what the testnet really does; then anyone curious about a blockchain with rules in logic.",
+ "question": "How do I watch the Tau Net testnet live?",
+ "title": "How to watch the Tau Net testnet live, block by block",
+ "thumb": {
+  "words": "Watch every block",
+  "number": "",
+  "agorzilla": "grown"
+ },
+ "scenes": [
+  {
+   "scene": "hud",
+   "say": "You do not have to take anyone's word for what this chain does. You can watch every block yourself, in a browser, with nothing to install. Here is where to look.",
+   "caption": "tauhud.com",
+   "voice": "main"
+  },
+  {
+   "scene": "explorer",
+   "say": "Start with the explorer. Every block is one bar, the newest on the right. Each bar shows what its block holds.",
+   "caption": "Every block, one bar",
+   "voice": "main"
+  },
+  {
+   "scene": "explorer-find",
+   "say": "Paste a transaction, a block or a wallet here, and it tells you what happened to it, in plain words.",
+   "caption": "What happened to it?",
+   "voice": "main"
+  },
+  {
+   "scene": "hud-feed",
+   "say": "Back on the dashboard, the feed shows what is happening this minute. Payments, rules being set, votes.",
+   "caption": "Happening now",
+   "voice": "main"
+  },
+  {
+   "scene": "hud-refused",
+   "say": "Watch this part. These are payments the chain refused, each with its reason. A block explorer that hides refusals hides half the story.",
+   "caption": "Refused, with the reason",
+   "voice": "main",
+   "moment": true
+  },
+  {
+   "scene": "nodes",
+   "say": "These are the nodes that carry the network, and how many are online right now.",
+   "caption": "Nodes online",
+   "voice": "main"
+  },
+  {
+   "scene": "status",
+   "say": "And when something is wrong, with the chain or with our own node, it stands here. Next: your first payment on the testnet.",
+   "caption": "Nothing hidden",
+   "voice": "main",
+   "bonus": true
+  }
+ ],
+ "description": "Where to look to see the Tau Net testnet at work: the explorer, the live feed, the payments the chain refused and why, the nodes, and the incidents.",
+ "facts": {
+  "alpha": "the testnet is alpha (tauhud.com/facts/, fact 'alpha')"
+ },
+ "sources": [
+  "https://tauhud.com/facts/",
+  "https://tauhud.com/status/"
+ ],
+ "next": "answer-first-payment",
+ "tags": [
+  "Tau explorer",
+  "Tau Net explorer",
+  "watch blockchain live"
+ ]
+}

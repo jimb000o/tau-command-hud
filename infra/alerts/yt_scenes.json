@@ -1,0 +1,253 @@
+{
+ "_": "What the film service can show (agorzilla-shots/film.mjs): one entry per view of tauhud.com. A brief (yt_brief.py) names scenes by id and adds only its words; nobody invents a page or a selector in a brief. steps: at = seconds into the scene, do = zoom (to a selector; no 'to' = back to the whole page), scroll (to a selector), hover, wait. No step ever clicks a button that sends anything to the chain. sim: true = the view shows our own test ships or bots, and the words spoken over it must say so (yt_brief.check). moment: true = a rule or the chain says no, in view.",
+ "scenes": {
+  "door": {
+   "page": "/",
+   "door": true,
+   "what": "the front door: \"Tau Testnet Alpha is live.\" with the newest real block under it",
+   "min": 7,
+   "steps": [
+    {
+     "at": 3,
+     "do": "zoom",
+     "to": "#doorProof"
+    }
+   ]
+  },
+  "hud": {
+   "page": "/",
+   "what": "the live HUD: block height, nodes online, the chain at work",
+   "min": 8,
+   "steps": [
+    {
+     "at": 3,
+     "do": "zoom",
+     "to": "#chipHeight"
+    },
+    {
+     "at": 7,
+     "do": "zoom"
+    }
+   ]
+  },
+  "hud-feed": {
+   "page": "/",
+   "what": "the HUD's feed of the newest transactions and blocks",
+   "min": 8,
+   "steps": [
+    {
+     "at": 2,
+     "do": "zoom",
+     "to": "#feed"
+    }
+   ]
+  },
+  "hud-refused": {
+   "page": "/",
+   "what": "payments the chain refused, in the HUD's feed",
+   "min": 9,
+   "moment": true,
+   "steps": [
+    {
+     "at": 2,
+     "do": "zoom",
+     "to": "#feedRej"
+    }
+   ]
+  },
+  "hud-rules": {
+   "page": "/",
+   "what": "the rules people gave their own wallets, on the HUD",
+   "min": 9,
+   "steps": [
+    {
+     "at": 2,
+     "do": "zoom",
+     "to": "#clauses"
+    }
+   ]
+  },
+  "hud-core": {
+   "page": "/",
+   "what": "the HUD's core: the chain's own rule and its revision",
+   "min": 8,
+   "steps": [
+    {
+     "at": 2,
+     "do": "zoom",
+     "to": "#core"
+    }
+   ]
+  },
+  "explorer": {
+   "page": "/explorer/",
+   "what": "the explorer: every block as a bar, the newest on the right",
+   "min": 9,
+   "steps": [
+    {
+     "at": 3,
+     "do": "zoom",
+     "to": "#bars"
+    },
+    {
+     "at": 8,
+     "do": "zoom"
+    }
+   ]
+  },
+  "explorer-find": {
+   "page": "/explorer/",
+   "what": "the explorer's search for a block, a transaction or a wallet",
+   "min": 7,
+   "steps": [
+    {
+     "at": 2,
+     "do": "zoom",
+     "to": "#find"
+    }
+   ]
+  },
+  "rules-wall": {
+   "page": "/rules/",
+   "what": "the wall of every personal rule in force on the chain",
+   "min": 9,
+   "steps": [
+    {
+     "at": 3,
+     "do": "zoom",
+     "to": "#wall"
+    }
+   ]
+  },
+  "wallet": {
+   "page": "/wallet/",
+   "what": "the browser wallet as a newcomer first sees it",
+   "min": 8,
+   "steps": [
+    {
+     "at": 3,
+     "do": "zoom",
+     "to": "#btnNew"
+    },
+    {
+     "at": 7,
+     "do": "zoom"
+    }
+   ]
+  },
+  "start": {
+   "page": "/start/",
+   "what": "the four first steps for a newcomer",
+   "min": 8,
+   "steps": [
+    {
+     "at": 3,
+     "do": "zoom",
+     "to": "#s1"
+    }
+   ]
+  },
+  "builder": {
+   "page": "/builder/",
+   "what": "the rule builder: a rule in plain words, then in Tau language",
+   "min": 9,
+   "steps": []
+  },
+  "guardian": {
+   "page": "/guardian/",
+   "what": "the Guardian: a second signer for payments",
+   "min": 9,
+   "steps": [
+    {
+     "at": 3,
+     "do": "zoom",
+     "to": "#hRule"
+    }
+   ]
+  },
+  "nodes": {
+   "page": "/nodes/",
+   "what": "the nodes of the testnet and how many are online",
+   "min": 8,
+   "steps": [
+    {
+     "at": 3,
+     "do": "zoom",
+     "to": "#boardWrap"
+    }
+   ]
+  },
+  "nodes-join": {
+   "page": "/nodes/",
+   "what": "the one command that starts your own node",
+   "min": 8,
+   "steps": [
+    {
+     "at": 1,
+     "do": "scroll",
+     "to": "#join"
+    },
+    {
+     "at": 3,
+     "do": "zoom",
+     "to": "#cmd"
+    }
+   ]
+  },
+  "status": {
+   "page": "/status/",
+   "what": "the testnet's health and its incidents, in the open",
+   "min": 8,
+   "steps": [
+    {
+     "at": 3,
+     "do": "zoom",
+     "to": "#health"
+    }
+   ]
+  },
+  "cruise": {
+   "page": "/cruise/",
+   "what": "the logbook of our test ships: the load they put on the chain",
+   "min": 9,
+   "sim": true,
+   "steps": [
+    {
+     "at": 3,
+     "do": "zoom",
+     "to": "#tiles"
+    },
+    {
+     "at": 7,
+     "do": "zoom",
+     "to": "#rows"
+    }
+   ]
+  },
+  "load": {
+   "page": "/load/",
+   "what": "the pace of the last load test, minute by minute",
+   "min": 8,
+   "sim": true,
+   "steps": []
+  },
+  "learn": {
+   "page": "/learn/",
+   "what": "the free Tau language lessons",
+   "min": 7,
+   "steps": []
+  },
+  "crew": {
+   "page": "/crew/",
+   "what": "what Tau HUD costs each month and how to help carry it",
+   "min": 6,
+   "steps": [
+    {
+     "at": 2,
+     "do": "zoom",
+     "to": "#billsLine"
+    }
+   ]
+  }
+ }
+}

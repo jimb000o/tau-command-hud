@@ -1,0 +1,67 @@
+{
+ "id": "answer-run-a-node",
+ "kind": "answer",
+ "audience": "People who have heard of Tau Net or hold AGRS and want to see what the testnet really does; then anyone curious about a blockchain with rules in logic.",
+ "question": "How do I run my own Tau Net testnet node?",
+ "title": "Run your own Tau Net testnet node: what it takes",
+ "thumb": {
+  "words": "Run a node",
+  "number": "",
+  "agorzilla": "grown"
+ },
+ "scenes": [
+  {
+   "scene": "nodes",
+   "say": "Anyone can run a node on the Tau Net testnet. Yours then checks every block itself, instead of trusting ours. This is what it takes.",
+   "caption": "Nodes online now",
+   "voice": "main"
+  },
+  {
+   "scene": "nodes-join",
+   "say": "The quickest way is the Docker image from IDNI, the team that builds Tau Net. It builds the Tau engine inside. This page gives you the command to copy.",
+   "caption": "One command",
+   "voice": "main"
+  },
+  {
+   "scene": "status",
+   "say": "Be ready for an alpha. Nodes lose their peers, chains restart. Ours stood alone for two hours once, because it did not reconnect by itself. When that happens, we say so.",
+   "caption": "Our own incidents",
+   "voice": "main"
+  },
+  {
+   "scene": "hud",
+   "say": "Once it runs, your node follows the chain block by block, like the one you are watching through now.",
+   "caption": "Following the chain",
+   "voice": "main"
+  },
+  {
+   "scene": "hud-refused",
+   "say": "And it refuses what breaks the rules, on its own. Every node does. That is why nobody has to be trusted to enforce them.",
+   "caption": "Every node checks",
+   "voice": "main",
+   "moment": true
+  },
+  {
+   "scene": "explorer",
+   "say": "If it fails to sync or loses peers, the logs are what helps most: IDNI asks for them as GitHub issues. Next: what the testnet is, from the start.",
+   "caption": "Report what fails",
+   "voice": "main",
+   "bonus": true
+  }
+ ],
+ "description": "What it takes to run a read node on the Tau Net testnet with IDNI's Docker image, what to expect from an alpha, and how to help by reporting what fails.",
+ "facts": {
+  "run-node": "the quickest way to run a node is IDNI's standalone Docker image, which builds the Tau engine inside it; anyone can run a read node (tauhud.com/facts/, fact 'run-node')",
+  "own-incident": "14 November: our node stayed on the old chain for 2 hours after a testnet restart until it was restarted (tauhud.com/status/)"
+ },
+ "sources": [
+  "https://tauhud.com/facts/",
+  "https://tauhud.com/status/"
+ ],
+ "next": "answer-what-is-tau-net",
+ "tags": [
+  "Tau node",
+  "run a node",
+  "Tau testnet node"
+ ]
+}
