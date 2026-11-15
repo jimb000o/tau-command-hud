@@ -531,7 +531,21 @@ def tell_draft(did: str, url: str) -> None:
     if did in st["drafts_told"]:
         return
     hours = float(os.environ.get("BLOG_AUTO_PUBLISH_HOURS", "0") or 0)
-    msg = f"Blog draft ready: {did}\nRead it: {url}\n" + (
+    notes = []
+    try:   # a second read against our rules (editor.py); notes keep the draft from publishing itself
+        import editor
+        bst = blog.state()
+        path = os.path.join(blog.PUBLIC, "drafts", bst["drafts"][did] + ".json")
+        a = blog.read_json(path, {})
+        if a:
+            a["editor"] = editor.review(a)
+            blog.write_json(path, a)
+            notes = editor.lines(a)
+            if a["editor"]:
+                hours = 0
+    except Exception as e:  # noqa: BLE001 - the message goes out without the notes
+        log.warning("editor for %s: %s", did, e)
+    msg = f"Blog draft ready: {did}\nRead it: {url}\n" + ("\n".join(notes).strip() + "\n\n" if notes else "") + (
         f"It goes on the blog by itself in {hours:g} hours (with one post on Telegram and X) if its numbers and wording check out.\n"
         "If it is not good, tell a thread before then. Publish it now instead:\n" if hours > 0 else
         "Publish it (blog + one post on Telegram and X):\n") + UP.format(f"blog publish {did}")

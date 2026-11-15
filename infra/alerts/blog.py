@@ -948,7 +948,7 @@ def auto_publish(now: float | None = None) -> str | None:
             continue
         a = read_json(os.path.join(PUBLIC, "drafts", st["drafts"][did] + ".json"), {})
         chk = a.get("check") or {}
-        if not a or chk.get("unknown_numbers") or chk.get("hype") or a.get("by_hand"):
+        if not a or chk.get("unknown_numbers") or chk.get("hype") or a.get("by_hand") or a.get("editor"):
             continue   # waits for a look and up blog publish (--force); the weekly testnet post always waits for the owner's OK
         if not too_late_to_post(a, now) and gap_left(now):
             return None   # the channels posted lately: the article and its post wait for the room (alerts.POST_GAP_MINUTES)
@@ -995,6 +995,8 @@ def auto_note(st: dict, did: str, a: dict) -> str:
         return "never by itself, held: " + held(did)
     if a.get("by_hand"):
         return "never by itself: it waits for your OK (up blog publish " + did + ")"
+    if a.get("editor"):
+        return f"never by itself: the second read against our rules has {len(a['editor'])} note(s) (python editor.py {did} shows them)"
     if chk.get("unknown_numbers") or chk.get("hype"):
         return "never by itself: the check marked numbers or wording (up blog publish --force after a read)"
     when = at + AUTO_PUBLISH_HOURS * 3600
