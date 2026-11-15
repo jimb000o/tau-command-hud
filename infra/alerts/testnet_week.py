@@ -45,6 +45,7 @@ UP = 'ssh root@node.tauhud.com "cd /opt/tau-command-hud && git pull && sh infra/
 NEAR = 3600            # a restart this long after a ship's last logbook line still counts as "around a visit"
 RETRY = 3600
 PREFIX = "testnet-week-"
+X_URL = re.compile(r"^https://(x|twitter)\.com/\w{1,15}/status/\d+$")   # only a post's own address, as the blog page links it
 
 # where the transactions came from (relay/txsources.py): people's wallets on our apps and elsewhere, and our own
 # server's automated senders, which are never users
@@ -69,6 +70,13 @@ def s(k: int, one: str, many: str | None = None) -> str:
 # ---------- reading ----------
 def gather(t0: float, t1: float) -> dict:
     raw = ir.gather(t0, t1)
+    try:   # the week's feature posts on X (xfeatures.py, HUD #785); without it the post just has no "On X" section
+        import xfeatures
+        y, wk, _ = blog.local(t0).isocalendar()
+        raw["x"] = list(xfeatures.week_lines(xfeatures.load(), y, wk) or [])
+    except Exception as e:  # noqa: BLE001
+        raw["x"] = []
+        log.info("x posts not read: %s", e)
     for key, path in (("history", "/history"), ("sources", "/api/v1/sources"), ("cruise", "/cruise")):
         try:
             raw[key] = blog.get(path)
@@ -111,6 +119,7 @@ def week_facts(raw: dict, t0: float, t1: float) -> dict:
     for r in f.get("restarts") or []:
         at = r.get("old_tip_ts") or r.get("detected_at") or 0
         r["near"] = next((sh for a, b, sh in win if a - 600 <= at <= b + NEAR), None)
+    f["x posts"] = [p for p in raw.get("x") or [] if isinstance(p, dict) and p.get("headline") and X_URL.match(str(p.get("url") or ""))]
     cr = raw.get("cruise")
     f["ships paused"] = isinstance(cr, dict) and cr.get("enabled") is False
     return f
@@ -262,6 +271,14 @@ def text(f: dict) -> dict:
     if f.get("posts"):
         L.append("## Written up this week")
         L += [f"- [{p['title']}]({p['url']})" for p in f["posts"][:5]]
+        L.append("")
+
+    if f.get("x posts"):
+        L.append("## On X this week")
+        for p in f["x posts"][:8]:
+            who = "@" + str(p.get("handle") or "").lstrip("@") if p.get("handle") else str(p.get("account") or "X")
+            head = " ".join(str(p["headline"]).replace("[", "(").replace("]", ")").split())[:140]
+            L.append(f"- {who}: [{head}]({p['url']})")
         L.append("")
 
     L.append(f"Tau HUD is a community project, not affiliated with IDNI. One node's view; if you saw something else, "

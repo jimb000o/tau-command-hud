@@ -51,7 +51,9 @@ src = {"days": {"2026-11-0%d" % d: {"agorzilla": [3, 1, 0, 1, 3], "tauhud": [2, 
 raw = {"missing": [], "uptime": uptime, "health": {"expected_block_seconds": 60}, "stats": stats, "incidents": {"incidents": []},
        "visits": {V: log}, "pulse": None, "posts": [{"id": "testnet-week-2026-w44", "on": "2026-11-01", "title": {"en": "Last week"}},
                                                      {"id": "2026-11-07-queen-learnings", "on": "2026-11-07", "title": {"en": "The Queen stayed"}}],
-       "node_log": {"lines": 3, "groups": [{}, {}]}, "history": hist, "sources": src, "cruise": {"enabled": False}}
+       "node_log": {"lines": 3, "groups": [{}, {}]}, "history": hist, "sources": src, "cruise": {"enabled": False},
+       "x": [{"account": "tauhud", "handle": "TauHUDcom", "headline": "Wallet walkers [live]", "url": "https://x.com/TauHUDcom/status/123", "at": T0},
+             {"account": "tauhud", "handle": "TauHUDcom", "headline": "bad link", "url": "https://evil.example/x", "at": T0}]}
 
 f = w.week_facts(raw, MON, SUN18)
 e = w.text(f)
@@ -73,6 +75,8 @@ check("742 transactions came from wallets" in e["why"][1] and "our test traffic 
 check("Queen Mempool: 200 accepted, 0 refused, 4 sends our own node did not answer in time" in b and "cruise/log?visit=2026-11-07-queen" in b, "ship visit")
 check("in sync 99.7%" in b and "fell more than 2 blocks behind 1 time, 30 min" in b and "3 warnings about syncing or peers, in 2 kinds" in b, "on our side")
 check("The Queen stayed" in b and "Last week" not in b, "written up: this week's articles, not last week's post")
+check("## On X this week" in b and "- @TauHUDcom: [Wallet walkers (live)](https://x.com/TauHUDcom/status/123)" in b and "evil" not in b,
+      "On X this week: the week's posts linked, only x.com post addresses")
 check("not affiliated with IDNI" in b and "coins have no value" in b, "not affiliated, testnet note")
 full = " ".join([e["title"], e["dek"], b, *e["why"], e["x"]])
 check(not re.search(r"\b(fault|blame|broke|failed us|huge|exciting|finally|revolutionary|unstable|unreliable|matrix|uplink)\b|!", full, re.I), "no blame, hype or exclamation")
@@ -81,6 +85,7 @@ check(all(len(c) <= 64 for c in e["card"][:2]) and e["card"][0] == e["title"], "
 
 quiet = dict(raw, uptime=dict(uptime, restarts=[]), cruise={"enabled": True})
 q = w.text(w.week_facts(quiet, MON, SUN18))
+check("On X" not in w.text(w.week_facts(dict(quiet, x=[]), MON, SUN18))["body"], "no X posts: no section")
 check("## Chain restarts" not in q["body"] and "No chain restart this week" in q["why"][0] and "paused" not in q["body"], "a week without restarts")
 
 # ---------- translations ----------
