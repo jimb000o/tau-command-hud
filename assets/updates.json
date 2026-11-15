@@ -3097,5 +3097,11 @@
     "on": "2026-11-15",
     "link": "/rules/numbers/",
     "html": "Rules in numbers: a new page shows what personal rules check (a most per payment, chosen addresses, a time lock, a second signature, a reserve, a freeze), who holds them with our own wallets counted apart, how they got them, rule offers and how many were accepted, and a day-by-day history kept across chain restarts. Each kind says what it guards against and what it cannot do. On the HUD, the “Worth a look” line now opens the wallet whose rule held a payment back, the refused list and the block, and says when that rule has the exact shape Tau HUD’s builder writes."
+  },
+  {
+    "tag": "Rules in numbers",
+    "on": "2026-11-15",
+    "link": "/rules/numbers/",
+    "html": "Rules in numbers: two more numbers. How many test AGRS the wallets with a rule hold, and how many payments our node refused each day because the sender’s own rule said no (only what passed our node; refusals at other nodes never reach it)."
   }
 ]

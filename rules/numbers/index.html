@@ -121,8 +121,11 @@ html.fit .wrap > .main { flex: 1 1 0; min-height: 0; grid-template-rows: minmax(
 html.fit .main > .panel { min-height: 0; overflow: hidden; }
 html.fit .chart { height: calc(100% - 52px); min-height: 120px; }
 html.fit #pTime { display: flex; flex-direction: column; }
+html.fit .sub { max-width: 64ch; }
+html.fit .intro { flex-wrap: nowrap; }
 html.fit .kind .not { display: none; }   /* on one screen the "cannot" line sits in the hover; phones show it */
-html.fit .kinds { gap: 11px; }
+html.fit .kinds { gap: 7px; }
+html.fit .note { margin-top: 6px; }
 @media (max-width: 700px) {
   .seg button { min-height: 44px; padding: 5px 14px; }
   .b { min-height: 44px; flex: 1 1 auto; }
@@ -153,14 +156,15 @@ html.fit .kinds { gap: 11px; }
       <span class="seg" role="group" aria-label="Whose rules"><button type="button" data-who="people" aria-pressed="true" data-tip="People\nEvery account that is not ours and not IDNI's. Wallets, not people: one person can hold several.">People</button><button type="button" data-who="ours" aria-pressed="false" data-tip="Ours\nTau HUD's own server wallets: the showcase wallets, the island bot, cruise passengers, No Memo's.">Ours</button><button type="button" data-who="all" aria-pressed="false" data-tip="All\nEvery account with a rule, ours and IDNI's included.">All</button></span>
       <span class="kpi hot" data-tip="Accounts that hold a personal rule right now, as our node answers."><b id="kNow">–</b>with a rule now</span>
       <span class="kpi" data-tip="Rules set or changed today (UTC), counted when our node next checks."><b id="kNew">–</b>new today</span>
-      <span class="kpi" data-tip="Different rule texts in the blocks our node keeps, each counted once however many accounts took it."><b id="kTexts">–</b>different rules</span>
+      <span class="kpi" data-tip="Test AGRS held by the wallets with a rule now, at our node's last check. Test AGRS have no value."><b id="kAgrs">–</b>AGRS under a rule</span>
+      <span class="kpi" data-tip="Payments our node refused today (UTC) because the sender's own rule said no. Only what passed our node: refusals at other nodes never reach it."><b id="kHeld">–</b>held back today</span>
     </div>
   </div>
   <main class="main">
     <section class="panel" id="pKinds">
       <h2>What the rules check <small id="kindsSub">rules in force now</small></h2>
       <div class="kinds" id="kinds"></div>
-      <p class="note" id="kindsNote">One rule can check several things, so it can count in more than one line. Read from the rule's own Tau text, never guessed.</p>
+      <p class="note" id="kindsNote">One rule can check several things, so it can count in more than one line.</p>
     </section>
     <section class="panel" id="pTime">
       <h2>Over time <small id="timeSub">accounts with a rule, day by day</small></h2>
@@ -312,7 +316,8 @@ function render() {
   const today = new Date().toISOString().slice(0, 10), hist = (d.history && d.history.days) || {};
   $("kNow").textContent = fmt(pick(d.now.holders));
   $("kNew").textContent = hist[today] ? fmt(pick(hist[today].new)) : "–";
-  $("kTexts").textContent = d.texts == null ? "–" : fmt(d.texts);
+  $("kAgrs").textContent = d.now.agrs ? fmt(pick(d.now.agrs)) : "–";
+  $("kHeld").textContent = hist[today] && hist[today].held ? fmt(pick(hist[today].held)) : "–";
   drawKinds(d); drawTime(d); drawOffers(d); drawHow(d);
 }
 function drawKinds(d) {
@@ -326,7 +331,7 @@ function drawKinds(d) {
       m.not ? el("span", { class: "not", text: T(m.not) }) : null);
   }));
   const c = d.now.checked, all = d.now.candidates;
-  $("kindsNote").textContent = T("One rule can check several things, so it can count in more than one line. Read from the rule's own Tau text, never guessed.")
+  $("kindsNote").textContent = T("One rule can check several things, so it can count in more than one line.")
     + (c != null && all != null && all > c ? " " + F("Our node asks about the {c} newest of {a} accounts that ever set a rule.", { c: fmt(c), a: fmt(all) }) : "");
 }
 function drawTime(d) {
@@ -342,7 +347,7 @@ function drawTime(d) {
   for (let t = +first; t <= +last; t += 864e5) all.push(new Date(t).toISOString().slice(0, 10));
   const H = d.history.days;
   let lastN = 0;
-  const rows = all.map(day => { const r = H[day]; if (r) lastN = pick(r.holders); return { day, n: r ? pick(r.holders) : lastN, nw: r ? pick(r.new) : 0, gone: r ? pick(r.gone) : 0, restart: !!(r && r.restart), seen: !!r }; });
+  const rows = all.map(day => { const r = H[day]; if (r) lastN = pick(r.holders); return { day, n: r ? pick(r.holders) : lastN, nw: r ? pick(r.new) : 0, gone: r ? pick(r.gone) : 0, held: r && r.held ? pick(r.held) : 0, restart: !!(r && r.restart), seen: !!r }; });
   const W = Math.max(240, box.clientWidth || 600), Hh = Math.max(120, box.clientHeight || 190), L = 34, R = 8, Tp = 8, B = 22, maxN = Math.max(4, ...rows.map(r => r.n)), maxB = Math.max(2, ...rows.map(r => Math.max(r.nw, r.gone)));
   const x = i => L + (rows.length === 1 ? (W - L - R) / 2 : i * (W - L - R) / (rows.length - 1)), mid = Tp + (Hh - Tp - B) * .62;
   const y = n => mid - (mid - Tp) * n / maxN, bw = Math.max(2, Math.min(18, (W - L - R) / rows.length * .6));
@@ -356,13 +361,16 @@ function drawTime(d) {
   });
   svg.append(sv("polyline", { points: rows.map((r, i) => `${x(i)},${y(r.n)}`).join(" "), fill: "none", stroke: "var(--ok)", "stroke-width": 2, "vector-effect": "non-scaling-stroke" }));
   rows.forEach((r, i) => { if (r.seen) svg.append(sv("circle", { cx: x(i), cy: y(r.n), r: rows.length > 40 ? 1.5 : 3, fill: "var(--ok)" })); });
+  /* payments held back by their own rule that day: a white tick above the line, taller with more */
+  const maxH = Math.max(1, ...rows.map(r => r.held));
+  rows.forEach((r, i) => { if (r.held) svg.append(sv("line", { x1: x(i), x2: x(i), y1: Tp, y2: Tp + 4 + 14 * r.held / maxH, stroke: "#fff", "stroke-width": 2, opacity: .8 })); });
   /* hover targets, one per day */
   rows.forEach((r, i) => svg.append(sv("rect", { x: x(i) - (W - L - R) / rows.length / 2, y: Tp, width: Math.max(4, (W - L - R) / rows.length), height: Hh - Tp - B, fill: "transparent",
-    "data-tip": `${r.day}\n${F("{n} accounts with a rule", { n: fmt(r.n) })}\n${F("{n} set or changed", { n: fmt(r.nw) })} · ${F("{n} removed", { n: fmt(r.gone) })}${r.restart ? "\n" + T("Chain restart that day.") : ""}${r.seen ? "" : "\n" + T("Not checked that day: the last count carries over.")}` })));
+    "data-tip": `${r.day}\n${F("{n} accounts with a rule", { n: fmt(r.n) })}\n${F("{n} set or changed", { n: fmt(r.nw) })} · ${F("{n} removed", { n: fmt(r.gone) })}${r.held ? "\n" + F("{n} payments held back by their own rule at our node", { n: fmt(r.held) }) : ""}${r.restart ? "\n" + T("Chain restart that day.") : ""}${r.seen ? "" : "\n" + T("Not checked that day: the last count carries over.")}` })));
   [0, rows.length - 1].filter((v, i, a) => a.indexOf(v) === i).forEach(i => { const t = sv("text", { class: "ax", x: x(i), y: Hh - 6, "text-anchor": rows.length === 1 ? "middle" : i ? "end" : "start" }); t.textContent = rows[i].day; svg.append(t); });
   box.replaceChildren(svg);
   lg.replaceChildren(el("span", null, el("i", { style: "background:var(--ok)" }), T("accounts with a rule")), el("span", null, el("i", { style: "background:var(--ok);opacity:.75" }), T("set or changed that day")),
-    el("span", null, el("i", { style: "background:#fff;opacity:.4" }), T("removed")), el("span", null, el("i", { style: "background:var(--sim)" }), T("chain restart")));
+    el("span", null, el("i", { style: "background:#fff;opacity:.4" }), T("removed")), el("span", null, el("i", { style: "background:#fff;opacity:.8" }), T("held back by its own rule")), el("span", null, el("i", { style: "background:var(--sim)" }), T("chain restart")));
   $("timeSub").textContent = F("since {d}, kept across chain restarts", { d: days[0] });
 }
 function row(label, n, total, tipText, ok) {

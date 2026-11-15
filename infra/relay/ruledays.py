@@ -129,11 +129,17 @@ class RuleDays:
 
     def _day(self, now: float) -> dict:
         d = self.days.setdefault(day_of(now), {})
-        for k in ("new", "gone"):
+        for k in ("new", "gone", "held"):
             d.setdefault(k, {w: 0 for w in WHO})
         return d
 
-    def record(self, bodies: dict, checked, who, now: float | None = None) -> dict:
+    def held(self, w: str, now: float | None = None):
+        """A payment our node refused because the sender's own rule said no (the wallet door's sendtx answer, or a
+        showcase wallet's daily forbidden try). Only what passed our node: refusals at other nodes never reach us."""
+        self._day(time.time() if now is None else now)["held"][w if w in WHO else "people"] += 1
+        self.dirty = True
+
+    def record(self, bodies: dict, checked, who, now: float | None = None, balances: dict | None = None) -> dict:
         """One check of the node: bodies = {holder: rule text} in force now, checked = every account asked (an account
         not asked this time keeps its last state), who(pk) -> people/ours/idni. Writes today's numbers; returns them."""
         now = time.time() if now is None else now
@@ -145,21 +151,27 @@ class RuleDays:
         for pk in [p for p in checked if p in self.last and p not in bodies]:
             d["gone"][who(pk)] += 1
             del self.last[pk]
-        d.update(self.snapshot(bodies, who))
+        d.update(self.snapshot(bodies, who, balances))
         d["at"] = round(now)
         self.dirty = True
         return d
 
     @staticmethod
-    def snapshot(bodies: dict, who) -> dict:
+    def snapshot(bodies: dict, who, balances: dict | None = None) -> dict:
+        """Rules in force by kind and holder; with balances ({holder: test AGRS}), the AGRS those wallets hold."""
         kinds_by = {w: {k: 0 for k in KINDS} for w in WHO}
         holders = {w: 0 for w in WHO}
+        agrs = {w: 0 for w in WHO}
         for pk, body in bodies.items():
             w = who(pk)
             holders[w] += 1
+            agrs[w] += int((balances or {}).get(pk) or 0)
             for k in kinds(body)["kinds"]:
                 kinds_by[w][k] += 1
-        return {"holders": holders, "kinds": kinds_by}
+        out = {"holders": holders, "kinds": kinds_by}
+        if balances is not None:
+            out["agrs"] = agrs
+        return out
 
     def restart(self, now: float | None = None):
         """The testnet started over: every rule is gone with the old chain. Not counted as "gone" (nobody removed one);

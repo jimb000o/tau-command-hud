@@ -180,4 +180,11 @@ TauI18n.add({ strings: {
   "Live\nRead from the rules wall; the day history starts with the next server update.": "实时\n读取自规则墙；逐日记录从下一次服务器更新开始。",
   "Offline\nOur node is not reachable right now.\nThis page tries again in a minute.": "离线\n我们的节点现在连不上。\n本页一分钟后重试。",
   "Simulation\nThe rules on the made-up chain, the same for every visitor.\nThe day history is kept only on the live testnet.": "模拟\n虚构链上的规则，每位访客看到的都一样。\n逐日记录只在实时测试网上保存。",
+  "AGRS under a rule": "AGRS 受规则约束",
+  "held back today": "今天被拦下",
+  "Test AGRS held by the wallets with a rule now, at our node's last check. Test AGRS have no value.": "此刻有规则的钱包持有的测试 AGRS，以我们节点最近一次检查为准。测试 AGRS 没有价值。",
+  "Payments our node refused today (UTC) because the sender's own rule said no. Only what passed our node: refusals at other nodes never reach it.": "今天（UTC）因为付款人自己的规则说不而被我们节点拒绝的付款。只算经过我们节点的：其他节点的拒绝传不到这里。",
+  "held back by its own rule": "被自己的规则拦下",
+  "{n} payments held back by their own rule at our node": "{n} 笔付款在我们节点被自己的规则拦下",
+  "One rule can check several things, so it can count in more than one line.": "一条规则可以检查好几样东西，所以可能计入不止一行。",
 } });

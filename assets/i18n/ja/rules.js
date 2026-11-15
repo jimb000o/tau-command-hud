@@ -180,4 +180,11 @@ TauI18n.add({ strings: {
   "Live\nRead from the rules wall; the day history starts with the next server update.": "ライブ\nルールの壁から読み取り。日ごとの記録は次のサーバー更新から始まります。",
   "Offline\nOur node is not reachable right now.\nThis page tries again in a minute.": "オフライン\n私たちのノードにいま接続できません。\nこのページは1分後にもう一度試します。",
   "Simulation\nThe rules on the made-up chain, the same for every visitor.\nThe day history is kept only on the live testnet.": "シミュレーション\n架空のチェーン上のルールで、誰が見ても同じです。\n日ごとの記録はライブのテストネットでのみ残します。",
+  "AGRS under a rule": "AGRS がルールの下に",
+  "held back today": "件が今日止められた",
+  "Test AGRS held by the wallets with a rule now, at our node's last check. Test AGRS have no value.": "いまルールを持つウォレットが保有するテスト用 AGRS（私たちのノードの最新の確認時点）。テスト用 AGRS に価値はありません。",
+  "Payments our node refused today (UTC) because the sender's own rule said no. Only what passed our node: refusals at other nodes never reach it.": "今日（UTC）、送り手自身のルールが「だめ」と答えたため私たちのノードが断った支払い。私たちのノードを通ったものだけで、ほかのノードでの拒否はここに届きません。",
+  "held back by its own rule": "自分のルールで止められた",
+  "{n} payments held back by their own rule at our node": "{n} 件の支払いが私たちのノードで自分のルールにより止められた",
+  "One rule can check several things, so it can count in more than one line.": "1つのルールが複数のことを確認する場合があるので、複数の行に数えられることがあります。",
 } });

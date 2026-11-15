@@ -136,6 +136,9 @@ async def mock_node(ws):
             await ws.send(relay.envelope_ok(cmd, {"offer_id": parts[1], "verdict": "clean", "layers": []}))
         elif cmd in ("sendtx", "checktx"):
             tx = json.loads(msg[len(cmd):])
+            if cmd == "sendtx" and tx.get("fee_limit") == "11":   # a payment the sender's own rule says no to
+                await ws.send(relay.envelope_error(cmd, "Transaction rejected: the sender's own policy clause blocked transfer #1 (o5 = 0)", "POLICY_REJECTED"))
+                continue
             await ws.send(relay.envelope_ok(cmd, {"ok": True, "tx_hash": "cd" * 32, "seen_type": tx["tx_type"]}))
         else:
             await ws.send(relay.envelope_error(cmd, "should never reach the node", "UNKNOWN_COMMAND"))
@@ -260,6 +263,13 @@ async def main():
                   and nums["offers"]["by"]["people"]["made"] == 0, f"/rules/numbers counts BOB's rule {nums}")
             with open(EVENTS + ".ruledays") as f:
                 check(BOB in json.load(f)["last"], "the rule record is on disk")
+            check(nums["now"]["agrs"]["people"] == 100000, f"the AGRS behind the rules {nums['now'].get('agrs')}")
+            pay = {**good, "fee_limit": "11", "operations": {"1": [["ab" * 48, "cd" * 48, "5"]]}}
+            check((await ask(ws, "sendtx " + json.dumps(pay)))["status"] == "error", "a payment its own rule refuses")
+            ruled = {**good, "fee_limit": "11"}   # a rule that fails, with a payment beside it: not counted as held back
+            await ask(ws, "sendtx " + json.dumps(ruled))
+            _, body = await get("/rules/numbers")
+            check(json.loads(body)["history"]["days"][today]["held"]["people"] == 1, "held back by its own rule: counted once, per day")
             sent = [x for x in mock["commands"] if x.startswith("sendtx ")][-1]
             check(json.loads(sent[7:])["operations"]["0"] == good["operations"]["0"], "rule text with spaces arrives intact")
             # /rulewall: one entry per rule text, the neutral clause left out

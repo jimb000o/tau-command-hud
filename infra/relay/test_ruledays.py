@@ -46,6 +46,12 @@ with tempfile.TemporaryDirectory() as d:
     t = r.days[ruledays.day_of(day2)]
     check(t.get("restart") is True and t["new"]["people"] == 2 and t["gone"]["people"] == 0,
           f"after a chain restart a rule set again counts as new, nothing as gone {t}")
+    r.held("people", now=day2); r.held("ours", now=day2)
+    t = r.days[ruledays.day_of(day2)]
+    check(t["held"] == {"people": 1, "ours": 1, "idni": 0}, f"payments held back by their own rule, per day {t['held']}")
+    snap = ruledays.RuleDays.snapshot({A: CAP, OURS: TIME}, who, {A: 2500, OURS: 90000})
+    check(snap["agrs"] == {"people": 2500, "ours": 90000, "idni": 0} and "agrs" not in ruledays.RuleDays.snapshot({A: CAP}, who),
+          f"AGRS behind the rules, only when balances were read {snap}")
     check(r.history()["since"] == ruledays.day_of(day1) and len(r.history()["days"]) == 2, "history from the first day")
 
 # offers: made, accepted, rejected, expired, open; matched by the chain's offer id
