@@ -3230,6 +3230,6 @@
   setTimeout(readBallot, 1200);
   window.COVE_GAME = { get state() { return G; }, begin, endDay, face, ending, open: p => openCard(p, PLACE[p]),
     card: openCard, closeCard, btn, el,   // card/closeCard/btn/el: the walkers' cards (walkers.js)
-    ask, socket: () => (CHAIN.ws && CHAIN.ws.readyState === 1 ? CHAIN.wsN : 0) };   // the relay, for your own islander's walks (walkers.js)
+    ask, toast, socket: () => (CHAIN.ws && CHAIN.ws.readyState === 1 ? CHAIN.wsN : 0) };   // toast: offers.js   // the relay, for your own islander's walks (walkers.js)
   wire();
 })();
