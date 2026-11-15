@@ -13,7 +13,9 @@
    transaction of LOOK + code test AGRS to the hearts box, which has no key behind it; the newest one counts.
    ?islander=1 opens the choice at once. Test params: ?walkers=demo shows made-up walkers (marked as such).
    Your own islander walks where you click (goTo), and every page sees it walk (remote, relay steer.py).
-   window.ISLE_WALKERS = { figure, look, open, board, choose, goTo, remote, mine } */
+   What an islander's wallet last wrote in the troll box (The Coconut Wire, assets/chat.js) pops up over its head now and
+   then (said, unsaid; relay chat.py keeps which wallet said it, in memory only).
+   window.ISLE_WALKERS = { figure, look, open, board, choose, goTo, remote, mine, said, unsaid } */
 (() => {
   "use strict";
   const SC = window.COVE_SCENE; if (!SC || !SC.extra) return;
@@ -155,7 +157,7 @@
   }
 
   /* ---------- who walks ---------- */
-  const W = { list: [], by: new Map(), total: 0, idni: 0, at: 0, sel: null, bubble: null, nextBubble: 0, board: null, ok: false };
+  const W = { list: [], by: new Map(), total: 0, idni: 0, at: 0, sel: null, bubble: null, nextBubble: 0, board: null, ok: false, said: new Map() };
   const myPk = () => { try { const k = JSON.parse(store.get(WKEY) || "null"); return k && k.pk ? String(k.pk).toLowerCase() : null; } catch (e) { return null; } };
   const myLook = () => { const v = parseInt(store.get(MINE) || "", 10); return v >= 0 && v < LOOKS ? v : null; };
   const placeIds = () => Object.keys(SC.places).filter(id => SC.places[id] && Number.isFinite(SC.places[id].x));
@@ -255,11 +257,56 @@
     if ((w.go && w.go.key === go.f.join() + "|" + go.t.join()) || (w.later && w.later.go.f.join() + "|" + w.later.go.t.join() === go.f.join() + "|" + go.t.join())) return;
     walk(w, go, go.age || 0);
   }
+  /* ---------- what an islander last said in the troll box (The Coconut Wire) ----------
+     Only the latest message that is still in the troll box (a hidden or day-old one goes), and not all the time: it pops
+     up for a few seconds when it is new, then now and then for a moment. When is worked out from the clock and the
+     wallet, so every page shows it at the same moments. */
+  const SAY = { every: 80, show: 7, fresh: 10000 };
+  function said(m, old, pushed) {   // pushed: it was just written; else from the list (it pops at once only if new)
+    if (!m || typeof m.w !== "string" || typeof m.text !== "string" || !Number.isFinite(m.id)) return;
+    if (old && old.id > m.id) { W.said.set(m.w, old); return; }   // a newer one came by push already
+    const fresh = pushed || Date.now() / 1000 - (m.ts || 0) < SAY.fresh / 1000;
+    W.said.set(m.w, { id: m.id, ts: m.ts || 0, text: m.text, got: old && old.id === m.id ? old.got : fresh ? performance.now() : 0 });
+  }
+  function unsaid(id) { for (const [a, m] of W.said) if (m.id === Number(id)) W.said.delete(a); }
+  function saying(a, now) {   // how much of the bubble shows now (0 = none)
+    const m = W.said.get(a); if (!m) return 0;
+    if (Date.now() / 1000 - m.ts > 86400) { W.said.delete(a); return 0; }
+    const ramp = t => Math.min(1, t / 400);
+    if (m.got && now - m.got < SAY.fresh) return Math.min(ramp(now - m.got), ramp(SAY.fresh - (now - m.got)));
+    let h = 7; for (const ch of a.slice(0, 16) + m.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    const t = (Date.now() + (h % (SAY.every * 1000))) % (SAY.every * 1000);
+    return t < SAY.show * 1000 ? Math.min(ramp(t), ramp(SAY.show * 1000 - t)) : 0;
+  }
+  function lines(g, text, max) {   // at most two lines, the rest cut with …
+    const words = text.split(/\s+/), out = [""];
+    for (const wd of words) {
+      const tryL = out[out.length - 1] ? out[out.length - 1] + " " + wd : wd;
+      if (g.measureText(tryL).width <= max) { out[out.length - 1] = tryL; continue; }
+      if (out.length === 2) { out[1] += " …"; break; }
+      out.push(wd);
+    }
+    return out.map(l => { if (g.measureText(l).width <= max) return l; let c = l; while (c.length > 1 && g.measureText(c + "…").width > max) c = c.slice(0, -1); return c + "…"; });
+  }
+  function speech(g, x, y, text, alpha) {   // a speech bubble whose tail points down to (x, y)
+    const F = phone() ? 11 : 9, LH = F * 1.25;
+    g.save(); g.globalAlpha = alpha; g.font = `600 ${F}px Sora, sans-serif`; g.textAlign = "center"; g.textBaseline = "alphabetic";
+    const ls = lines(g, text, F * 14), w = Math.max(...ls.map(l => g.measureText(l).width)) + F * 1.4, h = ls.length * LH + F * 0.7;
+    const bx = x - w / 2, by = y - 4.5 - h;
+    g.fillStyle = "rgba(244,241,234,.97)"; g.strokeStyle = INK; g.lineWidth = 0.8;
+    g.beginPath(); g.roundRect ? g.roundRect(bx, by, w, h, F * 0.5) : g.rect(bx, by, w, h); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(x - 3.5, by + h - 0.4); g.lineTo(x, y); g.lineTo(x + 3.5, by + h - 0.4); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(x - 3.5, by + h); g.lineTo(x, y); g.lineTo(x + 3.5, by + h); g.stroke();
+    g.fillStyle = INK; ls.forEach((l, i) => g.fillText(l, x, by + F * 0.35 + LH * (i + 0.8)));
+    g.restore();
+  }
   function demo() {
     const T0 = Math.floor(Date.now() / 1000), hx = n => Array.from({ length: 96 }, (_, i) => "0123456789abcdef"[(n * 7 + i * 13 + (i * n) % 11) % 16]).join("");
     const sets = [["nightowl", "feeder", "lawmaker"], ["winner", "politician", "voter"], ["guardian", "lawmaker", "regular"], ["hacker", "allrounder"], ["catfriend", "hearts", "earlybird"], ["newcomer"], ["veteran", "connector", "bigspender"], ["quiet"], ["busy", "regular"]];
     return { total: sets.length, idni: 1, walkers: [...sets.map((t, i) => ({ a: hx(i + 3), look: i % 3 ? null : i * 37 % LOOKS, idni: false, last: T0 - i * 400, n24: 3 + i, traits: t, home: "" })),
-      { a: hx(99), look: null, idni: true, last: T0, n24: 40, traits: ["idni", "busy"], home: "hall" }] };
+      { a: hx(99), look: null, idni: true, last: T0, n24: 40, traits: ["idni", "busy"], home: "hall" }],
+      said: [{ id: 1, ts: T0 - 5, w: hx(3), text: "Anyone else feeding Agorzilla tonight?" }, { id: 2, ts: T0 - 900, w: hx(4), text: "Just won my second election on this island, the hall was packed and the governor looked nervous" },
+        { id: 3, ts: T0 - 60, w: hx(6), text: "gm" }] };
   }
   async function poll() {
     if (document.hidden && W.ok) return;
@@ -289,6 +336,10 @@
     }
     W.by = keep; W.list = [...keep.values()];
     (Array.isArray(j.go) ? j.go : []).forEach(remote);   // the walks wallets asked for lately (steer.py)
+    if (Array.isArray(j.said)) {   // what their islanders last said in the troll box: only messages that are still there
+      const was = W.said; W.said = new Map();
+      j.said.forEach(m => said(m, was.get(m && m.w), false));
+    }
     if (W.sel && !keep.has(W.sel)) W.sel = null;
   }
 
@@ -337,6 +388,7 @@
     if (now > W.nextBubble) { const c = W.list[Math.floor(Math.random() * W.list.length)]; W.bubble = { a: c.a, until: now + 3600 }; W.nextBubble = now + 6500 + Math.random() * 5000; }
     for (const w of W.list) {
       step(w, dt);
+      const talk = W.said.size ? saying(w.a, now) : 0;   // what it last said in the troll box, now and then
       items.push([w.y, () => {
         const moving = W.sel !== w.a && w.wait <= 0, s = 1.25;
         figure(g, w.x, w.y, s, w.lk, { t, ph: w.ph, walk: moving, face: w.face, idni: w.d.idni, gear: w.gear, light });
@@ -346,9 +398,10 @@
         const pa = (now - w.ping) / 4000;   // it just sent a transaction: a ring goes out
         if (pa >= 0 && pa < 1) { g.strokeStyle = `rgba(57,255,138,${1 - pa})`; g.lineWidth = 1.2; g.beginPath(); g.ellipse(w.x, w.y, 6 + pa * 22, 2 + pa * 7, 0, 0, Math.PI * 2); g.stroke(); }
         if (W.sel === w.a) { g.strokeStyle = "#39ff8a"; g.lineWidth = 1.2; g.beginPath(); g.ellipse(w.x, w.y + 0.5, 8, 2.6, 0, 0, Math.PI * 2); g.stroke(); }
-        const label = w.me ? T("you") : W.bubble && W.bubble.a === w.a && now < W.bubble.until ? title(w.d.traits[0]) : null;
+        const label = w.me ? T("you") : !talk && W.bubble && W.bubble.a === w.a && now < W.bubble.until ? title(w.d.traits[0]) : null;
         if (label) bubble(g, w.x, top - 4, label, w.me);
       }]);
+      if (talk > 0) items.push([1e6 + w.y, () => speech(g, w.x, w.y - 31 * 1.25 - (w.me ? 15 : 4), W.said.get(w.a).text, talk)]);   // over everything
     }
     if (W.total) { const [bx, by] = boardSpot(); items.push([by, () => drawBoard(g, bx, by)]); }
     const mk = STEER.mark, ma = mk ? (now - mk.t0) / 1400 : 1;   // where your islander is going: a ring, for a moment
@@ -493,7 +546,7 @@
     finally { if (c) c.close(); if (b) b.disabled = false; }
   }
 
-  window.ISLE_WALKERS = { figure, look, gear, tip, open, board, choose, traits: TRAITS, goTo, remote, mine: () => !!(mineW() && ways()), at: a => { const w = W.by.get(a); return w ? [w.x, w.y] : null; } };
+  window.ISLE_WALKERS = { figure, look, gear, tip, open, board, choose, traits: TRAITS, goTo, remote, said: m => said(m, m && W.said.get(m.w), true), unsaid, mine: () => !!(mineW() && ways()), at: a => { const w = W.by.get(a); return w ? [w.x, w.y] : null; } };
   poll(); setInterval(poll, 60000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
   if (Q.get("islander") === "1") { const go = () => (G() ? setTimeout(choose, 600) : setTimeout(go, 500)); go(); }

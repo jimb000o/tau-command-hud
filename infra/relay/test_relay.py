@@ -427,6 +427,38 @@ async def main():
                 body4 = await asyncio.to_thread(lambda: json.loads(urllib.request.urlopen("http://127.0.0.1:18766/chat", timeout=5).read()))
                 check([m["text"] for m in body4["messages"]] == ["gm everyone"], "GET /chat lists the room")
 
+        # the islander says it too: the writer's wallet proves itself (steer.py hello, here a stand-in check) and every
+        # page on the island gets the message pushed for over that islander's head; nobody else can claim it
+        r.steer.check = lambda w, d, s: s == "5" * 192
+        W1, day = "c" * 96, time.strftime("%Y-%m-%d", time.gmtime())
+        async with connect(url, additional_headers={**origin, "X-Forwarded-For": "198.51.100.21"}) as isle:
+            json.loads(await isle.recv())
+            await ask(isle, "isle join")
+            async with connect(url, additional_headers={**origin, "X-Forwarded-For": "198.51.100.22"}) as w:
+                json.loads(await w.recv())
+                while True:   # presence pushes
+                    try:
+                        json.loads(await asyncio.wait_for(isle.recv(), 0.5))
+                    except asyncio.TimeoutError:
+                        break
+                said = await ask(w, "chat say " + "cd" * 16 + " 1 2 3 hello%20from%20the%20island")
+                mid = said["data"]["sent"]["id"]
+                bad = await ask(w, f"chat islander {mid} {W1} {day} " + "6" * 192)
+                check(bad["status"] == "ok" and bad["data"]["islander"] == 0, f"a wrong signature: not said by the islander {bad['data']}")
+                good = await ask(w, f"chat islander {mid} {W1} {day} " + "5" * 192)
+                check(good["status"] == "ok" and good["data"]["islander"] == mid, f"the wallet's islander says it {good['data']}")
+                got = None
+                for _ in range(10):
+                    m = json.loads(await asyncio.wait_for(isle.recv(), 3))
+                    if m.get("command") == "walker":
+                        got = m
+                        break
+                check(got and got["data"]["said"]["text"] == "hello from the island" and got["data"]["said"]["w"] == W1, f"the island gets it pushed {got}")
+            async with connect(url, additional_headers={**origin, "X-Forwarded-For": "198.51.100.23"}) as x:
+                json.loads(await x.recv())
+                other = await ask(x, f"chat islander {mid} {W1} {day} " + "5" * 192)
+                check(other["data"]["islander"] == 0, "someone else cannot put that message over an islander")
+
         # one person, several sockets: the same browser (address + user agent) counts once,
         # whatever token the page sends; a reconnect that overlaps with the old socket does
         # not add a second person; another browser does

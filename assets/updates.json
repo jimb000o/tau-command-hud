@@ -3133,5 +3133,11 @@
     "on": "2026-11-16",
     "link": "/account/",
     "html": "Wallets from our apps: where the HUD and the account page show a wallet, they now say when it came from one of our apps. A wallet whose first transaction we know of was signed in Tau HUD, No Memo, White Rabbit Key or Agorzilla reads “Started in Tau HUD” and so on, with the day; one that only sent through them later reads “Uses …”. It shows next to a rule holder, in a rule offer’s popup, in Worth a look and as a tag on the account page. Only for visitors’ wallets, never for IDNI’s or our own, and only when our server saw it: a wallet from before its record began never gets a start. A wallet is a key, not a person."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/",
+    "html": "White Rabbit Key: when an islander’s wallet writes in the troll box (on the HUD or in The Coconut Wire on the island), the message pops up as a speech bubble over that islander’s head: right away for a few seconds, then now and then for a moment, at the same moments for everyone on the island. Only the latest message that is still in the troll box shows; a hidden one or one older than a day is gone from over the head too. Your browser signs once a day that the wallet is yours."
   }
 ]

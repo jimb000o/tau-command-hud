@@ -7,7 +7,10 @@
    A page with a visible <div id="tbHost"> (the HUD on wide screens) gets the room as a panel inside it instead of the pill:
    always open, connected while the tab is visible. When the host is hidden (a smaller screen) it is the pill again.
    A host with data-pill="no" (White Rabbit Key) keeps the room inside it and never shows the pill: hidden host, no socket.
-   A host's data-room picks the room's name for that page from ROOMS below; it is the same room everywhere. */
+   A host's data-room picks the room's name for that page from ROOMS below; it is the same room everywhere.
+   When this browser's test wallet (tauhud.com/wallet/) walks on White Rabbit Key as an islander, a message sent here is
+   also said by that islander: the page signs "tauhud.com walker <wallet> <day>" with the wallet's key once a day (as for
+   walking it, relay steer.py) and the island shows the message over its head now and then (rabbit/walkers.js). */
 (() => {
   "use strict";
   const RELAY = window.TAU_CHAT_RELAY || "node.tauhud.com", SOCKET = /^wss?:\/\//.test(RELAY) ? RELAY : `wss://${RELAY}`;
@@ -38,6 +41,7 @@
       "This is a warning; the next strike mutes you for 10 minutes.": "这是一次警告；再犯一次将禁言 10 分钟。",
       "You are muted for {n} minutes.": "你被禁言 {n} 分钟。",
       "The same room as the Tau HUD troll box": "与 Tau HUD 闲聊箱是同一个聊天室",
+      "Your islander on White Rabbit Key says it too, over its head.": "你在白兔岛上的岛民也会把它说出来，显示在头顶。",
     },
     ja: {
       "Chat with everyone on Tau HUD": "Tau HUD のみんなとチャット", "Close": "閉じる",
@@ -64,6 +68,7 @@
       "This is a warning; the next strike mutes you for 10 minutes.": "これは警告です。次の違反で 10 分間ミュートされます。",
       "You are muted for {n} minutes.": "{n} 分間ミュートされました。",
       "The same room as the Tau HUD troll box": "Tau HUD のトロールボックスと同じ部屋です",
+      "Your islander on White Rabbit Key says it too, over its head.": "ホワイトラビット島のあなたの島民も、頭の上でそれを言います。",
     },
   };
   /* the room's name, one place per language; a page's host may call the same room by its own name (data-room) */
@@ -139,6 +144,32 @@
     while (list.children.length > 120) list.firstChild.remove();
     if (stick) list.scrollTop = list.scrollHeight;
   }
+  /* your islander on White Rabbit Key says it too: only when this browser's wallet walks on the island right now */
+  const ISL = { list: null, at: 0, sig: null, bls: null };
+  const myWallet = () => { try { const k = JSON.parse(localStorage.getItem("tauhud-wallet-key") || "null"); return k && /^[0-9a-f]{64}$/.test(k.sk || "") && /^[0-9a-f]{96}$/.test(k.pk || "") ? k : null; } catch (e) { return null; } };
+  async function onIsland(pk) {
+    const IW = window.ISLE_WALKERS;
+    if (IW && IW.at && IW.at(pk)) return true;   // on the island page: it walks there now
+    if (/^wss?:\/\//.test(RELAY)) return false;
+    if (!ISL.list || Date.now() - ISL.at > 120000) {
+      try { const r = await fetch(`https://${RELAY}/walkers`, { cache: "no-store" }); const j = r.ok ? await r.json() : null; ISL.list = new Set(((j && j.walkers) || []).map(w => w && w.a)); ISL.at = Date.now(); } catch (e) { return false; }
+    }
+    return ISL.list.has(pk);
+  }
+  const bls = () => window.TauBLS ? Promise.resolve(window.TauBLS) : (ISL.bls = ISL.bls || new Promise(res => {
+    const sc = document.createElement("script"); sc.src = "/wallet/vendor/tau-bls.min.js"; sc.onload = () => res(window.TauBLS || null); sc.onerror = () => { ISL.bls = null; res(null); }; document.head.append(sc);
+  }));
+  async function islander(mid, w) {
+    try {
+      const k = myWallet(); if (!k || !(await onIsland(k.pk))) return;
+      const day = new Date().toISOString().slice(0, 10);
+      if (!ISL.sig || ISL.sig.day !== day || ISL.sig.pk !== k.pk) {
+        const B = await bls(); if (!B) return;
+        ISL.sig = { day, pk: k.pk, sig: B.bytesToHex(B.sign(new TextEncoder().encode(`tauhud.com walker ${k.pk} ${day}`), B.hexToBytes(k.sk))) };
+      }
+      if (w && w.readyState === 1) w.send(`chat islander ${Number(mid)} ${k.pk} ${day} ${ISL.sig.sig}`);
+    } catch (e) {}
+  }
   function hide(id) { const li = list.querySelector(`[data-id="${Number(id)}"]`); if (li) li.remove(); }
   function showWho() { const m = today(ME(false)); who.textContent = t("You are {x} until 00:00 UTC", nameOf(m)); who.style.setProperty("--me", COLOURS[m.c] || COLOURS[7]); }
   setInterval(() => { if (who.isConnected) showWho(); }, 60000);   // the new name shows up just after midnight UTC
@@ -162,7 +193,8 @@
       }
       (d.new || []).forEach(add);
       if (d.new && d.new.length) setNote("");
-      if (d.sent) { add(d.sent); input.value = ""; send.disabled = false; setNote(""); list.scrollTop = list.scrollHeight; }
+      if (d.sent) { add(d.sent); input.value = ""; send.disabled = false; setNote(""); list.scrollTop = list.scrollHeight; islander(d.sent.id, me); }
+      if (d.islander) setNote(t("Your islander on White Rabbit Key says it too, over its head."));
       (d.hide || []).forEach(hide);
     };
     me.onclose = me.onerror = () => {

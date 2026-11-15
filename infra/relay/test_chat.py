@@ -136,6 +136,31 @@ check("a new day" in [x["text"] for x in c2.recent()["messages"]], "a restart ke
 T[0] += 86400
 check(c2.recent()["messages"] == [] and json.load(open(path))["msgs"] == [], "after 24 hours everything is gone, also on disk")
 
+# an islander on White Rabbit Key says its writer's messages: only the writer, only soon after, only while shown
+c5 = chat.Chat(os.path.join(d, "c5.json"), key, clock)
+W1, W2 = "a" * 96, "b" * 96
+m1 = c5.say("w1", tok(1), 0, 0, 0, "hello island")["msg"]
+check(c5.claim("w2", m1["id"], W2) is None, "someone else cannot put my message over their islander")
+said = c5.claim("w1", m1["id"], W1)
+check(said and said["w"] == W1 and said["text"] == "hello island", "the writer's islander says it")
+T[0] += 10
+m2 = c5.say("w1", tok(1), 0, 0, 0, "the second one")["msg"]
+c5.claim("w1", m2["id"], W1)
+check([x["text"] for x in c5.said()] == ["the second one"], "only the latest message over an islander")
+check(c5.said({W2}) == [], "only for the islanders asked about")
+T[0] += chat.CLAIM_FOR + 1
+m3 = c5.say("w1", tok(1), 0, 0, 0, "a third")["msg"]
+T[0] += chat.CLAIM_FOR + 1
+check(c5.claim("w1", m3["id"], W1) is None, "too long after sending: not said by the islander")
+c5.flag(m2["id"])
+check([x["text"] for x in c5.said()] == ["hello island"], "a hidden message is no longer over the islander")
+c5.flag(m1["id"])
+check(c5.said() == [], "nothing shown when every message of that islander is hidden")
+st = json.load(open(os.path.join(d, "c5.json")))
+check(W1 not in json.dumps(st), "the wallet is never stored on disk")
+T[0] += 86400
+check(c5.said() == [] and c5.islander == {}, "after 24 hours the islander's messages are gone too")
+
 # slow mode and the off switch
 c3 = chat.Chat(os.path.join(d, "c3.json"), key, clock)
 oks = sum(bool(c3.say(f"q{i}", tok(i), 0, 0, 0, f"message number {i} here").get("ok")) for i in range(40))

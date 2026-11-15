@@ -2422,7 +2422,11 @@
       ws.onopen = () => { ws.send("hello version=1"); if (ISLE.want) ws.send("isle join"); CHAIN.ws = ws; CHAIN.wsN = (CHAIN.wsN || 0) + 1; setTimeout(() => res(ws), 150); };
       ws.onmessage = ev => {
         let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; }
-        if (m.command === "walker" && m.data && m.data.push) { if (window.ISLE_WALKERS && ISLE_WALKERS.remote) ISLE_WALKERS.remote(m.data.go); return; }   // someone walked their islander (walkers.js)
+        if (m.command === "walker" && m.data && m.data.push) {   // someone walked their islander, or it said something in the troll box (walkers.js)
+          const IW = window.ISLE_WALKERS;
+          if (IW) { if (m.data.go && IW.remote) IW.remote(m.data.go); if (m.data.said && IW.said) IW.said(m.data.said); if (m.data.unsaid && IW.unsaid) IW.unsaid(m.data.unsaid); }
+          return;
+        }
         if (m.command === "isle") { if (m.status === "ok" && m.data && m.data.day) onIsle(m.data); else if (m.status === "ok" && m.data && m.data.board && typeof m.data.board === "object") onBoard(m.data.board); return; }   // the shared island: pushes and acks, never an answer someone waits for
         const q = CHAIN.wait.get(m.command); if (q && q.length) q.shift()(m);
       };
