@@ -159,8 +159,8 @@
   }
 
   /* ---------- the cards ---------- */
-  const face = (a, size) => { const W = WK(); return W && W.portrait ? W.portrait(a, size) : null; };
-  const who = a => { const W = WK(), t = W && W.title ? W.title(a) : null; return t ? t + " · " + short(a) : short(a); };
+  const face = (a, size) => { const W = WK(); try { return W && W.faceOf ? W.faceOf(a, size) : null; } catch (e) { return null; } };
+  const who = a => { const W = WK(); try { return W && W.whoOf ? W.whoOf(a) : short(a); } catch (e) { return short(a); } };
   const SAFE = "A personal rule only says yes or no to its own wallet’s payments; it can never move money.";
   function tauText(el, text) {
     return el("details", { class: "of-tau" }, el("summary", { text: T("The rule in Tau") }), el("code", { translate: "no", text: String(text || "") }));
@@ -235,7 +235,7 @@
           ...describe(r, me).map(t => el("p", { class: "of-says", text: t })),
           phone() && r && !r.unknown ? null : tauText(el, o.rule_text || o.rule_text_preview), acts, sure);
       });
-      const outs = O.out.slice(-6).reverse().map(o => el("li", null, el("span", { translate: "no", text: short(o.recipient_pubkey) }), " · ",
+      const outs = O.out.slice(-6).reverse().map(o => el("li", null, el("span", { translate: "no", text: who(o.recipient_pubkey) }), " · ",
         document.createTextNode((describe(readRule(o.rule_text || o.rule_text_preview), me)[0] || "") + " "), el("b", { text: T(STATUS[o.status] || o.status || "") })));
       const addr = el("input", { type: "text", class: "of-addr", placeholder: T("a wallet address (96 characters)"), "aria-label": T("Wallet address"), spellcheck: "false", autocomplete: "off" });
       box.append(...[el("h3", { text: T("Rules proposed to you") }),

@@ -3138,6 +3138,18 @@
   {
     "tag": "White Rabbit Key",
     "on": "2026-11-16",
+    "link": "/rabbit/?islander=1",
+    "html": "Islander studio on White Rabbit Key: every wallet’s islander is now made of 17 parts (build, hair, clothes, face shape, eyes, brows, nose, mouth, beard, glasses …), from its key until you change them, worn with one transaction to the hearts box. Earned pieces (a rule writer’s sash, No Memo goggles …) open only through your own transactions. The first wallet to choose a face is its first wearer. Islanders wave when their transaction lands, sit down while the chain rests, and a hover or click now tells what each wallet did on Tau HUD. Islander pass picture to save or share; “Your islander” on the wallet page."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/",
+    "html": "Radio Coco: Rico's Night Line now runs all night, 23:00 to 05:00 by your clock, on the island and in the header radio of every page. From eleven to midnight a caller between every two songs, as before; after midnight it gets quieter, with more music, a few words from Rico alone, and a caller now and then. Every full hour he names the time (also as a welcome for whoever tunes in late), and at five he closes the line. 25 new callers with new lagoon problems: an empty faucet, a transfer with no room for a note, a reserve instead of a daily limit, what a guardian does and doesn't, a fake support agent and a chatbot that both want your key, mining that doesn't exist, the same key on two devices, a new node catching up, and more."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
     "link": "/rabbit/",
     "html": "White Rabbit Key: islanders propose rules to each other. Click another islander and propose a personal rule to its wallet: a most per payment, or “above this amount, I co-sign”. Rules proposed to your wallet appear under ✉ at the top of the island, in plain words and in Tau; you accept or decline, and only your own wallet can take a rule (accepting is a transaction this browser signs, and it replaces the rule you hold now). A rule only says yes or no to its own wallet’s payments; it never moves money. You can also propose to any wallet by its address. This is Tau Net’s own rule sharing, the same offers the wallet page shows under Activity."
   }

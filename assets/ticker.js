@@ -120,20 +120,20 @@
     return { kind: "note", text: w.next.replace("{d}", d).replace("{t}", String(g.hour).padStart(2, "0") + ":00"), href: "gazette/", raw: true, tip };
   };
 
-  /* ---------- Rico's Night Line on Radio Coco: every night from 23:00 to midnight by the listener's own clock (rabbit/rico.js
-     NIGHT_AT), on the island and in the header radio of every page. Before it the line says when; in its hour it says it is
+  /* ---------- Rico's Night Line on Radio Coco: every night from 23:00 to 05:00 by the listener's own clock (rabbit/rico.js
+     NIGHT_AT, NIGHT_END), on the island and in the header radio of every page. Before it the line says when; in its hours it says it is
      on air and opens every round ---------- */
   const NLT = {
-    en: { next: "Rico's Night Line on Radio Coco: tonight at 23:00 your time", on: "On air now: Rico's Night Line on Radio Coco, until midnight",
-      tip: "Every night 23:00 to midnight by your clock: islanders phone Rico with their lagoon problems between the songs. Switch on the radio in the header." },
-    zh: { next: "Rico 的深夜热线，Radio Coco：今晚 23:00（你的当地时间）", on: "正在直播：Rico 的深夜热线，Radio Coco，直到午夜",
-      tip: "每晚按你的时间 23:00 到午夜：歌与歌之间，岛民打电话给 Rico 说潟湖上的难题。打开页头的收音机即可收听。" },
-    ja: { next: "リコのナイトライン、Radio Coco：今夜 23:00（あなたの時間）", on: "オンエア中：リコのナイトライン、Radio Coco、真夜中まで",
-      tip: "毎晩あなたの時計で 23:00 から真夜中まで：曲の合間に島の人たちがラグーンの悩みでリコに電話します。ヘッダーのラジオをオンに。" },
+    en: { next: "Rico's Night Line on Radio Coco: tonight at 23:00 your time", on: "On air now: Rico's Night Line on Radio Coco, until 05:00",
+      tip: "Every night 23:00 to 05:00 by your clock: islanders phone Rico with their lagoon problems between the songs, fewer after midnight, more music. Switch on the radio in the header." },
+    zh: { next: "Rico 的深夜热线，Radio Coco：今晚 23:00（你的当地时间）", on: "正在直播：Rico 的深夜热线，Radio Coco，直到 05:00",
+      tip: "每晚按你的时间 23:00 到 05:00：歌与歌之间，岛民打电话给 Rico 说潟湖上的难题；午夜后电话少一些，音乐多一些。打开页头的收音机即可收听。" },
+    ja: { next: "リコのナイトライン、Radio Coco：今夜 23:00（あなたの時間）", on: "オンエア中：リコのナイトライン、Radio Coco、05:00 まで",
+      tip: "毎晩あなたの時計で 23:00 から 05:00 まで：曲の合間に島の人たちがラグーンの悩みでリコに電話します。真夜中を過ぎると電話は少なめ、音楽は多めに。ヘッダーのラジオをオンに。" },
   };
-  const NIGHT_AT = 23;
+  const NIGHT_AT = 23, NIGHT_END = 5;
   const nightLine = () => {
-    const w = NLT[lang] || NLT.en, on = new Date().getHours() === NIGHT_AT;
+    const h = new Date().getHours(), w = NLT[lang] || NLT.en, on = h >= NIGHT_AT || h < NIGHT_END;
     return { kind: on ? "radio" : "note", text: on ? w.on : w.next, href: "rabbit/", raw: true, on, tip: w.tip, tipRaw: true };
   };
 
@@ -226,7 +226,7 @@
     while (lead.length) { const o = lead.shift(); if (shows(o)) return o; }
     /* on the day a new edition comes out, it opens the line and every round after */
     if (slot % SLOTS.length === 0) { const g = gazette(); if (g && g.out) { slot++; return g; } }
-    /* in the Night Line's hour, so does the show */
+    /* in the Night Line's hours, so does the show */
     if (slot % SLOTS.length === 1 && nightLine().on) { slot++; return nightLine(); }
     for (let tries = 0; tries < SLOTS.length * 2; tries++) {
       const k = SLOTS[slot++ % SLOTS.length]; let it = null;
