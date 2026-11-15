@@ -6,7 +6,9 @@
    ("" always, early, mid, last, myLaw, noLaw, pact, broke, deal, lied, caught, truth, smeared, lead, poor, chart, key,
    drummed, circled, dove, worked, plans, rich, amb, ambFortune, ambReform, ambKingmaker, ambClean, roof, lamp, stoneSet, and every law id in force: night quiet reef harbour boat lunch concerts road copy tax;
    your dealings with an embassy: southOffer southDeal southOwed southKept, northOffer northDeal northOwed northKept; what has happened to the island: eventBoiler eventStorm eventCoup eventCatch eventRoof;
-   the cruise ships, RABBIT_SHIP_WHEN at the end: ship, queen, dryrun, shipSoon shipTomorrow shipToday shipNear, shipHere, shipGone shipCut shipAfter).
+   the cruise ships, RABBIT_SHIP_WHEN at the end: ship, queen, dryrun, shipSoon shipTomorrow shipToday shipNear, shipHere, shipGone shipCut shipAfter;
+   what Tau Net shows today, from islelive.js: the wallets that walk here (walk, walkMany, walkNew, walkRule, walkOwl …) and the
+   personal rules on the chain (rules, rulesAny, ruleCap, ruleCosign, ruleFloor, ruleHeld, ruleOffer, ruleRestart …)).
    "a+b" holds when both hold, "!a" when a does not, so "last+southOwed+!road" is the last day, the resort's money taken and no road yet.
    A question with a "when" of its own is offered only while that holds (the cruise ships: "ship").
    Every line is spoken in that islander's voice (infra/rico/make.py, through rico.js all() and rabbit/voices.json),
@@ -29,6 +31,13 @@
         ["harbour", "The deep harbour is law now. Laws arrive quickly. What they do to the reef comes on the slow boat."],
         ["myLaw", "One of your laws stands. Good. A law is easy to pass and hard to live with. We will see which kind yours is."],
         ["early", "Sit, if you like. Young candidates stand. Old ones have learned that a vote takes as long as it takes."],
+        ["ruleRestart", "The testnet started over today. Every personal rule went with the old chain. The patient ones are writing theirs again. A fresh start is only fresh once."],
+        ["walkPol", "Some of the walkers under the tree play this election too, on their own island, in their own browser. Same laws, same tree. Their campaigns count in the island’s week like yours."],
+        ["walkIdni", "The grey walkers are the oldest accounts on the chain, there since the testnet began. Even they sign every payment, like everybody else. Age buys no shortcuts. I should know."],
+        ["ruleCosign", "Some wallets on the chain will not make a bigger payment until a second key agrees. One wants, one agrees. That is a council of two. I approve."],
+        ["rules", "News from the chain: every wallet may now write a rule for itself. Not a law for everyone, a law for one. We spent three hundred years making rules for each other. They went straight to the hard part."],
+        ["walkMany", "So many walkers today. Each one a wallet that paid somebody on the chain since yesterday. They do not vote here. They listen. The tree has never had this much company."],
+        ["walkNone", "No walkers on the island today. The chain is quiet, or the wallets are asleep. The tree waits. It is good at that."],
         ["", "The council is quiet today. Either the island is at peace, or everyone is at Lola’s. Usually it is Lola’s."],
         ["", "Back again. This tree has seen more elections than anyone. It never voted once, and it is still the most respected thing on the island."],
       ],
@@ -40,6 +49,10 @@
         { q: "Who really runs this island?", a: [["deal", "You took an envelope, so you may think the embassies do. They pay for promises. Promises are cheap. Two votes out of three are not."], ["", "Nobody, and that is the point. There is no chief with a master key. What we agreed is on the stone and in the Book, and anyone can read both."]],
           more: { q: "Not even you?", a: [["", "Especially not me. I am old. I forget where I put my glasses. Imagine if the rules depended on where I put them."]] } },
         { q: "Have you ever seen Agorzilla?", a: [["harbour", "Since the harbour passed, the footprints come down to the beach at night. I am not saying he is upset. I am saying he paces."], ["", "My grandmother said he grows the way the island votes. So when people ask me what he looks like, I tell them: look at what you voted for."]] },
+        { when: "walk", q: "Who are the strangers walking around?", a: [["", "Wallets, not people. Each one sent a real transaction on Tau Net in the last day, so it walks here for a while. Nobody knows who holds the key, and one person can hold many."]],
+          more: { q: "Can they vote in our election?", a: [["", "Only a wallet that plays. A wallet that plays White Rabbit Key campaigns on its own island, and every campaign counts in the island’s week. A walker who only walks has no vote. It has legs."]] } },
+        { when: "rulesAny", q: "What is a personal rule?", a: [["", "A rule a wallet writes for itself, and the chain holds it to it. A most per payment, only certain receivers, nothing before a date, a second signature, a reserve that must stay. Even the wallet’s own key cannot get past it."]],
+          more: { q: "Can it change the rule again?", a: [["", "Yes, with a new rule, signed and sent like a payment. A rule does not stop you changing your mind. It only makes sure every change of mind is in a block, for anyone to read."]] } },
       ],
     },
     marisol: {
@@ -64,6 +77,12 @@
         ["lied", "I heard the line you bought on Radio Coco. People believed it at breakfast. By lunch they had read the Book."],
         ["mid", "Halfway through the week, and people have started quoting me back to myself. That’s when you find out what you actually said."],
         ["early", "Morning! Everyone’s here. Buying fish, selling gossip, pretending not to listen. Say something they care about."],
+        ["walkMe", "I saw your wallet walking across the square! Green dot and everything. You look shorter on the chain."],
+        ["walkFeeder", "One of the walkers on the square fed Agorzilla. You can always tell. They carry a banana and walk like they’re important."],
+        ["walkCat", "A walker by the café puts food in Déjà’s bowl. Déjà has decided it’s a regular. Déjà decides everything."],
+        ["ruleOffer", "New rumour at the café: on the chain, one wallet can offer its rule to another. The other reads it and says yes or no. A pact, but the chain keeps it, not Lola."],
+        ["walkMany", "The square is full of walkers today. They don’t buy coffee, they don’t buy fish, but every one of them paid somebody on the chain. Good for business somewhere."],
+        ["rules", "Rules everywhere now. Every wallet on the chain may write its own. At the café we call it house rules for one."],
         ["", "You again! Good. People trust a face they’ve seen twice. Three times, and they start telling you their problems."],
       ],
       ask: [
@@ -75,6 +94,8 @@
         { q: "Do you trust the other candidates?", a: [["pact", "I trust the ones who shook hands at Lola’s. Not because they’re nice. Because the Book saw the handshake."], ["", "I trust what’s written down. Tobias has a speech for every envelope, Baako has a ledger for every coconut, Hana has a footnote for everyone. I have coffee, and coffee hears things."]] },
         { q: "Do the rumours really start at your café?", a: [["", "Rumours don’t start anywhere. They wander in, sit down and order a coffee. I only help them find the radio. A café has to live on something."]],
           more: { q: "And when they aren’t true?", a: [["", "Then Hana’s class has found out by lunch. Those children check everything. My gossip has never been so honest. Business is worse. The coffee is better."]] } },
+        { when: "walk", q: "Who are the people with the green dots?", a: [["", "Wallets from Tau Net. Each green dot paid something real since yesterday. They walk where their habits take them: banana carriers to the market, night owls to Lola’s. Nobody knows their names. I’ve tried."]],
+          more: { q: "Can I be one of them?", a: [["", "Your test wallet walks too, once it has sent something. Click yourself, you’re the one marked “you”, and you can choose your look. It’s a real payment, like everything worth showing off."]] } },
       ],
     },
     lola: {
@@ -95,6 +116,11 @@
         ["pact", "My favourite kind of customer: one with a pact. You keep yours, I keep pouring."],
         ["last", "Last night before the vote. Suddenly everybody loves everybody. I’ve seen this one before. I know how it ends."],
         ["early", "First days of the campaign. Everybody’s friends, nobody’s signed anything yet. My favourite time to listen."],
+        ["walkOwl+dark", "Late, and the night owls are out. Wallets that send most of their payments after ten at night. The chain never closes. Neither does my lantern."],
+        ["walkOwl", "See the walker with the lantern? A night owl. Most of its payments go out between ten at night and five in the morning. My kind of customer. Never orders, never leaves."],
+        ["ruleOfferTaken", "Somebody on the chain offered another wallet a rule, and the other one took it. A pact with the small print enforced. I’d drink to that, if I drank on shift."],
+        ["ruleCosign", "Out on the chain, some wallets need two signatures to pay big. One to want it, one to agree. Every couple at my bar should have that for the tab."],
+        ["walk", "The walkers come to Bar La Ola too. They sit, they glow a little green when their wallet pays someone, and they never ask for the bill. Lovely people. Terrible tippers."],
         ["", "You look thirsty. Or nervous. In election week on this island, it’s usually both."],
         ["", "Back so soon? Sit down. Pacts first, gossip second, lemonade always."],
       ],
@@ -105,6 +131,8 @@
           more: { q: "What happens when someone breaks one?", a: [["", "Nothing loud. No shouting, no glasses thrown. It just goes into the Book, and the next time that person holds out a hand, everybody looks at it first."]] } },
         { q: "Who comes in here at night?", a: [["", "Fishermen, surveyors, and one ambassador in a very big hat who thinks nobody recognises him. Everybody does. He tips well, so we pretend."]] },
         { q: "Have you ever seen Agorzilla?", a: [["", "Something took every banana from the crate out back and closed the lid again. Honestly? Best-behaved customer I ever had."]] },
+        { when: "rulesAny", q: "Could a pact be written on the chain?", a: [["", "On the chain, one wallet can offer another a rule. The other reads it, then takes it or turns it down. Once it’s taken, the chain holds that wallet to it. No handshake. Just signatures."]],
+          more: { q: "Better than a handshake?", a: [["", "Different. Here a pact can be broken, and everybody remembers. A rule on the chain turns the payment away before it happens. We forgive. The chain just says no."]] } },
       ],
     },
     rico: {
@@ -124,6 +152,10 @@
         ["truth", "You paid for a true line. Rare! Rico played it again for free, just to hear how the truth sounds on air."],
         ["last", "Last day before the vote! The phones are ringing, the bananas are disappearing, and Rico hasn’t slept. Business is great."],
         ["mid", "Halfway to the vote, baby. The rumours are getting tired and the Book is getting thicker. Rico loves this part."],
+        ["ruleHeld", "Breaking news, baby! Today a wallet tried to pay, and its own rule said no. Not a bank, not a boss. Its own rule. Rico calls that self-control with a block number."],
+        ["walkHacker", "Baby, there’s a walker with a visor outside the studio. No Memo crew! Cracked real chapters, on the real testnet. Rico’s playing the hacker mix in its honour."],
+        ["walkBusy", "One walker has been busy, baby. Fifty transactions in a day, or more. A script, or somebody who really loves the testnet. Rico doesn’t judge. Rico counts."],
+        ["rules", "Rico’s got a new jingle: every wallet its own rule! Nobody likes the jingle. Everybody likes the rule."],
         ["", "Welcome back to the studio, baby. Mind the cables. The yellow one is the radio. The green one is Rico’s fan."],
       ],
       ask: [
@@ -133,6 +165,7 @@
           more: { q: "Then why would anyone pay for a lie?", a: [["", "Because a lie runs faster than a page. For about a day. Then people read, and the lie trips over its own name. Rico has seen it a hundred times. Rico still takes the coins."]] } },
         { q: "Could the council switch you off?", a: [["", "Nobody can. There’s no big red button under the council tree. If people stop listening, that’s the off switch. And so far, baby, they listen."]] },
         { q: "What’s the deal with Agorzilla?", a: [["", "Off the record? One night Rico left the window open and came back to the turntable spinning a slow song. Nobody in the studio. One banana peel, folded. Rico respects a fellow music lover."]] },
+        { when: "rulesAny", q: "What’s the news on Tau Net?", a: [["ruleHeld", "Today a wallet’s own rule stopped one of its payments, baby. Rico loves that story. Nobody got robbed, nobody got told off. The wallet just kept its own word."], ["", "Every wallet on Tau Net can write its own rule now, baby. A most per payment, a second signature, a reserve it won’t touch. The chain checks it on every payment, even against the wallet’s own key."]] },
       ],
     },
     sam: {
@@ -153,6 +186,14 @@
         ["copy", "There’s a copy of the Book on the square now. Half my visitors are gone. I have never been happier."],
         ["last", "Last day. People come in to read who have never read before. Elections are good for reading."],
         ["early", "The first days are always thin. A few lines, a few promises. By the end of the week the Book will be heavy with them."],
+        ["ruleRestart", "The testnet started over today, and every rule on the chain went with the old one. The Book keeps our island’s pages. The chain begins a new book. Both are honest about it."],
+        ["ruleHeld", "Today a wallet’s own rule said no to one of its payments. Not a thief, not a judge. Its own words, written before. That is the best kind of no."],
+        ["walkGuard", "There’s a walker with a shield by the lighthouse. A guardian has to agree to its bigger payments. That helps when a payment is a mistake, or someone was talked into it. It does not help when the key itself is stolen. I tell everyone that part too."],
+        ["walkRule", "One of the walkers by the lighthouse carries a scroll. Its wallet wrote its own rule on the chain. It comes to stand near the Book, I think. Rule writers like a place that keeps records."],
+        ["ruleFloor", "A wallet out there keeps a reserve. Its rule reads its own balance and refuses any payment that would take it below the line. A Book for the future. Mine is for the past."],
+        ["ruleTime", "A wallet on the chain has locked its coins until a date. Its own rule. The chain reads the time of every block and says: not yet. Patience, written down."],
+        ["ruleFreeze", "Somewhere on the chain a wallet has frozen itself. Nothing leaves until it writes a new rule. A shop with the sign turned to closed, and the owner inside, holding the key."],
+        ["rules", "Not long ago only two wallets at a time could hold a rule of their own. Now every wallet can. More rules, more to write down. The Book is delighted. I am a little tired."],
         ["", "Sit, sit. I was just reading yesterday again. It hasn’t changed. That’s the nice thing about it."],
         ["", "Come in, come in. I’ve just dusted the Book. Not that it needs it. Nothing in it ever changes. It only grows."],
       ],
@@ -163,6 +204,10 @@
           more: { q: "Why not make just one exception?", a: [["", "Because the first exception is a key, and somebody will want to borrow it. A Book that one person can change is only a diary with ambitions."]] } },
         { q: "What do people look up most?", a: [["", "Who paid for what. Then who voted how. Then, every single time, whether Marisol really fishes inside the reef. She doesn’t. They check anyway. Checking is the whole idea."]] },
         { q: "Is the Book like Tau Testnet Alpha?", a: [["", "In a way. Out there every block points back to the one before, so nobody can slip a page into the middle. And out there they count wallets, not people. One person can hold many wallets. The Book only knows names."]] },
+        { when: "walk", q: "Does the Book know about the walkers?", a: [["", "The Book knows the island. The chain knows the walkers. Every payment they make is in a block, with a signature, for good. Two books, one habit."]],
+          more: { q: "What can it tell about a walker?", a: [["", "Only what its wallet did. When it pays, how often, whether it wrote a rule, whether it fed Agorzilla. Never who holds the key. Click one, and you will read exactly that."]] } },
+        { when: "rulesAny", q: "Should I write a rule for my wallet?", a: [["", "Try it with the test wallet, where the coins have no value. Write something small, a most per payment, then try to pay more. The chain says no and gives its reason. You learn more from that no than from ten speeches."]],
+          more: { q: "And if I get it wrong?", a: [["", "Then you write a new one. The newest rule is the one that counts. The chain keeps both in its blocks, and so would I. That is fine. Nobody here is embarrassed for you."]] } },
       ],
     },
     tobias: {
@@ -190,6 +235,11 @@
         ["concerts", "Beach concerts on Sundays! At last the island has a stage worthy of my announcements."],
         ["last", "The final day! Tomorrow, the count. I have polished my medal, my cap and my modesty. Mostly the medal."],
         ["mid", "Halfway through the campaign. I have given eleven speeches. The gulls have heard every one of them. The gulls are not voting."],
+        ["walkNew", "A newcomer at my pier! Its very first transaction on the chain, in the last day. I have prepared a welcome speech. It is short. For me."],
+        ["walkMe", "Your own wallet walks my island now! I saw it pass the notice board. I nearly gave it a speech. It walked faster."],
+        ["walkMany", "Look at the notice board! So many wallets walked the island today. And not one of them needed a tender."],
+        ["ruleCap", "Some wallets on the chain have written themselves a most per payment. A harbour limit for money. I would like one for speeches. Not for mine. For everybody else’s."],
+        ["walk", "Have you seen my notice board by the pier? It counts every wallet that walked the island today. I asked for a brass plaque. I got a board."],
         ["", "Ah, a visitor to my pier! Every boat that ties up here is greeted by me, personally, with a short speech. Short for me."],
       ],
       ask: [
@@ -201,6 +251,7 @@
         { q: "Is it true you have a theory about everyone?", a: [["", "Slander! Well, yes. Kai is secretly a fish. Pim measures his own shadow at night. And Agorzilla is a council member in a very good costume. I have no proof. Proof is for the Book. I do theories."]] },
         { q: "Do you take money from the embassies?", a: [["", "Take? I receive. With a brass band, a ribbon and a short speech. What they paid me for goes in the Book, like every promise on this island. You may read it. Bring a chair."]],
           more: { q: "Doesn’t the money buy your vote?", a: [["", "It buys a ceremony. The law still needs the council’s yes, and the council cannot be bought with a ribbon. I tried. Hana sent the ribbon back with corrections."]] } },
+        { when: "walk", q: "What is the board by the pier?", a: [["", "It counts the wallets that walked the island today. Each one sent a real payment on Tau Net in the last day. Click a walker and it tells you what its wallet does. Never who it is."]] },
       ],
     },
     hana: {
@@ -222,6 +273,10 @@
         ["smeared", "The children heard a rumour on Radio Coco. They checked the Book before break. It was a short break."],
         ["last", "Last day before the vote. I have marked every promise anyone made this week. Some of you will not like your marks."],
         ["early", "Good morning. The children are copying out every candidate’s promises, neatly, so they can compare them at the end of the week."],
+        ["walkNew", "A new walker today. Its first payment ever, on the testnet. The children waved. It did not wave back. Wallets are shy."],
+        ["ruleFloor", "A rule can read a wallet’s balance now. So a wallet can say: never below this line. The children call it the lunch money rule."],
+        ["rules", "Today’s lesson: on Tau Net, every wallet may write its own rule. The children wrote rules for their pocket money. Most of them chose: no sweets before Friday. Then they asked me to sign as the second key."],
+        ["walk", "The children have started a chart of the walkers. Night owls, early birds, banana carriers. They don’t know who any of them are. Only what their wallets do. That is the right way round."],
         ["", "Welcome back. Sit at the back, please. The front row is for people who did their homework."],
       ],
       ask: [
@@ -235,6 +290,8 @@
         { q: "Why run for council?", a: [["", "Because a good law is a lesson that keeps teaching after the teacher goes home. A speech stops when the speaker sits down."]] },
         { q: "What do the children say about Agorzilla?", a: [["", "Half the class says he is real, the other half says he is Kiko in a coat. They held a debate. Both sides quoted the same blurry photo. Everyone got a B."]] },
         { q: "Do the children hear the rumours too?", a: [["", "Before anyone. A rumour reaches the playground before it reaches the radio. The children bring them to class like shells from the beach, and we hold each one up to the Book. Most of them are empty."]] },
+        { when: "rulesAny", q: "What does a guardian protect against?", a: [["", "A payment made by mistake, or one somebody tricked you into. The guardian has to agree first. It does not help if someone steals your key. I make every child say that sentence twice."]],
+          more: { q: "Can a rule really stop its own owner?", a: [["", "Yes. The chain checks every payment against the sender’s own rule before it lets it in. Even the key that wrote the rule cannot get past it. The children tested it on paper first. Then on the test wallet."]] } },
       ],
     },
     kai: {
@@ -251,6 +308,8 @@
         ["harbour", "Since the harbour law, the readings look sad. The sensors don’t do politics. They just sign what they see."],
         ["dove", "Our dive is in the Book! Signed, sealed, slightly salty."],
         ["reef", "Big ships out of the bay, and the parrotfish are back. The sensors signed it, I signed it. The parrotfish didn’t, but you could tell."],
+        ["ruleHeld", "My sensors sign every reading. Wallets sign every payment. And today a wallet’s own rule refused a payment it had signed itself. The reef would like a rule like that for anchors."],
+        ["walk", "A walker came down to the dive shack. Didn’t swim. Just stood there, and then a green ring went out around its feet. Its wallet had just paid someone. Better than sonar."],
         ["", "Perfect visibility today. You can see the sand, the fish, and three sensors arguing with a turtle."],
         ["", "Hey, back for more? The reef is open. The coffee machine is not. Priorities."],
       ],
@@ -276,6 +335,8 @@
         ["road", "A road round the island! My coconuts will travel in style. Some of them have never seen the other side."],
         ["worked", "You worked a shift! You smell exactly right. Like someone who earned something."],
         ["early", "A fine morning! The coconuts are ripe, the co-op’s books balance, and nobody has asked me a hard question yet."],
+        ["walkBig", "A big mover walked past the Works today. Its wallet has moved a mountain of test coins. I offered it a job. It kept walking."],
+        ["rules", "Every wallet its own rule now, I hear. I wrote one for the co-op in my head: no coconut leaves without a receipt. Now I only have to learn Tau."],
         ["", "Welcome back, friend! Mind the organ. Did I say that already? I say it to everyone. Twice to Tobias."],
       ],
       ask: [
@@ -301,6 +362,8 @@
         ["road", "The road is law. Good. Trucks are coming, and trucks need someone who tells them where to park. That’s me, not the governor."],
         ["last", "Last day. Win or lose, my press starts at six tomorrow, and your coconuts had better be at the gate."],
         ["early", "Morning, candidate. The night shift made rope. Mostly rope. Some of it was supposed to be soap. My fault. I’ll fix it."],
+        ["ruleCap", "Some wallets on the chain have a most per payment, Baako. Written into their own rule. You should have one for promises."],
+        ["walk", "Walkers past the gate all day. None of them takes a shift. All of them sign things. I respect half of that."],
         ["", "Back again? Shifts are short, the pay is honest, and the organ is still off limits. Even for candidates."],
         ["", "You count coconuts, Baako. I count the hours they sit at my gate. Between us, nothing on this island goes uncounted."],
       ],
@@ -322,6 +385,8 @@
         ["shipHere+queen", "I measured the Queen from the cliff. Two hundred metres and a bit. The embassy wants to know what the bit would cost to dredge. I said: ask the council. They sighed."],
         ["deal", "Ah. You have signed with an embassy. That is not my business. I only measure. Although it was quite a thick envelope."],
         ["reef", "No big ships in the bay. The embassy asked me to measure the bay again. I did. It is still the same size."],
+        ["ruleFloor", "A rule that reads the balance before it lets a payment go. It measures first, then allows. That is all I have ever asked of anything."],
+        ["walk", "I counted the walkers. Then they moved. Then I counted again, and got a different number. The chain keeps a better count than I do. It is very annoying."],
         ["", "I measured the distance to your feet. Sorry. Habit. Two metres and a bit. The bit is the interesting part."],
         ["", "Oh. Hello again. Please don’t step on the string. That string is the coast, officially."],
       ],
@@ -347,6 +412,8 @@
         ["shipGone+dryrun", "They’ve gone, dear, and one of them left me a postcard. Of my own ship. I’ve labelled it."],
         ["key", "So you found what was behind the waterfall. I knew it, dear. The sea gives things back to the patient ones."],
         ["chart", "Still got my chart, dear? Good. Follow the water, not the path. Paths are made by people in a hurry."],
+        ["walkIdni", "The grey walkers are the oldest accounts on the chain, dear. IDNI set them up when the testnet began. I’ve given them a shelf of their own."],
+        ["walk", "I’ve started a catalogue of the walkers, dear. Item one: a wallet with a lantern. Item two: a wallet with a banana. Origin: the chain. Manners: excellent."],
         ["", "Back already, dear? I’ve just labelled the kettle. It was feeling left out."],
         ["", "Come aboard, dear, and mind the third step. It’s labelled, but nobody reads labels."],
       ],
@@ -369,6 +436,8 @@
         ["harbour", "The harbour law passed. Big ships, big waves. I’m building the sides higher."],
         ["last", "Last day before the vote. Everyone’s in a hurry. The wood doesn’t care."],
         ["early", "Morning. The wood is dry, the sea is calm, and nobody has asked me who I vote for. Yet."],
+        ["rules", "A rule for my canoe: three people, it floats. Four, it doesn’t. Now wallets on the chain write rules for themselves too. Theirs are written down. Mine is written in water."],
+        ["walkMany", "Lots of walkers today. Nobody asks for a canoe. Wallets don’t swim."],
         ["", "Back again. The canoe is one plank further than yesterday. That’s fast, for a canoe."],
       ],
       ask: [
@@ -389,6 +458,8 @@
         ["stoneSet", "Your stone sits in the circle. It does not vote. It listens, like you did. That is why it stays."],
         ["drummed", "The drums carried your truth across the hills. The hills don’t usually agree on anything. That evening they did."],
         ["circled", "You sat in the circle and listened. Rare, for a candidate. The others noticed. So did I."],
+        ["ruleCosign", "Two drums, one beat. That is a second signature. One wallet wants to pay, the other agrees, and only then the chain lets it through."],
+        ["walk", "The walkers come to the drums too. They don’t play. Somewhere a wallet signs a payment, and a green ring goes out around one of them. That is their beat."],
         ["", "You came back. The drums like that. Most people only come up here when there is bad news."],
         ["", "Welcome back. The drums are resting. A drummer rests between the beats. That’s half the music."],
       ],
@@ -407,6 +478,7 @@
         { q: "What does the North Wind really want?", a: [["", "A deep harbour. We say so openly. It is even in your Book. Ships need depth, and depth needs a vote. Ours is not a secret. It is merely expensive."]],
           more: { q: "And if the island says no?", a: [["", "Then we wait for the next election. The North Wind is patient. Unfortunately, so is your Book. It remembers who promised and did not deliver."]] } },
         { q: "Why not simply build it?", a: [["", "Because there is nobody here who can sign it for us. No chief, no master key, only a council and a Book. Honestly, it is exhausting. Elsewhere one handshake is enough."]] },
+        { when: "rulesAny", q: "Does the North Wind write rules for itself?", a: [["ruleHeld", "I hear a wallet’s own rule refused its own payment today. Imagine: a promise one cannot quietly break. Dreadful for diplomacy."], ["rules", "Every wallet with a rule of its own now. Charming. Where I come from, rules were something one wrote for other people."]] },
       ],
     },
     /* the resort's offer is game.js EMB.south; coming back, he talks about where your deal with him stands */
@@ -436,6 +508,8 @@
         ["southOwed+!road", "My investors call me every morning at six and ask the same thing: has our candidate proposed “A road round the island” yet? Please. Give me something to tell them."],   // his reminder (game.js EMB.south), so it is heard too
         ["southOffer+!road", "Ah, you came back! It’s the loungers, everybody comes back for the loungers. Same offer as before: the coins today, and you propose “A road round the island” before the election."],
         ["eventCoup", "About the council tree. That was my investors, not me, I swear on my moustache. I told them you can’t buy a tree on this island. They didn’t listen. Now they’ve met Ama, and they’re very quiet."],
+        ["ruleFloor", "A rule that reads the balance and never goes below the line! My investors would love that. Actually, they would hate it. Let’s not tell them."],
+        ["walkMany", "So many walkers on the island! Potential guests, all of them. Not one has booked a lounger. Yet."],
       ],
       ask: [
         { when: "ship", q: "Is the cruise ship good for the resort?", a: [["", "One ship a week, treatments booked, coins in escrow until the hour. That’s not mass tourism, that’s a reservation. I love a reservation."]],

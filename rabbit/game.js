@@ -690,6 +690,8 @@
     events().forEach(e => { if (e.day <= G.day) f["event" + e.id[0].toUpperCase() + e.id.slice(1)] = true; });
     /* a cruise ship near: which one, and whether it comes in a few days, tomorrow, today, is here or has left (shipFacts) */
     f.dark = darkNow();
+    /* what Tau Net shows today: the wallets that walk here and the personal rules on the chain (islelive.js) */
+    if (window.RABBIT_LIVE_WHEN) Object.assign(f, window.RABBIT_LIVE_WHEN());
     return Object.assign(f, shipFacts());
   }
   /* after dark in Germany (the island's own sky: ?hour=22:00 too): roughly half an hour after sunset to sunrise, by month */
