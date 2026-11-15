@@ -346,7 +346,7 @@
         const pa = (now - w.ping) / 4000;   // it just sent a transaction: a ring goes out
         if (pa >= 0 && pa < 1) { g.strokeStyle = `rgba(57,255,138,${1 - pa})`; g.lineWidth = 1.2; g.beginPath(); g.ellipse(w.x, w.y, 6 + pa * 22, 2 + pa * 7, 0, 0, Math.PI * 2); g.stroke(); }
         if (W.sel === w.a) { g.strokeStyle = "#39ff8a"; g.lineWidth = 1.2; g.beginPath(); g.ellipse(w.x, w.y + 0.5, 8, 2.6, 0, 0, Math.PI * 2); g.stroke(); }
-        const label = w.me ? T("you") : W.bubble && W.bubble.a === w.a && now < W.bubble.until ? title(w.d.traits[0]) : null;
+        const label = w.me ? (OF() && OF().count() ? "✉ " : "") + T("you") : W.bubble && W.bubble.a === w.a && now < W.bubble.until ? title(w.d.traits[0]) : null;
         if (label) bubble(g, w.x, top - 4, label, w.me);
       }]);
     }
@@ -375,7 +375,7 @@
     const w = W.by.get(id.slice(7)); if (!w) return "";
     return (w.me ? T("You") : title(w.d.traits[0])) + " · " + (w.d.idni ? T("an IDNI test account on Tau Net testnet, active today") : T("a real wallet on Tau Net testnet, active today"));
   }
-  const G = () => window.COVE_GAME;
+  const G = () => window.COVE_GAME, OF = () => window.ISLE_OFFERS;   // offers.js: rules proposed between wallets
   const short = a => a.slice(0, 6) + "…" + a.slice(-4);
   const day = s => { try { return new Intl.DateTimeFormat(window.TauI18n && TauI18n.lang === "zh" ? "zh-CN" : window.TauI18n && TauI18n.lang === "ja" ? "ja-JP" : "en-GB", { day: "numeric", month: "short", timeZone: "Europe/Berlin" }).format(new Date(s * 1000)); } catch (e) { return ""; } };
   function portrait(lk, traits, idni, size) {
@@ -393,7 +393,11 @@
       const who = el("div", { class: "cv-who" }, portrait(lk, w.d.traits, w.d.idni, size),
         el("div", null, el("b", { text: w.me ? T("You") : title(w.d.traits[0]) }), el("small", { translate: "no", text: short(id) })));
       const line = el("p", { class: "cv-line", text: (w.d.traits || []).slice(0, 3).map(title).join(" · ") }), list = el("ul", { class: "cv-help" }, el("li", { text: T("Reading the chain…") }));
+      const of = OF(), theirs = of && !w.me ? of.from(id).length : 0, mineN = of && w.me ? of.count() : 0;
       const acts = el("div", { class: "cv-acts" },
+        of && !w.me && !w.d.idni && of.can(id) ? game.btn(T("Propose a rule"), () => of.propose(id), { go: true }) : null,
+        theirs ? game.btn(theirs === 1 ? T("Read the rule it proposed to you") : F("Read the {n} rules it proposed to you", { n: theirs }), () => of.inbox()) : null,
+        w.me && of ? game.btn(mineN ? F("Rules proposed to you ({n})", { n: mineN }) : T("Rules proposed to you"), () => of.inbox()) : null,
         game.btn(T("In the Explorer"), () => window.open("/explorer/?a=" + id, "_blank", "noopener")),
         w.me ? game.btn(T("Choose your look"), () => choose()) : null,
         game.btn(T("Back to the island"), () => game.closeCard(), { go: true }));
@@ -428,7 +432,7 @@
         el("p", { class: "cv-line", text: T("Every wallet that sent a transaction on Tau Net testnet in the last day walks here by itself. Click one to see what the chain says about it: its rules, Agorzilla, No Memo, the island.") + (W.demo ? " " + T("(made-up walkers for a test)") : "") }),
         el("ul", { class: "cv-help wk-list" }, rows.map(d => el("li", null, el("button", { type: "button", class: "wk-row", onclick: () => open(d.a) }, portrait(look(d.a === myPk() && myLook() != null ? myLook() : d.look, d.a), d.traits, d.idni, 26), el("span", { translate: "no", text: short(d.a) }), el("span", { text: (d.traits || []).slice(0, 2).map(title).join(" · ") }))))),
         el("p", { class: "wk-note", text: T("Our own server's wallets never walk here: the cruise passengers and the island's bot are made up. IDNI's test accounts walk in grey.") }),
-        el("div", { class: "cv-acts" }, game.btn(T("Choose your look"), () => choose()), game.btn(T("Back to the island"), () => game.closeCard(), { go: true })));
+        el("div", { class: "cv-acts" }, game.btn(T("Choose your look"), () => choose()), OF() ? game.btn(T("Rules between wallets"), () => OF().inbox()) : null, game.btn(T("Back to the island"), () => game.closeCard(), { go: true })));
     });
   }
 
@@ -493,7 +497,11 @@
     finally { if (c) c.close(); if (b) b.disabled = false; }
   }
 
-  window.ISLE_WALKERS = { figure, look, gear, tip, open, board, choose, traits: TRAITS, goTo, remote, mine: () => !!(mineW() && ways()), at: a => { const w = W.by.get(a); return w ? [w.x, w.y] : null; } };
+  /* for offers.js: a wallet's face, its first trait, a ring when it sent something */
+  const faceOf = (a, size) => { const w = W.by.get(a), d = w ? w.d : (W.all || []).find(x => x.a === a) || { traits: [], look: null }; return portrait(w && w.lk ? w.lk : look(a === myPk() && myLook() != null ? myLook() : d.look, a), d.traits, !!d.idni, size); };
+  const titleOf = a => { const w = W.by.get(a), d = w ? w.d : (W.all || []).find(x => x.a === a); return d && d.traits && d.traits.length ? title(d.traits[0]) : null; };
+  const ping = a => { const w = W.by.get(a); if (w) w.ping = performance.now(); };
+  window.ISLE_WALKERS = { figure, look, gear, tip, open, board, choose, traits: TRAITS, goTo, remote, portrait: faceOf, title: titleOf, ping, mine: () => !!(mineW() && ways()), at: a => { const w = W.by.get(a); return w ? [w.x, w.y] : null; } };
   poll(); setInterval(poll, 60000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
   if (Q.get("islander") === "1") { const go = () => (G() ? setTimeout(choose, 600) : setTimeout(go, 500)); go(); }

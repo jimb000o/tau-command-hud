@@ -3127,5 +3127,11 @@
     "on": "2026-11-16",
     "link": "/rabbit/",
     "html": "White Rabbit Key: the islanders walk like people now. They keep to the paths, beaches, piers, rope bridges and stairs, and no longer cross houses, roofs, cliffs or water. If your test wallet walks on the island, it is yours to walk: click anywhere and your islander goes to the nearest spot it can reach on foot; click a place and it walks to the door first, and the place opens as it arrives. Everyone on the island sees it walk the same way. Only your wallet can walk it: your browser signs with its key once a day."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/",
+    "html": "White Rabbit Key: islanders propose rules to each other. Click another islander and propose a personal rule to its wallet: a most per payment, or “above this amount, I co-sign”. Rules proposed to your wallet appear under ✉ at the top of the island, in plain words and in Tau; you accept or decline, and only your own wallet can take a rule (accepting is a transaction this browser signs, and it replaces the rule you hold now). A rule only says yes or no to its own wallet’s payments; it never moves money. You can also propose to any wallet by its address. This is Tau Net’s own rule sharing, the same offers the wallet page shows under Activity."
   }
 ]
