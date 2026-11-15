@@ -3079,5 +3079,11 @@
     "tag": "Chinese",
     "on": "2026-11-15",
     "html": "Chinese: green and red mean the same as everywhere again. Green is live, OK and accepted, red is offline, an error or a refusal. Only where money moves does the Chinese market custom apply: a balance that rises shows red, one that falls shows green (Explorer, account pages). Badges with ?lang=zh stay green when live."
+  },
+  {
+    "tag": "Cruise logbook",
+    "on": "2026-11-15",
+    "link": "/cruise/",
+    "html": "Cruise logbook: on wide screens the page sits centred again instead of in the right half, and the node’s answer to an escrow or a skipped line stays on its own row. On laptops those short notes now show too."
   }
 ]
