@@ -59,7 +59,54 @@
     });
     // the small pictures elsewhere on the page (menus, the services list)
     document.querySelectorAll('img[src*="agorzilla"]').forEach(im => { const u = im.getAttribute("src"), v = src(u, st); if (v !== u) im.setAttribute("src", v); });
-    if (changed) dispatchEvent(new CustomEvent("agz-stage", { detail: st }));
+    return changed;
+  };
+  /* From Grown on agorzilla.com draws him from paintings of their own (its assets/rig/<painting>/, the way the feeders chose
+     when that way is painted). latest.json names the painting and where its eyes, lids, brows, mouth and pendant sit on it
+     (paint: {id, dir, at}); every Agorzilla here then shows those same pictures, straight from agorzilla.com, in those same
+     places (15.11.2026: "whatever stage and optics it has there, automatically"). A new painting there needs nothing here. */
+  const AGZ = "https://agorzilla.com/";
+  let paint = (() => { try { return JSON.parse(localStorage.getItem("agz-paint") || "null"); } catch (e) { return null; } })();
+  const PIECE = /(?:^|\/)(?:agz-)?(head|body|brow-l|brow-r|eye-l|eye-r|feet)\.webp(?:\?.*)?$/, FLAT = /agorzilla(?:-[a-z]+)?\.webp/;
+  const mine = new WeakMap();   // what this set inline, so it can be taken back
+  const put = (e, k, v) => { if (v == null || v === "") return; e.style.setProperty(k, v); if (!mine.has(e)) mine.set(e, new Set()); mine.get(e).add(k); };
+  const takeBack = root => [root, ...root.querySelectorAll("*")].forEach(e => { const m = mine.get(e); if (m) { m.forEach(k => e.style.removeProperty(k)); mine.delete(e); } });
+  const absUrl = v => String(v || "").replace(/url\("?([^")]+)"?\)/g, (m, u) => `url("${/^https?:/.test(u) ? u : AGZ + "assets/" + u}")`);
+  const swap = (im, to) => { const u = im.getAttribute("src") || ""; if (!im.dataset.agzOrig && !u.startsWith(AGZ)) im.dataset.agzOrig = u; if (u !== to) im.setAttribute("src", to); };
+  const unswap = im => { if (im.dataset.agzOrig) { im.setAttribute("src", im.dataset.agzOrig); delete im.dataset.agzOrig; } };
+  function painted(p) {
+    const dir = AGZ + (p.dir || `assets/rig/${p.id}/`), at = p.at || {}, A = s => at[s] || {};
+    document.querySelectorAll("[data-agz-look]").forEach(el => {
+      takeBack(el);
+      el.querySelectorAll("img").forEach(im => {
+        const u = im.dataset.agzOrig || im.getAttribute("src") || "", m = PIECE.exec(u);
+        if (m) swap(im, dir + m[1] + ".webp"); else if (FLAT.test(u)) swap(im, dir + "feet.webp");
+      });
+      const box = (sel, d, keys) => el.querySelectorAll(sel).forEach(e => keys.forEach(k => put(e, k, d[k])));
+      for (const s of ["l", "r"]) {
+        box(`.eye.${s}, .lid.${s}`, A(`:is(.eye, .lid).${s}`), ["left", "top", "width", "height"]);
+        box(`.brow.${s}`, A(`img.brow.${s}`), ["left", "top", "width"]); el.querySelectorAll(`.brow.${s}`).forEach(e => put(e, "height", "auto"));
+        for (const t of ["b", "s"]) el.querySelectorAll(`.lid.${s} ${t}`).forEach(e => put(e, "background-image", absUrl(A(`.lid.${s} ${t}`)["background-image"])));
+      }
+      box(".mouth", A(".mouth"), ["left", "top", "width"]); box(".tgw", A(".tgw"), ["left", "top", "width"]);
+      const mask = (sel, v) => el.querySelectorAll(sel).forEach(e => { put(e, "mask-image", absUrl(v)); put(e, "-webkit-mask-image", absUrl(v)); });
+      mask(".agz-pl", A(".plight")["mask-image"]); mask("img.agz-back", A(".silver")["mask-image"]); mask("img.agz-muz", A(".grey")["mask-image"]);
+      el.querySelectorAll(".hd, .head, .gaze").forEach(e => put(e, "transform-origin", A(".gaze")["transform-origin"] || A(".head")["transform-origin"]));
+      // the painting is already its age: no shrinking eyes, darker skin or lifted head on top
+      for (const [k, v] of [["--agz-eye", "1"], ["--agz-skin", "1"], ["--agz-grey", "0"], ["--agz-iris", "1"], ["--agz-nx", "0%"], ["--agz-ny", "0%"], ["--agz-hs", "1"]]) put(el, k, v);
+      el.dataset.agzPaint = p.id;
+    });
+    document.querySelectorAll('img[src*="agorzilla"]').forEach(im => { if (!im.closest("[data-agz-look]") && FLAT.test(im.dataset.agzOrig || im.getAttribute("src"))) swap(im, dir + "feet.webp"); });
+  }
+  function unpainted() {
+    document.querySelectorAll("[data-agz-look]").forEach(el => { takeBack(el); delete el.dataset.agzPaint; });
+    document.querySelectorAll("img[data-agz-orig]").forEach(unswap);
+  }
+  const drawn = (prev, now, t) => {   // the painting (or none) after the stage: grow() sets the baby-based age, a painting overrides it
+    const was = prev && prev.id;
+    paint = now; try { localStorage.setItem("agz-paint", JSON.stringify(now)); } catch (e) { /* the next page fetches it again */ }
+    if (now) painted(now); else if (was) { unpainted(); grow(stage, t); }
+    return (was || null) !== (now ? now.id : null);
   };
   const apply = d => {
     const t = d && d.traits; if (!t) return;
@@ -69,14 +116,16 @@
       if (fur) el.style.setProperty("--agz-fur", fur);
       el.dataset.agzPendant = key(t.pendant); el.dataset.agzFur = key(t.fur);
     });
-    grow(key(d.stage), t);
+    const prev = paint; paint = d.paint && d.paint.id ? d.paint : null;   // before grow, so the pages' listeners see it
+    const grew = grow(key(d.stage), t), repainted = drawn(prev, paint, t);
+    if (grew || repainted) dispatchEvent(new CustomEvent("agz-stage", { detail: stage }));
   };
   const poll = async () => {
     try { const r = await fetch("https://agorzilla.com/chain/latest.json", { cache: "no-store" }); if (r.ok) apply(await r.json()); } catch (e) { /* keeps the last look */ }
   };
-  window.AgzLook = { apply, src: u => src(u, stage), get stage() { return stage; } };
+  window.AgzLook = { apply, src: u => src(u, stage), get stage() { return stage; }, get paint() { return paint; } };
   // the remembered stage at once, so a grown-up never opens as a baby for the first seconds
-  const early = () => { if (stage !== "baby") grow(stage, null); };
+  const early = () => { if (stage !== "baby") grow(stage, null); if (paint) painted(paint); };
   document.readyState === "loading" && !document.querySelector("[data-agz-look]") ? addEventListener("DOMContentLoaded", early) : early();
   const me = document.currentScript;
   if (me && me.hasAttribute("data-poll")) {
