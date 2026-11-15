@@ -76,6 +76,9 @@ def _cmps(n: dict, up: list):
 
 def kinds(text: str) -> dict:
     """{"kinds": [...], "size": comparisons on inputs} for one rule text. A text the reader cannot parse is "other"."""
+    text = str(text or "").strip()
+    if not re.match(r"always\b", text):   # the node answers a clause body without its "always ( … )." (getruleoffers)
+        text = f"always ( {text} )."
     try:
         tree = rulefacts.parse(text)
     except Exception:

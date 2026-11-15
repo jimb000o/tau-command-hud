@@ -26,6 +26,8 @@
   }
   function kinds(text) {
     let tree;
+    text = String(text || "").trim();
+    if (!/^always\b/.test(text)) text = `always ( ${text} ).`;   // the node answers a clause body without its "always ( … )." (getruleoffers)
     try { tree = RF().parse(text); } catch (e) { return { kinds: ["other"], size: 0 }; }
     const list = [...cmps(tree, [])];
     const reads = new Set();

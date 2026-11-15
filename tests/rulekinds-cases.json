@@ -111,6 +111,22 @@
   "size": 2
  },
  {
+  "name": "a clause body as the node answers it, without always",
+  "text": "(i1[t]:bv[24] >= { #x001389 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24])",
+  "kinds": [
+   "cap"
+  ],
+  "size": 1
+ },
+ {
+  "name": "the same body in parentheses",
+  "text": "((i5[t]:bv[64] < {1798761600}:bv[64]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]))",
+  "kinds": [
+   "time"
+  ],
+  "size": 1
+ },
+ {
   "name": "text the reader cannot parse",
   "text": "o5 is whatever",
   "kinds": [
