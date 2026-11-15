@@ -138,6 +138,7 @@ e3 = w.make_gazette(w.recap_numbers(END), END + 300)
 idx = json.load(open(os.path.join(g, "editions.json")))
 check(e2["no"] == 2 and e3["no"] == 2 and [x["no"] for x in idx] == [2, 1], "the Monday edition is No. 2; written again the same day it keeps its number")
 check(set(idx[0]) >= {"no", "date", "banner", "teaser", "url"}, "the archive lists number, date, headline, teaser and link")
+check(len({x["banner"]["en"] for x in idx}) == len(idx) and all(x.get("sig") for x in idx), "no two editions in the archive share a headline")
 check(e2["stories"][1]["body"][0]["en"].startswith("Across town from the real testnet") and "In the simulation, where the visitors decide, two hourly" in json.dumps(e2["stories"][1]), "the week's noted day goes into the rehearsal hall")
 alerts.PUBLIC_DIR, w0 = TMP, alerts.Watcher
 alerts.Watcher = Relay
@@ -145,6 +146,18 @@ code = alerts.gazette_cli(reprint=True)
 alerts.Watcher = w0
 idx = json.load(open(os.path.join(g, "editions.json")))
 check(code == 0 and [x["no"] for x in idx] == [2, 1] and json.load(open(os.path.join(g, "latest.json")))["date"] == "2026-11-09", "a reprint keeps the latest edition's number, date and week")
+
+# ---- every edition is its own (the café's archive room lists them by headline) ----
+quiet = week(end=END, start=END - 7 * 86400)
+eds, seen = [], set()
+for k in range(5):   # five weeks that are word for word the same week
+    x = gazette.edition(quiet, [], [], 10 + k, END + k * 7 * 86400, seen=seen)
+    seen.add(x["banner"]["en"]); eds.append(x)
+heads = [x["banner"]["en"] for x in eds]
+check(len(set(heads)) == 5 and heads[1] == heads[0] + ", again" and heads[2] == heads[0] + " · No. 12", f"the same news never prints the same headline twice {heads[:3]}")
+check(all(x["banner"]["zh"] and x["banner"]["ja"] for x in eds) and eds[1]["banner"]["zh"].endswith("又一次"), "the headline's repeat mark is in all three languages")
+check(len({gazette.signature(x) for x in eds}) == 5 and gazette.summary(eds[0])["sig"] == gazette.signature(eds[0]), "each edition has its own signature in the archive list")
+check(eds[1]["banner"]["en"] in json.dumps(eds[1]["cafe"]["sully"]), "Sully calls the headline as printed")
 
 
 # ---- the café walk's talk of the week ----
