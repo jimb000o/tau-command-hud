@@ -55,7 +55,14 @@ if (list) {
     }
     if ("link" in e && (typeof e.link !== "string" || !/^(\/[^\s"<>]*|https:\/\/[^\s"<>]+)$/.test(e.link)))
       fail(`${at} "link" should be a tauhud.com path like "/gxp/" or a full https address: ${e.link}`);
-    for (const k of Object.keys(e)) if (!["tag", "on", "html", "link", "major", "backfill"].includes(k)) fail(`${at} has an unknown field "${k}"`);
+    if ("x" in e) {   // a feature post on X, drafted by the server, posted only by the owner (infra/alerts/xfeatures.py checks the rest)
+      const x = e.x || {};
+      if (!/^[a-z0-9][a-z0-9-]{2,60}$/.test(x.id || "")) fail(`${at} "x" needs an id of lowercase letters, digits and dashes`);
+      if (!["hud", "agorzilla"].includes(x.account)) fail(`${at} "x" account should be "hud" or "agorzilla"`);
+      if (typeof x.text !== "string" || [...x.text].length > 280) fail(`${at} "x" text should be a post of at most 280 characters`);
+      if (!x.film || !/^https:\/\//.test(x.film.url || "")) fail(`${at} "x" needs a film of the live page ({url, steps})`);
+    }
+    for (const k of Object.keys(e)) if (!["tag", "on", "html", "link", "major", "backfill", "x"].includes(k)) fail(`${at} has an unknown field "${k}"`);
   });
 
   for (const [at, img] of images) {
