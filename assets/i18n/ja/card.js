@@ -1,5 +1,15 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  /* Déjà on the card (15.11.2026) */
+  "and": "と",
+  "Meals": "食事",
+  "days Déjà ate": "Déjà が食べた日",
+  "{n}× the third": "{n} 回 3 番目",
+  "helped Déjà eat on one day": "Déjà が食べられた日を 1 日つくり",
+  "helped Déjà eat on {n} days": "Déjà が食べられた日を {n} 日つくり",
+  "Help Déjà eat": "Déjà にごはんを",
+  "The café cat eats on a day only when three wallets agree. Be one of the three.": "カフェの猫は 3 つのウォレットが合意した日にだけ食べる。その 3 つの 1 つになろう。",
+  "Déjà": "Déjà",
   "/card/": "/card/",
   "My Tau card": "マイ Tau カード",
   "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post": "あなたのウォレットを 1 枚の画像に：書いたルール、投票、Agorzilla の食事、カフェのスタンプ。そのまま投稿できます",

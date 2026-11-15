@@ -7,13 +7,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>My Tau card</title>
-<meta name="description" content="One picture of what your test wallet did on Tau Testnet Alpha: rules written, votes, Agorzilla meals and café stamps. Post it or keep it. Test AGRS only, nothing priced or promised.">
+<meta name="description" content="One picture of what your test wallet did on Tau Testnet Alpha: rules written, votes, meals for Agorzilla and Déjà, and café stamps. Post it or keep it. Test AGRS only, nothing priced or promised.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#09090a">
 <meta property="og:title" content="Tau HUD · My Tau card">
-<meta property="og:description" content="One picture of what your test wallet did on Tau Testnet Alpha: rules written, votes, Agorzilla meals and café stamps.">
+<meta property="og:description" content="One picture of what your test wallet did on Tau Testnet Alpha: rules written, votes, meals for Agorzilla and Déjà, and café stamps.">
 <meta property="og:image" content="https://tauhud.com/assets/og/card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -189,7 +189,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
   <div>
     <p class="lead" id="lead">Your wallet on one card, ready to post.</p>
       <p class="sub tauwhy">Tau Testnet Alpha is live: a public test chain whose rules are written in logic, checked before they apply, and changed only by agreement.</p>
-    <p class="sub">Rules written, votes cast, <b>Agorzilla</b> meals and <b>café</b> stamps, read straight from the testnet. Test AGRS have no value: nothing on this card is priced or promised.</p>
+    <p class="sub">Rules written, votes cast, <b>Agorzilla</b> and <b>Déjà</b> meals and <b>café</b> stamps, read straight from the testnet. Test AGRS have no value: nothing on this card is priced or promised.</p>
   </div>
   <main class="main">
     <div class="stage reading" id="stage">
@@ -274,6 +274,7 @@ function line(c) {
   if (c.rules) p.push(F(c.rules === 1 ? "wrote 1 rule" : "wrote {n} rules", { n: c.rules }));
   if (c.votes) p.push(F(c.votes === 1 ? "cast 1 vote" : "cast {n} votes", { n: c.votes }));
   if (c.meals) p.push(c.meals === 1 ? T("fed Agorzilla once") : F("fed Agorzilla {n} times", { n: c.meals }));
+  if (c.deja) p.push(c.deja === 1 ? T("helped Déjà eat on one day") : F("helped Déjà eat on {n} days", { n: c.deja }));
   if (!p.length) return T("Just arrived on Tau Testnet Alpha.");
   return FX("This wallet {x}.", { x: p.length > 1 ? p.slice(0, -1).join(L === "zh" ? "，" : L === "ja" ? "、" : ", ") + (L === "zh" ? "，并" : L === "ja" ? "、" : " and ") + p[p.length - 1] : p[0] });
 }
@@ -334,7 +335,17 @@ function draw(c, hash, stamps = STAMPS, full = c) {
   const rn = [["own", "{n} own"], ["offered", "{n} offered"], ["proposed", "{n} proposed"]].filter(([key]) => c[key]).map(([key, s]) => F(s, { n: c[key] }));
   tile(0, "Rules written", nf.format(c.rules || 0), rn.join(" · ") || T("own rules, offers, changes"), c.rules > 0);
   tile(1, "Votes cast", nf.format(c.votes || 0), F("{n} on rules · {m} for Agorzilla", { n: c.rule_votes || 0, m: c.agz_votes || 0 }), c.votes > 0);
-  tile(2, "Agorzilla meals", nf.format(c.meals || 0), T("one counts per hour"), c.meals > 0);
+  /* meals: Agorzilla's on the left; on the right the days Déjà ate with this wallet among the three who agreed
+     (agorzilla.com/cat/), and in green how often it was the third, the one that made her agreement hold */
+  const fedAny = c.meals > 0 || c.deja > 0, half = w / 2;
+  lit(2, fedAny);
+  txt(T("Meals").toUpperCase(), xs[2] + 20, y0 + 16, `600 12px ${SORA}`, fedAny ? C.text : C.dim);
+  [[c.meals || 0, T("Agorzilla")], [c.deja || 0, T("days Déjà ate")]].forEach(([v, note], k) => {
+    const x = xs[2] + 20 + k * half;
+    txt(nf.format(v), x, y0 + 40, `600 40px ${SORA}`, v > 0 ? C.white : C.faint);
+    g.font = fit(note, 13, 400, MONO, half - 24); g.fillStyle = C.dim; g.textAlign = "left"; g.fillText(note, x, y0 + 104);
+  });
+  if (c.deja_third > 0) { const t3 = F("{n}× the third", { n: c.deja_third }); g.font = fit(t3, 13, 400, MONO, half - 24); g.fillStyle = C.ok; g.fillText(t3, xs[2] + 20 + half, y0 + 124); }
   lit(3, stamps > 0);
   txt(T("Café stamps").toUpperCase(), xs[3] + 20, y0 + 16, `600 12px ${SORA}`, stamps > 0 ? C.text : C.dim);
   const step = (w - 40 - 56) / 3;
@@ -363,6 +374,7 @@ function fillList(c) {
     [c.rules > 0, "Write a rule", "Your own transfer rule, checked by the testnet.", "/wallet/#rules-mine", "Wallet"],
     [c.votes > 0, "Cast a vote", "Say yes or no to a rule change, or to Agorzilla's evening question.", "/proposals/", "Rule changes"],
     [c.meals > 0, "Feed Agorzilla", "One test AGRS is a meal; every wallet's meals shape it.", "https://agorzilla.com", "Agorzilla"],
+    [c.deja > 0, "Help Déjà eat", "The café cat eats on a day only when three wallets agree. Be one of the three.", "https://agorzilla.com/cat/", "Déjà"],
     [STAMPS >= 4, "Walk through the café", "Four regulars, four stamps on your ticket.", "/gazette/walk/", "The café"],
   ];
   $("fill").replaceChildren(...rows.map(([done, t, d, h, go]) => {
@@ -378,7 +390,7 @@ function fillList(c) {
 const PAL = window.CardAgz || { set() {} };
 
 /* how much is on the card: one step for each kind of thing done, the café counted by its stamps */
-const moodOf = c => { const n = !c ? 0 : (c.rules > 0) + (c.votes > 0) + (c.meals > 0) + STAMPS / 4; return n ? Math.max(1, Math.round(n)) : 0; };
+const moodOf = c => { const n = !c ? 0 : (c.rules > 0) + (c.votes > 0) + (c.meals > 0 || c.deja > 0) + STAMPS / 4; return n ? Math.max(1, Math.round(n)) : 0; };
 const MOODS = [
   "An empty card. Agorzilla was so hoping for one rule.",
   "He's cheering up a little. There's still room on the card.",
