@@ -2913,4 +2913,5 @@ TauI18n.add({ strings: {
   "· made with Tau HUD’s rule builder": "· 用 Tau HUD 的规则构建器写成",
   "Rule offers": "规则提议",
   "Rule offers on the HUD: click an offer and the offerer and recipient open their accounts. The popup says who they are where we know it (a showcase wallet, an IDNI genesis wallet, a game player), the rule each holds now, and how many offers each made and received. A rule that keeps a reserve ((i2 − i1) ≥ X) was shown as a spending limit; it now reads as a balance floor.": "HUD 上的规则提议：点开一个提议，提供方和接收方都能打开各自的账户。弹窗会在我们知道时说明他们是谁（展示钱包、IDNI 创世钱包、游戏玩家）、各自现在持有的规则，以及各自发出和收到了多少提议。一条保留余额的规则（(i2 − i1) ≥ X）之前被显示为支出上限，现在读作余额下限。",
+  "My Tau card counts Déjà too: the meals tile shows Agorzilla’s meals and the days Déjà, the café cat on agorzilla.com/cat/, ate with your wallet among the three that agreed, and in green how often yours was the third, the one that made her agreement hold.": "我的 Tau 卡片也算上 Déjà 了：餐数格显示 Agorzilla 的餐数，以及 Déjà（agorzilla.com/cat/ 上的咖啡馆猫）在你的钱包是三个同意者之一时吃上饭的天数；绿色字显示你有几次是第三个，也就是让约定成立的那一个。",
 } });

@@ -1,5 +1,15 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  /* Déjà on the card (15.11.2026) */
+  "and": "和",
+  "Meals": "餐数",
+  "days Déjà ate": "Déjà 吃上饭的天数",
+  "{n}× the third": "{n} 次是第三个",
+  "helped Déjà eat on one day": "帮 Déjà 吃上了一天的饭",
+  "helped Déjà eat on {n} days": "帮 Déjà 吃上了 {n} 天的饭",
+  "Help Déjà eat": "帮 Déjà 吃上饭",
+  "The café cat eats on a day only when three wallets agree. Be one of the three.": "咖啡馆的猫只有在三个钱包同意的那天才吃饭。来当三个之一吧。",
+  "Déjà": "Déjà",
   "/card/": "/card/",
   "My Tau card": "我的 Tau 卡片",
   "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post": "一张图看你的钱包：写过的规则、投票、Agorzilla 餐数、咖啡馆印章；可直接分享",
