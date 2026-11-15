@@ -3085,5 +3085,11 @@
     "on": "2026-11-15",
     "link": "/cruise/",
     "html": "Cruise logbook: on wide screens the page sits centred again instead of in the right half, and the node’s answer to an escrow or a skipped line stays on its own row. On laptops those short notes now show too."
+  },
+  {
+    "tag": "Newspaper",
+    "on": "2026-11-15",
+    "link": "/gazette/?cafe=archive",
+    "html": "Newspaper: the café walk has a new room between the back room and the door, the archive. It keeps every edition of The Daily Consensus, newest first: open one to see its headline and teaser, then read that whole front page. From the door, go left to get in. And no two editions ever print the same headline."
   }
 ]
