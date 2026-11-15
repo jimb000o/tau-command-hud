@@ -27,6 +27,7 @@ assert rule_parts("always ( (i5[t]:bv[64] < {1800000000}:bv[64]) ? (o5[t]:bv[24]
 
 path = os.path.join(tempfile.mkdtemp(), "walkers.json")
 w = Walkers(path)
+w.since = NOW - 10 * 86400   # a record that began long ago
 blocks = [
     blk(NOW - 3600, 10, (A, BOWL, 5), (B, C, 50), (BOT, A, 1)),
     blk(NOW - 3000, 11, (A, DEJA, 1), (A, BOX, 101), (A, BOX, 102), (A, BOX, LOOK + 77), (IDNI, B, 1000)),
@@ -68,4 +69,11 @@ assert "nightowl" in [k for k, _ in n.card(C, night + 100)["traits"]]
 w.save(force=True)
 again = Walkers(path)
 assert again.active(NOW, ours={BOT}) == w.active(NOW, ours={BOT})
+# a record begun today calls nobody a newcomer: the blocks it read first may be old wallets
+fresh = Walkers(os.path.join(tempfile.mkdtemp(), "f.json"))
+fresh.add_blocks([blk(NOW - 100, 5, (A, C, 1))])
+fresh.since = NOW - 3600
+assert "newcomer" not in [k for k, _ in fresh.card(A, NOW)["traits"]]
+fresh.since = NOW - 3 * 86400
+assert "newcomer" in [k for k, _ in fresh.card(A, NOW)["traits"]]
 print("walkers ok")
