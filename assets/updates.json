@@ -3121,5 +3121,11 @@
     "on": "2026-11-16",
     "link": "/rabbit/",
     "html": "White Rabbit Key: the islanders talk about Tau Net today. They notice the wallets that walk on the island (newcomers, night owls, Agorzilla’s feeders, rule writers, IDNI’s grey accounts) and the personal rules on the chain (a most per payment, a time lock, a second signature, a reserve, a freeze, rule offers, a payment a wallet’s own rule refused today, a restart that took every rule with it). The lines follow the live numbers. New free questions: who the walkers are, what a personal rule is, what a guardian protects against, whether a pact can be written on the chain."
+  },
+  {
+    "tag": "Wallets",
+    "on": "2026-11-16",
+    "link": "/account/",
+    "html": "Wallets from our apps: where the HUD and the account page show a wallet, they now say when it came from one of our apps. A wallet whose first transaction we know of was signed in Tau HUD, No Memo, White Rabbit Key or Agorzilla reads “Started in Tau HUD” and so on, with the day; one that only sent through them later reads “Uses …”. It shows next to a rule holder, in a rule offer’s popup, in Worth a look and as a tag on the account page. Only for visitors’ wallets, never for IDNI’s or our own, and only when our server saw it: a wallet from before its record began never gets a start. A wallet is a key, not a person."
   }
 ]

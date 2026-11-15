@@ -2872,4 +2872,7 @@ TauI18n.add({ strings: {
   "· made with Tau HUD’s rule builder": "· Tau HUD のルールビルダーで作成",
   "Rule offers": "ルールの提案",
   "Rule offers on the HUD: click an offer and the offerer and recipient open their accounts. The popup says who they are where we know it (a showcase wallet, an IDNI genesis wallet, a game player), the rule each holds now, and how many offers each made and received. A rule that keeps a reserve ((i2 − i1) ≥ X) was shown as a spending limit; it now reads as a balance floor.": "HUD のルールの提案：提案をクリックすると、提案者と受取人のアカウントを開けます。わかる範囲でだれなのか（ショーケースのウォレット、IDNI のジェネシスウォレット、ゲームのプレイヤー）、いま持っているルール、それぞれが出した提案と受け取った提案の数を表示します。残高を残すルール（(i2 − i1) ≥ X）が支出上限として表示されていましたが、いまは残高の下限として読みます。",
+  /* wallets from our apps (assets/origins.js app) */
+  "a Tau HUD user": "Tau HUD のユーザー",
+  "A wallet we know nothing more about: not one we recognise as Tau HUD’s or IDNI’s, nor one we have seen send through our apps.": "それ以上は分からないウォレット：Tau HUD や IDNI のものではなく、私たちのアプリを通じて送信したのも見ていません。",
 } });
