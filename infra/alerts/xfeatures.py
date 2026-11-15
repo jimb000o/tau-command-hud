@@ -62,6 +62,10 @@ SERVER_LINE = 'ssh root@node.tauhud.com "cd /opt/tau-command-hud && git pull && 
 SLOP = ["excited to announce", "thrilled", "game-changer", "game changer", "revolutionary", "unleash", "supercharge",
         "level up", "don't miss", "dive in", "delve", "seamless", "cutting-edge", "next-level", "to the moon", "🚀", "🔥",
         "💥", "🤯", "pump it", "buy now", "financial advice"]
+# bold safety claims a regulator would read as a promise (Kilian, 15 Nov 2026: for every text of the project)
+BOLD = ["cannot lose", "can't lose", "can not lose", "never lose", "risk-free", "risk free", "no risk", "zero risk",
+        "guaranteed", "guarantee", "completely safe", "totally safe", "100% safe", "fully safe", "perfectly safe",
+        "cannot be stolen", "can't be stolen", "can never be stolen", "unhackable", "impossible to hack", "always safe"]
 TAGS = {"hud": ["#TauNet", "$AGRS"], "agorzilla": ["#TauNet"]}
 
 
@@ -130,6 +134,9 @@ def problems(p: dict) -> list[str]:
     for w in SLOP:
         if w in low:
             out.append(f"text: {w.strip()!r} reads as hype")
+    for w in BOLD:
+        if w in low:
+            out.append(f"text: {w!r} is a safety promise we cannot make")
     if re.search(r"https?://|\bwww\.", text):
         out.append("text: no links (the film carries the post; the profile has the site)")
     for t in TAGS.get(acc, []):
