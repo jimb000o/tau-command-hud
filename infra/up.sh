@@ -66,6 +66,9 @@
 #              up showcase   the three showcase wallets (relay/showcase.py): the relay rebuilt alone with the code just pulled
 #                            (the node left alone; not while a cruise ship is due), then each wallet's rule and last daily
 #                            try; up showcase status  only those
+#              up vaults     No Memo's vaults (relay/vaults.py): the relay rebuilt alone with the code just pulled (the node left
+#                            alone; not while a cruise ship is due, --now overrides), then each vault's rule in words, balance,
+#                            who took most this week, and the keeper's lease; up vaults status  only those
 #              up knowledge  Tau today for AI assistants (tauhud.com/facts/, llms.txt): the build pulse rebuilt with the code
 #                            just pulled, Caddy given its two files, then both written at once and what they hold; the
 #                            node left alone, safe any time; up knowledge status  only what they hold now
@@ -521,6 +524,38 @@ for k, x in (d.get("stories") or {}).items(): print("story %-8s %02d:00 %s: %s" 
 k = d.get("desk") or {}
 if k: print("rule desk: %s starter offers today of %s, %s waiting" % (k.get("today"), k.get("per_day"), k.get("waiting")))
 for n in d.get("log", [])[-6:]: print("  · %s %s: %s" % (time.strftime("%d.%m %H:%M", time.gmtime(n["t"])) + "Z", n["wallet"], n["note"][:110]))' 2>&1 || echo "relay /showcase not answering yet"
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# No Memo's vaults (relay/vaults.py): wallets whose key is played as leaked, their real rules the only lock; the keeper takes
+# a player's rule if it passes its checklist (the checker judges it). up vaults  the relay rebuilt alone with the code just
+# pulled (not while a cruise ship is due, --now overrides), then the vaults; their rules go on the chain within minutes by
+# themselves, the faucet funds each new vault at its first transaction. up vaults status  only the vaults, nothing rebuilt
+if [ "${1:-}" = "vaults" ]; then
+  if [ "${2:-}" != "status" ]; then
+    when=$(TZ=Europe/Berlin date +%u%H)
+    case "$when" in 315|316|317|410|411|613|614|615|616)
+      if [ "${2:-}" != "--now" ]; then
+        echo "a cruise ship or the hack replay is due or under way now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
+        echo "try again after the visit, or: up vaults --now"; exit 1
+      fi ;;
+    esac
+    docker compose up -d --build --no-deps relay
+    echo "waiting 20 s for the relay to read the chain…"; sleep 20
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T relay python -c 'import json,time,urllib.request
+d=json.load(urllib.request.urlopen("http://127.0.0.1:8080/vaults?words=1", timeout=20))
+if not d.get("ready"): print("vaults: not ready (enabled=%s); see: docker compose logs relay | grep vault" % d.get("enabled")); raise SystemExit
+for k, v in d["vaults"].items():
+    print("%-8s %s… rule %-8s balance %-9s %s" % (k, (v["pk"] or "")[:10], "IN FORCE" if v["in_force"] else "not yet", v["balance"], v.get("words", "")))
+    if v.get("drained"): print("         drained %s by %s" % (time.strftime("%d.%m %H:%M", time.gmtime(v["drained"]["t"])) + "Z", v["drained"]["by"]))
+    if v.get("top"): print("         this week: " + ", ".join("%s %s" % (a, n) for a, n in v["top"]))
+k = d["keeper"]
+print("keeper lease: %s · waiting %s · paid today %s of %s" % (k["lease"] or "none", d["waiting"], d["today"], d["limits"]["daily"]))
+for n in d.get("log", [])[-6:]: print("  · %s %s: %s" % (time.strftime("%d.%m %H:%M", time.gmtime(n["t"])) + "Z", n["vault"], n["note"][:110]))' 2>&1 || echo "relay /vaults not answering yet"
+  docker compose exec -T relay python -c 'import urllib.request;print("checker from the relay:", urllib.request.urlopen("http://checker:8090/check/health", timeout=10).status)' 2>&1 | tail -1
   echo "---------------- to here --------------------------------------"
   exit 0
 fi

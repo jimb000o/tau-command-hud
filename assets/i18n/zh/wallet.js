@@ -726,4 +726,7 @@ TauI18n.add({ strings: {
   "Tau HUD’s rule desk offers your wallet a starter rule through rule sharing: at most 1,000 test AGRS per payment. It shows up here after the next block or two; you read it, then accept or decline it.": "Tau HUD 的规则服务台通过规则共享给你的钱包提供一条入门规则：每笔付款最多 1,000 测试 AGRS。它会在一两个区块后出现在这里；你先阅读，再接受或拒绝。",
   "Asking Tau HUD’s rule desk…": "正在询问 Tau HUD 的规则服务台…",
   "Asked. The offer arrives with the next block or two.": "已询问。提议会在一两个区块后到达。",
+  "Your islander": "你的岛民",
+  "Your wallet walks on White Rabbit Key.": "你的钱包在 White Rabbit Key 上走动。",
+  "Make its face part by part; one transaction wears it.": "一个部件一个部件地做出它的脸；一笔交易就能换上。",
 } });

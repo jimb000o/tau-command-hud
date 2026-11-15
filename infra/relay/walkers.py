@@ -18,6 +18,18 @@ wallet chooses its own by paying the hearts box (hearts.py BOX, no key behind it
 the node's new addresses) LOOK + code, code 0..LOOKS-1 (figure, hair or hat, shirt colour); the newest such payment
 counts. The hearts read only amounts below 1200, so the two never mix.
 
+The islander, part by part (rabbit/islander.js, the same lists): seventeen parts (build, skin, hair or hat, hair colour,
+clothes, clothes colour, trousers, walk, face shape, eyes, brows, nose, mouth, beard, marks, glasses and jewellery, an
+earned piece). Each part comes from the wallet's key until the wallet chooses: PART + part * STRIDE + choice to the
+hearts box, one payment per part, any number of them in one transaction; the newest per part counts. An older look
+payment sets skin, hair, hair colour and shirt colour. The earned piece is shown only while the wallet has the trait
+it stands for (EARN). The first wallet whose chosen parts make a face (FACE) records it: `faces` keeps the first one in
+block order, so anyone can check it against the blocks. Wallets that never chose wear their key's face, unrecorded.
+
+The chain's own state for the island: the newest block read (time, height) and the last restart seen (a block newer
+than the newest one read but more than five blocks lower), so the islanders can sit down while the chain pauses.
+A payment the node refused because the wallet's own rule said no (relay.py held_by_rule) is noted per wallet (`held`).
+
 What it means (traits): a few plain readings of the counts, each with the number it rests on, for instance a night
 owl (most of its transactions between 22:00 and 05:00 German time), Agorzilla's friend (fed the bowl), writes its own
 rules, a guardian co-signs its payments. walkers.js says them in words and gives the islander the matching thing to
@@ -52,6 +64,12 @@ log = logging.getLogger("relay.walkers")
 WINDOW = 86400
 SHOW, SHOW_IDNI = 60, 6
 LOOK, LOOKS = 1200, 384          # amount LOOK + code to BOX chooses a look; code = figure * 64 + hair * 8 + shirt
+PART, STRIDE = 1600, 32          # amount PART + part * STRIDE + choice to BOX chooses one part of the islander
+NS = (5, 10, 16, 10, 8, 16, 8, 5, 6, 10, 8, 8, 8, 8, 8, 10, 10)   # choices per part (rabbit/islander.js SLOTS)
+FACE = (1, 2, 3, 8, 9, 10, 11, 12, 13, 14, 15)
+EARN = (None, "lawmaker", "hacker", "feeder", "veteran", "guardian", "winner", "voter", "hearts", "catfriend")
+OLD_SKIN = (1, 2, 4, 5, 7, 9)
+HELD_SHOW = 3600                 # a refusal by the wallet's own rule shows on the island for an hour
 RECENT = 60                      # timestamps of the newest transactions kept per wallet (for "in the last day")
 PEERS = 64                       # different wallets paid, counted up to this
 SAVE_SECONDS = 60
@@ -90,7 +108,30 @@ def rule_parts(text: str) -> list[str]:
 def blank() -> dict:
     return {"f": 0, "l": 0, "w": [0, 0, 0], "n": 0, "d": [], "h": [0] * 24, "p": [], "m": 0, "q": [],
             "meal": 0, "vote": 0, "ask": 0, "deja": 0, "line": 0, "ballot": 0, "heart": 0,
-            "rules": 0, "rt": "", "look": None}
+            "rules": 0, "rt": "", "look": None, "pt": [None] * len(NS), "held": 0}
+
+
+def key_part(pk: str, i: int) -> int:
+    """Part i of a wallet that did not choose it: from byte i of its key (rabbit/islander.js parts())."""
+    if i == 16:
+        return 0
+    b = int(pk[2 * i:2 * i + 2], 16)
+    if i >= 13:
+        return 0 if b < 180 else 1 + b % (NS[i] - 1)
+    return b % NS[i]
+
+
+def parts_of(pk: str, chosen: list) -> list[int]:
+    return [c if isinstance(c, int) and 0 <= c < NS[i] else key_part(pk, i) for i, c in enumerate((list(chosen or []) + [None] * len(NS))[:len(NS)])]
+
+
+def face_sig(p: list[int]) -> str:
+    return "-".join(str(p[i]) for i in FACE)
+
+
+def look_parts(code: int) -> dict[int, int]:
+    """An older look code as parts: skin, hair or hat, hair colour, shirt colour."""
+    return {1: OLD_SKIN[code // 64], 2: code // 8 % 8, 3: (code * 7 + 3) % 6, 5: code % 8}
 
 
 class Walkers:
@@ -98,16 +139,23 @@ class Walkers:
         self.path = path if path is not None else os.environ.get("WALKERS_PATH", "/data/walkers.json")
         self.w: dict[str, dict] = {}
         self.since = 0          # when this record began: a wallet first seen in its first day may be much older
+        self.faces: dict[str, list] = {}   # face -> [first wallet that chose it, block time, height, place in the block]
+        self.tip = [0, 0]                   # the newest block read: time, height
+        self.restart = 0                    # block time of the first block after the last restart seen
         self.dirty = False
         self.saved_at = 0.0
         try:
             with open(self.path) as f:
                 st = json.load(f)
             self.since = int(st.get("since") or 0)
+            self.faces = {str(k): list(v) for k, v in (st.get("faces") or {}).items() if isinstance(v, list) and len(v) >= 2}
+            self.tip = [int(x) for x in (st.get("tip") or [0, 0])][:2]
+            self.restart = int(st.get("restart") or 0)
             for k, v in (st.get("w") or {}).items():
                 if HEX.match(str(k)) and isinstance(v, dict):
                     r = blank()
                     r.update({x: v[x] for x in r if x in v})
+                    r["pt"] = (list(r["pt"] or []) + [None] * len(NS))[:len(NS)]
                     self.w[str(k)] = r
         except FileNotFoundError:
             pass
@@ -129,6 +177,11 @@ class Walkers:
                 continue
             if ts <= 0:
                 continue
+            if ts > self.tip[0]:
+                if height < self.tip[1] - 5:
+                    self.restart = ts   # newer, but far lower: the chain started over
+                self.tip = [ts, height]
+                changed = True
             day = ts // 86400
             for i, tx in enumerate(b.get("transactions") or []):
                 if not isinstance(tx, dict):
@@ -163,6 +216,7 @@ class Walkers:
             r["rules"] += 1
             r["rt"] = text.strip()
         fed = box = ask = deja = rabbit_line = ballot = False
+        chose = False
         for op in ops.get("1") or []:
             if not (isinstance(op, (list, tuple)) and len(op) >= 3) or str(op[0]).lower() != s:
                 continue
@@ -191,6 +245,14 @@ class Walkers:
             elif to == BOX:
                 if LOOK <= amount < LOOK + LOOKS:
                     r["look"] = amount - LOOK
+                    for i, c in look_parts(amount - LOOK).items():
+                        r["pt"][i] = c
+                    chose = True
+                elif PART <= amount < PART + len(NS) * STRIDE:
+                    i, c = divmod(amount - PART, STRIDE)
+                    if c < NS[i]:
+                        r["pt"][i] = c
+                        chose = True
                 elif (d := decode(amount)) is not None and d[1]:
                     r["heart"] += 1
         r["meal"] += fed
@@ -199,6 +261,36 @@ class Walkers:
         r["deja"] += deja
         r["line"] += rabbit_line
         r["ballot"] += ballot
+        if chose:
+            sig = face_sig(parts_of(s, r["pt"]))
+            if sig not in self.faces or r["w"] < self.faces[sig][1:4]:
+                self.faces[sig] = [s, *r["w"]]
+
+    def held(self, pk: str, ts: float | None = None):
+        """The node refused one of this wallet's payments because its own rule said no."""
+        r = self.w.get(str(pk).lower())
+        if r is not None:
+            r["held"] = int(ts or time.time())
+            self.dirty = True
+
+    def parts(self, pk: str, r: dict, traits: list[list]) -> list[int]:
+        """The islander as shown: chosen parts, the key's for the rest; the earned piece only with its trait."""
+        p = parts_of(pk, r["pt"])
+        need = EARN[p[16]] if p[16] < len(EARN) else None
+        if need and need not in {k for k, _ in traits}:
+            p[16] = 0
+        return p
+
+    def face(self, sig: str) -> dict:
+        """GET /walkers/face/<face>: the first wallet that chose this face, if any."""
+        f = self.faces.get(sig)
+        return {"face": sig, "first": f[0] if f else None, "at": f[1] if f else None}
+
+    def first_wearer(self, pk: str, r: dict) -> bool:
+        if not any(c is not None for c in r["pt"]):
+            return False
+        f = self.faces.get(face_sig(parts_of(pk, r["pt"])))
+        return bool(f and f[0] == pk)
 
     # ---------- what it means ----------
     def traits(self, pk: str, r: dict, now: float, rabbit: dict | None = None, nomemo: dict | None = None) -> list[list]:
@@ -284,10 +376,17 @@ class Walkers:
         for pk, r in rest[:SHOW] + idni[:SHOW_IDNI]:
             rb, nm = extra(pk) if extra else (None, None)
             tr = self.traits(pk, r, now, rb, nm)
-            out.append({"a": pk, "look": r["look"], "idni": pk in GENESIS, "last": r["l"],
-                        "n24": sum(1 for t in r["q"] if t >= now - WINDOW), "traits": [k for k, _ in tr[:4]], "home": self.home(tr)})
-        return {"window": WINDOW, "total": len(rest), "idni": len(idni), "walkers": out, "look": {"box": BOX, "base": LOOK, "count": LOOKS},
-                "generated_at": round(now)}
+            row = {"a": pk, "look": r["look"], "idni": pk in GENESIS, "last": r["l"],
+                   "n24": sum(1 for t in r["q"] if t >= now - WINDOW), "traits": [k for k, _ in tr[:4]], "home": self.home(tr),
+                   "pt": self.parts(pk, r, tr)}
+            if self.first_wearer(pk, r):
+                row["first"] = True
+            if r.get("held", 0) >= now - HELD_SHOW:
+                row["held"] = r["held"]
+            out.append(row)
+        return {"window": WINDOW, "total": len(rest), "idni": len(idni), "walkers": out,
+                "look": {"box": BOX, "base": LOOK, "count": LOOKS, "part": PART, "stride": STRIDE, "n": list(NS)},
+                "chain": {"tip": self.tip[0], "height": self.tip[1], "restart": self.restart}, "generated_at": round(now)}
 
     def card(self, pk: str, now: float | None = None, rabbit: dict | None = None, nomemo: dict | None = None,
              in_force: bool | None = None) -> dict | None:
@@ -296,13 +395,17 @@ class Walkers:
         if r is None:
             return None
         hours = r["h"]
+        tr = self.traits(pk, r, now, rabbit, nomemo)
+        have = {k for k, _ in tr}
         return {"a": pk, "idni": pk in GENESIS, "look": r["look"], "first": r["f"], "last": r["l"], "txs": r["n"], "days": len(r["d"]),
                 "n24": sum(1 for t in r["q"] if t >= now - WINDOW), "moved": r["m"], "peers": len(r["p"]), "peers_max": PEERS,
                 "hours": hours, "meals": r["meal"], "votes": r["vote"], "asks": r["ask"], "deja": r["deja"],
                 "rabbit": {"lines": r["line"], "ballots": r["ballot"], **({k: rabbit.get(k) for k in ("played", "won", "moves", "fav")} if rabbit else {})},
                 "nomemo": {"chapters": len((nomemo or {}).get("claims") or {}), "nth": (nomemo or {}).get("nth")} if nomemo else None,
                 "hearts": r["heart"], "rule": {"deploys": r["rules"], "parts": rule_parts(r["rt"]), "in_force": in_force},
-                "traits": self.traits(pk, r, now, rabbit, nomemo)}
+                "traits": tr, "pt": self.parts(pk, r, tr), "chosen": r["pt"],
+                "earned": [i for i, k in enumerate(EARN) if k and k in have],
+                "face": {**self.face(face_sig(parts_of(pk, r["pt"]))), "mine": self.first_wearer(pk, r)}}
 
     def save(self, now: float | None = None, force: bool = False):
         now = time.time() if now is None else now
@@ -312,7 +415,7 @@ class Walkers:
         tmp = self.path + ".tmp"
         try:
             with open(tmp, "w") as f:
-                json.dump({"w": self.w, "since": self.since}, f, separators=(",", ":"))
+                json.dump({"w": self.w, "since": self.since, "faces": self.faces, "tip": self.tip, "restart": self.restart}, f, separators=(",", ":"))
             os.replace(tmp, self.path)
             self.dirty = False
         except OSError as exc:

@@ -2738,6 +2738,7 @@ const PLAIN_LABEL = {
 /* who a wallet is, in words: names we know from the chain (assets/origins.js), else "a wallet"; never a hash */
 const NB_TAG = { idni: "an IDNI genesis wallet", bot: "our island bot", cruise: "a simulated cruise passenger", rabbit: "a White Rabbit Key player", nomemo: "a No Memo player", agorzilla: "an Agorzilla player" };
 const NB_BOX = { agorzilla: "Agorzilla", deja: "Déjà the café cat", rabbit: "White Rabbit Key" };
+const NB_APP = { tauhud: "a Tau HUD user", nomemo: "a No Memo player", rabbit: "a White Rabbit Key player", agorzilla: "an Agorzilla player", deja: "an Agorzilla player" };
 function nbWho(a) {
   const h = String(a || "").toLowerCase(); if (!h) return "a wallet";
   if (h === String(myNodeKey() || "").toLowerCase()) return "your node";
@@ -2746,7 +2747,9 @@ function nbWho(a) {
   const O = window.TauOrigin; if (!O) return "a wallet";
   const own = O.name && O.name(h); if (own) return own;   // the showcase wallets: "Tau HUD's piggy bank" and so on
   const box = O.of("0", [[null, h]]); if (box && NB_BOX[box.tag]) return NB_BOX[box.tag];
-  const o = O.of(h, [], ""); return (o && NB_TAG[o.tag]) || "a wallet";
+  const o = O.of(h, [], ""); if (o && NB_TAG[o.tag]) return NB_TAG[o.tag];
+  const ap = O.app && O.app(h), first = ap && (ap.born || ap.used[0]);   // a visitor's wallet that came from one of our apps (walletdays.py)
+  return (first && NB_APP[first]) || "a wallet";
 }
 const nbSpan = a => `<span>${esc(nbWho(a))}</span>`;
 function plainBody(t) {
@@ -2924,6 +2927,9 @@ function lvStat() {
        read from the public rule text alone, never from what our server knows about who sent it */
     const c = who && S.clauses.get(who);
     if (c && c.body && window.RuleWords && window.RuleWords.fromTau(c.body)) ex.push(["", "rule made with Tau HUD's builder", live ? "rules/numbers/" : null, "Its rule has the exact shape Tau HUD's wallet and rule builder write. See all rules in numbers"]);
+    /* the app that wallet came from, when our relay saw it (assets/origins.js app, walletdays.py): only for visitors' wallets */
+    const ap = live && who && window.TauOrigin && TauOrigin.app ? TauOrigin.app(who) : null;
+    if (ap && ap.born) ex.push(["", ap.short, "account/?a=" + encodeURIComponent(who), ap.line]);
   }
   if (r) ex.push(["bad", r === 1 ? "1 transaction refused in the last 10 min" : `${r} transactions refused in the last 10 min`, "#feed", "Show only the refused ones in the feed, each with its reason"]);
   const left = pace != null ? Math.round(pace - since) : null, w = memState().W;
@@ -3209,9 +3215,11 @@ function renderOffers() {
    IDNI genesis, players), else its short address; Expert adds the short address next to a name */
 function clauseWho(acc) {
   const nm = nbWho(acc);
+  const ap = window.TauOrigin && TauOrigin.app ? TauOrigin.app(acc) : null;   // the app a visitor's wallet came from, small next to its name
+  const appTag = ap && ap.born ? ` <em class="gen" title="${esc(ap.line || ap.short)}">${esc(ap.short)}</em>` : "";
   if (nm === "a wallet") return acct(acc) + (isGenesis(acc) ? ` <em class="gen">genesis</em>` : "");
   const name = S.mode === "live" ? `<a class="acct nm" href="account/?a=${encodeURIComponent(acc)}" title="Open account ${esc(acc)}">${esc(nm)}</a>` : `<span class="nm">${esc(nm)}</span>`;
-  return name + (TECH() ? ` <span class="adr">${acct(acc)}</span>` : "");
+  return name + appTag + (TECH() ? ` <span class="adr">${acct(acc)}</span>` : "");
 }
 function renderClauses() {
   if (hold("clauses", renderClauses)) return;
@@ -4735,7 +4743,7 @@ function detailTx(t) {
 function offerParty(a, role) {
   const nm = nbWho(a), ab = (window.TauOrigin && TauOrigin.about ? TauOrigin.about(a) : null) || [], rule = S.clauses.get(a);
   const made = S.offers.filter(x => x.from === a).length, got = S.offers.filter(x => x.to === a).length;
-  const who = nm !== "a wallet" ? nm.charAt(0).toUpperCase() + nm.slice(1) : isGenesis(a) ? "An IDNI genesis wallet" : "A wallet we know nothing more about: not one we recognise as Tau HUD’s or IDNI’s.";
+  const who = nm !== "a wallet" ? nm.charAt(0).toUpperCase() + nm.slice(1) : isGenesis(a) ? "An IDNI genesis wallet" : "A wallet we know nothing more about: not one we recognise as Tau HUD’s or IDNI’s, nor one we have seen send through our apps.";
   const lines = [who, ...ab,
     rule ? `Its own rule now: ${rule.name}, ${rule.label}.` : "No own rule of it is known to us right now.",
     rule && window.RuleWords && RuleWords.fromTau && rule.body && RuleWords.fromTau(rule.body) ? "Made with Tau HUD’s rule builder." : "",

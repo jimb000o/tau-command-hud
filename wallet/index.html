@@ -378,7 +378,7 @@ html.wl-new #rMine > *, html.wl-new #bPick > * { grid-column: 1 / -1; }
 html.wl-new #bPick { display: contents; }
 html.wl-new #rMine > #bPick > #bSay { grid-column: 1; }
 html.wl-new #rMine > #probesBox { grid-column: 2; margin-top: 10px; }
-html.wl-new #lnkAcct, html.wl-new #lnkTg, html.wl-new #btnPayMe, html.wl-new #lnkCard { display: none !important; }
+html.wl-new #lnkAcct, html.wl-new #lnkTg, html.wl-new #btnPayMe, html.wl-new #lnkCard, html.wl-new #lnkIslander { display: none !important; }
 .bcards { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
 .bcard { border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; display: grid; gap: 6px; align-content: start; background: rgba(5,5,6,.6); }
 .bcard.on { border-color: var(--ok); background: rgba(57,255,138,.05); }
@@ -555,6 +555,7 @@ html.focus-feed #signFacts { display: none; }
             <button class="b" type="button" id="btnBackup">Back up key</button>
             <a class="b" id="lnkAcct" href="/account/" style="text-decoration:none;display:inline-flex;align-items:center;font:600 11px var(--display);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--hair);border-radius:6px;padding:6px 11px;color:var(--text)">Open in Accounts</a>
             <a class="b" id="lnkCard" href="/card/" style="text-decoration:none;display:inline-flex;align-items:center;font:600 11px var(--display);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--hair);border-radius:6px;padding:6px 11px;color:var(--text)" data-tip="My Tau card&#10;Your rules, votes, Agorzilla meals and café stamps on one picture.&#10;Ready to post; nothing on it is priced.">My Tau card</a>
+            <a class="b" id="lnkIslander" href="/rabbit/?islander=1" style="text-decoration:none;display:inline-flex;align-items:center;font:600 11px var(--display);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--hair);border-radius:6px;padding:6px 11px;color:var(--text)" data-tip="Your islander&#10;Your wallet walks on White Rabbit Key.&#10;Make its face part by part; one transaction wears it.">Your islander</a>
             <a class="b" id="lnkTg" href="https://t.me/tauhud_alerts_bot" target="_blank" rel="noopener" hidden data-tip="Telegram alerts&#10;A message from @tauhud_alerts_bot when this wallet sends, receives or its rule lands in a block.&#10;Only your chat id and this address are kept. /stop ends it." style="text-decoration:none;display:inline-flex;align-items:center;font:600 11px var(--display);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--hair);border-radius:6px;padding:6px 11px;color:var(--text)">Telegram alerts</a>
             <button class="b" type="button" id="btnPayMe" aria-expanded="false" data-tip="Ask to be paid&#10;A link and a QR code with your address in it.&#10;Whoever opens it finds the wallet filled in for you.">Ask to be paid</button>
             <button class="b quiet" type="button" id="btnForget">Forget key</button>
