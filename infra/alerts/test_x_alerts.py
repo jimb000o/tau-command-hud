@@ -67,6 +67,7 @@ with open(os.path.join(TMP, "recap", "gazette", "latest.json"), "w") as f:
 texts["paper"] = alerts.recap_x(week)
 cap = alerts.recap_caption(week)
 check(texts["paper"].startswith("📰 The Daily Consensus No. 2 is out\n\n“A vote of the users becomes law”"), "Monday on X: the paper first")
+check("/gazette/" in texts["paper"] and len(texts["paper"]) <= 300, "Monday on X: the link to the edition (X_PAPER_LINK)")
 check(cap.startswith("📰 <b>THE DAILY CONSENSUS · No. 2 is out</b>") and "/gazette/" in cap and "• 12 transactions" in cap
       and len(re.sub(r"<[^>]+>", "", cap)) <= 1024, "Monday on Telegram: the paper, its link, the week, within a photo caption")
 check("/crew/" not in cap, "no ship log link while the crew's weekly log is off")
@@ -76,7 +77,8 @@ check("/crew/\">Members get the full ship log</a>" in cap2 and len(re.sub(r"<[^>
 alerts.crewlog.ON, alerts.crewlog.USER, alerts.crewlog.PASS = False, "", ""
 for k, t in texts.items():
     check(alerts.x_len(t) <= 280, f"{k}: {alerts.x_len(t)} of 280 as X counts it")
-    check("http" not in t and "tauhud.com/" not in t, f"{k}: no link (a link costs $0.20 instead of $0.015)")
+    if k != "paper":   # the Monday post with a new edition links it (X_PAPER_LINK), every other post is link-free
+        check("http" not in t and "tauhud.com/" not in t, f"{k}: no link (a link costs $0.20 instead of $0.015)")
     check(t.endswith("#TauNet") and re.findall(r"#[A-Za-z]\w*", t) == ["#TauNet"] and "$AGRS" not in t, f"{k}: ends with #TauNet, once, no other tags, no cashtag")
     check("\n\n" in t and not t.startswith(alerts.X_REAL), f"{k}: headline first, parts apart")
 check(texts["rule"].startswith("✅ Users agreed: the base fee goes from 20 to 30\n\n"), "rule: headline first, then a blank line")
