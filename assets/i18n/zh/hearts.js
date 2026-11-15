@@ -44,7 +44,7 @@ TauI18n.add({ strings: {
   "The box:": "箱子：",
   "open it in the account view ›": "在账户视图中打开 ›",
   "The same numbers as data:": "同样的数字（数据格式）：",
-  "Unofficial community project, not affiliated with IDNI.": "非官方社区项目，与 IDNI 无关。",
+  "Unofficial community project, not run by IDNI.": "非官方社区项目，并非由 IDNI 运营。",
   "Our relay is out of reach just now; the hearts show here once it answers.": "我们的中继暂时无法连接；它一回应，心就会显示在这里。",
   "No hearts yet. Open the HUD and give one to the part you like best.": "还没有心。打开 HUD，给你最喜欢的部分一颗心。",
   "1 wallet": "1 个钱包",

@@ -382,7 +382,7 @@ HEADLINES = os.environ.get("DEVPULSE_HEADLINES", "") or os.path.join(CLONES, "he
 RETRY_AFTER = 2 * 3600
 NEWS_VERSION = 2   # raise when the instructions change: every kept headline is written anew once
 NEWS_SYSTEM = """You write the news line of Tau HUD (tauhud.com), an unofficial community dashboard for Tau Testnet Alpha, \
-made by people not affiliated with IDNI. Its readers are curious people, not developers: they follow the testnet, \
+made independently, not by IDNI. Its readers are curious people, not developers: they follow the testnet, \
 send test transactions or play games on it, and many have never read its code. You get the commits IDNI just merged \
 into the testnet's code: their messages, the commits of merged branches, the files changed, part of the diff, and \
 titles of issues they name.

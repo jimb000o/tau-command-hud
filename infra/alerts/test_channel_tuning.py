@@ -76,7 +76,7 @@ check(w3.state["deepdives"]["voted"] == "b" and "open" not in w3.state["poll"], 
 costs = {"items": [{"t": "Server", "amount": 6, "cur": "EUR"}, {"t": "AI assistant", "amount": 200, "cur": "USD"},
                    {"t": "Voices", "amount": None, "cur": "USD"}]}
 c = alerts.costs_text(costs, {"count": 1, "donors": 1, "totals": {"AGRS": "50"}})
-check("About €6 + $200 a month" in c and "not in yet: Voices" in c and "50 AGRS" in c and "not affiliated with IDNI" in c,
+check("About €6 + $200 a month" in c and "not in yet: Voices" in c and "50 AGRS" in c and "not run by IDNI" in c,
       "costs: billed items summed per currency, open bills named, donations")
 check(alerts.costs_text({"items": [{"t": "x", "amount": None, "cur": "EUR"}]}, None) is None, "no bill in: no post")
 usage = {"since": "2026-11-07", "months": {"2026-11": {"pictures": 12, "looks": 3, "usd": 1.234}}}

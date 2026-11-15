@@ -368,7 +368,7 @@ def text(f: dict) -> dict:
             L.append(f"- {who}: [{head}]({p['url']})")
         L.append("")
 
-    L.append(f"Tau HUD is a community project, not affiliated with IDNI. One node's view; if you saw something else, "
+    L.append(f"Tau HUD is a community project, not run by IDNI. One node's view; if you saw something else, "
              "tell us and we correct it.")
 
     nums = []
@@ -398,7 +398,7 @@ def text(f: dict) -> dict:
         f"{s(len(rs), 'chain restart')}, cause unknown" if rs else "No chain restart this week",
         f"{n(people)} transactions by users of our apps" if src.get("apps") else "Counted the same way every week",
         "Our own test traffic counted apart")]
-    card.append("Tau HUD blog · community project, not affiliated with IDNI")
+    card.append("Tau HUD blog · community project, not run by IDNI")
     return {"title": title, "dek": dek, "why": why, "body": "\n".join(L).rstrip(), "card": card, "stats": stats, "numbers": nums,
             "x": f"{', '.join(head)}. One community node's view of Tau Testnet Alpha, counted from its logs."}
 
@@ -500,7 +500,7 @@ def model_facts(f: dict) -> dict:
     return {k: v for k, v in x.items() if v is not None}
 
 
-WEEK_SYSTEM = """You write the weekly testnet post of Tau HUD (tauhud.com), a community project not affiliated with IDNI, \
+WEEK_SYSTEM = """You write the weekly testnet post of Tau HUD (tauhud.com), a community project not run by IDNI, \
 the team that builds Tau Net. Tau Net is the network; Tau Testnet Alpha is its test network ("the Tau Net testnet"). \
 Tau alone is the language rules are written in; never call the network just "Tau".
 
@@ -581,7 +581,7 @@ def ask(facts: dict) -> dict:
 
 LINK_HEADS = {"posts": {"en": "## Written up this week", "zh": "## 本周文章", "ja": "## 今週の記事"},
               "x": {"en": "## On X this week", "zh": "## 本周在 X 上", "ja": "## 今週の X"},
-              "end": {"en": "Tau HUD is a community project, not affiliated with IDNI. One node's view; if you saw something else, tell us and we correct it.",
+              "end": {"en": "Tau HUD is a community project, not run by IDNI. One node's view; if you saw something else, tell us and we correct it.",
                       "zh": "Tau HUD 是社区项目，与 IDNI 无关。这是一个节点的视角；如果你看到的不同，请告诉我们，我们会更正。",
                       "ja": "Tau HUD はコミュニティのプロジェクトで、IDNI とは関係ありません。一つのノードからの見方です。違うものを見た方は教えてください。訂正します。"}}
 
@@ -601,7 +601,7 @@ def link_tail(f: dict, lang: str) -> str:
 
 
 # ---------- Chinese and Japanese ----------
-TRANSLATE = """You translate a blog post of Tau HUD (tauhud.com), a community project not affiliated with IDNI, from \
+TRANSLATE = """You translate a blog post of Tau HUD (tauhud.com), a community project not run by IDNI, from \
 English into Simplified Chinese (zh) and Japanese (ja). Keep the meaning exactly; add nothing, leave nothing out. Keep \
 every number exactly as it is written, and write no number the English does not hold (write dates the English way, \
 for example "9–15 Nov 2026", not with month numbers). Keep Markdown as it is ("## " headings, "- " lists, links with \

@@ -2,7 +2,7 @@
 
 *Where the rules change by agreement.* Unofficial community project.
 
-**Unofficial community project.** Not affiliated with, endorsed by or maintained by IDNI or the Tau team.
+**Unofficial community project.** Not run, funded, reviewed or endorsed by IDNI or the Tau team.
 
 **Experimental, no claim of accuracy.** Tau HUD is an experimental approach to visualising the Tau testnet. We do not claim that the information displayed is accurate, complete or current, in simulation or live mode. Nothing here is official information, financial advice or technical advice. Verify anything that matters against the [tau-testnet repository](https://github.com/IDNI/tau-testnet) and your own node.
 

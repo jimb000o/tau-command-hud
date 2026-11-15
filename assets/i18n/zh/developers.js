@@ -60,7 +60,7 @@ TauI18n.add({ strings: {
   "Tau proposals badge": "Tau 提案徽章",
   "Tau status badge": "Tau 状态徽章",
   "Tau validators badge": "Tau 验证者徽章",
-  "Testnet data from one community node, without warranty. Not affiliated with IDNI.": "来自一个社区节点的测试网数据，不提供任何保证。与 IDNI 无关。",
+  "Testnet data from one community node, without warranty. Not run by IDNI.": "来自一个社区节点的测试网数据，不提供任何保证。并非由 IDNI 运营。",
   "Testnet health 0 to 100 with every factor behind it and its history.": "测试网健康评分 0 到 100，包含背后的每个因素及其历史。",
   "Testnet health score, 0 to 100": "测试网健康评分，0 到 100",
   "The badges on this page: status, height, proposals, validators, health.": "本页上的徽章：状态、高度、提案、验证者、健康。",

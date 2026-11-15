@@ -248,7 +248,7 @@ TauI18n.add({ strings: {
   "turning point": "转折点",
   "unchanged": "未变",
   "unofficial": "非官方",
-  "Unofficial community project · not affiliated with IDNI": "非官方社区项目 · 与 IDNI 无关",
+  "Unofficial community project · not run by IDNI": "非官方社区项目 · 并非由 IDNI 运营",
   "until {x}": "直到 {x}",
   "Updates": "更新",
   "Uptime, outages, sync gaps and restarts of the community node": "社区节点的在线率、中断、同步缺口和重启",

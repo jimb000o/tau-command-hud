@@ -17,7 +17,7 @@ TauI18n.add({ strings: {
   "Last block slots": "最近的出块时段",
   "Made up and private: this chain runs only in your browser and starts fresh with every mission. Counting, thresholds and the wait before a change takes effect follow the Tau testnet’s governance code; everything happens faster so a mission takes a minute or two.": "虚构且私有：这条链只在你的浏览器里运行，每个任务都会重新开始。计票、门槛以及变更生效前的等待都遵循 Tau 测试网的治理代码；一切都加快了，所以一个任务只需一两分钟。",
   "Counting and thresholds as in": "计票和门槛与以下代码一致：",
-  ": a quorum of the whole validator set, one vote per validator, activation at a later height. Practice chain only, nothing is sent anywhere. Unofficial community page, not affiliated with IDNI.": "：法定票数按整个验证者集合计算，每个验证者一票，在之后的高度生效。仅为练习链，不会向任何地方发送数据。非官方社区页面，与 IDNI 无关。",
+  ": a quorum of the whole validator set, one vote per validator, activation at a later height. Practice chain only, nothing is sent anywhere. Unofficial community page, not run by IDNI.": "：法定票数按整个验证者集合计算，每个验证者一票，在之后的高度生效。仅为练习链，不会向任何地方发送数据。非官方社区页面，并非由 IDNI 运营。",
 
   /* missions */
   "Vote a change into law": "投票让一项变更成为法律",

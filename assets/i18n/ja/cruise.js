@@ -34,7 +34,7 @@ TauI18n.add({ strings: {
   "no landing": "上陸なし",
   "left": "出港",
   "the ship’s own events, with the testnet’s state at that moment.": "は船自身の出来事で、その時点のテストネットの状態つきです。",
-  "Unofficial, not affiliated with IDNI. The ships send only when the island bot is quiet and never past half of the island’s daily budget; a strained testnet halves their pace, a stalled one sends them away.": "非公式、IDNI とは無関係です。船は島のボットが静かなときだけ送り、島の 1 日の予算の半分を超えることはありません。テストネットが逼迫すると速度は半分に、停止すると船は去ります。",
+  "Unofficial, not run by IDNI. The ships send only when the island bot is quiet and never past half of the island’s daily budget; a strained testnet halves their pace, a stalled one sends them away.": "非公式、IDNI が運営するものではありません。船は島のボットが静かなときだけ送り、島の 1 日の予算の半分を超えることはありません。テストネットが逼迫すると速度は半分に、停止すると船は去ります。",
   "Raw data (JSON)": "生データ（JSON）",
   "Testnet load": "テストネット負荷",
   "White Rabbit Key": "ホワイト・ラビット・キー",

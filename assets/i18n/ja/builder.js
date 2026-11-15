@@ -32,7 +32,7 @@ TauI18n.add({ strings: {
   "The wallet signs rules made of its four blocks. A hand-written rule is checked here; to try it further, open it in the Playground.": "ウォレットが署名するのは 4 種類のブロックでできたルールです。手書きのルールはここで確認できます。さらに試すにはプレイグラウンドで開いてください。",
   "A rule that stops every payment is not handed to the wallet. Change it first.": "すべての支払いを止めるルールはウォレットに渡しません。先に直してください。",
   "Freezing is one button in your wallet (Freeze). Nothing is sent from this page.": "凍結はウォレットのボタンひとつです（凍結）。このページからは何も送信されません。",
-  "The first four checks run in your browser; the last two ask the testnet's own engine on {e1}. Not affiliated with IDNI.": "最初の 4 つのチェックはあなたのブラウザで動きます。最後の 2 つは {e1} にあるテストネット自身のエンジンに問い合わせます。IDNI とは提携していません。",
+  "The first four checks run in your browser; the last two ask the testnet's own engine on {e1}. Not run by IDNI.": "最初の 4 つのチェックはあなたのブラウザで動きます。最後の 2 つは {e1} にあるテストネット自身のエンジンに問い合わせます。IDNI が運営するものではありません。",
   "Source code": "ソースコード",
   "Try": "試す",
   "Limit, co-signer, date": "上限・共同署名者・日付",

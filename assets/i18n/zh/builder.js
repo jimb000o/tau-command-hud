@@ -32,7 +32,7 @@ TauI18n.add({ strings: {
   "The wallet signs rules made of its four blocks. A hand-written rule is checked here; to try it further, open it in the Playground.": "钱包只签署由它的四种积木搭成的规则。手写的规则可以在这里检查；想进一步试验，请在练习场中打开它。",
   "A rule that stops every payment is not handed to the wallet. Change it first.": "会拦下每一笔付款的规则不会交给钱包。请先修改它。",
   "Freezing is one button in your wallet (Freeze). Nothing is sent from this page.": "冻结是你钱包里的一个按钮（冻结）。本页不会发送任何东西。",
-  "The first four checks run in your browser; the last two ask the testnet's own engine on {e1}. Not affiliated with IDNI.": "前四项检查在你的浏览器里运行；最后两项询问 {e1} 上测试网自己的引擎。与 IDNI 无隶属关系。",
+  "The first four checks run in your browser; the last two ask the testnet's own engine on {e1}. Not run by IDNI.": "前四项检查在你的浏览器里运行；最后两项询问 {e1} 上测试网自己的引擎。并非由 IDNI 运营。",
   "Source code": "源代码",
   "Try": "试试",
   "Limit, co-signer, date": "上限、共同签名人、日期",

@@ -62,7 +62,7 @@ TauI18n.add({ strings: {
   "One validator, run by IDNI, seals every block; it builds one when ten transactions wait or thirty seconds have passed. Our relay lets visitors send at most 60 transactions a minute in all and the island bot at most 24, so a busy minute here says as much about our limits as about the testnet’s. A transaction already sealed but still listed by the node (a ghost, IDNI issue #81) is not counted as waiting.": "すべてのブロックは IDNI が運営する 1 つのバリデーターが封入します。10 件が待つか 30 秒が経つとブロックを作ります。当リレーは訪問者の送信を合計で毎分最大 60 件、島のボットを最大 24 件に制限しているので、ここでの混雑した 1 分はテストネットの限界と同じくらい当方の上限も示します。封入済みなのにノードが一覧に残しているトランザクション（ゴースト、IDNI issue #81）は待機として数えません。",
   "{n} sealed in {b} blocks · {m} sent through tauhud · {r} refused": "{b} ブロックで {n} 件封入 · tauhud 経由 {m} 件 · 拒否 {r} 件",
   "{n} waiting · longest wait {w}": "待機 {n} 件 · 最長待ち {w}",
-  "Unofficial, not affiliated with IDNI. Counted by the read-only relay at node.tauhud.com from our own testnet node.": "非公式で、IDNI とは無関係です。node.tauhud.com の読み取り専用リレーが当方のテストネットノードから数えています。",
+  "Unofficial, not run by IDNI. Counted by the read-only relay at node.tauhud.com from our own testnet node.": "非公式で、IDNI が運営するものではありません。node.tauhud.com の読み取り専用リレーが当方のテストネットノードから数えています。",
   "Transactions sealed per minute": "1 分あたりの封入トランザクション",
   "Transactions waiting and time to a block": "待機中のトランザクションとブロックまでの時間",
   "sent through tauhud": "tauhud 経由で送信",

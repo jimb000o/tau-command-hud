@@ -6,7 +6,7 @@ TauI18n.add({ strings: {
   "Donate to Tau HUD": "向 Tau HUD 捐赠",
   "Donations": "捐赠",
   "Tau HUD is free. Donations are voluntary, and nothing is owed in return.": "Tau HUD 免费使用。捐赠出于自愿，不欠任何回报。",
-  "An independent community project, built by one person in their free time and not affiliated with IDNI.": "一个独立的社区项目，由一个人利用业余时间搭建，与 IDNI 无关。",
+  "An independent community project, built by one person in their free time and not run by IDNI.": "一个独立的社区项目，由一个人利用业余时间搭建，并非由 IDNI 运营。",
   "If you find it useful, a donation is welcome.": "如果你觉得它有用，欢迎捐赠。",
   "Below:": "下方：",
   "what it costs": "它的花费",

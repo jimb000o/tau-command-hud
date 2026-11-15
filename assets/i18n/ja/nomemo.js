@@ -17,7 +17,7 @@ TauI18n.add({ strings: {
   "Connecting": "接続中",
   "Where this terminal talks to. Every contract is a transaction signed in this browser and sent to Tau Testnet Alpha through our node at node.tauhud.com.": "この端末の接続先。各契約はこのブラウザで署名し、私たちのノード node.tauhud.com を通して Tau Testnet Alpha に送る取引です。",
   "You and the other players are real: everybody here plays together, and the game is the testnet itself. Every contract is a real test transaction on Tau Testnet Alpha from your own test wallet, signed in this browser. The crew are game characters; test AGRS have no value.": "あなたも他のプレイヤーも本物です：みんなここで一緒に遊び、ゲームはテストネットそのものです。どの依頼も、自分のテストウォレットからこのブラウザで署名した Tau Testnet Alpha への本物のテスト取引です。船員はゲームのキャラクター、テスト AGRS に価値はありません。",
-  "Unofficial, not affiliated with IDNI. A game on the public testnet: your test wallet is the one": "非公式、IDNI とは無関係。公開テストネット上のゲーム：あなたのテストウォレットは",
+  "Unofficial, not run by IDNI. A game on the public testnet: your test wallet is the one": "非公式、IDNI の運営ではありません。公開テストネット上のゲーム：あなたのテストウォレットは",
   "the wallet page": "ウォレットのページ",
   "and": "と",
   "White Rabbit Key": "ホワイトラビット・キー",

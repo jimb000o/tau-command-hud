@@ -30,7 +30,7 @@ TauI18n.add({ strings: {
   "Add a name and a link.": "名前とリンクを付ける。",
   "Open a pre-filled request with your key; we add the name once your link shows that key.": "キーを入れた記入済みの依頼を開いてください。リンク先にそのキーが載っていれば名前を付けます。",
   "Request a name": "名前を依頼",
-  "A listing says what the chain shows, not who runs an account or whether it is safe. Testnet only, test AGRS have no value. Not affiliated with IDNI.": "掲載はチェーンに見えることを示すだけで、誰が運営しているか、安全かどうかは示しません。テストネットのみ、テスト用 AGRS に価値はありません。IDNI とは無関係です。",
+  "A listing says what the chain shows, not who runs an account or whether it is safe. Testnet only, test AGRS have no value. Not run by IDNI.": "掲載はチェーンに見えることを示すだけで、誰が運営しているか、安全かどうかは示しません。テストネットのみ、テスト用 AGRS に価値はありません。IDNI が運営するものではありません。",
   "By tauhud.com": "tauhud.com 製",
   "by tauhud.com": "tauhud.com 製",
   "Found on the chain": "チェーン上で発見",
