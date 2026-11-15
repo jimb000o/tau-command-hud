@@ -154,7 +154,7 @@
   function tick() {
     const S = window.COVE_SOUND;
     if (!S || !S.on || performance.now() < R.next || S.gap) return;   // with the sound on he talks in a background tab too
-    if (R.hello && RICO.night && RICO.night()) return;   // the Night Line's hour: only the callers, between the songs
+    if (R.hello && RICO.night && RICO.night()) return;   // the Night Line's hours (23-05): only the breaks between the songs
     R.next = performance.now() + 60000;   // held until this line is over
     if (++R.n % 3 === 1) return weather(line => (line ? air(line) : (R.next = 0)));
     /* the chain has stood still for an hour or more: now and then Rico says so between the songs */
