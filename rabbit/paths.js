@@ -8,7 +8,8 @@
 
    A painting without traced ways (a new island, the drawn island when the server is away) gets none: the walkers
    there walk as before. window.ISLE_PATHS = { of(file) → nav | null }; nav = { door(place), near(x, y), stand(node),
-   route(x, y, from, to, lane) → [[x, y] …], node(i) } */
+   route(x, y, from, to, lane) → [[x, y] …], way(fx, fy, tx, ty) → the same steered way in every browser,
+   doorSpot(place, wallet), node(i) } */
 (() => {
   "use strict";
   const WAYS = {
@@ -52,10 +53,10 @@
   const built = {};
   function build(def) {
     const ids = Object.keys(def.nodes), at = new Map(ids.map((k, i) => [k, i])), P = ids.map(k => def.nodes[k]);
-    const adj = P.map(() => []);
+    const adj = P.map(() => []), EDGES = [];
     def.edges.split(/\s+/).filter(Boolean).forEach(e => {
       const [a, b] = e.split("-").map(k => at.get(k)); if (a == null || b == null) return;
-      const d = Math.hypot(P[a][0] - P[b][0], P[a][1] - P[b][1]); adj[a].push([b, d]); adj[b].push([a, d]);
+      const d = Math.hypot(P[a][0] - P[b][0], P[a][1] - P[b][1]); adj[a].push([b, d]); adj[b].push([a, d]); EDGES.push([a, b, d]);
     });
     const door = {}; for (const id in def.doors) if (at.has(def.doors[id])) door[id] = at.get(def.doors[id]);
     /* A* over a few dozen nodes: cheap enough to run whenever someone sets off; the answers are kept */
@@ -82,17 +83,20 @@
     }
     /* the way from (x, y), which stands at node s, to a spot about node t: corners rounded (Chaikin, twice), and each
        walker keeps a little to its own side of the way (lane, world units) so a crowd does not walk in single file */
-    function route(x, y, s, t, lane) {
-      const ns = path(s, t); if (!ns.length) return null;
-      const end = stand(t), pts = [[x, y], ...ns.slice(1, -1).map(i => [P[i][0], P[i][1]]), end];
-      if (ns.length === 1) return pts;
-      if (lane) for (let k = 1; k < pts.length - 1; k++) {
-        const a = pts[k - 1], b = pts[k + 1], dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy) || 1;
-        const room = Math.min(1, (P[ns[k]][2] || 0) / 4 + 0.35);   // on a bridge or stairs: barely
-        pts[k] = [pts[k][0] - dy / d * lane * room, pts[k][1] + dx / d * lane * room * 0.5];
+    /* the nearest point on the ways to (x, y): [edge, how far along it (0..1), x, y] */
+    function onWay(x, y) {
+      let best = null, bd = Infinity;
+      for (const e of EDGES) {
+        const A = P[e[0]], B = P[e[1]], dx = B[0] - A[0], dy = B[1] - A[1], L2 = dx * dx + dy * dy || 1;
+        const f = Math.max(0, Math.min(1, ((x - A[0]) * dx + (y - A[1]) * dy) / L2)), px = A[0] + dx * f, py = A[1] + dy * f;
+        const d = Math.hypot(px - x, (py - y) * 1.6);   // the painting looks down at a slant: up and down count more
+        if (d < bd) { bd = d; best = [e, f, px, py]; }
       }
+      return best;
+    }
+    const chaikin = (pts, n) => {
       let q = pts;
-      for (let it = 0; it < 2; it++) {
+      for (let it = 0; it < n; it++) {
         const o = [q[0]];
         for (let k = 0; k < q.length - 1; k++) {
           const a = q[k], b = q[k + 1];
@@ -102,8 +106,51 @@
         o.push(q[q.length - 1]); q = o;
       }
       return q;
+    };
+    /* the way of a walker someone steers, from (fx, fy) to the reachable point nearest (tx, ty): the same in every
+       browser (no randomness), so every page shows that walker in the same place. → { pts, to: [x, y], node, len } */
+    function way(fx, fy, tx, ty) {
+      const s = onWay(fx, fy), e = onWay(tx, ty); if (!s || !e) return null;
+      const to = [Math.round(e[2] * 10) / 10, Math.round(e[3] * 10) / 10], ends = q => [[q[0][0], q[1]], [q[0][1], 1 - q[1]]];
+      let pts;
+      if (s[0] === e[0]) pts = [[fx, fy], [s[2], s[3]], to];
+      else {
+        let bc = Infinity, bp = null;
+        for (const [a, fa] of ends(s)) for (const [b, fb] of ends(e)) {
+          const ns = path(a, b); if (!ns.length) continue;
+          let g = 0; for (let k = 1; k < ns.length; k++) g += Math.hypot(P[ns[k]][0] - P[ns[k - 1]][0], P[ns[k]][1] - P[ns[k - 1]][1]);
+          const c = fa * s[0][2] + g + fb * e[0][2];
+          if (c < bc - 1e-6) { bc = c; bp = ns; }
+        }
+        if (!bp) return null;
+        pts = [[fx, fy], [s[2], s[3]], ...bp.map(i => [P[i][0], P[i][1]]), to];
+      }
+      pts = pts.filter((p, k) => k === 0 || Math.hypot(p[0] - pts[k - 1][0], p[1] - pts[k - 1][1]) > 0.5);
+      if (pts.length < 2) pts = [[fx, fy], to];
+      const q = chaikin(pts, 2);
+      let len = 0; for (let k = 1; k < q.length; k++) len += Math.hypot(q[k][0] - q[k - 1][0], q[k][1] - q[k - 1][1]);
+      const n = Math.hypot(P[e[0][0]][0] - to[0], P[e[0][0]][1] - to[1]) < Math.hypot(P[e[0][1]][0] - to[0], P[e[0][1]][1] - to[1]) ? e[0][0] : e[0][1];
+      return { pts: q, to, node: n, len };
     }
-    return { door: id => (id in door ? door[id] : null), near, stand, route, path, node: i => P[i], size: P.length, ids };
+    /* where a steered walker stands at a place: about its door, at a spot that follows from its wallet (the same everywhere) */
+    function doorSpot(id, seed) {
+      const i = door[id]; if (i == null) return null;
+      let h = 0; for (const c of String(seed || "")) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+      const p = P[i], r = p[2] || 0, a = (h % 360) / 180 * Math.PI, f = ((h >>> 9) % 100) / 100;
+      return [Math.round((p[0] + Math.cos(a) * r * f) * 10) / 10, Math.round((p[1] + Math.sin(a) * r * f * 0.45) * 10) / 10];
+    }
+    function route(x, y, s, t, lane) {
+      const ns = path(s, t); if (!ns.length) return null;
+      const end = stand(t), pts = [[x, y], ...ns.slice(1, -1).map(i => [P[i][0], P[i][1]]), end];
+      if (ns.length === 1) return pts;
+      if (lane) for (let k = 1; k < pts.length - 1; k++) {
+        const a = pts[k - 1], b = pts[k + 1], dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy) || 1;
+        const room = Math.min(1, (P[ns[k]][2] || 0) / 4 + 0.35);   // on a bridge or stairs: barely
+        pts[k] = [pts[k][0] - dy / d * lane * room, pts[k][1] + dx / d * lane * room * 0.5];
+      }
+      return chaikin(pts, 2);
+    }
+    return { door: id => (id in door ? door[id] : null), near, stand, route, way, doorSpot, onWay, path, node: i => P[i], size: P.length, ids };
   }
   window.ISLE_PATHS = {
     /* the ways of a painting, by its file name (a clean copy, island-…-clean-1234abcd, and a path before it count too) */

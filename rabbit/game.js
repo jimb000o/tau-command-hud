@@ -462,7 +462,7 @@
   }
 
   /* ---------- the screen ---------- */
-  const UI = { card: null, cardFace: null, hover: null, air: false, airUntil: 0 };
+  const UI = { card: null, cardFace: null, hover: null, air: false, airUntil: 0, walkTo: 0 };
   let wake = () => {};   // the first tap starts the music (set in wire())
   function hud() {
     $("cvStage").classList.toggle("pre", !G);
@@ -2419,9 +2419,10 @@
     return new Promise(res => {
       if (CHAIN.ws && CHAIN.ws.readyState === 1) return res(CHAIN.ws);
       let ws; try { ws = new WebSocket("wss://node.tauhud.com"); } catch (e) { return res(null); }
-      ws.onopen = () => { ws.send("hello version=1"); if (ISLE.want) ws.send("isle join"); CHAIN.ws = ws; setTimeout(() => res(ws), 150); };
+      ws.onopen = () => { ws.send("hello version=1"); if (ISLE.want) ws.send("isle join"); CHAIN.ws = ws; CHAIN.wsN = (CHAIN.wsN || 0) + 1; setTimeout(() => res(ws), 150); };
       ws.onmessage = ev => {
         let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; }
+        if (m.command === "walker" && m.data && m.data.push) { if (window.ISLE_WALKERS && ISLE_WALKERS.remote) ISLE_WALKERS.remote(m.data.go); return; }   // someone walked their islander (walkers.js)
         if (m.command === "isle") { if (m.status === "ok" && m.data && m.data.day) onIsle(m.data); else if (m.status === "ok" && m.data && m.data.board && typeof m.data.board === "object") onBoard(m.data.board); return; }   // the shared island: pushes and acks, never an answer someone waits for
         const q = CHAIN.wait.get(m.command); if (q && q.length) q.shift()(m);
       };
@@ -3099,7 +3100,13 @@
       if (id === "agorzilla") { legend(); return; }
       if (id && id.startsWith("walker:") && window.ISLE_WALKERS) { ISLE_WALKERS.open(id.slice(7)); return; }
       if (id === "cruise") { aboard(); return; }
-      if (id && PLACE[id]) openCard(id, PLACE[id]);
+      if (id && PLACE[id]) {   // your own islander, if this browser's wallet walks on the island, goes there first; the place opens as it arrives
+        const IW = window.ISLE_WALKERS, at = ++UI.walkTo;
+        if (IW && IW.mine && IW.mine() && !matchMedia("(prefers-reduced-motion: reduce)").matches && IW.goTo(0, 0, id, () => { if (UI.walkTo === at && !UI.card) openCard(id, PLACE[id]); })) return;
+        openCard(id, PLACE[id]); return;
+      }
+      /* a click on the island itself: your own islander walks to the nearest spot it can reach on foot */
+      if (!id && window.ISLE_WALKERS && ISLE_WALKERS.mine && ISLE_WALKERS.mine()) { UI.walkTo++; ISLE_WALKERS.goTo(...SC.toWorld(...where(e)), null); }
     });
     /* places by keyboard: the list under the scene, one button each */
     placeKeys();
@@ -3171,6 +3178,7 @@
   }
   setTimeout(readBallot, 1200);
   window.COVE_GAME = { get state() { return G; }, begin, endDay, face, ending, open: p => openCard(p, PLACE[p]),
-    card: openCard, closeCard, btn, el };   // card/closeCard/btn/el: the walkers' cards (walkers.js)
+    card: openCard, closeCard, btn, el,   // card/closeCard/btn/el: the walkers' cards (walkers.js)
+    ask, socket: () => (CHAIN.ws && CHAIN.ws.readyState === 1 ? CHAIN.wsN : 0) };   // the relay, for your own islander's walks (walkers.js)
   wire();
 })();
