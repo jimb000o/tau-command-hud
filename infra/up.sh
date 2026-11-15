@@ -51,9 +51,12 @@
 #              up hack       the hack of the week (relay/hackweek.py, Thursdays 11:00): next replay, last runs step by step
 #                            (nothing rebuilt, nothing sent); up hack preview  the last replay's post texts and picture;
 #                            up hack release 2026-11-12-poisoning  shows a held-back finding in public (after IDNI knows)
+#              up week       the testnet this week as a blog post (alerts/testnet_week.py, node left alone): how it reads now;
+#                            up week last  last week's; up week draft  writes the draft and tells your Telegram (it comes by
+#                            itself every Sunday 18:00 as a draft; only up blog publish testnet-week-<year>-w<week> puts it up)
 #              up report     the weekly report for IDNI as it stands (nothing filed; blog + nodelog rebuilt, node left alone): its text, a page
 #                            and a pre-filled GitHub issue link; up report last  last week's; up report send  also to
-#                            your Telegram (it comes there by itself every Sunday 18:00)
+#                            your Telegram (only by hand since 15.11.2026: the weekly blog post took its place)
 #              up guardian   the Guardian (tauhud.com/guardian/) started or restarted with the code just pulled, and Caddy
 #                            given its door; nothing rebuilt, the node left alone; up guardian status  only its numbers
 #              up services   the relay rebuilt with the code just pulled (tauhud.com/services/ reads it), the node left alone;
@@ -379,6 +382,17 @@ if [ "${1:-}" = "idni" ]; then
     exit $?
   fi
   docker compose exec -T devpulse python devpulse.py --digest "$@"
+  exit $?
+fi
+# the testnet this week as a blog post (alerts/testnet_week.py), the blog service and the node-log reader rebuilt with the
+# code just pulled (the node left alone, safe any time): up week  how this week's post reads now (nothing written),
+# up week last  last week's, up week draft  writes the draft now (anew, same address) and tells your Telegram; it comes
+# by itself every Sunday 18:00 and never goes up without up blog publish testnet-week-<year>-w<week>
+if [ "${1:-}" = "week" ]; then
+  shift
+  docker compose up -d --build --no-deps blog nodelog >/dev/null 2>&1 || docker compose up -d --build --no-deps blog nodelog || true
+  docker compose exec -T nodelog python -c 'import node_logs; node_logs.keep()' >/dev/null 2>&1 || true
+  docker compose exec -T blog python testnet_week.py "$@"
   exit $?
 fi
 # the weekly report for IDNI, nothing filed (alerts/idni_report.py): the blog service and the node-log reader
@@ -903,4 +917,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up cost, up crewlog, up earnings, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up follow, up idni, up week, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up cost, up crewlog, up earnings, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
