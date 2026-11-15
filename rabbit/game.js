@@ -84,6 +84,11 @@
       remind: "My investors call me every morning at six and ask the same thing: has our candidate proposed “{x}” yet? Please. Give me something to tell them.",
       done: "No business today, my friend: “{x}” is law already, and there’s nothing left for me to buy. My investors will think I’m on holiday. Sit anyway, the loungers are free." },   // his own words (and talk.js, when you come back); the North Wind keeps the diplomat's
   };
+  /* the laws of the week bind the purses on the chain (infra/relay/islandrules.py LAW_RULES): with the reef law as an
+     island law, the North Wind's purse holds a rule that refuses any payment above REEF_CAP, so its envelope is that */
+  const REEF_CAP = 20;
+  const reefPurse = () => !!(G && G.laws.some(l => l.id === "reef" && l.by === ISLE_BY));
+  const coinsOf = e => (e === "north" && reefPurse() ? Math.min(EMB.north.coins, REEF_CAP) : EMB[e].coins);
   const DAYS = 7, MOVES = 3, RUMOUR = 25, GIFT = 20;   // a campaign is one island week, Monday to Sunday; the election is Sunday night
   const FIRST_EXTRA = 3;   // the first day of a campaign has six moves, so a first visit is a real game and not three taps; from then on three a day
   /* the island's calendar is the real one: an island day is a real day (Europe/Berlin), three moves each, and the week's
@@ -358,7 +363,7 @@
   /* propose a law: the Book checks it against the laws in force first, then the other three vote */
   function propose(by, id) {
     const L = LAWS[id], c = conflict(id);
-    G.deals.forEach(d => { if (d.by === by && d.law === id) d.kept = true; });
+    G.deals.forEach(d => { if (d.by === by && d.law === id) { d.kept = true; if (by === G.me) keptMe(d.emb); } });
     if (c) { write(by, c.by === ISLE_BY ? F("proposed “{x}”: refused, it contradicts “{y}”, the island’s law this week", { x: T(L.t), y: T(LAWS[c.id].t) }) : F("proposed “{x}”: refused, it contradicts “{y}”, in force since day {n}", { x: T(L.t), y: T(LAWS[c.id].t), n: c.day }), "refused", null, 1, id); return { refused: c }; }
     const votes = {};
     others(by).forEach(v => { votes[v] = v === G.me ? null : aiVote(v, by, id); });
@@ -399,9 +404,9 @@
     write(by, F("paid Radio Coco {n} coins to say: “{x}”", { n: RUMOUR, x: claim }), lie ? "lie" : "fact", "radio", RUMOUR, about);
   }
   function deal(by, emb) {
-    const E = EMB[emb]; G.coins[by] += E.coins;
-    G.deals.push({ by, emb, law: E.wants, day: G.day, kept: false });
-    write(by, F("took {n} coins from the {x} and promised to propose “{y}”", { n: E.coins, x: T(E.name), y: T(LAWS[E.wants].t) }), "deal", emb, 1, emb);
+    const E = EMB[emb], n = coinsOf(emb); G.coins[by] += n;
+    G.deals.push({ by, emb, law: E.wants, day: G.day, kept: false, coins: n });
+    write(by, F("took {n} coins from the {x} and promised to propose “{y}”", { n, x: T(E.name), y: T(LAWS[E.wants].t) }), "deal", emb, 1, emb);
     if (by === G.me) payMe(emb, T(E.name));
   }
   function makePact(a, b, gift) {
@@ -455,7 +460,7 @@
   }
   /* a true thing one can say about a rival, straight from the Book */
   function factAbout(c) {
-    const d = G.deals.find(d => d.by === c); if (d) return F("{x} took {n} coins from the {y}", { x: nm(c), n: EMB[d.emb].coins, y: EMB[d.emb].name });   // the dictionary translates the filling too
+    const d = G.deals.find(d => d.by === c); if (d) return F("{x} took {n} coins from the {y}", { x: nm(c), n: d.coins || EMB[d.emb].coins, y: EMB[d.emb].name });   // the dictionary translates the filling too
     const l = G.lies.find(l => l.by === c && l.lie); if (l) return F("{x} paid for the rumour about {y}", { x: nm(c), y: nm(l.about) });
     const b = G.pacts.find(p => p.broken && p.a === c); if (b) return F("{x} broke a pact", { x: nm(c) });
     return null;
@@ -689,6 +694,7 @@
     /* what has happened to the island this campaign: eventBoiler, eventStorm, eventCoup, eventCatch, eventRoof */
     events().forEach(e => { if (e.day <= G.day) f["event" + e.id[0].toUpperCase() + e.id.slice(1)] = true; });
     /* a cruise ship near: which one, and whether it comes in a few days, tomorrow, today, is here or has left (shipFacts) */
+    f.reefPurse = reefPurse();   // the reef law of the week binds the North Wind's purse on the chain
     f.dark = darkNow();
     /* what Tau Net shows today: the wallets that walk here and the personal rules on the chain (islelive.js) */
     if (window.RABBIT_LIVE_WHEN) Object.assign(f, window.RABBIT_LIVE_WHEN());
@@ -817,7 +823,7 @@
     book(box) {
       G.said.book = G.book.length; save();
       const rows = G.book.slice().reverse().map(b => el("li", { class: "k-" + b.kind }, el("small", { text: F("Day {n}", { n: b.day }) + " · " + T(HOURS[b.hour] || "Night") }), el("span", null, el("b", { translate: "no", text: nm(b.who) }), " ", el("span", { text: b.text }), b.tx && !/^\d+$/.test(b.tx) ? el("a", { class: "cv-tx", href: "/explorer/?tx=" + b.tx, target: "_blank", rel: "noopener", title: T("This line on Tau Testnet Alpha"), text: " ⛓" }) : b.tx || b.bot ? el("span", { class: "cv-tx", title: T("This line went to Tau Testnet Alpha as a transaction"), text: " ⛓" }) : null)));
-      scene(box, "sam", T("The Book in the lighthouse"), T(G.book.length ? "Every move on the island is written here with the name of whoever made it. Nobody can tear out a page, not even me. Reading costs nothing." : "Empty, for now. Every move on the island will be written here, with the name of whoever made it. Nobody can tear out a page."), [btn(T("The island today"), () => openIsle(), { sub: T("every campaign played today, added up") }), buildBtn("lamp")],
+      scene(box, "sam", T("The Book in the lighthouse"), T(G.book.length ? "Every move on the island is written here with the name of whoever made it. Nobody can tear out a page, not even me. Reading costs nothing." : "Empty, for now. Every move on the island will be written here, with the name of whoever made it. Nobody can tear out a page."), [btn(T("The island today"), () => openIsle(), { sub: T("every campaign played today, added up") }), buildBtn("lamp"), guardBtn()].filter(Boolean),
         el("ol", { class: "cv-book" }, rows.length ? rows : [el("li", { class: "dim", text: T("Nothing yet.") })]),
         el("p", { class: "cv-old", text: T("The Book is the oldest custom of the island’s first people: for three hundred years every agreement was copied by hand into many books, so nobody alone could change one. The testnet is only its newest copy.") }));
     },
@@ -941,6 +947,35 @@
     const fx = LAWS[id].fx, parts = Object.keys(fx).map(k => (fx[k] > 0 ? "+" : "−") + " " + T(TOPICS[k]));
     return LAWS[id].open ? T("everyone reads the Book more often") : parts.join("  ");
   }
+  /* ---------- Old Sam's task: a guardian for your test wallet ----------
+     A guardian is a rule on the wallet that asks a second key to agree to its bigger payments (tauhud.com/guardian/,
+     the same test wallet the game plays with). Sam says what it guards against and what not, the player sets it on the
+     guardian page, and the island checks the chain (GET node.tauhud.com/walkers/<wallet>: a rule in force that asks a
+     co-signer, i18 to i25). Done once: a line in the Book. One rule per wallet: it replaces the clean-hands pledge. */
+  const guardBtn = () => G && G.onchain ? btn(G.did && G.did.guard ? T("Your wallet has a guardian") : T("Old Sam’s task: a guardian for your wallet"), () => guardTask(), { sub: T("costs no move") }) : null;
+  function guardTask(msg) {
+    openCard("book", box => {
+      const done = !!(G.did && G.did.guard);
+      scene(box, "sam", T("A guardian for your wallet"), done ? T("Your wallet has a guardian now. A second key must agree to its bigger payments. It helps when a payment is a mistake, or someone talked you into it. If someone steals your key, it does not help. Keep that sentence.")
+        : T("A task, if you want one. Give your test wallet a guardian: a rule that asks a second key to agree before a bigger payment leaves. It helps when a payment is a mistake, or someone talked you into it. If someone steals your key, it does not help. Set it on the guardian page, then come back and I will check the chain."), [
+        done ? null : btn(T("Open the guardian page"), () => window.open("/guardian/", "_blank", "noopener"), { sub: T("the same test wallet; one rule per wallet: it replaces any rule yours has, the clean-hands pledge too") }),
+        done ? null : btn(T("I set one: check the chain"), () => guardCheck(), { go: true }),
+        btn(T("Back to the Book"), () => openCard("book", PLACE.book)),
+      ].filter(Boolean), msg ? el("p", { class: "cv-note", text: msg }) : null);
+    });
+  }
+  async function guardCheck() {
+    const k = myKey(); if (!k) return;
+    let c = null;
+    try { const r = await fetch("https://node.tauhud.com/walkers/" + k.pk, { cache: "no-store" }); if (r.ok) c = await r.json(); } catch (e) {}
+    const rule = c && c.rule;
+    if (!rule) return guardTask(T("The chain’s reading of your wallet is out of reach just now, or none of its transactions is in a block yet. Try again in a few minutes."));
+    if (!(rule.parts || []).includes("co") || rule.in_force === false) return guardTask(T("Not yet: your wallet holds no rule in force that asks a second key. After you sign it, the next block holds it; give it a few minutes."));
+    G.did = G.did || {}; G.did.guard = 1;
+    write(G.me, T("gave their test wallet a guardian on the testnet: a second key must agree to its bigger payments"), "fact", "book");
+    bump(G.me, p => p.cares.includes("school"), 4);
+    SND.sfx("yes"); save(); guardTask(T("Found it on the chain. Written in the Book."));
+  }
   /* ---------- the clean-hands pledge: a real rule on the player's own wallet (IDNI tau-testnet 5ad1bb7, 13 November 2026:
      every wallet may carry one rule of its own, a transaction of its own whose operation "0" writes o5). The pledge stops
      the wallet paying either embassy's till (i4 is where a payment goes), so taking an embassy's money, which is a move
@@ -1010,14 +1045,20 @@
     const E = EMB[e], took = G.deals.find(d => d.by === G.me && d.emb === e);
     /* what they pay for is law already (last week's island law, or passed this week): there is nothing left to promise, so no coins */
     if (!took && inForce(E.wants)) return scene(box, E.who, T(E.name), F(E.done || "“{x}” is law already, so we have nothing to ask of you today. An unusual feeling. We do not care for it.", { x: LAWS[E.wants].t }), [btn(T("Leave"), () => closeCard())]);
-    const line = took ? F(E.remind || "We are counting on you for “{x}”. We would hate to remind the island in public.", { x: LAWS[E.wants].t }) : F(E.offer || "{n} coins, today. All we ask is that you propose “{x}” before the election. A small thing between friends.", { n: E.coins, x: LAWS[E.wants].t });
+    const line = took ? F(E.remind || "We are counting on you for “{x}”. We would hate to remind the island in public.", { x: LAWS[E.wants].t }) : F(E.offer || "{n} coins, today. All we ask is that you propose “{x}” before the election. A small thing between friends.", { n: coinsOf(e), x: LAWS[E.wants].t });
+    /* on the testnet the money is an envelope: a retractable transfer that becomes the player's at the election, unless
+       the promise was not kept by Sunday 23:30, when the embassy takes it back (infra/relay/islandrules.py) */
+    const notes = [];
+    if (!took && e === "north" && reefPurse()) notes.push(el("p", { class: "cv-note", text: F("The reef law of this week binds the North Wind’s purse on the testnet: a rule on its wallet refuses any payment above {n} test AGRS. So its envelope is {n}.", { n: REEF_CAP }) }));
+    if (G.onchain && !took) notes.push(el("p", { class: "cv-note", text: Fd("On the testnet the money comes as an envelope the embassy can take back. It becomes yours at the election (Monday 00:00 German time) if you propose “{x}” before Sunday 23:30. If not, the embassy takes it back on the chain.", { x: T(LAWS[E.wants].t) }) }));
+    if (G.onchain && took && took.on) notes.push(el("p", { class: "cv-note", text: took.kept ? T("Your envelope stays: you proposed the law. It becomes yours at the election.") : Fd("Your envelope waits on the testnet. Propose “{x}” before Sunday 23:30, or the embassy takes it back.", { x: T(LAWS[E.wants].t) }) }));
     scene(box, E.who, T(E.name), line, took ? [btn(T("Leave"), () => closeCard())] : [
-      btn(F("Take the {n} coins and promise", { n: E.coins }), () => { const take = () => { deal(G.me, e); SND.sfx("coin"); toast(T("The promise is in the Book now.")); spend(); if (UI.card) openCard(e, PLACE[e]); };
+      btn(F("Take the {n} coins and promise", { n: coinsOf(e) }), () => { const take = () => { deal(G.me, e); SND.sfx("coin"); toast(T("The promise is in the Book now.")); spend(); if (UI.card) openCard(e, PLACE[e]); };
         if (G.pledge && !G.pledge.off && G.onchain) pledgeDeal(e, take); else take(); }, { off: !movesLeft(), sub: F("people who care about {x} will not like it", { x: Object.keys(LAWS[E.wants].fx).filter(k => LAWS[E.wants].fx[k] < 0).map(k => T(TOPICS[k])).join(", ") }) }),
       btn(T("Politely decline"), () => closeCard()),
       G.onchain && !G.pledge ? btn(T("Sign a clean-hands pledge on the testnet"), () => pledgeSign(), { sub: T("a rule on your own wallet: it pays no embassy until the election; it replaces any rule your wallet has") }) : null,
       G.pledge && !G.pledge.off ? btn(T("Take the pledge back"), () => pledgeLift("back"), { warn: true, sub: T("the chain lifts it; the island reads it in the Book") }) : null,
-    ].filter(Boolean));
+    ].filter(Boolean), notes.length ? el("div", null, ...notes) : null);
   }
   function doPropose(id) {
     const r = propose(G.me, id);
@@ -2307,7 +2348,7 @@
     const lies = G.lies.filter(l => l.by === me && l.lie), truths = G.lies.filter(l => l.by === me && !l.lie).length;
     if (lies.length) out.push(F("Rumours you paid for: {n}, shown up by the Book: {m}", { n: lies.length, m: lies.filter(l => l.out).length }));
     if (truths) out.push(F("Truths you paid Radio Coco to tell: {n}", { n: truths }));
-    G.deals.filter(d => d.by === me).forEach(d => out.push(F(d.kept ? "Took {n} coins from the {x} and kept the promise" : "Took {n} coins from the {x} and never kept the promise", { n: EMB[d.emb].coins, x: EMB[d.emb].name })));
+    G.deals.filter(d => d.by === me).forEach(d => out.push(F(d.kept ? "Took {n} coins from the {x} and kept the promise" : "Took {n} coins from the {x} and never kept the promise", { n: d.coins || EMB[d.emb].coins, x: EMB[d.emb].name })));
     const signed = mine.filter(b => b.tx).length;
     if (signed) out.push(F("{n} of your moves signed into Tau Testnet Alpha", { n: signed }));
     if (G.amb) { const A = AMB[G.amb.id], ok = A.check(); out.push(Fd(ok ? "Your ambition, {x}: reached" : "Your ambition, {x}: missed", { x: T(A.name) })); }
@@ -2451,12 +2492,22 @@
     CHAIN.payq.push({ purse, from });
     if (!CHAIN.busy && !CHAIN.q.length) flushPay();
   }
+  /* the embassy's law proposed: its envelope stays (asked once the proposal's own transaction is through) */
+  function keptMe(emb) {
+    if (!G || !G.onchain || !EMB[emb]) return;
+    CHAIN.payq.push({ purse: emb, kept: true });
+    if (!CHAIN.busy && !CHAIN.q.length) flushPay();
+  }
   function flushPay() {
     const k = myKey(); if (!k) { CHAIN.payq.length = 0; return; }
-    CHAIN.payq.splice(0).forEach(({ purse, from }) => ask("islandpay " + purse + " " + k.pk, 8000).then(m => {
+    CHAIN.payq.splice(0).forEach(({ purse, from, kept }) => kept ? ask("islandkept " + purse + " " + k.pk, 8000).then(m => {
+      if (m && m.status === "ok" && m.data && m.data.kept) toast(Fd("The {x} keeps its envelope on the testnet: it becomes yours at the election.", { x: T(EMB[purse].name) }));
+    }, () => {}) : ask("islandpay " + purse + " " + k.pk, 8000).then(m => {
       if (!(m && m.status === "ok" && m.data && m.data.queued)) return;
       if (m.data.from) remember(m.data.from, "Key purse · " + from);
-      toast(F("{x} is sending you {n} test AGRS on the testnet.", { x: from, n: m.data.amount }));
+      if (m.data.envelope) { const d = G.deals.find(d => d.by === G.me && d.emb === purse); if (d) { d.on = true; save(); } }
+      toast(m.data.envelope ? Fd("{x} is sending you {n} test AGRS as an envelope on the testnet: yours at the election, if you keep your promise.", { x: from, n: m.data.amount })
+        : F("{x} is sending you {n} test AGRS on the testnet.", { x: from, n: m.data.amount }));
     }, () => {}));
   }
   /* the visitor's test wallet in this browser (the same key /wallet/ uses); made here if there is none yet */

@@ -50,6 +50,8 @@ import secrets
 import time
 from collections import deque
 
+from islandrules import ENVELOPE_PURSES, IslandChain
+
 log = logging.getLogger("island")
 
 COUNCIL = "96179f47d33ab65d9922c5652d7686f9e6be9d36ef4b9e9e04bdaac25b6e30d01928182c16da7aaa6dc954cccb88b62b"
@@ -100,7 +102,16 @@ def signing_bytes(tx: dict) -> bytes:
     d["tx_type"] = tx.get("tx_type", "user_tx")
     if tx.get("expire_at_height") is not None:
         d["expire_at_height"] = tx["expire_at_height"]
-    d["operations"] = tx.get("operations", {})
+    t = d["tx_type"]
+    if t == "retractable_transfer":   # an embassy's envelope (islandrules.py): both release fields are signed, the unused one null
+        d["recipient_pubkey"] = tx.get("recipient_pubkey")
+        d["amount"] = tx.get("amount")
+        d["release_at_height"] = tx.get("release_at_height")
+        d["release_at_time"] = tx.get("release_at_time")
+    elif t == "retract_transfer":
+        d["retractable_id"] = tx.get("retractable_id")
+    else:
+        d["operations"] = tx.get("operations", {})
     return json.dumps(d, sort_keys=True, separators=(",", ":")).encode()
 
 
@@ -145,6 +156,8 @@ class Island:
         self.today_pay = 0              # payouts sent today
         self.on_tx = None               # called for every transaction the node took (relay.py: the testnet load page)
         self.idle = None                # async (ask, gov) -> bool, asked when nothing waits: the cruise ships (cruise.py) send then
+        # the embassies' envelopes as retractable transfers and the laws of the week as rules on the purses (islandrules.py)
+        self.chain = IslandChain(os.environ.get("ISLAND_STATE_PATH") or os.path.join(os.path.dirname(self.path) or ".", "island-chain.json"), clock)
         if self.enabled:
             try:
                 self.load()
@@ -204,7 +217,8 @@ class Island:
             self.paid_ip.clear()
         self.paid_ip[ip] = self.paid_ip.get(ip, 0) + 1
         self.pays[(purse, wallet)] = self.pays.get((purse, wallet), 0) + 1
-        return True, {"queued": True, "amount": PURSES[purse], "from": self.ppk[purse]}
+        env = purse in ENVELOPE_PURSES and self.chain.envelope(purse, wallet) is not None   # as it stands now (islandrules.py)
+        return True, {"queued": True, "amount": self.chain.amount(purse, PURSES[purse]), "from": self.ppk[purse], "envelope": env}
 
     def saw_tx(self, ip: str):
         """The relay passed a signed transaction from this address to the node (relay.py sendtx)."""
@@ -212,13 +226,33 @@ class Island:
             self.seen.clear()
         self.seen[ip] = self.clock()
 
-    def build_pay(self, purse: str, wallet: str, seq: int, tip: int, fee: int, n: int = 1) -> dict:
-        """One signed transfer from a purse to the visitor's wallet: the wage or the embassy's money, n times."""
+    def build_pay(self, purse: str, wallet: str, seq: int, tip: int, fee: int, n: int = 1, env: dict | None = None) -> dict:
+        """One signed transfer from a purse to the visitor's wallet: the wage or the embassy's money, n times; an
+        embassy's envelope (env) is a retractable transfer released at the island's election (islandrules.py)."""
         from py_ecc.bls import G2Basic
         pk = self.ppk[purse]
-        tx = {"tx_type": "user_tx", "sender_pubkey": pk, "sequence_number": seq,
-              "expiration_time": int(self.clock()) + 600, "expire_at_height": tip + 1000,
-              "fee_limit": str(fee * 5), "operations": {"1": [[pk, wallet, str(PURSES[purse] * max(1, n))]]}}
+        amount = self.chain.amount(purse, PURSES[purse]) * max(1, n)
+        base = {"sender_pubkey": pk, "sequence_number": seq, "expiration_time": int(self.clock()) + 600, "expire_at_height": tip + 1000,
+                "fee_limit": str(fee * 5)}
+        if env:
+            base["expiration_time"] = min(base["expiration_time"], env["rel"] - 1)
+            tx = {"tx_type": "retractable_transfer", **base, "recipient_pubkey": wallet, "amount": amount, "release_at_time": int(env["rel"])}
+        else:
+            tx = {"tx_type": "user_tx", **base, "operations": {"1": [[pk, wallet, str(amount)]]}}
+        tx["signature"] = G2Basic.Sign(self.psk[purse], hashlib.sha256(signing_bytes(tx)).digest()).hex()
+        return tx
+
+    def build_purse(self, purse: str, seq: int, tip: int, fee: int, rule: str | None = None, rid: str | None = None, rel: int = 0) -> dict:
+        """A purse's own rule (operation "0", alone in its transaction) or the retract of one of its envelopes (feeless)."""
+        from py_ecc.bls import G2Basic
+        pk = self.ppk[purse]
+        base = {"sender_pubkey": pk, "sequence_number": seq, "expiration_time": int(self.clock()) + 600, "expire_at_height": tip + 1000}
+        if rid:
+            base["expiration_time"] = min(base["expiration_time"], rel - 1)
+            base["expire_at_height"] = tip + 100
+            tx = {"tx_type": "retract_transfer", **base, "fee_limit": "0", "retractable_id": rid}
+        else:
+            tx = {"tx_type": "user_tx", **base, "fee_limit": str(fee * 5), "operations": {"0": rule}}
         tx["signature"] = G2Basic.Sign(self.psk[purse], hashlib.sha256(signing_bytes(tx)).digest()).hex()
         return tx
 
@@ -229,15 +263,19 @@ class Island:
             return None
         d = st.get("data") or {}
         seq = max(int(d.get("sequence_number") or 0), self.next_seq.get("purse-" + purse, 0))
-        tx = await asyncio.to_thread(self.build_pay, purse, wallet, seq, int(d.get("tip_height") or 0), base_fee(gov()), n)
+        env = self.chain.envelope(purse, wallet) if n == 1 else None
+        tx = await asyncio.to_thread(self.build_pay, purse, wallet, seq, int(d.get("tip_height") or 0), base_fee(gov()), n, env)
         res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))
-        if bool(res) and res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False:
+        ok = bool(res) and res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False
+        if env:
+            self.chain.sent({**env, "amount": tx["amount"]}, ok, (res.get("data") or {}).get("tx_hash") if ok else None)
+        if ok:
             self.next_seq["purse-" + purse] = seq + 1
             self.today += 1
             self.on_tx and self.on_tx()
             self.today_pay += 1
             self.paid[wallet] = self.paid.get(wallet, 0) + n
-            self.recent.appendleft({"by": purse, "kind": "pay", "to": wallet, "amount": PURSES[purse] * n, "hash": (res.get("data") or {}).get("tx_hash"), "at": int(self.clock())})
+            self.recent.appendleft({"by": purse, "kind": "envelope" if env else "pay", "to": wallet, "amount": self.chain.amount(purse, PURSES[purse]) * n, "hash": (res.get("data") or {}).get("tx_hash"), "at": int(self.clock())})
         else:
             self.next_seq.pop("purse-" + purse, None)
             log.info("island pay %s refused: %.160s", purse, json.dumps((res or {}).get("error") or res))
@@ -300,6 +338,15 @@ class Island:
                     log.warning("island pay %s failed: %r", purse, exc)
                 await asyncio.sleep(SPACING)
                 continue
+            if not self.queue and not self.pays:   # an envelope to take back or settle, a purse's rule to send (islandrules.py)
+                job = self.chain.next_job()
+                if job:
+                    try:
+                        await self.chain_job(job, ask, gov)
+                    except Exception as exc:
+                        log.warning("island chain job %s failed: %r", job[0], exc)
+                    await asyncio.sleep(SPACING)
+                    continue
             if not self.queue:   # nothing of the game waits: a cruise ship's passengers may use the slot (cruise.py)
                 sent = False
                 if self.idle:
@@ -320,6 +367,87 @@ class Island:
             except Exception as exc:   # one bad answer must not stop the bot
                 log.warning("island move %s %s failed: %r", who, kind, exc)
             await asyncio.sleep(self.pace())
+
+    async def chain_job(self, job: tuple, ask, gov):
+        kind, now = job[0], self.clock()
+        if kind == "settle":
+            e = job[1]
+            e["asked"] = int(now)
+            st = None
+            if e.get("rid"):
+                r = await ask(f"getretractable {e['rid']}")
+                st = ((r or {}).get("data") or {}).get("status")
+            elif e.get("hash"):
+                r = await ask(f"gettxstatus {e['hash']}")
+                x = ((r or {}).get("data") or {}).get("retractable")
+                if isinstance(x, dict):
+                    e["rid"], st = str(x.get("id") or "") or None, x.get("status")
+            if st in ("released", "retracted"):
+                e["state"] = st
+                e["back"] = st == "retracted"
+            self.chain.save()
+            return
+        purse = job[1] if kind == "rule" else job[1]["purse"]
+        pk = self.ppk[purse]
+        st = await ask(f"getsequence {pk}")
+        if not st or st.get("status") != "ok":
+            return
+        d = st.get("data") or {}
+        seq = max(int(d.get("sequence_number") or 0), self.next_seq.get("purse-" + purse, 0))
+        tip = int(d.get("tip_height") or 0)
+        if kind == "retract":
+            e = job[1]
+            e["tried"] = int(now)
+            rid = e.get("rid")
+            if not rid and e.get("hash"):
+                r = await ask(f"gettxstatus {e['hash']}")
+                x = ((r or {}).get("data") or {}).get("retractable")
+                rid = str(x.get("id") or "") if isinstance(x, dict) else None
+            if not rid:   # the node's own list of the purse's open envelopes
+                r = await ask(f"getretractables {pk} out")
+                for x in ((r or {}).get("data") or {}).get("retractables") or []:
+                    if str(x.get("recipient_pubkey", "")).lower() == e["wallet"] and int(x.get("release_at_time") or 0) == int(e["rel"]):
+                        rid = str(x.get("retractable_id") or "")
+                        break
+            if not rid:
+                log.info("island envelope %s → %s: no open retractable found", purse, e["wallet"][:10])
+                self.chain.save()
+                return
+            e["rid"] = rid
+            tx = await asyncio.to_thread(self.build_purse, purse, seq, tip, 0, None, rid, int(e["rel"]))
+        else:
+            _, _, text, law, cap = job
+            tx = await asyncio.to_thread(self.build_purse, purse, seq, tip, base_fee(gov()), text)
+        res = await ask("sendtx " + json.dumps(tx, separators=(",", ":")))
+        ok = bool(res) and res.get("status") == "ok" and (res.get("data") or {}).get("ok") is not False
+        if ok:
+            self.next_seq["purse-" + purse] = seq + 1
+            self.today += 1
+            self.on_tx and self.on_tx()
+            h = (res.get("data") or {}).get("tx_hash")
+            if kind == "retract":
+                job[1]["state"] = "retracting"
+                self.recent.appendleft({"by": purse, "kind": "retract", "to": job[1]["wallet"], "hash": h, "at": int(now)})
+            else:
+                self.chain.rules[purse] = {"text": text, "law": law, "cap": cap, "hash": h, "at": int(now)}
+                self.recent.appendleft({"by": purse, "kind": "rule", "law": law, "hash": h, "at": int(now)})
+        else:
+            self.next_seq.pop("purse-" + purse, None)
+            if kind == "rule":
+                self.chain.rules.setdefault(purse, {})["tried"] = int(now)
+            log.info("island %s %s refused: %.160s", kind, purse, json.dumps((res or {}).get("error") or res))
+        self.chain.save()
+
+    def accept_kept(self, purse: str, wallet: str, ip: str) -> tuple[bool, dict | str]:
+        """`islandkept <north|south> <wallet>`: the player proposed the embassy's law, so its envelope stays."""
+        if not self.enabled:
+            return False, "The island bot is switched off on this relay."
+        wallet = wallet.lower()
+        if purse not in ("north", "south") or not WALLET_RE.match(wallet):
+            return False, "Usage: islandkept <north|south> <your wallet>"
+        if self.clock() - self.seen.get(ip, 0) > PAY_AFTER_MOVE:   # the law was proposed with a move, and a move is a transaction
+            return True, {"kept": False, "why": "no move"}
+        return True, self.chain.kept(purse, wallet)
 
     def batch(self, n: int) -> int:
         """How many of n waiting moves the next transaction carries: one, so every move is its own transaction on the
@@ -366,4 +494,5 @@ class Island:
             return None
         self.roll(self.clock())
         return {"enabled": self.enabled, "council": COUNCIL, "places": PLACES, "wallets": self.pk, "purses": self.ppk, "today": self.today, "daily": self.daily,
-                "queued": len(self.queue), "recent": list(self.recent)}
+                "queued": len(self.queue), "recent": list(self.recent),
+                "pay": {p: self.chain.amount(p, a) for p, a in PURSES.items()}, **self.chain.view()}

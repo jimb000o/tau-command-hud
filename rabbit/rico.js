@@ -1496,11 +1496,15 @@
     ...Object.entries(EMBV).flatMap(([who, [law, n, offer, remind, done]]) => { const f = t => t.replace("{n}", n).replace("{x}", LAWT[law]);
       return [[who, f(remind || "We are counting on you for “{x}”. We would hate to remind the island in public.")], [who, f(offer || "{n} coins, today. All we ask is that you propose “{x}” before the election. A small thing between friends.")],
         [who, f(done || "“{x}” is law already, so we have nothing to ask of you today. An unusual feeling. We do not care for it.")]]; }),   // done: what they pay for is law already
+    ["sam", "A task, if you want one. Give your test wallet a guardian: a rule that asks a second key to agree before a bigger payment leaves. It helps when a payment is a mistake, or someone talked you into it. If someone steals your key, it does not help. Set it on the guardian page, then come back and I will check the chain."],   // game.js guardTask: Old Sam's task, a guardian for your wallet
+    ["sam", "Your wallet has a guardian now. A second key must agree to its bigger payments. It helps when a payment is a mistake, or someone talked you into it. If someone steals your key, it does not help. Keep that sentence."],
+    /* the reef law of the week caps the North Wind's purse on the chain (game.js REEF_CAP): its offer is then 20 */
+    ["frost", "20 coins, today. All we ask is that you propose “" + LAWT.harbour + "” before the election. A small thing between friends."],
   ];
   /* what Rico can put on air: the four rumours that are not true, and the true things the Book has seen */
   const LIES = ["Marisol fishes inside the reef at night", "Tobias wants to sell the lighthouse", "Baako’s coconuts are imported", "Hana wants school on Sundays"];
   const EMBN = { "North Wind Embassy": 40, "South Current Wellness Resort": 35 };
-  const CLAIMS = [...LIES, ...NAMES.flatMap(x => [...Object.entries(EMBN).map(([y, n]) => `${x} took ${n} coins from the ${y}`), ...NAMES.filter(y => y !== x).map(y => `${x} paid for the rumour about ${y}`), `${x} broke a pact`])];
+  const CLAIMS = [...LIES, ...NAMES.flatMap(x => [...Object.entries(EMBN).map(([y, n]) => `${x} took ${n} coins from the ${y}`), `${x} took 20 coins from the North Wind Embassy`, ...NAMES.filter(y => y !== x).map(y => `${x} paid for the rumour about ${y}`), `${x} broke a pact`])];
   CLAIMS.forEach(c => CAST.push(["rico", c + "!"]));
   const fill = (s, v) => s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m));
   /* every line anyone can speak, as [who, English]: the server makes one clip for each */
