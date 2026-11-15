@@ -259,6 +259,9 @@ def status_lines() -> list[str]:
     r = (s.get("runs") or [None])[0]
     if r:
         out.append(f"         last {r['id']}: {r.get('result')}" + (f" ({r.get('why')})" if r.get("why") else ""))
+    tr = s.get("last_try")
+    if tr:
+        out.append(f"         rehearsal {tr['id']}: {tr.get('result') or tr.get('status')}" + (f" ({tr.get('why')})" if tr.get("why") else ""))
     return out
 
 
