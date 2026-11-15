@@ -1,5 +1,9 @@
 /* Simplified Chinese for /builder/. Keys are the English text; {n} {a} {b} are numbers, {x} {y} words, {e1} an inline link. */
 TauI18n.add({ strings: {
+  /* 14.11.2026: the moment you did something (assets/win.js) */
+  "Your rule works: the Tau engine takes it": "你的规则可行：Tau 引擎接受了它",
+  "All {n} test payments did what you said they should. Next: sign it in your wallet, and it guards your account on the testnet.": "全部 {n} 笔测试付款都如你所说。下一步：在钱包里签名，它就会在测试网上守护你的账户。",
+  "{n} of {n} test payments as expected": "{n}/{n} 笔测试付款符合预期",
   "Your rule in plain words, or in Tau": "你的规则，用日常语言或 Tau 书写",
   "Rule builder": "规则搭建器",
   "The Tau engine on our node answers the last two checks. Everything else runs in your browser.": "最后两项检查由我们节点上的 Tau 引擎回答，其余都在你的浏览器里运行。",

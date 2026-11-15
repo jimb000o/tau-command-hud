@@ -146,6 +146,15 @@ html.nm-calm .mtabs button[data-pane="stat"] { display: none; }
 .trace.hot i { background: var(--behind); }
 .trace.out i { background: var(--bad); }
 .rank { color: var(--ok) !important; }
+#inst .row.rk { position: relative; }
+#inst .row.rk .plus { position: absolute; right: 8px; top: 2px; color: var(--ok); font-weight: 700; text-shadow: 0 0 10px var(--ok); animation: nmplus 1.6s ease-out forwards; pointer-events: none; }
+#inst .row.rk.gain { animation: nmgain 1.2s ease-out; } #inst .row.rk.rkup { animation: nmgain 1.6s ease-out 2; }
+@keyframes nmplus { 0% { opacity: 0; transform: translateY(8px); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateY(-22px); } }
+@keyframes nmgain { 0% { box-shadow: inset 0 0 0 1px var(--ok), 0 0 18px -4px var(--ok); } 100% { box-shadow: inset 0 0 0 1px transparent, 0 0 0 0 transparent; } }
+.term .rankup { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; margin: 6px 0; padding: 8px 22px; border: 3px double var(--ok); color: var(--ok); letter-spacing: .2em; text-transform: uppercase; font-size: 11px; animation: nmrank 1.4s ease-out; }
+.term .rankup b { font-size: 18px; letter-spacing: .08em; color: #fff; text-shadow: 0 0 12px var(--ok); }
+@keyframes nmrank { 0% { opacity: 0; transform: scale(.85); box-shadow: 0 0 0 0 var(--ok); } 40% { opacity: 1; transform: scale(1.04); box-shadow: 0 0 30px 2px rgba(57,255,138,.5); } 100% { transform: none; box-shadow: none; } }
+@media (prefers-reduced-motion: reduce) { #inst .row.rk, #inst .row.rk .plus, .term .rankup { animation: none !important; } }
 .inst .row.state-live b { color: var(--ok); } .inst .row.state-sim b { color: var(--behind); } .inst .row.state-off b { color: var(--bad); }
 
 /* the top bar: the block clock, what is running, the post, the trace; always in view, on the phone in every tab */

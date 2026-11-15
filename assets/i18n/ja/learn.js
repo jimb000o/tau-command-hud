@@ -1,5 +1,10 @@
 /* Japanese for this page. Keys are the English text; {e1} … are inline elements kept in place. */
 TauI18n.add({ strings: {
+  /* 14.11.2026: the moment you did something (assets/win.js) */
+  "Lesson {a} solved: {x}": "レッスン {a} クリア：{x}",
+  "Every lesson solved. You can read and write Tau rules like the ones the testnet runs.": "すべてのレッスンをクリアしました。テストネットで動いているような Tau のルールを読み書きできます。",
+  "{a} of {b} lessons solved. Each one is a real answer from the Tau engine, not a quiz.": "{b} レッスン中 {a} をクリア。どれもクイズではなく、Tau エンジンの本物の答えです。",
+  "{a} of {b} solved": "{a}/{b} クリア",
   "Learn Tau Language": "Tau Language を学ぶ",
   "Learn Tau Language. No node needed.": "Tau Language を学ぼう。ノードは要りません。",
   "Every rule on the Tau testnet is a {e1}. To learn to write them you only need the {e2} program on your own computer: its REPL answers each line you type. A node is something else: it follows the chain and wants a server.": "Tau テストネットのルールはどれも {e1} です。書き方を学ぶには、自分のパソコンに {e2} プログラムがあれば十分です。その REPL は入力した一行ごとに答えます。ノードは別物で、チェーンを追いかけるのでサーバーが要ります。",

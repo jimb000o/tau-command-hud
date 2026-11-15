@@ -1,5 +1,11 @@
 /* Japanese for the Guardian page (guardian/). Keys are the English text; {n} {e1} … are placeholders. */
 TauI18n.add({ strings: {
+  /* 14.11.2026: the moment you did something (assets/win.js) */
+  "your rule on the chain": "チェーン上のあなたのルール",
+  "Step 1 done: your authenticator app is connected": "ステップ 1 完了：認証アプリがつながりました",
+  "Its six-digit codes are now the second key for your test wallet.": "その 6 桁のコードが、テストウォレットの 2 本目の鍵になります。",
+  "Step 2 done: the Guardian rule is in force": "ステップ 2 完了：Guardian のルールが有効です",
+  "A block holds it now. From here, payments it covers wait for a code from your app.": "いまはブロックに記録されています。これからは、対象の支払いがアプリのコードを待ちます。",
   "Guardian": "Guardian",
   "It can say yes to your payment, never send one": "あなたの支払いに「はい」と言えるだけで、自分から送ることは決してできません",
   "Your test wallet": "あなたのテストウォレット",

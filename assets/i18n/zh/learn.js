@@ -1,5 +1,10 @@
 /* Simplified Chinese for this page. Keys are the English text; {e1} … are inline elements kept in place. */
 TauI18n.add({ strings: {
+  /* 14.11.2026: the moment you did something (assets/win.js) */
+  "Lesson {a} solved: {x}": "第 {a} 课已解出：{x}",
+  "Every lesson solved. You can read and write Tau rules like the ones the testnet runs.": "所有课程都已解出。你能读写测试网上运行的那种 Tau 规则了。",
+  "{a} of {b} lessons solved. Each one is a real answer from the Tau engine, not a quiz.": "已解出 {a}/{b} 课。每一课都是 Tau 引擎的真实回答，不是测验。",
+  "{a} of {b} solved": "已解出 {a}/{b}",
   "Learn Tau Language": "学习 Tau 语言",
   "Learn Tau Language. No node needed.": "学习 Tau 语言，不需要节点。",
   "Every rule on the Tau testnet is a {e1}. To learn to write them you only need the {e2} program on your own computer: its REPL answers each line you type. A node is something else: it follows the chain and wants a server.": "Tau 测试网上的每条规则都是一份 {e1}。要学会写规则，你只需要在自己的电脑上装 {e2} 程序：它的 REPL 会回答你输入的每一行。节点是另一回事：它跟随链，需要一台服务器。",

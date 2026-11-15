@@ -3043,5 +3043,11 @@
     "on": "2026-11-14",
     "link": "/nomemo/",
     "html": "No Memo: the heist Four eyes, two keys. Put a rule on your own wallet that wants a second signature above an amount, send a bigger payment that waits on the chain as an approval request, and let your partner sign it: Tau HUD’s co-signer, or a friend who types cosign in their own No Memo. Then take the rule off again."
+  },
+  {
+    "tag": "Tau HUD",
+    "on": "2026-11-14",
+    "link": "/wallet/",
+    "html": "Every win now shows itself: when a payment, a rule or a vote of yours is in a block, when a lesson is solved, when the Tau engine takes your rule or a Guardian step is done, one short card says what you did, what it means, and the block it is in. Hearts beat when you give them and say when a block holds them; No Memo shows your points rising and a banner for a new rank; White Rabbit Key's chain line flashes when a move is sealed. No points to chase, nothing to lose."
   }
 ]

@@ -169,6 +169,7 @@ html.fit.wide .wrap > .main { grid-template-columns: minmax(0, 2.2fr) minmax(0, 
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../history/vendor/blake3.umd.min.js" defer></script>
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/win.js" defer></script>
 </head>
 <body>
 <div class="wrap">
@@ -563,7 +564,9 @@ function watchLanding(id) {
   const tick = () => {
     if (TauSim.head() >= v.at) {
       good(F("Block #{a}: your yes for {id} is counted.", { a: v.at, id: short(id) }));
-      renderTally(); return;
+      renderTally();
+      if (window.TauWin) TauWin.moment({ key: "vote-practice", at: $("tally") || null, title: T("Your yes is counted"), meaning: T("That is how a validator agrees a rule change on Tau Net: the same commands, the same steps. Here it was the practice chain."), proof: F("practice · block #{a}", { a: v.at }) });
+      return;
     }
     setTimeout(tick, 1000);
   };

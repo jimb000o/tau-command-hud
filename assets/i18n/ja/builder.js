@@ -1,5 +1,9 @@
 /* Japanese for /builder/. Keys are the English text; {n} {a} {b} are numbers, {x} {y} words, {e1} an inline link. */
 TauI18n.add({ strings: {
+  /* 14.11.2026: the moment you did something (assets/win.js) */
+  "Your rule works: the Tau engine takes it": "ルールは動きます：Tau エンジンが受け入れました",
+  "All {n} test payments did what you said they should. Next: sign it in your wallet, and it guards your account on the testnet.": "{n} 件のテスト支払いがすべて思った通りに動きました。次はウォレットで署名すれば、テストネットであなたのアカウントを守ります。",
+  "{n} of {n} test payments as expected": "テスト支払い {n}/{n} が期待どおり",
   "Your rule in plain words, or in Tau": "あなたのルール（普通の言葉、または Tau で）",
   "Rule builder": "ルールビルダー",
   "The Tau engine on our node answers the last two checks. Everything else runs in your browser.": "最後の 2 つのチェックは私たちのノードの Tau エンジンが答えます。ほかはすべてあなたのブラウザで動きます。",

@@ -2422,6 +2422,7 @@
     d.replaceChildren(el("i", { class: "dot" + (t.st === "in" ? " ok" : t.st === "out" ? " no" : " now"), "aria-hidden": "true" }), el("span", { class: "tx", text: text }), el("code", { class: "h", text: txShort(t.h) }),
       el("a", { href: txUrl(t.h), target: "_blank", rel: "noopener", text: T("Explorer") }));
     d.hidden = false; requestAnimationFrame(() => d.classList.add("on"));
+    d.classList.remove("sealed"); if (t.st === "in") { void d.offsetWidth; d.classList.add("sealed"); const c = $("cvChainChip"); if (c) { c.classList.remove("pop"); void c.offsetWidth; c.classList.add("pop"); } }
     clearTimeout(stripT); stripT = setTimeout(() => { d.classList.remove("on"); setTimeout(() => { if (!d.classList.contains("on")) d.hidden = true; }, 350); }, t.st === "queued" ? 14000 : 9000);
   }
   function followTxs() {

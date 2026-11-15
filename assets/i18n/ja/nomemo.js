@@ -1,6 +1,8 @@
 /* Japanese for No Memo, the crew terminal. Keys are the English text; {n} {m} {a} {b} {h} … are placeholders.
    Command words (help, take, run, back, case, pick), node codes and the ship's name stay as they are. */
 TauI18n.add({ strings: {
+  /* 14.11.2026: the moment you did something (assets/win.js) */
+  "New rank": "新しいランク",
   "who pays the node": "ノードの費用は誰が払う",
   "This terminal dials node.tauhud.com, a community node with a monthly bill. The Tau HUD crew is a paid membership that carries part of it:": "この端末は node.tauhud.com に接続します。毎月の請求があるコミュニティノードです。Tau HUD クルーはその一部を負担する有料メンバーシップです：",
   "The game runs on our community node. Help keep it online:": "このゲームは私たちのコミュニティノードで動いています。動かし続けるために：",

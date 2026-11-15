@@ -1,5 +1,18 @@
 /* Japanese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  /* 14.11.2026: the moment you did something (assets/win.js) */
+  "take-back in block #{a}": "取り消しはブロック #{a}",
+  "take-back sent": "取り消しを送信済み",
+  "It is final: every node now holds the same record of it.": "確定しました。すべてのノードが同じ記録を持っています。",
+  "It waits for its release block. Until then you can still take it back under Activity.": "解放ブロックを待っています。それまでは「アクティビティ」から取り消せます。",
+  "Your request is on the chain. It executes the moment your co-signer signs.": "リクエストはチェーン上にあります。共同署名者が署名した瞬間に実行されます。",
+  "A block counted it. Every node agrees it is there.": "ブロックに数えられました。すべてのノードがそれを認めています。",
+  "Your account follows its own rule now: every payment from it is checked against it first.": "あなたのアカウントは自分のルールに従います。出ていく支払いはすべて先にこのルールで確認されます。",
+  "The other account now finds your rule in its inbox, to agree to or decline.": "相手のアカウントの受信箱にあなたのルールが届きました。同意するか断るかは相手次第です。",
+  "You agreed: that rule now runs on your account for every payment.": "同意しました。このルールはあなたのアカウントのすべての支払いに適用されます。",
+  "It never arrived: the test AGRS are back with you.": "届きませんでした。テスト AGRS はあなたの手元に戻りました。",
+  "All steps done: you sent a payment and took it back": "全ステップ完了：支払いを送り、取り消しました",
+  "On the chain only the sender can take a payment back, and only before the release block. You have now done both sides of it.": "チェーン上で支払いを取り消せるのは送り手だけで、解放ブロックの前に限ります。その両方をやり終えました。",
   "Tau testnet wallet": "Tau テストネットウォレット",
   "Wallet": "ウォレット",
   "A testnet account with its own rules: send, take back, co-sign, vote, form a Pakt": "独自ルールを持つテストネットのアカウント：送金、取り消し、共同署名、投票、Pakt の結成",

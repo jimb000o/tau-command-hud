@@ -1,5 +1,9 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. Commands and node answers stay as they are. */
 TauI18n.add({ strings: {
+  /* 14.11.2026: the moment you did something (assets/win.js) */
+  "Your yes is counted": "你的赞成票已计入",
+  "That is how a validator agrees a rule change on Tau Net: the same commands, the same steps. Here it was the practice chain.": "Tau Net 上的验证者就是这样同意规则变更的：同样的命令，同样的步骤。这里用的是练习链。",
+  "practice · block #{a}": "练习 · 区块 #{a}",
   "Who may vote on a rule change is a setting of the network; the counter on the right says what it admits now.": "谁可以为规则变更投票是网络的一项设置；右侧的计数显示它现在接受谁的投票。",
   "runs one with the network’s settings.": "会按网络自己的设置运行一个节点。",
   "Who may vote.": "谁可以投票。",

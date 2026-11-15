@@ -72,7 +72,8 @@
   }
   function toggle(btn) {
     const id = btn.dataset.id;
-    const go = () => { if (want[id]) delete want[id]; else want[id] = 1; save(); paint(); clearTimeout(timer); timer = setTimeout(flush, SETTLE); };
+    const go = () => { if (want[id]) delete want[id]; else want[id] = 1; save(); paint(); clearTimeout(timer); timer = setTimeout(flush, SETTLE);
+      if (want[id]) document.querySelectorAll(`button.heart[data-id="${id}"]`).forEach(h => { h.classList.remove("pop"); void h.offsetWidth; h.classList.add("pop"); setTimeout(() => h.classList.remove("pop"), 800); }); };   // it beats once when you give it
     if (!want[id]) tell(btn, go); else go();
   }
 
@@ -130,8 +131,25 @@
         try { const lk = "tauhud-wallet-log-live-" + k.pk, logs = JSON.parse(store.get(lk) || "[]"); logs.unshift({ hash: sent[id].hash, kind: "pay", label: (on ? "♥ " : "♡ ") + T(PARTS[Object.keys(PARTS).find(p => String(PARTS[p][0]) === id)][1]), at: Date.now(), status: "queued", seq: tx.sequence_number, paid: true }); store.set(lk, JSON.stringify(logs.slice(0, 200))); } catch (e) {}
       }
     } catch (e) { note(T("The testnet is out of reach just now; your heart is sent on your next visit.")); }
-    if (c) c.close();
+    if (c) { const last = Object.keys(sent).filter(id => sent[id].hash && Date.now() - sent[id].at < 30000).sort((x, y) => sent[y].at - sent[x].at)[0]; if (last && sent[last].on) { const cc = c; landed(cc, last).catch(() => {}).then(() => cc.close()); } else c.close(); }
     busy = false; paint(); setTimeout(fetchCounts, 60000);
+  }
+  /* the heart you just gave, followed until a block holds it (up to about a minute), then one calm card: it is in, what it
+     is for, and the block (assets/win.js, loaded here when the page does not have it) */
+  async function landed(c, id) {
+    const h = sent[id].hash;
+    for (let k = 0; k < 14; k++) {
+      await new Promise(r => setTimeout(r, 5000));
+      const m = await c.ask("gettxstatus " + h, 8000), d = (m && m.status === "ok" && m.data) || {};
+      if (d.block_number == null && !/confirmed|included|mined|sealed|applied/i.test(String(d.status || d.state || ""))) continue;
+      const blk = d.block_number ?? d.height ?? null, name = window.TauHearts ? TauHearts.name(id) : null;
+      const show = () => window.TauWin && TauWin.moment({ key: "heart", at: document.querySelector(`button.heart[data-id="${id}"]`),
+        title: name ? T("Your heart is in a block") + ": " + T(name) : T("Your heart is in a block"),
+        meaning: T("It tells us which parts you love most, so we build those first. Public on the chain, without a name."),
+        proof: (blk != null ? "block #" + blk + " · " : "") + "tx " + h.slice(0, 8) + "…", href: "/hearts/" });
+      if (window.TauWin) show(); else { const sc = document.createElement("script"); sc.src = "/assets/win.js"; sc.onload = show; document.head.append(sc); }
+      return;
+    }
   }
   function note(t) {
     let n = document.querySelector(".heart-note"); if (!n) { n = document.createElement("div"); n.className = "heart-note"; n.setAttribute("role", "status"); document.body.append(n); }
@@ -161,6 +179,9 @@ button.heart .hh svg{display:block;width:10px;height:10px;fill:none;stroke:curre
 button.heart .hn:empty{display:none}
 button.heart:hover,button.heart:focus-visible{color:#ff6b8a;outline:none}button.heart:hover .hh,button.heart:focus-visible .hh{border-color:rgba(255,107,138,.7)}
 button.heart[aria-pressed="true"]{color:#ff6b8a}button.heart[aria-pressed="true"] .hh{border-color:rgba(255,107,138,.7);background:rgba(255,107,138,.12)}button.heart[aria-pressed="true"] svg{fill:currentColor}
+button.heart{position:relative}button.heart.pop .hh{animation:hpop .5s cubic-bezier(.3,1.8,.5,1)}button.heart.pop .hh::after{content:"";position:absolute;inset:-1px;border-radius:50%;border:2px solid #ff6b8a;animation:hring .7s ease-out forwards;pointer-events:none}button.heart .hh{position:relative}
+@keyframes hpop{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}@keyframes hring{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(2.4)}}
+@media (prefers-reduced-motion:reduce){button.heart.pop .hh,button.heart.pop .hh::after{animation:none}}
 @media (pointer:coarse){button.heart{min-height:44px;min-width:36px;justify-content:center;margin:-13px 0}}
 .heart-tell{position:fixed;z-index:80;background:#101012;border:1px solid rgba(255,107,138,.6);border-radius:8px;padding:12px;box-shadow:0 20px 50px -10px rgba(0,0,0,.9);font:13px/1.5 var(--mono,monospace);color:#ebebee}
 .heart-tell p{margin:0 0 10px}.heart-tell .ht-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}

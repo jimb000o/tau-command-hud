@@ -119,6 +119,7 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/win.js" defer></script>
 </head>
 <body>
 <div class="wrap">
@@ -400,6 +401,19 @@ $("modes").addEventListener("input", () => { touched = true; render(); });
 const waiting = () => (((W.reqs && W.reqs.outgoing) || []).filter(q => q.status === "open" || q.status === "pending")
   .filter(q => Object.values(q.approvers || {}).some(a => a.pubkey === guardPk() && a.state === "awaiting")));
 let shown = null;   // the secret behind the QR code on screen
+/* a step that becomes done while you are on the page gets its moment (assets/win.js): the app connected, the rule in force.
+   A step already done when the page opened stays quiet. */
+let wasApp = null, wasRule;
+function guardWin(enrolled, mode) {
+  const first = wasApp === null;
+  if (!first && window.TauWin) {
+    if (enrolled && !wasApp) TauWin.moment({ key: "guardian-app", at: $("pApp"), title: T("Step 1 done: your authenticator app is connected"), meaning: T("Its six-digit codes are now the second key for your test wallet.") });
+    else if (mode != null && wasRule == null) TauWin.moment({ key: "guardian-rule", at: $("pRule"), title: T("Step 2 done: the Guardian rule is in force"), meaning: T("A block holds it now. From here, payments it covers wait for a code from your app."),
+      proof: (SIM ? T("simulation") + " · " : "") + (W.clause ? String(W.clause).replace(/\s+/g, " ").slice(0, 70) + (String(W.clause).length > 70 ? "…" : "") : T("your rule on the chain")), href: W.pk && !SIM ? "/account/?a=" + W.pk : null });
+  }
+  if (first && (!W.pk || G.acct === null || W.clause === undefined)) return;   // nothing known yet: the first real answer is the starting point
+  wasApp = enrolled; wasRule = mode;
+}
 function render() {
   const live = !SIM || DEMO, have = !!W.pk, enrolled = !!(G.acct && G.acct.enrolled), lim = myLimit();
   $("simNote").hidden = !SIM;
@@ -420,6 +434,7 @@ function render() {
   // 2: the rule
   const s = W.slots, mine = s && (s.holders || []).includes(W.pk), mode = myMode(), auto = G.acct && G.acct.auto;
   $("pRule").classList.toggle("done", mode != null);
+  guardWin(enrolled, mode);
   $("stRule").textContent = mode === "allow" ? F("by itself up to {a} each, {b} a day", { a: fmt(auto.per), b: fmt(auto.day) }) : mode === "always" ? T("every payment with your code") : mode === "above" ? F("above {n} with your code", { n: fmt(lim) }) : "";
   $("stRule").className = "st" + (mode ? " ok" : "");
   if (!touched && mode) {   // show what is set
