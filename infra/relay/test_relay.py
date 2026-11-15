@@ -643,7 +643,8 @@ async def main():
               and api["status"] in ("synced", "catching_up"), f"/api/v1/summary {api['status']} {api['height']}")
         ctype, svg = await get("/api/v1/badge/height.svg")
         check(ctype.startswith("image/svg+xml") and "Tau block" in svg, "height badge over HTTP")
-        check("#39ff8a" in (await get("/api/v1/badge/height.svg?lang=zh"))[1], "?lang=zh badge green when live too (status, not price)")
+        zsvg = (await get("/api/v1/badge/height.svg?lang=zh"))[1]
+        check(zsvg == svg and "#ff3b52" not in zsvg, "?lang=zh badge the same colours as without (status, not price)")
 
         minter.cancel()
         runner.cancel()
