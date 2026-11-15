@@ -57,6 +57,7 @@ from walletdays import WalletDays
 from chainhist import ChainHistory
 from hearts import Hearts
 from walkers import Walkers
+from steer import Steer
 from services import Services
 from nodehist import NodeHistory
 from setupfunnel import SetupFunnel
@@ -489,6 +490,7 @@ class Relay:
         self.walkers.add_blocks(self.ordered_blocks(), self.walker_ours())
         self.walkers.save(force=True)
         self.walkers_text, self.walkers_at = None, 0.0
+        self.steer = Steer()     # your own islander: where a wallet walks its walker, pushed to every page (steer.py)
         self.wallets_text, self.wallets_at = None, 0.0
         # what every chain held per hour and day, kept across testnet restarts, for /history (chainhist.py)
         self.chainhist = ChainHistory()
@@ -826,6 +828,12 @@ class Relay:
                 cruise.chain_restarted(time.time(), old.get("tip"), new_block1_ts)
             except Exception as exc:  # noqa: BLE001 - the restart is recorded all the same
                 log.warning("cruise restart note: %r", exc)
+        hack = getattr(self, "hack", None)
+        if hack is not None:   # a hack replay under way ends as "restart": its payments went with the old chain
+            try:
+                hack.chain_restarted(time.time())
+            except Exception as exc:  # noqa: BLE001
+                log.warning("hack restart note: %r", exc)
         if getattr(self, "chainhist", None):   # a chain that ended while the relay was away: at least its tip
             self.chainhist.seed(self.state["restarts"][-1:])
             self.history_text = None
@@ -1354,7 +1362,9 @@ class Relay:
             if self.walkers_text is None or time.monotonic() - self.walkers_at >= 30:
                 self.walkers_at = time.monotonic()
                 self.walkers_text = json.dumps(self.walkers.active(ours=self.walker_ours(), extra=self.walker_extra), separators=(",", ":"))
-            return json.loads(self.walkers_text)
+            j = json.loads(self.walkers_text)
+            j["go"] = self.steer.recent({w.get("a") for w in j.get("walkers") or []})   # the walks their wallets asked for lately
+            return j
         pk = path[len("/walkers/"):].lower()
         if not re.match(r"^[0-9a-f]{96}$", pk) or pk in self.walker_ours():
             return {"error": "not a walker"}
@@ -1573,6 +1583,9 @@ class Relay:
         if cmd == "isle":   # White Rabbit Key's shared island day (isle.py)
             return self.isle_command(args, ip, ws)
 
+        if cmd == "walker":   # White Rabbit Key: a wallet walks its own islander, every page sees it (steer.py)
+            return await self.walker_command(args, ip, ws)
+
         if cmd == "islandmove":   # White Rabbit Key: a rival's move in a visitor's game, sent by the island bot (island.py)
             if len(args) not in (2, 3):
                 return envelope_error(cmd, "Usage: islandmove <candidate> <kind> [place]", "INVALID_PARAMS")
@@ -1600,7 +1613,7 @@ class Relay:
                                      self.via.get(ws, "") if ws else "")
 
         return envelope_error(cmd, "Not allowed here. Allowed: getblocks, getblockrange, getmempool, getgovernance, "
-                              "gettaustate, presence, report, via, islandmove, islandpay, isle, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
+                              "gettaustate, presence, report, via, islandmove, islandpay, isle, walker, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
                               + " (a transaction signed in your browser)", "FORBIDDEN")
 
     async def wallet(self, cmd: str, raw: str, ip: str, site: str = "", via: str = "") -> str:
@@ -2149,6 +2162,20 @@ class Relay:
     def presence_envelope(self) -> str:
         return envelope_ok("presence", {"online": self.online(), "sites": self.online_sites(), "playing": {"rabbit": self.playing()}, "pushed": True})
 
+    async def walker_command(self, args: list[str], ip: str, ws: ServerConnection | None) -> str:
+        """walker hello <wallet> <day> <signature> | walker go <wallet> <fx> <fy> <tx> <ty> [place] (steer.py)"""
+        sub, a = (args[0].lower(), args[1:]) if args else ("", [])
+        if sub == "hello" and len(a) == 3:
+            ok, data = await self.steer.hello(ws, ip, *a)
+        elif sub == "go":
+            ok, data = self.steer.go(ws, ip, a, self.isle.signed)
+            if ok:   # every page on the island walks it there too
+                broadcast([w for w in self.isle.subs if w is not ws], envelope_ok("walker", {"go": data, "push": True}))
+                data = {"go": data}
+        else:
+            ok, data = False, "Usage: walker hello <wallet> <day> <signature> | walker go <wallet> <fx> <fy> <tx> <ty> [place]"
+        return envelope_ok("walker", data) if ok else envelope_error("walker", data, "INVALID_PARAMS")
+
     def isle_command(self, args: list[str], ip: str, ws: ServerConnection | None) -> str:
         """The shared island: join / leave / move / end (isle.py has the rules)."""
         sub = args[0].lower() if args else ""
@@ -2567,6 +2594,7 @@ class Relay:
             self.chat_subs.discard(ws)
             self.road_subs.discard(ws)
             self.isle.subs.discard(ws)
+            self.steer.forget(ws)
             self.viewers.pop(ws, None)
             self.via.pop(ws, None)
             self.per_ip[ip] -= 1

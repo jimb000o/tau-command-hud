@@ -2297,7 +2297,7 @@
     requestAnimationFrame(frame);
   }
   window.COVE_SCENE = {
-    mount, hit, focus, places: PLACES, toScreen, canPan: () => canPan(),
+    mount, hit, focus, places: PLACES, toScreen, toWorld, canPan: () => canPan(),
     setHour(h, now) { if (!LIGHT.game) return; S.hourT = h; if (now) S.hour = h; },   // the light follows the clock in Germany (see CLOCK)
     clock: () => { const m = Math.floor(berlinMinutes()); return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); },
     host(fn, tall) { S.hostFn = fn; S.hostTall = !!tall; },

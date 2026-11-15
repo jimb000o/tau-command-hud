@@ -3123,6 +3123,12 @@
     "html": "White Rabbit Key: the islanders talk about Tau Net today. They notice the wallets that walk on the island (newcomers, night owls, Agorzilla’s feeders, rule writers, IDNI’s grey accounts) and the personal rules on the chain (a most per payment, a time lock, a second signature, a reserve, a freeze, rule offers, a payment a wallet’s own rule refused today, a restart that took every rule with it). The lines follow the live numbers. New free questions: who the walkers are, what a personal rule is, what a guardian protects against, whether a pact can be written on the chain."
   },
   {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/",
+    "html": "White Rabbit Key: the islanders walk like people now. They keep to the paths, beaches, piers, rope bridges and stairs, and no longer cross houses, roofs, cliffs or water. If your test wallet walks on the island, it is yours to walk: click anywhere and your islander goes to the nearest spot it can reach on foot; click a place and it walks to the door first, and the place opens as it arrives. Everyone on the island sees it walk the same way. Only your wallet can walk it: your browser signs with its key once a day."
+  },
+  {
     "tag": "Wallets",
     "on": "2026-11-16",
     "link": "/account/",
