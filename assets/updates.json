@@ -3055,5 +3055,11 @@
     "on": "2026-11-15",
     "link": "https://agorzilla.com/",
     "html": "Agorzilla on Tau HUD now always looks like the one on agorzilla.com: from Grown on he is drawn from the same paintings, with the way the feeders chose, in the header, beside the My Tau card and on the start page, by himself after every evening."
-  }
+  },
+ {
+  "tag": "White Rabbit Key",
+  "on": "2026-11-15",
+  "link": "/rabbit/",
+  "html": "White Rabbit Key: every wallet that sent a real transaction on Tau Net testnet in the last day now walks on the island by itself. Hover one to see it is a real wallet, click it for what the chain says about it: its rules, Agorzilla meals, votes, No Memo chapters, island elections, read as traits like night owl or rule writer, and it carries what it earned. Your own test wallet can choose its look with one transaction."
+ }
 ]
