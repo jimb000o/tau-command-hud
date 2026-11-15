@@ -110,7 +110,10 @@
   };
   const apply = d => {
     const t = d && d.traits; if (!t) return;
-    const pend = PEND[key(t.pendant)], fur = FUR[key(t.fur)];
+    // agorzilla.com's rules v8 (from 20.11.2026): a colour drawn from the hash is named by its hue, "Teal 187°"
+    const hue = v => { const m = /\s(\d{1,3})°$/.exec(String(v || "")); return m ? Number(m[1]) : null; };
+    const hp = hue(t.pendant), hf = hue(t.fur);
+    const pend = hp != null ? `hsl(${hp} 90% 75%)` : PEND[key(t.pendant)], fur = hf != null ? `sepia(.6) saturate(1.7) hue-rotate(${hf - 35}deg) contrast(1.08)` : FUR[key(t.fur)];
     document.querySelectorAll("[data-agz-look]").forEach(el => {
       if (pend) el.style.setProperty("--agz-pend", pend);
       if (fur) el.style.setProperty("--agz-fur", fur);
