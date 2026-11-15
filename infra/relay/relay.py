@@ -412,6 +412,7 @@ class Relay:
         self.sender = Upstream(upstream_url, "sender") if (SENDER_CONNECTION and self.island.enabled) else None
         self.isle = Isle()       # White Rabbit Key: every campaign played today, added up and pushed to every page (isle.py)
         self.isle.people = self.playing   # and how many people have it open now, counted like `online`
+        self.island.chain.laws = lambda: list((self.isle.last or {}).get("laws") or [])   # the laws of the week become rules on the purses
         self.load = Load()       # how hard the testnet works, minute by minute: GET /load (load.py)
         self.island.on_tx = lambda: self.load.sent("bot")
         # White Rabbit Key: cruise ships whose simulated passengers send real test transactions in the bot's free slots (cruise.py)
@@ -1598,6 +1599,12 @@ class Relay:
             ok, data = self.island.accept_pay(args[0].lower(), args[1], ip)
             return envelope_ok(cmd, data) if ok else envelope_error(cmd, data, "FORBIDDEN" if "off" in data else "INVALID_PARAMS")
 
+        if cmd == "islandkept":   # White Rabbit Key: the player proposed the law an embassy paid for, so its envelope stays
+            if len(args) != 2:
+                return envelope_error(cmd, "Usage: islandkept <north|south> <wallet>", "INVALID_PARAMS")
+            ok, data = self.island.accept_kept(args[0].lower(), args[1], ip)
+            return envelope_ok(cmd, data) if ok else envelope_error(cmd, data, "FORBIDDEN" if "off" in data else "INVALID_PARAMS")
+
         if cmd == "leasetx":   # the fair turns on the two rule places, retired with the limit (IDNI main 5ad1bb7)
             return envelope_error("leasetx", "Every account may hold a rule now; there are no turns to keep.", "FORBIDDEN")
 
@@ -1613,7 +1620,7 @@ class Relay:
                                      self.via.get(ws, "") if ws else "")
 
         return envelope_error(cmd, "Not allowed here. Allowed: getblocks, getblockrange, getmempool, getgovernance, "
-                              "gettaustate, presence, report, via, islandmove, islandpay, isle, walker, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
+                              "gettaustate, presence, report, via, islandmove, islandpay, islandkept, isle, walker, " + ", ".join(LOOKUPS) + ", " + ", ".join(WALLET_COMMANDS)
                               + " (a transaction signed in your browser)", "FORBIDDEN")
 
     async def wallet(self, cmd: str, raw: str, ip: str, site: str = "", via: str = "") -> str:
