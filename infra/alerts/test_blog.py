@@ -414,6 +414,8 @@ check(blog.held("2026-11-99-x-learnings") == "read first" and blog.held("2026-11
 blog_notes.NOTES.clear(); blog_notes.NOTES.update(_own_notes)
 for _id, _note in blog_notes.NOTES.items():
     _s = _note.get("sections") or _note.get("body") or {}
+    if not _s:   # a note that only holds a draft back
+        continue
     check(set(_s) == {"en", "zh", "ja"} and all(v.lstrip().startswith("## ") for v in _s.values()) and not blog.BLAME.search(_s.get("en", "")) and not blog.HYPE.search(_s.get("en", "")),
           f"note {_id}: three languages, starting with a heading, no blame or hype words")
 
