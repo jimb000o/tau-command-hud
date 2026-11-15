@@ -29,6 +29,8 @@ agorzilla.com, www.agorzilla.com {
 	handle @public {
 		header /chain/* Cache-Control no-cache
 		header /chain/latest.json Access-Control-Allow-Origin *
+		# the paintings' pieces: Tau HUD draws every Agorzilla from them, and a CSS mask (the pendant light) needs this
+		header /assets/rig/* Access-Control-Allow-Origin *
 		file_server
 	}
 	handle {
