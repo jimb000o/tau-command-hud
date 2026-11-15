@@ -974,6 +974,13 @@
     if (v.phase === "gone") { const f = Math.max(0, Math.min(1, (now - v.end) / 240)); return f >= 1 ? null : [ax + 430 * ease(f), ay, 1 - Math.max(0, f - 0.8) * 5]; }
     return [ax, ay, 1];
   }
+  /* a point on the cruise ship while she can be boarded (coming in, waiting, in port): her hull and decks, a little generous */
+  function shipAt(x, y) {
+    const v = SHIP.s; if (!v || !/^(approach|waiting|landing|ashore|boarding)$/.test(v.phase)) return false;
+    const pos = shipPos(Date.now() / 1000); if (!pos || pos[2] < 0.4) return false;
+    const k = shipKind(v), m = boatArt(k), L = m ? m.length : (SHIPS[k] || SHIPS[/^pirate/.test(k) ? "pirate" : "liner"]).L;
+    return Math.abs(x - pos[0]) < L * 0.55 && y < pos[1] + 8 && y > pos[1] - L * 0.42;
+  }
   function cruiseShip(g, x, y, t, kind, light, a) {
     if (paintedBoat(g, x, y, t, kind, a)) return;
     const D = SHIPS[kind] || SHIPS[/^pirate/.test(kind) ? "pirate" : "liner"], L = D.L, bob = Math.sin(t * 0.0012) * 1.2, hh = 15;
@@ -2187,6 +2194,7 @@
     const [x, y] = toWorld(px, py);
     if (RARE.zilla && inBox(RARE.zilla.box, x, y)) return "agorzilla";
     if (Math.abs(x - RB.x) < 16 && y < RB.y + 6 && y > RB.y - 30) return "rabbit";
+    if (shipAt(x, y)) return "cruise";   // the cruise ship in port or coming in: aboard to her captain (game.js aboard)
     for (const id in PLACES) {
       if (S.locked.has(id)) continue;
       const p = PLACES[id];

@@ -3061,5 +3061,11 @@
     "on": "2026-11-15",
     "link": "/cruise/",
     "html": "The next testnet stress test is now on the HUD's first screen and in its header: which cruise ship calls next and when, counted down in your own time. While one is in port the line says Live now, with the minutes left, the simulated passengers ashore and the real test transactions they sent, and one click takes you to the island to watch."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-15",
+    "link": "/rabbit/",
+    "html": "White Rabbit Key: while a cruise ship is in, click her and go aboard. Each ship has a captain of her own: Scarlett Nonce of the pirate ship Black Sequence, Ingrid Lindqvist of MS Dry Run and Commodore Augustus Fairweather of the Queen Mempool. They talk like a live broadcast about what their ship is testing on the chain right now, from the real logbook: each pirate trick and the chain's answer, bookings in escrow, our node's answer times, the brakes, and why each test matters for Tau Net. The captains and their passengers are made up, and they say so; the transactions are real. On days without a ship, the captain of the last call tells what it showed at the pier."
   }
 ]
