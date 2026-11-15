@@ -208,7 +208,7 @@ def make(brief: dict, auto: bool = False) -> dict:
                 parts.append({"path": yt_cut.sting(os.path.join(work, "sting.mp4"), fmt), "seconds": yt_cut.STING})
                 t += yt_cut.STING
         if any(s.get("moment") for s, fs in zip(brief["scenes"], film["scenes"]) if not any(x.get("ok") and x.get("rect") for x in fs["steps"])):
-            raise RuntimeError("the moment was not in the picture (nothing refused on the page while filming); tried again at the next turn")
+            raise RuntimeError("the moment was not in the picture (nothing refused on the page while filming)")
         nxt = brief.get("next") or ""
         nxt_title = (st["videos"].get(nxt) or {}).get("title") or ""
         if not nxt_title and nxt:
@@ -499,7 +499,7 @@ def line() -> str:
            f"; {yt_voice.used()} of {yt_voice.MONTH_CAP} signs spoken this month"]
     n = {k: sum(1 for v in vids if v.get("status") == k) for k in ("draft", "public", "failed")}
     out.append(f"  {n['public']} public, {n['draft']} drafts, {n['failed']} failed; answers still to make: {len(answers_left(st))}; "
-               f"released by you: weekly {st['released'].get('weekly', 0)} of {REVIEW['weekly']}, shorts {st['released'].get('short', 0)} of {REVIEW['short']}")
+               f"released: weekly {st['released'].get('weekly', 0)} of {REVIEW['weekly']}, shorts {st['released'].get('short', 0)} of {REVIEW['short']}")
     for v in sorted(vids, key=lambda v: -(v.get("made") or v.get("at") or 0))[:6]:
         s = f"  {v.get('status'):7} {v['id']}"
         if v.get("status") == "draft":

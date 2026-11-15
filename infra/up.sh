@@ -38,6 +38,12 @@
 #                            node left alone, safe any time), then this month's clips; up kling test  one 5 s clip of the
 #                            live island to look at (proves the key), up kling list  every clip, up kling send <key>  posts
 #                            a draft, up kling off island  the island still again (until the next painting)
+#              up yt         the YouTube channel (alerts/yt.py): yt and film rebuilt with the code just pulled, Caddy given
+#                            /yt/drafts/* (the node left alone, safe any time), then its state and every draft with its line;
+#                            up yt login  the one-time YouTube sign-in (run with ssh -t), up yt make answer-what-is-tau-net
+#                            one video now as a private draft, up yt send <id>  a draft made public, up yt drop <id>,
+#                            up yt list, up yt weekly / short  the week's video written and made now, up yt learn  the
+#                            numbers, up yt off / on
 #              up shots      the post pictures of Tau HUD's pages taken anew in Live mode and checked (node left alone):
 #                            which pages have a picture, why the others have none; up shots rules status  only these
 #              up escrow     the relay alone restarted with the code just pulled (not while a ship is due), then the
@@ -202,6 +208,22 @@ print("page pictures: %d of %d checked" % (len(ok), len(d)))
 for k, v in sorted(d.items()):
     print(("  ok    " if v.get("ok") else "  none  ") + k + ("" if v.get("ok") else "  (" + str(v.get("why")) + ")"))
 '
+  exit 0
+fi
+# The YouTube channel (alerts/yt.py, agorzilla-shots/film.mjs), the node left alone: yt and film rebuilt with the code
+# just pulled, Caddy given /yt/drafts/*, then: up yt  its state, up yt login (interactive: ssh -t), up yt make <id>,
+# up yt send <id>, up yt drop <id>, up yt list, up yt weekly, up yt short, up yt learn, up yt off / on
+if [ "${1:-}" = "yt" ]; then
+  docker compose up -d --no-deps --build yt film >/dev/null 2>&1 || docker compose up -d --no-deps --build yt film
+  docker compose up -d --no-deps --force-recreate caddy >/dev/null 2>&1 || true
+  case "${2:-}" in
+    login) docker compose exec yt python yt.py login || true ;;
+    make|send|drop|check) docker compose exec -T yt python yt.py "$2" "${3:-}" ${4:-} || true ;;
+    list|learn|weekly|short|on|off) docker compose exec -T yt python yt.py "$2" || true ;;
+  esac
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T yt python yt.py line
+  echo "---------------- to here --------------------------------------"
   exit 0
 fi
 # Kling's clips (alerts/kling.py, kling_island.py), the node left alone: the blog and agorzilla services rebuilt with the
@@ -867,6 +889,8 @@ docker compose exec -T costs python receipts.py line 2>/dev/null | tee -a "$NOTE
 x_line | tee -a "$NOTE" || true
 # Kling's clips this month (alerts/kling.py; KLING_MONTH_CAP in .env, default 30 clips)
 docker compose exec -T blog python kling.py line 2>/dev/null | tee -a "$NOTE" || true
+# the YouTube channel (alerts/yt.py): signed in, voice, drafts waiting for their line
+docker compose exec -T yt python yt.py line 2>/dev/null | tee -a "$NOTE" || true
 # a new painted island, only when asked for: up island
 if [ "${1:-}" = "island" ]; then
   sh island.sh auto 2>&1 | tee "$V"
@@ -877,4 +901,4 @@ echo "---------------- copy from here into the chat ----------------"
 cat "$NOTE"
 echo "---------------- to here --------------------------------------"
 rm -f "$NOTE" "$NOTE.status" "$NOTE.isle" "$NOTE.cruise" "$NOTE.pulse" "$V"
-echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up cost, up crewlog, up earnings, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"
+echo "done. next time just type: up   (or: up follow, up idni, up report, up blog, up hack, up nomemo, up guardian, up services, up knowledge, up kling, up yt, up cost, up crewlog, up earnings, up owner, up island, up room <place>, up touch <change>, up keep <number> <rooms>, up bust <name>)"

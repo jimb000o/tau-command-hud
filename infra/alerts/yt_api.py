@@ -101,7 +101,7 @@ def login_link() -> tuple[str, str]:
 def code_of(pasted: str) -> str:
     """The code from what the owner pasted: the whole address from the browser's address line, or the code alone."""
     pasted = pasted.strip().strip('"').strip("'")
-    if "code=" in pasted:
+    if "code=" in pasted or "error=" in pasted:
         q = urllib.parse.parse_qs(urllib.parse.urlsplit(pasted).query)
         if q.get("error"):
             raise YtError(f"Google said: {q['error'][0]}")
@@ -195,6 +195,8 @@ def upload(path: str, res: dict, tries: int = 6) -> str:
         while True:
             f.seek(sent)
             piece = f.read(CHUNK)
+            if not piece:
+                raise YtError("YouTube asked for more than the file holds; the upload is started again at the next turn")
             end = sent + len(piece) - 1
             st, hd, raw = _http(urllib.request.Request(loc, data=piece, method="PUT", headers={
                 "Authorization": "Bearer " + access(), "Content-Type": "video/mp4", "Content-Length": str(len(piece)),
