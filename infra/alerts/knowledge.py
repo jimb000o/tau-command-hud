@@ -41,7 +41,7 @@ API = os.environ.get("KNOWLEDGE_API", "https://node.tauhud.com").rstrip("/")
 COMMIT_DAYS = 14     # IDNI commits listed
 COMMIT_MAX = 12
 DIGEST_MAX = 7       # IDNI progress posts listed
-UNOFFICIAL = "Tau HUD (tauhud.com) is a community project, not affiliated with IDNI or the Tau team."
+UNOFFICIAL = "Tau HUD (tauhud.com) is a community project, not run by IDNI or the Tau team."
 
 
 def when(ts) -> str:

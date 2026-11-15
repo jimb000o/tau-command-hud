@@ -2085,7 +2085,7 @@ def costs_text(costs: dict | None, don: dict | None, gemini: dict | None = None,
                    + (f", {e(tot)}" if tot else "") + ". Thank you.")
     else:
         out.append("No donations yet.")
-    out.append("Tau HUD is a community project, not affiliated with IDNI. Every bill is listed on the donation page.")
+    out.append("Tau HUD is a community project, not run by IDNI. Every bill is listed on the donation page.")
     return "\n".join(out)
 
 

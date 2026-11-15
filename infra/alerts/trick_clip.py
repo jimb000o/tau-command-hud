@@ -5,7 +5,7 @@ Telegram and X by the blog service (cruise_crier.step calls step() here).
   intro     the ship at anchor off the island (the live painting and the painted ship, as cruise_pic.py draws them)
   8 x 2 s   one pirate of the crew sheet (rabbit/art/ships/crew-pirate.*, k01..k08, each holding the prop of its trick),
             the trick in words, then the chain's answer: REFUSED, the node's code, "4 of 4 tries"
-  outro     all tries refused, why it matters, the logbook, "not affiliated with IDNI"
+  outro     all tries refused, why it matters, the logbook, "not run by IDNI"
 
 Honest by construction:
   - every number comes from the visit's logbook (/cruise/log?visit=...): a try is a trick the node answered and refused;
@@ -354,7 +354,7 @@ class Clip:
             d.text((W // 2, 440), "These are the checks that keep every wallet's coins safe,", font=fo["mid"], fill=col2(INK), anchor="mm")
             d.text((W // 2, 480), "tested in public on Tau Testnet Alpha, every Tuesday.", font=fo["mid"], fill=col2(INK), anchor="mm")
             d.text((W // 2, 570), "Every try in the open logbook: tauhud.com/cruise", font=fo["small"], fill=col2(SOFT), anchor="mm")
-            d.text((W // 2, 640), "White Rabbit Key · community project, not affiliated with IDNI", font=fo["foot"], fill=col2(DIM), anchor="mm")
+            d.text((W // 2, 640), "White Rabbit Key · community project, not run by IDNI", font=fo["foot"], fill=col2(DIM), anchor="mm")
         return self.marks(im)
 
     def render(self, out: str) -> str:
@@ -402,7 +402,7 @@ def texts(f: dict) -> dict:
         "payment twice, no payment with someone else's key. Here they are tested in public, every Tuesday.",
         html.escape("Honest note: the pirates are made up, their transactions are real and signed, never more than 12 a "
                     f"minute. Every try in the logbook: {LOGBOOK}?visit={f['visit']}", quote=False),
-        "White Rabbit Key · community project, not affiliated with IDNI",
+        "White Rabbit Key · community project, not run by IDNI",
     ])
     x = alerts.x_post([f"🏴 Black Sequence, {day}: made-up pirates tried {kinds} kinds of trick on Tau Testnet Alpha. "
                        f"The chain refused all {n} tries.",

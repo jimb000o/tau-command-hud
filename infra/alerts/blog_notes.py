@@ -13,7 +13,7 @@ What the model wrote stays in the draft (as_drafted, body_model), so changing a 
 text in, never twice, and taking a part out gives the model's back. A card set by hand makes the hero picture anew.
 Only what we saw and can show; nothing that IDNI has not been told yet."""
 
-FOOT = "Tau HUD blog · community project, not affiliated with IDNI"
+FOOT = "Tau HUD blog · community project, not run by IDNI"
 STATS = "/stats/"                                   # chain restarts, read from our own node
 BEFORE = "/blog/?p=2026-11-07-queen-learnings"      # the Queen's call of 7 November
 

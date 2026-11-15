@@ -25,7 +25,7 @@ log = logging.getLogger("editor")
 
 from blog_rules import RULES  # noqa: E402  (the house rules, the same the writers get)
 
-ASK = "Tau HUD's rules for its blog (tauhud.com/blog/), a community project not affiliated with IDNI:\n" + RULES + """
+ASK = "Tau HUD's rules for its blog (tauhud.com/blog/), a community project not run by IDNI:\n" + RULES + """
 
 Read the draft below as an editor. Name what breaks a rule or reads weak, most important first, at most six notes. \
 Each note: the exact words from the draft (short), the rule number, and the better wording or the fix. If nothing \

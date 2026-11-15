@@ -62,7 +62,7 @@ TauI18n.add({ strings: {
   "One validator, run by IDNI, seals every block; it builds one when ten transactions wait or thirty seconds have passed. Our relay lets visitors send at most 60 transactions a minute in all and the island bot at most 24, so a busy minute here says as much about our limits as about the testnet’s. A transaction already sealed but still listed by the node (a ghost, IDNI issue #81) is not counted as waiting.": "所有区块都由 IDNI 运行的唯一验证者封装；有十笔交易等待或过了三十秒时，它就出一个块。我们的中继允许访客每分钟合计最多发送 60 笔交易，岛屿机器人最多 24 笔，所以这里繁忙的一分钟既反映测试网的极限，也反映我们自己的限制。已封装但仍被节点列出的交易（幽灵交易，IDNI issue #81）不算作等待。",
   "{n} sealed in {b} blocks · {m} sent through tauhud · {r} refused": "{n} 笔封装于 {b} 个区块 · {m} 笔经由 tauhud 发送 · {r} 笔被拒绝",
   "{n} waiting · longest wait {w}": "{n} 笔等待 · 最长等待 {w}",
-  "Unofficial, not affiliated with IDNI. Counted by the read-only relay at node.tauhud.com from our own testnet node.": "非官方，与 IDNI 无关。由 node.tauhud.com 上的只读中继根据我们自己的测试网节点统计。",
+  "Unofficial, not run by IDNI. Counted by the read-only relay at node.tauhud.com from our own testnet node.": "非官方，并非由 IDNI 运营。由 node.tauhud.com 上的只读中继根据我们自己的测试网节点统计。",
   "Transactions sealed per minute": "每分钟封装的交易",
   "Transactions waiting and time to a block": "等待的交易和进入区块的时间",
   "sent through tauhud": "经由 tauhud 发送",

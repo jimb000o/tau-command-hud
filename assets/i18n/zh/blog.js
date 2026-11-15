@@ -17,7 +17,7 @@ TauI18n.add({ strings: {
   "Words to check:": "需要检查的词：",
   "The facts the article was written from": "文章所依据的事实",
   "This draft is not there (any more). Published articles are listed on the blog.": "这份草稿不存在（或已不在）。已发布的文章列在博客上。",
-  "Tau HUD is a community project, not affiliated with IDNI. The articles are drafted from our logbooks with the help of a language model and read by a person before they go up.": "Tau HUD 是社区项目，与 IDNI 无关。文章由语言模型根据我们的日志起草，发布前由人阅读确认。",
+  "Tau HUD is a community project, not run by IDNI. The articles are drafted from our logbooks with the help of a language model and read by a person before they go up.": "Tau HUD 是社区项目，并非由 IDNI 运营。文章由语言模型根据我们的日志起草，发布前由人阅读确认。",
   "Ship logbook": "游轮日志",
   "Testnet load": "测试网负载",
   "Findings": "问题报告",

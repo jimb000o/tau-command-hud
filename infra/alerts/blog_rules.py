@@ -27,7 +27,7 @@ changes where they say more than raw counts. Only events inside the period.
 9. Shape. Short paragraphs with air; "why it matters" says it at a glance (for the people using the testnet, for the \
 community and IDNI, one honest limit). Plain words for non-developers; no code, file or field names.
 10. Our apps named in the text are linked to their pages. It is a testnet: its coins have no value and it can start \
-over (say it once). Tau HUD is a community project, not affiliated with IDNI.
+over (say it once). Tau HUD is a community project, not run by IDNI.
 11. No hype or marketing words, no price or coin talk, no exclamation marks, no emoji, no names of people.
 12. No bold safety promises: never "cannot lose", "risk-free", "no risk", "guaranteed", "completely safe", "cannot be \
 stolen" or the like; they are a regulatory risk and nothing we can stand behind. Say what is true and limited instead \

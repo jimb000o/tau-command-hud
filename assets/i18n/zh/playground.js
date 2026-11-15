@@ -12,7 +12,7 @@ TauI18n.add({ strings: {
   "In force. Pick another change to vote again.": "已生效。选择另一项变更再次投票。",
   ", most likely run by IDNI), so the quorum is 1. Whether other accounts’ votes count is a network setting that the Vote page reads live; open admission was switched off on 1 November 2026. Here the seat is simulated and only validators vote, which is the code’s default. Counting, quorum and the delay before a change takes effect work as on the real node.": "，很可能由 IDNI 运行），所以法定票数是 1。其他账户的投票是否算数，是网络的一项设置，投票页面会实时读取；开放准入已于 2026 年 11 月 1 日关闭。这里的席位是模拟的，只有验证者能投票，这是代码的默认设置。计票、法定票数和变更生效前的延迟与真实节点一致。",
   ". Personal rules may look at the current step [t] only; one rule reading another step would break every account’s outputs after each rule change.": "。个人规则只能查看当前步 [t]；一条读取其他步的规则会在每次规则变更后破坏每个账户的输出。",
-  ". Unofficial community page, not affiliated with IDNI. ·": "。非官方社区页面，与 IDNI 无关。·",
+  ". Unofficial community page, not run by IDNI. ·": "。非官方社区页面，并非由 IDNI 运营。·",
   "1 · Size": "1 · 大小",
   "1 · Your transfer rule": "1 · 你的转账规则",
   "10 AGRS per step": "每步 10 AGRS",

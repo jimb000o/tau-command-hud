@@ -11,7 +11,7 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 T = lambda s: datetime.fromisoformat(s).timestamp()   # noqa: E731  (German time in the tests: +01:00 in November)
 
 GOOD = {"id": "rabbit-walkers", "account": "hud", "from": "2026-11-16T11:00:00Z",
-        "text": "Every wallet walks on the island now.\n\nClick one to read it from the chain.\n\n#TauNet $AGRS",
+        "text": "Every wallet walks on the island now.\n\nClick one to read it from the chain.\n\n#TauNet",
         "film": {"url": "https://tauhud.com/rabbit/", "steps": [["wait", 1000]]}}
 
 
@@ -32,15 +32,15 @@ class Plan(unittest.TestCase):
         def probs(**kw):
             return X.problems({**GOOD, **kw})
         self.assertEqual(probs(), [])
-        self.assertTrue(any("hype" in w for w in probs(text="Excited to announce 🚀\n\nnew\n\n#TauNet $AGRS")))
-        self.assertTrue(any("links" in w for w in probs(text="New\n\nhttps://tauhud.com\n\n#TauNet $AGRS")))
+        self.assertTrue(any("hype" in w for w in probs(text="Excited to announce 🚀\n\nnew\n\n#TauNet")))
+        self.assertTrue(any("links" in w for w in probs(text="New\n\nhttps://tauhud.com\n\n#TauNet")))
         self.assertTrue(any("ends with" in w for w in probs(text="New\n\nsee it")))
-        self.assertTrue(any("$AGRS" in w for w in probs(account="agorzilla", text="New\n\nsee\n\n#TauNet $AGRS")))
-        self.assertTrue(any("280" in w for w in probs(text="x" * 300 + "\n\n#TauNet $AGRS")))
-        self.assertTrue(any("blank line" in w for w in probs(text="One line only #TauNet $AGRS")))
+        self.assertTrue(any("$AGRS" in w for w in probs(account="hud", text="New\n\nsee\n\n#TauNet $AGRS")))
+        self.assertTrue(any("280" in w for w in probs(text="x" * 300 + "\n\n#TauNet")))
+        self.assertTrue(any("blank line" in w for w in probs(text="One line only #TauNet")))
         self.assertTrue(any("film" in w for w in probs(film=None)))
         for claim in ("You cannot lose your test AGRS", "Risk-free", "A guaranteed result", "Completely safe", "Keys that cannot be stolen"):
-            self.assertTrue(any("promise" in w for w in probs(text=claim + "\n\nmore\n\n#TauNet $AGRS")), claim)
+            self.assertTrue(any("promise" in w for w in probs(text=claim + "\n\nmore\n\n#TauNet")), claim)
         self.assertTrue(any("twice" in w for w in X.specs(None, {"posts": [GOOD, GOOD]})[1]["problems"]))
 
 
@@ -112,7 +112,7 @@ class Room(unittest.TestCase):
 class Week(unittest.TestCase):
     def test_week_lines_for_the_sunday_post(self):
         d = {"sent": [{"account": "hud", "at": T("2026-11-16T12:00:00+01:00"), "url": "https://x.com/TauHUDcom/status/1",
-                       "text": "Every wallet walks.\n\nmore\n\n#TauNet $AGRS"},
+                       "text": "Every wallet walks.\n\nmore\n\n#TauNet"},
                       {"account": "agorzilla", "at": T("2026-11-24T20:00:00+01:00"), "url": "u", "text": "Next week"}]}
         got = X.week_lines(d, 2026, 47)
         self.assertEqual([g["headline"] for g in got], ["Every wallet walks."])

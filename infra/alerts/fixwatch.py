@@ -125,7 +125,7 @@ def still_open(reps: list[dict], fixed: dict, states: dict, no: dict) -> list[di
 
 # ---------------- the language model ----------------
 SYSTEM = """You check whether one change IDNI made to the code of Tau Net's testnet (Tau Testnet Alpha) solves any of \
-the reports Tau HUD filed with IDNI. Tau HUD is a community project not affiliated with IDNI.
+the reports Tau HUD filed with IDNI. Tau HUD is a community project not run by IDNI.
 
 You get the change (its message, the commits of a merged branch, the files and part of the diff, and the headline our \
 news line wrote for it) and the reports that are still open: what we found and why it matters.
@@ -327,7 +327,7 @@ def public(st: dict) -> dict:
 
 # ---------------- the post ----------------
 POST_SYSTEM = """You write one short post for the Telegram channel and the X account of Tau HUD (tauhud.com), a \
-community project not affiliated with IDNI, the team that builds Tau Net. Tau HUD reports problems and requests to \
+community project not run by IDNI, the team that builds Tau Net. Tau HUD reports problems and requests to \
 IDNI; IDNI has now solved some of them. You get each one: what we reported and what IDNI's change does about it.
 
 Rules:
@@ -400,10 +400,10 @@ def tg_text(p: dict) -> str:
     rows = [f"• <b>#{n}</b> {e(t)}" for n, t in zip(p["ns"], p["items"])]
     return "\n\n".join([f"🎉 <b>{e(p['title'])}</b>", *rows,
                         f'Thank you, IDNI. Every report we filed and where it stands: <a href="{SITE}/findings/">Findings on Tau HUD</a>',
-                        "<i>Tau HUD is a community project, not affiliated with IDNI.</i>"])
+                        "<i>Tau HUD is a community project, not run by IDNI.</i>"])
 
 
-X_FOOT = "🛠 Tau HUD build watch, not affiliated with IDNI"
+X_FOOT = "🛠 Tau HUD build watch, not run by IDNI"
 
 
 def x_lines(p: dict) -> list[str]:

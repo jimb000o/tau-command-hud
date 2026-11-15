@@ -55,7 +55,7 @@
     "- Free, no ads, no tracking",
     "- What it costs, shown openly",
     "- A purchase is not a donation",
-    "Tau HUD blog · community project, not affiliated with IDNI"
+    "Tau HUD blog · community project, not run by IDNI"
    ],
    "image": "/assets/blog/img/2026-11-13-support-tau-hud-hero.jpg",
    "image_alt": {
@@ -127,7 +127,7 @@
     }
    ],
    "intro": {
-    "en": "Tau Net is the network IDNI is building; its public test network is Tau Testnet Alpha. The rules on it are written in the Tau Language and checked by the Tau engine. On 12 November 2026 IDNI changed how personal rules work on that testnet, and the testnet has since started over on a new block 0 with that code. Before, two accounts on the whole network could hold a personal rule. Now every account can. We are Tau HUD, a community project not affiliated with IDNI; on 29 October we had asked for room to try rules on the live chain.",
+    "en": "Tau Net is the network IDNI is building; its public test network is Tau Testnet Alpha. The rules on it are written in the Tau Language and checked by the Tau engine. On 12 November 2026 IDNI changed how personal rules work on that testnet, and the testnet has since started over on a new block 0 with that code. Before, two accounts on the whole network could hold a personal rule. Now every account can. We are Tau HUD, a community project not run by IDNI; on 29 October we had asked for room to try rules on the live chain.",
     "zh": "Tau Net 是 IDNI 正在构建的网络，它的公开测试网叫 Tau Testnet Alpha。上面的规则用 Tau Language 编写，由 Tau 引擎检查。2026 年 11 月 12 日，IDNI 改变了个人规则在这个测试网上的工作方式，测试网随后带着这份代码从新的区块 0 重新开始。以前，整个网络上只有两个账户能持有个人规则。现在每个账户都可以。我们是 Tau HUD，一个与 IDNI 无关的社区项目；10 月 29 日，我们曾请求在实时链上留出试用规则的空间。",
     "ja": "Tau Net は IDNI が作っているネットワークで、その公開テストネットが Tau Testnet Alpha です。その上のルールは Tau Language で書かれ、Tau エンジンが検査します。2026 年 11 月 12 日、IDNI はこのテストネットでのパーソナルルールの仕組みを変え、テストネットはその後このコードで新しいブロック 0 からやり直しました。以前は、ネットワーク全体でパーソナルルールを持てるアカウントは 2 つだけでした。今はすべてのアカウントが持てます。私たち Tau HUD は IDNI とは無関係のコミュニティプロジェクトで、10 月 29 日に、実際のチェーンでルールを試せる場所を求めていました。"
    },
@@ -148,7 +148,7 @@
     "- Limits and co-signers for any account",
     "- Checked by every node",
     "- Not a shield for a stolen key",
-    "Tau HUD blog · community project, not affiliated with IDNI"
+    "Tau HUD blog · community project, not run by IDNI"
    ],
    "image": "https://node.tauhud.com/blog/img/2026-11-13-personal-rules-for-everyone-hero.jpg",
    "image_alt": {
@@ -208,7 +208,7 @@
     }
    ],
    "intro": {
-    "en": "On 10 November 2026 IDNI, the team behind Tau, published its monthly Q&A video. Five of the questions came from us, Tau HUD, a community project not affiliated with IDNI. Here are the answers in short, with the minute in the video, and what we do with them.",
+    "en": "On 10 November 2026 IDNI, the team behind Tau, published its monthly Q&A video. Five of the questions came from us, Tau HUD, a community project not run by IDNI. Here are the answers in short, with the minute in the video, and what we do with them.",
     "zh": "2026 年 11 月 10 日，Tau 背后的团队 IDNI 发布了每月问答视频。其中五个问题来自我们 Tau HUD，一个与 IDNI 无关的社区项目。下面是答案的简述、它在视频里的分钟数，以及我们怎么用它们。",
     "ja": "2026 年 11 月 10 日、Tau を作るチーム IDNI が毎月の Q&A 動画を公開しました。そのうち 5 つの質問は、IDNI とは無関係のコミュニティプロジェクト Tau HUD の私たちからでした。答えを短く、動画の何分目かとともにまとめ、それをどう活かすかを書きます。"
    },
@@ -227,7 +227,7 @@
     "- No node rewards planned yet",
     "- Validator seats limited for now",
     "- Sync failures with logs help most",
-    "Tau HUD blog · community project, not affiliated with IDNI"
+    "Tau HUD blog · community project, not run by IDNI"
    ],
    "image": "https://node.tauhud.com/blog/img/2026-11-10-idni-qa-november-hero.jpg",
    "image_alt": {
@@ -308,7 +308,7 @@
     "- Community: the ship never floods the testnet",
     "- IDNI: a community node under everyday load",
     "- All 5 bookings paid out by the chain itself",
-    "Tau HUD blog · community project, not affiliated with IDNI"
+    "Tau HUD blog · community project, not run by IDNI"
    ],
    "image": "https://node.tauhud.com/blog/img/2026-11-04-dryrun-learnings-hero.jpg",
    "image_alt": {

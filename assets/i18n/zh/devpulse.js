@@ -91,7 +91,7 @@ TauI18n.add({ strings: {
   "Time from our notes.": "时间来自我们的记录。",
   "New tag {x}": "新标签 {x}",
   "The git history could not be read right now. It comes back by itself.": "现在无法读取 git 历史。它会自动恢复。",
-  "Unofficial, not affiliated with IDNI. Counted from the public git history of": "非官方，与 IDNI 无关。统计自以下公开的 git 历史：",
+  "Unofficial, not run by IDNI. Counted from the public git history of": "非官方，并非由 IDNI 运营。统计自以下公开的 git 历史：",
   "and": "和",
   ", refreshed every 30 minutes. A commit count says how often code was saved, not how much work was done.": "，每 30 分钟刷新一次。提交次数说明代码被保存的频率，而不是完成了多少工作。",
   "within the hour": "一小时内",

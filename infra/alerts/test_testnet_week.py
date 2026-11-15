@@ -80,7 +80,7 @@ check("in sync 99.7%" in b and "fell more than 2 blocks behind 1 time, 30 min" i
 check("The Queen stayed" in b and "Last week" not in b, "written up: this week's articles, not last week's post")
 check("## On X this week" in b and "- @TauHUDcom: [Wallet walkers (live)](https://x.com/TauHUDcom/status/123)" in b and "evil" not in b,
       "On X this week: the week's posts linked, only x.com post addresses")
-check("not affiliated with IDNI" in b and "coins have no value" in b, "not affiliated, testnet note")
+check("not run by IDNI" in b and "coins have no value" in b, "not affiliated, testnet note")
 full = " ".join([e["title"], e["dek"], b, *e["why"], e["x"]])
 check(not re.search(r"\b(fault|blame|broke|failed us|huge|exciting|finally|revolutionary|unstable|unreliable|matrix|uplink)\b|!", full, re.I), "no blame, hype or exclamation")
 check("Kilian" not in full, "no names")
@@ -184,7 +184,7 @@ a2 = blog.read_json(os.path.join(TMP, "blog", "drafts", blog.state()["drafts"][d
 check(seen and "what the numbers mean" in seen[0], "the model gets the facts with their meaning")
 check(a2["title"]["en"] == "Two restarts reset the testnet this week" and a2["model"] != "script", "the model's article")
 check(a2["check"]["unknown_numbers"] == ["77"], f"a number not in the facts is marked ({a2['check']['unknown_numbers']})")
-check("## On X this week" in a2["body"]["en"] and "## 本周在 X 上" in a2["body"]["zh"] and "not affiliated with IDNI" in a2["body"]["en"], "link lists and the closing line in every language")
+check("## On X this week" in a2["body"]["en"] and "## 本周在 X 上" in a2["body"]["zh"] and "not run by IDNI" in a2["body"]["en"], "link lists and the closing line in every language")
 check(a2["stats"][2][:2] == ["42", "transactions by users of our apps"] and a2["numbers"][0].startswith("9,720 blocks"), "tiles and post numbers stay the script's")
 figs = {os.path.basename(x["src"]): x for x in a2.get("figures") or []}
 check(set(figs) == {did2 + "-days.png", did2 + "-sources.png", did2 + "-before.png"} and all(os.path.exists(os.path.join(TMP, "blog", "img", k)) for k in figs),

@@ -89,7 +89,7 @@ except Exception:  # noqa: BLE001 - no tz data: UTC, and the facts say so
     TZ = None
 
 SYSTEM = """You write the blog of Tau HUD (tauhud.com), an unofficial community dashboard for Tau Testnet Alpha, made \
-by people not affiliated with IDNI, the team behind Tau. On the site, White Rabbit Key is an island game, and cruise \
+independently, not by IDNI, the team behind Tau. On the site, White Rabbit Key is an island game, and cruise \
 ships call there by a timetable: their passengers are openly simulated, but every stop they make is a real, paced test \
 transaction on the testnet. After each visit you write one short article: what happened and what we learned.
 
@@ -617,7 +617,7 @@ def card_of(c, title: str) -> list[str]:
     why = [short(w, 56) for w in (c.get("why") or [])[:3] if w]
     if why:
         lines += ["## Why it matters"] + ["- " + w for w in why]
-    return lines + ["Tau HUD blog · community project, not affiliated with IDNI"]
+    return lines + ["Tau HUD blog · community project, not run by IDNI"]
 
 
 # ---------- pictures ----------

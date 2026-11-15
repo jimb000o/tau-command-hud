@@ -44,5 +44,5 @@ TauI18n.add({ strings: {
   "The live part is regenerated every 30 minutes from our node:": "ライブの部分は私たちのノードから 30 分ごとに作り直しています：",
   "A wrong or missing fact?": "誤りや抜けがありますか？",
   "Tell us": "お知らせください",
-  "Tau HUD is a community project, not affiliated with IDNI.": "Tau HUD はコミュニティのプロジェクトで、IDNI とは無関係です。",
+  "Tau HUD is a community project, not run by IDNI.": "Tau HUD はコミュニティのプロジェクトで、IDNI が運営するものではありません。",
 } });

@@ -122,7 +122,7 @@ def heads_of(news: dict, start: int, end: int) -> list[dict]:
 
 
 SYSTEM = """You write the post that tells the Telegram channel and the X account of Tau HUD (tauhud.com), an unofficial \
-community dashboard for Tau Testnet Alpha made by people not affiliated with IDNI (the team that builds Tau), that the \
+community dashboard for Tau Testnet Alpha made independently, not by IDNI (the team that builds Tau), that the \
 Tau Net testnet has started over from block 0. Readers are the Tau community and the IDNI team: curious people, node runners, \
 testers; many never read code.
 

@@ -17,7 +17,7 @@ TauI18n.add({ strings: {
   "Last block slots": "直近のブロック枠",
   "Made up and private: this chain runs only in your browser and starts fresh with every mission. Counting, thresholds and the wait before a change takes effect follow the Tau testnet’s governance code; everything happens faster so a mission takes a minute or two.": "架空で非公開：このチェーンはあなたのブラウザの中だけで動き、ミッションごとに新しく始まります。集計、しきい値、変更が有効になるまでの待ち時間は Tau テストネットのガバナンスのコードに従いますが、ミッションが 1〜2 分で終わるように、すべてが速く進みます。",
   "Counting and thresholds as in": "集計としきい値は次と同じです：",
-  ": a quorum of the whole validator set, one vote per validator, activation at a later height. Practice chain only, nothing is sent anywhere. Unofficial community page, not affiliated with IDNI.": "：バリデーターセット全体の定足数、バリデーター 1 人 1 票、有効化は後の高さで。練習用チェーンのみで、何もどこにも送られません。非公式のコミュニティページで、IDNI とは無関係です。",
+  ": a quorum of the whole validator set, one vote per validator, activation at a later height. Practice chain only, nothing is sent anywhere. Unofficial community page, not run by IDNI.": "：バリデーターセット全体の定足数、バリデーター 1 人 1 票、有効化は後の高さで。練習用チェーンのみで、何もどこにも送られません。非公式のコミュニティページで、IDNI が運営するものではありません。",
   "Vote a change into law": "変更を投票で施行させる",
   "Two thirds of the validators must agree.": "バリデーターの 3 分の 2 が合意しなければなりません。",
   "Four validators run this chain. A change to the rules needs two thirds of them, three of four. Pick a fee change that enough of them like, vote for it and watch it become law.": "このチェーンは 4 人のバリデーターが動かしています。ルールの変更にはその 3 分の 2、4 人中 3 人が必要です。十分な数の人が気に入る手数料の変更を選び、投票し、それが施行される様子を見てください。",
