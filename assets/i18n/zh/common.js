@@ -821,4 +821,15 @@ TauI18n.add({ strings: {
   "Rules in numbers": "规则数据",
   "What personal rules check, who holds them, offers and how rules grow over time, read from the chain": "个人规则检查什么、谁持有、规则提议，以及规则如何随时间增长，均从链上读取",
   "Cruise logbook": "游轮航海日志",
+  /* wallets from our apps (assets/origins.js app) */
+  "Started in {w}": "始于 {w}",
+  "Uses {w}": "使用 {w}",
+  "Started in Tau HUD: its first transaction we know of was signed in tauhud.com’s wallet, on {d}.": "始于 Tau HUD：我们所知的它的第一笔交易是在 tauhud.com 的钱包里签名的，时间是 {d}。",
+  "Started in No Memo: its first transaction we know of was a move in No Memo on tauhud.com, on {d}.": "始于 No Memo：我们所知的它的第一笔交易是 tauhud.com 上 No Memo 里的一步，时间是 {d}。",
+  "Started in White Rabbit Key: its first transaction we know of was a move on the island, on {d}.": "始于 White Rabbit Key：我们所知的它的第一笔交易是岛上的一步，时间是 {d}。",
+  "Started in Agorzilla: its first transaction we know of was a meal or a vote on agorzilla.com, on {d}.": "始于 Agorzilla：我们所知的它的第一笔交易是 agorzilla.com 上的一餐或一票，时间是 {d}。",
+  "Started with Déjà: its first transaction we know of fed Agorzilla’s café cat, on {d}.": "始于 Déjà：我们所知的它的第一笔交易喂了 Agorzilla 的咖啡馆猫，时间是 {d}。",
+  "Also sent through: {w}.": "之后也通过这些发送过：{w}。",
+  "Sent through: {w}.": "曾通过这些发送：{w}。",
+  "Read from our own server's record of what it sent and from the public blocks. A wallet is a key, not a person.": "读取自我们服务器对其发送内容的记录和公开区块。钱包是一把密钥，不是一个人。",
 } });

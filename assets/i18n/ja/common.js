@@ -816,4 +816,15 @@ TauI18n.add({ strings: {
   "Rules in numbers": "ルールの数字",
   "What personal rules check, who holds them, offers and how rules grow over time, read from the chain": "個人ルールが何を確認するか、誰が持つか、提案、そして時間とともにどう増えるか。チェーンから読み取り",
   "Cruise logbook": "クルーズ航海日誌",
+  /* wallets from our apps (assets/origins.js app) */
+  "Started in {w}": "{w} で開始",
+  "Uses {w}": "{w} を利用",
+  "Started in Tau HUD: its first transaction we know of was signed in tauhud.com’s wallet, on {d}.": "Tau HUD で開始：私たちが知る最初の取引は tauhud.com のウォレットで署名されました（{d}）。",
+  "Started in No Memo: its first transaction we know of was a move in No Memo on tauhud.com, on {d}.": "No Memo で開始：私たちが知る最初の取引は tauhud.com の No Memo での一手でした（{d}）。",
+  "Started in White Rabbit Key: its first transaction we know of was a move on the island, on {d}.": "White Rabbit Key で開始：私たちが知る最初の取引は島での一手でした（{d}）。",
+  "Started in Agorzilla: its first transaction we know of was a meal or a vote on agorzilla.com, on {d}.": "Agorzilla で開始：私たちが知る最初の取引は agorzilla.com での食事か投票でした（{d}）。",
+  "Started with Déjà: its first transaction we know of fed Agorzilla’s café cat, on {d}.": "Déjà で開始：私たちが知る最初の取引は Agorzilla のカフェの猫にごはんをあげるものでした（{d}）。",
+  "Also sent through: {w}.": "その後の送信先：{w}。",
+  "Sent through: {w}.": "送信に使ったアプリ：{w}。",
+  "Read from our own server's record of what it sent and from the public blocks. A wallet is a key, not a person.": "私たちのサーバーが送った取引の記録と公開ブロックから読み取っています。ウォレットは鍵であり、人ではありません。",
 } });
