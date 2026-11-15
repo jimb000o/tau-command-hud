@@ -630,8 +630,8 @@
     sbH20: "The request line is open. Until somebody calls, Rico picks.",
     nx_coco: "Here's Coco Calypso.", nx_mango: "Here's Mango Run.", nx_lowtide: "Here's Low Tide.",
     nx_tinroof: "Here's Tin Roof Shuffle.", nx_hammock: "Here's Hammock Hours.", nx_moon: "Here's Moon Over the Pier.",
-    /* the Night Line: one hour a night (23:00 by the listener's clock) listeners call with their problems on the lagoon,
-       one caller between every two songs, and Rico listens and helps (NIGHT below); spoken calm and low (voices.json how "night") */
+    /* the Night Line: every night from 23:00 to 05:00 by the listener's clock listeners call with their problems on the lagoon,
+       a caller between the songs (fewer after midnight), and Rico listens and helps (NIGHT below); spoken calm and low (voices.json how "night") */
     nlo1: "It's eleven on the lagoon. The bar is closing, the lighthouse is turning, and the lines are open. This is the Night Line on Radio Coco. Whatever keeps you awake, call Rico.",
     nlo2: "Good evening, night owls. For the next hour Radio Coco slows down. The Night Line is open: your questions, your worries, your stuck transactions. Rico listens.",
     nlo3: "Eleven o'clock. Lights low, phones on. This is the Night Line. No question too small, no wallet too empty. Between every two songs, one of you.",
@@ -646,6 +646,28 @@
     nlb5: "Goodnight. And to everybody listening: the line stays open.",
     nlc1: "Midnight. The Night Line closes for today. Thank you for every call. If your problem isn't solved, at least it's shared now. Back to the usual nonsense.",
     nlc2: "That was the Night Line. Same time tomorrow, eleven o'clock. Drink some water, put your keys somewhere safe, and goodnight, lagoon.",
+    /* the Night Line after midnight (it runs 23:00 to 05:00): the hour as it turns, or the welcome for whoever tunes in late (nlh<hour>);
+       Rico alone between the songs (nlt), more ways to pick up and say goodbye, and the close at five (nlc3-5) */
+    nlh0a: "Midnight on Radio Coco. The Night Line stays open until five. Phones are on, voices are low.",
+    nlh1a: "One o'clock. The Night Line, still on air. If you just tuned in: islanders call, Rico listens, the songs play in between.",
+    nlh2a: "Two o'clock. The quietest hour on the island. More songs now, and a caller now and then. Until five.",
+    nlh3a: "Three o'clock. Even the crabs are asleep. The Night Line isn't. Call if you need to.",
+    nlh4a: "Four o'clock. One more hour of the Night Line. The fishermen are up, and the coffee is on.",
+    nlt1: "Night Line, still here. If you can't sleep, you're in good company: the validator never does.",
+    nlt2: "Somewhere a block was just sealed. Nobody clapped. It doesn't mind.",
+    nlt3: "A small reminder from the night desk: your wallet key belongs on paper, in a drawer. Not in a chat.",
+    nlt4: "The lagoon is flat, the lighthouse turns, and the chain counts another block. Rico counts sheep. The chain is faster.",
+    nlt6: "Late-night fact: the chain doesn't know your name. It knows your wallet. Keep it that way.",
+    nlt9: "Night thought: a rule you write for your own wallet is a promise to yourself, and the whole network helps you keep it.",
+    nlt10: "For everyone on the night shift, at the Coconut Works, at the lighthouse, at the keyboard: this one's for you.",
+    nlt11: "Still awake? Drink some water. Rico has a coconut. Same idea.",
+    nlt13: "If someone you've never met offers to double your coins tonight, the answer is goodnight.",
+    nlt16: "A test network is where mistakes are cheap. Make yours tonight, and keep them cheap.",
+    nlt22: "The ferry to the mainland didn't come tonight either. Rico checked. Twice.",
+    nlt24: "An address is safe to share. A key is not. If you only remember one thing from tonight, make it that one.",
+    nlc3: "Five o'clock. The Night Line closes. Thank you for every call tonight. The sun is coming, the bakery is open, and Radio Coco goes back to the usual nonsense.",
+    nlc4: "That's five, and that's the Night Line. If you stayed up all night, go to bed. If you just woke up, good morning. Either way, keep your keys safe.",
+    nlc5: "The night is over on the lagoon. The Night Line is back tonight at eleven. Rico is going to find some coffee.",
     /* the songs Radio Coco plays (music.js SONGS), announced while they play */
     sn_coco: "On Radio Coco now: Coco Calypso, the island's own tune. If you can't hum it yet, you will by Thursday.",
     sn_mango: "Here's Mango Run! Fast, sticky and sweet. Do not dance near the fruit stall.",
@@ -754,7 +776,11 @@
     /* between two songs (BREAK maps the song change to its lines sbA1..sbF6) and the Night Line */
     sbAm: ["sbH1", "sbH2", "sbH9", "sbH10"], sbPm: ["sbH3", "sbH4", "sbH11", "sbH12"], sbEv: ["sbH5", "sbH6", "sbH13", "sbH14"], sbNt: ["sbH7", "sbH8", "sbH15", "sbH16"], sbAny: ["sbH17", "sbH18", "sbH19", "sbH20"],
     nodeNew: ["nd1", "nd2", "nd3", "nd4", "nd5"], nodeMany: ["ndm1", "ndm2", "ndm3", "ndm4"], nodeGone: ["ngo1", "ngo2", "ngo3"], nodeGoneMany: ["ngm1"],
-    nlOpen: ["nlo1", "nlo2", "nlo3"], nlRing: ["nlr1", "nlr2", "nlr3", "nlr4"], nlBye: ["nlb1", "nlb2", "nlb3", "nlb4", "nlb5"], nlClose: ["nlc1", "nlc2"],
+    /* the Night Line opens at eleven (nlo2 says "the next hour": only for the one-off EXTRA hours), names the hour as it
+       turns (nlH0-4, also the welcome for whoever tunes in after eleven), and closes at five (nlc1/nlc2 named midnight) */
+    nlOpen: ["nlo1", "nlo3"], nlRing: ["nlr1", "nlr2", "nlr3", "nlr4"], nlBye: ["nlb1", "nlb2", "nlb3", "nlb4", "nlb5"], nlClose: ["nlc3", "nlc4", "nlc5"],
+    nlH0: ["nlh0a"], nlH1: ["nlh1a"], nlH2: ["nlh2a"], nlH3: ["nlh3a"], nlH4: ["nlh4a"],
+    nlTalk: ["nlt1", "nlt2", "nlt3", "nlt4", "nlt6", "nlt9", "nlt10", "nlt11", "nlt13", "nlt16", "nlt22", "nlt24"],
     lagoon: ["bld1", "bld2", "bld3", "idea1", "idea2", "idea3", "idea4", "idea5", "idea6"], dunno: ["dk1", "dk2"],
     /* the cruise ships (game.js shipLine): by how near the ship is, Q the Queen Mempool, D MS Dry Run; what the ships are (shipWhy);
        what just happened in port (shipBook, shipCancel, shipBill), how the lagoon copes (shipCalm, shipBusy), the numbers (shipTotal, shipBlock) */
@@ -1264,6 +1290,179 @@
       "And if I ask something stupid?",
       "Pearl, people call Rico at midnight about napkins. Nothing you ask is stupid.",
       "Ha. Okay. Thanks, Rico."] },
+    { who: "dom", say: ["Rico, it's Dom. Can't sleep, so I went to the faucet for more coins. It gave me nothing. Not even a drip.",
+      "Is there anything in your wallet, Dom?",
+      "Forty coins. Left over from last week.",
+      "Then that's why. The faucet only pours into an empty wallet. A hundred thousand test coins, to a wallet that has nothing.",
+      "So I have to spend my forty to get a hundred thousand?",
+      "Or make a new wallet. But be honest, Dom. What are you going to do with a hundred thousand coins at this hour?",
+      "Count them, probably. Fair point. Night, Rico."] },
+    { who: "zia", say: ["Rico, it's Zia. Quick question, then I'm going to sleep. I sent my brother ten coins for the kite, but where do I write 'for the kite'?",
+      "Nowhere, Zia. A transfer on this chain says three things: who sends, who gets, and how much. No note.",
+      "Then how does he know it's for the kite?",
+      "You tell him. At breakfast. The chain keeps the coins honest. The talking is still your job.",
+      "Okay. And now I'm going to sleep. Really. Bye, Rico."] },
+    { who: "pearl", say: ["Rico, Pearl. I want a rule for my wallet: never more than a hundred coins a day. The chain won't take it.",
+      "On the testnet as it runs now, Pearl, a rule can't count what you sent today. That part is switched off.",
+      "So no limits at all?",
+      "Other limits. A rule can look at your balance. Always keep at least five hundred: that's a rule the chain understands.",
+      "A floor instead of a fence.",
+      "A floor instead of a fence. You'll never go below it, however late it gets.",
+      "I like floors. Thanks, Rico."] },
+    { who: "gus", say: ["Rico, Gus. My nephew put a guardian on my wallet. He says now nothing bad can ever happen.",
+      "Your nephew means well, Gus. A guardian has to agree to your bigger payments. That helps when you make a mistake, or when somebody talks you into one.",
+      "That's me after nine o'clock.",
+      "But it doesn't help if somebody steals your key. So the key still goes somewhere safe.",
+      "Mistakes and tricksters, yes. Thieves, no. I'll tell my nephew he was half right.",
+      "Half right at this hour is a very good score, Gus.",
+      "Ha. Night, Rico."] },
+    { who: "lola", say: ["Rico, it's Lola. Bar's closed, chairs are up. Question: can I paint my wallet address on the tip jar?",
+      "You can, Lola. An address is safe to show. It only lets people send to you.",
+      "And the key?",
+      "The key never goes on a jar, a napkin or a wall. The address is your letterbox. The key is the house.",
+      "So tips in, nothing out. I like that business plan.",
+      "Just remember they're test coins. Your rent still wants the real kind.",
+      "Ha. Goodnight, Rico. Keep it down, I've got customers asleep on the beach."] },
+    { who: "tess", say: ["Rico, it's Tess. I put the same wallet key on my phone and on my laptop. Is that two wallets now?",
+      "One wallet, Tess, in two places. The key is the wallet, wherever you type it. And every extra place is one more place it can leak.",
+      "But I can send from either?",
+      "From either. Just not from both at the same moment. Each transfer takes the wallet's next number, and two devices can pick the same one.",
+      "And then?",
+      "Then only one of them goes through. Send from one, wait for the block, then use the other.",
+      "One wallet, one queue. Night, Rico."] },
+    { who: "frost", say: ["Good evening. North Wind Embassy. We wish to send a payment that nobody else can see.",
+      "Not on this chain, ambassador. Every transfer is there for anybody to read.",
+      "Anybody? Even the South Current?",
+      "Even the South Current. They'll see that one wallet sent coins to another. Not who you are, unless somebody tells them.",
+      "Then nobody must tell them.",
+      "Then don't paint your address on the embassy door.",
+      "Noted. This call never happened."] },
+    { who: "vik", say: ["Rico, Vik. My cousin says I can mine coins at night while I sleep. Is my laptop fan supposed to be this loud?",
+      "Switch it off, Vik. There's no mining on Tau Net. Nobody earns coins here by burning electricity.",
+      "Then who makes the blocks?",
+      "The validators seal them. Right now that's one, and it isn't your laptop.",
+      "Then what is my laptop doing?",
+      "Whatever your cousin gave you. Switch it off, and look at that program tomorrow, in daylight, with somebody you trust.",
+      "Oh no. Okay. Thanks, Rico."] },
+    { who: "ama", say: ["Rico, this is Ama. My grandson explained blocks to me. Then he fell asleep before I understood. What is a block?",
+      "A page in the island's book, Ama. Every little while a new page is written with the latest transfers on it, and sealed.",
+      "And when it is sealed?",
+      "Then nobody changes it. Each new page carries a mark of the one before, so the pages stay in order.",
+      "A book where you cannot tear out a page.",
+      "That's it exactly. Your grandson can explain it again tomorrow. Now he has to.",
+      "Good. Goodnight, Rico."] },
+    { who: "tobias", say: ["Rico, Tobias, harbour master. My transfer waited behind a fisherman's. Surely the harbour master goes first?",
+      "Not on this chain, Tobias. Every wallet follows the same rules. Nobody goes first because of who they are.",
+      "Even with my hat?",
+      "The chain can't see hats. It sees a wallet, a signature, and an amount.",
+      "Then what is the point of the hat?",
+      "Morale, Tobias. Pure morale.",
+      "Correct. Goodnight."] },
+    { who: "salado", say: ["Rico, Salado, from the resort. I'm launching Night Coins. Guests buy them now and sleep better. Can you announce it?",
+      "No, Salado. Test coins aren't for sale, and nobody should pay real money for them.",
+      "They're not test coins. They're wellness coins.",
+      "On this island they're the same coins in a bathrobe. The faucet gives them away for free.",
+      "Free is a terrible price point.",
+      "And it's the honest one. Goodnight, Salado.",
+      "You'll regret this when I'm on the mainland."] },
+    { who: "nell", say: ["Rico, Nell. Somebody paid me for fish with one of those transfers that can be pulled back. Is it mine yet?",
+      "Don't count it as yours yet, love. Until its release time, the sender can still pull it back.",
+      "And after?",
+      "After the release it's yours, and nobody can take it back.",
+      "So I keep the fish until then.",
+      "Or you hand it over and trust them. That's between you and your customer. The chain only tells you when it's final.",
+      "Fish first, coins later? Not at my stall. Night, Rico."] },
+    { who: "bert", say: ["Rico, Bertie. A new rule for the whole island, I say: no wallet may send more than ten thousand coins at once.",
+      "A rule for everybody is a network rule, Bertie. The validators have to agree to it.",
+      "They'd agree with me, surely.",
+      "Maybe not. You're a man ringing a radio station in the middle of the night about other people's money.",
+      "Ha. Fair. Then I'll write it for my own wallet.",
+      "That one only needs you. Read it twice before you send it, because every node will hold you to it.",
+      "Aye. Like the wife. Night, lad."] },
+    { who: "sam", say: ["Rico, it's Sam at the lighthouse. The blocks are still full of transfers. Who sends coins at this hour?",
+      "Half the world, Sam. Somewhere it's lunchtime. And some of it is programs that send on a schedule, all night long.",
+      "Programs. Like the lighthouse lamp.",
+      "Exactly like your lamp. Nobody stays up to turn it. It just turns.",
+      "I stay up to turn it.",
+      "Then you're the human part of the network, Sam. Every chain needs one.",
+      "That's kind. Goodnight, Rico."] },
+    { who: "hana", say: ["Rico, Hana. I'm marking homework, and the children's rules are better than mine. Where does a grown-up learn to write Tau?",
+      "Same place the children did, Hana. Tau HUD has free lessons, one small step at a time.",
+      "Is it hard?",
+      "It's logic. True, false, and, or, not. You already teach all of that. You just call it behaving.",
+      "And the rule really runs on the chain?",
+      "Send it for your wallet, and every node checks your transfers against it. Your homework, enforced.",
+      "Now I'm a little scared. Goodnight, Rico."] },
+    { who: "pim", say: ["Rico, it's Pim, the surveyor. I've counted the characters in my wallet address twice. It looks like a cat walked over a keyboard.",
+      "It's made from your public key, Pim. Long and random on purpose, so nobody can guess it or make one that looks like yours.",
+      "Couldn't it be shorter? Pim One, for example?",
+      "Then somebody else would want Pim One. On the chain, wallets don't get names. Only those long strings.",
+      "Wallets, not people.",
+      "Exactly. You can tell your friends which one is yours. The chain won't.",
+      "Very well. I shall survey something else. Goodnight."] },
+    { who: "zia", say: ["Rico, it's Zia. There's a storm. What if lightning hits the computer that makes the blocks?",
+      "Then the island would have no new blocks for a while, Zia. Like the bakery when the power is out.",
+      "And the old blocks?",
+      "Every node keeps a copy of every block. One storm can't wash them away.",
+      "Not even the very first block?",
+      "Not even that one. Now close the window and get under the blanket.",
+      "Okay. Night, Rico."] },
+    { who: "gus", say: ["Rico, it's Gus. I wrote my first rule tonight. My wallet must always keep a hundred coins. And it worked!",
+      "Gus! Congratulations. How do you know it worked?",
+      "I tried to send everything to my sister. The chain said no. I've never been so happy to hear no.",
+      "That's the feeling, Gus. A promise you made yourself, kept by every node.",
+      "Should I tell my sister?",
+      "Tell her. And then send her five coins. The rule lets you.",
+      "It does! Night, Rico."] },
+    { who: "rudy", say: ["Rico, Rudy again. I asked a chatbot to help me with a transfer, and it wants my wallet key. Is that normal?",
+      "Normal for a trap, Rudy. A real helper can explain every step without ever seeing your key.",
+      "But it's a computer. It won't steal.",
+      "You don't know who built it, or who reads what you type. A key typed anywhere is a key to treat as gone.",
+      "I didn't send it yet.",
+      "Then you win tonight. Paste the question, never the key.",
+      "Question yes, key no. Night, Rico."] },
+    { who: "tess", say: ["Rico, Tess. I started my own node this evening. It's thousands of blocks behind the explorer. Is it broken?",
+      "It's catching up, Tess. A new node reads the whole chain from the beginning, one block after the other.",
+      "All of them? Why not just the latest?",
+      "Because it doesn't take anybody's word for it. It checks every block itself. That's what makes it a node and not a rumour.",
+      "So I wait.",
+      "You sleep. When you wake up it'll most likely be at the newest block, with the rest of the island.",
+      "A node, not a rumour. Night, Rico."] },
+    { who: "ozzie", say: ["Rico, Ozzie. I heard there's a creature in the jungle that eats transactions. Is it safe to feed him at night?",
+      "Agorzilla. Perfectly safe, Ozzie. Every test payment to his wallet is a meal.",
+      "Does he sleep?",
+      "Rico has never caught him at it. And the chain delivers all night.",
+      "What does he eat, exactly?",
+      "Test coins, a few at a time. He grows from what the island feeds him, not from what it promises him.",
+      "Fair dinkum. I'll send him a midnight snack. Cheers!"] },
+    { who: "dom", say: ["Rico, Dom from the hammock. New theory. The blockchain is just a spreadsheet with extra steps.",
+      "Half right, Dom. It is a list. But a spreadsheet has an owner who can quietly change last Tuesday.",
+      "And the chain?",
+      "Every node keeps its own copy and checks every new page. Change last Tuesday on one copy, and all the others say no.",
+      "So it's a spreadsheet everybody can check.",
+      "With extra steps, yes. The steps are the point.",
+      "Respect. Theory upgraded. Night, Rico."] },
+    { who: "mae", say: ["Rico dear, Auntie Mae. My grandson says I shouldn't keep my wallet key in my email. But that's where I keep everything.",
+      "He's right, Auntie. Anything in your email is one stolen password away from somebody else.",
+      "Where then? Under the flour jar?",
+      "On paper, written clearly, kept somewhere dry. Two copies, in two places. And not on napkins. Vik learned that one.",
+      "And the flour jar?",
+      "The flour jar is fine. Just don't bake with the key.",
+      "Ha! Goodnight, dear."] },
+    { who: "sam", say: ["Rico, Sam again, up at the lighthouse. No new block for a long time now. Has the island fallen asleep?",
+      "Sometimes the chain stands still, Sam. On a test network that happens, and the builders are busy making it handle more.",
+      "And the transfers people sent?",
+      "Whatever is already in a block stays there. Whatever was still waiting may have to be sent again when the blocks come back.",
+      "So I keep the lamp on.",
+      "Keep the lamp on. That's what lighthouses are for. Test networks too.",
+      "Goodnight, Rico."] },
+    { who: "bert", say: ["Rico, Bertie. Can't sleep for wondering. Why does a transfer cost anything at all? They're only test coins.",
+      "Because the fee keeps the island tidy, Bertie. If sending were free, somebody would send a million transfers just to watch the queue.",
+      "Like the gulls at the fish stall.",
+      "Exactly like the gulls. A small fee for each one, and the gulls think twice.",
+      "And who sets the price?",
+      "The rules on the chain. Not Rico, and not the validator's mood.",
+      "Good. I don't trust moods. Night, lad."] },
   ];
   /* what the islanders say in the places (the same English as in game.js, which the tests check) */
   const LAWT = { harbour: "A deep harbour for cruise ships", road: "A road round the island" };
@@ -1441,24 +1640,29 @@
   }
   /* between two songs the band stops (music.js onbreak) and Rico says what fits: most often a line on the song that
      just ended and the one coming (BREAK, by the playlist's order), otherwise a word for the listener's hour and the
-     next song's name. In the Night Line's hour (NIGHT_AT, or ?nightline=1 to try it) the first break opens the line,
-     every break after it is a caller (NIGHT), and the first break after the hour closes it. o.pick chooses one key of a
+     next song's name. In the Night Line's hours (NIGHT_AT to NIGHT_END, or ?nightline=1 to try it) the first break
+     opens the line (at eleven the opener, later the hour's welcome), and the first break of each new hour names it.
+     From eleven to midnight every break is a caller (NIGHT); after midnight the night gets quieter (NL_EVERY): a caller,
+     then Rico alone (a night word, SETS.nlTalk, or his usual one), and from two o'clock a break that only names the next
+     song and another word before the next caller. The first break after five closes the line. o.pick chooses one key of a
      list (game.js: the voiced ones he has not said lately); without it, a voiced one he has not said in this browser. */
   const BREAK = { "coco>mango": "A", "mango>lowtide": "B", "lowtide>tinroof": "C", "tinroof>hammock": "D", "hammock>moon": "E", "moon>coco": "F" };
-  const NIGHT_AT = 23;
+  const NIGHT_AT = 23, NIGHT_END = 5;
+  const NL_EVERY = { 23: 1, 0: 2, 1: 3, 2: 4, 3: 4, 4: 4 };   // one break in how many is a caller, by the hour
   const QS = typeof location !== "undefined" && location.search ? new URLSearchParams(location.search) : null;
   /* one-off extra hours (UTC), e.g. Kilian's first listen on 4 Nov 01:45-02:45 German time; the openers and closers that
      name eleven o'clock or midnight are skipped then */
   const EXTRA = [[Date.UTC(2026, 10, 4, 0, 45), Date.UTC(2026, 10, 4, 1, 45)]];
   const extra = () => EXTRA.some(([a, b]) => Date.now() >= a && Date.now() < b);
-  const night = (hr = new Date().getHours()) => (QS && QS.get("nightline") === "1") || hr === NIGHT_AT || extra();
-  const NL = { open: false };
+  const inNight = hr => hr >= NIGHT_AT || hr < NIGHT_END;
+  const night = (hr = new Date().getHours()) => (QS && QS.get("nightline") === "1") || inNight(hr) || extra();
+  const NL = { open: false, hr: null, n: 0 };
   const BRK_SAID = "rabbit-radio-breaks";
   const brkSaid = () => { try { const a = JSON.parse(localStorage.getItem(BRK_SAID) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
   function pickOwn(keys) {
     const v = keys.filter(k => voiced(k) !== false), from = v.length ? v : keys, said = brkSaid(), fresh = from.filter(k => !said.includes(k));
     const k = fresh.length ? fresh[Math.floor(Math.random() * fresh.length)] : from.slice().sort((a, b) => said.indexOf(a) - said.indexOf(b))[0];
-    try { localStorage.setItem(BRK_SAID, JSON.stringify(said.filter(x => x !== k).concat(k).slice(-80))); } catch (e) {}
+    try { localStorage.setItem(BRK_SAID, JSON.stringify(said.filter(x => x !== k).concat(k).slice(-400))); } catch (e) {}   // a whole Night Line: some 80 callers, each with a ring and a goodbye
     return k;
   }
   /* the chain weather by sender: n = the relay's counts for the last blocks (/api/v1/sources/recent). Only when every
@@ -1483,17 +1687,30 @@
   }
   function brk(from, to, o = {}) {
     const pick = o.pick || pickOwn, hr = o.hr != null ? o.hr : new Date().getHours(), line = k => ({ t: tr(L[k]), v: L[k] });
+    const next = () => (L["nx_" + to] ? [line("nx_" + to)] : []);
     if (night(hr)) {
-      if (!NL.open) { NL.open = true; NL.extra = extra() && hr !== NIGHT_AT; const k = pick(NL.extra ? ["nlo2"] : SETS.nlOpen); return { k, parts: [line(k)] }; }
+      const hour = SETS["nlH" + hr];
+      if (!NL.open) {
+        NL.open = true; NL.hr = hr; NL.n = 0; NL.extra = extra() && !inNight(hr);
+        const k = pick(NL.extra ? ["nlo2"] : hr === NIGHT_AT || !hour ? SETS.nlOpen : hour); return { k, parts: [line(k)] };
+      }
+      if (hr !== NL.hr) { NL.hr = hr; NL.n = 0; if (hour) { const k = pick(hour); return { k, parts: [line(k)] }; } }
+      const turn = NL.n++ % (NL.extra ? 1 : NL_EVERY[hr] || 1);
+      if (turn === 2 && L["nx_" + to]) return { k: "nx_" + to, parts: next() };   // only the next song's name
+      if (turn) { if (Math.random() < 0.5) { const k = pick(SETS.nlTalk); return { k, parts: [line(k), ...next()] }; } return usual(); }   // Rico alone: a night word, or his usual one
       const k = pick(NIGHT.map((c, i) => "night:" + i)), ring = pick(SETS.nlRing), bye = pick(SETS.nlBye);
       return { k, also: [ring, bye], parts: call(NIGHT[+k.slice(6)], ring, bye), call: true };
     }
     if (NL.open) { NL.open = false; if (!NL.extra) { const k = pick(SETS.nlClose); return { k, parts: [line(k)] }; } }
-    const x = BREAK[from + ">" + to], pair = x ? Object.keys(L).filter(k => k.startsWith("sb" + x)) : [];
-    if (pair.length && Math.random() < 0.65) { const k = pick(pair); return { k, parts: [line(k)] }; }
-    if (Math.random() < 0.12) { const k = pick(SETS.salado); return { k, parts: [line(k), ...(L["nx_" + to] ? [line("nx_" + to)] : [])] }; }   // the wellness investor, now and then
-    const set = Math.random() < 0.25 ? "sbAny" : hr >= 5 && hr < 11 ? "sbAm" : hr >= 11 && hr < 17 ? "sbPm" : hr >= 17 && hr < 22 ? "sbEv" : "sbNt", k = pick(SETS[set]);
-    return { k, parts: [line(k), ...(L["nx_" + to] ? [line("nx_" + to)] : [])] };
+    return usual();
+    /* the usual word between two songs: on the pair of songs, the wellness investor now and then, or the listener's hour */
+    function usual() {
+      const x = BREAK[from + ">" + to], pair = x ? Object.keys(L).filter(k => k.startsWith("sb" + x)) : [];
+      if (pair.length && Math.random() < 0.65) { const k = pick(pair); return { k, parts: [line(k)] }; }
+      if (Math.random() < 0.12) { const k = pick(SETS.salado); return { k, parts: [line(k), ...next()] }; }   // the wellness investor, now and then
+      const set = Math.random() < 0.25 ? "sbAny" : hr >= 5 && hr < 11 ? "sbAm" : hr >= 11 && hr < 17 ? "sbPm" : hr >= 17 && hr < 22 ? "sbEv" : "sbNt", k = pick(SETS[set]);
+      return { k, parts: [line(k), ...next()] };
+    }
   }
   window.RICO = { L, SETS, CAST, CALLS, NIGHT, brk, night, wxSource, NAMES, BANDS, NUMERIC, BLOCK, all, speak, fill, key, hud, call, wake, voiced, check, stop: () => { if (EL && !EL.paused) { EL.onended = null; EL.pause(); } }, get why() { return why.last; } };
 })();
