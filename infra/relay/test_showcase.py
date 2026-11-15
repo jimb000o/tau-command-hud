@@ -48,13 +48,16 @@ class Node:
             inc = [{k: v for k, v in o.items() if k != "rule_text"} for o in self.offers.values() if o["recipient_pubkey"] == pk]
             return {"status": "ok", "data": {"accepted_clauses": [{"target_stream": "o5", "clause_body": c}] if c else [], "incoming": inc}}
         if verb == "getruleoffer":
-            return {"status": "ok", "data": self.offers.get(rest.strip())}
+            o = self.offers.get(rest.strip())
+            if o and o["status"] != "offered":   # a resolved offer no longer names offerer and recipient, as on the chain
+                o = {**o, "offerer_pubkey": "", "recipient_pubkey": "", "expire_at_height": 0}
+            return {"status": "ok", "data": o} if o else {"status": "error", "error": {"code": "OFFER_UNKNOWN", "message": "Unknown offer"}}
         if verb == "sendtx":
             tx = json.loads(rest)
             self.sent.append(tx)
             pk = tx["sender_pubkey"]
             if tx["tx_type"] == "rule_offer":
-                oid = "o%d" % len(self.offers)
+                oid = showcase.offer_id(pk, tx["recipient_pubkey"], tx["rule_text"], tx["expire_at_height"])   # the chain's id
                 self.offers[oid] = {"offer_id": oid, "offerer_pubkey": pk, "recipient_pubkey": tx["recipient_pubkey"], "rule_text": tx["rule_text"],
                                     "expire_at_height": tx["expire_at_height"], "status": "offered"}
                 return {"status": "ok", "data": {"ok": True, "tx_hash": "x%d" % len(self.sent)}}
@@ -171,7 +174,9 @@ check(sm and sm["status"] == "rejected" and node.clauses.get(sc.pk["foureyes"]) 
       "scam: the stranger's pay-only-me rule is declined, the four-eyes wallet keeps its own rule")
 ig = by.get((sc.pk["stranger"], sc.pk["feeding"]))
 check(ig and ig["status"] == "offered" and ig["expire_at_height"] == 50 + showcase.IGNORED_WINDOW, "ignored: an offer nobody answers, open for 15 blocks")
-check([o["status"] for o in offers if o["offerer_pubkey"] == sc.pk["piggy"]] == ["accepted", "accepted"], "one gift a day, two days, both accepted")
+check(sum(t["tx_type"] == "rule_offer" and t["sender_pubkey"] == sc.pk["piggy"] for t in node.sent) == 2
+      and sum(t["tx_type"] == "rule_offer_accept" and t["sender_pubkey"] == sc.pk["apprentice"] for t in node.sent) == 2,
+      "one gift a day, two days, both accepted")
 check(sc.review(sc.story_rule("scam"), sc.pk["stranger"]) and not sc.review(sc.rule("feeding"), sc.pk["stranger"]),
       "the review catches a rule that pays only its offerer, not a whitelist naming someone else")
 check(all(t["tx_type"] != "rule_offer" or t["expire_at_height"] - 50 in (showcase.OFFER_WINDOW, showcase.IGNORED_WINDOW) for t in node.sent),
@@ -267,6 +272,23 @@ for i in range(showcase.COSIGN_PER_IP):
     co.route("/showcase/cosign", f"id={i:064x}&from={P}", "2.2.2.2")
 check(co.route("/showcase/cosign", f"id={'55' * 32}&from={P}", "2.2.2.2")["ok"] is False, "at most ten a day from one address")
 
+# a block takes the offer but the chain records none: the status says so
+class SwallowNode(Node):
+    async def ask(self, cmd):
+        verb, _, rest = cmd.partition(" ")
+        if verb == "sendtx" and json.loads(rest)["tx_type"] == "rule_offer":
+            self.sent.append(json.loads(rest))
+            return {"status": "ok", "data": {"ok": True, "tx_hash": "%064x" % len(self.sent)}}
+        if verb == "gettxstatus":
+            return {"status": "ok", "data": {"tx_hash": rest.strip(), "status": "confirmed"}}
+        return await super().ask(cmd)
+
+tmp6 = tempfile.mkdtemp()
+clock6 = Clock(cruise.berlin_t(DAY, 9))
+sw = showcase.Showcase(keys_path=os.path.join(tmp6, "k"), state_path=os.path.join(tmp6, "s.json"), clock=clock6, enabled=True)
+asyncio.run(run(sw, SwallowNode(), clock6, cruise.berlin_t(DAY, 18)))
+check("recorded no offer" in sw.st["stories"]["gift"]["result"], "confirmed but no offer on the chain: the status names it")
+
 # offers that never reach a block: the status says what the node knows of the transaction, and it is sent once more
 class LostNode(Node):
     async def ask(self, cmd):
@@ -287,6 +309,7 @@ gifts = [t for t in ln.sent if t["tx_type"] == "rule_offer" and t["recipient_pub
 res = lost.st["stories"]["gift"]["result"]
 check(len(gifts) == 2 and "node: expired" in res and "trying once more" not in res,
       "an offer that never reaches a block: the node's word on it in the status, sent once more, then left")
+check(len(lost.st["stories"]["gift"]["oid"] or "") == 64, "each offer's id is worked out the way the chain does it")
 check("node: expired" in lost.st["stories"]["ignored"]["result"],
       "the ignored offer is watched too: it must reach a block before it can be left to expire")
 

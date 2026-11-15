@@ -164,6 +164,20 @@ def make_keys(path: str, keys: dict | None = None) -> dict:
     return keys
 
 
+def offer_id(offerer: str, recipient: str, rule_text: str, expire: int) -> str | None:
+    """The offer's id the way the chain derives it (tau-testnet consensus/serialization.py compute_offer_id: BLAKE3 over
+    offerer 48 bytes, recipient 48 bytes, the text with a 4-byte length, the expiry height as 8 bytes). With it the relay
+    asks for exactly this offer (getruleoffer), which still answers after the offer is resolved, when the chain's offer
+    list no longer names offerer and recipient. None when blake3 is not installed."""
+    try:
+        from blake3 import blake3
+    except ImportError:
+        return None
+    text = rule_text.encode("utf-8")
+    raw = bytes.fromhex(offerer) + bytes.fromhex(recipient) + len(text).to_bytes(4, "big") + text + int(expire).to_bytes(8, "big")
+    return blake3(raw).hexdigest()
+
+
 def short_of_floor() -> str:
     """True when this payment would leave less than FLOOR: the amount is more than the balance (guards the bv[24]
     wrap of i2 - i1; money arriving in the same block can still make such a payment succeed) or what stays is below."""
@@ -504,6 +518,7 @@ class Showcase:
                 ok = self.took(res)
                 self.st["stories"][story] = {"day": day, "t": int(now), "expire": tx["expire_at_height"], "tries": tries,
                                              "hash": str(((res or {}).get("data") or {}).get("tx_hash") or ""),
+                                             "oid": offer_id(self.pk[offerer], self.pk[to], self.story_rule(story), tx["expire_at_height"]),
                                              "phase": "wait" if ok else "done",
                                              "result": ("offered" if ok else "the node refused the offer")}
                 self.note(offerer, ("offered: " if ok else "offer refused: ") + self.story_words(story) + ("" if ok else " · " + self.said(res)))
@@ -518,6 +533,10 @@ class Showcase:
                     r = await ask(f"gettxstatus {s['hash']}")
                     d = (r or {}).get("data") or {}
                     why = " · ".join(str(d[k]) for k in ("status", "reason", "detail") if d.get(k))[:200]
+                if s.get("oid") and why.startswith("confirmed"):   # in a block, yet the chain has no such offer
+                    r = await ask(f"getruleoffer {s['oid']}")
+                    if (r or {}).get("status") != "ok":
+                        why += " · the block took it but the chain recorded no offer (" + self.said(r)[:120] + ")"
                 again = (s.get("tries") or 1) < STORY_TRIES
                 s.update(phase="done", retry=again,
                          result="the offer never showed up in a block in time" + (f" (node: {why})" if why else "")
@@ -527,12 +546,17 @@ class Showcase:
             if now - self.last_story_look < 30:
                 return False
             self.last_story_look = now
-            r = await ask(f"getruleoffers {self.pk[to]} in")
-            d = (r or {}).get("data") or {}
-            mine = [x for x in d.get("incoming") or [] if isinstance(x, dict)
-                    and str(x.get("offerer_pubkey", "")).lower() == self.pk[offerer]
-                    and int(x.get("expire_at_height") or -1) == int(s.get("expire") or -2)]
-            o = next((x for x in mine if x.get("status") == "offered"), mine[0] if mine else None)
+            if s.get("oid"):   # this one offer by its id: answers also once it is resolved
+                r = await ask(f"getruleoffer {s['oid']}")
+                d = (r or {}).get("data") if (r or {}).get("status") == "ok" else None
+                o = {**d, "offer_id": d.get("offer_id") or s["oid"]} if isinstance(d, dict) and d.get("status") else None
+            else:
+                r = await ask(f"getruleoffers {self.pk[to]} in")
+                d = (r or {}).get("data") or {}
+                mine = [x for x in d.get("incoming") or [] if isinstance(x, dict)
+                        and str(x.get("offerer_pubkey", "")).lower() == self.pk[offerer]
+                        and int(x.get("expire_at_height") or -1) == int(s.get("expire") or -2)]
+                o = next((x for x in mine if x.get("status") == "offered"), mine[0] if mine else None)
             if not o:
                 return False
             if o.get("status") != "offered":
