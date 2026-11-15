@@ -761,11 +761,14 @@
     const fit = () => {
       const vw = document.documentElement.clientWidth, pad = vw <= 720 ? 12 : 16;
       els.forEach(e => {
-        e.style.width = e.style.maxWidth = e.style.marginLeft = e.style.zoom = "";
+        e.style.width = e.style.maxWidth = e.style.marginLeft = e.style.marginRight = e.style.zoom = "";
         const r = e.getBoundingClientRect(), scale = e.offsetWidth ? r.width / e.offsetWidth : 1;
         if (scale > 1.02 || scale < 0.98) { e.style.zoom = String(1 / scale); return; }
         if (r.width >= vw - 2 * pad - 60) return;
         e.style.width = e.style.maxWidth = (vw - 2 * pad) + "px"; e.style.marginLeft = (pad - r.left) + "px";
+        // the right margin gives the width back, so the row still counts as the column's width: in a grid column
+        // (cruise logbook, …) the track would otherwise grow to the screen and push every other row to the right
+        e.style.marginRight = (r.right - (vw - pad)) + "px";
       });
     };
     const later = () => { clearTimeout(t); t = setTimeout(fit, 60); };
