@@ -115,7 +115,7 @@
   async function open() {
     const W = WK(); if (!W) return;
     close(); const game = GM(); if (game) game.closeCard();
-    const me = W.mine();
+    const me = W.me();
     S.pk = me ? me.pk : null;
     S.base = me ? me.parts.slice() : IS.parts(null);
     S.pick = S.base.slice(); S.tab = 0; S.card = null; S.earned = new Set(); S.happyUntil = 0; S.drawn = 0; S.faceSig = "";
