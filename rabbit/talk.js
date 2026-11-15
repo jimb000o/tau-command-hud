@@ -194,6 +194,7 @@
         ["ruleTime", "A wallet on the chain has locked its coins until a date. Its own rule. The chain reads the time of every block and says: not yet. Patience, written down."],
         ["ruleFreeze", "Somewhere on the chain a wallet has frozen itself. Nothing leaves until it writes a new rule. A shop with the sign turned to closed, and the owner inside, holding the key."],
         ["rules", "Not long ago only two wallets at a time could hold a rule of their own. Now every wallet can. More rules, more to write down. The Book is delighted. I am a little tired."],
+        ["reefPurse", "The reef law holds this week, and not only in the Book. The North Wind’s purse carries a rule on the chain now: no payment above twenty. Even an embassy has to read its own rule."],
         ["", "Sit, sit. I was just reading yesterday again. It hasn’t changed. That’s the nice thing about it."],
         ["", "Come in, come in. I’ve just dusted the Book. Not that it needs it. Nothing in it ever changes. It only grows."],
       ],
@@ -310,6 +311,7 @@
         ["reef", "Big ships out of the bay, and the parrotfish are back. The sensors signed it, I signed it. The parrotfish didn’t, but you could tell."],
         ["ruleHeld", "My sensors sign every reading. Wallets sign every payment. And today a wallet’s own rule refused a payment it had signed itself. The reef would like a rule like that for anchors."],
         ["walk", "A walker came down to the dive shack. Didn’t swim. Just stood there, and then a green ring went out around its feet. Its wallet had just paid someone. Better than sonar."],
+        ["reefPurse", "The reef law reaches the embassies now. A rule on the North Wind’s purse, on the chain: the harbour people can’t pay big. First time the reef has had a lawyer."],
         ["", "Perfect visibility today. You can see the sand, the fish, and three sensors arguing with a turtle."],
         ["", "Hey, back for more? The reef is open. The coffee machine is not. Priorities."],
       ],
@@ -479,6 +481,8 @@
           more: { q: "And if the island says no?", a: [["", "Then we wait for the next election. The North Wind is patient. Unfortunately, so is your Book. It remembers who promised and did not deliver."]] } },
         { q: "Why not simply build it?", a: [["", "Because there is nobody here who can sign it for us. No chief, no master key, only a council and a Book. Honestly, it is exhausting. Elsewhere one handshake is enough."]] },
         { when: "rulesAny", q: "Does the North Wind write rules for itself?", a: [["ruleHeld", "I hear a wallet’s own rule refused its own payment today. Imagine: a promise one cannot quietly break. Dreadful for diplomacy."], ["rules", "Every wallet with a rule of its own now. Charming. Where I come from, rules were something one wrote for other people."]] },
+        { when: "northDeal", q: "And if I take your money and forget the harbour?", a: [["", "Then on Sunday night our purse takes its envelope back. On the chain, not in a speech. The money waits until the election for exactly that reason. Diplomacy, with a receipt."]] },
+        { when: "reefPurse", q: "Why is your envelope smaller this week?", a: [["", "Your reef law. It is written into our purse on the chain: nothing above twenty leaves it. We did not write that rule. We are merely bound by it. A novel experience."]] },
       ],
     },
     /* the resort's offer is game.js EMB.south; coming back, he talks about where your deal with him stands */
@@ -510,6 +514,7 @@
         ["eventCoup", "About the council tree. That was my investors, not me, I swear on my moustache. I told them you can’t buy a tree on this island. They didn’t listen. Now they’ve met Ama, and they’re very quiet."],
         ["ruleFloor", "A rule that reads the balance and never goes below the line! My investors would love that. Actually, they would hate it. Let’s not tell them."],
         ["walkMany", "So many walkers on the island! Potential guests, all of them. Not one has booked a lounger. Yet."],
+        ["southOwed+!road", "Tick tock, my friend. My envelope waits on the chain until the election. Propose the road before Sunday night and it’s yours. If not, the purse takes it home. I didn’t design it. I just love it."],
       ],
       ask: [
         { when: "ship", q: "Is the cruise ship good for the resort?", a: [["", "One ship a week, treatments booked, coins in escrow until the hour. That’s not mass tourism, that’s a reservation. I love a reservation."]],
@@ -521,6 +526,7 @@
           more: { q: "Then why do your investors keep paying?", a: [["", "Because I make beautiful slides, and I say “synergy” a lot. They’ve never been here. If they came up the jungle path and saw the empty loungers… So, between us, please don’t invite them."]] } },
         { q: "Do you ever get to relax?", a: [["", "Me? I sell relaxing, I don’t do it. Every morning I join the guests for yoga, and every morning my phone rings in the middle of the tree pose. It’s always the investors. I have never once finished a tree."]] },
         { q: "Have you ever seen Agorzilla?", a: [["", "Something big drinks from my pool at night. In the morning the water is lower and there’s a banana peel on a lounger, folded. Now I leave a towel out for him. Folded too. We have an understanding."]] },
+        { when: "southDeal", q: "Can you really take the money back?", a: [["", "Not me, the purse. It sent you a transfer it can take back until the election. You propose the road, and on Monday it’s yours. You don’t, and on Sunday night it quietly comes home. Like my investors."]] },
       ],
     },
   };
