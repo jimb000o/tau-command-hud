@@ -176,6 +176,15 @@ print('released:', ', '.join(r))
   docker compose logs -t --since 72h relay 2>&1 | grep -E "(upstream|sender) sendtx failed" | awk '{print substr($3,1,13)}' | sort | uniq -c | sed 's/^/  /'
   exit 0
 fi
+# up restarts [days]: what our ships sent right before each testnet restart, and every call side by side (read only,
+# nothing rebuilt; infra/restart-report.py), in English, ready to paste for IDNI
+if [ "${1:-}" = "restarts" ]; then
+  docker compose cp restart-report.py relay:/tmp/restart-report.py >/dev/null
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T relay python /tmp/restart-report.py ${2:-}
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
 # the pirates' clip after each Tuesday call (alerts/trick_clip.py, posted by itself), nothing rebuilt: up clip  the newest
 # pirate visit's clip to look at (a SAMPLE, marked on every frame, before the first one), posts nothing;
 # up clip send 2026-11-10-pirates  posts that visit's clip now, once (never one where a trick got through)
