@@ -9,6 +9,8 @@ as a draft for the owner (testnet_week.py).
   python blog.py draft <visit-id>     write the draft of that visit (anew, if there is one)
   python blog.py publish <id> [--dry] put the draft on the blog and post it once to Telegram and X (--dry: show only;
                                       a call older than BLOG_POST_MAX_HOURS is not posted, --post posts it anyway)
+  python blog.py publish <id> --at=2026-11-16T08:00Z   the draft goes up by itself at that time (UTC), as by hand;
+                                      --at=off takes the time back
   python blog.py unpublish <id>       take a published article off the blog again (the posts stay)
   python blog.py pictures             make the hero pictures and link-preview pages of all articles anew
 
@@ -979,6 +981,8 @@ def call_time(a: dict) -> float | None:
 
 def too_late_to_post(a: dict, now: float) -> float | None:
     """The hours since the call when that is more than POST_MAX_HOURS (the article then goes out without a post), else None."""
+    if a.get("kind") == "week":
+        return None   # the weekly post tells its own news: it is posted whenever it goes up, never "too old"
     t0 = call_time(a)
     if POST_MAX_HOURS <= 0 or t0 is None:
         return None
@@ -1000,6 +1004,9 @@ def auto_note(st: dict, did: str, a: dict) -> str:
         return "never by itself: written before drafts published themselves, only by hand"
     if held(did):
         return "never by itself, held: " + held(did)
+    if (st.get("publish_at") or {}).get(did):
+        t = st["publish_at"][did]
+        return f"goes up by itself {dt.datetime.fromtimestamp(t, dt.timezone.utc):%a %d.%m. %H:%M} UTC, the time you set (--at=off takes it back)"
     if a.get("by_hand"):
         return "never by itself: it waits for your OK (up blog publish " + did + ")"
     if a.get("editor"):
@@ -1167,6 +1174,68 @@ def publish_cli(did: str, dry: bool, force: bool, post_late: bool = False, now: 
     return 0
 
 
+def publish_at(text: str, now: float | None = None) -> float | None:
+    """The time of --at=…: an ISO day and time in UTC (2026-11-16T08:00Z), or off; None when it does not read."""
+    t = str(text or "").strip().upper().removesuffix("Z").removesuffix("UTC").strip()
+    try:
+        d = dt.datetime.fromisoformat(t.replace(" ", "T"))
+    except ValueError:
+        return None
+    return (d if d.tzinfo else d.replace(tzinfo=dt.timezone.utc)).timestamp()
+
+
+def schedule_cli(did: str, at: str, now: float | None = None) -> int:
+    """up blog publish <id> --at=2026-11-16T08:00Z: the draft goes up by itself then (blog + its one post), as if
+    published by hand at that time; --at=off takes the time back. The owner's OK for that one draft only."""
+    now = now or time.time()
+    st = state()
+    sch = st.setdefault("publish_at", {})
+    if at.strip().lower() == "off":
+        print(f"{did}: no time set any more" if sch.pop(did, None) else f"{did} had no time set")
+        write_json(STATE, st)
+        return 0
+    if did not in st["drafts"]:
+        print(f"no draft {did}; waiting: {', '.join(st['drafts']) or 'none'}")
+        return 1
+    t = publish_at(at)
+    if t is None or t <= now:
+        print(f"not set: {at!r} is no time to come (write it in UTC: --at=2026-11-16T08:00Z)")
+        return 1
+    sch[did] = round(t)
+    write_json(STATE, st)
+    print(f"{did} goes up by itself at {dt.datetime.fromtimestamp(t, dt.timezone.utc):%a %d.%m. %H:%M} UTC "
+          f"({local(t):%H:%M} German time), with its one post on Telegram and X; the draft until then: {draft_url(st, did)}"
+          f"\ntake it back: up blog publish {did} --at=off")
+    return 0
+
+
+def scheduled_publish(now: float | None = None) -> list[str]:
+    """The drafts whose --at time has come go up, once each; the owner hears on Telegram how it went."""
+    now = now or time.time()
+    st = state()
+    due = [did for did, t in (st.get("publish_at") or {}).items() if t <= now]
+    done = []
+    for did in due:
+        st = state()
+        st.get("publish_at", {}).pop(did, None)   # once: a refusal is told, not tried again every ten minutes
+        write_json(STATE, st)
+        import contextlib
+        import io
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = publish_cli(did, False, False, now=now)
+        said = out.getvalue().strip()
+        log.info("timed publish %s: %s", did, said)
+        try:
+            import tickerwatch
+            tickerwatch.tell(("Published at the set time: " if rc == 0 else "NOT published at the set time: ") + did + "\n" + said[:1500])
+        except Exception as e:  # noqa: BLE001
+            log.warning("timed publish %s, telling: %s", did, e)
+        if rc == 0:
+            done.append(did)
+    return done
+
+
 def unpublish_cli(did: str) -> int:
     p = posts()
     keep = [x for x in p["posts"] if x.get("id") != did]
@@ -1193,6 +1262,8 @@ def main(argv: list[str]) -> int:
         did = write_draft(args[0])
         print(f"draft {did} written")
         return drafts_cli()
+    if cmd == "publish" and args and ID_RE.match(args[0]) and any(a.startswith("--at=") for a in argv):
+        return schedule_cli(args[0], next(a for a in argv if a.startswith("--at="))[5:])
     if cmd == "publish" and args and ID_RE.match(args[0]):
         return publish_cli(args[0], "--dry" in argv, "--force" in argv, "--post" in argv)
     if cmd == "unpublish" and args and ID_RE.match(args[0]):
@@ -1234,6 +1305,7 @@ def main(argv: list[str]) -> int:
                 notes_tick()
                 site_pictures()
                 tick()
+                scheduled_publish()   # a draft the owner gave a time to (up blog publish <id> --at=…)
                 auto_publish()
             except Exception as e:  # noqa: BLE001 - the relay may be restarting
                 log.warning("tick: %s", e)

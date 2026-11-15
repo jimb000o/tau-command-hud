@@ -25,6 +25,7 @@ The address stays the same for a week: tauhud.com/blog/?p=testnet-week-<year>-w<
   python testnet_week.py               this week so far, as the post would read (nothing written, nothing sent)
   python testnet_week.py last          the same for last week
   python testnet_week.py draft [last]  write the draft now (anew, same address) and tell the owner on Telegram
+  python testnet_week.py repaint [id]  only the draft's picture made anew (the text stays as approved); id: the last week drafted
 """
 from __future__ import annotations
 
@@ -384,7 +385,7 @@ def text(f: dict) -> dict:
         pace = cc[0] / (((f["to"] - f["from"]) / f["block seconds"]) or 1) if f.get("block seconds") else None
         stats.append([n(cc[0]), "blocks this week", None if pace is None else "ok" if pace >= 0.95 else "amber" if pace >= 0.8 else "bad"])
     stats.append([str(len(rs)), ("chain restart" if len(rs) == 1 else "chain restarts") + (", cause not clear yet" if rs else ""),
-                  "ok" if not rs else "amber"])   # restarts are a caution, never red: red reads as "super bad" (Kilian, 15 Nov)
+                  restart_tone(len(rs))])
     if src.get("apps"):
         bf = (f.get("before") or {}).get("app txs")
         stats.append([n(people), "transactions by users of our apps", None if not bf else "ok" if people >= bf else "amber"])
@@ -779,6 +780,31 @@ def write_draft(f: dict, wid: str, now: float | None = None, tr: dict | None = N
     return a["id"]
 
 
+def restart_tone(n: int) -> str:
+    """Restarts are a caution, never red: red reads as "super bad" (owner, 15 Nov 2026)."""
+    return "ok" if not n else "amber"
+
+
+def repaint(did: str | None = None) -> str:
+    """The draft's picture made anew with today's colours; its text stays word for word as it was read and approved."""
+    st = blog.state()
+    if not did:
+        done = st.get("week_drafted") or {}
+        did = (done[max(done)] or {}).get("id") if done else None
+    if not did or did not in (st.get("drafts") or {}):
+        raise SystemExit(f"no week draft {did or ''}; waiting: {', '.join(st.get('drafts') or {}) or 'none'}")
+    path = os.path.join(blog.PUBLIC, "drafts", st["drafts"][did] + ".json")
+    a = blog.read_json(path, {})
+    for tile in a.get("stats") or []:
+        if len(tile) > 2 and "restart" in str(tile[1]) and str(tile[0]).isdigit():
+            tile[2] = restart_tone(int(tile[0]))
+    if not blog.make_hero(a, a.get("stats")):
+        raise SystemExit(f"{did}: no picture made")
+    a["image"] = f"{blog.NODE}/blog/img/{a['id']}-hero.jpg"
+    blog.write_json(path, a)
+    return did
+
+
 def tell_text(a: dict, url: str) -> str:
     import editor
     return "\n".join([f"Weekly testnet post ready as a draft: {a['title']['en']}"] + ["• " + x for x in a.get("numbers") or []]
@@ -852,6 +878,11 @@ def status_lines(now: float | None = None) -> list[str]:
 
 def main(argv: list[str]) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+    if argv[:1] == ["repaint"] and len(argv) <= 2:
+        did = repaint(argv[1] if len(argv) > 1 else None)
+        print(f"picture of {did} made anew, its text unchanged: {blog.NODE}/blog/img/{did}-hero.jpg"
+              f"\npublish: " + UP.format(f"blog publish {did}"))
+        return 0
     if any(x not in ("draft", "last") for x in argv):
         print(__doc__)
         return 2
