@@ -62,7 +62,13 @@ NOTES: dict[str, dict] = {
         "x": "A testnet restart cut the Queen Mempool's call short after 12 of 90 minutes. Our node took two hours to rejoin; "
              "next time a watchdog catches that within minutes.",
         "body": {
-            "en": f"""## What happened
+            "en": f"""## Update, 15 November
+
+On her make-up call the next day, the testnet started over again, 8 minutes after the Queen landed: the old chain ended at block 1457 at 14:07:54 UTC, and the new one began at 14:09:39 UTC. Two restarts within minutes of the same ship's arrival, on two days in a row, are hard to call chance. So we no longer write that nothing points to the ship: her traffic may be connected, though we do not know how, and why the testnet restarts is for the IDNI team to say. We have paused the cruise ships until we understand it.
+
+One thing did work this time: our node followed the new chain within seconds, and the ship's logbook told the restart as a restart.
+
+## What happened
 
 The Queen Mempool arrived at White Rabbit Key at 13:00 UTC for a 90-minute call. A few minutes later the testnet started over from its starting state, and her call ended after 12 minutes. Our node accepted 8 of her payments; 12 more got no answer in time, and 517 planned stops were skipped.
 
@@ -75,7 +81,7 @@ We checked first whether the ship could have caused it, because that would be ou
 - Up to the Queen's arrival everything looked normal. Blocks 1563 to 1568 reached our node about one a minute from 12:55 UTC on. Block 1569 was made at 13:01:52 UTC. Like the blocks before it, it was small and plain: one transfer of 3 AGRS, where each of the three before held one or two transfers, and no rule changes in any of them. By then the Queen had sent only a few payments, all while our node rated the load as calm.
 - Then the testnet [started over]({STATS}). The old chain ended at block 1569, and a new chain began from block 1 a few minutes later, around 13:05 to 13:10 UTC (worked out from the block rate, not read off the chain). It runs the same software as before. Why it was restarted is for the IDNI team to say.
 - Restarts wipe balances, rules and history. Whatever the Queen's passengers paid in those first minutes went with the old chain.
-- [On 7 November]({BEFORE}) the same ship sent more than 400 payments in 90 minutes, and our node kept receiving blocks the whole time. Nothing we found points to the ship as the reason for the restart, though we cannot rule it out.
+- [On 7 November]({BEFORE}) the same ship sent more than 400 payments in 90 minutes, and our node kept receiving blocks the whole time. At the time we found nothing pointing to the ship as the reason for the restart, but we could not rule it out (see the update above).
 
 ## What happened on our side
 
@@ -95,8 +101,14 @@ The ship only sees our node. It saw no new block for ten minutes with payments w
 ## What is still open
 
 - Why the testnet was restarted at that moment. When the IDNI team says, we will add it here.
-- **The Queen comes back for a make-up call on Sunday, 15 November, at 14:00 UTC** (15:00 in Germany), on the new chain and with the same plan as always. It will show whether the voyage runs as on 7 November.""",
-            "zh": f"""## 发生了什么
+- Whether the Queen's traffic and the restarts are connected. Until we know, the cruise ships stay in port.""",
+            "zh": f"""## 更新，11 月 15 日
+
+在第二天补的那次停靠中，测试网又一次重新开始了，就在 Queen 到达 8 分钟后：旧链在 UTC 14:07:54 于第 1457 号区块结束，新链在 UTC 14:09:39 开始。连续两天，两次重启都发生在同一艘船到达后几分钟内，很难说是巧合。所以我们不再写“没有迹象指向船”：她的流量可能与此有关，但我们不知道是怎样的关系，而测试网为什么重启，应由 IDNI 团队来说明。在弄清楚之前，我们暂停了所有游轮。
+
+这一次有一件事做对了：我们的节点在几秒内就跟上了新链，船的日志也把这次重启如实记作重启。
+
+## 发生了什么
 
 Queen Mempool 在 UTC 13:00 到达 White Rabbit Key，计划停靠 90 分钟。几分钟后，测试网从初始状态重新开始，她的停靠在 12 分钟后结束。我们的节点接受了她的 8 笔付款；另有 12 笔没有及时得到回应，517 个计划中的停靠点被跳过。
 
@@ -109,7 +121,7 @@ Queen Mempool 在 UTC 13:00 到达 White Rabbit Key，计划停靠 90 分钟。�
 - 在 Queen 到达之前，一切看起来都正常。从 UTC 12:55 起，第 1563 到 1568 号区块大约每分钟一个到达我们的节点。第 1569 号区块在 UTC 13:01:52 产生。和之前的区块一样，它很小也很普通：只有一笔 3 AGRS 的转账，之前三个区块各有一到两笔转账，其中都没有规则变更。到那时 Queen 只发出了很少几笔付款，我们的节点当时把负载评为平静。
 - 随后测试网[重新开始]({STATS})。旧链在第 1569 号区块结束，几分钟后，大约 UTC 13:05 到 13:10，一条新链从第 1 号区块开始（这是按出块速度推算的，不是从链上读到的）。它运行的软件和之前相同。为什么重启，应由 IDNI 团队来说明。
 - 重启会清除余额、规则和历史。Queen 的乘客在最初几分钟里付的款，也随旧链一起消失了。
-- [11 月 7 日]({BEFORE})，同一艘船在 90 分钟里发出了 400 多笔付款，我们的节点在整个过程中一直收到新区块。我们没有找到任何迹象表明船是这次重启的原因，但也不能排除。
+- [11 月 7 日]({BEFORE})，同一艘船在 90 分钟里发出了 400 多笔付款，我们的节点在整个过程中一直收到新区块。当时我们没有找到迹象表明船是这次重启的原因，但也不能排除（见上面的更新）。
 
 ## 我们这边发生了什么
 
@@ -129,8 +141,14 @@ Queen Mempool 在 UTC 13:00 到达 White Rabbit Key，计划停靠 90 分钟。�
 ## 仍待解答
 
 - 测试网为什么在那个时候重启。IDNI 团队说明后，我们会补充在这里。
-- **Queen 将在 11 月 15 日星期日 UTC 14:00（德国时间 15:00）回来补一次停靠**，在新链上，计划和往常一样。它会显示这次航行能否像 11 月 7 日那样进行。""",
-            "ja": f"""## 何が起きたのか
+- Queen 的流量和这些重启是否有关。在弄清楚之前，游轮都留在港口。""",
+            "ja": f"""## 更新（11 月 15 日）
+
+翌日のやり直しの寄港でも、Queen が着いて 8 分後にテストネットはまた最初からやり直しになりました。古いチェーンは UTC 14:07:54 にブロック 1457 で終わり、新しいチェーンは UTC 14:09:39 に始まりました。2 日続けて、同じ船の到着から数分で再起動が起きたことを、偶然とは言いにくいです。そのため「船を示すものはない」とはもう書きません。彼女の通信が関係しているかもしれませんが、どう関係しているのかはわかりません。テストネットがなぜ再起動するのかは、IDNI チームが説明することです。理由がわかるまで、クルーズ船は休止しています。
+
+今回うまくいったこともあります。私たちのノードは数秒で新しいチェーンについていき、船の航海日誌も再起動を再起動として記録しました。
+
+## 何が起きたのか
 
 Queen Mempool は UTC 13:00 に White Rabbit Key に着き、90 分の寄港を予定していました。数分後、テストネットは初期状態から最初からやり直しになり、寄港は 12 分で終わりました。私たちのノードは彼女の支払いのうち 8 件を受け付け、さらに 12 件は時間内に応答がなく、予定していた 517 か所の立ち寄りは飛ばされました。
 
@@ -143,7 +161,7 @@ Queen Mempool は UTC 13:00 に White Rabbit Key に着き、90 分の寄港を�
 - Queen が着くまでは、すべて普段どおりに見えました。UTC 12:55 から、ブロック 1563 から 1568 がほぼ 1 分に 1 つずつ私たちのノードに届きました。ブロック 1569 が作られたのは UTC 13:01:52 です。それまでのブロックと同じく小さくごく普通で、3 AGRS の送金が 1 件だけでした。その前の 3 つのブロックもそれぞれ送金 1〜2 件で、ルールの変更はどれにもありません。その時点で Queen が送った支払いはわずかで、ノードは負荷を「落ち着いている」と判定していました。
 - その後、テストネットは[最初からやり直し]({STATS})になりました。古いチェーンはブロック 1569 で終わり、数分後、UTC 13:05〜13:10 ごろに新しいチェーンがブロック 1 から始まりました（ブロックの速さから計算したもので、チェーンから読んだ値ではありません）。動いているソフトウェアは以前と同じです。なぜ再起動したのかは、IDNI チームが説明することです。
 - 再起動では残高、ルール、履歴が消えます。Queen の乗客が最初の数分に支払った分も、古いチェーンと一緒に消えました。
-- [11 月 7 日]({BEFORE})、同じ船は 90 分間で 400 件以上の支払いを送り、その間私たちのノードはずっと新しいブロックを受け取っていました。船が再起動の理由だったことを示すものは見つかっていませんが、否定もできません。
+- [11 月 7 日]({BEFORE})、同じ船は 90 分間で 400 件以上の支払いを送り、その間私たちのノードはずっと新しいブロックを受け取っていました。その時点では船が再起動の理由だったことを示すものは見つかりませんでしたが、否定もできませんでした（上の更新を参照）。
 
 ## 私たちの側で起きたこと
 
@@ -163,7 +181,7 @@ Queen Mempool は UTC 13:00 に White Rabbit Key に着き、90 分の寄港を�
 ## まだわからないこと
 
 - なぜあの時点でテストネットが再起動したのか。IDNI チームが説明したら、ここに加えます。
-- **Queen は 11 月 15 日（日）UTC 14:00（ドイツ時間 15:00）に、やり直しの寄港に戻ってきます。** 新しいチェーンで、いつもと同じ計画です。11 月 7 日のように航海できるかがわかります。""",
+- Queen の通信と再起動が関係しているのかどうか。わかるまで、クルーズ船は港に留まります。""",
         },
     },
 }
