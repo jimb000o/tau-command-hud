@@ -23,25 +23,9 @@ import blog  # noqa: E402
 
 log = logging.getLogger("editor")
 
-RULES = """Tau HUD's rules for its blog (tauhud.com/blog/), a community project not affiliated with IDNI:
-1. Meaning first. A post says what the numbers mean for people who use or follow the Tau Net testnet, then backs it with \
-numbers. A post that only lists numbers fails this rule. Readers should want to read it, without clickbait or trolling.
-2. Naming: the network is Tau Net; its test network is Tau Testnet Alpha or "the Tau Net testnet". Tau alone is the \
-language rules are written in (and the Tau engine checks them), never the network.
-3. Never blame, mock or lecture IDNI or the testnet. Credit what held up. Own what went wrong on our side plainly.
-4. Chain restarts: as seen, cause unknown unless IDNI said it. When one came during or right after one of our cruise \
-ships' visits, the post must not rule out our own test traffic.
-5. Users: only transactions by users of our apps (Agorzilla, Tau HUD, White Rabbit Key, players in No Memo) and other \
-wallets are people's. Simulated cruise passengers, the island bot, No Memo's own wallets, the hack-of-the-week wallets \
-and IDNI's genesis accounts (IDNI's own testing) are never users. No Memo's players are real people. Wallets, not people.
-6. Every number must be grounded in the post's own data; no invented causes, plans or effects.
-7. No hype or marketing words, no price or coin talk, no exclamation marks, no emoji, no names of people.
-8. Plain words for non-developers; no code, file or field names. Labels and captions read as natural English, never \
-clipped or inverted ("transactions, our test traffic not counted" is wrong; "transactions by users of our apps" is right).
-9. Short paragraphs with air; a "why it matters" that says why at a glance.
-10. Our apps named in the text are linked to their pages. It is a testnet: coins have no value, it can start over."""
+from blog_rules import RULES  # noqa: E402  (the house rules, the same the writers get)
 
-ASK = RULES + """
+ASK = "Tau HUD's rules for its blog (tauhud.com/blog/), a community project not affiliated with IDNI:\n" + RULES + """
 
 Read the draft below as an editor. Name what breaks a rule or reads weak, most important first, at most six notes. \
 Each note: the exact words from the draft (short), the rule number, and the better wording or the fix. If nothing \

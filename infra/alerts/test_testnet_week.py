@@ -61,7 +61,7 @@ e = w.text(f)
 b = e["body"]
 print(b)
 check(f["week"] == {"blocks": 162 * 60, "txs": 162 * 2, "chains": 3}, "blocks and transactions over every chain of the week (history), not the current chain only")
-check("9,720 blocks with 324 transactions, across 3 chains" in b and e["title"] == "The Tau Net testnet this week, 2–8 Nov 2026", "chain line and title")
+check("9,720 blocks with 324 transactions, across 3 chains" in b and e["title"] == "Two restarts on the Tau Net testnet, 2–8 Nov 2026", "chain line and title")
 check("2 chain restarts" in e["dek"] and "Counted from our public logs" in e["dek"], "dek")
 check("## Chain restarts" in b and "we do not know what caused them" in b, "restarts: cause unknown")
 check("1 of them came while one of our cruise ships was sending" in b and "not ruled out that our own traffic plays a part" in b,
@@ -73,7 +73,7 @@ check("- Users of [Agorzilla](https://agorzilla.com/): 21" in b and "- Users of 
       and "IDNI uses for testing (not counted as users): 700" in b and "999" not in b,
       "sources of this week's days only, labels as on the site")
 check("Our own server sent 245 more" in b and "simulated passengers: 210" in b and "the island bot: 35" in b, "our automated senders counted apart")
-check("Users of our apps sent 42 transactions" in e["why"][1] and e["stats"][2] == ["42", "transactions by users of our apps"],
+check("Users of our apps sent 42 transactions" in e["why"][1] and e["stats"][2][:2] == ["42", "transactions by users of our apps"],
       "users: only our apps' users, never IDNI's testing or our own traffic; the tile reads as plain English")
 check("Queen Mempool: 200 accepted, 0 refused, 4 sends our own node did not answer in time" in b and "cruise/log?visit=2026-11-07-queen" in b, "ship visit")
 check("in sync 99.7%" in b and "fell more than 2 blocks behind 1 time, 30 min" in b and "3 warnings about syncing or peers, in 2 kinds" in b, "on our side")
@@ -90,6 +90,21 @@ quiet = dict(raw, uptime=dict(uptime, restarts=[]), cruise={"enabled": True})
 q = w.text(w.week_facts(quiet, MON, SUN18))
 check("On X" not in w.text(w.week_facts(dict(quiet, x=[]), MON, SUN18))["body"], "no X posts: no section")
 check("## Chain restarts" not in q["body"] and "No chain restart this week" in q["why"][0] and "paused" not in q["body"], "a week without restarts")
+
+tones = {t[1]: t[2] for t in e["stats"]}
+check(tones == {"blocks this week": "ok", "chain restarts, cause not clear yet": "bad", "transactions by users of our apps": "amber", "our node in sync": "ok"},
+      f"each tile's tone fits its number ({tones})")
+check(w.text(w.week_facts(quiet, MON, SUN18))["stats"][1][2] == "ok", "no restart: a green tile")
+check(f["visits"][0]["ship"] == "Queen Mempool" and f["visits"][0]["day"] == "Sat 7 Nov", "ship by its own name, day of the call")
+raw_q = dict(raw, visits={V: log, "2026-11-01-dryrun": log})
+check([v["id"] for v in w.week_facts(raw_q, MON, SUN18)["visits"]] == [V], "a call of the week before is left out")
+w.CONTEXT["2026-w45"] = ["On 7 November IDNI said that an update is under way."]
+fc = w.week_facts(raw, MON, SUN18)
+check("IDNI said that an update is under way" in w.text(fc)["body"] and w.model_facts(fc)["said this week (by IDNI or by us, written down by hand)"],
+      "what IDNI said this week, as said")
+del w.CONTEXT["2026-w45"]
+import blog_rules  # noqa: E402
+check(blog_rules.RULES in w.WEEK_SYSTEM and blog_rules.RULES in blog.SYSTEM and "Natural spoken English" in blog_rules.RULES, "every writer gets the house rules")
 
 # ---------- translations ----------
 good = {lang: {"title": "T 2–8 Nov 2026", "dek": "D 9,720", "why": ["a", "b", "c"], "body": "B 42"} for lang in ("zh", "ja")}
@@ -167,7 +182,7 @@ check(seen and "what the numbers mean" in seen[0], "the model gets the facts wit
 check(a2["title"]["en"] == "Two restarts reset the testnet this week" and a2["model"] != "script", "the model's article")
 check(a2["check"]["unknown_numbers"] == ["77"], f"a number not in the facts is marked ({a2['check']['unknown_numbers']})")
 check("## On X this week" in a2["body"]["en"] and "## 本周在 X 上" in a2["body"]["zh"] and "not affiliated with IDNI" in a2["body"]["en"], "link lists and the closing line in every language")
-check(a2["stats"][2] == ["42", "transactions by users of our apps"] and a2["numbers"][0].startswith("9,720 blocks"), "tiles and post numbers stay the script's")
+check(a2["stats"][2][:2] == ["42", "transactions by users of our apps"] and a2["numbers"][0].startswith("9,720 blocks"), "tiles and post numbers stay the script's")
 figs = {os.path.basename(x["src"]): x for x in a2.get("figures") or []}
 check(set(figs) == {did2 + "-days.png", did2 + "-sources.png", did2 + "-before.png"} and all(os.path.exists(os.path.join(TMP, "blog", "img", k)) for k in figs),
       "three charts: blocks per day, where transactions came from, the week before")

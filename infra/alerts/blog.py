@@ -154,6 +154,8 @@ each that say at a glance why it matters (for the community, for IDNI, and what 
 Answer with JSON only, no other text:
 {"title":{"en":"","zh":"","ja":""},"dek":{"en":"","zh":"","ja":""},"why":[{"en":"","zh":"","ja":""}],\
 "body":{"en":"","zh":"","ja":""},"x":"","card":{"line":"","why":["","",""]}}"""
+import blog_rules  # noqa: E402  (the house rules for every article, editor.py checks them too)
+SYSTEM += blog_rules.FOR_WRITERS
 
 
 # ---------- reading ----------

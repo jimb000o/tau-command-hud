@@ -49,6 +49,15 @@ UP = 'ssh root@node.tauhud.com "cd /opt/tau-command-hud && git pull && sh infra/
 NEAR = 3600            # a restart this long after a ship's last logbook line still counts as "around a visit"
 RETRY = 3600
 PREFIX = "testnet-week-"
+SHIP_NAMES = {"queen": "Queen Mempool", "liner": "Queen Mempool", "dryrun": "MS Dry Run", "expedition": "MS Dry Run",
+              "pirate": "Black Sequence", "black": "Black Sequence"}
+# What IDNI or we said in the week that the numbers cannot show, written by hand (only what was said, never more); the
+# writer tells it as said, and it takes the place of "we do not know" where it answers that
+CONTEXT = {
+    "2026-w46": ["On 15 November IDNI said that a large scalability update is under way on the testnet and that outages are "
+                 "to be expected, and asked for repeating patterns to be reported (for example: when I send this, it restarts).",
+                 "Our cruise ships were paused on 15 November after the second restart during a Queen Mempool call, and come "
+                 "back with an extra Queen Mempool call on Monday 16 November, 15:00 German time."]}
 X_URL = re.compile(r"^https://(x|twitter)\.com/\w{1,15}/status/\d+$")   # only a post's own address, as the blog page links it
 
 # where the transactions came from (relay/txsources.py), grouped as tauhud.com/meta/ shows them: users of our apps;
@@ -93,6 +102,16 @@ def gather(t0: float, t1: float) -> dict:
 # ---------- counting ----------
 def week_facts(raw: dict, t0: float, t1: float) -> dict:
     f = ir.facts(raw, t0, t1)
+    for v in f.get("visits") or []:   # the ship's own name, never its key; the day of the call, from its id
+        v["ship"] = SHIP_NAMES.get(str(v["ship"]).lower(), v["ship"])
+        m = re.match(r"(\d{4})-(\d{2})-(\d{2})", v["id"])
+        if m:
+            import datetime as dt
+            d = dt.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+            v["day"] = f"{d.strftime('%a')} {d.day} {d.strftime('%b')}"
+    f["visits"] = [v for v in f.get("visits") or [] if not re.match(r"\d{4}-\d{2}-\d{2}", v["id"])
+                   or blog.local(t0).date().isoformat() <= v["id"][:10] <= blog.local(t1 - 1).date().isoformat()]
+    f["context"] = list(CONTEXT.get(ir.week_of(t1 - 1)[2]) or [])
     f["posts"] = [p for p in f.get("posts") or [] if "?p=" + PREFIX not in p["url"]]
     h = raw.get("history") or {}
     fields = h.get("fields") or []
@@ -221,7 +240,11 @@ def text(f: dict) -> dict:
     ours = sum(k for _, k in src.get("ours") or [])
     a, b = blog.local(f["from"]), blog.local(f["to"])
 
-    title = f"The Tau Net testnet this week, {span(f)}"
+    words = {1: "One", 2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "Seven", 8: "Eight", 9: "Nine"}
+    if rs:   # the week's news in the title: its restarts, or a week that held
+        title = f"{words.get(len(rs), n(len(rs)))} restart{'s' if len(rs) != 1 else ''} on the Tau Net testnet, {span(f)}"
+    else:
+        title = f"A week without a restart on the Tau Net testnet, {span(f)}"
     head = []
     if cc:
         head.append(f"{n(cc[0])} blocks, {n(cc[1])} transactions")
@@ -272,7 +295,8 @@ def text(f: dict) -> dict:
                 line += f", during or shortly after the visit of our cruise ship {r['near']}"
             L.append(line)
         L.append("")
-        say = "We saw these restarts; we do not know what caused them."
+        say = "We saw these restarts; we do not know what caused them." if not f.get("context") else \
+            "We saw these restarts. " + " ".join(c for c in f["context"] if "IDNI" in c)
         if near:
             say += (f" {'All' if len(near) == len(rs) else n(len(near)) + ' of them'} came while one of our cruise ships was "
                     "sending test traffic or within an hour after, so we have not ruled out that our own traffic plays a part.")
@@ -355,14 +379,18 @@ def text(f: dict) -> dict:
     if f.get("in sync") is not None:
         nums.append(f"our node in sync {f['in sync'] * 100:.1f}% of the week")
 
-    stats = []
+    stats = []   # [number, label, tone]: each tile's outline says what its number means (ok, amber, bad, neutral)
     if cc:
-        stats.append([n(cc[0]), "blocks this week"])
-    stats.append([str(len(rs)), "chain restarts, cause unknown" if rs else "chain restarts"])
+        pace = cc[0] / (((f["to"] - f["from"]) / f["block seconds"]) or 1) if f.get("block seconds") else None
+        stats.append([n(cc[0]), "blocks this week", None if pace is None else "ok" if pace >= 0.95 else "amber" if pace >= 0.8 else "bad"])
+    stats.append([str(len(rs)), ("chain restart" if len(rs) == 1 else "chain restarts") + (", cause not clear yet" if rs else ""),
+                  "ok" if not rs else "amber" if len(rs) == 1 else "bad"])
     if src.get("apps"):
-        stats.append([n(people), "transactions by users of our apps"])
+        bf = (f.get("before") or {}).get("app txs")
+        stats.append([n(people), "transactions by users of our apps", None if not bf else "ok" if people >= bf else "amber"])
     if f.get("in sync") is not None:
-        stats.append([f"{f['in sync'] * 100:.1f}%", "our node in sync"])
+        y = f["in sync"]
+        stats.append([f"{y * 100:.1f}%", "our node in sync", "ok" if y >= 0.99 else "amber" if y >= 0.95 else "bad"])
 
     card = [blog.card_title(title), "What one community node saw, counted from its logs", "## Why it matters"]
     card += ["- " + c for c in (
@@ -423,7 +451,9 @@ def model_facts(f: dict) -> dict:
     x["what a restart means for someone using the testnet"] = (
         "a new block 1: balances, personal wallet rules and the history of the old chain are gone, every wallet starts again "
         "at zero, and the faucet pays 100,000 test AGRS again to a wallet with zero balance")
-    x["cause of the restarts"] = "unknown to us; IDNI runs the testnet and has not said" if rs else None
+    x["cause of the restarts"] = ("what IDNI said is under 'said this week'; nothing more is known" if f.get("context")
+                                  else "unknown to us; IDNI runs the testnet and has not said") if rs else None
+    x["said this week (by IDNI or by us, written down by hand)"] = f.get("context") or None
     x["our cruise ships paused"] = bool(f.get("ships paused"))
     if src:
         x["transactions by users of our apps"] = {label: k for label, k, _ in src.get("apps") or []}
@@ -513,6 +543,8 @@ points of at most 52 characters each.
 Answer with JSON only:
 {"title":{"en":"","zh":"","ja":""},"dek":{"en":"","zh":"","ja":""},"why":[{"en":"","zh":"","ja":""}],\
 "body":{"en":"","zh":"","ja":""},"x":"","card":{"line":"","why":["","",""]}}"""
+import blog_rules  # noqa: E402
+WEEK_SYSTEM += blog_rules.FOR_WRITERS
 
 
 def ask(facts: dict) -> dict:
@@ -521,10 +553,21 @@ def ask(facts: dict) -> dict:
     body = {"model": blog.AI_MODEL, "max_tokens": blog.ROOM_MAX, "system": WEEK_SYSTEM,
             "messages": [{"role": "user", "content": "The week's facts (JSON):\n\n" + json.dumps(facts, ensure_ascii=False, indent=1)}],
             "output_config": {"format": {"type": "json_schema", "schema": blog.ARTICLE_SHAPE}}}
-    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=json.dumps(body).encode(), headers={
-        "x-api-key": blog.AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
-    with urllib.request.urlopen(req, timeout=900) as r:
-        j = json.load(r)
+    for shaped in (True, False):
+        if not shaped:
+            body.pop("output_config", None)
+        req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=json.dumps(body).encode(), headers={
+            "x-api-key": blog.AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=900) as r:
+                j = json.load(r)
+            break
+        except urllib.error.HTTPError as e:
+            reason = e.read().decode("utf-8", "replace")[:300]
+            if e.code == 400 and shaped:   # the model does not take the shaped answer: the plain way, JSON in the text
+                log.warning("the API answered 400 to the shaped request (%s): asking the plain way", reason)
+                continue
+            raise RuntimeError(f"the API answered {e.code}: {reason}") from None
     ai_meter.meter("blog", blog.AI_MODEL, j.get("usage"))
     if j.get("stop_reason") in ("refusal", "max_tokens"):
         raise RuntimeError(f"no article: {j.get('stop_reason')}")
@@ -698,14 +741,18 @@ def write_draft(f: dict, wid: str, now: float | None = None, tr: dict | None = N
     With NEWS_AI_KEY the model writes it from the counted facts (every number checked); without, or when that fails,
     the script's own text."""
     now = now or time.time()
-    a = None
+    a, why_not = None, None
     if (ask_ or blog.AI_KEY) and tr is None:
         try:
             a = article(f, wid, now, out=(ask_ or ask)(model_facts(f)))
         except Exception as e:  # noqa: BLE001 - the script's text instead
-            log.warning("week article by the model: %s; the script's text instead", e)
+            why_not = f"{type(e).__name__}: {e}"[:300]
+            log.warning("week article by the model: %s; the script's text instead", why_not)
+    elif not blog.AI_KEY:
+        why_not = "no NEWS_AI_KEY"
     if a is None:
         a = article(f, wid, now, translate(text(f)) if tr is None else tr)
+        a["model_error"] = why_not
     try:
         if blog.make_hero(a, a["stats"]):
             a["image"] = f"{blog.NODE}/blog/img/{a['id']}-hero.jpg"
@@ -814,6 +861,10 @@ def main(argv: list[str]) -> int:
         print("writing the week's draft (with NEWS_AI_KEY the model writes it from the counted facts, then a second read; a few minutes); nothing is published", flush=True)
         did, ok, url = draft_and_tell(now, last)
         print(f"draft {did}: {url}")
+        dr = blog.read_json(os.path.join(blog.PUBLIC, "drafts", blog.state()["drafts"][did] + ".json"), {})
+        print(f"written by: {dr.get('model')}" + (f" (the model did not write it: {dr['model_error']})" if dr.get("model_error") else ""))
+        import editor
+        print("\n".join(editor.lines(dr)).strip() or "second read: none (no key)")
         print("told on your Telegram" if ok else "NOT told on Telegram (up owner?)")
         print("publish: " + UP.format(f"blog publish {did}"))
         return 0
