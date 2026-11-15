@@ -39,6 +39,8 @@ class Plan(unittest.TestCase):
         self.assertTrue(any("280" in w for w in probs(text="x" * 300 + "\n\n#TauNet $AGRS")))
         self.assertTrue(any("blank line" in w for w in probs(text="One line only #TauNet $AGRS")))
         self.assertTrue(any("film" in w for w in probs(film=None)))
+        for claim in ("You cannot lose your test AGRS", "Risk-free", "A guaranteed result", "Completely safe", "Keys that cannot be stolen"):
+            self.assertTrue(any("promise" in w for w in probs(text=claim + "\n\nmore\n\n#TauNet $AGRS")), claim)
         self.assertTrue(any("twice" in w for w in X.specs(None, {"posts": [GOOD, GOOD]})[1]["problems"]))
 
 
