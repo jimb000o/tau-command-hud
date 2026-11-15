@@ -2126,6 +2126,7 @@
     [["i2", "balance", "reserve"], "i2, the balance", "In a wallet’s rule, i2 is the wallet’s balance before the payment, as the chain knows it. A rule that reads it can keep a reserve: no payment while the balance is low. The contract Mind the purse hides such a rule."],
     [["i5", "time", "seconds", "when", "unix"], "i5, the time", "In a wallet’s rule, i5 is the block’s time in seconds since 1 January 1970, UTC. when <seconds> turns such a number into a date."],
     [["showcase", "piggy bank", "four-eyes", "four eyes", "feeding fund"], "The showcase wallets", "Three wallets Tau HUD runs on the testnet, each with a rule of its own: a piggy bank locked until New Year, a four-eyes wallet that needs a co-signer, and Agorzilla’s feeding fund. Their rules are in force on the chain and anyone may read them: showcase."],
+    [["vault", "vaults", "drain", "crack", "keeper", "leaked key"], "The vaults", "Five wallets Tau HUD runs on the testnet, played as if their keys had leaked: our server signs any plain payment you ask for, never a change of rule, so each vault’s real rule on the chain is its only lock. Read the rule, find what it lets through, drain it: vaults. The keeper takes a rule you write for it if it passes its checklist (crack). A real thief with a real key could also change the rule."],
     [["daily", "streak", "today"], "The daily order", "One contract a day, marked ★, German days. Each day in a row adds a point to it, up to five; a missed day starts the streak again."],
   ];
   /* rule: the chain's rules, taken apart token by token */
@@ -2514,7 +2515,7 @@
     ["Story", [["jobs", "the twelve contracts"], ["take <n>", "take one"], ["run", "build, sign, send"], ["back", "retract a payment"], ["drop", "put it back"], ["claim [n]", "the chapter’s share"], ["chapter <n>", "the chapter’s card"]]],
     ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["probe · name · final", "intel contracts"], ["why [topic]", "what just happened"], ["archive · history", "your record"], ["daily · unguard", "the day’s order · your rule off"], ["cosign", "sign a friend’s request"]]],
     ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail · mail <n>", "letters; some bring special orders"], ["crew", "who is who"], ["scan · blocks · dry", "gear for rank"]]],
-    ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["showcase · when <s>", "real wallet rules, read them"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"], ["upkeep", "who pays the node"]]],
+    ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["showcase · when <s>", "real wallet rules, read them"], ["vaults · drain · crack", "empty a vault with the right rule"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"], ["upkeep", "who pays the node"]]],
     ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · reboot · clear", "reboot: dial the node again"], ["scene · transmission on|off", "the cabin; the crew on screen"]]],
   ];
   function help() {
@@ -2600,6 +2601,134 @@
     }
     say("learn", T("Each of them tries once a day to pay what its own rule forbids (11:00, 15:00 and 19:00 German time); the node refuses it before the mempool, so it costs nothing. In a rule, i1 is the amount, i2 the balance, i4 where the payment goes, i5 the time in seconds, i18 a co-signer."));
     if (x.simulated) say("sys", T("These three are made up by the practice node; on the live node they are Tau HUD’s real wallets."));
+  }
+  /* ---------- the vaults (infra/relay/vaults.py, GET node.tauhud.com/vaults): wallets Tau HUD runs on the testnet whose
+     key is played as leaked. Our server signs any plain payment a player asks for and never a change of rule, so each
+     vault's real rule on the chain is its only lock. The keeper takes a rule a player writes for it, if it passes the
+     keeper's checklist (test payments the real Tau engine judges); the player then drains it while the lease lasts ---------- */
+  const VAULT_KEYS = ["till", "reserve", "window", "clock", "keeper"];
+  const VAULT_NAMES = { till: "The till", reserve: "The reserve", window: "The window", clock: "The clock", keeper: "The keeper" };
+  const VAULT_HINT = {
+    till: "In its rule, i1 is the amount, in hex. Read the cap, then drain it in many payments.",
+    reserve: "i1 is the amount, i2 the vault’s balance before the payment. Read the floor; drain down to it.",
+    window: "Only a narrow window of amounts gets through, both ends in hex. Hit the window.",
+    clock: "i5 is the block’s time in seconds: when <seconds> tells you the half hour. Come back then.",
+    keeper: "Write the keeper a rule that passes its checklist and still lets your payment through: crack <level> <rule>.",
+  };
+  const VAULT_DONE = ["paid", "stopped", "refused", "caught", "over"];
+  async function vaultsGet() {
+    try { const r = await fetch(RELAY + "/vaults", { cache: "no-store" }); return r.ok ? await r.json() : null; } catch (e) { return null; }
+  }
+  async function vaultAsk(path) {
+    try { const r = await fetch(RELAY + path, { cache: "no-store" }); return r.ok ? await r.json() : null; } catch (e) { return null; }
+  }
+  function vaultsOff() {
+    if (!SIM) return false;
+    say("sys", T("The vaults are real wallets on the testnet; the simulation does not reach them. Switch to the live node in the header."));
+    return true;
+  }
+  function vaultTruth() {
+    say("learn", T("What is real: each vault’s rule on the chain, the node’s yes or no, the payment in a block. What is game: our server holds each vault’s key and signs any plain payment you ask for, as if the key had leaked. It never changes a vault’s rule for you; a real thief with a real key could, so a rule protects against mistakes and tricks, not against a stolen key."));
+  }
+  async function vaultsCmd(arg) {
+    if (vaultsOff()) return;
+    say("step", T("asking our relay for the vaults …"));
+    const x = await vaultsGet();
+    if (!x || !x.ready || !x.vaults) { say("no", T("The vaults are not answering just now. Try again in a minute.")); return; }
+    if (arg && VAULT_KEYS.includes(arg)) return vaultOne(x, arg);
+    for (const k of VAULT_KEYS) {
+      const v = x.vaults[k]; if (!v) continue;
+      say("sys", T(VAULT_NAMES[k]) + " · " + short(v.pk) + " · " + (v.balance == null ? "?" : fmt(v.balance)) + " " + T("test AGRS") + " · " + (v.in_force ? T("rule in force on the chain") : T("rule not confirmed yet")) + (v.drained ? " · " + F("drained by {h}", { h: v.drained.by }) : ""), btn("vault " + k, "vault " + k));
+    }
+    vaultTruth();
+    say("sys", T("vault <name> shows one vault’s rule; drain <name> <amount> asks it to pay you. A payment its rule refuses costs nothing: the node stops it at the door."));
+  }
+  function vaultOne(x, k) {
+    const v = x.vaults[k];
+    say("sys", T(VAULT_NAMES[k]) + " · " + short(v.pk) + " · " + (v.balance == null ? "?" : fmt(v.balance)) + " " + T("test AGRS") + " · " + (v.in_force ? T("rule in force on the chain") : T("rule not confirmed yet")));
+    if (k === "keeper") {
+      say("sys", T(v.words === "locked: blocks every amount above 0" ? "At rest the keeper is locked: its rule blocks every amount above 0." : "Just now the keeper holds a rule a player wrote, for that player’s lease."));
+      say("sys", String(v.rule_text || ""));
+      const L = x.keeper || {};
+      for (const n of ["1", "2", "3"]) {
+        const lv = (L.levels || {})[n]; if (!lv) continue;
+        say("sys", F("Level " + n + ", the " + lv.name + " keeper: drain up to {c} while your lease lasts.", { c: fmt(lv.cap) }) + " " +
+          (lv.tests === "hidden" ? T("Its checklist: four strangers and four amounts to you, dealt at random and not shown; it refuses any rule that names your address.") :
+            T("Its checklist, every one must be blocked:") + " " + lv.tests.map(t => (t.to === "you" ? T("you") : T("a stranger")) + " " + fmt(t.amount)).join(" · ")), btn("crack " + n, "crack " + n));
+      }
+      if (L.lease) say("warn", F("Taken now: level {n}, by {h}.", { n: L.lease.level, h: L.lease.to }) + " " + T(L.lease.state === "open" ? "lease open" : "rule on its way to the chain"));
+    } else {
+      say("sys", String(v.rule_text || ""));
+      say("learn", T(VAULT_HINT[k]));
+      if (v.drained) say("ok", F("Drained {t}, German time, by {h}. New rules on Monday.", { t: berlinAt(v.drained.t), h: v.drained.by }));
+      say("sys", F("New rules and fresh money every week; next on {t}, German time.", { t: berlinAt(x.next_week) }));
+    }
+    if (v.top && v.top.length) say("sys", T("This week:") + " " + v.top.map(([h, n]) => h + " " + fmt(n)).join(" · "));
+    if (k !== "keeper") say("sys", T("Try it:"), btn("drain " + k + " …", "drain " + k));
+    if (k === "keeper") say("learn", T(VAULT_HINT.keeper));
+  }
+  async function vaultFollow(id, kind) {
+    let last = "", seen = false;
+    for (let i = 0; i < 240; i++) {
+      await new Promise(r => setTimeout(r, i < 2 ? 2500 : 5000));
+      const r = await vaultAsk("/vaults/req?id=" + encodeURIComponent(id));
+      if (!r || r.error) { if (i > 4) { say("no", T("Our relay lost the request; type vaults to look again.")); return; } continue; }
+      const key = r.state + (r.place || "");
+      if (key !== last) {
+        last = key;
+        if (r.state === "waiting") say("step", F("waiting: number {n} in the queue", { n: r.place || 1 }));
+        else if (r.state === "checking") say("step", T("the keeper runs its checklist through the Tau engine …"));
+        else if (r.state === "sent") say("step", T("the node took the vault’s payment; waiting for a block …"));
+        else if (r.state === "setting") { vaultTests(r); say("ok", T(r.said)); say("step", T("the keeper’s rule transaction goes to the chain; a few blocks …")); }
+        else if (r.state === "open") {
+          if (!seen) vaultTests(r);
+          say("ok", T("Cracked. Your rule is the keeper’s rule on the chain now."));
+          say("sys", F("Drain up to {c} before {t}, German time:", { c: fmt((r.lease || {}).left || 0), t: berlinAt((r.lease || {}).until || 0) }), btn("drain keeper …", "drain keeper"));
+          return;
+        }
+        else if (r.state === "paid") { say("ok", F("In a block: {a} test AGRS to your wallet.", { a: fmt(r.amount || 0) }), r.tx ? explorer(r.tx) : null); balance(); return; }
+        else if (r.state === "stopped") { say("no", T("Stopped by the vault’s own rule (o5 = 0). Nothing moved, no fee."), null); say("sys", String(r.said || "").slice(0, 300)); return; }
+        else if (r.state === "caught") { vaultTests(r); say("no", T(r.said)); return; }
+        else if (VAULT_DONE.includes(r.state)) { say("no", String(r.said || r.state)); return; }
+        seen = seen || r.state === "setting";
+      }
+    }
+    say("sys", T("Still under way; vaults shows where things stand."));
+  }
+  function vaultTests(r) {
+    if (!r.tests || !r.tests.length) return;
+    cols(r.tests.map(t => [(t.passed ? "✗ " : "✓ ") + (t.to === "you" ? T("you") : T("a stranger")), (t.amount == null ? "?" : fmt(t.amount)) + " · " + T(t.passed ? "got through" : "blocked")]));
+  }
+  async function drainCmd(args) {
+    if (vaultsOff()) return;
+    const k = args[0], pk = myPk();
+    if (!VAULT_KEYS.includes(k || "")) { say("sys", T("drain <vault> <amount>: the till, reserve, window, clock or keeper."), btn("vaults", "vaults")); return; }
+    if (!/^\d{1,8}$/.test(args[1] || "")) { say("sys", "drain " + k + " <amount> · " + T("how much the vault should pay you. Read its rule first:"), btn("vault " + k, "vault " + k)); return; }
+    if (!pk) { say("sys", T("You have no wallet yet: play a contract first, and the vaults know you once you have paid the drop."), nextChip()); return; }
+    say("step", T(VAULT_NAMES[k]) + " · " + F("asking it to pay you {a} test AGRS; its rule decides", { a: fmt(args[1]) }));
+    const r = await vaultAsk("/vaults/drain?vault=" + k + "&to=" + pk + "&amount=" + args[1]);
+    if (!r) { say("no", T("The vaults are not answering just now. Try again in a minute.")); return; }
+    if (r.error) { say("no", T(r.error)); return; }
+    vaultFollow(r.id, "drain");
+  }
+  async function crackCmd(level, raw) {
+    if (vaultsOff()) return;
+    const pk = myPk();
+    if (!/^[123]$/.test(level || "")) { say("sys", T("crack <level> <rule>: levels 1, 2 and 3. vault keeper shows each checklist."), btn("vault keeper", "vault keeper")); return; }
+    if (!raw) {
+      say("sys", F("crack {n} <rule>: one line of Tau, the rule you want the keeper to hold. It says o5 = 1 to let a payment through, o5 = 0 to block it. Write #xME for your own address.", { n: level }));
+      say("sys", "always ( (i1[t]:bv[24] > { #x000000 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).");
+      say("learn", T("That is the keeper’s lock: it blocks everything. In a rule, i1 is the amount, i2 the balance, i4 where the payment goes (an address, bv[384]), i5 the time."));
+      say("sys", T("Its checklist:"), btn("vault keeper", "vault keeper"));
+      return;
+    }
+    if (!pk) { say("sys", T("You have no wallet yet: play a contract first, and the vaults know you once you have paid the drop."), nextChip()); return; }
+    const rule = raw.replace(/#xME\b/g, "#x" + pk).replace(/\bME\b/g, "#x" + pk);
+    say("step", F("handing the keeper your rule, level {n} …", { n: level }));
+    const r = await vaultAsk("/vaults/crack?level=" + level + "&to=" + pk + "&rule=" + encodeURIComponent(rule));
+    if (!r) { say("no", T("The vaults are not answering just now. Try again in a minute.")); return; }
+    if (r.error) { say("no", T(r.error)); return; }
+    vaultFollow(r.id, "crack");
   }
   function whenCmd(a) {
     if (!/^\d{1,12}$/.test(a || "")) { say("sys", T("when <seconds since 1970>: that moment, German time and UTC. A rule reads the time as i5, in seconds.")); return; }
@@ -2894,6 +3023,9 @@
     if (c === "dry") return dryCmd();
     if (c === "showcase" || c === "showcases") return showcaseCmd();
     if (c === "when") return whenCmd(args[0]);
+    if (c === "vaults" || c === "vault") return vaultsCmd(args[0]);
+    if (c === "drain") return drainCmd(args);
+    if (c === "crack" && args.length) return crackCmd(args[0], s.trim().split(/\s+/).slice(2).join(" "));
     if (c === "unguard") return unguard();
     if (c === "cosign") return cosignCmd(args[0]);
     if (c === "daily" || c === "streak") return dailyCmd();

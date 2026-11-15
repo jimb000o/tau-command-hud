@@ -11,7 +11,10 @@
    Address lists: infra/relay/txsources.py (GENESIS, AGORZILLA, DEJA, RABBIT_*). Keep them the same there and here.
    A transaction sent from one of our games with a page of its own (No Memo) is named by its hash (GET /wallets/tags "via"):
    the same browser wallet plays White Rabbit Key and No Memo, so the wallet alone cannot say which game it came from.
-   TauOrigin.of(sender, transfers, hash) -> { tag, name, what } or null. TauOrigin.ready(): a promise once the relay answered (or failed). */
+   TauOrigin.of(sender, transfers, hash) -> { tag, name, what } or null. TauOrigin.ready(): a promise once the relay answered (or failed).
+   TauOrigin.app(pk) -> { born, day, used, short, line } or null: which of our apps a visitor's wallet came from (GET /wallets/tags
+   "apps", walletdays.py). born = the app its first transaction we know of came from (only for wallets new to the relay's record
+   after it began), used = every app it sent through. Never for IDNI's or our own server's wallets. */
 (() => {
   "use strict";
   const set = a => new Set(a);
@@ -109,8 +112,16 @@
     nomemo: "A No Memo player’s wallet: whoever holds its key set this rule.",
     agorzilla: "An Agorzilla player’s wallet: whoever holds its key set this rule.",
   };
+  // our apps a visitor's wallet can come from (walletdays.py APPS): its name, and where its first transaction came from
+  const APPS = {
+    tauhud: ["Tau HUD", "Started in Tau HUD: its first transaction we know of was signed in tauhud.com’s wallet, on {d}."],
+    nomemo: ["No Memo", "Started in No Memo: its first transaction we know of was a move in No Memo on tauhud.com, on {d}."],
+    rabbit: ["White Rabbit Key", "Started in White Rabbit Key: its first transaction we know of was a move on the island, on {d}."],
+    agorzilla: ["Agorzilla", "Started in Agorzilla: its first transaction we know of was a meal or a vote on agorzilla.com, on {d}."],
+    deja: ["Déjà the café cat", "Started with Déjà: its first transaction we know of fed Agorzilla’s café cat, on {d}."],
+  };
   const sim = () => !!(window.TauSim && TauSim.on);
-  let known = new Map(), via = new Map(), names = new Map(), roles = new Map();
+  let known = new Map(), via = new Map(), names = new Map(), roles = new Map(), apps = new Map();
   const get = async path => { try { const r = await fetch("https://node.tauhud.com" + path, { cache: "no-store" }); return r.ok ? await r.json() : null; } catch (e) { return null; } };
   const load = async () => {
     if (sim()) return;
@@ -127,6 +138,7 @@
     if (nm.size) { names = nm; roles = rl; }
     if (m.size || tags) known = m;
     if (tags && tags.via) via = new Map(Object.entries(tags.via).filter(([, v]) => TAGS[v]));
+    if (tags && tags.apps && typeof tags.apps === "object") apps = new Map(Object.entries(tags.apps).filter(([, v]) => v && typeof v === "object"));
   };
   const first = load();
   setInterval(load, 300000);
@@ -152,12 +164,32 @@
   const label = tag => { const t = SHORT[tag] || tag; return window.TauI18n ? TauI18n.t(t) : t; };
   // a wallet's own name where it has one (the showcase wallets), else null
   const name = pk => (!sim() && names.get(String(pk || "").toLowerCase())) || null;
-  // what we know about the wallet behind a rule, as lines (purpose, who runs it), or null when we know nothing
+  const tr = (t, v) => { const s = t.replace(/\{(\w+)\}/g, (m, k) => v && k in v ? v[k] : m); return window.TauI18n ? TauI18n.t(s) : s; };
+  const fmtDay = d => { const t = Date.parse(d + "T12:00:00Z"); return isFinite(t) ? new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : d; };
+  // which of our apps a visitor's wallet came from: { born, day, used, short, line } or null
+  const app = pk => {
+    if (sim()) return null;
+    const h = String(pk || "").toLowerCase(), e = apps.get(h);
+    if (!e || GENESIS.has(h)) return null;
+    const k = known.get(h); if (k === "bot" || k === "cruise" || k === "showcase") return null;
+    const born = APPS[e.b] ? e.b : null, used = (Array.isArray(e.u) ? e.u : []).filter(a => APPS[a]);
+    if (!born && !used.length) return null;
+    const names = [...new Set(used.map(a => APPS[a === "deja" ? "agorzilla" : a][0]))];
+    const lines = [];
+    if (born) lines.push(tr(APPS[born][1], { d: fmtDay(String(e.d || "")) }));
+    const more = names.filter(n => !born || n !== APPS[born === "deja" ? "agorzilla" : born][0]);
+    if (more.length) lines.push(tr(born ? "Also sent through: {w}." : "Sent through: {w}.", { w: more.join(", ") }));
+    const short = born ? tr("Started in {w}", { w: APPS[born === "deja" ? "agorzilla" : born][0] }) : tr("Uses {w}", { w: names[0] });
+    return { born, day: e.d || null, used, short, line: lines.join("\n") };
+  };
+  // what we know about the wallet behind a rule, as lines (purpose, who runs it, the app it came from), or null when we know nothing
   const about = pk => {
     if (sim()) return null;
     const h = String(pk || "").toLowerCase(), r = roles.get(h);
     if (r && ABOUT[r]) return ABOUT[r].slice();
-    const o = of(h, [], ""); return o && TAG_ABOUT[o.tag] ? [TAG_ABOUT[o.tag]] : null;
+    const o = of(h, [], ""), a = app(h), out = o && TAG_ABOUT[o.tag] ? [TAG_ABOUT[o.tag]] : [];
+    if (a && a.line) out.push(...a.line.split("\n"));
+    return out.length ? out : null;
   };
-  window.TauOrigin = { of, label, name, about, tags: TAGS, ready: () => first };
+  window.TauOrigin = { of, label, name, about, app, tags: TAGS, ready: () => first };
 })();
