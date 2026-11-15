@@ -811,5 +811,9 @@ TauI18n.add({ strings: {
   "INSUFFICIENT_FUNDS. Nearly everyone on the testnet gets this answer once; now you have it too. It also comes as a tee.": "INSUFFICIENT_FUNDS。テストネットではほとんど誰もが一度はこの応答を受け取ります。あなたも仲間入りです。T シャツにもなっています。",
   "Or something to wear, from the testnet:": "あるいは、テストネット発の着られるものを：",
   "What you love most": "みんなが一番好きなもの",
-  "Every heart on Tau HUD is a real testnet transaction; which parts visitors love most, read from the chain": "Tau HUD のハートはどれも本物のテストネット取引。訪問者が一番好きな部分をチェーンから読み取ります"
+  "Every heart on Tau HUD is a real testnet transaction; which parts visitors love most, read from the chain": "Tau HUD のハートはどれも本物のテストネット取引。訪問者が一番好きな部分をチェーンから読み取ります",
+  /* menu: Rules in numbers */
+  "Rules in numbers": "ルールの数字",
+  "What personal rules check, who holds them, offers and how rules grow over time, read from the chain": "個人ルールが何を確認するか、誰が持つか、提案、そして時間とともにどう増えるか。チェーンから読み取り",
+  "Cruise logbook": "クルーズ航海日誌",
 } });

@@ -15,6 +15,7 @@
 <script src="assets/chainload.js"></script>
 <script src="assets/sim.js"></script>
 <script src="assets/origins.js"></script>
+<script src="assets/rulewords.js" defer></script>
 <script src="assets/simvote.js"></script>
 <script src="assets/simnode.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -1253,6 +1254,8 @@ html.lvmid .lvstat, html.lvpro .lvstat { display: flex; flex-wrap: wrap; align-i
 .lvstat b.ok::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); vertical-align: 1px; }
 .lvstat .x { color: var(--text); } .lvstat .x.warn { color: #ffb13b; } .lvstat .x.bad { color: var(--refused); } .lvstat .x.ok { color: var(--ok); } .lvstat .x.hot { color: #fff; font-weight: 600; }
 .lvstat span + span::before { content: "· "; color: var(--dim); }
+.lvstat a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255,255,255,.25); text-underline-offset: 3px; }
+.lvstat a:hover { text-decoration-color: currentColor; }
 html.lvmid .a-upd.idle .contrast, html.lvpro .a-upd.idle .contrast { display: none; }
 html.lvmid .a-upd.idle.cmp .contrast, html.lvpro .a-upd.idle.cmp .contrast { display: block; }
 html.lvmid .a-upd .nb-vote, html.lvpro .a-upd .nb-vote { display: block; flex: 0 0 auto; margin: 0 0 4px; font: 12.5px/1.45 var(--mono); color: var(--text); }
@@ -2911,15 +2914,31 @@ function lvStat() {
   S.updates.filter(u => u.status === "voting" || u.status === "scheduled").forEach(u => ex.push(["hot", u.status === "scheduled" ? `Rule change agreed: active at block #${u.activateAt}` : `Vote running: ${u.votes.size} of ${threshold()} agreed`]));
   LV.ev = LV.ev.filter(e => now - e.at < 600);
   const g = LV.ev.filter(e => e.kind === "grd").length, r = LV.ev.length - g;
-  if (g) ex.push(["ok", g === 1 ? "1 payment guarded by its own rule in the last 10 min" : `${g} payments guarded by their own rules in the last 10 min`]);
-  if (r) ex.push(["bad", r === 1 ? "1 transaction refused in the last 10 min" : `${r} transactions refused in the last 10 min`]);
+  /* each item can open what it is about (live only): the wallet whose own rule held a payment back, the refused list, the block */
+  const live = S.mode === "live";
+  if (g) {
+    const last = LV.ev.filter(e => e.kind === "grd").sort((a, b) => b.at - a.at)[0], who = last && last.sender;
+    ex.push(["ok", g === 1 ? "1 payment guarded by its own rule in the last 10 min" : `${g} payments guarded by their own rules in the last 10 min`,
+      live && who ? "account/?a=" + encodeURIComponent(who) : null, g === 1 ? "Open the wallet whose own rule held the payment back" : "Open the wallet whose own rule held the newest one back"]);
+    /* its rule in the exact shape Tau HUD's wallet and builder write (assets/rulewords.js fromTau: read back, built again, same text):
+       read from the public rule text alone, never from what our server knows about who sent it */
+    const c = who && S.clauses.get(who);
+    if (c && c.body && window.RuleWords && window.RuleWords.fromTau(c.body)) ex.push(["", "rule made with Tau HUD's builder", live ? "rules/numbers/" : null, "Its rule has the exact shape Tau HUD's wallet and rule builder write. See all rules in numbers"]);
+  }
+  if (r) ex.push(["bad", r === 1 ? "1 transaction refused in the last 10 min" : `${r} transactions refused in the last 10 min`, "#feed", "Show only the refused ones in the feed, each with its reason"]);
   const left = pace != null ? Math.round(pace - since) : null, w = memState().W;
-  const base = [S.height ? (since < 90 ? `Block #${fmt(S.height)} · ${since} s ago` : `Block #${fmt(S.height)} · ${Math.round(since / 60)} min ago`) : "",
-    !late && left != null && left > 0 ? `next in about ${left} s` : "", `${fmt(w)} waiting`].filter(Boolean);
+  const base = [S.height ? [since < 90 ? `Block #${fmt(S.height)} · ${since} s ago` : `Block #${fmt(S.height)} · ${Math.round(since / 60)} min ago`, live ? "explorer/?b=" + encodeURIComponent(S.height) : null, "Open this block in the explorer"] : null,
+    !late && left != null && left > 0 ? [`next in about ${left} s`] : null, [`${fmt(w)} waiting`]].filter(Boolean);
   const key = JSON.stringify([ex, base]); if (box.dataset.k === key) return; box.dataset.k = key;
   const T = x => window.TauI18n && TauI18n.t ? TauI18n.t(x) : x;
-  const mk = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; e.textContent = T(txt); return e; };
-  box.replaceChildren(mk("b", ex.length ? "" : "ok", ex.length ? "Worth a look:" : "All normal"), ...ex.map(([c, t]) => mk("span", "x " + c, t)), ...base.map(t => mk("span", "", t)));
+  const mk = (tag, cls, txt, href, tip) => {
+    const e = document.createElement(tag); if (cls) e.className = cls;
+    if (!href) { e.textContent = T(txt); return e; }
+    const a = document.createElement("a"); a.href = href; a.textContent = T(txt); if (tip) a.title = T(tip);
+    if (href === "#feed") a.onclick = ev => { ev.preventDefault(); const c = $("feedRej"); if (c && c.getAttribute("aria-pressed") !== "true") c.click(); if (c) c.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
+    e.append(a); return e;
+  };
+  box.replaceChildren(mk("b", ex.length ? "" : "ok", ex.length ? "Worth a look:" : "All normal"), ...ex.map(([c, t, h, tip]) => mk("span", "x " + c, t, h, tip)), ...base.map(([t, h, tip]) => mk("span", "", t, h, tip)));
 }
 setInterval(() => { if (!document.hidden && !document.documentElement.classList.contains("nb")) lvStat(); }, 1000);
 /* Expert: hovering a transaction lights its block in the chain and its wallet's rule (list and ring) */
@@ -3011,7 +3030,7 @@ function txCard(t) {
   if (S.mode === "live" && !t.rejected && Number.isFinite(t.block)) sealMark(d, t.block);   // first seen in its block: sealed, never a ghost
   d.dataset.ex = exKey(() => explainTx(t)); d.dataset.detail = dtKey(() => detailTx(t));
   nbMark(d, t);
-  if (t.rejected) { const at = Number(t.at), now = Date.now() / 1000; if (!Number.isFinite(at) || now - at < 600) LV.ev.push({ at: Number.isFinite(at) ? at : now, kind: guard ? "grd" : "rej" }); }
+  if (t.rejected) { const at = Number(t.at), now = Date.now() / 1000; if (!Number.isFinite(at) || now - at < 600) LV.ev.push({ at: Number.isFinite(at) ? at : now, kind: guard ? "grd" : "rej", sender: String(t.sender || "").toLowerCase() }); }
   d.dataset.from = String(t.sender || "").toLowerCase();
   if (t.rejected) { NB.refused(t); bounce(t); S.refusedN = (S.refusedN || 0) + 1; const c = $("feedRej"); c.textContent = `${S.refusedN} refused`; c.classList.add("some"); }
   const feed = $("feed");

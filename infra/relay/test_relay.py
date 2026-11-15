@@ -23,7 +23,7 @@ with open(EVENTS, "w") as f:
 CHAIN = os.path.join(os.path.dirname(EVENTS), "chain.jsonl")
 BOARD = os.path.join(os.path.dirname(EVENTS), "community.json")
 PEERS = os.path.join(os.path.dirname(EVENTS), "peers.json")
-os.environ.update(PEERS_PATH=PEERS, BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, SENT_PATH=EVENTS + ".sent", CHAT_PATH=EVENTS + ".chat", CHAT_KEY_PATH=EVENTS + ".chatkey", ROADMAP_PATH=EVENTS + ".roadmap", CHAINHIST_PATH=EVENTS + ".chainhist", DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
+os.environ.update(PEERS_PATH=PEERS, BOARD_PATH=BOARD, CHAIN_PATH=CHAIN, EVENTS_PATH=EVENTS, SENT_PATH=EVENTS + ".sent", CHAT_PATH=EVENTS + ".chat", CHAT_KEY_PATH=EVENTS + ".chatkey", ROADMAP_PATH=EVENTS + ".roadmap", CHAINHIST_PATH=EVENTS + ".chainhist", RULEDAYS_PATH=EVENTS + ".ruledays", DROP_GRACE_SECONDS="1", STATS_CACHE_SECONDS="0")
 os.environ["KNOWN_NODES_PROBE"] = "0"   # no TCP checks of real addresses from a test
 os.environ.update(UPSTREAM_URL="ws://127.0.0.1:18765", LISTEN_HOST="127.0.0.1", LISTEN_PORT="18766",
                   TRUST_PROXY="1", MAX_PER_IP="3", CLIENT_BURST="20", LOOKUP_CACHE_SECONDS="10", GOV_POLL_SECONDS="4", TAU_GOVERNANCE_OPEN_ADMISSION="true")
@@ -251,6 +251,15 @@ async def main():
             rules = json.loads(body)
             check(ctype == "application/json" and "places" not in rules and rules["limit"] is None and rules["holders"] == [BOB] and rules["taken"] == 1,
                   f"/rules counts BOB, not CAROL's neutral rule {rules}")
+            # /rules/numbers: BOB's rule sorted by kind, written down for today, kept in a file across restarts
+            ctype, body = await get("/rules/numbers")
+            nums = json.loads(body)
+            today = time.strftime("%Y-%m-%d", time.gmtime())
+            check(ctype == "application/json" and nums["now"]["holders"]["people"] == 1 and sum(nums["now"]["kinds"]["people"].values()) >= 1
+                  and nums["history"]["days"][today]["new"]["people"] == 1 and nums["now"]["how"]["people"]["own"] == 1
+                  and nums["offers"]["by"]["people"]["made"] == 0, f"/rules/numbers counts BOB's rule {nums}")
+            with open(EVENTS + ".ruledays") as f:
+                check(BOB in json.load(f)["last"], "the rule record is on disk")
             sent = [x for x in mock["commands"] if x.startswith("sendtx ")][-1]
             check(json.loads(sent[7:])["operations"]["0"] == good["operations"]["0"], "rule text with spaces arrives intact")
             # /rulewall: one entry per rule text, the neutral clause left out

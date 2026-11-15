@@ -816,5 +816,9 @@ TauI18n.add({ strings: {
   "INSUFFICIENT_FUNDS. Nearly everyone on the testnet gets this answer once; now you have it too. It also comes as a tee.": "INSUFFICIENT_FUNDS。测试网上几乎每个人都收到过一次这个回答，现在你也有了。它还有 T 恤版。",
   "Or something to wear, from the testnet:": "或者来一件能穿的，出自测试网：",
   "What you love most": "你们最喜欢的",
-  "Every heart on Tau HUD is a real testnet transaction; which parts visitors love most, read from the chain": "Tau HUD 上的每颗心都是一笔真实的测试网交易；访客最喜欢哪些部分，从链上读取"
+  "Every heart on Tau HUD is a real testnet transaction; which parts visitors love most, read from the chain": "Tau HUD 上的每颗心都是一笔真实的测试网交易；访客最喜欢哪些部分，从链上读取",
+  /* menu: Rules in numbers */
+  "Rules in numbers": "规则数据",
+  "What personal rules check, who holds them, offers and how rules grow over time, read from the chain": "个人规则检查什么、谁持有、规则提议，以及规则如何随时间增长，均从链上读取",
+  "Cruise logbook": "游轮航海日志",
 } });

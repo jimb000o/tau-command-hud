@@ -1,0 +1,121 @@
+[
+ {
+  "name": "wallet: most per payment",
+  "text": "always ( (i1[t]:bv[24] >= { #x001389 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+  "kinds": [
+   "cap"
+  ],
+  "size": 1
+ },
+ {
+  "name": "wallet: only to two people",
+  "text": "always ( (!(i4[t]:bv[384] = { #xabababababababababababababababababababababababababababababababababababababababababababababababab }:bv[384]) && !(i4[t]:bv[384] = { #xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd }:bv[384])) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+  "kinds": [
+   "only"
+  ],
+  "size": 2
+ },
+ {
+  "name": "wallet: nothing before a date",
+  "text": "always ( (i5[t]:bv[64] < {1798761600}:bv[64]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+  "kinds": [
+   "time"
+  ],
+  "size": 1
+ },
+ {
+  "name": "wallet: above 1,000 one co-signer",
+  "text": "always ( (i1[t]:bv[24] > { #x0003e8 }:bv[24] && !(i18[t]:bv[384] = { #xabababababababababababababababababababababababababababababababababababababababababababababababab }:bv[384])) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+  "kinds": [
+   "cosign"
+  ],
+  "size": 2
+ },
+ {
+  "name": "wallet: most 5,000, above 1,000 two co-sign",
+  "text": "always ( (i1[t]:bv[24] >= { #x001389 }:bv[24]) || (i1[t]:bv[24] > { #x0003e8 }:bv[24] && !(i18[t]:bv[384] = { #xabababababababababababababababababababababababababababababababababababababababababababababababab }:bv[384]) && !(i19[t]:bv[384] = { #xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd }:bv[384])) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+  "kinds": [
+   "cap",
+   "cosign"
+  ],
+  "size": 4
+ },
+ {
+  "name": "wallet: only to, most, and a date",
+  "text": "always ( (!(i4[t]:bv[384] = { #xabababababababababababababababababababababababababababababababababababababababababababababababab }:bv[384])) || (i1[t]:bv[24] >= { #x0001f5 }:bv[24]) || (i5[t]:bv[64] < {1798761600}:bv[64]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+  "kinds": [
+   "cap",
+   "only",
+   "time"
+  ],
+  "size": 3
+ },
+ {
+  "name": "wallet: freeze",
+  "text": "always ( (i1[t]:bv[24] > { #x000000 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+  "kinds": [
+   "freeze"
+  ],
+  "size": 1
+ },
+ {
+  "name": "wallet: old freeze",
+  "text": "always ( (o5[t]:bv[24] = { #x000000 }:bv[24]) ).",
+  "kinds": [
+   "freeze"
+  ],
+  "size": 0
+ },
+ {
+  "name": "showcase four-eyes: co-signer above 100 or below the reserve",
+  "text": "always ( ((i1[t]:bv[24] > { #x000064 }:bv[24] || (i1[t]:bv[24] > i2[t]:bv[24] || (i2[t]:bv[24] - i1[t]:bv[24]) < { #x015f90 }:bv[24])) && !(i18[t]:bv[384] = { #xabababababababababababababababababababababababababababababababababababababababababababababababab }:bv[384])) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+  "kinds": [
+   "cosign",
+   "reserve"
+  ],
+  "size": 4
+ },
+ {
+  "name": "showcase feeding fund: only the bowl, at most 20, keep a reserve",
+  "text": "always ( (i4[t]:bv[384] = { #xabababababababababababababababababababababababababababababababababababababababababababababababab }:bv[384] && !(i1[t]:bv[24] > { #x000014 }:bv[24]) && !(i1[t]:bv[24] > i2[t]:bv[24] || (i2[t]:bv[24] - i1[t]:bv[24]) < { #x015f90 }:bv[24])) ? (o5[t]:bv[24] = { #x000001 }:bv[24]) : (o5[t]:bv[24] = { #x000000 }:bv[24]) ).",
+  "kinds": [
+   "cap",
+   "only",
+   "reserve"
+  ],
+  "size": 4
+ },
+ {
+  "name": "playground balance floor",
+  "text": "always ( (i2[t]:bv[24] < { #x002710 }:bv[24]) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+  "kinds": [
+   "reserve"
+  ],
+  "size": 1
+ },
+ {
+  "name": "a custom input from i26",
+  "text": "always ( (i26[t]:bv[24] = { #x000001 }:bv[24]) ? (o5[t]:bv[24] = { #x000001 }:bv[24]) : (o5[t]:bv[24] = { #x000000 }:bv[24]) ).",
+  "kinds": [
+   "other"
+  ],
+  "size": 1
+ },
+ {
+  "name": "a most per payment and a custom input",
+  "text": "always ( (i1[t]:bv[24] > { #x000064 }:bv[24] && !(i26[t]:bv[24] = { #x000001 }:bv[24])) ? (o5[t]:bv[24] = { #x000000 }:bv[24]) : (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+  "kinds": [
+   "cap",
+   "other"
+  ],
+  "size": 2
+ },
+ {
+  "name": "text the reader cannot parse",
+  "text": "o5 is whatever",
+  "kinds": [
+   "other"
+  ],
+  "size": 0
+ }
+]

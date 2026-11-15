@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../../assets/i18n.js"></script>
+<script src="../../assets/sim.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<title>Rules in numbers</title>
+<meta name="description" content="Personal rules on Tau Testnet Alpha in numbers: what the rules check, who holds them, how people got them, rule offers, and how rules grow day by day. Read from the chain.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#09090a">
+<meta property="og:title" content="Tau HUD · Rules in numbers">
+<meta property="og:description" content="Every account on the Tau testnet may give itself a rule. What people protect with them, read from the chain.">
+<meta property="og:image" content="https://tauhud.com/assets/shots/rules.png">
+<meta property="og:url" content="https://tauhud.com/rules/numbers/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TauHUDcom">
+<link rel="stylesheet" href="../../assets/fonts/sora-jetbrainsmono.css">
+<style>
+/* Same tokens as /rules: black and white, phosphor green as the one accent, amber for the simulation and chain restarts. */
+:root {
+  --void: #09090a; --line: rgba(255,255,255,.09); --hair: rgba(255,255,255,.18);
+  --ok: #39ff8a; --dim: #8a8a94; --text: #ebebee; --sim: #ffb13b;
+  --display: "Sora", "Manrope", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--void); color: var(--text); font: 13px/1.5 var(--mono);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: auto, 96px 96px, 96px 96px; overflow-x: hidden;
+}
+a { color: #fff; }
+.wrap { margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.wrap > *, .wrap > .tnav { flex: none; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+.mark { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark .pulse { stroke: var(--ok); }
+.brand h1 { margin: 0; font: 700 17px var(--display); letter-spacing: .02em; }
+.brand span { color: var(--dim); font: 12px var(--mono); }
+.state { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; color: var(--dim); font-size: 12px; white-space: nowrap; }
+.state i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+.state.ok { color: var(--text); } .state.ok i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.state.sim i { background: var(--sim); }
+.state.off i { background: #ff4d6d; }
+.intro { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }
+.lead { margin: 6px 0 0; font: 600 clamp(22px, 3vw, 30px)/1.2 var(--display); color: #fff; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 92ch; }
+.sub b { color: var(--text); font-weight: 600; }
+.kpis { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.kpi { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--dim); font-size: 12px; white-space: nowrap; background: rgba(16,16,18,.86); cursor: help; }
+.kpi b { color: #fff; font: 600 13px var(--display); margin-right: 4px; font-variant-numeric: tabular-nums; }
+.kpi.hot b { color: var(--ok); }
+.seg { display: inline-flex; border: 1px solid var(--hair); border-radius: 999px; overflow: hidden; }
+.seg button { font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; background: none; color: var(--dim); border: 0; padding: 5px 12px; cursor: pointer; min-height: 30px; }
+.seg button[aria-pressed="true"] { background: #fff; color: #000; }
+.main { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+.panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.panel h2 { margin: 0 0 10px; font: 600 11px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel h2 small { font: 11px var(--mono); letter-spacing: 0; text-transform: none; color: var(--dim); opacity: .8; }
+.note { color: var(--dim); font-size: 11.5px; margin: 8px 0 0; }
+.note b { color: var(--text); font-weight: 600; }
+/* what the rules check */
+.kinds { display: grid; gap: 9px; }
+.kind { display: grid; grid-template-columns: minmax(0, 1fr) 46px; gap: 2px 10px; align-items: center; cursor: help; }
+.kind .nm { color: #fff; font: 500 13px var(--display); }
+.kind .n { text-align: right; font: 600 14px var(--display); font-variant-numeric: tabular-nums; color: #fff; }
+.kind .bar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: rgba(255,255,255,.06); overflow: hidden; }
+.kind .bar i { display: block; height: 100%; background: var(--ok); border-radius: 3px; transition: width .5s; }
+.kind.zero .bar i { background: transparent; }
+.kind .why { grid-column: 1 / -1; color: var(--dim); font-size: 11.5px; line-height: 1.4; }
+.kind .not { grid-column: 1 / -1; color: var(--dim); font-size: 11px; line-height: 1.35; opacity: .85; }
+.kind .not::before { content: "✕ "; color: var(--dim); }
+/* over time */
+.chart { position: relative; width: 100%; height: 190px; }
+.chart svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.chart .ax { fill: var(--dim); font: 11px var(--mono); }
+.chart .grid { stroke: rgba(255,255,255,.07); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--dim); font-size: 11px; margin-top: 6px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+/* small stacked bars */
+.split { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+.stack { display: grid; gap: 6px; }
+.stack .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; font-size: 12px; cursor: help; }
+.stack .row b { color: #fff; font: 600 13px var(--display); font-variant-numeric: tabular-nums; }
+.stack .row .bar { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: rgba(255,255,255,.06); overflow: hidden; }
+.stack .row .bar i { display: block; height: 100%; background: #fff; opacity: .85; }
+.stack .row.ok .bar i { background: var(--ok); opacity: 1; }
+.stack h3 { margin: 0; font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--text); }
+ul.facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+ul.facts li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 6px; color: var(--dim); font-size: 12px; line-height: 1.45; }
+ul.facts li::before { content: "·"; color: var(--ok); font-weight: 700; text-align: center; }
+ul.facts b { color: #fff; font-weight: 600; }
+.acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.b { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; font: 600 11px var(--display); letter-spacing: .06em; text-decoration: none; color: var(--text); background: none; border: 1px solid var(--hair); border-radius: 7px; padding: 5px 12px; }
+.b:hover { color: #000; background: #fff; border-color: #fff; }
+.b.go { color: #000; background: var(--ok); border-color: var(--ok); }
+.empty { border: 1px dashed var(--hair); border-radius: 8px; padding: 12px; color: var(--dim); font-size: 12px; }
+.empty b { color: var(--text); }
+footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+footer a { color: var(--dim); }
+#tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(340px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); white-space: pre-line; }
+[hidden] { display: none !important; }
+@media (min-width: 700px) { .split { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1000px) {
+  .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, .95fr); grid-template-rows: auto auto; }
+  #pKinds { grid-row: 1 / span 2; }
+}
+/* landscape from laptop size up: one screen */
+html.fit body { height: 100vh; overflow: hidden; padding-top: 0; padding-bottom: 0; }
+html.fit .wrap { zoom: var(--z); height: var(--fitH); padding: 6px 0 8px; }
+html.fit #tip { zoom: var(--z); }
+html.fit .wrap > .main { flex: 1 1 0; min-height: 0; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+html.fit .main > .panel { min-height: 0; overflow: hidden; }
+html.fit .chart { height: calc(100% - 52px); min-height: 120px; }
+html.fit #pTime { display: flex; flex-direction: column; }
+html.fit .kind .not { display: none; }   /* on one screen the "cannot" line sits in the hover; phones show it */
+html.fit .kinds { gap: 11px; }
+@media (max-width: 700px) {
+  .seg button { min-height: 44px; padding: 5px 14px; }
+  .b { min-height: 44px; flex: 1 1 auto; }
+  .kind .not, .kind .why, .note, .legend, ul.facts li { font-size: 11px; }
+}
+</style>
+<link rel="stylesheet" href="../../assets/nav.css">
+<script src="../../assets/nav.js" defer></script>
+<script src="../../assets/rulefacts.js"></script>
+<script src="../../assets/rulekinds.js"></script>
+<script src="../../assets/origins.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>Rules in numbers</span></a>
+    <div class="hdr-right">
+      <span class="state" id="state" tabindex="0" data-tip="Connecting to our node…"><i></i><span id="stateText">Connecting</span></span>
+    </div>
+  </header>
+  <nav class="tnav" data-page="rulenums" aria-label="Pages and tools"></nav>
+  <div class="intro">
+    <div>
+      <p class="lead">What people protect with their own rules.</p>
+      <p class="sub">Every account on Tau Testnet Alpha may give itself a personal rule that every node checks its payments against. <b>Read from the chain, sorted by what each rule checks.</b> Our own showcase wallets and bots are counted apart.</p>
+    </div>
+    <div class="kpis" aria-label="Key numbers">
+      <span class="seg" role="group" aria-label="Whose rules"><button type="button" data-who="people" aria-pressed="true" data-tip="People\nEvery account that is not ours and not IDNI's. Wallets, not people: one person can hold several.">People</button><button type="button" data-who="ours" aria-pressed="false" data-tip="Ours\nTau HUD's own server wallets: the showcase wallets, the island bot, cruise passengers, No Memo's.">Ours</button><button type="button" data-who="all" aria-pressed="false" data-tip="All\nEvery account with a rule, ours and IDNI's included.">All</button></span>
+      <span class="kpi hot" data-tip="Accounts that hold a personal rule right now, as our node answers."><b id="kNow">–</b>with a rule now</span>
+      <span class="kpi" data-tip="Rules set or changed today (UTC), counted when our node next checks."><b id="kNew">–</b>new today</span>
+      <span class="kpi" data-tip="Different rule texts in the blocks our node keeps, each counted once however many accounts took it."><b id="kTexts">–</b>different rules</span>
+    </div>
+  </div>
+  <main class="main">
+    <section class="panel" id="pKinds">
+      <h2>What the rules check <small id="kindsSub">rules in force now</small></h2>
+      <div class="kinds" id="kinds"></div>
+      <p class="note" id="kindsNote">One rule can check several things, so it can count in more than one line. Read from the rule's own Tau text, never guessed.</p>
+    </section>
+    <section class="panel" id="pTime">
+      <h2>Over time <small id="timeSub">accounts with a rule, day by day</small></h2>
+      <div class="chart" id="chart"></div>
+      <div class="legend" id="legend"></div>
+    </section>
+    <section class="panel" id="pOffers">
+      <h2>Rule offers <small>one account offers a rule, the other decides</small></h2>
+      <div class="stack" id="offers"></div>
+      <p class="note" id="offersNote"></p>
+    </section>
+    <section class="panel" id="pHow">
+      <h2>How they got their rule</h2>
+      <div class="split"><div class="stack" id="how"></div><div class="stack" id="sent"></div></div>
+      <p class="note" id="howNote"></p>
+    </section>
+    <section class="panel" id="pNot">
+      <h2>What no personal rule does</h2>
+      <ul class="facts">
+        <li><span><b>No guard for a stolen key.</b> Whoever holds the key can sign a new rule. Rules guard against mistaken or tricked payments.</span></li>
+        <li><span><b>No total per day.</b> A rule sees one payment at a time, never the ones before it.</span></li>
+        <li><span><b>Small on purpose.</b> At most 32 comparisons and 8 KiB per rule.</span></li>
+      </ul>
+      <div class="acts"><a class="b go" href="/builder/">Say a rule in plain words</a><a class="b" href="/rules/">Rules wall</a></div>
+    </section>
+  </main>
+  <footer>
+    <p>Read from the blocks and the rules our node at <a href="https://node.tauhud.com/rules/numbers" target="_blank" rel="noopener">node.tauhud.com</a> checks every few minutes; the day history is kept across chain restarts. Test AGRS have no value. · <a href="https://node.tauhud.com/rules/numbers" target="_blank" rel="noopener">Raw data (JSON)</a> · <a href="/rules/">Rules wall</a> · <a href="/stats/">Stats</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BRules%20in%20numbers%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+  </footer>
+</div>
+<div id="tip" hidden></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const RELAY = "https://node.tauhud.com";
+const SIM = !!(window.TauSim && TauSim.on);
+const T = s => (window.TauI18n ? TauI18n.t(s) : s);
+const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));
+const fmt = n => Number(n || 0).toLocaleString("en-US");
+const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) { if (v == null) continue; if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else e.setAttribute(k, v); }
+  for (const k of kids) if (k != null && k !== false) e.append(k);
+  return e;
+}
+const SVGNS = "http://www.w3.org/2000/svg";
+function sv(tag, attrs) { const e = document.createElementNS(SVGNS, tag); for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v); return e; }
+
+/* each kind: what it guards against, and what it cannot do (facts: IDNI tau-testnet 5ad1bb7 clause screens; assets/rulewords.js) */
+const KIND = {
+  cap:     { name: "A most per payment", why: "One mistaken or tricked payment cannot be larger than the limit.", not: "No total per day: it sees one payment at a time." },
+  only:    { name: "Only to chosen addresses", why: "Money can only go to addresses the owner listed.", not: "It knows wallets, not people: who holds a listed address is not checked." },
+  time:    { name: "A time lock", why: "Nothing leaves before a date: savings that wait.", not: "It reads the block time; a lock until a block number is not possible." },
+  cosign:  { name: "A second signature", why: "Above a limit, a second key must sign the same payment.", not: null },
+  reserve: { name: "Keeps a reserve", why: "A payment may not take the balance below a floor.", not: "It reads the balance at the block before: several payments inside one block can still go below." },
+  freeze:  { name: "Frozen", why: "Nothing leaves this account at all.", not: "Lifting it is a new rule, signed with the same key." },
+  other:   { name: "Something else", why: "Reads other inputs, such as custom ones from i26 on.", not: null },
+};
+const KINDS = Object.keys(KIND);
+const WHOS = ["people", "ours", "idni"];
+const S = { data: null, who: store.get("tauhud-rulenums-who") || "people", mode: "connecting" };
+if (!["people", "ours", "all"].includes(S.who)) S.who = "people";
+
+const pick = obj => S.who === "all" ? WHOS.reduce((a, w) => a + (obj && obj[w] || 0), 0) : (obj && obj[S.who]) || 0;
+const pickKinds = byWho => Object.fromEntries(KINDS.map(k => [k, S.who === "all" ? WHOS.reduce((a, w) => a + ((byWho[w] || {})[k] || 0), 0) : ((byWho[S.who] || {})[k] || 0)]));
+const sumWho = (byWho, key) => S.who === "all" ? WHOS.reduce((a, w) => a + ((byWho[w] || {})[key] || 0), 0) : ((byWho[S.who] || {})[key] || 0);
+
+/* ---------- data: the relay's /rules/numbers; before it is deployed, the rules wall and /rules read here; in the simulation, the made-up chain ---------- */
+const flat = s => String(s || "").replace(/\s+/g, "");
+const NEUTRAL = new Set([flat("always ( (o5[t]:bv[24] = { #x000001 }:bv[24]) )."), flat("(o5[t]:bv[24]={#x000001}:bv[24])"), flat("o5[t]:bv[24]={#x000001}:bv[24]")]);
+function whoOf(pk) {
+  const o = window.TauOrigin && TauOrigin.of ? TauOrigin.of(pk, []) : null, t = o && o.tag;
+  return t === "idni" ? "idni" : ["bot", "cruise", "showcase"].includes(t) ? "ours" : "people";
+}
+/* the simulation still writes the older rule shapes (no "always", untyped streams; assets/sim.js), which the exact reader
+   refuses: there, the streams a rule names decide its kind */
+function simKinds(text) {
+  const has = n => new RegExp("\\bi" + n + "\\[t\\]").test(text), co = [18, 19, 20, 21, 22, 23, 24, 25].some(has), k = [];
+  if (has(1) && !co) k.push("cap"); if (has(4)) k.push("only"); if (has(5) || has(6)) k.push("time"); if (co) k.push("cosign"); if (has(2)) k.push("reserve");
+  return k.length ? k : ["other"];
+}
+function fromBlocks(blocks, holders, head) {
+  /* newest rule per account from the blocks; holders (a Set) narrows to the accounts the node says hold one */
+  const newest = new Map(), how = new Map(), texts = new Set();
+  const offers = { by: Object.fromEntries(WHOS.map(w => [w, { made: 0, accepted: 0, rejected: 0, expired: 0, open: 0 }])), matched: head != null };
+  const made = new Map(), answer = new Map();
+  for (const b of blocks) for (const t of b.transactions || []) {
+    const kind = t.tx_type || "user_tx", ops = t.operations || {}, pk = String(t.sender_pubkey || "").toLowerCase();
+    const text = kind === "user_tx" ? ops["0"] : kind === "rule_offer_accept" ? t.rule_text : null;
+    if (kind === "rule_offer") { offers.by[whoOf(pk)].made++; if (t.offer_id) made.set(t.offer_id, [whoOf(pk), +t.expire_at_height || 0]); else offers.matched = false; }
+    if (kind === "rule_offer_accept" || kind === "rule_offer_reject") answer.set(t.offer_id, kind === "rule_offer_accept" ? "accepted" : "rejected");
+    if (typeof text !== "string" || !text.includes("o5")) continue;
+    if (NEUTRAL.has(flat(text))) { newest.delete(pk); continue; }
+    newest.set(pk, text); how.set(pk, kind === "user_tx" ? "own" : "offer"); texts.add(flat(text));
+  }
+  const kinds = Object.fromEntries(WHOS.map(w => [w, Object.fromEntries(KINDS.map(k => [k, 0]))]));
+  const hold = Object.fromEntries(WHOS.map(w => [w, 0])), ways = Object.fromEntries(WHOS.map(w => [w, { own: 0, offer: 0, unknown: 0 }]));
+  for (const [pk, text] of newest) {
+    if (holders && !holders.has(pk)) continue;
+    const w = whoOf(pk);
+    hold[w]++; ways[w][how.get(pk)]++;
+    for (const k of SIM ? simKinds(text) : RuleKinds.kinds(text).kinds) kinds[w][k]++;
+  }
+  if (offers.matched) for (const [id, [w, exp]] of made) offers.by[w][answer.get(id) || (exp && exp < head ? "expired" : "open")]++;
+  return { now: { holders: hold, kinds, how: ways, sent: null }, offers, texts: texts.size, history: { since: null, days: {} } };
+}
+async function load() {
+  if (SIM) {
+    const head = TauSim.head(), blocks = [];
+    for (let n = 0; n <= head; n++) { const b = TauSim.block(n); if (b) blocks.push(b); }
+    S.data = fromBlocks(blocks, null, head); S.mode = "sim";
+    setState("sim", "Simulation", "Simulation\nThe rules on the made-up chain, the same for every visitor.\nThe day history is kept only on the live testnet.");
+    return render();
+  }
+  if (window.TauOrigin && TauOrigin.ready) { try { await TauOrigin.ready(); } catch (e) {} }
+  try {
+    const r = await fetch(RELAY + "/rules/numbers", { cache: "no-store" });
+    if (!r.ok) throw new Error("no numbers yet");
+    const j = await r.json();
+    if (!j || !j.now) throw new Error("no numbers yet");
+    S.data = j; S.mode = "live";
+    setState("ok", "Live", "Live\nOur node checks who holds a rule every few minutes.\nThis page reads again every minute.");
+  } catch (e) {
+    try {   // a relay from before /rules/numbers: the same reading from the rules wall, without history or offers outcome
+      const [wall, rules] = await Promise.all([fetch(RELAY + "/rulewall", { cache: "no-store" }).then(r => r.json()), fetch(RELAY + "/rules", { cache: "no-store" }).then(r => r.json())]);
+      const holders = new Set(rules.holders || []), blocks = [];
+      (wall.rules || []).forEach(r => r.users.forEach(u => blocks.push({ n: r.last, transactions: [{ sender_pubkey: u, operations: { "0": r.text } }] })));
+      blocks.sort((a, b) => a.n - b.n);
+      S.data = fromBlocks(blocks, holders); S.data.texts = (wall.rules || []).length; S.data.partial = true; S.mode = "live";
+      setState("ok", "Live", "Live\nRead from the rules wall; the day history starts with the next server update.");
+    } catch (x) {
+      S.mode = S.data ? S.mode : "off";
+      setState("off", "Offline", "Offline\nOur node is not reachable right now.\nThis page tries again in a minute.");
+    }
+  }
+  render();
+}
+function setState(cls, text, tipText) { const s = $("state"); s.className = "state " + cls; $("stateText").textContent = T(text); s.dataset.tip = tipText; }
+
+/* ---------- drawing ---------- */
+function render() {
+  document.querySelectorAll("[data-who]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.who === S.who)));
+  const d = S.data;
+  if (!d) {
+    const off = el("div", { class: "empty" }, el("b", { text: T("Our node is not answering.") }), " ", T("This page tries again in a minute."));
+    $("kinds").replaceChildren(off); return;
+  }
+  const today = new Date().toISOString().slice(0, 10), hist = (d.history && d.history.days) || {};
+  $("kNow").textContent = fmt(pick(d.now.holders));
+  $("kNew").textContent = hist[today] ? fmt(pick(hist[today].new)) : "–";
+  $("kTexts").textContent = d.texts == null ? "–" : fmt(d.texts);
+  drawKinds(d); drawTime(d); drawOffers(d); drawHow(d);
+}
+function drawKinds(d) {
+  const k = pickKinds(d.now.kinds), total = pick(d.now.holders), max = Math.max(1, ...Object.values(k));
+  $("kinds").replaceChildren(...KINDS.map(key => {
+    const m = KIND[key], n = k[key], share = total ? Math.round(100 * n / total) : 0;
+    return el("div", { class: "kind" + (n ? "" : " zero"), "data-tip": `${T(m.name)}\n${F("{n} of {t} accounts with a rule ({p} %)", { n: fmt(n), t: fmt(total), p: share })}\n${T(m.why)}${m.not ? "\n✕ " + T(m.not) : ""}` },
+      el("span", { class: "nm", text: T(m.name) }), el("span", { class: "n", text: fmt(n) }),
+      el("span", { class: "bar" }, el("i", { style: `width:${(100 * n / max).toFixed(1)}%` })),
+      el("span", { class: "why", text: T(m.why) }),
+      m.not ? el("span", { class: "not", text: T(m.not) }) : null);
+  }));
+  const c = d.now.checked, all = d.now.candidates;
+  $("kindsNote").textContent = T("One rule can check several things, so it can count in more than one line. Read from the rule's own Tau text, never guessed.")
+    + (c != null && all != null && all > c ? " " + F("Our node asks about the {c} newest of {a} accounts that ever set a rule.", { c: fmt(c), a: fmt(all) }) : "");
+}
+function drawTime(d) {
+  const box = $("chart"), days = Object.keys((d.history && d.history.days) || {}).sort();
+  const lg = $("legend");
+  if (S.mode === "sim" || !days.length) {
+    box.replaceChildren(el("div", { class: "empty" }, el("b", { text: T(S.mode === "sim" ? "The day history is kept only on the live testnet." : "The day history starts with the next server update.") }), " ",
+      T("From then on our node writes down every day how many accounts hold a rule, of each kind, and how many were set or removed. A chain restart does not erase it.")));
+    lg.replaceChildren(); $("timeSub").textContent = T("accounts with a rule, day by day"); return;
+  }
+  /* every day from the first one to today, empty days included */
+  const all = [], first = new Date(days[0] + "T00:00:00Z"), last = new Date(Math.max(Date.parse(days[days.length - 1] + "T00:00:00Z"), Date.parse(new Date().toISOString().slice(0, 10) + "T00:00:00Z")));
+  for (let t = +first; t <= +last; t += 864e5) all.push(new Date(t).toISOString().slice(0, 10));
+  const H = d.history.days;
+  let lastN = 0;
+  const rows = all.map(day => { const r = H[day]; if (r) lastN = pick(r.holders); return { day, n: r ? pick(r.holders) : lastN, nw: r ? pick(r.new) : 0, gone: r ? pick(r.gone) : 0, restart: !!(r && r.restart), seen: !!r }; });
+  const W = Math.max(240, box.clientWidth || 600), Hh = Math.max(120, box.clientHeight || 190), L = 34, R = 8, Tp = 8, B = 22, maxN = Math.max(4, ...rows.map(r => r.n)), maxB = Math.max(2, ...rows.map(r => Math.max(r.nw, r.gone)));
+  const x = i => L + (rows.length === 1 ? (W - L - R) / 2 : i * (W - L - R) / (rows.length - 1)), mid = Tp + (Hh - Tp - B) * .62;
+  const y = n => mid - (mid - Tp) * n / maxN, bw = Math.max(2, Math.min(18, (W - L - R) / rows.length * .6));
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${Hh}`, role: "img", "aria-label": T("Accounts with a rule, day by day") });
+  [0, .5, 1].forEach(f => { const n = Math.round(maxN * f), yy = y(n); svg.append(sv("line", { class: "grid", x1: L, x2: W - R, y1: yy, y2: yy })); const t = sv("text", { class: "ax", x: L - 6, y: yy + 3, "text-anchor": "end" }); t.textContent = fmt(n); svg.append(t); });
+  const below = Hh - B - mid;
+  rows.forEach((r, i) => {
+    if (r.restart) svg.append(Object.assign(sv("line", { x1: x(i), x2: x(i), y1: Tp, y2: Hh - B, stroke: "var(--sim)", "stroke-dasharray": "3 3", "data-tip": `${r.day}\n${T("Chain restart: every rule went with the old chain. Rules set again count as new.")}` })));
+    if (r.nw) svg.append(sv("rect", { x: x(i) - bw / 2, y: mid + 2, width: bw / 2 - .5, height: Math.max(1, below * .9 * r.nw / maxB), fill: "var(--ok)", opacity: .75 }));
+    if (r.gone) svg.append(sv("rect", { x: x(i) + .5, y: mid + 2, width: bw / 2 - .5, height: Math.max(1, below * .9 * r.gone / maxB), fill: "#fff", opacity: .4 }));
+  });
+  svg.append(sv("polyline", { points: rows.map((r, i) => `${x(i)},${y(r.n)}`).join(" "), fill: "none", stroke: "var(--ok)", "stroke-width": 2, "vector-effect": "non-scaling-stroke" }));
+  rows.forEach((r, i) => { if (r.seen) svg.append(sv("circle", { cx: x(i), cy: y(r.n), r: rows.length > 40 ? 1.5 : 3, fill: "var(--ok)" })); });
+  /* hover targets, one per day */
+  rows.forEach((r, i) => svg.append(sv("rect", { x: x(i) - (W - L - R) / rows.length / 2, y: Tp, width: Math.max(4, (W - L - R) / rows.length), height: Hh - Tp - B, fill: "transparent",
+    "data-tip": `${r.day}\n${F("{n} accounts with a rule", { n: fmt(r.n) })}\n${F("{n} set or changed", { n: fmt(r.nw) })} · ${F("{n} removed", { n: fmt(r.gone) })}${r.restart ? "\n" + T("Chain restart that day.") : ""}${r.seen ? "" : "\n" + T("Not checked that day: the last count carries over.")}` })));
+  [0, rows.length - 1].filter((v, i, a) => a.indexOf(v) === i).forEach(i => { const t = sv("text", { class: "ax", x: x(i), y: Hh - 6, "text-anchor": rows.length === 1 ? "middle" : i ? "end" : "start" }); t.textContent = rows[i].day; svg.append(t); });
+  box.replaceChildren(svg);
+  lg.replaceChildren(el("span", null, el("i", { style: "background:var(--ok)" }), T("accounts with a rule")), el("span", null, el("i", { style: "background:var(--ok);opacity:.75" }), T("set or changed that day")),
+    el("span", null, el("i", { style: "background:#fff;opacity:.4" }), T("removed")), el("span", null, el("i", { style: "background:var(--sim)" }), T("chain restart")));
+  $("timeSub").textContent = F("since {d}, kept across chain restarts", { d: days[0] });
+}
+function row(label, n, total, tipText, ok) {
+  return el("div", { class: "row" + (ok ? " ok" : ""), "data-tip": tipText || null }, el("span", { text: label }), el("b", { text: fmt(n) }), el("span", { class: "bar" }, el("i", { style: `width:${total ? (100 * n / total).toFixed(1) : 0}%` })));
+}
+function drawOffers(d) {
+  const o = d.offers || { by: {} }, g = k => sumWho(o.by, k), made = g("made");
+  if (!made) {
+    $("offers").replaceChildren(el("div", { class: "empty" }, el("b", { text: T("No rule offers in the blocks our node keeps.") }), " ", T("An account can offer its rule to another; the other accepts, rejects or lets it expire.")));
+    $("offersNote").textContent = ""; return;
+  }
+  const parts = d.partial ? [] : o.matched ? [["accepted", "Accepted", "The other account took the rule as its own.", true], ["rejected", "Rejected", "The other account said no."], ["expired", "Expired", "Nobody answered before the offer's last block."], ["open", "Still open", "Waiting for an answer."]] : [["accepted", "Accepted", "", true], ["rejected", "Rejected", ""]];
+  $("offers").replaceChildren(row(T("Offers made"), made, made, T("Rule offers sent in the blocks our node keeps.")), ...parts.map(([k, label, tipText, ok]) => row(T(label), g(k), made, tipText ? T(tipText) : null, ok)));
+  $("offersNote").textContent = d.partial ? T("Outcomes come with the next server update.") : T("From the blocks our node keeps; a chain restart starts them over.");
+}
+function drawHow(d) {
+  const h = d.now.how || {}, own = sumWho(h, "own"), off = sumWho(h, "offer"), unk = sumWho(h, "unknown"), tot = own + off + unk;
+  $("how").replaceChildren(...[el("h3", { text: T("Own or offered") }),
+    row(T("Wrote or picked it themselves"), own, tot, T("The account signed its own rule."), true),
+    row(T("Took an offer"), off, tot, T("Another account offered the rule; this one accepted it.")),
+    unk ? row(T("Before the kept blocks"), unk, tot, T("Set in a block older than the ones our node keeps.")) : null].filter(Boolean));
+  const s = d.now.sent;
+  if (!s) { $("sent").replaceChildren(el("h3", { text: T("Sent from") }), el("div", { class: "empty", text: T(S.mode === "sim" ? "Only on the live testnet." : "Comes with the next server update.") })); }
+  else {
+    const th = sumWho(s, "tauhud"), el2 = sumWho(s, "elsewhere"), tt = th + el2, pages = Object.entries(d.now.pages || {}).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    $("sent").replaceChildren(el("h3", { text: T("Sent from") }),
+      row(T("Tau HUD pages"), th, tt, T("Signed in the visitor's browser and sent through our node's wallet door.") + (pages.length && S.who !== "ours" ? "\n" + pages.map(([p, n]) => `${p}: ${fmt(n)}`).join("\n") : ""), true),
+      row(T("Elsewhere"), el2, tt, T("IDNI's web wallet, a node's own command line, scripts or other apps.")));
+  }
+  const sizes = S.who === "all" ? WHOS.flatMap(w => (d.now.sizes || {})[w] || []) : ((d.now.sizes || {})[S.who] || []);
+  $("howNote").textContent = sizes.length ? F("Rules use {a} comparisons on average, the largest {m} of the 32 allowed.", { a: (sizes.reduce((a, b) => a + b, 0) / sizes.length).toFixed(1), m: Math.max(...sizes) }) : "";
+}
+document.querySelectorAll("[data-who]").forEach(b => b.addEventListener("click", () => { S.who = b.dataset.who; store.set("tauhud-rulenums-who", S.who); render(); }));
+
+/* ---------- hover tips ---------- */
+const tip = $("tip");
+document.addEventListener("mouseover", e => {
+  const t = e.target.closest("[data-tip]");
+  if (!t || !t.dataset.tip && !t.getAttribute("data-tip")) { tip.hidden = true; return; }
+  tip.textContent = T(String(t.getAttribute("data-tip")).replace(/\\n/g, "\n"));
+  tip.hidden = false;
+});
+document.addEventListener("mousemove", e => {
+  if (tip.hidden) return;
+  const z = document.documentElement.classList.contains("fit") ? +getComputedStyle(document.documentElement).getPropertyValue("--z") || 1 : 1;
+  const w = tip.offsetWidth * z, h = tip.offsetHeight * z;
+  tip.style.left = Math.max(8, Math.min(e.clientX + 14, innerWidth - w - 8)) / z + "px";
+  tip.style.top = (e.clientY + 18 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 18) / z + "px";
+});
+document.addEventListener("mouseleave", () => { tip.hidden = true; });
+
+/* ---------- one screen ---------- */
+function fit() {
+  const w = innerWidth, h = innerHeight, root = document.documentElement;
+  const on = w >= 1200 && h >= 640 && w / h >= 1.3;
+  const z = on ? Math.max(.8, Math.min(2, w / 1600, h / 860)) : 1;
+  root.classList.toggle("fit", on);
+  root.style.setProperty("--z", z);
+  root.style.setProperty("--fitH", Math.floor(h / z) + "px");
+}
+addEventListener("resize", () => { fit(); if (S.data) drawTime(S.data); });
+
+if (SIM) TauSim.mark();
+fit();
+load();
+setInterval(() => { if (!document.hidden) load(); }, 60000);
+</script>
+</body>
+</html>

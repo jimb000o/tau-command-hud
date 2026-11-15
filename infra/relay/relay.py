@@ -45,13 +45,14 @@ from simvotes import SimVotes, name_of
 from simwallet import SimWallet
 from cruise import Cruise
 from hackweek import HackWeek
-from showcase import Showcase
+from showcase import Showcase, offer_id
+from ruledays import KINDS as RULE_KINDS, WHO as WHO_RULES, RuleDays, offers as rule_offers, kinds as rule_kinds
 from island import Island
 from isle import Isle
 from nomemo import NoMemo
 from nomemo_feedback import Feedback as NoMemoFeedback
 from load import Load
-from txsources import TxSources, deja as deja_day
+from txsources import GENESIS, TxSources, deja as deja_day
 from walletdays import WalletDays
 from chainhist import ChainHistory
 from hearts import Hearts
@@ -175,7 +176,7 @@ LOOKUPS = {
 # lists them, so the relay takes the candidates from the blocks it keeps (senders of an o5 rule, acceptors of an offer)
 # and asks the node for each, at most RULES_MAX_CHECKS of them.
 RULES_POLL = _env_float("RULES_POLL_SECONDS", 300)
-RULES_MAX_CHECKS = _env_int("RULES_MAX_CHECKS", 40)
+RULES_MAX_CHECKS = _env_int("RULES_MAX_CHECKS", 80)
 NEUTRAL_O5 = "(o5[t]:bv[24]={#x000001}:bv[24])"
 # /rulewall: every personal rule in the kept blocks, for the rules wall on tauhud.com/rules/
 RULEWALL_MAX = _env_int("RULEWALL_MAX", 200)
@@ -519,6 +520,10 @@ class Relay:
         self.summary_data: dict | None = None
         self.summary_at = 0.0
         self.rules_text: str | None = None      # /rules, refreshed by poll_rules
+        self.rule_bodies: dict[str, str] = {}   # holder -> rule text in force, from the same check
+        self.ruledays = RuleDays()              # /rules/numbers: rules in force per day, across chain restarts (ruledays.py)
+        self.rulenums_text: str | None = None
+        self.rulenums_at = 0.0
         # last: the cruise ships' passenger wallets are made in the background; tagged as simulated once known
         self.cruise.on_ready = self.tag_passengers
         self.hack.on_ready = self.tag_passengers
@@ -575,6 +580,7 @@ class Relay:
             self.blocks.clear()
             reset = True
             self.showcase.recheck()   # the showcase wallets' rules are gone with the old chain: set them again
+            self.ruledays.restart()
         elif full and self.blocks and self._other_chain(fetched):
             # typically right after a relay start: the blocks on disk are from a chain that is gone
             log.warning("held blocks belong to an earlier chain; dropping them")
@@ -582,6 +588,7 @@ class Relay:
             self.blocks.clear()
             dropped = True
             self.showcase.recheck()
+            self.ruledays.restart()
             if self.state.get("chain"):
                 self._record_restart(self.state["chain"])
                 self.state["chain"] = None
@@ -1092,9 +1099,69 @@ class Relay:
                                             separators=(",", ":"))
         return self.rulewall_text
 
+    def rule_who(self):
+        """pk -> people / ours / idni, for the rule numbers (ruledays.py)."""
+        ours = self.walker_ours()
+        return lambda pk: "ours" if pk in ours else "idni" if pk in GENESIS else "people"
+
+    def rule_numbers(self) -> dict:
+        """GET /rules/numbers: the rules in force by kind and by who holds them, how each holder got its rule and where
+        it was sent from, rule offers and their outcome, the size of each rule, and the day history (ruledays.py)."""
+        who = self.rule_who()
+        blocks = self.ordered_blocks()
+        how: dict[str, tuple] = {}   # holder -> (own/offer, tx hash) of its newest rule in the kept blocks
+        for b in blocks:
+            ids = b.get("tx_ids") or []
+            for i, t in enumerate(b.get("transactions") or []):
+                if not isinstance(t, dict):
+                    continue
+                kind = t.get("tx_type") or "user_tx"
+                ops = t.get("operations") if isinstance(t.get("operations"), dict) else {}
+                pk = str(t.get("sender_pubkey") or "").lower()
+                if kind == "user_tx" and isinstance(ops.get("0"), str) and "o5" in ops["0"]:
+                    how[pk] = ("own", str(ids[i] if i < len(ids) else t.get("tx_hash") or "").lower())
+                elif kind == "rule_offer_accept":
+                    how[pk] = ("offer", "")
+        ways = {w: {"own": 0, "offer": 0, "unknown": 0} for w in WHO_RULES}
+        sent = {w: {"tauhud": 0, "elsewhere": 0} for w in WHO_RULES}
+        pages: dict[str, int] = {}
+        sizes = {w: [] for w in WHO_RULES}
+        for pk, body in self.rule_bodies.items():
+            w = who(pk)
+            way, h = how.get(pk, ("unknown", ""))
+            ways[w][way] += 1
+            sizes[w].append(rule_kinds(body)["size"])
+            if way == "own":
+                site = self.sources.sent.get(h)
+                s_, _, via = (site or "").partition("|")
+                if site is not None and not s_:
+                    sent[w]["tauhud"] += 1
+                    if w == "people":
+                        pages[via or "wallet"] = pages.get(via or "wallet", 0) + 1
+                else:
+                    sent[w]["elsewhere"] += 1
+        try:
+            rules = json.loads(self.rules_text) if self.rules_text else {}
+        except ValueError:
+            rules = {}
+        snap = self.ruledays.snapshot(self.rule_bodies, who)
+        return {"now": {**snap, "how": ways, "sent": sent, "pages": pages, "sizes": sizes,
+                        "checked": rules.get("checked"), "candidates": rules.get("candidates"), "checked_at": rules.get("checked_at")},
+                "offers": rule_offers(blocks, self.height(), offer_id, who),
+                "texts": len(self.rulewall()), "kinds": list(RULE_KINDS), "who": list(WHO_RULES), "max_comparisons": 32,
+                "history": self.ruledays.history(), "height": self.height(), "oldest": self._height(blocks[0]) if blocks else None,
+                "generated_at": round(time.time())}
+
+    def rule_numbers_json(self) -> str:
+        now = time.time()
+        if self.rulenums_text is None or now - self.rulenums_at >= 60:
+            self.rulenums_at = now
+            self.rulenums_text = json.dumps(self.rule_numbers(), separators=(",", ":"))
+        return self.rulenums_text
+
     async def poll_rules(self):
-        holders = []
-        for i, a in enumerate(self.rule_candidates()[:RULES_MAX_CHECKS]):
+        holders, bodies, cands = [], {}, self.rule_candidates()
+        for i, a in enumerate(cands[:RULES_MAX_CHECKS]):
             if i:
                 await asyncio.sleep(2.5)   # getruleoffers is in the node's expensive tier (0.5/s)
             msg = await self.upstream.request(f"getruleoffers {a} in")
@@ -1104,10 +1171,15 @@ class Relay:
             for c in data.get("accepted_clauses") or []:
                 if str(c.get("target_stream")) in ("5", "o5") and re.sub(r"\s+", "", str(c.get("clause_body") or "")) not in (NEUTRAL_O5, NEUTRAL_O5[1:-1]):
                     holders.append(a)
+                    bodies[a] = str(c.get("clause_body") or "")
                     break
         self.rules_text = json.dumps({"holders": holders, "taken": len(holders), "limit": None,
-                                      "checked": min(len(self.rule_candidates()), RULES_MAX_CHECKS),
+                                      "checked": min(len(cands), RULES_MAX_CHECKS), "candidates": len(cands),
                                       "checked_at": round(time.time())}, separators=(",", ":"))
+        self.rule_bodies = bodies
+        self.ruledays.record(bodies, set(cands[:RULES_MAX_CHECKS]), self.rule_who())
+        self.ruledays.save()
+        self.rulenums_text = None
 
     @staticmethod
     def _tx_summary(t: dict) -> dict:
@@ -2330,6 +2402,11 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "public, max-age=60")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.rulewall_json().encode())
+        if path == "/rules/numbers":
+            headers = Headers([("Content-Type", "application/json"),
+                               ("Access-Control-Allow-Origin", "*"),
+                               ("Cache-Control", "public, max-age=60")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.rule_numbers_json().encode())
         if path == "/rules":
             ready = self.rules_text is not None
             headers = Headers([("Content-Type", "application/json"),
