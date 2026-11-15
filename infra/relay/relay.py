@@ -50,6 +50,7 @@ from ruledays import KINDS as RULE_KINDS, WHO as WHO_RULES, RuleDays, offers as 
 from island import Island
 from isle import Isle
 from nomemo import NoMemo
+from vaults import Vaults
 from nomemo_feedback import Feedback as NoMemoFeedback
 from load import Load
 from txsources import GENESIS, TxSources, deja as deja_day
@@ -429,6 +430,10 @@ class Relay:
         self.nomemo = NoMemo()   # No Memo's crew purse: the share, the mark and the Tracer's dust (nomemo.py)
         self.nomemo.on_tx = lambda: self.load.sent("bot")
         self.nomemo.lenders = self.cruise.lenders   # while our node cannot take the bank's fresh wallet (IDNI tau-testnet #108)
+        # No Memo's vaults: wallets whose key is played as leaked; their real rules are the only lock (vaults.py)
+        self.vaults = Vaults(self.nomemo)
+        self.vaults.on_tx = lambda ok: self.load.sent("bot" if ok else "refused")
+        self.vaults.on_refused = self.note_refused
         self.nomemo_feedback = NoMemoFeedback()   # `feedback <text>` in the No Memo terminal, kept for the owner (nomemo_feedback.py)
         self.island.idle = self.idle_step
         # visitors' forecasts for the same rounds, scored from that ballot (simpredict.py)
@@ -536,7 +541,7 @@ class Relay:
         self.hack.on_ready = self.tag_passengers
         self.nomemo.on_ready = self.tag_passengers
         self.showcase.on_ready = self.tag_passengers
-        if self.cruise.ready or self.hack.ready or self.nomemo.ready or self.showcase.ready:
+        if self.cruise.ready or self.hack.ready or self.nomemo.ready or self.showcase.ready or self.vaults.ready:
             self.tag_passengers()
 
     # ---------- polling ----------
@@ -587,6 +592,7 @@ class Relay:
             self.blocks.clear()
             reset = True
             self.showcase.recheck()   # the showcase wallets' rules are gone with the old chain: set them again
+            self.vaults.recheck()
             self.ruledays.restart()
         elif full and self.blocks and self._other_chain(fetched):
             # typically right after a relay start: the blocks on disk are from a chain that is gone
@@ -595,6 +601,7 @@ class Relay:
             self.blocks.clear()
             dropped = True
             self.showcase.recheck()
+            self.vaults.recheck()
             self.ruledays.restart()
             if self.state.get("chain"):
                 self._record_restart(self.state["chain"])
@@ -1328,7 +1335,7 @@ class Relay:
         """Our simulated wallets: the cruise ships' passengers, the hack of the week's four, No Memo's own and the four
         showcase wallets (pubkey -> who)."""
         return {**self.cruise.who, **getattr(getattr(self, "hack", None), "who", {}), **getattr(getattr(self, "nomemo", None), "who", {}),
-                **getattr(getattr(self, "showcase", None), "who", {})}
+                **getattr(getattr(self, "showcase", None), "who", {}), **getattr(getattr(self, "vaults", None), "who", {})}
 
     async def idle_step(self, ask, gov) -> bool:
         """The island bot's free slot: a cruise ship first, then the hack of the week (never both in one slot)."""
@@ -1337,6 +1344,8 @@ class Relay:
         if await self.hack.step(ask, gov):
             return True
         if await self.nomemo.step(ask, gov):
+            return True
+        if await self.vaults.step(ask, gov):
             return True
         return await self.showcase.step(ask, gov)
 
@@ -2387,7 +2396,7 @@ class Relay:
             return Response(code.value, code.phrase, headers, json.dumps(sim[1], separators=(",", ":")).encode())
         # GET /showcase: the showcase wallets, their rules in words, the last daily tries, the rule-sharing stories;
         # GET /showcase/offer?to=<address>: the rule desk offers that wallet a starter rule (showcase.py)
-        isl = self.showcase.route(path, query, ip, not request.headers.get("X-Forwarded-For")) if path.startswith("/showcase") else self.nomemo_feedback.route(path, query, ip) if path == "/nomemo/feedback" else self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.hack.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/hack") else self.nomemo.route(path, query) if path.startswith("/nomemo") else self.isle.route(path)
+        isl = self.showcase.route(path, query, ip, not request.headers.get("X-Forwarded-For")) if path.startswith("/showcase") else self.nomemo_feedback.route(path, query, ip) if path == "/nomemo/feedback" else self.island.route(path) if path == "/island" else self.cruise.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/cruise") else self.hack.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/hack") else self.vaults.route(path, query, not request.headers.get("X-Forwarded-For")) if path.startswith("/vaults") else self.nomemo.route(path, query) if path.startswith("/nomemo") else self.isle.route(path)
         if isl is not None:
             headers = Headers([("Content-Type", "application/json"), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, json.dumps(isl, separators=(",", ":")).encode())
@@ -2506,7 +2515,8 @@ class Relay:
                             json.dumps(self.summary(), separators=(",", ":")).encode())
         if path == "/wallets/tags":   # which known app or owner each wallet belongs to, for the chain core (walletdays.py)
             if getattr(self, "wtags_text", None) is None or time.monotonic() - self.wtags_at >= 60:
-                self.wtags_text = json.dumps({"tags": self.wallets.known(), "via": self.sources.games()}, separators=(",", ":"))
+                self.wtags_text = json.dumps({"tags": self.wallets.known(), "via": self.sources.games(),
+                                              "apps": self.wallets.app_list()}, separators=(",", ":"))
                 self.wtags_at = time.monotonic()
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),
