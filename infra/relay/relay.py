@@ -524,6 +524,7 @@ class Relay:
         self.summary_at = 0.0
         self.rules_text: str | None = None      # /rules, refreshed by poll_rules
         self.rule_bodies: dict[str, str] = {}   # holder -> rule text in force, from the same check
+        self.rule_balances: dict[str, int] = {}   # holder -> test AGRS at that check
         self.ruledays = RuleDays()              # /rules/numbers: rules in force per day, across chain restarts (ruledays.py)
         self.rulenums_text: str | None = None
         self.rulenums_at = 0.0
@@ -1163,7 +1164,7 @@ class Relay:
             rules = json.loads(self.rules_text) if self.rules_text else {}
         except ValueError:
             rules = {}
-        snap = self.ruledays.snapshot(self.rule_bodies, who)
+        snap = self.ruledays.snapshot(self.rule_bodies, who, self.rule_balances)
         return {"now": {**snap, "how": ways, "sent": sent, "pages": pages, "sizes": sizes,
                         "checked": rules.get("checked"), "candidates": rules.get("candidates"), "checked_at": rules.get("checked_at")},
                 "offers": rule_offers(blocks, self.height(), offer_id, who),
@@ -1179,7 +1180,7 @@ class Relay:
         return self.rulenums_text
 
     async def poll_rules(self):
-        holders, bodies, cands = [], {}, self.rule_candidates()
+        holders, bodies, balances, cands = [], {}, {}, self.rule_candidates()
         for i, a in enumerate(cands[:RULES_MAX_CHECKS]):
             if i:
                 await asyncio.sleep(2.5)   # getruleoffers is in the node's expensive tier (0.5/s)
@@ -1191,12 +1192,17 @@ class Relay:
                 if str(c.get("target_stream")) in ("5", "o5") and re.sub(r"\s+", "", str(c.get("clause_body") or "")) not in (NEUTRAL_O5, NEUTRAL_O5[1:-1]):
                     holders.append(a)
                     bodies[a] = str(c.get("clause_body") or "")
+                    bal = await self.upstream.request(f"getbalance {a}")   # the AGRS behind a rule (/rules/numbers)
+                    try:
+                        balances[a] = int(((bal or {}).get("data") or {}).get("balance") or 0) if (bal or {}).get("status") == "ok" else 0
+                    except (TypeError, ValueError):
+                        balances[a] = 0
                     break
         self.rules_text = json.dumps({"holders": holders, "taken": len(holders), "limit": None,
                                       "checked": min(len(cands), RULES_MAX_CHECKS), "candidates": len(cands),
                                       "checked_at": round(time.time())}, separators=(",", ":"))
-        self.rule_bodies = bodies
-        self.ruledays.record(bodies, set(cands[:RULES_MAX_CHECKS]), self.rule_who())
+        self.rule_bodies, self.rule_balances = bodies, balances
+        self.ruledays.record(bodies, set(cands[:RULES_MAX_CHECKS]), self.rule_who(), balances=balances)
         self.ruledays.save()
         self.rulenums_text = None
 
@@ -1208,6 +1214,13 @@ class Relay:
             kind = "rule_deploy"
         return {"type": str(kind)[:40], "sender": str(t.get("sender_pubkey") or t.get("sender") or "")[:200]}
 
+    def held_by_rule(self, sender: str, reason: str):
+        """A payment refused because the sender's own rule (o5) said no, as the node words it: counted per day."""
+        if re.search(r"o5|own (policy|rule)", str(reason or ""), re.I) and HEX.match(str(sender or "")):
+            self.ruledays.held(self.rule_who()(str(sender).lower()))
+            self.ruledays.save()
+            self.rulenums_text = None
+
     def note_refused(self, entry: dict):
         """A transaction the node refused at the door, before any queue (the showcase wallets' daily try): listed with the
         dropped ones, so the HUD's feed shows it with the node's reason, like one that left the queue without a block."""
@@ -1215,6 +1228,7 @@ class Relay:
         self.state["dropped"] = self.state["dropped"][-EVENTS_MAX:]
         self.stats_text = None
         self._save_state()
+        self.held_by_rule(entry.get("sender") or "", entry.get("reason") or "")
 
     def track_mempool(self, data: dict):
         """A transaction that leaves the mempool and never shows up in a block
@@ -1617,6 +1631,14 @@ class Relay:
             msg = await self.explain_new_wallet(msg, tx, way)
         if cmd == "sendtx":
             self.load.sent("sent" if msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False else "refused")
+            if msg.get("status") == "error" or (msg.get("data") or {}).get("ok") is False:
+                try:
+                    why, parsed = json.dumps(msg.get("error") or msg.get("data") or {}), json.loads(tx)
+                    ops = parsed.get("operations") if isinstance(parsed.get("operations"), dict) else {}
+                    if ops.get("1") and not ops.get("0"):   # a payment, not a rule that failed its own checks
+                        self.held_by_rule(str(parsed.get("sender_pubkey") or ""), why)
+                except (ValueError, AttributeError):
+                    pass
         if cmd == "sendtx" and msg.get("status") == "ok" and (msg.get("data") or {}).get("ok") is not False:
             self.sources.note((msg.get("data") or {}).get("tx_hash"), site, via)   # for "where the transactions come from"
             self.island.saw_tx(ip)   # White Rabbit Key may pay this address for the move

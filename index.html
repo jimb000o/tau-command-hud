@@ -1969,8 +1969,8 @@ const o5Neutral = text => { const f = String(text || "").replace(/\s+/g, "").rep
 /* ---------- a personal rule as the chain carries it (the text of stream o5), read into the shape the panels know ---------- */
 function policyFromText(text) {
   const s0 = String(text || "").trim(), num = h => /^#?x?[0-9a-f]+$/i.test(h) && /[a-f]|^#?x/i.test(h) ? parseInt(h.replace(/^#?x/i, ""), 16) : Number(h);
-  // a floor on what a payment leaves ((i2 - i1) < X, IDNI's issue #20 template, with or without the "i1 > i2" wrap guard) is read on its own and taken out, so its i1 is not mistaken for a spending limit
-  const after = /\(\s*i2\[t\](?::bv\[\d+\])?\s*-\s*i1\[t\](?::bv\[\d+\])?\s*\)\s*<\s*\{\s*(#x[0-9a-fA-F]+|\d+)\s*\}(?::bv\[\d+\])?/.exec(s0);
+  // a floor on what a payment leaves ((i2 - i1) < X ? block, or (i2 - i1) >= X ? allow; IDNI's issue #20 template, with or without the "i1 > i2" wrap guard) is read on its own and taken out, so its i1 is not mistaken for a spending limit
+  const after = /\(\s*i2\[t\](?::bv\[\d+\])?\s*-\s*i1\[t\](?::bv\[\d+\])?\s*\)\s*(?:<|>=)\s*\{\s*(#x[0-9a-fA-F]+|\d+)\s*\}(?::bv\[\d+\])?/.exec(s0);
   const s = after ? s0.replace(after[0], "true").replace(/i1\[t\](?::bv\[\d+\])?\s*>\s*i2\[t\](?::bv\[\d+\])?/g, "true") : s0;
   const who = /i18\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]{8,})/.exec(s), to = /i4\[t\][^=]*=\s*\{\s*#x([0-9a-fA-F]{8,})/.exec(s);
   const amt = /i1\[t\][^<>]*[<>]=?\s*\{\s*(#x[0-9a-fA-F]+|\d+)/.exec(s), fl = after || /i2\[t\][^<>]*<\s*\{\s*(#x[0-9a-fA-F]+|\d+)/.exec(s), hgt = /i6\[t\][^<>]*[<>]=?\s*\{\s*(\d+)/.exec(s), ts = /i5\[t\][^<>]*[<>]=?\s*\{\s*(\d+)/.exec(s);
@@ -4731,9 +4731,23 @@ function detailTx(t) {
   if (t.note && !transfer) rule += `<p style="color:var(--dim);font-size:12px;margin:8px 0 0">${esc(t.note)}</p>`;
   return { title: `Transaction · ${esc(label)}`, html: `<p class="lead">${esc(where)}</p>${kvHtml(kv)}${rule}` };
 }
+/* who an offerer or recipient is, in the offer's popup: name and what we know (assets/origins.js), its own rule in force, and its offers in view */
+function offerParty(a, role) {
+  const nm = nbWho(a), ab = (window.TauOrigin && TauOrigin.about ? TauOrigin.about(a) : null) || [], rule = S.clauses.get(a);
+  const made = S.offers.filter(x => x.from === a).length, got = S.offers.filter(x => x.to === a).length;
+  const who = nm !== "a wallet" ? nm.charAt(0).toUpperCase() + nm.slice(1) : isGenesis(a) ? "An IDNI genesis wallet" : "A wallet we know nothing more about: not one we recognise as Tau HUD’s or IDNI’s.";
+  const lines = [who, ...ab,
+    rule ? `Its own rule now: ${rule.name}, ${rule.label}.` : "No own rule of it is known to us right now.",
+    rule && window.RuleWords && RuleWords.fromTau && rule.body && RuleWords.fromTau(rule.body) ? "Made with Tau HUD’s rule builder." : "",
+    `Rule offers in view: ${made} made, ${got} received.`];
+  return `<div class="party"><b>${role}</b> ${acctN(a)}${S.mode === "live" ? ` · <a class="acct" href="account/?a=${encodeURIComponent(a)}">open account</a>` : ""}<p style="color:var(--dim);font-size:12px;margin:2px 0 8px">${lines.filter(Boolean).map(esc).join("<br>")}</p></div>`;
+}
 function detailOffer(o) {
-  const st = { offered: `Waiting for ${short(o.to)} to decide; expires unanswered at block #${o.expire}.`, accepted: `Accepted: it now binds ${short(o.to)}’s account on every transfer.`, rejected: "Rejected by the recipient; nothing changed.", expired: "Expired unanswered; nothing changed." }[o.status] || o.status;
-  return { title: `Rule offer · ${esc(o.policy.name)}`, html: `<p class="lead">${esc(st)}</p>${kvHtml({ Offerer: esc(o.from), Recipient: esc(o.to), Rule: esc(o.policy.name + ": " + o.policy.label), Status: o.status, "Expires at": "#" + o.expire, "Offer id": esc(o.id) })}
+  const tn = a => { const n = nbWho(a); return n === "a wallet" ? short(a) : n; };
+  const st = { offered: `Waiting for ${tn(o.to)} to decide; expires unanswered at block #${o.expire}.`, accepted: `Accepted: it now binds ${tn(o.to)}’s account on every transfer.`, rejected: "Rejected by the recipient; nothing changed.", expired: "Expired unanswered; nothing changed." }[o.status] || o.status;
+  const built = window.RuleWords && RuleWords.fromTau && o.policy.body && RuleWords.fromTau(o.policy.body);
+  return { title: `Rule offer · ${esc(o.policy.name)}`, html: `<p class="lead">${esc(st)}</p>${kvHtml({ Offerer: acctN(o.from), Recipient: acctN(o.to), Rule: esc(o.policy.name + ": " + o.policy.label) + (built ? ` <a href="rules/numbers/">· made with Tau HUD’s rule builder</a>` : ""), Status: o.status, "Expires at": "#" + o.expire, "Offer id": esc(o.id) })}
+    <h3>Who they are</h3>${offerParty(o.from, "Offerer")}${offerParty(o.to, "Recipient")}
     <h3>Checks at admission</h3>${checksHtml([
       ["shape ✓", "", "The offered rule has the shape the protocol expects: one Tau clause on the sender’s own money stream (o5)."],
       ["reserved streams ✓", "", "The rule touches only streams an account may use. The consensus streams (i6 … o9) are reserved for the chain’s own rules."],
