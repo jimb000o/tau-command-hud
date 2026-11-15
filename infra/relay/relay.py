@@ -1913,8 +1913,9 @@ class Relay:
     @staticmethod
     def badge(left: str, right: str, on: bool, zh: bool = False) -> str:
         """Shields-style two-part badge in the site's colours: black, white,
-        phosphor green when the value is good news (red with ?lang=zh, as on the Chinese site)."""
-        bg, fg = (("#ff3b52" if zh else "#39ff8a"), "#000") if on else ("#2a2a2e", "#ebebee")
+        phosphor green when the value is good news. Green also with ?lang=zh: live and OK are status, not a price
+        rise, so the Chinese site keeps green for them too (zh is still accepted, for old embeds)."""
+        bg, fg = ("#39ff8a", "#000") if on else ("#2a2a2e", "#ebebee")
         # Verdana 11px averages about 6.6 px per character; padding 6 px each side
         lw, rw = int(len(left) * 6.6) + 12, int(len(right) * 6.6) + 12
         esc = lambda t: t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")

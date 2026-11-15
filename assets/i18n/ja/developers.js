@@ -64,7 +64,6 @@ TauI18n.add({ strings: {
   "Testnet health 0 to 100 with every factor behind it and its history.": "テストネットの健全性 0〜100 と、その背後のすべての要因と履歴。",
   "Testnet health score, 0 to 100": "テストネットの健全性スコア、0〜100",
   "The badges on this page: status, height, proposals, validators, health.": "このページのバッジ：状態、高さ、提案、バリデーター、健全性。",
-  "The badges on this page: status, height, proposals, validators, health. Add ?lang=zh for the Chinese colours (red when live).": "このページのバッジ：状態、高さ、提案、バリデーター、健全性。中国式の色（稼働中は赤）にするには ?lang=zh を付けてください。",
   "the first box you picked": "最初に選んだボックス",
   "The relay and our node right now: heights, sync, people online, restarts.": "いまのリレーと私たちのノード：高さ、同期、オンラインの人数、再起動。",
   "The relay behind all of this is open source:": "これらすべての背後にあるリレーはオープンソースです：",

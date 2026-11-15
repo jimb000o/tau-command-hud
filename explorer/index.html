@@ -248,7 +248,7 @@ html.fit .list .d .ago { display: none; }   /* beside the band and the core the 
 .verdict p em { font-style: normal; color: var(--dim); }
 .split { display: grid; gap: 4px 24px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1100px) { .split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-td.up { color: var(--ok); } td.down { color: #fff; }
+td.up { color: var(--ok); } td.down { color: #fff; }   /* a balance rise; red in Chinese (class mv-up, assets/i18n.js) */
 ul.plain { margin: 6px 0 0; padding-left: 16px; font-size: 12.5px; } ul.plain li { margin: 2px 0; } ul.plain em { font-style: normal; color: var(--dim); }
 
 /* the open item */
@@ -809,7 +809,7 @@ function blockView(h) {
     <div class="split">
       <div>
         <h3>What it changed</h3>
-        ${moves.length ? `<table><thead><tr><th>Account</th><th class="n">AGRS</th></tr></thead><tbody>${moves.map(([a, v]) => `<tr><td>${addrLink(a)}</td><td class="n ${v > 0 ? "up" : "down"}">${v > 0 ? "+" : "−"}${fmtA(Math.abs(v))}</td></tr>`).join("")}</tbody></table>` : ""}
+        ${moves.length ? `<table><thead><tr><th>Account</th><th class="n">AGRS</th></tr></thead><tbody>${moves.map(([a, v]) => `<tr><td>${addrLink(a)}</td><td class="n ${v > 0 ? "up mv-up" : "down"}">${v > 0 ? "+" : "−"}${fmtA(Math.abs(v))}</td></tr>`).join("")}</tbody></table>` : ""}
         ${effects.length ? `<ul class="plain">${effects.map(e => `<li>${e}</li>`).join("")}</ul>` : ""}
         ${!moves.length && !effects.length ? `<p class="empty">${h === 0 ? "It created the starting balances." : "Nothing: an empty block. The validator still seals one on schedule, which keeps the chain's clock going."}</p>` : moves.length ? `<p class="note">Net change per account, before fees.</p>` : ""}
       </div>
