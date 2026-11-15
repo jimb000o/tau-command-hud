@@ -145,6 +145,24 @@ check(all(sc.w(n)["last"]["outcome"] == "stopped" for n in showcase.WALLETS), "/
 asyncio.run(run(sc, node, clock, cruise.berlin_t(DAY, 23)))
 check(len([t for t in node.sent if "1" in t.get("operations", {})]) == 3, "no second try the same day")
 
+# a try for a film (our video service, from inside the server only): one more refusal now, said to be a test
+check("error" in sc.route("/showcase/demo", "wallet=piggy", "1.2.3.4", internal=False), "the film's try is not open to the web")
+check("error" in sc.route("/showcase/demo", "wallet=nobody", internal=True), "an unknown wallet is refused")
+check(sc.route("/showcase/demo", "wallet=piggy", internal=True).get("queued"), "a film's try is queued")
+check(sc.route("/showcase/demo", "wallet=piggy", internal=True).get("queued"), "asked twice before it went out: still the one try")
+n0, r0 = len(node.sent), len(refused)
+asyncio.run(run(sc, node, clock, clock() + 120))
+demo = node.sent[n0:]
+check(len(demo) == 1 and demo[0]["sender_pubkey"] == sc.pk["piggy"], "the film's try goes out within two minutes, once")
+check(len(refused) == r0 + 1 and "filmed for a video" in refused[-1]["reason"] and refused[-1]["reason"].startswith("o5 = 0"),
+      "its refusal reaches the HUD's feed as the wallet's own rule, said to be our test")
+check(sc.w("piggy")["last"].get("demo") and sc.demand is None, "/showcase shows it as the last try, marked demo")
+check("error" in sc.route("/showcase/demo", "wallet=piggy", internal=True), "the next film's try only after ten minutes")
+asyncio.run(run(sc, node, clock, clock() + 700))
+check(sc.route("/showcase/demo", "wallet=feeding", internal=True).get("queued"), "after ten minutes another wallet may be filmed")
+asyncio.run(run(sc, node, clock, clock() + 120))
+check(sc.w("feeding").get("tried") == DAY.isoformat(), "a film's try does not touch the day's own try")
+
 # a testnet restart: the node forgets everything, the relay calls recheck(); the rules come back, the next day's tries follow
 node.clauses.clear()
 node.seq.clear()
@@ -152,7 +170,7 @@ sc.recheck()
 asyncio.run(run(sc, node, clock, cruise.berlin_t(DAY + dt.timedelta(days=1), 10)))
 check(len([t for t in node.sent if "0" in t.get("operations", {})]) == 6, "after a restart the three rules are set again")
 asyncio.run(run(sc, node, clock, cruise.berlin_t(DAY + dt.timedelta(days=1), 20)))
-check(len(refused) == 6, "and the next day's three tries are refused again")
+check(len([r for r in refused if "filmed" not in r["reason"]]) == 6, "and the next day's three tries are refused again")
 
 # state across a relay restart: the same keys, the same day's tries remembered
 sc2 = showcase.Showcase(keys_path=os.path.join(tmp, "k"), state_path=os.path.join(tmp, "s.json"), clock=clock, enabled=True)
