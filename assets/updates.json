@@ -3073,5 +3073,10 @@
     "on": "2026-11-15",
     "link": "/rabbit/",
     "html": "White Rabbit Key: every wallet that sent a real transaction on Tau Net testnet in the last day now walks on the island by itself. Hover one to see it is a real wallet, click it for what the chain says about it: its rules, Agorzilla meals, votes, No Memo chapters, island elections, read as traits like night owl or rule writer, and it carries what it earned. Your own test wallet can choose its look with one transaction."
+  },
+  {
+    "tag": "Chinese",
+    "on": "2026-11-15",
+    "html": "Chinese: green and red mean the same as everywhere again. Green is live, OK and accepted, red is offline, an error or a refusal. Only where money moves does the Chinese market custom apply: a balance that rises shows red, one that falls shows green (Explorer, account pages). Badges with ?lang=zh stay green when live."
   }
 ]
