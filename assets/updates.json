@@ -3157,6 +3157,12 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-16",
     "link": "/rabbit/",
+    "html": "White Rabbit Key: islanders propose rules to each other. Click another islander and propose a personal rule to its wallet: a most per payment, or “above this amount, I co-sign”. Rules proposed to your wallet appear under ✉ at the top of the island, in plain words and in Tau; you accept or decline, and only your own wallet can take a rule (accepting is a transaction this browser signs, and it replaces the rule you hold now). A rule only says yes or no to its own wallet’s payments; it never moves money. You can also propose to any wallet by its address. This is Tau Net’s own rule sharing, the same offers the wallet page shows under Activity."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/",
     "html": "White Rabbit Key: when an islander’s wallet writes in the troll box (on the HUD or in The Coconut Wire on the island), the message pops up as a speech bubble over that islander’s head: right away for a few seconds, then now and then for a moment, at the same moments for everyone on the island. Only the latest message that is still in the troll box shows; a hidden one or one older than a day is gone from over the head too. Your browser signs once a day that the wallet is yours."
   }
 ]

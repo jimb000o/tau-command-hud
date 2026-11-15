@@ -359,6 +359,26 @@ html.rk-full #cvFull { border-color: var(--ok); }
 .wk-list { max-height: none; }
 .wk-row { display: grid; grid-template-columns: 26px auto 1fr; gap: 8px; align-items: center; width: 100%; min-height: 34px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); background: rgba(255,255,255,.03); color: var(--text); font: 12px var(--mono); text-align: left; cursor: pointer; }
 .wk-row:hover, .wk-row:focus-visible { border-color: var(--ok); }
+/* rules between wallets (offers.js) */
+.chip.offers { cursor: pointer; border-color: rgba(57,255,138,.55); color: #b9ffd6; }
+.of-opts { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0; }
+.of-k, .of-n { min-height: 36px; padding: 4px 12px; border-radius: 10px; border: 1px solid var(--hair); background: rgba(255,255,255,.04); color: var(--text); font: 600 12.5px var(--display); cursor: pointer; }
+.of-k.on, .of-n.on { outline: 2px solid var(--ok); outline-offset: 1px; color: #fff; }
+.of-says { margin: 2px 0; font: 500 13.5px/1.45 var(--display); color: #fff; }
+.of-tau summary { cursor: pointer; color: var(--dim); font-size: 11.5px; }
+.of-tau code { display: block; margin-top: 4px; padding: 6px 8px; border-radius: 8px; background: rgba(0,0,0,.35); color: #b9ffd6; font: 11px/1.45 var(--mono); white-space: pre-wrap; word-break: break-all; }
+.of-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.of-row { padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.03); display: grid; gap: 4px; }
+.of-row .cv-who { margin: 0; }
+.of-acts, .of-sure { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 4px; }
+.of-acts[hidden], .of-sure[hidden] { display: none; }
+.of-sure > span { width: 100%; color: var(--amber); font-size: 12px; }
+.of-h { display: block; color: var(--dim); font-size: 11.5px; margin: 6px 0 3px; }
+.of-out li { font-size: 12px; }
+.of-anyrow { display: flex; gap: 6px; }
+.of-addr { flex: 1 1 auto; min-width: 0; min-height: 36px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--hair); background: rgba(0,0,0,.3); color: var(--text); font: 11px var(--mono); }
+.of-msg:empty { display: none; }
+@media (pointer: coarse) { .of-k, .of-n, .of-addr { min-height: 44px; } }
 .wk-row .wk-face { border: 0; background: none; }
 .wk-row span:last-child { color: var(--dim); font-family: var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wk-pickrow { display: flex; gap: 14px; align-items: flex-start; margin: 4px 0; }
@@ -622,6 +642,7 @@ html.rk-full .wire { left: max(8px, env(safe-area-inset-left, 0px)); bottom: cal
       <button class="chip isle" id="cvIsle" type="button" hidden>The island today</button>
       <button class="chip isle chain" id="cvChainChip" type="button" hidden>on chain</button>
       <button class="chip bell" id="cvBell" type="button" hidden title="At eight o’clock German time Tobias rings the pier bell. Ring back within two minutes: a real transaction, and one more move today.">🔔 The evening bell at eight</button>
+      <button class="chip offers" id="cvOffers" type="button" hidden title="Rules other wallets proposed to yours: read them, accept or decline"><span aria-hidden="true">✉</span><span class="lb">1 rule for you</span></button>
       <button class="chip ship" id="cvShip" type="button" hidden title="A cruise ship with simulated passengers: what they do ashore is real test transactions">🛳</button>
       <button class="chip opt" id="cvHelp" type="button">How it works</button>
       <button class="chip" id="cvSound" type="button" aria-pressed="false">♪ Tap for sound</button>
@@ -650,5 +671,6 @@ html.rk-full .wire { left: max(8px, env(safe-area-inset-left, 0px)); bottom: cal
 <script src="islander.js"></script>
 <script src="walkers.js"></script>
 <script src="studio.js"></script>
+<script src="offers.js"></script>
 </body>
 </html>

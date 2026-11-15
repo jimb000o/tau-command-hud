@@ -371,7 +371,7 @@
           g.fillStyle = "#39ff8a"; g.beginPath(); const ay = top - 16 - Math.abs(Math.sin(now * 0.006)) * 5; g.moveTo(w.x - 4, ay - 6); g.lineTo(w.x + 4, ay - 6); g.lineTo(w.x, ay); g.fill();
         }
         const mine = W.bubble && W.bubble.a === w.a && now < W.bubble.until;
-        const label = w.me ? T("you") + " · " + w.name : mine && !talk ? (heldNow(w) ? T("My rule said no") : sit ? T("The chain is resting") : w.name + " · " + title(w.d.traits[0])) : null;
+        const label = w.me ? (OF() && OF().count() ? "✉ " : "") + T("you") + " · " + w.name : mine && !talk ? (heldNow(w) ? T("My rule said no") : sit ? T("The chain is resting") : w.name + " · " + title(w.d.traits[0])) : null;
         if (label) bubble(g, w.x, top - 4, label, w.me);
       }]);
       if (talk > 0) items.push([1e6 + w.y, () => speech(g, w.x, w.y - 31 * 1.25 - (w.me ? 15 : 4), W.said.get(w.a).text, talk)]);   // over everything
@@ -415,7 +415,7 @@
     const what = [a.length ? F("uses {x}", { x: a.join(", ") }) : "", rule ? T("has its own rule") : ""].filter(Boolean).join(" · ");
     return (w.me ? T("You") + " · " + w.name : w.name + " · " + title(w.d.traits[0])) + " · " + (w.d.idni ? T("IDNI test account") : what || T("plain payments, no Tau HUD app yet")) + " · " + F("last transaction {x}", { x: ago(w.d.last) }) + " · " + T("click for its story");
   }
-  const G = () => window.COVE_GAME;
+  const G = () => window.COVE_GAME, OF = () => window.ISLE_OFFERS;   // offers.js: rules proposed between wallets
   const short = a => a.slice(0, 6) + "…" + a.slice(-4);
   const day = s => { try { return new Intl.DateTimeFormat(window.TauI18n && TauI18n.lang === "zh" ? "zh-CN" : window.TauI18n && TauI18n.lang === "ja" ? "ja-JP" : "en-GB", { day: "numeric", month: "short", timeZone: "Europe/Berlin" }).format(new Date(s * 1000)); } catch (e) { return ""; } };
   /* a portrait: the face (islander.js bust) from 44 px up, the whole small figure below that */
@@ -436,7 +436,11 @@
       const who = el("div", { class: "cv-who" }, portrait(lk, w.d.traits, w.d.idni, size),
         el("div", null, el("b", { text: (me ? T("You") + " · " : "") + (w.name || nameOf(id)) }), el("small", { text: (w.d.traits || []).length ? title(w.d.traits[0]) : "" }), el("small", { translate: "no", text: short(id) })));
       const line = el("p", { class: "cv-line", text: kind(w.d) + (w.d.last ? " " + F("Last transaction {x}.", { x: ago(w.d.last) }) : "") }), list = el("ul", { class: "cv-help" }, el("li", { text: T("Reading the chain…") }));
+      const of = OF(), theirs = of && !me ? of.from(id).length : 0, mineN = of && me ? of.count() : 0;
       const acts = el("div", { class: "cv-acts" },
+        of && !me && !w.d.idni && of.can(id) ? game.btn(T("Propose a rule"), () => of.propose(id), { go: true }) : null,
+        theirs ? game.btn(theirs === 1 ? T("Read the rule it proposed to you") : F("Read the {n} rules it proposed to you", { n: theirs }), () => of.inbox()) : null,
+        me && of ? game.btn(mineN ? F("Rules proposed to you ({n})", { n: mineN }) : T("Rules proposed to you"), () => of.inbox()) : null,
         game.btn(T("In the Explorer"), () => window.open("/explorer/?a=" + id, "_blank", "noopener")),
         me ? game.btn(T("Islander studio"), () => choose()) : null,
         game.btn(T("Back to the island"), () => game.closeCard(), { go: true }));
@@ -498,7 +502,7 @@
           : restarted() ? el("p", { class: "wk-amber", text: T("The testnet started over in the last half hour. The islanders keep their looks: the relay remembers what the old chain said.") }) : null,
         el("ul", { class: "cv-help wk-list" }, rows.map(d => el("li", null, el("button", { type: "button", class: "wk-row", onclick: () => open(d.a) }, portrait(d.a === me ? myParts(d, me) : partsOf(d), d.traits, d.idni, 26), el("span", { translate: "no", text: nameOf(d.a) }), el("span", { text: (d.traits || []).slice(0, 2).map(title).join(" · ") }))))),
         el("p", { class: "wk-note", text: T("Our own server's wallets never walk here: the cruise passengers and the island's bot are made up. IDNI's test accounts walk in grey.") }),
-        el("div", { class: "cv-acts" }, game.btn(T("Islander studio"), () => choose()), me && W.by.has(me) ? game.btn(T("Find me"), () => { game.closeCard(); find(); }) : null, game.btn(T("Back to the island"), () => game.closeCard(), { go: true })));
+        el("div", { class: "cv-acts" }, game.btn(T("Islander studio"), () => choose()), OF() ? game.btn(T("Rules between wallets"), () => OF().inbox()) : null, me && W.by.has(me) ? game.btn(T("Find me"), () => { game.closeCard(); find(); }) : null, game.btn(T("Back to the island"), () => game.closeCard(), { go: true })));
     });
   }
   /* ---------- your own islander ---------- */
@@ -515,7 +519,11 @@
   }
   function choose() { if (window.ISLE_STUDIO) ISLE_STUDIO.open(); }
 
-  window.ISLE_WALKERS = { figure, look, gear, tip, open, board, choose, find, me: mine, wear, cardOf, portrait, title, nameOf, relay: () => ({ RELAY, WS, WKEY, BOX }), traits: TRAITS, get demo() { return W.demo; },
+  /* for offers.js: a wallet's face and name by its address, a ring when it sent something */
+  const faceOf = (a, size) => { const w = W.by.get(a), d = w ? w.d : (W.all || []).find(x => x.a === a) || { a, traits: [], look: null }; return portrait(w && w.lk ? w.lk : a === myPk() ? myParts(d.pt ? d : null, a) : partsOf({ ...d, a }), d.traits || [], !!d.idni, size); };
+  const whoOf = a => { const d = (W.by.get(a) || {}).d || (W.all || []).find(x => x.a === a); return nameOf(a) + (d && d.traits && d.traits.length ? " · " + title(d.traits[0]) : ""); };
+  const ping = a => { const w = W.by.get(a); if (w) w.ping = performance.now(); };
+  window.ISLE_WALKERS = { faceOf, whoOf, ping, figure, look, gear, tip, open, board, choose, find, me: mine, wear, cardOf, portrait, title, nameOf, relay: () => ({ RELAY, WS, WKEY, BOX }), traits: TRAITS, get demo() { return W.demo; },
     goTo, remote, said: m => said(m, m && W.said.get(m.w), true), unsaid, mine: () => !!(mineW() && ways()), at: a => { const w = W.by.get(a); return w ? [w.x, w.y] : null; } };
   poll(); setInterval(poll, 60000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
