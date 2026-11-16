@@ -3188,5 +3188,11 @@
     "on": "2026-11-16",
     "link": "/rabbit/?islander=1",
     "html": "White Rabbit Key: the islander studio now has its own button, “Your islander”, in the island’s top bar, next to The Book. Before, it opened only from your own islander’s card or the wallet page."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/?islander=1",
+    "html": "Islander studio: choosing a look now costs about thirty times less (two small payments per part, 16 parts ≈ 850 test AGRS instead of ≈ 26,000). The button says each step: signing, sent, waiting for a block (the node's own answer), then a little confetti when a block holds it, with “Show me on the island”. Everything grows on large screens, and on phones the button stays in view."
   }
 ]

@@ -64,7 +64,8 @@ log = logging.getLogger("relay.walkers")
 WINDOW = 86400
 SHOW, SHOW_IDNI = 60, 6
 LOOK, LOOKS = 1200, 384          # amount LOOK + code to BOX chooses a look; code = figure * 64 + hair * 8 + shirt
-PART, STRIDE = 1600, 32          # amount PART + part * STRIDE + choice to BOX chooses one part of the islander
+PART, STRIDE = 1600, 32          # amount PART + part * STRIDE + choice to BOX chooses one part of the islander (16.11: older, dear)
+MARK, PICK = 1, 41               # the cheap way since 16.11: MARK + part, then PICK + choice, two small payments to BOX in one transaction
 NS = (5, 10, 16, 10, 8, 16, 8, 5, 6, 10, 8, 8, 8, 8, 8, 10, 10)   # choices per part (rabbit/islander.js SLOTS)
 FACE = (1, 2, 3, 8, 9, 10, 11, 12, 13, 14, 15)
 EARN = (None, "lawmaker", "hacker", "feeder", "veteran", "guardian", "winner", "voter", "hearts", "catfriend")
@@ -217,6 +218,7 @@ class Walkers:
             r["rt"] = text.strip()
         fed = box = ask = deja = rabbit_line = ballot = False
         chose = False
+        part = None   # the part the last small MARK payment named; the next PICK payment chooses it
         for op in ops.get("1") or []:
             if not (isinstance(op, (list, tuple)) and len(op) >= 3) or str(op[0]).lower() != s:
                 continue
@@ -243,6 +245,15 @@ class Walkers:
             elif to in RABBIT_BOXES:
                 ballot = True
             elif to == BOX:
+                if MARK <= amount < MARK + len(NS):
+                    part = amount - MARK
+                    continue
+                if PICK <= amount < PICK + max(NS) and part is not None:
+                    if amount - PICK < NS[part]:
+                        r["pt"][part] = amount - PICK
+                        chose = True
+                    part = None
+                    continue
                 if LOOK <= amount < LOOK + LOOKS:
                     r["look"] = amount - LOOK
                     for i, c in look_parts(amount - LOOK).items():
@@ -385,7 +396,7 @@ class Walkers:
                 row["held"] = r["held"]
             out.append(row)
         return {"window": WINDOW, "total": len(rest), "idni": len(idni), "walkers": out,
-                "look": {"box": BOX, "base": LOOK, "count": LOOKS, "part": PART, "stride": STRIDE, "n": list(NS)},
+                "look": {"box": BOX, "base": LOOK, "count": LOOKS, "part": PART, "stride": STRIDE, "mark": MARK, "pick": PICK, "n": list(NS)},
                 "chain": {"tip": self.tip[0], "height": self.tip[1], "restart": self.restart}, "generated_at": round(now)}
 
     def card(self, pk: str, now: float | None = None, rabbit: dict | None = None, nomemo: dict | None = None,
