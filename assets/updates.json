@@ -3184,6 +3184,12 @@
     "html": "Newspaper: every Monday edition of The Daily Consensus is now a new episode from start to finish. A paragraph, an article or a café answer that an earlier edition already printed word for word is not printed again; the week’s own numbers take its place, or the story says since which edition nothing has changed."
   },
   {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/?islander=1",
+    "html": "White Rabbit Key: the islander studio now has its own button, “Your islander”, in the island’s top bar, next to The Book. Before, it opened only from your own islander’s card or the wallet page."
+  },
+  {
     "tag": "Chain core",
     "on": "2026-11-16",
     "link": "/",

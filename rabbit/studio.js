@@ -265,3 +265,6 @@
 
   window.ISLE_STUDIO = { open, close, pass };
 })();
+
+/* the "Your islander" chip in the top bar opens the studio (so nobody has to find it on a card) */
+(function () { const b = document.getElementById("cvIslander"); if (b) b.addEventListener("click", () => { if (window.ISLE_WALKERS) ISLE_WALKERS.choose(); }); })();
