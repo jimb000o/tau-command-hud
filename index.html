@@ -2661,12 +2661,20 @@ function ruleSentence(p) {
   if (p.kind === "custom") return p.name === "Balance floor" ? `Rule: ${p.label}.` : "Rule: its own rule, written in Tau.";
   return `Rule: ${nbRule(p)}.`;
 }
+/* a rule another wallet offered and this one accepted (rule sharing). On the chain it is then the wallet's own rule like any
+   other (one o5 clause per account); only how it got there differs, so we read it from the accepted offers we know */
+function ruleShare(a, p) {
+  if (p.sharedBy) return p.sharedBy;
+  const h = String(a || "").toLowerCase(), o = S.offers.find(o => o.status === "accepted" && String(o.to || "").toLowerCase() === h && o.policy && o.policy.kind + o.policy.label === p.kind + p.label);
+  return o ? String(o.from || "").toLowerCase() : null;
+}
 function ruleNote(p) {   // a floor reads the balance of the last block (i2), not the balance after earlier payments in the same block
   return p.floor ? `Note: it checks the last block’s balance, so several payments in one block can still go below ${fmt(p.floor)} AGRS.` : "";
 }
 function ruleHover(a, p) {
   const nm = nbWho(a);
-  return [nm.charAt(0).toUpperCase() + nm.slice(1), ruleFrom(a), ruleSentence(p), ruleNote(p), TECH() ? `Address ${short(a)}` : ""].filter(Boolean).join("\n") + "\n";
+  const sh = ruleShare(a, p), by = sh && nbWho(sh);
+  return [nm.charAt(0).toUpperCase() + nm.slice(1), ruleFrom(a), ruleSentence(p), sh ? (by && by !== "a wallet" ? `Shared: offered by ${by}, accepted here.` : `Shared: offered by wallet ${short(sh)}, accepted here.`) : "", ruleNote(p), TECH() ? `Address ${short(a)}` : "", S.mode === "live" && !isSim() ? "Click to open its rules." : ""].filter(Boolean).join("\n") + "\n";
 }
 const proposalMeaning = u => ({
   fee: `Every transaction would cost ${u.value} AGRS instead of ${S.fee}; the fee rule (o9) in the consensus spec changes.`,
@@ -3882,7 +3890,7 @@ function liveMessage(ev) {
         else if (t.type === "rule_offer_accept" || t.type === "rule_offer_reject") {
           const yes = t.type === "rule_offer_accept", o = S.offers.find(x => x.id === t.offerId); t.offer = o;
           if (yes) t.policy = o ? o.policy : t.ruleText ? policyFromText(t.ruleText) : null;
-          if (fresh) { if (o && o.status === "offered") { o.status = yes ? "accepted" : "rejected"; o.settledAt = b.n; o.reason = t.reason || ""; ruleWork = true; } if (yes && t.policy) { S.clauses.set(t.sender, t.policy); S.rulesLastBlock = b.n; ruleWork = true; log(`Clause registry: ${short(t.sender)} now runs “${t.policy.name}” · composite o5 rebuilt`, "warn"); } }
+          if (fresh) { if (o && o.status === "offered") { o.status = yes ? "accepted" : "rejected"; o.settledAt = b.n; o.reason = t.reason || ""; ruleWork = true; } if (yes && t.policy) { if (o) t.policy.sharedBy = String(o.from || "").toLowerCase(); S.clauses.set(t.sender, t.policy); S.rulesLastBlock = b.n; ruleWork = true; log(`Clause registry: ${short(t.sender)} now runs “${t.policy.name}” · composite o5 rebuilt`, "warn"); } }
           t.note = `${short(t.sender)} ${yes ? "accepts" : "declines"} ${o ? `“${o.policy.name}” from ${short(o.from)}` : "a rule offer"}${t.reason ? " · " + t.reason : ""}`;
         }
         else if (t.type === "retract_transfer") t.note = `${short(t.sender)} pulls back transfer ${short(t.retractId)} before its release point`;
@@ -4512,7 +4520,7 @@ function draw(tm) {
 
   // user-rule ring: every account that runs its own Tau policy
   const R = [...S.clauses.values()], rr = C * .56;
-  ring(rr, 14, () => vt(`Rule ring: wallets with their own money rule, ${R.length ? R.length + " now" : "none now"}.\nEach rule binds only the wallet that set it, never anyone else.\nWhoever holds a wallet’s key can also change its rule.`,
+  ring(rr, 14, () => vt(`Rule ring: wallets with their own money rule, ${R.length ? R.length + " now" : "none now"}.\nEach rule binds only the wallet that set it, never anyone else.\nWhoever holds a wallet’s key can also change its rule.\nSolid halo: the wallet set its rule itself. Dashed halo: another wallet offered the rule and this one accepted it.`,
     `Rule ring: senders with their own o5 clause, ${R.length ? R.length + " now" : "none now"}.\nEach clause binds only its own sender; every account may hold one.`));
   const RA = [...S.clauses.keys()];
   const rt = spinT("rule", C);
@@ -4521,11 +4529,12 @@ function draw(tm) {
     const st = ruleState(p), held = st.hot && st.refused, col = st.hot ? (held ? "222,222,230" : "57,255,138") : "170,170,178";   // a refusal leaves the account untouched: it stays lit, its shield takes the red
     focusAt(RA[i], x, y, 22);
     hit(x, y, 24, () => verdict("ok", st.hot ? (st.refused ? "Normal: its rule just refused a transfer; the shield held." : "Normal: it just let a transfer pass.") : p.since != null ? `Normal: in force since block #${fmt(p.since)}.` : "Normal: in force.")
-      + ruleHover(RA[i], p));
+      + ruleHover(RA[i], p), S.mode === "live" && !isSim() ? () => `account/?a=${encodeURIComponent(RA[i])}#rules` : null);
     dotShadow(x, y, 9, C);
     cx.beginPath(); cx.arc(x, y, 7, 0, Math.PI * 2);
     cx.fillStyle = `rgba(${col},.9)`; cx.shadowColor = `rgb(${col})`; cx.shadowBlur = st.hot ? 18 : 10; cx.fill();
-    cx.shadowBlur = 0; cx.beginPath(); cx.arc(x, y, 12, 0, Math.PI * 2); cx.strokeStyle = `rgba(${col},.45)`; cx.lineWidth = 1.5; cx.stroke();
+    const shared = !!ruleShare(RA[i], p);   // a shared rule: a dashed, slightly wider halo; a rule the wallet set itself: a solid one
+    cx.shadowBlur = 0; cx.save(); if (shared) cx.setLineDash([3, 3]); cx.beginPath(); cx.arc(x, y, shared ? 13 : 12, 0, Math.PI * 2); cx.strokeStyle = `rgba(${col},${shared ? .8 : .45})`; cx.lineWidth = shared ? 2 : 1.5; cx.stroke(); cx.restore();
     if (held) ruleShield(x, y, a, st, C);
     if (SPOT && SPOT.from && SPOT.from === String(RA[i]).toLowerCase()) { cx.beginPath(); cx.arc(x, y, 20, 0, Math.PI * 2); cx.strokeStyle = "rgba(255,255,255,.9)"; cx.lineWidth = 2.5; cx.stroke(); }
     else { cx.shadowBlur = 0; cx.strokeStyle = `rgba(${col},${st.hot ? .25 + st.k * .65 : .18})`; cx.lineWidth = st.hot ? 2.5 : 1.5; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(0, 0); cx.stroke(); }
