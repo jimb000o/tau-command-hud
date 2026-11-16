@@ -337,22 +337,27 @@
     }
     w.x += dx / d * Math.min(v, d); w.y += dy / d * Math.min(v, d); w.face = dx < 0 ? -1 : 1; w.ph += dt * 0.012;
   }
-  function boardSpot() { const p = SC.places.pier || SC.places.market || { x: 1000, y: 700 }; return [p.x - 95, p.y - 6]; }
+  /* the notice board stands on the sand below the bar, in front of the pier: lower than the bar's string of lights and
+     torches, so its number does not get lost among them (?board=dx,dy moves it by hand for a check) */
+  const BOARD_AT = (() => { const m = (Q.get("board") || "").match(/^(-?\d+),(-?\d+)$/); return m ? [+m[1], +m[2]] : [-55, 50]; })();
+  function boardSpot() { const p = SC.places.pier || SC.places.market || { x: 1000, y: 700 }; return [p.x + BOARD_AT[0], p.y + BOARD_AT[1]]; }
+  const BS = 1.2;   // a little larger than the islanders' own size, so the number reads at a glance
   function drawBoard(g, x, y) {   // the notice board: how many wallets walked the island today
-    g.save(); g.translate(x, y); g.strokeStyle = INK; g.lineWidth = 1.4; g.fillStyle = "#8b6a48";
+    g.save(); g.translate(x, y); g.scale(BS, BS); g.strokeStyle = INK; g.lineWidth = 1.4; g.fillStyle = "#8b6a48";
     g.fillRect(-1.6, -22, 3.2, 22); g.strokeRect(-1.6, -22, 3.2, 22);
-    g.fillStyle = "#f3e7c9"; g.fillRect(-22, -44, 44, 24); g.strokeRect(-22, -44, 44, 24);
+    g.fillStyle = "#3a2a1e"; g.fillRect(-24.5, -46.5, 49, 29);   // a dark wooden frame: the cream panel stands out from any background
+    g.fillStyle = "#fff6dc"; g.fillRect(-22, -44, 44, 24); g.lineWidth = 1; g.strokeRect(-22, -44, 44, 24);
     g.fillStyle = "#39ff8a"; g.shadowColor = "#39ff8a"; g.shadowBlur = 4; g.beginPath(); g.arc(-15, -38.5, 1.8, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0;
     IS.figure(g, -11, -23.5, 0.62, IS.parts("00"), { idni: true });
-    g.fillStyle = INK; g.font = "800 13px Sora, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(W.total), 6, -31.5);
+    g.fillStyle = "#09090a"; g.font = "800 15px Sora, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(W.total), 6, -31.5);
     if (paused() || restarted()) {   // amber, never red: a pause or a fresh start is the testnet's normal life
       g.fillStyle = "#ffb13b"; g.shadowColor = "#ffb13b"; g.shadowBlur = 5; g.beginPath(); g.arc(17, -41, 3.2, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0;
       g.fillStyle = "#09090a"; g.font = "800 5px Sora, sans-serif"; g.fillText("!", 17, -40.8);
     }
-    g.restore(); W.board = [x - 23, y - 45, 46, 45];
+    g.restore(); W.board = [x - 25 * BS, y - 47 * BS, 50 * BS, 47 * BS];
   }
   SC.extra((g, t, dt, items, light) => {
-    if (!W.list.length) { W.board = null; return; }
+    if (!W.list.length) { W.board = null; if (SC.lamp) SC.lamp("board", null); return; }
     const now = performance.now();
     if (now > W.nextBubble) { const held = W.list.filter(heldNow), c = held.length && Math.random() < 0.6 ? held[Math.floor(Math.random() * held.length)] : W.list[Math.floor(Math.random() * W.list.length)]; W.bubble = { a: c.a, until: now + 3600 }; W.nextBubble = now + 6500 + Math.random() * 5000; }
     for (const w of W.list) {
@@ -377,7 +382,8 @@
       }]);
       if (talk > 0) items.push([1e6 + w.y, () => speech(g, w.x, w.y - 31 * 1.25 - (w.me ? 15 : 4), W.said.get(w.a).text, talk)]);   // over everything
     }
-    if (W.total) { const [bx, by] = boardSpot(); items.push([by, () => drawBoard(g, bx, by)]); }
+    if (W.total) { const [bx, by] = boardSpot(); items.push([by, () => drawBoard(g, bx, by)]); if (SC.lamp) SC.lamp("board", [bx, by - 38 * BS, 34]); }
+    else if (SC.lamp) SC.lamp("board", null);
     const mk = STEER.mark, ma = mk ? (now - mk.t0) / 1400 : 1;   // where your islander is going: a ring, for a moment
     if (ma < 1) items.push([mk.y - 1, () => { g.strokeStyle = `rgba(57,255,138,${(1 - ma) * 0.9})`; g.lineWidth = 1.4; g.beginPath(); g.ellipse(mk.x, mk.y, 5 + ma * 9, 1.8 + ma * 3, 0, 0, Math.PI * 2); g.stroke(); }]);
     else STEER.mark = null;
