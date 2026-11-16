@@ -275,5 +275,18 @@ cf = gazette.cafe(week(end=R["start"] + 12 * 3600), [], [], 4, e2["banner"], e2[
 check("played twenty games against Claude Opus 5.5. It won thirteen, lost two, drew five." in cf["prof"]["greet"]["en"] and "The last game went to Opus" in json.dumps(cf["prof"]), "the final page's result is known without the records")
 check(w.state["chess"]["engine"] == 17 and calls == [1] and gazette.chess_round(R["start"] + 12 * 3600, w.state["chess"])["done"], "the result is read once, and the café is told again")
 
+# ---- Around Town: the games' week from the site's update log ----
+UPD = [{"tag": "v1", "on": "2026-10-26", "html": "First HUD."},
+       {"on": "2026-11-04", "html": "White Rabbit Key: the captains now walk the decks of their ships, each with a portrait."},
+       {"on": "2026-11-06", "html": "White Rabbit Key: wallets walk the island by themselves; hover one to see its rules."},
+       {"on": "2026-11-07", "html": "No Memo: a new heist, Four eyes, two keys. Put a rule on your own wallet that wants a second signature."},
+       {"on": "2026-10-20", "html": "Agorzilla: an old change from before the week."}]
+ZH = gazette.site_dict('  "No Memo: a new heist, Four eyes, two keys. Put a rule on your own wallet that wants a second signature.": "No Memo：新劫案“四只眼”。给你自己的钱包加一条规则。",\n')
+tw = gazette.town(UPD, ZH, {}, END - 7 * 86400, END)
+check([x["game"] for x in tw] == ["rabbit", "nomemo"], "only games with a change this week get a dispatch, in a fixed order")
+check(tw[0]["n"] == 2 and tw[0]["h"]["en"].startswith("Wallets walk the island") and "White Rabbit Key:" not in json.dumps(tw), "the newest change of the week leads, without the log's game tag")
+check(tw[1]["h"]["zh"].startswith("新劫案") and tw[1]["h"]["ja"] == tw[1]["h"]["en"] and tw[1]["link"] == "/nomemo/", "a site translation is used; a missing one stays English")
+check(gazette.town(None, None, None, 0, END) == [] and gazette.town([{"on": "x"}], {}, {}, 0, END) == [], "no log, no dispatches")
+
 print("\n" + ("all ok" if not failed else f"{failed} FAILED"))
 sys.exit(1 if failed else 0)

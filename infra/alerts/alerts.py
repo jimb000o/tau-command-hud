@@ -3529,6 +3529,16 @@ class Watcher:
                 return  # one planned post per check
 
     # ---------- changes to Tau HUD itself ----------
+    def site_text(self, path: str) -> str | None:
+        """A text file of the site (a dictionary for Around Town), or None."""
+        try:
+            req = urllib.request.Request(SITE + path, headers={"Cache-Control": "no-cache", "User-Agent": "tauhud-alerts"})
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                return resp.read().decode("utf-8", "replace")
+        except Exception as exc:
+            log.warning("site: cannot read %s (%r)", path, exc)
+            return None
+
     def fetch_updates(self) -> list | None:
         try:
             req = urllib.request.Request(SITE_UPDATES_URL, headers={"Cache-Control": "no-cache", "User-Agent": "tauhud-alerts"})
@@ -3844,7 +3854,14 @@ class Watcher:
                     gazette.printed_lines(json.load(f), printed)
             except (OSError, ValueError, KeyError, TypeError):
                 pass
-        e = gazette.edition(r, props, days, no, printed_at, chess, seen, printed)
+        # Around Town: the week of our own games, from the site's update log and its dictionaries (gazette.town)
+        try:
+            around = gazette.town(self.fetch_updates(), gazette.site_dict(self.site_text("/assets/i18n/zh/hud.js")),
+                                  gazette.site_dict(self.site_text("/assets/i18n/ja/hud.js")), r["start"], r["end"])
+        except Exception as exc:  # the paper goes out without it
+            log.warning("gazette: around town skipped (%r)", exc)
+            around = []
+        e = gazette.edition(r, props, days, no, printed_at, chess, seen, printed, around)
         e["chess"] = chess and {k: chess.get(k) for k in ("date", "played")}
         e["drops"] = self.drops(printed_at)
         prev = next((x for x in index if x.get("date") != date), None)
