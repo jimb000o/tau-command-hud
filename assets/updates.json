@@ -3223,5 +3223,11 @@
     "on": "2026-11-16",
     "link": "/crew/",
     "html": "Top bar: the crew and online hovers are shorter. Crew says what a membership costs, that it cancels any time and that only the count shows; online keeps its privacy points (one person counts once, no cookies, hashed daily, memory only) in two lines."
+  },
+  {
+    "tag": "HUD",
+    "on": "2026-11-16",
+    "link": "/cruise/",
+    "html": "Top bar: the stress test hover is shorter. It says which ship docks at White Rabbit Key, that her simulated passengers send real test transactions at a capped pace, when she comes in your time, the last call's result and where a click leads."
   }
 ]
