@@ -3190,6 +3190,12 @@
     "html": "White Rabbit Key: the islander studio now has its own button, “Your islander”, in the island’s top bar, next to The Book. Before, it opened only from your own islander’s card or the wallet page."
   },
   {
+    "tag": "Cruise logbook",
+    "on": "2026-11-16",
+    "link": "/cruise/",
+    "html": "Cruise logbook: our blog articles about past cruises are now on the logbook itself. The newest ones stand next to the logbook’s title, and a visit with its own article carries a small ✎; choose that visit and “Read what we learned on this visit” leads straight to it."
+  },
+  {
     "tag": "Newspaper",
     "on": "2026-11-16",
     "html": "Newspaper: The Daily Consensus gets an Around Town page. Each Monday it carries the week’s news from White Rabbit Key, No Memo and Agorzilla as short dispatches with pictures from the games, plus one small notice for the crew and one for the shop."
