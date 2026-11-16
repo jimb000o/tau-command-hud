@@ -33,7 +33,8 @@ class Plan(unittest.TestCase):
             return X.problems({**GOOD, **kw})
         self.assertEqual(probs(), [])
         self.assertTrue(any("hype" in w for w in probs(text="Excited to announce 🚀\n\nnew\n\n#TauNet")))
-        self.assertTrue(any("links" in w for w in probs(text="New\n\nhttps://tauhud.com\n\n#TauNet")))
+        self.assertEqual(probs(text="New\n\nhttps://tauhud.com\n\n#TauNet"), [])   # links welcome since 16 Nov 2026
+        self.assertTrue(any("link stays" in w for w in probs(text="x" * 250 + "\n\n#TauNet")))   # 250 + link 23 + tag > 280
         self.assertTrue(any("ends with" in w for w in probs(text="New\n\nsee it")))
         self.assertTrue(any("$AGRS" in w for w in probs(account="hud", text="New\n\nsee\n\n#TauNet $AGRS")))
         self.assertTrue(any("280" in w for w in probs(text="x" * 300 + "\n\n#TauNet")))
@@ -42,6 +43,36 @@ class Plan(unittest.TestCase):
         for claim in ("You cannot lose your test AGRS", "Risk-free", "A guaranteed result", "Completely safe", "Keys that cannot be stolen"):
             self.assertTrue(any("promise" in w for w in probs(text=claim + "\n\nmore\n\n#TauNet")), claim)
         self.assertTrue(any("twice" in w for w in X.specs(None, {"posts": [GOOD, GOOD]})[1]["problems"]))
+
+
+class AppLink(unittest.TestCase):
+    """Kilian, 16 Nov 2026: every feature post carries the link of its app; words shorter, the link never cut."""
+    def test_link_line_above_the_hashtag(self):
+        self.assertEqual(X.with_link(GOOD["text"], X.link_of(GOOD)),
+                         "Every wallet walks on the island now.\n\nClick one to read it from the chain.\n\n"
+                         "tauhud.com/rabbit/\n\n#TauNet")
+
+    def test_named_link_is_not_added_twice(self):
+        t = "Wish for one at agorzilla.com.\n\n#TauNet"
+        self.assertEqual(X.with_link(t, "https://agorzilla.com/"), t)
+
+    def test_own_link_field_and_account_default(self):
+        self.assertEqual(X.link_of({**GOOD, "link": "https://tauhud.com/nomemo/"}), "https://tauhud.com/nomemo/")
+        self.assertEqual(X.link_of({"account": "agorzilla", "film": None}), "https://agorzilla.com/")
+        self.assertEqual(X.shown("https://agorzilla.com/"), "agorzilla.com")
+        self.assertEqual(X.shown("https://tauhud.com/rabbit/"), "tauhud.com/rabbit/")
+
+    def test_link_counts_23(self):
+        self.assertEqual(X.x_len("at agorzilla.com."), 3 + 23 + 1)
+        self.assertEqual(X.x_len("https://tauhud.com/rabbit/"), 23)
+
+    def test_offer_shows_the_link(self):
+        d = {"drafts": {}, "sent": []}
+        told = []
+        X.step(T("2026-11-16T11:05:00+00:00"), X.specs(None, {"posts": [GOOD]}), d, film=lambda p: None,
+               cutter=lambda pid: ("/f/x.mp4", ""), teller=lambda msg, v: told.append(msg) or (True, ""))
+        self.assertIn("tauhud.com/rabbit/", told[0])
+        self.assertEqual(d["drafts"]["rabbit-walkers"]["link"], "https://tauhud.com/rabbit/")
 
 
 class Loop(unittest.TestCase):

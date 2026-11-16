@@ -6,8 +6,13 @@ assets/updates.json, or (Agorzilla, whose changes live in another repository, or
 assets/x-features.json {"posts": [...]}. Both read the same:
 
   {"id": "rabbit-walkers", "account": "hud" | "agorzilla", "from": "2026-11-16T11:00:00Z",
-   "text": "the post, at most 280, link-free, ends with #TauNet (no $AGRS cashtag on any account)",
-   "film": {"url": "https://tauhud.com/rabbit/", "seconds": 12, "settle": 3000, "steps": [...]}}
+   "text": "the post, ends with #TauNet (no $AGRS cashtag on any account)",
+   "film": {"url": "https://tauhud.com/rabbit/", "seconds": 12, "settle": 3000, "steps": [...]},
+   "link": "https://tauhud.com/rabbit/"   (optional; without it: the film's page)}
+
+The app's link goes into every post by itself (Kilian, 16 Nov 2026): as its own line above the hashtag, unless the words
+name it already. Words plus link stay within 280 (X counts a link as 23): too long is refused, so the words are made
+shorter, the link is never cut.
 
 What happens by itself (the xfeatures service, every 5 minutes):
   1  from "from" on (an updates.json entry without it: its day, 08:00 UTC) the post is a draft; its film is asked of the
@@ -113,9 +118,41 @@ def specs(updates: list | None, plan: dict | list | None) -> list[dict]:
     return res
 
 
+LINK_RE = re.compile(r"https?://[^\s]+|(?<![@\w.])(?:[a-z0-9-]+\.)+(?:com|net|org|io|app|ai|dev)\b(?:/[^\s]*)?", re.I)
+APP = {"hud": "https://tauhud.com/", "agorzilla": "https://agorzilla.com/"}   # when a post names no page at all
+
+
 def x_len(text: str) -> int:
-    """X counts a link as 23 and most emoji as 2; the plan's posts carry no links, so: characters, wide ones twice."""
-    return sum(2 if ord(c) > 0x2FFF else 1 for c in text)
+    """X counts every link (also a bare tauhud.com/…) as 23 and most emoji as 2; the rest one character each."""
+    n = 0
+    for part in LINK_RE.split(text):
+        n += sum(2 if ord(c) > 0x2FFF else 1 for c in part)
+    return n + 23 * len(LINK_RE.findall(text))
+
+
+def link_of(p: dict) -> str:
+    """The app this post is about: its own "link", else the page its film shows, else the account's site."""
+    for u in (p.get("link"), (p.get("film") or {}).get("url") if isinstance(p.get("film"), dict) else None):
+        if isinstance(u, str) and u.startswith("https://") and u != "https://x":
+            return u
+    return APP.get(p.get("account"), "https://tauhud.com/")
+
+
+def shown(link: str) -> str:
+    """How the link reads in the post: agorzilla.com, tauhud.com/rabbit/ (X links it all the same)."""
+    s = re.sub(r"^https?://(www\.)?", "", link.strip())
+    return s[:-1] if s.endswith("/") and s.count("/") == 1 else s
+
+
+def with_link(text: str, link: str) -> str:
+    """The words with the app's link: left alone when they name it already, else its own line above the hashtags."""
+    want = shown(link).rstrip("/").lower()
+    if want and want in text.lower():
+        return text
+    paras = text.strip().split("\n\n")
+    if len(paras) > 1 and all(w.startswith(("#", "$")) for w in paras[-1].split()):
+        return "\n\n".join(paras[:-1] + [shown(link), paras[-1]])
+    return text.strip() + "\n\n" + shown(link)
 
 
 def problems(p: dict) -> list[str]:
@@ -129,8 +166,9 @@ def problems(p: dict) -> list[str]:
     text = p.get("text")
     if not isinstance(text, str) or not text.strip():
         return out + ["no text"]
-    if x_len(text) > 280:
-        out.append(f"text: {x_len(text)} of 280")
+    full = with_link(text, link_of(p))
+    if x_len(full) > 280:
+        out.append(f"text: {x_len(full)} of 280 with the link {shown(link_of(p))} (shorter words; the link stays)")
     low = text.lower()
     for w in SLOP:
         if w in low:
@@ -138,8 +176,8 @@ def problems(p: dict) -> list[str]:
     for w in BOLD:
         if w in low:
             out.append(f"text: {w!r} is a safety promise we cannot make")
-    if re.search(r"https?://|\bwww\.", text):
-        out.append("text: no links (the film carries the post; the profile has the site)")
+    if p.get("link") is not None and not str(p.get("link")).startswith("https://"):
+        out.append("link: https://… (the app the post is about)")
     for t in TAGS.get(acc, []):
         if t not in text:
             out.append(f"text: ends with {' '.join(TAGS[acc])}")
@@ -297,6 +335,7 @@ def tell(text: str, video: str | None = None) -> tuple[bool, str]:
 
 
 def offer_text(p: dict, text: str) -> str:
+    text = with_link(text, link_of(p))
     return (f"Draft for @{HANDLES[p['account']]} ({p['id']}), nothing posted:\n\n{text}\n\n"
             f"Post it:\n{SERVER_LINE.format('send ' + p['id'])}\n\n"
             f"Drop it: up x drop {p['id']} · new words: up x text {p['id']} \"…\" · film again: up x film {p['id']}")
@@ -311,7 +350,8 @@ def step(now: float, plan: list[dict], d: dict, film=want_film, cutter=cut, tell
     for pid, p in by.items():
         if pid in d["drafts"] or not (p["at"] <= now < p["at"] + EXPIRE):
             continue
-        d["drafts"][pid] = {"state": "filming", "account": p["account"], "text": p["text"], "at": round(now), "from": p["at"]}
+        d["drafts"][pid] = {"state": "filming", "account": p["account"], "text": p["text"], "at": round(now), "from": p["at"],
+                            "link": link_of(p)}
         film(p)
         did.append(f"{pid}: film asked")
     for pid, r in d["drafts"].items():
@@ -362,6 +402,19 @@ def loop() -> None:
 
 
 # ---------------- by hand ----------------
+
+def draft_link(pid: str, r: dict) -> str:
+    """The app link of a draft: kept with it since 16 Nov 2026; older drafts look it up in the plan."""
+    if r.get("link"):
+        return r["link"]
+    try:
+        for p in specs(fetch_json("/assets/updates.json"), fetch_json("/assets/x-features.json")):
+            if p.get("id") == pid:
+                return link_of(p)
+    except Exception as e:  # noqa: BLE001
+        log.info("plan: %s", e)
+    return APP.get(r.get("account"), "https://tauhud.com/")
+
 
 def post(acc: str, text: str, video: str | None) -> str:
     """The post on the account; with the film when there is one. Returns the status id."""
@@ -449,13 +502,17 @@ def main(argv: list[str]) -> int:
         return 0
     if cmd == "text":
         new = " ".join(argv[3:]).replace("\\n", "\n")
-        probs = problems({"id": pid, "account": r["account"], "text": new, "film": {"url": "https://x", "steps": []}, "from": "2026-01-01"})
+        link = draft_link(pid, r)
+        probs = problems({"id": pid, "account": r["account"], "text": new, "link": link,
+                          "film": {"url": link, "steps": []}, "from": "2026-01-01"})
         if probs:
             print("not taken: " + "; ".join(probs))
             return 1
         r["text_new"] = new
+        r["link"] = link
         save(d)
-        print(f"{pid}: new words kept ({x_len(new)} of 280):\n{new}")
+        full = with_link(new, link)
+        print(f"{pid}: new words kept ({x_len(full)} of 280, with the link):\n{full}")
         return 0
     if cmd == "send":
         if r["state"] == "sent":
@@ -465,11 +522,14 @@ def main(argv: list[str]) -> int:
         if why:
             print("not posted: " + "; ".join(why))
             return 1
-        text = r.get("text_new") or r["text"]
         film = r.get("film") if r.get("film") and os.path.exists(r["film"]) else None
         if not film:   # 16 Nov 2026: rabbit-walkers went out without its film, and X showed the page's old link card instead
             print(f"not posted: {pid} has no film of its own ({r.get('film_why') or 'not filmed yet'}); "
                   f"a post on X always carries the picture made for it. Film it again: up x film {pid}")
+            return 1
+        text = with_link(r.get("text_new") or r["text"], draft_link(pid, r))   # the app's link, always (16 Nov 2026)
+        if x_len(text) > 280:
+            print(f"not posted: {x_len(text)} of 280 with the link; shorter words: up x text {pid} \"…\"")
             return 1
         try:
             sid = post(r["account"], text, film)
