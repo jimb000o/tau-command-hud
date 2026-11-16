@@ -3017,5 +3017,6 @@ TauI18n.add({ strings: {
   "Why: it is the second signature the four-eyes wallet needs. It never sends.": "为什么：它是四眼钱包需要的第二个签名。它从不发送。",
   "Why: it shows rule sharing. Every day it reads the piggy bank’s rule and accepts it.": "为什么：它展示规则共享。它每天读取存钱罐的规则并接受它。",
   "Why: it shows why you read a rule first. Its daily offer to the four-eyes wallet gets declined.": "为什么：它说明为什么要先读规则。它每天向四眼钱包提出的规则都被拒绝。",
-  "Why: it offers visitors a starter rule on the wallet page. The owner accepts or declines it.": "为什么：它在钱包页面为访客提供一条入门规则。由钱包主人接受或拒绝。"
+  "Why: it offers visitors a starter rule on the wallet page. The owner accepts or declines it.": "为什么：它在钱包页面为访客提供一条入门规则。由钱包主人接受或拒绝。",
+  "Personal money rules: the hover on each rule is short now. It says the rule in one plain sentence, why it is there (for Tau HUD’s showcase wallets, with the payment we try each day and the node refuses), who runs the wallet, and at most one honest note.": "个人资金规则：每条规则的悬停说明现在很简短。它用一句话说明规则，说明它为什么存在（对 Tau HUD 的展示钱包，还有我们每天故意尝试、被节点拒绝的那笔付款），谁在运行这个钱包，以及最多一条如实的提示。"
 } });
