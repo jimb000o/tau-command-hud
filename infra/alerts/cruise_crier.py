@@ -119,19 +119,76 @@ def short_day(t: float) -> str:
 # ---------- the texts ----------
 def last_call(ship: str, before: str, visits: list[str], entries_of, incidents: list[dict]) -> dict | None:
     """The facts of this ship's newest visit in the logbook before `before` (a visit id), or None (first call)."""
+    calls = recent_calls(ship, before, visits, entries_of, incidents, 1)
+    return calls[0] if calls else None
+
+
+def recent_calls(ship: str, before: str, visits: list[str], entries_of, incidents: list[dict], n: int = 3) -> list[dict]:
+    """The facts of this ship's newest `n` visits in the logbook before `before`, newest first (the last call first)."""
+    out = []
     for vid in visits:   # newest first
+        if len(out) >= n:
+            break
         if vid.endswith("-" + ship) and vid < before:
             entries = entries_of(vid)
             if entries:
-                return blog.facts_of(entries, incidents)
-    return None
+                out.append(blog.facts_of(entries, incidents))
+    return out
 
 
-def last_lines(f: dict | None) -> tuple[str, str, str]:
-    """(Telegram sentence, card point, X sentence) about the last call, every number from the logbook's facts."""
+def restart_of(f: dict | None) -> dict | None:
+    """The testnet restart during this call (blog.facts_of), or None."""
+    r = (f or {}).get("the testnet started over")
+    return r if isinstance(r, dict) and r.get("during her call") else None
+
+
+def cut_short(f: dict | None) -> bool:
+    """The call ended before its 90 minutes: a restart under her, or she left early."""
+    return bool(restart_of(f) or isinstance((f or {}).get("left early"), dict))
+
+
+def day_of(f: dict) -> str:
+    return (f.get("date") or "").rsplit(" ", 1)[0]   # "Saturday, 7 November"
+
+
+def earlier_line(earlier: list[dict], too: bool = True) -> str:
+    """One sentence on the calls before the last one that were cut short too, so a post never tells the last call as
+    if it stood alone (16 Nov 2026: two calls in a row ended with a testnet restart)."""
+    run = []
+    for f in earlier:
+        if not cut_short(f):
+            break
+        run.append(f)
+    if not run:
+        return ""
+    parts = []
+    for f in run:
+        if restart_of(f):
+            parts.append(f"on {day_of(f)}, the testnet started over during her call")
+        else:
+            m = (f.get("left early") or {}).get("minutes in port")
+            parts.append(f"on {day_of(f)}, she left after {m} of 90 minutes" if m is not None else f"on {day_of(f)}, she left early")
+    t = " too" if too else ""
+    return (f" The call before ended early{t}: " if len(run) == 1 else f" The {len(run)} calls before ended early{t}: ") + "; ".join(parts) + "."
+
+
+def last_lines(f: dict | None, earlier: list[dict] | None = None) -> tuple[str, str, str]:
+    """(Telegram sentence, card point, X sentence) about the last call, every number from the logbook's facts.
+    `earlier`: the facts of the calls before it, newest first (recent_calls)."""
     if not f:
         return "This is her first call.", "- Every transaction logged with the node's answer, open to all", ""
-    date = (f.get("date") or "").rsplit(" ", 1)[0]   # "Saturday, 7 November"
+    date = day_of(f)
+    if restart_of(f):   # the chain under her started over: her call ended there, whatever the counts after it say
+        r = restart_of(f)
+        acc = f.get("accepted in all") or 0
+        una = f.get("sends our node did not answer in time (not refusals)") or 0
+        blk = r.get("old chain ended at block")
+        tg = (f"On her last call, {date}, the testnet started over minutes after she anchored"
+              + (f": the old chain ended at block {blk} and a new one began" if blk else "")
+              + f", and what her passengers had paid until then went with the old chain. "
+              f"Our node accepted {acc} of their transactions in all" + (f"; {una} got no answer in time." if una else "."))
+        return (tg + earlier_line(earlier or []), "- Last call: the testnet restarted minutes after she anchored",
+                "On her last call the testnet restarted minutes after she anchored.")
     if f.get("landed") is False:
         why = str(f.get("why not landed") or "").removeprefix("no landing: ")
         return (f"On her last call, {date}, she did not land" + (f": {why}." if why else "."),
@@ -143,7 +200,7 @@ def last_lines(f: dict | None) -> tuple[str, str, str]:
               + (" Each is a check the chain itself makes on every payment, whoever sends it."
                  if tricks.get("refused with the expected answer", 0) == tricks["tried"] else ""))
         card = f"- Last call: {tricks.get('refused with the expected answer', 0)} of {tricks['tried']} tricks refused"
-        return tg + changed_line(f), card, ""
+        return tg + earlier_line(earlier or [], cut_short(f)) + changed_line(f), card, ""
     old = f.get("refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)") or 0
     una = (f.get("sends our node did not answer in time (not refusals)") or 0) + old
     acc, ref = f.get("accepted in all") or 0, (f.get("refused in all") or 0) - old
@@ -162,11 +219,13 @@ def last_lines(f: dict | None) -> tuple[str, str, str]:
         if old and "refus" in why and ref <= 0:
             why = "her brake took our node's missing answers for refusals, which it no longer does"
         tg += f" She left after {left['minutes in port']} minutes" + (f" ({why})." if why else ".")
-    elif f.get("landed"):
+    elif f.get("landed") and f.get("minutes in port") == 90:
         tg += " She stayed the full 90 minutes."
+    if (f.get("the testnet started over") or {}).get("during her call") is False:
+        tg += " After she left, the testnet started over."
     card = f"- Last call: {acc} accepted" + (f", {ref} refused" if ref > 0 else ", none refused")
     x = f"Last call: {acc} real transactions accepted."
-    return tg + changed_line(f), card, x
+    return tg + earlier_line(earlier or [], cut_short(f)) + changed_line(f), card, x
 
 
 def changed_line(f: dict) -> str:
@@ -194,13 +253,51 @@ def booked_ahead(cruise: dict | None, t0: float) -> int:
     return 0
 
 
-def texts(ship: str, t0: float, last: dict | None, ahead: int = 0) -> dict:
-    """The announcement written from the timetable and the last call: Telegram (HTML), X (no link), the picture's card."""
+ARTICLE_DAYS = 8   # a blog article this new is named in the announcement (what we already told about her last calls)
+
+
+def recent_article(ship: str, t0: float, arts: list[dict] | None = None) -> dict | None:
+    """The newest published blog article of the last ARTICLE_DAYS before the call that tells about this ship's calls
+    (its "visit" or "visits") or the testnet's week (kind "week": restarts, the ships): {"title", "url"}, or None.
+    Published only, never a draft: the server's list (blog.posts) and the site's (assets/blog/posts.json)."""
+    if arts is None:
+        arts = list(blog.posts().get("posts") or [])
+        try:
+            req = urllib.request.Request(f"{blog.SITE}/assets/blog/posts.json", headers={"Cache-Control": "no-cache", "User-Agent": "tauhud-blog"})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                arts += json.load(r).get("posts") or []
+        except Exception:  # noqa: BLE001 - Pages unreachable: the server's articles only
+            pass
+    today = blog.local(t0).date()
+    best = None
+    for a in arts:
+        try:
+            on = dt.date.fromisoformat(str(a.get("on") or "")[:10])
+        except ValueError:
+            continue
+        if not (0 <= (today - on).days <= ARTICLE_DAYS) or not a.get("id"):
+            continue
+        vis = [a.get("visit")] + list(a.get("visits") or [])
+        if a.get("kind") != "week" and not any(str(v or "").endswith("-" + ship) for v in vis):
+            continue
+        title = a.get("title")
+        title = (title.get("en") if isinstance(title, dict) else title) or ""
+        if title and (best is None or str(a.get("on")) > best[0]):
+            best = (str(a.get("on")), {"title": " ".join(str(title).split()), "url": f"{blog.SITE}/blog/?p={a['id']}"})
+    return best[1] if best else None
+
+
+def texts(ship: str, t0: float, last: dict | None, ahead: int = 0, earlier: list[dict] | None = None,
+          article: dict | None = None) -> dict:
+    """The announcement written from the timetable and the last calls: Telegram (HTML), X (no link), the picture's card.
+    `earlier`: the calls before the last one (recent_calls); `article`: our newest blog article on them (recent_article)."""
     import alerts
     s = SHIPS[ship]
     hh = blog.local(t0).hour
     fill = {"hh": f"{hh:02d}", "hz": f"{hh - 1:02d}", "day": short_day(t0)}
-    tg_last, card_last, x_last = last_lines(last)
+    tg_last, card_last, x_last = last_lines(last, earlier)
+    if article:
+        tg_last += f" More on our blog: {article['title']}: {article['url']}"
     tg = "\n\n".join([
         f"{s['emoji']} <b>{html.escape(s['head'].format(**fill), quote=False)}</b>",
         html.escape(" ".join(x for x in (s["story"].format(**fill), ahead_line(ahead, fill["hh"])) if x), quote=False),
@@ -286,16 +383,17 @@ def compose(ship: str, t0: int) -> dict:
         try:
             visits = blog.get("/cruise/log?n=1").get("visits") or []
             inc = blog.get("/cruise/incidents").get("incidents") or []
-            last = last_call(ship, vid, visits, lambda v: blog.get(f"/cruise/log?visit={v}&n=2000").get("entries") or [], inc)
+            calls = recent_calls(ship, vid, visits, lambda v: blog.get(f"/cruise/log?visit={v}&n=2000").get("entries") or [], inc)
         except Exception as e:  # noqa: BLE001 - without the logbook the post says nothing about the last call
             log.warning("last call of %s not read: %s", ship, e)
-            last = None
+            calls = []
+        last, earlier = (calls[0], calls[1:]) if calls else (None, [])
         try:
             ahead = booked_ahead(blog.get("/cruise"), t0)
         except Exception as e:  # noqa: BLE001 - without the relay's answer the post leaves the bookings ahead out
             log.warning("bookings ahead of %s not read: %s", ship, e)
             ahead = 0
-        t = texts(ship, t0, last, ahead)
+        t = texts(ship, t0, last, ahead, earlier, recent_article(ship, t0))
     return t
 
 

@@ -80,6 +80,45 @@ q = cc.texts("queen", QUEEN, None)
 check("first call" in q["telegram"] and q["card"][-2] == "- Every transaction logged with the node's answer, open to all", "first call: said so, no numbers")
 check(cc.last_call("dryrun", "2026-11-11-dryrun", ["2026-11-07-queen", V], lambda v: log if v == V else [], []) is not None
       and cc.last_call("dryrun", V, [V], lambda v: log, []) is None, "last call: the same ship's visit before this one")
+# ---------- 16 Nov 2026: the last call had a testnet restart under her, the one before ended early ----------
+# (the post of 16.11 said "she stayed the full 90 minutes" of a call the testnet restarted 8 minutes into)
+Q15 = 1794056400 + 8 * 86400 + 3600                   # Sunday 15 November, 15:00 German time
+Q14 = 1794056400 + 7 * 86400                          # Saturday 14 November, 14:00
+q15 = [{"t": Q15, "visit": "2026-11-15-queen", "ship": "queen", "kind": "landed", "verdict": "calm", "plan": 581}]
+q15 += [{"t": Q15 + 20 + i * 15, "visit": "2026-11-15-queen", "kind": "pay", "ok": True, "verdict": "calm", "ms": 900} for i in range(23)]
+q15 += [{"t": Q15 + 400 + i * 30, "visit": "2026-11-15-queen", "kind": "pay", "ok": None, "note": "no answer from our node in time"} for i in range(10)]
+q15 += [{"t": Q15 + 600, "visit": "2026-11-15-queen", "ship": "queen", "kind": "chain restarted", "old_tip": 1457,
+         "new_chain_began": Q15 + 579, "note": "The testnet started over"},
+        {"t": Q15 + 5400, "visit": "2026-11-15-queen", "kind": "visit over",
+         "summary": {"id": "2026-11-15-queen", "ship": "queen", "name": "Queen Mempool", "t0": Q15, "landed": True, "end": Q15 + 5400,
+                     "sent": {"pay": 23}, "refused": {}, "unanswered": 10, "skipped": 548, "passengers": 120}}]
+q14 = [{"t": Q14, "visit": "2026-11-14-queen", "ship": "queen", "kind": "landed", "verdict": "calm", "plan": 581},
+       {"t": Q14 + 30, "visit": "2026-11-14-queen", "kind": "pay", "ok": True, "verdict": "calm"},
+       {"t": Q14 + 720, "visit": "2026-11-14-queen", "ship": "queen", "kind": "left", "verdict": "stalled", "note": "no new block reached our node for over ten minutes"},
+       {"t": Q14 + 5400, "visit": "2026-11-14-queen", "kind": "visit over",
+        "summary": {"id": "2026-11-14-queen", "ship": "queen", "name": "Queen Mempool", "t0": Q14, "landed": True, "end": Q14 + 720,
+                    "sent": {"pay": 1}, "refused": {}, "passengers": 120}}]
+logs = {"2026-11-15-queen": q15, "2026-11-14-queen": q14}
+calls = cc.recent_calls("queen", "2026-11-16-queen", ["2026-11-16-queen", "2026-11-15-queen", "2026-11-14-queen"], lambda v: logs.get(v, []), [])
+check([c["visit"] for c in calls] == ["2026-11-15-queen", "2026-11-14-queen"], "recent calls: newest first, today's left out")
+check(calls[0]["minutes in port"] == 10 and calls[0]["call cut short by the restart"]
+      and calls[0]["the testnet started over"]["during her call"], "facts: a restart during the call ends her time in port there")
+rtg, rcard, rx = cc.last_lines(calls[0], calls[1:])
+check("full 90 minutes" not in rtg and "testnet started over minutes after she anchored" in rtg and "block 1457" in rtg
+      and "accepted 23" in rtg and "10 got no answer" in rtg, "restart told, never 'the full 90 minutes'")
+check("The call before ended early too: on Saturday, 14 November, she left after 12 of 90 minutes." in rtg, "the call before is named too")
+check("restart" in rcard and "restart" in rx and not blog.BLAME.search(rtg + rcard + rx) and not blog.HYPE.search(rtg + rcard + rx),
+      "card and X: the restart, no blame or hype")
+art = cc.recent_article("queen", Q15 + 86400, [
+    {"id": "2026-11-16-testnet-week-46", "on": "2026-11-16", "kind": "week", "title": {"en": "Three restarts on the Tau Net testnet, 9–15 Nov 2026"}},
+    {"id": "2026-11-07-queen-learnings", "on": "2026-11-07", "kind": "cruise", "visit": "2026-11-07-queen", "title": {"en": "old"}},
+    {"id": "2026-11-13-support-tau-hud", "on": "2026-11-13", "kind": "news", "title": {"en": "shop"}}])
+check(art and art["title"].startswith("Three restarts") and art["url"].endswith("?p=2026-11-16-testnet-week-46"), "newest article on her calls or the week")
+rt = cc.texts("queen", Q15 + 86400, calls[0], 0, calls[1:], art)
+check("More on our blog: Three restarts" in rt["telegram"] and "full 90 minutes" not in rt["telegram"] and alerts.x_len(rt["x"]) <= 280,
+      "the announcement: restart, the call before, our article; X within 280")
+clean = cc.last_lines(f, calls)[0]
+check("The 2 calls before ended early too:" in clean, "a call that left early names the cut-short calls before it too")
 picture = cc.picture(t, os.path.join(TMP, "p.jpg"))
 check(Image.open(picture).size == (1600, 900), "the picture is made (1600x900)")
 
