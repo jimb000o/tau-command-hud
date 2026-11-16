@@ -31,6 +31,7 @@ ENDS = os.environ.get("CHAIN_END_DIR", os.path.join(DATA, "chain-ends"))
 WINDOW = 15 * 60
 LAST = 10
 TX_KINDS = ("pay", "bill", "book", "cancel", "trick")
+TIMEOUT = float(os.environ.get("UPSTREAM_TIMEOUT_SECONDS", 20))   # how long the relay waits for the node's answer
 
 
 def hm(t):
@@ -67,6 +68,10 @@ def answer(e):
     if e.get("ok") is False:
         return "refused"
     return "no answer" if "no answer" in str(e.get("note") or "") else "not sent"
+
+
+def plural(n: int, word: str) -> str:
+    return f"{n} {word}" + ("" if n == 1 else "s")
 
 
 def summary(ss):
@@ -236,35 +241,50 @@ def brief(restarts: list, rows: list | None = None, now: float | None = None, da
     if calls:
         first = min((e["t"] for e in rows if e.get("visit") in calls and e.get("kind") in TX_KINDS), default=None)
     kinds = collections.Counter(e["kind"] for e in before)
-    acc = sum(1 for e in before if answer(e) == "accepted")
+    ans = collections.Counter(answer(e) for e in before)
     ms = [e["ms"] for e in before if isinstance(e.get("ms"), int)]
-    # the reply, line by line, only from what is known
-    when = f"{time.strftime('%d %b', time.gmtime(tip_ts or r.get('detected_at') or now)).lstrip('0')}"
+    # the reply, line by line, only from what is known; short lines a chat reads at a glance
+    utc = lambda t: hm(t).replace("Z", " UTC")
+    day_of = lambda t: time.strftime("%d %b", time.gmtime(t)).lstrip("0")
+    when = day_of(tip_ts or r.get("detected_at") or now)
     again = " again" if len(restarts) > 1 else ""
+    lines = [f"Hi Andrei, the testnet restarted{again} ({when}):", ""]
     if tip_ts:
-        lines = [f"Hi Andrei, the testnet restarted{again} ({when}): the old chain's last block was #{tip} at {hm(tip_ts)}"
-                 + (f", new block 1 at {hm(b1)}." if b1 else ".")]
+        lines.append(f"• Old chain's last block: #{tip} at {utc(tip_ts)}")
+        if b1:
+            lines.append(f"• New block 1: {utc(b1)}")
     else:   # the relay was away when it happened: only what it found after
-        lines = [f"Hi Andrei, the testnet restarted{again} ({when}); our relay noticed it at {hm(r.get('detected_at'))}."]
+        lines.append(f"• Our relay noticed it at {utc(r.get('detected_at'))}")
     if calls:
         ship = ", ".join(ship_name(v) for v in calls)
-        lines.append(f"It came {((tip_ts - first) / 60):.0f} min into one of our test runs ({ship}: simulated wallets "
-                     f"sending small transfers)." if first else f"It came during one of our test runs ({ship}).")
+        lines.append(f"• It came {((tip_ts - first) / 60):.0f} min into one of our test runs ({ship}: simulated wallets "
+                     f"sending small transfers)" if first else f"• It came during one of our test runs ({ship})")
         if before:
-            ln = (f"In the {WINDOW // 60} min before the last block we sent {len(before)} transactions "
-                  f"({', '.join(f'{k} {n}' for k, n in kinds.most_common())}), {acc} accepted")
+            lines += ["", f"In the {WINDOW // 60} min before the last block:",
+                      f"• We sent {plural(len(before), 'transaction')} ({', '.join(f'{n} {k}' for k, n in kinds.most_common())})"]
+            got = [f"{ans[a]} {w}" for a, w in (("accepted", "accepted"), ("refused", "refused"),
+                                               ("no answer", f"got no answer from our node within {TIMEOUT:.0f} s"),
+                                               ("not sent", "not sent")) if ans.get(a)]
+            if got:
+                lines.append("• " + ", ".join(got))
             if ms:
-                ln += f", node answered in median {statistics.median(ms):.0f} ms"
-            if bs:
-                ln += f"; {waiting} of the accepted ones were not in a block yet when the chain ended"
-            lines.append(ln + ".")
+                med = statistics.median(ms)
+                lines.append(f"• Median answer time: {med / 1000:.0f} s" if med >= 1000 else f"• Median answer time: {med:.0f} ms")
+            if bs and ans.get("accepted"):
+                lines.append(f"• {waiting} of the {plural(ans['accepted'], 'accepted transaction')} "
+                             f"{'was' if waiting == 1 else 'were'} not in a block yet when the chain ended")
     else:
-        lines.append("None of our test runs was sending at the time.")
+        lines.append("• None of our test runs was sending at the time")
     if len(recent) > 1 or calls:
-        lines.append(f"So far: {len(recent)} restart{'s' if len(recent) != 1 else ''} in the last {days} days, "
-                     f"{len(during)} of them during one of our runs; {calm} of our other runs in those days had none.")
+        ts = sorted({x["old"]["tip_ts"] - x["old"]["tip_ts"] % 86400 for x in during})   # each day once, in order
+        names = [day_of(t) for t in ts]
+        if len({n.split()[-1] for n in names}) == 1:   # one month: "14, 15 and 16 Nov"
+            names = [n.split()[0] for n in names[:-1]] + names[-1:]
+        on = f" ({', '.join(names[:-1])} and {names[-1]})" if len(names) > 1 else ""
+        lines += ["", f"So far: {plural(len(recent), 'restart')} in the last {days} days, {len(during)} of them during one "
+                      f"of our runs{on}. {calm} of our other runs in those days had none."]
     if link:
-        lines.append(f"Full timeline with tx hashes: {link}")
+        lines += ["", f"Full timeline with tx hashes: {link}"]
     return {"key": f"{r.get('detected_at')}", "detected_at": r.get("detected_at"), "tip": tip, "tip_ts": tip_ts,
             "new_block1_ts": b1, "calls": calls, "sends_before": len(before), "waiting": waiting if bs else None,
             "recent": len(recent), "during": len(during), "calm_calls": calm, "reply": "\n".join(lines)}
