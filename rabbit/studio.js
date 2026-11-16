@@ -1,8 +1,10 @@
 /* The islander studio on White Rabbit Key: make your wallet's islander part by part (islander.js), see the face large
    and the figure walking, roll the dice or go back to the face your key gave you, then wear it with one real
-   transaction from the test wallet in this browser: one payment to the hearts box per changed part (PART + part * 32
-   + choice test AGRS, no value; the box has no key), all in one transaction, one fee. The relay reads it from the
-   block (infra/relay/walkers.py) and the island shows it to everyone.
+   transaction from the test wallet in this browser: two small payments to the hearts box per changed part (islander.js
+   pays: MARK + part, then PICK + choice test AGRS, no value; the box has no key), all in one transaction, one fee. The
+   relay reads it from the block (infra/relay/walkers.py) and the island shows it to everyone. The button says each
+   step (signing, sent, waiting for a block, worn) and the studio celebrates when a block holds it.
+   On a large screen everything grows with the stage (--k), so the options stay easy to see and hit.
 
    The earned piece is not for sale: each one opens when the wallet has the matching trait on the chain (a rule of its
    own, a No Memo chapter, a meal for Agorzilla …); a locked one says how to earn it. The first wallet that chooses a
@@ -47,7 +49,7 @@
   }
   function optionRow(i) {
     const slot = IS.SLOTS[i], names = Array.isArray(slot[2]) ? slot[2] : null, col = IS.COLOURS[i], n = IS.N[i];
-    const size = phone() ? 44 : n > 10 ? 34 : 40;
+    const size = phone() ? 44 : Math.max(matchMedia("(pointer: coarse)").matches ? 44 : 0, Math.round((n > 10 ? 34 : 40) * S.k));
     const btns = Array.from({ length: n }, (_, v) => {
       const locked = i === 16 && v > 0 && !S.earned.has(v) && !S.demoAll;
       const label = names ? T(names[v]) : F("{what} {n}", { what: T(slot[1]), n: v + 1 });
@@ -62,7 +64,9 @@
     });
     return el("div", { class: "st-row", role: "radiogroup", "aria-label": T(slot[1]) }, el("small", { text: T(slot[1]) + (names && !(i === 16 && S.pick[i] === 0) ? " · " + T(names[S.pick[i]]) : "") }), el("div", { class: "st-opts" }, btns));
   }
-  const say = t => { const m = S.box && S.box.querySelector(".st-msg"); if (m) m.textContent = t; };
+  /* the status line by the button: tone "" / "ok" / "warn" / "work"; an optional link or button after the text */
+  const say = (t, tone, extra) => { const m = S.box && S.box.querySelector(".st-msg"); if (!m) return; m.className = "st-msg" + (t ? " show" : "") + (tone ? " " + tone : ""); m.replaceChildren(...(t ? [el("span", { text: t }), extra || null].filter(Boolean) : [])); };
+  const sendLabel = (t, busy) => { const b = S.box && S.box.querySelector(".st-send"); if (!b) return; b.textContent = t; b.classList.toggle("busy", !!busy); };
 
   function render() {
     if (!S.box) return;
@@ -78,9 +82,12 @@
     const ch = S.pick.map((v, i) => v !== S.base[i] ? i : -1).filter(i => i >= 0);
     const amt = IS.cost(S.base, S.pick);
     S.box.querySelector(".st-cost").textContent = ch.length
-      ? F("{n} parts changed: {a} test AGRS (no value) to the hearts box in one transaction, plus the fee.", { n: ch.length, a: nf(amt) }).replace(/^1 parts changed/, T("1 part changed"))
+      ? (ch.length === 1 ? F("1 part changed: {a} test AGRS (no value) to the hearts box, plus the fee.", { a: nf(amt) }) : F("{n} parts changed: {a} test AGRS (no value) to the hearts box in one transaction, plus the fee.", { n: ch.length, a: nf(amt) }))
+      : S.worn ? T("You wear this look now. Change any part to try another one.")
       : T("Nothing changed yet. Your key's face costs nothing: only the parts you change are sent.");
-    S.box.querySelector(".st-send").disabled = !ch.length || S.busy;
+    const sb = S.box.querySelector(".st-send");
+    sb.disabled = !ch.length || S.busy;
+    if (!S.busy) sendLabel(ch.length ? T("Sign and wear it") : S.worn ? "✓ " + T("Worn") : T("Sign and wear it"));
     const sig = IS.sig(S.pick);
     if (sig !== S.faceSig) { S.faceSig = sig; clearTimeout(S.faceT); S.faceT = setTimeout(() => firstOf(sig), 450); }
   }
@@ -104,6 +111,15 @@
       g.setTransform(r, 0, 0, r, 0, 0); g.clearRect(0, 0, w, h);
       const blink = (t % 4200) < 140, mood = t < S.happyUntil ? "happy" : null;
       IS.bust(g, (w - h) / 2, 0, h, S.pick, { blink, mood });
+      if (S.party && t - S.party < 2600) {   // worn: a little burst of confetti over the portrait
+        const q = (t - S.party) / 2600;
+        for (let i = 0; i < 28; i++) {
+          const ang = i * 2.39996, sp = 0.35 + (i % 5) * 0.09, x = w / 2 + Math.cos(ang) * sp * w * q, y = h * 0.42 + Math.sin(ang) * sp * h * q + q * q * h * 0.5;
+          g.globalAlpha = 1 - q; g.fillStyle = ["#39ff8a", "#ffb13b", "#ff6fa0", "#6fa8ff", "#fff"][i % 5];
+          g.save(); g.translate(x, y); g.rotate(ang + q * 6); g.fillRect(-3, -1.5, 6, 3); g.restore();
+        }
+        g.globalAlpha = 1;
+      }
       const fg = f.getContext("2d"), fw = f.width / r, fh = f.height / r;
       fg.setTransform(r, 0, 0, r, 0, 0); fg.clearRect(0, 0, fw, fh);
       fg.fillStyle = "rgba(57,255,138,.08)"; fg.beginPath(); fg.ellipse(fw / 2, fh - 6, fw * 0.36, 5, 0, 0, Math.PI * 2); fg.fill();
@@ -118,12 +134,14 @@
     const me = W.me();
     S.pk = me ? me.pk : null;
     S.base = me ? me.parts.slice() : IS.parts(null);
-    S.pick = S.base.slice(); S.tab = 0; S.card = null; S.earned = new Set(); S.happyUntil = 0; S.drawn = 0; S.faceSig = "";
-    const bh = phone() ? 132 : Math.max(150, Math.min(250, innerHeight - 560));
-    const [bust] = canvas(bh, bh), [walk] = canvas(phone() ? 54 : 70, phone() ? 80 : 100);
+    S.pick = S.base.slice(); S.tab = 0; S.card = null; S.earned = new Set(); S.happyUntil = 0; S.drawn = 0; S.faceSig = ""; S.worn = false; S.party = 0;
+    const host = document.getElementById("cvStage") || document.body, R = host.getBoundingClientRect();
+    S.k = phone() ? 1 : Math.max(1, Math.min(1.9, Math.min(R.width / 1150, R.height / 640)));
+    const bh = phone() ? 132 : Math.round(Math.max(150, Math.min(250 * S.k, R.height - 330)));
+    const [bust] = canvas(bh, bh), [walk] = canvas(Math.round((phone() ? 54 : 70) * S.k), Math.round((phone() ? 80 : 100) * S.k));
     bust.className = "st-bust"; walk.className = "st-walk";
     const tabs = el("div", { class: "st-tabs", role: "tablist" }, TABS.map(([n], k) => el("button", { type: "button", role: "tab", class: "st-tab", onclick: () => { S.tab = k; render(); } }, T(n))));
-    const box = el("section", { class: "wk-studio", role: "dialog", "aria-modal": "true", "aria-label": T("Islander studio") },
+    const box = el("section", { class: "wk-studio", role: "dialog", "aria-modal": "true", "aria-label": T("Islander studio"), style: "--k:" + S.k.toFixed(3) },
       el("button", { type: "button", class: "cv-x", "aria-label": T("Back to the island"), onclick: close, text: "✕" }),
       el("div", { class: "st-prev" },
         el("div", { class: "st-stage" }, bust, walk),
@@ -134,15 +152,16 @@
         el("h3", { text: T("Islander studio") }),
         tabs,
         el("div", { class: "st-parts" }),
+        el("div", { class: "st-foot" },
         el("p", { class: "st-cost" }),
-        el("p", { class: "wk-note st-msg", role: "status" }),
+        el("p", { class: "st-msg", role: "status", "aria-live": "polite" }),
         el("div", { class: "st-acts" },
           el("button", { type: "button", class: "cv-b", onclick: dice }, "🎲 " + T("Roll the dice")),
           el("button", { type: "button", class: "cv-b", onclick: () => { S.pick = IS.parts(S.pk); say(T("The face your key gave you: free, nothing to send.")); render(); } }, T("My key's face")),
           el("button", { type: "button", class: "cv-b", onclick: () => { S.pick = S.base.slice(); say(""); render(); } }, T("Undo")),
           el("button", { type: "button", class: "cv-b", onclick: () => pass() }, T("Islander pass")),
-          el("button", { type: "button", class: "cv-b go st-send", onclick: e => send(e.currentTarget) }, T("Sign and wear it")))));
-    (document.getElementById("cvStage") || document.body).append(box);
+          el("button", { type: "button", class: "cv-b go st-send", onclick: e => send(e.currentTarget) }, T("Sign and wear it"))))));
+    host.append(box);
     S.box = box;
     box.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
     render(); loop();
@@ -184,36 +203,79 @@
       };
     });
   }
+  const toWallet = () => el("a", { class: "st-link", href: "/wallet/", target: "_blank", rel: "noopener", text: T("Open the wallet page") });
   async function send(b) {
+    if (S.busy) return;
     const W = WK(), B = window.TauBLS, R = W.relay(); let k = null;
     try { const s = JSON.parse(store.get(R.WKEY) || "null"); if (B && s && /^[0-9a-f]{64}$/.test(s.sk)) k = { sk: B.hexToBytes(s.sk), pk: s.pk || B.bytesToHex(B.pubOf(B.hexToBytes(s.sk))) }; } catch (e) {}
-    if (!k) { say(T("This browser has no test wallet yet: start a campaign on the island or open tauhud.com/wallet/ first.")); return; }
+    if (!k) { say(T("This browser has no test wallet yet: start a campaign on the island or open the wallet page first."), "warn", toWallet()); return; }
     const pick = S.pick.slice(), base = S.base.slice();
-    const ops = pick.map((v, i) => v !== base[i] ? [k.pk, R.BOX, String(IS.PART + i * IS.STRIDE + v)] : null).filter(Boolean);
+    const ops = IS.pays(base, pick).map(a => [k.pk, R.BOX, String(a)]);
     if (!ops.length) return;
-    const amount = IS.cost(base, pick);
-    S.busy = true; if (b) b.disabled = true; say(T("Signing…"));
-    const c = await socket(R.WS);
+    const parts = ops.length / 2, amount = IS.cost(base, pick);
+    S.busy = true; S.worn = false; if (b) b.disabled = true;
+    sendLabel(T("Signing…"), true); say(T("Signing in this browser: your key never leaves it."), "work");
+    const c = await Promise.race([socket(R.WS), new Promise(r => setTimeout(() => r(null), 8000))]);
+    let sent = false;
     try {
       if (!c) throw new Error("relay");
       const gv = await c.ask("getgovernance"), m = /o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)/.exec((gv && gv.data && gv.data.consensus_rules) || ""), fee = m ? parseInt(m[1], 16) : 10;
-      await c.ask("via islander");
+      await c.ask("via islander", 4000);
       const st = await c.ask("getsequence " + k.pk); if (!st || st.status !== "ok") throw new Error("seq");
-      if (st.data && st.data.balance != null && Number(st.data.balance) < amount + fee * 5) { say(F("Your test wallet needs {a} test AGRS for this and has {b}: the wallet page gets more from the faucet, or change fewer parts.", { a: nf(amount + fee * 5), b: nf(st.data.balance) })); return; }
-      const tx = { tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: st.data.sequence_number || 0, expiration_time: Math.floor(Date.now() / 1000) + 600,
+      if (st.data && st.data.balance != null && Number(st.data.balance) < amount + fee * 5) {
+        say(F("Your test wallet needs {a} test AGRS for this and has {b}. Change fewer parts, or get test AGRS on the wallet page (the faucet pays a wallet that is at 0).", { a: nf(amount + fee * 5), b: nf(st.data.balance) }), "warn", toWallet());
+        return;
+      }
+      const seq = st.data.sequence_number || 0;
+      const tx = { tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: seq, expiration_time: Math.floor(Date.now() / 1000) + 600,
         expire_at_height: (st.data.tip_height || 0) + 1000, fee_limit: String(fee * 5), operations: { "1": ops } };
       const d = { sender_pubkey: tx.sender_pubkey, sequence_number: tx.sequence_number, expiration_time: tx.expiration_time, fee_limit: tx.fee_limit, tx_type: tx.tx_type, expire_at_height: tx.expire_at_height, operations: tx.operations };
       tx.signature = B.bytesToHex(B.sign(new TextEncoder().encode(canon(d)), k.sk));
+      sendLabel(T("Sending…"), true);
       const r = await c.ask("sendtx " + JSON.stringify(tx), 20000);
       if (!(r && r.status === "ok" && !(r.data && r.data.ok === false))) {
         const why = String((r && (r.message || (r.data && (r.data.error || r.data.reason)))) || "");
         throw new Error(/o5|own (policy|rule)/i.test(why) ? "rule" : "refused");
       }
-      W.wear(k.pk, pick); S.base = pick.slice(); S.happyUntil = performance.now() + 4000;
-      say(F("Sent: {n} parts in one transaction. Your islander wears it now; the island shows it to everyone once a block holds it.", { n: ops.length }));
+      sent = true;
+      W.wear(k.pk, pick); S.base = pick.slice(); S.happyUntil = performance.now() + 2500;
       render();
-    } catch (e) { say(e.message === "rule" ? T("Your wallet's own rule said no to this payment. The rule works: change the rule on the wallet page, or keep your look.") : T("The testnet did not take it just now. Try again in a minute.")); }
-    finally { S.busy = false; if (c) c.close(); if (b && S.box) render(); }
+      /* waiting for a block: the node's answer to gettxstatus (the sequence number counts the mempool, so it cannot tell) */
+      const h = r.data && /^[0-9a-f]{64}$/i.test(r.data.tx_hash || "") ? r.data.tx_hash : null;
+      const lang = window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "";
+      const ex = () => h ? el("a", { class: "st-link", href: "/explorer/?tx=" + h + lang, target: "_blank", rel: "noopener", text: T("See it in the explorer") }) : null;
+      const t0 = Date.now();
+      let held = null, out = null, n = 0;
+      say(parts === 1 ? T("Sent. The testnet puts it in the next block, usually within a minute. Your islander here wears it already.") : F("Sent: {n} parts in one transaction. The testnet puts it in the next block, usually within a minute. Your islander here wears it already.", { n: parts }), "work", ex());
+      while (h && S.box && Date.now() - t0 < 180000) {
+        sendLabel(F("Waiting for a block · {n} s", { n: Math.round((Date.now() - t0) / 1000) }), true);
+        await new Promise(res => setTimeout(res, 1000));
+        if (++n % 4) continue;   // the label counts every second, the node is asked every four
+        const q = await c.ask("gettxstatus " + h, 6000); if (!q || q.status !== "ok") continue;
+        const dd = q.data || {}, stt = String(dd.status || dd.state || "").toLowerCase();
+        if (dd.block_number != null || /confirmed|included|mined|sealed|applied/.test(stt)) { held = dd.block_number ?? dd.height ?? true; break; }
+        if (/reject|fail|dropped|expired|invalid/.test(stt)) { out = dd.reason || dd.error || stt; break; }
+      }
+      if (!S.box) return;
+      if (held) {
+        S.worn = true; S.happyUntil = performance.now() + 6000; S.party = performance.now();
+        say((held === true ? T("A block holds it") : F("Block {n} holds it", { n: nf(held) })) + ": " + T("everyone on the island sees your new look now."), "ok",
+          el("button", { type: "button", class: "st-link", onclick: () => { close(); if (W.find) W.find(); } }, T("Show me on the island")));
+      } else if (out) {
+        say(F("The testnet dropped it: {x}. Nothing changed on the chain; try again.", { x: String(out).slice(0, 80) }), "warn", ex());
+      } else if (h) {
+        say(T("Sent, but no block has taken it yet: the testnet may be resting. Your islander here wears it; the island catches up with the next block."), "warn", ex());
+      } else {
+        S.worn = true; S.party = performance.now();
+        say(T("Sent. Your islander here wears it now; the island shows it to everyone once a block holds it."), "ok");
+      }
+    } catch (e) {
+      if (sent) return;
+      say(e.message === "rule" ? T("Your wallet's own rule said no to this payment. The rule works: change the rule on the wallet page, or keep your look.")
+        : e.message === "relay" ? T("The testnet cannot be reached just now. Nothing was sent; try again in a minute.")
+        : T("The testnet did not take it just now. Nothing was sent; try again in a minute."), "warn");
+    }
+    finally { S.busy = false; if (c) c.close(); if (S.box) render(); }
   }
 
   /* ---------- the islander pass: 1200 × 675, drawn here, saved or shared by you ---------- */

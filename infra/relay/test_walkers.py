@@ -106,6 +106,14 @@ assert w2.face(sig)["first"] == P and not next(x for x in w2.active(NOW)["walker
 w2.add_blocks([{"header": {"timestamp": NOW - 300, "block_number": 52}, "transactions": [
     {"tx_type": "user_tx", "sender_pubkey": Q, "operations": {"1": [[Q, BOX, str(LOOK + 2 * 64 + 3 * 8 + 5)]]}}]}])
 assert w2.w[Q]["pt"][1] == 4 and w2.w[Q]["pt"][2] == 3 and w2.w[Q]["pt"][5] == 5 and w2.w[Q]["look"] == 2 * 64 + 29
+# the cheap way (16.11): MARK + part, then PICK + choice; a PICK without a MARK, or past the part's choices, changes nothing
+from walkers import MARK, PICK
+Z = "ab" * 48
+w2.add_blocks([{"header": {"timestamp": NOW - 250, "block_number": 52}, "transactions": [
+    {"tx_type": "user_tx", "sender_pubkey": Z, "operations": {"1": [[Z, BOX, str(PICK + 2)], [Z, BOX, str(MARK + 9)], [Z, BOX, str(PICK + 4)],
+                                                                  [Z, BOX, str(MARK + 0)], [Z, BOX, str(PICK + 9)], [Z, BOX, str(MARK + 2)], [Z, BOX, str(PICK + 15)]]}}]}])
+assert w2.w[Z]["pt"][9] == 4 and w2.w[Z]["pt"][0] is None and w2.w[Z]["pt"][2] == 15 and w2.w[Z]["heart"] == 0, w2.w[Z]["pt"]
+assert sum(1 for v in w2.w[Z]["pt"] if v is not None) == 2
 # a rule writer may wear the sash
 w2.add_blocks([rule(NOW - 200, 53, P, "always ( (o5[t]:bv[24] = { #x000001 }:bv[24]) ).")])
 assert next(x for x in w2.active(NOW)["walkers"] if x["a"] == P)["pt"][16] == 1

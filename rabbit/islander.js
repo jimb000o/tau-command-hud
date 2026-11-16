@@ -2,16 +2,18 @@
    island (figure) and large on its card (bust). Used by walkers.js (who walks) and studio.js (the islander studio).
 
    Seventeen parts, each a number. Without a choice every part comes from the wallet's key (byte i of the key for
-   part i; beard, marks and glasses only for about three keys in ten), so every wallet has its own islander from its first transaction, at no cost. A choice is a real payment to
-   the hearts box (no key behind it): PART + part * 32 + choice test AGRS, one payment per changed part, all of them in
-   one transaction (one fee). The relay (infra/relay/walkers.py) reads them from the blocks, the newest per part wins.
+   part i; beard, marks and glasses only for about three keys in ten), so every wallet has its own islander from its first transaction, at no cost. A choice is two small
+   real payments to the hearts box (no key behind it): MARK + part, then PICK + choice test AGRS (1..17, then 41..56,
+   amounts the hearts never use), all changed parts in one transaction (one fee). The first way (PART + part * 32 +
+   choice, from 1,600 up) still counts but cost thirty times more. The relay (infra/relay/walkers.py) reads them from
+   the blocks, the newest per part wins.
    The older look payments (1,200 + code: skin, hair or hat, shirt) still count; they set skin, hair, hair colour
    and shirt colour. Part 16 is earned on the chain: it is shown only while the wallet has the matching trait.
 
    On the island an islander is about 28 units tall, so what reads there is its outline: build, hair or hat,
    clothes, colours, the way it walks. The face is seen on its card. (The WoW Diary notes that fine face settings
    were rarely seen under armour; here the face gets its own large drawing instead.)
-   window.ISLANDER = { SLOTS, FACE, PART, EARN, parts, fromLook, figure, bust, name, sig, cost } */
+   window.ISLANDER = { SLOTS, FACE, MARK, PICK, pays, EARN, parts, fromLook, figure, bust, name, sig, cost } */
 (() => {
   "use strict";
   const INK = "#22303a";
@@ -36,7 +38,7 @@
     ["earned", "Earned on the chain", ["None", "Rule writer's sash", "No Memo goggles", "Banana brooch", "Old hand's scarf", "Guardian badge", "Winner's laurel", "Voter's feather", "Heart pin", "Paw patch"]],
   ];
   const N = SLOTS.map(s => (Array.isArray(s[2]) ? s[2].length : s[2]));
-  const PART = 1600, STRIDE = 32;
+  const PART = 1600, STRIDE = 32, MARK = 1, PICK = 41;
   /* the trait a wallet needs to wear an earned piece (relay walkers.py EARN, the same list) */
   const EARN = [null, "lawmaker", "hacker", "feeder", "veteran", "guardian", "winner", "voter", "hearts", "catfriend"];
   const EARN_HOW = [null, "Write a rule for your own wallet on the chain.", "Crack a chapter in No Memo.", "Feed Agorzilla.", "Be on the chain for 14 days.", "Give your wallet a guardian: a rule that asks for a co-signer.", "Win a White Rabbit Key election.", "Vote twice: Agorzilla's ballot boxes or the island's.", "Give two hearts to parts of Tau HUD.", "Put food in Déjà's bowl at the café."];
@@ -68,7 +70,9 @@
     return c;
   }
   const sig = p => FACE.map(i => p[i]).join("-");
-  const cost = (from, to) => to.reduce((s, v, i) => s + (v !== from[i] ? PART + i * STRIDE + v : 0), 0);
+  /* the payments that wear `to` over `from`: [amount, ...] in order, two per changed part */
+  const pays = (from, to) => to.flatMap((v, i) => (v !== from[i] ? [MARK + i, PICK + v] : []));
+  const cost = (from, to) => pays(from, to).reduce((s, a) => s + a, 0);
 
   /* a name from the key's syllables: the same key, the same name, never on the chain */
   function name(pk) {
@@ -399,5 +403,5 @@
     }
   }
 
-  window.ISLANDER = { SLOTS, N, FACE, PART, STRIDE, EARN, EARN_HOW, COLOURS, parts, fromLook, figure, bust, name, sig, cost };
+  window.ISLANDER = { SLOTS, N, FACE, PART, STRIDE, MARK, PICK, pays, EARN, EARN_HOW, COLOURS, parts, fromLook, figure, bust, name, sig, cost };
 })();
