@@ -35,8 +35,8 @@
   const TABS = [
     ["Body", [0, 1, 7]], ["Hair", [2, 3]], ["Clothes", [4, 5, 6]], ["Face", [8, 9, 10, 11, 12]], ["Details", [13, 14, 15]], ["Earned", [16]],
   ];
-  const PICT = { 0: "figure", 2: "head", 4: "whole", 7: "figure", 8: "face", 9: "eyes", 10: "eyes", 11: "face", 12: "mouth", 13: "face", 14: "face", 15: "face", 16: "whole" };
-  const CROP = { head: [0, -6, 1], face: [30, 28, 1.6], eyes: [50, 52, 2.4], mouth: [50, 88, 2.4], whole: [-10, -16, 0.9] };   // [x, y, zoom] into the 200 box
+  const PICT = { 0: "figure", 2: "head", 4: "whole", 7: "figure", 8: "face", 9: "eyes", 10: "eyes", 11: "nose", 12: "mouth", 13: "face", 14: "face", 15: "face", 16: "whole" };
+  const CROP = { head: [0, -6, 1], face: [30, 28, 1.6], eyes: [50, 52, 2.4], mouth: [50, 88, 2.4], nose: [50, 66, 2.4], whole: [-10, -16, 0.9] };   // [x, y, zoom] into the 200 box
 
   const S = { box: null, pk: null, base: null, pick: null, tab: 0, card: null, earned: new Set(), anim: 0, faceAt: 0, faceSig: "", busy: false };
 
@@ -48,11 +48,13 @@
     return c;
   }
   function optionRow(i) {
-    const slot = IS.SLOTS[i], names = Array.isArray(slot[2]) ? slot[2] : null, col = IS.COLOURS[i], n = IS.N[i];
-    const size = phone() ? 44 : Math.max(matchMedia("(pointer: coarse)").matches ? 44 : 0, Math.round((n > 10 ? 34 : 40) * S.k));
-    const btns = Array.from({ length: n }, (_, v) => {
+    const slot = IS.SLOTS[i], names = Array.isArray(slot[2]) ? slot[2] : null, col = IS.COLOURS[i];
+    const list = IS.SHOW[i].includes(S.pick[i]) ? IS.SHOW[i] : IS.SHOW[i].concat(S.pick[i]);   // a look chosen before the lists got shorter still shows
+    const n = list.length;
+    const size = phone() ? 48 : Math.max(matchMedia("(pointer: coarse)").matches ? 48 : 0, Math.round((col ? 40 : n > 8 ? 44 : 46) * S.k));
+    const btns = list.map((v, k) => {
       const locked = i === 16 && v > 0 && !S.earned.has(v) && !S.demoAll;
-      const label = names ? T(names[v]) : F("{what} {n}", { what: T(slot[1]), n: v + 1 });
+      const label = names ? T(names[v]) : F("{what} {n}", { what: T(slot[1]), n: k + 1 });
       const b = el("button", { type: "button", class: "st-o" + (S.pick[i] === v ? " on" : "") + (locked ? " locked" : "") + (col ? " sw" : ""), role: "radio", "aria-checked": String(S.pick[i] === v),
         "aria-label": label + (locked ? " · " + T("locked") : ""), title: locked ? label + " · " + T(IS.EARN_HOW[v]) : label, style: `--sz:${size}px` + (col ? `;background:${col[v]}` : "") });
       if (!col) b.append(thumb(i, v, size - 4));
@@ -184,7 +186,8 @@
     if (S.box) S.box.remove(); S.box = null;
   }
   function dice() {
-    S.pick = S.pick.map((v, i) => i === 16 ? v : i >= 13 ? (Math.random() < 0.6 ? 0 : 1 + Math.floor(Math.random() * (IS.N[i] - 1))) : Math.floor(Math.random() * IS.N[i]));
+    const any = L => L[Math.floor(Math.random() * L.length)];
+    S.pick = S.pick.map((v, i) => i === 16 ? v : i >= 13 ? (Math.random() < 0.6 ? 0 : any(IS.SHOW[i].slice(1))) : any(IS.SHOW[i]));
     say(""); render();
   }
 

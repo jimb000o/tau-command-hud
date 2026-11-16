@@ -112,14 +112,21 @@ def blank() -> dict:
             "rules": 0, "rt": "", "look": None, "pt": [None] * len(NS), "held": 0}
 
 
+# what the studio offers per part since 16.11 (rabbit/islander.js SHOW, the same lists): a key's own face comes from these
+OFFER = ((0, 2, 3), (0, 1, 3, 5, 7, 9), (0, 1, 2, 3, 4, 8, 10, 11, 12, 14), (0, 2, 4, 5, 6, 7, 9), (0, 2, 3, 5, 6, 7),
+        (0, 1, 2, 3, 4, 5, 6, 11), (0, 2, 3, 6), (0, 1, 4), (0, 1, 3, 5), (0, 3, 4, 5, 6, 9), (0, 2, 3, 4, 6), (0, 2, 3, 6),
+        (0, 1, 2, 4, 6), (0, 2, 3, 4, 5, 7), (0, 1, 3, 4, 7), (0, 1, 3, 4, 6, 8, 9), tuple(range(10)))
+
+
 def key_part(pk: str, i: int) -> int:
     """Part i of a wallet that did not choose it: from byte i of its key (rabbit/islander.js parts())."""
     if i == 16:
         return 0
     b = int(pk[2 * i:2 * i + 2], 16)
+    L = OFFER[i]
     if i >= 13:
-        return 0 if b < 180 else 1 + b % (NS[i] - 1)
-    return b % NS[i]
+        return 0 if b < 180 else L[1 + b % (len(L) - 1)]
+    return L[b % len(L)]
 
 
 def parts_of(pk: str, chosen: list) -> list[int]:
