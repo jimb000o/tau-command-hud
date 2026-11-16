@@ -115,8 +115,14 @@ art = cc.recent_article("queen", Q15 + 86400, [
     {"id": "2026-11-13-support-tau-hud", "on": "2026-11-13", "kind": "news", "title": {"en": "shop"}}])
 check(art and art["title"].startswith("Three restarts") and art["url"].endswith("?p=2026-11-16-testnet-week-46"), "newest article on her calls or the week")
 rt = cc.texts("queen", Q15 + 86400, calls[0], 0, calls[1:], art)
-check("More on our blog: Three restarts" in rt["telegram"] and "full 90 minutes" not in rt["telegram"] and alerts.x_len(rt["x"]) <= 280,
-      "the announcement: restart, the call before, our article; X within 280")
+check("testnet started over" in rt["telegram"] and "14 November" in rt["telegram"] and "full 90 minutes" not in rt["telegram"] and alerts.x_len(rt["x"]) <= 280,
+      "the announcement: restart and the call before; X within 280")
+check(cc.caption_len(rt["telegram"]) <= cc.CAPTION_MAX and "testnet started over" in rt["telegram"],
+      f"the caption fits Telegram's limit ({cc.caption_len(rt['telegram'])} of {cc.CAPTION_MAX}), the restart kept")
+long_art = {"title": "x" * 400, "url": "https://tauhud.com/blog/?p=long"}
+lt = cc.texts("queen", Q15 + 86400, calls[0], 3, calls[1:], long_art)
+check(cc.caption_len(lt["telegram"]) <= cc.CAPTION_MAX and "More on our blog" not in lt["telegram"] and "testnet started over" in lt["telegram"],
+      "too long: the article goes first, the last call stays")
 clean = cc.last_lines(f, calls)[0]
 check("The 2 calls before ended early too:" in clean, "a call that left early names the cut-short calls before it too")
 picture = cc.picture(t, os.path.join(TMP, "p.jpg"))

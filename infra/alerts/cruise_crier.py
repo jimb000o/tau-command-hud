@@ -30,6 +30,7 @@ import html
 import json
 import logging
 import os
+import re
 import sys
 import time
 import urllib.request
@@ -172,7 +173,24 @@ def earlier_line(earlier: list[dict], too: bool = True) -> str:
     return (f" The call before ended early{t}: " if len(run) == 1 else f" The {len(run)} calls before ended early{t}: ") + "; ".join(parts) + "."
 
 
-def last_lines(f: dict | None, earlier: list[dict] | None = None) -> tuple[str, str, str]:
+CAPTION_MAX = 1024   # Telegram's limit for a picture's or a clip's caption, in characters as the reader sees them
+
+
+def caption_len(tg: str) -> int:
+    """The caption's length as Telegram counts it: without the HTML tags, entities as one character, in UTF-16 units."""
+    plain = html.unescape(re.sub(r"<[^>]+>", "", tg))
+    return len(plain.encode("utf-16-le")) // 2
+
+
+def short_last(f: dict | None) -> str:
+    """The last call in one sentence, for a caption that has no room for more."""
+    if restart_of(f):
+        return f"On her last call, {day_of(f)}, the testnet started over minutes after she anchored."
+    tg = last_lines(f, None, changed=False)[0]
+    return tg.split(". ")[0].rstrip(".") + "."
+
+
+def last_lines(f: dict | None, earlier: list[dict] | None = None, changed: bool = True) -> tuple[str, str, str]:
     """(Telegram sentence, card point, X sentence) about the last call, every number from the logbook's facts.
     `earlier`: the facts of the calls before it, newest first (recent_calls)."""
     if not f:
@@ -200,7 +218,7 @@ def last_lines(f: dict | None, earlier: list[dict] | None = None) -> tuple[str, 
               + (" Each is a check the chain itself makes on every payment, whoever sends it."
                  if tricks.get("refused with the expected answer", 0) == tricks["tried"] else ""))
         card = f"- Last call: {tricks.get('refused with the expected answer', 0)} of {tricks['tried']} tricks refused"
-        return tg + earlier_line(earlier or [], cut_short(f)) + changed_line(f), card, ""
+        return tg + earlier_line(earlier or [], cut_short(f)) + (changed_line(f) if changed else ""), card, ""
     old = f.get("refusals logged without any answer from the node (a timeout, counted as refusal by the old rule)") or 0
     una = (f.get("sends our node did not answer in time (not refusals)") or 0) + old
     acc, ref = f.get("accepted in all") or 0, (f.get("refused in all") or 0) - old
@@ -225,7 +243,7 @@ def last_lines(f: dict | None, earlier: list[dict] | None = None) -> tuple[str, 
         tg += " After she left, the testnet started over."
     card = f"- Last call: {acc} accepted" + (f", {ref} refused" if ref > 0 else ", none refused")
     x = f"Last call: {acc} real transactions accepted."
-    return tg + earlier_line(earlier or [], cut_short(f)) + changed_line(f), card, x
+    return tg + earlier_line(earlier or [], cut_short(f)) + (changed_line(f) if changed else ""), card, x
 
 
 def changed_line(f: dict) -> str:
@@ -296,17 +314,23 @@ def texts(ship: str, t0: float, last: dict | None, ahead: int = 0, earlier: list
     hh = blog.local(t0).hour
     fill = {"hh": f"{hh:02d}", "hz": f"{hh - 1:02d}", "day": short_day(t0)}
     tg_last, card_last, x_last = last_lines(last, earlier)
-    if article:
-        tg_last += f" More on our blog: {article['title']}: {article['url']}"
-    tg = "\n\n".join([
-        f"{s['emoji']} <b>{html.escape(s['head'].format(**fill), quote=False)}</b>",
-        html.escape(" ".join(x for x in (s["story"].format(**fill), ahead_line(ahead, fill["hh"])) if x), quote=False),
-        html.escape(tg_last, quote=False),
-        "Honest note: the passengers are made up. Their transactions are real, on Tau Testnet Alpha: never more than 12 "
-        "a minute, fewer when the node is slow, and she only lands when the testnet is calm. Every transaction goes into "
-        f"the logbook: {LOGBOOK}",
-        f"Watch from the pier in your browser, sound on: {GAME}",
-    ])
+    head = f"{s['emoji']} <b>{html.escape(s['head'].format(**fill), quote=False)}</b>"
+    story = html.escape(" ".join(x for x in (s["story"].format(**fill), ahead_line(ahead, fill["hh"])) if x), quote=False)
+    note = ("Honest note: the passengers are made up. Their transactions are real, on Tau Testnet Alpha: never more than 12 "
+            "a minute, fewer when the node is slow, and she only lands when the testnet is calm. Every transaction goes into "
+            f"the logbook: {LOGBOOK}")
+    pier = f"Watch from the pier in your browser, sound on: {GAME}"
+    # the post goes out as a picture's caption (Telegram: CAPTION_MAX at most, else it is refused): our article goes
+    # first, then the calls before, then what she changed; the last call itself always stays
+    more = f" More on our blog: {article['title']}: {article['url']}" if article else ""
+    short = short_last(last)
+    before = earlier_line(earlier or [], cut_short(last)) if last else ""
+    brief = f"Honest note: the passengers are made up, their transactions are real, on Tau Testnet Alpha. Logbook: {LOGBOOK}"
+    tries = [(c, note) for c in (tg_last + more, tg_last, short + before + more, short + before, short + more, short)] + [(short, brief)]
+    for cand, honest in tries:
+        tg = "\n\n".join([head, story, html.escape(cand, quote=False), honest, pier])
+        if caption_len(tg) <= CAPTION_MAX:
+            break
     # the honest note stays, the last call goes first when the post is too long
     x = alerts.x_post([s["x"].format(**fill), "The passengers are made up. Their transactions are real, on Tau Testnet Alpha.", x_last],
                       foot="", keep=2) if s.get("on_x", True) else ""
