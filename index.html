@@ -2727,9 +2727,11 @@ function explainOffer(o) {
   return `${who}${policyMeaning(o.policy)}\n${o.collides ? "Accepting replaces the recipient’s current rule. " : ""}${st}`;
 }
 const isGenesis = a => { const o = window.TauOrigin && TauOrigin.of(a); return !!o && o.tag === "idni"; };   // assets/origins.js, the same list the account page uses
+/* the Rules panel hover, kept short and in the same parts as the rule ring's: the rule in one plain sentence, why it is there
+   (only where we know: our showcase wallets), where it comes from, and at most one honest note */
 function explainClause(acc, p) {
-  const ab = window.TauOrigin && TauOrigin.about ? TauOrigin.about(acc) : null;
-  return `${isGenesis(acc) && !ab ? "IDNI genesis account, one of the 11 the testnet started with. " : ""}${policyMeaning(p)}${ab ? "\n" + ab.join("\n") : ""}\nChecked on every transfer, at admission and again in the block. Binds the account, not the key.`;
+  const why = window.TauOrigin && TauOrigin.why ? TauOrigin.why(acc) : "";
+  return [ruleSentence(p), why, ruleFrom(acc), ruleNote(p)].filter(Boolean).join("\n");
 }
 function explainBlock(b) {
   if (!b.n) return "Genesis: the starting state, spec revision 1, no transactions.";

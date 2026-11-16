@@ -3009,5 +3009,13 @@ TauI18n.add({ strings: {
   "Troll box: links to our own sites now go through and are clickable: any page of tauhud.com (also node.tauhud.com), agorzilla.com and our shop tau-hud-shop.fourthwall.com, with or without https://. Every other link is still refused, so scam links stay out.": "Troll box：现在可以发我们自己网站的链接了，而且可以点击：tauhud.com 的任何页面（包括 node.tauhud.com）、agorzilla.com 和我们的商店 tau-hud-shop.fourthwall.com，带不带 https:// 都行。其他链接仍然一律拒绝，诈骗链接进不来。",
   "Blog: what is in Tau Language 0.8.0. Over the weekend IDNI merged its development work into Tau Language’s main branch and pointed the downloads to 0.8.0; a new article says what it gives someone writing rules, and that the Tau Net testnet still builds its Tau engine from a commit of 14 October. Every article now ends with a next step: the page that fits it best to try it on the testnet, and our Telegram group.": "博客：Tau Language 0.8.0 里有什么。这个周末，IDNI 把开发工作合并进了 Tau Language 的主分支，并把下载链接指向了 0.8.0；一篇新文章讲它给写规则的人带来什么，也说明 Tau Net 测试网的 Tau 引擎仍是用 10 月 14 日的一个提交构建的。现在每篇文章的结尾都有下一步：最适合在测试网上亲手试试的页面，以及我们的 Telegram 群组。",
   "Tau Language 0.8.0 is taking shape on IDNI's main branch": "Tau Language 0.8.0 正在 IDNI 的主分支上成形",
-  "Whole numbers, more words for time, Tau from Python, JavaScript and the browser. What IDNI merged over the weekend, and what the Tau Net testnet uses today.": "整数、更多表达时间的词、从 Python、JavaScript 和浏览器使用 Tau。IDNI 这个周末合并了什么，以及 Tau Net 测试网今天用的是哪一版。"
+  "Whole numbers, more words for time, Tau from Python, JavaScript and the browser. What IDNI merged over the weekend, and what the Tau Net testnet uses today.": "整数、更多表达时间的词、从 Python、JavaScript 和浏览器使用 Tau。IDNI 这个周末合并了什么，以及 Tau Net 测试网今天用的是哪一版。",
+  /* 16.11.2026: short "why" lines in the Rules panel hover */
+  "Why: savings that cannot be spent early. Once a day we try a payment anyway, and the node refuses it.": "为什么：存款不能提前花掉。我们每天故意试一笔付款，节点拒绝它。",
+  "Why: big payments need two people. Once a day we try one without the co-signer, and the node refuses it.": "为什么：大额付款需要两个人。我们每天试一笔没有共同签名者的付款，节点拒绝它。",
+  "Why: this money can only feed Agorzilla. Once a day we try to pay someone else, and the node refuses it.": "为什么：这笔钱只能用来喂 Agorzilla。我们每天试着付给别人，节点拒绝它。",
+  "Why: it is the second signature the four-eyes wallet needs. It never sends.": "为什么：它是四眼钱包需要的第二个签名。它从不发送。",
+  "Why: it shows rule sharing. Every day it reads the piggy bank’s rule and accepts it.": "为什么：它展示规则共享。它每天读取存钱罐的规则并接受它。",
+  "Why: it shows why you read a rule first. Its daily offer to the four-eyes wallet gets declined.": "为什么：它说明为什么要先读规则。它每天向四眼钱包提出的规则都被拒绝。",
+  "Why: it offers visitors a starter rule on the wallet page. The owner accepts or declines it.": "为什么：它在钱包页面为访客提供一条入门规则。由钱包主人接受或拒绝。"
 } });

@@ -104,6 +104,16 @@
     stranger: ["Purpose: shows why you read a rule before you accept it. Every day it offers Tau HUD’s four-eyes wallet a rule that would let it pay only the stranger, and the offer is declined.", "Run by tauhud.com’s server with test AGRS."],
     desk: ["Offers a starter rule (at most 1,000 test AGRS per payment) to a visitor’s wallet that asks for it on the wallet page. The owner reads it and accepts or declines it there.", "Run by tauhud.com’s server with test AGRS."],
   };
+  // one short line on why a showcase wallet's rule is there, for the Rules panel hover (the rule itself and who runs it come from the HUD)
+  const WHY = {
+    piggy: "Why: savings that cannot be spent early. Once a day we try a payment anyway, and the node refuses it.",
+    foureyes: "Why: big payments need two people. Once a day we try one without the co-signer, and the node refuses it.",
+    feeding: "Why: this money can only feed Agorzilla. Once a day we try to pay someone else, and the node refuses it.",
+    cosigner: "Why: it is the second signature the four-eyes wallet needs. It never sends.",
+    apprentice: "Why: it shows rule sharing. Every day it reads the piggy bank’s rule and accepts it.",
+    stranger: "Why: it shows why you read a rule first. Its daily offer to the four-eyes wallet gets declined.",
+    desk: "Why: it offers visitors a starter rule on the wallet page. The owner accepts or declines it.",
+  };
   const TAG_ABOUT = {
     idni: "One of the 11 accounts the testnet started with, set up by IDNI.",
     bot: "One of our own server wallets on White Rabbit Key.",
@@ -196,6 +206,7 @@
     if (a && a.line) out.push(...a.line.split("\n"));
     return out.length ? out : null;
   };
+  const why = pk => { const r = role(pk); return (r && WHY[r]) || ""; };   // English: the hover translates it line by line
   // a showcase wallet's role (piggy, foureyes, feeding, cosigner, apprentice, stranger, desk), else null
   const role = pk => (!sim() && roles.get(String(pk || "").toLowerCase())) || null;
   // what an address is, when it belongs to an app or owner we know (a rule's recipient or co-signer), else null
@@ -208,5 +219,5 @@
     if (GENESIS.has(h)) return tr("an IDNI genesis account");
     return name(h);
   };
-  window.TauOrigin = { of, label, name, about, app, role, place, tags: TAGS, ready: () => first };
+  window.TauOrigin = { of, label, name, about, why, app, role, place, tags: TAGS, ready: () => first };
 })();
