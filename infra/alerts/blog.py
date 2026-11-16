@@ -706,7 +706,10 @@ def share_page(a: dict) -> str:
     a person who opens it goes on to the article."""
     import html as h
     url = f"{SITE}/blog/?p={a['id']}"
-    img = a.get("image") or f"{SITE}/assets/shots/blog.png"
+    # the article's own picture: its "image", else the hero made for it here; never another article's (16 Nov 2026:
+    # a link to the Tau Language article showed the MS Dry Run screenshot), at worst the site's plain card
+    hero = os.path.join(IMG, a["id"] + "-hero.jpg")
+    img = a.get("image") or (f"{NODE}/blog/img/{a['id']}-hero.jpg" if os.path.exists(hero) else f"{SITE}/og.png")
     t, dek = h.escape(a["title"]["en"]), h.escape(a["dek"]["en"])
     page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{t} · Tau HUD Blog</title>
 <meta name="description" content="{dek}"><meta property="og:type" content="article"><meta property="og:title" content="{t}">

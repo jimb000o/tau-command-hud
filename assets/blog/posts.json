@@ -81,6 +81,12 @@
     "- Testnet still on the October engine",
     "Tau HUD blog · community project, not run by IDNI"
    ],
+   "image": "https://node.tauhud.com/blog/img/2026-11-16-tau-language-0-8-hero.jpg",
+   "image_alt": {
+    "en": "The article's card and its four numbers in the Tau HUD look",
+    "zh": "以 Tau HUD 风格呈现的文章卡片和四个数字",
+    "ja": "Tau HUD のデザインで描いた記事のカードと4つの数字"
+   },
    "next": {
     "href": "/learn/",
     "label": {
