@@ -161,4 +161,9 @@ TauI18n.add({ strings: {
   "offers a policy rule with more comparisons than one clause may carry (over 32)": "提交一条比较次数超过单条子句上限（超过 32）的策略规则",
   "{a} allowed, the fee rule asks {b}": "允许 {a}，收费规则要求 {b}",
   "with {b} it went through": "允许 {b} 时就通过了",
+  "From our blog": "我们的博客",
+  "After each visit we write down what it showed about the testnet, from this very logbook. Only published articles appear here.": "每次到访之后，我们都会根据这本航海日志写下它让我们看到的测试网情况。这里只显示已发布的文章。",
+  "All articles": "全部文章",
+  "Our article on this visit": "我们关于这次到访的文章",
+  "Read what we learned on this visit": "阅读我们从这次到访中学到的东西",
 } });
