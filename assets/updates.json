@@ -3300,5 +3300,11 @@
     "tag": "Rules load",
     "on": "2026-11-16",
     "html": "Personal money rules and Rule sharing fill as soon as the HUD opens: the relay now hands over every rule in force and the newest offers in one answer, instead of the page asking our node about each account in turn. While our node is still reading after a server update, both panels and Rules in numbers show how far it got."
+  },
+  {
+    "tag": "Guardian",
+    "on": "2026-11-16",
+    "link": "/guardian/",
+    "html": "Guardian: you can now lock your rule. IDNI added a rule lock to the testnet today (tau-testnet 211b780): with it, changing or removing an account’s rule waits for a co-signer. On the Guardian page the lock names the Guardian, so a change waits for a code from your app; without the code it goes through only after 1,000 blocks, and you can cancel it in that time. The wallet shows such a waiting change with a Cancel button, friends can approve a change that names them, and our pages no longer say a rule can never stop a stolen key."
   }
 ]

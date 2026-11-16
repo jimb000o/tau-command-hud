@@ -212,6 +212,7 @@ VIA = re.compile(r"^[a-z0-9-]{1,24}(/[a-z]{2})?$")   # a page name: start, rules
 WALLET_TX_TYPES = frozenset({
     "user_tx", "consensus_rule_vote", "rule_offer", "rule_offer_accept", "rule_offer_reject",
     "approval_request", "transfer_vote", "retractable_transfer", "retract_transfer",
+    "rule_change_request", "rule_change_cancel",   # the rule lock, tau-testnet 211b780 (docs/approvals.md "Guarding policy changes")
 })
 TX_MAX_BYTES = _env_int("TX_MAX_BYTES", 8192)
 TX_IP_BURST = _env_float("TX_IP_BURST", 6)

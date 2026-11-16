@@ -1386,7 +1386,7 @@ TauI18n.add({ strings: {
   "asking it to pay you {a} test AGRS; its rule decides": "请它付你 {a} 测试 AGRS；由它的规则决定",
   "crack {n} <rule>: one line of Tau, the rule you want the keeper to hold. It says o5 = 1 to let a payment through, o5 = 0 to block it. Write #xME for your own address.": "crack {n} <rule>：一行 Tau，就是你想让看守持有的规则。o5 = 1 放行付款，o5 = 0 拦下。用 #xME 代表你自己的地址。",
   "The vaults are real wallets on the testnet; the simulation does not reach them. Switch to the live node in the header.": "金库是测试网上真实的钱包，模拟模式够不到它们。请在页头切换到实时节点。",
-  "What is real: each vault’s rule on the chain, the node’s yes or no, the payment in a block. What is game: our server holds each vault’s key and signs any plain payment you ask for, as if the key had leaked. It never changes a vault’s rule for you; a real thief with a real key could, so a rule protects against mistakes and tricks, not against a stolen key.": "真实的部分：每个金库在链上的规则、节点的同意或拒绝、区块里的付款。游戏的部分：我们的服务器持有每个金库的私钥，你要求的任何普通付款它都会签名，就像私钥泄露了一样。它从不替你改金库的规则；真正拿到私钥的小偷却可以，所以规则防的是失误和骗局，不是被盗的私钥。",
+  "What is real: each vault’s rule on the chain, the node’s yes or no, the payment in a block. What is game: our server holds each vault’s key and signs any plain payment you ask for, as if the key had leaked. It never changes a vault’s rule for you; a real thief with a real key could, unless the vault also had a rule lock (on the testnet since 16 November 2026): then a rule change waits for a co-signer, or for 1,000 blocks.": "真实的部分：每个金库在链上的规则、节点的同意或拒绝、区块里的付款。游戏的部分：我们的服务器持有每个金库的私钥，你要求的任何普通付款它都会签名，就像私钥泄露了一样。它从不替你改金库的规则；真正拿到私钥的小偷却可以，除非金库还有规则锁（测试网 2026 年 11 月 16 日起新增）：那样改规则要等联署人同意，或者等 1,000 个区块。",
   "asking our relay for the vaults …": "正在向我们的中继询问金库……",
   "The vaults are not answering just now. Try again in a minute.": "金库暂时没有回应。一分钟后再试。",
   "The till": "钱柜",
@@ -1438,5 +1438,8 @@ TauI18n.add({ strings: {
   "you already have a request under way: wait for its answer": "你已经有一个请求在进行中：等它的回答",
   "the keeper is busy with another player's rule; try again in a few minutes": "看守正忙着处理另一位玩家的规则；几分钟后再试",
   "the keeper is not yours: crack it first (crack <level> <rule>), then drain it while your lease lasts": "看守不归你：先破解它（crack <level> <rule>），再在租期内掏空它",
-  "the vaults are closed just now": "金库暂时关闭"
+  "the vaults are closed just now": "金库暂时关闭",
+  /* 16.11.2026: the rule lock (tau-testnet 211b780) */
+  "a change of {h}’s rule: {k}": "{h} 的规则修改：{k}",
+  "signing {h}’s request: {w}": "正在签署 {h} 的请求：{w}",
 } });

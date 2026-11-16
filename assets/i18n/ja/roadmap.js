@@ -286,5 +286,7 @@ TauI18n.add({ strings: {
   "Move the testnet to the newest Tau language once it is released (#111).": "最新の Tau 言語がリリースされたら、テストネットをそれに移す（#111）。",
   "IDNI already refuses rules that read an earlier step, such as i1[t-1], for the same reason. A bare time condition is one more case for the same check.": "IDNI は同じ理由で、i1[t-1] のように前のステップを読むルールをすでに断っています。時間だけの条件は、同じ確認のもう一つの場合です。",
   "Our weekly check found something here that may be out of date. We are on it.": "毎週のチェックで、ここに古くなっているかもしれない部分が見つかりました。対応中です。",
-  "Weekly check": "毎週のチェック"
+  "Weekly check": "毎週のチェック",
+  /* 16.11.2026: the rule lock (tau-testnet 211b780) */
+  "Since 16 November (IDNI’s change 211b780) an account can also lock its rule: a change then waits for a co-signer, or 1,000 blocks in which the owner can cancel it. Tau HUD’s Guardian offers that lock.": "11 月 16 日から（IDNI の変更 211b780）、アカウントはルールをロックすることもできます。変更は共同署名者の同意か 1,000 ブロックを待ち、その間に持ち主が取り消せます。Tau HUD の Guardian がこのロックを提供しています。",
 } });

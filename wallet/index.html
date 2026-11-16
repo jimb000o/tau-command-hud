@@ -904,6 +904,7 @@ const SIGNED = {
   rule_offer_accept: ["offer_id", "rule_text"], rule_offer_reject: ["offer_id"],
   approval_request: ["recipient_pubkey", "amount", "expire_at_height", "approvers", "custom_inputs"], transfer_vote: ["request_id", "approve", "reason"],
   retractable_transfer: ["recipient_pubkey", "amount", "release_at_height", "release_at_time"], retract_transfer: ["retractable_id"],
+  rule_change_request: ["kind", "rule_text", "offer_id", "approvers"], rule_change_cancel: ["request_id"],   // tau-testnet 211b780: the rule lock
 };
 const DEFAULTS = { operations: {}, approve: true, approvers: {}, custom_inputs: {}, reason: "" };
 function canon(o) {   // Python's json.dumps(sort_keys=True, separators=(",", ":"))
@@ -920,7 +921,7 @@ function signTx(tx) {
 let nextSeq = null;   // a second send before the first lands takes the next number
 function base(type, extra) {
   const h = head() || 0, seq = Math.max(W.seq || 0, nextSeq || 0);
-  const free = ["consensus_rule_vote", "transfer_vote", "retract_transfer"].includes(type);
+  const free = ["consensus_rule_vote", "transfer_vote", "retract_transfer", "rule_change_cancel"].includes(type);
   return { tx_type: type, sender_pubkey: W.pk, sequence_number: seq, expiration_time: Math.floor(Date.now() / 1000) + 600,
     expire_at_height: h + 1000, fee_limit: String(free ? 0 : baseFee() * 5), ...extra };
 }
@@ -956,6 +957,7 @@ const byRule = env => /user policy \(o5\)/i.test(JSON.stringify((env && (env.err
 /* the node's refusals, in plain words where we know them */
 function plain(env) {
   const e = (env && (env.error || (env.data && env.data.ok === false ? env.data : null))) || {}, m = String(e.message || ""), code = e.code || "";
+  if (/RULE_CHANGE_NEEDS_APPROVAL/.test(code + m)) return T("Refused before sending: your account has a rule lock, so a change to its rule waits for your co-signer. With the Guardian as co-signer, change the rule on the Guardian page and confirm it with a code from your app. Nothing was sent.");
   if (/RULE_WITH_TRANSFERS/.test(code + m)) return T("Refused before sending: a rule and payments cannot share one transaction. Send the rule first, then the payments. Nothing was sent.");
   if (/reads no input/i.test(m)) return T("Refused before sending: a rule must look at the payment (amount, recipient, time or a co-signature); a rule that only says “block” is refused. Nothing was sent.");
   if (/comparisons; the limit|nests parentheses/i.test(m)) return T("Refused before sending: the rule is too long for the testnet (at most 32 comparisons and 32 levels of brackets). Nothing was sent.");
@@ -1823,9 +1825,16 @@ async function askDesk() {
   renderActivity();
 }
 async function answerRequest(q, yes) {
-  const r = await submit(base("transfer_vote", { request_id: q.request_id, approve: yes }), yes ? F("Co-signed {n} test AGRS from {x}", { n: fmt(q.amount), x: tag(q.sender_pubkey) }) : F("Declined to co-sign for {x}", { x: tag(q.sender_pubkey) }), "vote");
+  const rc = q.request_type === "rule_change";
+  const r = await submit(base("transfer_vote", { request_id: q.request_id, approve: yes }), yes ? (rc ? F("Approved a rule change of {x}", { x: tag(q.sender_pubkey) }) : F("Co-signed {n} test AGRS from {x}", { n: fmt(q.amount), x: tag(q.sender_pubkey) })) : F("Declined to co-sign for {x}", { x: tag(q.sender_pubkey) }), "vote");
   $("actAside").textContent = r.ok ? "" : r.why;
   if (r.ok) dispatchEvent(new Event("tauhud-mail"));   // the ✉ in the top bar (nav.js) reads again
+}
+/* tau-testnet 211b780: what a rule-change request asks for, by its kind (docs/approvals.md "Guarding policy changes") */
+const RC_WHAT = { 1: "a new rule for the account", 2: "removing the account's rule", 3: "accepting an offered rule", 4: "a new rule lock", 5: "removing the rule lock" };
+async function cancelChange(q) {
+  const r = await submit(base("rule_change_cancel", { request_id: q.request_id }), T("Cancelled a change of your rule"), "vote");
+  $("actAside").textContent = r.ok ? "" : r.why;
 }
 async function takeBack(t) {
   const r = await submit(base("retract_transfer", { retractable_id: t.retractable_id }), F("Took back {n} test AGRS", { n: fmt(t.amount) }), "retract");
@@ -1864,13 +1873,29 @@ function inboxItems() {
       el("span", { class: "acts" }, el("button", { class: "b", type: "button", text: T("Ask Tau HUD"), "data-tip": T("Ask Tau HUD’s rule desk") + "\n" + T("It offers your wallet a starter rule: at most 1,000 test AGRS per payment.") + "\n" + T("Nothing changes until you read it and accept it here."), onclick: askDesk })),
       el("span", { class: "m", text: T("Tau HUD’s rule desk offers your wallet a starter rule through rule sharing: at most 1,000 test AGRS per payment. It shows up here after the next block or two; you read it, then accept or decline it.") })));
   }
-  for (const q of ((W.reqs && W.reqs.incoming) || []).filter(q => q.status === "pending")) {
+  const mineWaits = q => Object.values(q.approvers || {}).some(a => a.pubkey === W.pk && a.state === "awaiting");
+  for (const q of ((W.reqs && W.reqs.incoming) || []).filter(q => q.status === "pending" || (q.status === "open" && mineWaits(q)))) {
+    if (q.request_type === "rule_change") {   // a friend's rule lock names you: their rule may change only with your yes
+      items.push(el("div", { class: "item ask keep" }, el("span", { class: "dot ok" }),
+        el("span", { class: "t", text: F("{x} asks you to approve: {k}", { x: tag(q.sender_pubkey), k: T(RC_WHAT[q.kind] || "a change of their rule") }) }),
+        el("span", { class: "acts" }, el("button", { class: "b", type: "button", text: T("Approve"), onclick: () => answerRequest(q, true) }), el("button", { class: "b quiet", type: "button", text: T("Decline"), onclick: () => answerRequest(q, false) }), bookBtn(q.sender_pubkey)),
+        el("span", { class: "m", text: (q.body ? F("New text: {r}", { r: String(q.body).replace(/\s+/g, " ").slice(0, 160) + (String(q.body).length > 160 ? "…" : "") }) + " " : "") + T("Approve only if you know they asked for it: a thief with their key can ask too.") })));
+      continue;
+    }
     items.push(el("div", { class: "item ask keep" }, el("span", { class: "dot ok" }),
       el("span", { class: "t", text: F("{x} asks you to co-sign {n} test AGRS", { x: tag(q.sender_pubkey), n: fmt(q.amount) }) }),
       el("span", { class: "acts" }, el("button", { class: "b", type: "button", text: T("Co-sign"), onclick: () => answerRequest(q, true) }), el("button", { class: "b quiet", type: "button", text: T("Decline"), onclick: () => answerRequest(q, false) }), bookBtn(q.sender_pubkey)),
       el("span", { class: "m", text: F("To {x}. Free for you; the payment goes through once its rule is met.", { x: tag(q.recipient_pubkey) }) })));
   }
   for (const q of ((W.reqs && W.reqs.outgoing) || []).filter(q => q.status === "pending" || q.status === "open")) {   // the node says "open", the simulation "pending"
+    if (q.request_type === "rule_change") {   // a change of this account's own rule that its rule lock holds back
+      const g = !SIM && GUARD && Object.values(q.approvers || {}).some(a => a.state === "awaiting" && a.pubkey === GUARD);
+      items.push(el("div", { class: "item keep" }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("Your rule lock holds back: {k}", { k: T(RC_WHAT[q.kind] || "a change of your rule") }) }),
+        el("span", { class: "acts" }, g ? el("a", { class: "b", href: "/guardian/#r=" + q.request_id, text: T("Enter your code ›") }) : null,
+          el("button", { class: "b quiet", type: "button", text: T("Cancel it"), "data-tip": T("Cancel this change") + "\n" + T("Free. Whoever holds your key could have asked for it."), onclick: () => cancelChange(q) })),
+        el("span", { class: "m", text: T("Not you? Cancel it: anyone with your key can ask.") + " " + F("Without a co-signature it goes through by itself at block #{a}.", { a: q.escape_height }) })));
+      continue;
+    }
     const guard = !SIM && GUARD && Object.values(q.approvers || {}).some(a => a.state === "awaiting" && a.pubkey === GUARD);
     const waiting = Object.values(q.approvers || {}).filter(a => a.state === "awaiting").map(a => a.pubkey === GUARD ? T("the Guardian") : tag(a.pubkey));
     items.push(el("div", { class: "item" + (guard ? " keep" : "") }, el("span", { class: "dot sim" }), el("span", { class: "t", text: F("{n} test AGRS to {x} waits for a co-signature", { n: fmt(q.amount), x: tag(q.recipient_pubkey) }) }),
@@ -2009,7 +2034,7 @@ function renderKpis() {
   document.querySelector(".kpis").hidden = !W.pk;   // three dashes say nothing before there is an account
   $("tRule").textContent = !W.pk || W.clause === undefined ? "–" : r ? T("1") : T("no");
   $("kRule").classList.toggle("hot", !!r);
-  const wait = W.pk ? (((W.offers && W.offers.incoming) || []).filter(o => o.status === "offered").length + ((W.reqs && W.reqs.incoming) || []).filter(q => q.status === "pending").length) : null;
+  const wait = W.pk ? (((W.offers && W.offers.incoming) || []).filter(o => o.status === "offered").length + ((W.reqs && W.reqs.incoming) || []).filter(q => q.status === "pending" || (q.status === "open" && Object.values(q.approvers || {}).some(a => a.pubkey === W.pk && a.state === "awaiting"))).length) : null;
   $("tWait").textContent = wait == null ? "–" : wait;
   $("jumpN").hidden = !wait; $("jumpN").textContent = wait || "";
   $("kWait").classList.toggle("wait", !!wait);

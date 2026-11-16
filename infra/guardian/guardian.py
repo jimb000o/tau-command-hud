@@ -9,8 +9,10 @@ What it can do and what it cannot:
 - It can only say yes to a payment the account itself asked for, and only to one that names the Guardian. It can never
   send, move or hold anything: it has no account key of anyone and no funds (votes are feeless).
 - If it is down, payments above the limit wait and run out (expire_at_height); nothing below the limit is touched.
-- Whoever holds the account key can still replace or remove the rule (the protocol allows it today). This guards against
-  a mistaken or tricked payment, not against a stolen key. The page says so.
+- Whoever holds the account key can replace or remove the rule, unless the account also has a rule lock (tau-testnet
+  211b780, docs/approvals.md "Guarding policy changes"): the page offers one that names the Guardian, so a change of the
+  rule then waits for the owner's code like a payment (IDNI's TotpBot.decide_rule_change: a code only, never the daily
+  allowance, which needs an amount), or 1,000 blocks in which the owner can cancel it.
 - The code never goes on chain: six digits on chain can be brute-forced in their validity window.
 
 Built on IDNI's reference approver bot in tau-testnet (scripts/approval_bot_totp.py and approval_bot_common.py): its
@@ -546,7 +548,8 @@ def status(g: Guardian) -> int:
     print(f"          accounts with a daily allowance: {auto}; the rest want a code for every payment")
     for a in g.meta.get("approvals", [])[-3:]:
         when = time.strftime("%d.%m. %H:%M UTC", time.gmtime(a["t"]))
-        print(f"          co-signed {when}: {a.get('amount')} test AGRS from {a.get('account')}…")
+        what = f"{a.get('amount')} test AGRS" if a.get("amount") is not None else "a rule change"   # rule lock (tau-testnet 211b780)
+        print(f"          co-signed {when}: {what} from {a.get('account')}…")
     print("          page: https://tauhud.com/guardian/")
     return 0
 

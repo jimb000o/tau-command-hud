@@ -2628,7 +2628,7 @@
     return true;
   }
   function vaultTruth() {
-    say("learn", T("What is real: each vault’s rule on the chain, the node’s yes or no, the payment in a block. What is game: our server holds each vault’s key and signs any plain payment you ask for, as if the key had leaked. It never changes a vault’s rule for you; a real thief with a real key could, so a rule protects against mistakes and tricks, not against a stolen key."));
+    say("learn", T("What is real: each vault’s rule on the chain, the node’s yes or no, the payment in a block. What is game: our server holds each vault’s key and signs any plain payment you ask for, as if the key had leaked. It never changes a vault’s rule for you; a real thief with a real key could, unless the vault also had a rule lock (on the testnet since 16 November 2026): then a rule change waits for a co-signer, or for 1,000 blocks."));
   }
   async function vaultsCmd(arg) {
     if (vaultsOff()) return;
@@ -2826,10 +2826,12 @@
       const r = await ask("getapprovalrequests " + k.pk + " in");
       if (!isOk(r)) { say("no", T("The node did not answer; try again in a minute.")); return; }
       const rows = (r.data.incoming || []).filter(x => x.status === "open" && Object.values(x.approvers || {}).some(a => a.pubkey === k.pk && a.state === "awaiting"));
+      /* a payment, or (tau-testnet 211b780) a change of a friend's rule that their rule lock holds back for your yes */
+      const what = x => x.request_type === "rule_change" ? F("a change of {h}’s rule: {k}", { h: short(x.sender_pubkey), k: String(x.kind_name || x.kind) }) : F("{n} test AGRS from {h} to {g}", { n: fmt(x.amount), h: short(x.sender_pubkey), g: short(x.recipient_pubkey) });
       if (!arg) {
         if (!rows.length) { say("sys", T("Nobody is waiting for your signature. A friend who wants you as their second key needs your address:")); say("sys", k.pk); return; }
         say("sys", T("Waiting for your signature:"));
-        cols(rows.map((x, i) => ["cosign " + (i + 1), F("{n} test AGRS from {h} to {g}", { n: fmt(x.amount), h: short(x.sender_pubkey), g: short(x.recipient_pubkey) })]));
+        cols(rows.map((x, i) => ["cosign " + (i + 1), what(x)]));
         say("learn", T("Signing is a transaction of its own (transfer_vote), without a fee. Once the second key the sender’s rule wants has signed, the chain pays the parked payment by itself."));
         return;
       }
@@ -2837,7 +2839,7 @@
       if (!x) { say("warn", T("No such request waits for you: type cosign to see them.")); return; }
       const { seq, tip } = await envelope(k.pk);
       const tx = sign({ tx_type: "transfer_vote", sender_pubkey: k.pk, sequence_number: seq, expiration_time: now() + 600, expire_at_height: tip + 1000, fee_limit: "0", request_id: x.request_id, approve: true, reason: "No Memo" }, k.sk);
-      say("step", F("signing {h}’s request: {n} test AGRS", { h: short(x.sender_pubkey), n: fmt(x.amount) }));
+      say("step", x.request_type === "rule_change" ? F("signing {h}’s request: {w}", { h: short(x.sender_pubkey), w: what(x) }) : F("signing {h}’s request: {n} test AGRS", { h: short(x.sender_pubkey), n: fmt(x.amount) }));
       const s = await sendtx(tx);
       if (!s.r) { say("no", T("No answer from the node; nothing was sent. Type cosign again.")); return; }
       if (!s.hash) { say("no", F("The chain said no: {x}", { x: codeOf(s.r) || plain(s.r) })); return; }
