@@ -1,6 +1,111 @@
 {
  "posts": [
   {
+   "id": "2026-11-16-money-rules-so-far",
+   "on": "2026-11-16",
+   "kind": "learnings",
+   "kicker": "Learnings · Tau Net testnet · 16 November 2026",
+   "title": {
+    "en": "Personal money rules on Tau Net: what we wrote, what broke, and how to write yours",
+    "zh": "Tau Net 上的个人资金规则：我们写了什么、哪里出了错、你怎么写自己的",
+    "ja": "Tau Net のパーソナルなお金のルール：私たちが書いたもの、壊れたもの、あなたのルールの書き方"
+   },
+   "dek": {
+    "en": "Someone in our chat asked whether anyone has written a personal money rule yet. We have: wallets that refuse their owner, rules players propose to each other, a game where the rule is the only lock. What held, what we got wrong, and where a rule stops.",
+    "zh": "我们聊天室里有人问：有人写过个人资金规则吗？我们写过：会拒绝主人的钱包、玩家之间互相提议的规则、规则是唯一一把锁的游戏。哪些站住了，我们错在哪里，规则的边界在哪里。",
+    "ja": "チャットで「もう誰かパーソナルなお金のルールを書いた？」と聞かれました。私たちは書きました。持ち主を拒むウォレット、プレイヤーどうしが提案し合うルール、ルールが唯一の鍵になるゲーム。うまくいったこと、間違えたこと、ルールの限界。"
+   },
+   "why": [
+    {
+     "en": "For you: a rule is the one payment your wallet refuses even when you click yes, and you can write one in plain words.",
+     "zh": "对你：规则就是即使你点了“确定”，你的钱包也会拒绝的那笔付款，而且你可以用大白话写出来。",
+     "ja": "あなたにとって：ルールとは、あなたが「はい」を押してもウォレットが拒む支払いのこと。ふつうの言葉で書けます。"
+    },
+    {
+     "en": "For Tau Net: the testnet learns from rules people really write; every odd case we hit went back to IDNI as a report.",
+     "zh": "对 Tau Net：测试网从人们真正写下的规则中学习；我们碰到的每个怪情况都作为报告交给了 IDNI。",
+     "ja": "Tau Net にとって：テストネットは実際に書かれたルールから学びます。私たちが出会った妙なケースはすべて IDNI に報告しました。"
+    },
+    {
+     "en": "Honest limit: a rule sees one payment at a time, cannot add up a day, and a testnet restart clears it.",
+     "zh": "诚实的边界：规则一次只看一笔付款，不能按天累计，测试网重启会把它清空。",
+     "ja": "正直な限界：ルールは 1 回の支払いしか見ず、1 日の合計は数えられず、テストネットの再起動で消えます。"
+    }
+   ],
+   "intro": {
+    "en": "In our chat someone asked: \"anyone written a personal money rule yet?\" The answers were \"it's crazy stuff\" and \"I dabbled, nothing concrete\". Fair enough. Since 13 November every account on the Tau Net testnet can carry its own rule: a short text in the Tau Language that every node checks before a payment leaves. We are Tau HUD, a community project not run by IDNI, and since then we have written rules for our own wallets, for our games and for other people's wallets. This is what we saw.",
+    "zh": "我们的聊天室里有人问：“有人写过个人资金规则吗？”回答是“这东西太疯了”和“我试过几条，没什么具体的”。说得也对。从 11 月 13 日起，Tau Net 测试网上的每个账户都可以带一条自己的规则：一段用 Tau Language 写的短文本，每笔付款离开前每个节点都会检查它。我们是 Tau HUD，一个不由 IDNI 运营的社区项目。从那以后，我们为自己的钱包、为我们的游戏、也为别人的钱包写了规则。下面是我们看到的。",
+    "ja": "チャットで誰かが「もう誰かパーソナルなお金のルールを書いた？」と聞きました。返事は「すごいことになってる」と「少し試したけど、具体的なものはまだ」。もっともです。11 月 13 日から、Tau Net テストネットのすべてのアカウントが自分のルールを持てます。Tau Language で書いた短いテキストで、支払いが出ていく前にすべてのノードが検査します。私たち Tau HUD は IDNI が運営していないコミュニティプロジェクトで、それ以来、自分たちのウォレット、ゲーム、そして他の人のウォレットのためにルールを書いてきました。見えたことをまとめます。"
+   },
+   "body": {
+    "en": "## The moment it clicked\nOn 13 November we gave a fresh test wallet one rule: no payment above 1,000. Then we tried to send 5,000 from it, signed with its own key. The node refused it at the door, so it cost no fee. A payment of 500 from the same wallet went into block 166. Nobody stood in between: not our app, not our server. The one refused was the key holder.\n\nThat is the whole idea. A personal rule is a promise you make to your own wallet, and every Tau Net node keeps it for you, even when you, or someone pushing you, click yes.\n\n## What we built with it\n- **Three wallets that say no in public.** Tau HUD's piggy bank cannot send anything before 1 January 2027. The four-eyes wallet needs a second signature for any payment above 100, and for any payment that would leave it below 90,000. The [Agorzilla](https://agorzilla.com/) feeding fund can only pay Agorzilla's bowl, at most 20 a meal. Three times a day each of them tries a payment its rule forbids, and the network refuses it where everyone can watch.\n- **A rule builder that reads plain words.** In the [rule builder](/builder/) you type \"max 500 per payment, co-sign above 1,000\" and it writes the rule, then checks it six ways. That very sentence taught us the most useful check: the co-signer part never decides anything, because nothing above 500 gets through in the first place. Plain words can promise more than the rule does.\n- **A co-signer on your phone.** The [Guardian](/guardian/) signs your small payments by itself and asks for your code for the rest. We built it on 6 November, when the whole testnet had two rule places and both were taken, so it could not be tried on the live chain until every account got a place. Since today it can also lock your rule.\n- **Rules between people.** A wallet can offer its rule to another wallet, which reads it and accepts or declines. In [White Rabbit Key](/rabbit/) islanders now propose rules to each other: click another islander and offer \"at most 1,000 a payment\" or \"I co-sign your big payments\". Every day at 12, 13 and 14 German time our own wallets play it out in public: a gift that is accepted, a \"pay only me\" scam rule that is declined, an offer left to expire.\n- **A game where the rule is the only lock.** In [No Memo](/nomemo/) five vault wallets play as if their key had leaked: our server signs any payment a player asks for. The only thing in the way is each vault's real rule on the chain. Read it, find the gap, drain it. The vaults get new rules every Monday; the first week started this Monday.\n- **Seeing whose rule it is.** The inner ring of the [HUD](/) marks every account that holds a rule; hover a mark and it tells whose rule it is and what it allows. [Rules in numbers](/rules/numbers/) counts them by kind and by who holds them.\n\n## What broke, and what we got wrong\n- **We promised a floor that a block can slip under.** Our four-eyes wallet and feeding fund first said \"never below 90,000\". But a rule reads the balance as it stood in the block before, so several payments inside one block can still take it lower. We rewrote both rules and the wording on 14 November.\n- **A rule that reads nothing is refused.** Our wallet's first \"freeze\" said simply \"block\". A rule must read something about the payment, so the network refused it. Freeze now reads \"block any payment above 0\".\n- **Our gift story cried failure.** On 15 November the daily gift between our wallets was reported as failed twice, although it had landed: our lookup searched for the offer after the node had already settled it. We fixed our side the same day. On 14 November two offers were taken by our node but never reached a block, and we still do not know why. Today's run is the real test.\n- **A restart clears every rule.** The testnet started over on 14 and 15 November. A new chain starts with no rules at all. Our wallets set theirs again by themselves. If you set a rule by hand before Sunday evening, set it again.\n- **Time is tricky.** On a private copy of the testnet, never on the live one, our audit found one rule shape that counts the Tau engine's own steps and made two nodes disagree about the same block. We reported it to IDNI as issue #115. Finding exactly this kind of thing early is what a testnet is for.\n\n## What a rule can and cannot do today\n- **It can:** cap each payment, allow only certain recipients, ask for a co-signer above an amount, wait until a date, keep a reserve (with the one-block gap above), and since today lock itself.\n- **It cannot add up a day.** Each payment is checked on its own, so \"at most 1,000 a day\" is not possible yet. Many small payments each pass a cap per payment. The Guardian's daily allowance covers that gap off the chain.\n- **A stolen key.** Without a lock, whoever holds your key can replace your rule and then send freely. Since IDNI's update this morning a rule can be locked: a change then waits for your co-signer, or for 1,000 blocks, and you can cancel it in the meantime. It raises the bar for a thief. It is not a way to get a lost key back.\n- **Small and plain.** A rule holds at most 32 comparisons, and setting it is its own transaction without a payment in it.\n\n## Write yours\nOpen the [rule builder](/builder/) and write in plain words what your wallet should never do, for example \"at most 1,000 per payment\". Read the six checks, then hand the rule to your wallet. This is the testnet: the coins have no value, setting a rule costs a small fee, and a payment your rule refuses at the door costs nothing. Then tell us in our [Telegram group](/telegram/) what you wrote and what surprised you.",
+    "zh": "## 恍然大悟的那一刻\n11 月 13 日，我们给一个全新的测试钱包设了一条规则：单笔付款不超过 1,000。然后我们用它自己的密钥签名，试着从它转出 5,000。节点在门口就拒绝了，所以没有扣手续费。同一个钱包的一笔 500 的付款进入了区块 166。中间没有任何人把关：不是我们的应用，也不是我们的服务器。被拒绝的，正是密钥持有者本人。\n\n这就是全部的意义。个人规则是你对自己钱包许下的承诺，每个 Tau Net 节点都替你守住它，即使你自己、或者逼迫你的人点了“确定”。\n\n## 我们用它做了什么\n- **三个公开说“不”的钱包。** Tau HUD 的存钱罐在 2027 年 1 月 1 日之前什么都转不出去。四眼钱包里，超过 100 的付款、以及会让余额低于 90,000 的付款，都需要第二个签名。[Agorzilla](https://agorzilla.com/) 喂食基金只能付给 Agorzilla 的食盆，每顿最多 20。它们每天三次尝试一笔规则禁止的付款，网络在所有人眼前拒绝它。\n- **听得懂大白话的规则构建器。** 在[规则构建器](/builder/)里输入“每笔最多 500，超过 1,000 需要共同签名人”，它会写出规则，再从六个方面检查。正是这句话教会了我们最有用的一项检查：共同签名那部分什么都决定不了，因为超过 500 的付款本来就过不去。大白话承诺的，可能比规则做到的更多。\n- **手机上的共同签名人。** [Guardian](/guardian/) 会自己签下你的小额付款，其余的向你要验证码。我们在 11 月 6 日做好了它，那时整个测试网只有两个规则位置，而且都被占了，所以直到每个账户都有了位置，它才能在实时链上试用。从今天起，它还能锁定你的规则。\n- **人与人之间的规则。** 一个钱包可以把自己的规则提议给另一个钱包，对方读过后接受或拒绝。在 [White Rabbit Key](/rabbit/) 里，岛民们现在互相提议规则：点击另一个岛民，提议“每笔最多 1,000”或“你的大额付款由我共同签名”。每天德国时间 12、13、14 点，我们自己的钱包公开演一遍：一份被接受的礼物，一条被拒绝的“只付给我”骗局规则，一份放到过期的提议。\n- **规则是唯一一把锁的游戏。** 在 [No Memo](/nomemo/) 里，五个金库钱包假装自己的密钥已经泄露：玩家要求的任何付款，我们的服务器都会签。唯一挡路的，是每个金库在链上的真实规则。读懂它，找到漏洞，把它搬空。金库每周一换新规则；第一周就在这个周一开始。\n- **看清规则是谁的。** [HUD](/) 的内环标出每个持有规则的账户；把鼠标放在标记上，就能看到这是谁的规则、允许什么。[规则数据](/rules/numbers/)按类型和持有人统计它们。\n\n## 出了什么问题，我们错在哪里\n- **我们承诺了一条区块能钻空子的底线。** 我们的四眼钱包和喂食基金最初写着“永远不低于 90,000”。但规则读到的是上一个区块里的余额，所以同一个区块里的几笔付款仍然可能让它更低。11 月 14 日我们改写了这两条规则和说明文字。\n- **什么都不读的规则会被拒绝。** 我们钱包最早的“冻结”只写了“阻止”。规则必须读取付款的某项信息，所以网络拒绝了它。现在冻结写成“阻止任何超过 0 的付款”。\n- **我们的礼物故事误报失败。** 11 月 15 日，我们钱包之间的每日礼物两次被报告为失败，其实已经成功了：我们的查询去找那份提议时，节点早已把它处理完。当天我们修好了自己这边。11 月 14 日，有两份提议被我们的节点接收，却始终没有进入区块，原因我们至今不知道。今天这一轮才是真正的检验。\n- **重启会清空所有规则。** 测试网在 11 月 14 日和 15 日重新开始。新链上一条规则也没有。我们的钱包会自己重新设好。如果你在周日晚上之前手动设过规则，请再设一次。\n- **时间很棘手。** 在测试网的一份私有副本上（从不在实时测试网上），我们的审查发现一种计数 Tau 引擎自身步数的规则写法，让两个节点对同一个区块产生了分歧。我们把它作为 issue #115 报告给了 IDNI。尽早发现这类问题，正是测试网的用处。\n\n## 今天规则能做什么、不能做什么\n- **它能：** 限制每笔付款，只允许特定收款人，超过某个金额需要共同签名人，等到某个日期，保留一笔储备（有上面说的一个区块的缺口），并且从今天起能锁定自己。\n- **它不能按天累计。** 每笔付款单独检查，所以“每天最多 1,000”暂时做不到。许多小额付款各自都能通过单笔上限。Guardian 的每日额度在链外补上了这个缺口。\n- **被盗的密钥。** 没有锁的话，谁拿到你的密钥，就能换掉你的规则，然后随意转账。自从今天早上 IDNI 的更新，规则可以被锁定：之后的修改要等你的共同签名人，或者等 1,000 个区块，期间你可以取消它。这抬高了小偷的门槛，但不是找回丢失密钥的办法。\n- **小而直白。** 一条规则最多 32 个比较，设置规则本身是一笔不含付款的独立交易。\n\n## 写下你自己的规则\n打开[规则构建器](/builder/)，用大白话写下你的钱包绝不该做的事，比如“每笔最多 1,000”。读一读六项检查，再把规则交给你的钱包。这是测试网：币没有价值，设置规则要付一点手续费，被你的规则在门口拒绝的付款不花任何费用。然后来我们的 [Telegram 群](/telegram/)告诉我们你写了什么、什么让你意外。",
+    "ja": "## 腑に落ちた瞬間\n11 月 13 日、私たちは新しいテストウォレットに 1 つのルールを付けました。1 回の支払いは 1,000 まで。そして、そのウォレット自身の鍵で署名して 5,000 を送ろうとしました。ノードは入口で拒否したので、手数料はかかりませんでした。同じウォレットからの 500 の支払いはブロック 166 に入りました。間には誰もいません。私たちのアプリでも、サーバーでもありません。拒否されたのは鍵の持ち主自身でした。\n\nそれがすべてです。パーソナルルールは自分のウォレットとの約束で、あなた自身や、あなたに迫る誰かが「はい」を押しても、すべての Tau Net ノードがそれを守ります。\n\n## それで何を作ったか\n- **人前で「ノー」と言う 3 つのウォレット。** Tau HUD の貯金箱は 2027 年 1 月 1 日まで何も送れません。フォーアイズ・ウォレットは、100 を超える支払いと、残高が 90,000 を下回る支払いに 2 つ目の署名が必要です。[Agorzilla](https://agorzilla.com/) のエサ基金は Agorzilla のお皿にしか払えず、1 食 20 までです。どれも 1 日 3 回、ルールが禁じる支払いを試し、ネットワークがみんなの見ている前で拒否します。\n- **ふつうの言葉を読むルールビルダー。** [ルールビルダー](/builder/)に「1 回 500 まで、1,000 を超えたら共同署名者」と打つと、ルールを書いて 6 通りに検査します。まさにこの文が、いちばん役に立つ検査を教えてくれました。共同署名の部分は何も決めていません。500 を超える支払いはそもそも通らないからです。ふつうの言葉は、ルールが実際にすること以上を約束してしまうことがあります。\n- **スマホの中の共同署名者。** [Guardian](/guardian/) は少額の支払いを自分で署名し、残りはあなたのコードを求めます。作ったのは 11 月 6 日で、当時テストネット全体にルールの枠は 2 つしかなく、どちらも埋まっていました。そのため、すべてのアカウントが枠を持てるようになるまで、本番チェーンで試せませんでした。今日からはルールをロックすることもできます。\n- **人と人の間のルール。** ウォレットは自分のルールを別のウォレットに提案でき、相手は読んで受け入れるか断ります。[White Rabbit Key](/rabbit/) では島民どうしがルールを提案し合えるようになりました。別の島民をクリックして「1 回 1,000 まで」や「大きな支払いは私が共同署名する」を提案します。毎日ドイツ時間の 12 時、13 時、14 時に、私たち自身のウォレットが公開で演じます。受け入れられる贈り物、断られる「私にだけ払え」という詐欺ルール、期限切れまで放っておかれる提案。\n- **ルールが唯一の鍵になるゲーム。** [No Memo](/nomemo/) では 5 つの金庫ウォレットが、鍵が漏れたという設定で遊びます。プレイヤーが頼むどんな支払いにも私たちのサーバーが署名します。邪魔をするのは、各金庫のチェーン上の本物のルールだけ。読んで、穴を見つけて、空にする。金庫のルールは毎週月曜に変わり、最初の週はこの月曜に始まりました。\n- **誰のルールかが見える。** [HUD](/) の内側のリングは、ルールを持つすべてのアカウントに印を付けます。印にカーソルを合わせると、誰のルールで何を許すかが分かります。[ルールの数字](/rules/numbers/)は種類別、持ち主別に数えます。\n\n## 壊れたこと、私たちの間違い\n- **ブロックの隙間からすり抜ける下限を約束していました。** フォーアイズ・ウォレットとエサ基金は最初「90,000 を決して下回らない」と書いていました。でもルールが読むのは 1 つ前のブロック時点の残高なので、同じブロック内の複数の支払いでそれより下がることがあります。11 月 14 日に両方のルールと説明を書き直しました。\n- **何も読まないルールは拒否されます。** 私たちのウォレットの最初の「凍結」は単に「ブロック」と書いていました。ルールは支払いについて何かを読む必要があるため、ネットワークに拒否されました。今の凍結は「0 を超える支払いはすべてブロック」です。\n- **贈り物の話が失敗を誤報。** 11 月 15 日、私たちのウォレット間の毎日の贈り物が 2 回失敗と報告されましたが、実際には届いていました。ノードが処理を終えた後で、私たちの検索が提案を探していたのです。こちら側は同じ日に直しました。11 月 14 日には 2 つの提案が私たちのノードに受け付けられたのにブロックに入らず、理由はまだ分かっていません。今日の回が本当の試験です。\n- **再起動はすべてのルールを消します。** テストネットは 11 月 14 日と 15 日にやり直しました。新しいチェーンにはルールが 1 つもありません。私たちのウォレットは自分で設定し直します。日曜の夜より前に手でルールを設定した人は、もう一度設定してください。\n- **時間は難しい。** テストネットの非公開コピー上で（本番のテストネットでは決してやりません）、私たちの監査は、Tau エンジン自身のステップを数えるルールの書き方で、2 つのノードが同じブロックについて食い違うことを見つけました。IDNI に issue #115 として報告しました。こういうことを早く見つけるのが、テストネットの役目です。\n\n## ルールに今できること、できないこと\n- **できること：** 1 回の支払いに上限を付ける、決まった受取人だけを許す、ある金額を超えたら共同署名者を求める、ある日まで待つ、残高を残す（上で書いた 1 ブロックの隙間あり）、そして今日からは自分自身をロックする。\n- **1 日の合計は数えられません。** 支払いは 1 回ずつ検査されるので、「1 日 1,000 まで」はまだできません。少額の支払いはそれぞれ 1 回あたりの上限を通ります。この隙間はチェーンの外で Guardian の 1 日の枠が埋めます。\n- **盗まれた鍵。** ロックがなければ、鍵を持つ人はあなたのルールを差し替えて自由に送れます。今朝の IDNI の更新から、ルールをロックできるようになりました。変更は共同署名者を待つか、1,000 ブロック待つことになり、その間にあなたは取り消せます。泥棒にとってのハードルは上がりますが、なくした鍵を取り戻す方法ではありません。\n- **小さく、素直に。** ルールは最大 32 個の比較まで。ルールの設定は、支払いを含まない単独のトランザクションです。\n\n## あなたのルールを書く\n[ルールビルダー](/builder/)を開いて、ウォレットに決してさせたくないことをふつうの言葉で書いてください。たとえば「1 回 1,000 まで」。6 つの検査を読んでから、ルールをウォレットに渡します。ここはテストネットです。コインに価値はなく、ルールの設定には少しの手数料がかかり、ルールが入口で拒否した支払いには何もかかりません。そして私たちの [Telegram グループ](/telegram/)で、何を書いて何に驚いたかを教えてください。"
+   },
+   "sources": [
+    "https://github.com/IDNI/tau-testnet/blob/main/docs/approvals.md",
+    "https://github.com/IDNI/tau-testnet/commit/211b780",
+    "https://github.com/IDNI/tau-testnet/issues/85",
+    "https://github.com/IDNI/tau-testnet/issues/115",
+    "https://tauhud.com/rules/numbers/"
+   ],
+   "card": [
+    "What we learned writing money rules",
+    "Personal rules on the Tau Net testnet, our first days",
+    "## Why it matters",
+    "- The one payment your wallet refuses",
+    "- Plain words can promise more than the rule",
+    "- A testnet restart clears every rule",
+    "Tau HUD blog · community project, not run by IDNI"
+   ],
+   "image": "https://node.tauhud.com/blog/img/2026-11-16-money-rules-so-far-hero.jpg",
+   "image_alt": {
+    "en": "The article's card and its four numbers in the Tau HUD look, above a row of testnet blocks",
+    "zh": "以 Tau HUD 风格呈现的文章卡片和四个数字，下方是一排测试网区块",
+    "ja": "Tau HUD のデザインで描いた記事のカードと4つの数字、下に並ぶテストネットのブロック"
+   },
+   "stats": [
+    [
+     "8",
+     "accounts held a rule on 15 Nov"
+    ],
+    [
+     "3",
+     "of them people, not us or IDNI"
+    ],
+    [
+     "0",
+     "fee for a payment a rule refuses"
+    ],
+    [
+     "1,000",
+     "blocks a locked rule change waits"
+    ]
+   ],
+   "figures": [
+    {
+     "src": "/assets/blog/img/money-rules-holders.png",
+     "after": 2,
+     "link": "/rules/numbers/",
+     "caption": {
+      "en": "Who held a personal rule on the Tau Net testnet on Sunday night, 15 November. Our own wallets are the showcase wallets; the No Memo vaults came an hour later. Today's numbers on Rules in numbers.",
+      "zh": "11 月 15 日周日晚上，谁在 Tau Net 测试网上持有个人规则。我们自己的钱包是展示钱包；No Memo 金库一小时后才上线。今天的数字见“规则数据”。",
+      "ja": "11 月 15 日日曜の夜、Tau Net テストネットでパーソナルルールを持っていたのは誰か。私たちのウォレットはショーケース用のもので、No Memo の金庫はその 1 時間後に加わりました。今日の数字は「ルールの数字」で。"
+     }
+    },
+    {
+     "src": "/assets/blog/img/money-rules-timeline.png",
+     "after": 3,
+     "link": "/rules/",
+     "caption": {
+      "en": "From two rule places for the whole testnet to a rule you can lock, in under three weeks. Amber: restarts and our own mistakes.",
+      "zh": "不到三周，从整个测试网只有两个规则位置，到可以锁定的规则。琥珀色：重启和我们自己的错误。",
+      "ja": "テストネット全体でルールの枠が 2 つだった頃から、ロックできるルールまで、3 週間足らず。琥珀色：再起動と私たち自身の間違い。"
+     }
+    }
+   ]
+  },
+  {
    "id": "2026-11-13-support-tau-hud",
    "on": "2026-11-13",
    "kind": "news",
