@@ -4280,6 +4280,31 @@ class Watcher:
             log.warning("crew ship log failed: %s", crewlog.error_text(exc))
         self.save_state()
 
+    async def maybe_restart_note(self, notes: list | None = None) -> int:
+        """After a testnet restart the relay writes one note (relay/restartwatch.py: what set itself again, the ships'
+        pause, a reply for IDNI made of facts, the full timeline's link); it goes to the owner's private chat once, never
+        to the channel and never to IDNI. Returns how many went out."""
+        if notes is None:
+            got = await asyncio.to_thread(self.relay_json, "/restarts/notes")
+            if not isinstance(got, dict):
+                return 0
+            notes = got.get("notes") or []
+        done = self.state.setdefault("restart_notes", [])
+        sent = 0
+        for n in notes:
+            key = str(n.get("key"))
+            if not n.get("text") or key in done:
+                continue
+            if not self.tell_owner(n["text"]):
+                break   # no owner chat or Telegram down: tried again next pass
+            done.append(key)
+            del done[:-20]
+            sent += 1
+            log.info("restart note for %s sent to the owner", key)
+        if sent:
+            self.save_state()
+        return sent
+
     async def maybe_earnings(self):
         """Our share of the shop's sales and the crew's memberships, for tauhud.com/donate/: read every 15 minutes once the
         Fourthwall API user is in .env (earnings.py); each new order and each new member is told to the owner privately."""
@@ -4338,6 +4363,7 @@ class Watcher:
                         await self.maybe_today()
                         await self.maybe_visitors()
                         await self.maybe_ticker()
+                        await self.maybe_restart_note()
                         await asyncio.sleep(POLL_SECONDS)
             except asyncio.CancelledError:
                 raise

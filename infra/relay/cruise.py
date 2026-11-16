@@ -966,6 +966,8 @@ class Cruise:
         self.write({"t": int(now), "visit": vid, "ship": ship, "kind": "chain restarted", "old_tip": old_tip,
                     "new_chain_began": int(new_start) if new_start else None, "note": note})
         log.warning("cruise: %s: %s", vid, note)
+        if v and v["id"] == vid and not v.get("left"):   # a call under way ends here: the passengers' wallets are gone with the chain
+            self.leave(now, "the testnet restarted during the call, so the call was cut short", "restarted")
 
     def leave(self, now: float, why: str, state: str | None):
         """The brake: the ship takes its passengers back at once; on a stall it writes an incident report."""
@@ -1914,6 +1916,14 @@ class Cruise:
             return self.snapshot()
         if path == "/cruise/held":
             return self.held() if internal else {"error": "only from inside the server"}
+        if path == "/cruise/leave":   # up ships leave: the ship in port ends its call now (the owner's brake)
+            if not internal:
+                return {"error": "only from inside the server"}
+            v = self.cur
+            if not v or v.get("left"):
+                return {"left": None, "note": "no ship in port"}
+            self.leave(self.clock(), "the owner ended the call", "owner")
+            return {"left": v["id"]}
         if path == "/cruise/log":
             q = parse_qs(query or "")
             try:

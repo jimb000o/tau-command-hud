@@ -1,7 +1,8 @@
 """What we sent right before each testnet restart, read in the relay container (read only, sends nothing).
 
   up restarts            on the server (infra/up.sh): the report, ready to paste for IDNI
-  docker compose cp restart-report.py relay:/tmp/rr.py && docker compose exec -T relay python /tmp/rr.py [days]
+  docker compose exec -T relay python restart_report.py [days]
+  GET /restarts/report.txt   the same text, served by the relay (relay/restartwatch.py), the link to send IDNI
 
 IDNI asked (15.11.2026) for a repeating pattern like "when I send X, it restarts". For every restart the relay noted
 in the last `days` days (default 14) this prints, in English:
@@ -52,7 +53,7 @@ def load_log():
                 if isinstance(e, dict) and e.get("t"):
                     rows.append(e)
     except OSError as exc:
-        print(f"(no cruise logbook: {exc})")
+        sys.stderr.write(f"(no cruise logbook: {exc})\n")
     return sorted(rows, key=lambda e: e["t"])
 
 
@@ -113,9 +114,12 @@ def tx_kind(tx):
     return "+".join(sorted(ops)) or "none"
 
 
-def main():
-    days = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 14
-    since = time.time() - days * 86400
+def report(days: int = 14, now: float | None = None) -> str:
+    """The whole report as text (what `up restarts` prints and /restarts/report.txt serves)."""
+    out = []
+    print = out.append  # noqa: A001 - every line of the report
+    now = now if now is not None else time.time()
+    since = now - days * 86400
     try:
         restarts = json.load(open(EVENTS)).get("restarts") or []
     except (OSError, ValueError) as exc:
@@ -131,7 +135,7 @@ def main():
         old = r.get("old") or {}
         tip, tip_ts, b1 = old.get("tip"), old.get("tip_ts"), r.get("new_block1_ts")
         ends.append(tip_ts or r.get("detected_at"))
-        print()
+        print("")
         print(f"Restart {n}: old chain's last block #{tip} at {day(tip_ts)} {hm(tip_ts)}; new block 1 at {hm(b1)}"
               + (f" ({(b1 - tip_ts) / 60:.1f} min later)" if b1 and tip_ts else "")
               + f"; noticed by our relay at {hm(r.get('detected_at'))}")
@@ -175,7 +179,7 @@ def main():
         else:
             print("  the old chain's blocks were not kept (our relay keeps them from 16.11.2026 on)")
     # every call, side by side
-    print()
+    print("")
     print(f"Every ship call in these days, its first {WINDOW // 60} minutes:")
     calls = collections.OrderedDict()
     for e in rows:
@@ -188,6 +192,83 @@ def main():
         print(f"  {vid}: from {day(t0)} {hm(t0)}, {(t1 - t0) / 60:.0f} min, "
               + (f"RESTART {(hit[0] - t0) / 60:.1f} min after the first send" if hit else "no restart"))
         print(f"    {summary(first)}")
+    return "\n".join(out) + "\n"
+
+
+SHIP_NAMES = {"queen": "Queen Mempool", "dryrun": "MS Dry Run", "pirates": "Black Sequence"}
+
+
+def ship_name(vid: str) -> str:
+    """'2026-11-16-1400-queen' -> 'Queen Mempool' (the visit id ends with the ship)."""
+    tail = str(vid or "").rsplit("-", 1)[-1]
+    return SHIP_NAMES.get(tail, tail or "a ship")
+
+
+def in_call(rows, tip_ts) -> list:
+    """The ship calls that were sending around the old chain's last block (WINDOW before it up to 10 min after)."""
+    return sorted({e.get("visit") for e in sends(rows, tip_ts - WINDOW, tip_ts + 600) if e.get("visit")})
+
+
+def brief(restarts: list, rows: list | None = None, now: float | None = None, days: int = 7, link: str = "") -> dict | None:
+    """The newest restart in a few facts, and a short English reply for IDNI made only of them (no guess about the cause,
+    nobody blamed). None when no restart is known. `restarts` = the relay's events.json list, oldest first."""
+    if not restarts:
+        return None
+    now = now if now is not None else time.time()
+    rows = load_log() if rows is None else rows
+    r = restarts[-1]
+    old = r.get("old") or {}
+    tip, tip_ts, b1 = old.get("tip"), old.get("tip_ts"), r.get("new_block1_ts")
+    calls = in_call(rows, tip_ts) if tip_ts else []
+    before = sends(rows, tip_ts - WINDOW, tip_ts) if tip_ts else []
+    waiting = 0
+    bs = chain_end(tip, tip_ts) if tip_ts else None
+    if bs:
+        inblocks = {h for b in bs for h in tx_hashes(b)}
+        waiting = sum(1 for e in before if e.get("ok") is True and e.get("hash") and str(e["hash"]).lower() not in inblocks)
+    since = now - days * 86400
+    recent = [x for x in restarts if (x.get("detected_at") or 0) >= since]
+    during = [x for x in recent if (x.get("old") or {}).get("tip_ts") and in_call(rows, x["old"]["tip_ts"])]
+    hit = {v for x in during for v in in_call(rows, x["old"]["tip_ts"])}
+    all_calls = {e["visit"] for e in rows if e.get("visit") and e.get("kind") in TX_KINDS and e["t"] >= since}
+    calm = len(all_calls - hit)
+    first = None
+    if calls:
+        first = min((e["t"] for e in rows if e.get("visit") in calls and e.get("kind") in TX_KINDS), default=None)
+    kinds = collections.Counter(e["kind"] for e in before)
+    acc = sum(1 for e in before if answer(e) == "accepted")
+    ms = [e["ms"] for e in before if isinstance(e.get("ms"), int)]
+    # the reply, line by line, only from what is known
+    when = f"{time.strftime('%d %b', time.gmtime(tip_ts or r.get('detected_at') or now)).lstrip('0')}"
+    lines = [f"Hi Andrei, the testnet restarted again ({when}): the old chain's last block was #{tip} at {hm(tip_ts)}"
+             + (f", new block 1 at {hm(b1)}." if b1 else ".")]
+    if calls:
+        ship = ", ".join(ship_name(v) for v in calls)
+        lines.append(f"It came {((tip_ts - first) / 60):.0f} min into one of our test runs ({ship}: simulated wallets "
+                     f"sending small transfers)." if first else f"It came during one of our test runs ({ship}).")
+        if before:
+            ln = (f"In the {WINDOW // 60} min before the last block we sent {len(before)} transactions "
+                  f"({', '.join(f'{k} {n}' for k, n in kinds.most_common())}), {acc} accepted")
+            if ms:
+                ln += f", node answered in median {statistics.median(ms):.0f} ms"
+            if bs:
+                ln += f"; {waiting} of the accepted ones were not in a block yet when the chain ended"
+            lines.append(ln + ".")
+    else:
+        lines.append("None of our test runs was sending at the time.")
+    if len(recent) > 1 or calls:
+        lines.append(f"So far: {len(recent)} restart{'s' if len(recent) != 1 else ''} in the last {days} days, "
+                     f"{len(during)} of them during one of our runs; {calm} of our other runs in those days had none.")
+    if link:
+        lines.append(f"Full timeline with tx hashes: {link}")
+    return {"key": f"{r.get('detected_at')}", "detected_at": r.get("detected_at"), "tip": tip, "tip_ts": tip_ts,
+            "new_block1_ts": b1, "calls": calls, "sends_before": len(before), "waiting": waiting if bs else None,
+            "recent": len(recent), "during": len(during), "calm_calls": calm, "reply": "\n".join(lines)}
+
+
+def main():
+    days = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 14
+    sys.stdout.write(report(days))
 
 
 if __name__ == "__main__":

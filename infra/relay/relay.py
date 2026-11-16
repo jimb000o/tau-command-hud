@@ -45,12 +45,13 @@ from simvotes import SimVotes, name_of
 from simwallet import SimWallet
 from cruise import Cruise
 from hackweek import HackWeek
-from showcase import Showcase, offer_id
+from showcase import WALLETS as SC_WALLETS, Showcase, offer_id
 from ruledays import FROM as RULE_FROM, KINDS as RULE_KINDS, WHO as WHO_RULES, RuleDays, offers as rule_offers, kinds as rule_kinds
 from island import Island
 from isle import Isle
 from nomemo import NoMemo
-from vaults import Vaults
+from vaults import KEYS as VAULT_KEYS, Vaults
+from restartwatch import RestartWatch
 from nomemo_feedback import Feedback as NoMemoFeedback
 from load import Load
 from txsources import GENESIS, TxSources, deja as deja_day
@@ -423,6 +424,9 @@ class Relay:
         self.cruise.on_tx = lambda ok: self.load.sent("cruise" if ok else "refused")
         # the hack of the week, replayed on the testnet with our own wallets, after the ships in the bot's free slots (hackweek.py)
         self.hack = HackWeek(verdict=self.load_word)
+        # after a testnet restart: the owner's private note with the reply for IDNI, the ships' pause (restartwatch.py)
+        self.restartwatch = RestartWatch()
+        self.restartwatch.apply_pause(self.cruise)
         self.hack.on_tx = lambda ok: self.load.sent("cruise" if ok else "refused")
         # three showcase wallets, each with a personal rule; once a day each tries a payment its rule forbids (showcase.py)
         self.showcase = Showcase()
@@ -675,7 +679,7 @@ class Relay:
         self.history_text = self.sources_text = None
 
     def _keep_chain_end(self, blocks: list[dict]):
-        """The dying chain's last CHAIN_END_BLOCKS blocks, kept in CHAIN_END_DIR (infra/restart-report.py reads them):
+        """The dying chain's last CHAIN_END_BLOCKS blocks, kept in CHAIN_END_DIR (relay/restart_report.py reads them):
         what was in the blocks right before a testnet restart, to find a pattern ("when X is sent, it restarts")."""
         try:
             os.makedirs(CHAIN_END_DIR, exist_ok=True)
@@ -843,6 +847,12 @@ class Relay:
                 hack.chain_restarted(time.time())
             except Exception as exc:  # noqa: BLE001
                 log.warning("hack restart note: %r", exc)
+        watch = getattr(self, "restartwatch", None)
+        if watch is not None:   # the ships pause after RESTART_SHIP_PAUSE_AFTER restarts during calls
+            try:
+                watch.on_restart(self.state["restarts"], cruise)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("restartwatch: %r", exc)
         if getattr(self, "chainhist", None):   # a chain that ended while the relay was away: at least its tip
             self.chainhist.seed(self.state["restarts"][-1:])
             self.history_text = None
@@ -932,6 +942,20 @@ class Relay:
                 self.sample_uptime()
             except Exception:
                 log.exception("uptime sample failed")
+            try:
+                self.restartwatch.tick(self.state["restarts"], self.rules_back(), self.canonical_height())
+            except Exception:
+                log.exception("restartwatch tick failed")
+
+    def rules_back(self) -> dict:
+        """The rules our own wallets set again after a restart: {group: {wallet: in force}} (restartwatch.py)."""
+        now, out = time.time(), {}
+        sc, va = self.showcase, self.vaults
+        if sc.enabled and sc.ready:
+            out["Schaufenster-Wallets"] = {n: bool(sc.w(n).get("in_force")) or sc.opened(n, now) for n in SC_WALLETS}
+        if va.enabled and va.ready:
+            out["No-Memo-Vaults"] = {n: bool(va.v(n).get("in_force")) for n in VAULT_KEYS}
+        return out
 
     def chain_stalls(self, since: float) -> list[dict]:
         """Gaps between consecutive blocks of the current chain longer than
@@ -2515,7 +2539,8 @@ class Relay:
                                ("Cache-Control", "no-store"), ("Referrer-Policy", "no-referrer"),
                                ("X-Robots-Tag", "noindex")])
             return Response(code.value, code.phrase, headers, seen[2])
-        said = self.chat.route(path, query) if path.startswith("/chat") else self.roadmap.route(path, query) if path.startswith("/roadmap") else None
+        said = self.chat.route(path, query) if path.startswith("/chat") else self.roadmap.route(path, query) if path.startswith("/roadmap") else \
+            self.restartwatch.route(path, not request.headers.get("X-Forwarded-For"), self.cruise) if path.startswith("/restarts/") else None
         if said is not None:
             code = HTTPStatus(said[0])
             headers = Headers([("Content-Type", said[1]), ("Access-Control-Allow-Origin", "*"), ("Cache-Control", "no-store"),
