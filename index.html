@@ -3590,8 +3590,11 @@ $("stBody").addEventListener("click", async e => { const b = e.target.closest(".
 /* ---------- block intake (shared by sim + live) ---------- */
 function ingestBlock(b, live) {
   const t = performance.now(), prev = S.blocks[S.blocks.length - 1];
-  // live: the chain’s own clock (block timestamps, stream i7); simulation: the browser clock
-  const dt = live ? (prev && b.ts > prev.ts ? b.ts - prev.ts : null) : (prev ? (t - S.lastBlockAt) / 1000 : null);
+  // live: the chain’s own clock (block timestamps, stream i7); simulation: the browser clock.
+  // Live intervals only between real blocks of this chain: never from genesis #0 (its timestamp is 0, which after a restart
+  // read as a pace of millions of minutes), never from a timestamp before 2020, and spread evenly over a gap of missed heights
+  const realTs = x => x && Number(x.n) >= 1 && Number(x.ts) > 1.5e9, gap = prev ? Number(b.n) - Number(prev.n) : 0;
+  const dt = live ? (realTs(prev) && realTs(b) && gap >= 1 && b.ts > prev.ts ? (b.ts - prev.ts) / gap : null) : (prev ? (t - S.lastBlockAt) / 1000 : null);
   if (dt != null) { S.blockTimes.push(dt); S.lastInterval = dt; }
   if (S.blockTimes.length > 10) S.blockTimes.shift();
   S.lastBlockAt = t;
