@@ -6,6 +6,9 @@ AI_USAGE_DIR (the ai_usage volume, /ai-usage), numbers only, never a prompt or a
 
 The same file sits in infra/relay/ (the relay is built from its own folder); test_ai_meter.py checks both are equal.
 
+When the API says no (16 November 2026: the account's own monthly spend limit was reached and every answer was a bare
+"HTTP Error 400"), api_error() turns its answer into a plain reason: the limit, the credit, or the API's own words.
+
 Run: python ai_meter.py line   (this month in one line)
 """
 import json
@@ -108,6 +111,31 @@ def line(now: float | None = None) -> str:
     by = ", ".join(f"{k} ${v:.2f}" for k, v in t["by"].items()) or "nothing yet"
     return (f"anthropic: this month {t['answers']} answers, about ${t['usd']:.2f} ({by}; measured since {t['since']}); "
             "the bill: https://platform.claude.com/settings/billing")
+
+
+LIMITS = "https://console.anthropic.com/settings/limits"
+BILLING = "https://console.anthropic.com/settings/billing"
+LIMIT_REACHED = "Anthropic monthly limit reached"
+
+
+def reason(code: int, body: str) -> str:
+    """The API's refusal in plain words: the spend limit and the credit with where to fix them, else its own message."""
+    b = " ".join(str(body or "").split())
+    low = b.lower()
+    if "usage limit" in low or "spend limit" in low:
+        return f"{LIMIT_REACHED}, raise it at {LIMITS} (the API answered {code}: {b[:160]})"
+    if "credit balance" in low:
+        return f"Anthropic credit used up, top up at {BILLING} (the API answered {code}: {b[:160]})"
+    return f"the API answered {code}: {b[:300]}"
+
+
+def api_error(e) -> RuntimeError:
+    """An HTTPError from api.anthropic.com as a RuntimeError with the reason (reads the error's body once)."""
+    try:
+        body = e.read().decode("utf-8", "replace")
+    except Exception:  # noqa: BLE001
+        body = ""
+    return RuntimeError(reason(getattr(e, "code", 0), body))
 
 
 if __name__ == "__main__":

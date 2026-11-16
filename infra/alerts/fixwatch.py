@@ -162,8 +162,11 @@ def ask(prompt: str) -> dict:
                        "messages": [{"role": "user", "content": prompt}]}).encode()
     req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body, headers={
         "x-api-key": dp.NEWS_AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
-    with urllib.request.urlopen(req, timeout=180) as r:
-        j = json.load(r)
+    try:
+        with urllib.request.urlopen(req, timeout=180) as r:
+            j = json.load(r)
+    except urllib.error.HTTPError as e:   # the reason, not a bare 'HTTP Error 400' (the spend limit, 16.11.2026)
+        raise ai_meter.api_error(e) from None
     ai_meter.meter("fixwatch", dp.NEWS_AI_MODEL, j.get("usage"))
     text = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
     m = re.search(r"\{.*\}", text, re.S)
@@ -385,8 +388,11 @@ def post_ask(prompt: str) -> dict:
                        "messages": [{"role": "user", "content": prompt}]}).encode()
     req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body, headers={
         "x-api-key": dp.NEWS_AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
-    with urllib.request.urlopen(req, timeout=120) as r:
-        j = json.load(r)
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            j = json.load(r)
+    except urllib.error.HTTPError as e:   # the reason, not a bare 'HTTP Error 400' (the spend limit, 16.11.2026)
+        raise ai_meter.api_error(e) from None
     ai_meter.meter("fixwatch", dp.NEWS_AI_MODEL, j.get("usage"))
     text = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
     m = re.search(r"\{.*\}", text, re.S)

@@ -173,6 +173,10 @@ def problems(ln: dict | None, pulse: dict | None, now: float) -> dict:
         ai = str(pulse.get("news_ai") or "")
         if now - gen > PULSE_OLD:
             out["idni"] = f"devpulse.json is {int((now - gen) // 3600)} hours old, so IDNI's news no longer comes onto the line (docker compose logs devpulse)."
+        elif "limit reached" in ai:   # every writer shares the key: the news line, the IDNI post, the blog drafts
+            out["idni"] = ("Anthropic monthly limit reached, so IDNI's news no longer comes onto the line and no blog draft or "
+                           "IDNI post gets written. Raise it at https://console.anthropic.com/settings/limits; the writer "
+                           "tries again by itself within two hours.")
         elif ai and ai != "on" and not ai.startswith("waiting"):
             out["idni"] = f"IDNI's headline writer is {ai}, so IDNI's news no longer comes onto the line."
     return out

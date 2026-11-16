@@ -568,7 +568,7 @@ def ask(facts: dict) -> dict:
             if e.code == 400 and shaped:   # the model does not take the shaped answer: the plain way, JSON in the text
                 log.warning("the API answered 400 to the shaped request (%s): asking the plain way", reason)
                 continue
-            raise RuntimeError(f"the API answered {e.code}: {reason}") from None
+            raise RuntimeError(ai_meter.reason(e.code, reason)) from None
     ai_meter.meter("blog", blog.AI_MODEL, j.get("usage"))
     if j.get("stop_reason") in ("refusal", "max_tokens"):
         raise RuntimeError(f"no article: {j.get('stop_reason')}")

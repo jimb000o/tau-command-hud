@@ -52,6 +52,21 @@ check(not any("prompt" in open(os.path.join(D, n)).read() for n in os.listdir(D)
 
 ai_meter.DIR = "/proc/no-such-dir"
 check(ai_meter.meter("blog", "claude-sonnet-5-5", {"input_tokens": 1}, NOV) > 0, "an unwritable folder never raises")
+# the API's refusals in plain words (16 November 2026: the spend limit read as a bare "HTTP Error 400")
+r = ai_meter.reason(400, '{"type":"error","error":{"type":"invalid_request_error","message":"You have reached your specified API usage limits. You will regain access on 2026-12-01 at 00:00 UTC."}}')
+check(r.startswith("Anthropic monthly limit reached") and "settings/limits" in r, "the spend limit is named, with its link")
+check("credit used up" in ai_meter.reason(400, "Your credit balance is too low to access the Anthropic API."), "the credit too")
+check(ai_meter.reason(400, "bad model").startswith("the API answered 400: bad model"), "anything else in the API's words")
+
+
+class _E:
+    code = 400
+
+    def read(self):
+        return b"You have reached your specified API usage limits."
+
+
+check("limit reached" in str(ai_meter.api_error(_E())), "api_error reads the body")
 check(open(os.path.join(HERE, "ai_meter.py")).read() == open(os.path.join(HERE, "..", "relay", "ai_meter.py")).read(),
       "relay/ai_meter.py is the same file")
 
