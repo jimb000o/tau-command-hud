@@ -2975,4 +2975,12 @@ TauI18n.add({ strings: {
   "Cruise logbook: our blog articles about past cruises are now on the logbook itself. The newest ones stand next to the logbook’s title, and a visit with its own article carries a small ✎; choose that visit and “Read what we learned on this visit” leads straight to it.": "航海日志：我们关于以往邮轮到访的博客文章现在直接显示在日志里。最新的几篇就在日志标题旁边；有专门文章的到访带一个小小的 ✎，选中这次到访，“阅读我们从这次到访中学到的东西”就会直接带你过去。",
   "Top bar: a ✉ next to Search when other wallets proposed a rule to your test wallet, or a payment waits for your co-signature. It shows on every page of Tau HUD once this browser has a test wallet, with the number waiting; a click opens the island’s inbox on White Rabbit Key and your wallet’s Activity everywhere else, where you read each one and accept or decline it. Only your own wallet can say yes.": "顶栏：当其他钱包向你的测试钱包提议了规则，或有付款等你共同签名时，搜索框旁会出现一个 ✉。只要这个浏览器有测试钱包，Tau HUD 的每个页面都会显示它和等待的数量；在 White Rabbit Key 上点击会打开岛上的收件箱，在其他页面会打开你钱包的“动态”，在那里逐一阅读并接受或拒绝。只有你自己的钱包能同意。",
   "Wallets": "钱包",
+  /* rule sharing: who both sides are (nbWho, walletdays.py apps) */
+  "a Tau HUD regular": "一位 Tau HUD 常客",
+  "a No Memo regular": "一位 No Memo 常客",
+  "a White Rabbit Key regular": "一位 White Rabbit Key 常客",
+  "an Agorzilla regular": "一位 Agorzilla 常客",
+  "a regular at Déjà’s café": "Déjà 咖啡馆的一位常客",
+  "From {w} to {x}.": "从{w}到{x}。",
+  "Rule sharing names both sides: an offer between two wallets now says who they are where our server saw them, by what each mostly does with our apps (a White Rabbit Key player, a No Memo regular, a Tau HUD user, an Agorzilla regular after three days or more), also in the offer’s hover. A rule proposed to an islander on White Rabbit Key counts for White Rabbit Key now, not for Tau HUD in general. A wallet we have no record of keeps its short address.": "规则共享会标明双方：两个钱包之间的规则提议，现在会在我们的服务器见过它们时说明它们是谁，依据是每个钱包在我们的应用里主要做什么（一位 White Rabbit Key 玩家、一位 No Memo 常客、一位 Tau HUD 用户，活跃三天及以上的是 Agorzilla 常客），提议的悬停提示里也有。在 White Rabbit Key 上向岛民提议的规则，现在算作 White Rabbit Key，而不是笼统的 Tau HUD。我们没有记录的钱包仍只显示短地址。",
 } });

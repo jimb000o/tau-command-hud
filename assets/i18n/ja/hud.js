@@ -2918,5 +2918,12 @@ TauI18n.add({ strings: {
   "Uses {x} · whoever holds its key set this rule": "{x} を利用 · 鍵を持つ人がこのルールを設定",
   "one chosen wallet": "指定した 1 つのウォレット",
   "Rule: {x}.": "ルール：{x}。",
-  "Chain core: the rule ring’s hover cards are short and the same for every wallet. Who the wallet is, whether its rule is in force, where it comes from (White Rabbit Key’s cruise ships, Agorzilla, No Memo’s vaults, a Tau HUD user, an IDNI genesis account, or unknown to us) and the rule in one plain sentence; a note only where a rule has a real catch. The repeated “Stops” and “Terms” lines are gone, and so is the promise that a limit holds even against the right key: whoever holds a wallet’s key can also change its rule.": "チェーンの核：ルールの輪のホバーカードを短くし、どのウォレットでも同じ形にしました。ウォレットが誰か、ルールが施行中か、どこから来たか（White Rabbit Key のクルーズ船、Agorzilla、No Memo の金庫、Tau HUD のユーザー、IDNI のジェネシスアカウント、または私たちの知らないウォレット）、そしてルールを平易な 1 文で。本当に注意点があるルールにだけ注意を 1 行。繰り返しだった「阻止」と「条件」の行はなくなり、「正しい鍵でも止まる」という約束もなくしました：ウォレットの鍵を持つ人は、そのルールを変えることもできます。"
+  "Chain core: the rule ring’s hover cards are short and the same for every wallet. Who the wallet is, whether its rule is in force, where it comes from (White Rabbit Key’s cruise ships, Agorzilla, No Memo’s vaults, a Tau HUD user, an IDNI genesis account, or unknown to us) and the rule in one plain sentence; a note only where a rule has a real catch. The repeated “Stops” and “Terms” lines are gone, and so is the promise that a limit holds even against the right key: whoever holds a wallet’s key can also change its rule.": "チェーンの核：ルールの輪のホバーカードを短くし、どのウォレットでも同じ形にしました。ウォレットが誰か、ルールが施行中か、どこから来たか（White Rabbit Key のクルーズ船、Agorzilla、No Memo の金庫、Tau HUD のユーザー、IDNI のジェネシスアカウント、または私たちの知らないウォレット）、そしてルールを平易な 1 文で。本当に注意点があるルールにだけ注意を 1 行。繰り返しだった「阻止」と「条件」の行はなくなり、「正しい鍵でも止まる」という約束もなくしました：ウォレットの鍵を持つ人は、そのルールを変えることもできます。",
+  /* rule sharing: who both sides are (nbWho, walletdays.py apps) */
+  "a Tau HUD regular": "Tau HUD の常連",
+  "a No Memo regular": "No Memo の常連",
+  "a White Rabbit Key regular": "White Rabbit Key の常連",
+  "an Agorzilla regular": "Agorzilla の常連",
+  "a regular at Déjà’s café": "Déjà のカフェの常連",
+  "From {w} to {x}.": "{w}から{x}へ。",
 } });

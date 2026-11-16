@@ -2706,7 +2706,8 @@ function explainUpdate(u) {
 }
 function explainOffer(o) {
   const st = { offered: `Waiting for ${short(o.to)}; expires at #${o.expire}.`, accepted: `Now binds ${short(o.to)}’s account.`, rejected: "Declined; nothing changed.", expired: "Expired unanswered." }[o.status] || o.status;
-  return `${policyMeaning(o.policy)}\n${o.collides ? "Accepting replaces the recipient’s current rule. " : ""}${st}`;
+  const f = nbWho(o.from), t = nbWho(o.to), who = f !== "a wallet" || t !== "a wallet" ? `From ${f} to ${t}.\n` : "";   // who they are, where our relay saw them (nbWho)
+  return `${who}${policyMeaning(o.policy)}\n${o.collides ? "Accepting replaces the recipient’s current rule. " : ""}${st}`;
 }
 const isGenesis = a => { const o = window.TauOrigin && TauOrigin.of(a); return !!o && o.tag === "idni"; };   // assets/origins.js, the same list the account page uses
 function explainClause(acc, p) {
@@ -2760,6 +2761,7 @@ const PLAIN_LABEL = {
 const NB_TAG = { idni: "an IDNI genesis wallet", bot: "our island bot", cruise: "a simulated cruise passenger", rabbit: "a White Rabbit Key player", nomemo: "a No Memo player", agorzilla: "an Agorzilla player" };
 const NB_BOX = { agorzilla: "Agorzilla", deja: "Déjà the café cat", rabbit: "White Rabbit Key" };
 const NB_APP = { tauhud: "a Tau HUD user", nomemo: "a No Memo player", rabbit: "a White Rabbit Key player", agorzilla: "an Agorzilla player", deja: "an Agorzilla player" };
+const NB_REG = { tauhud: "a Tau HUD regular", nomemo: "a No Memo regular", rabbit: "a White Rabbit Key regular", agorzilla: "an Agorzilla regular", deja: "a regular at Déjà’s café" };
 function nbWho(a) {
   const h = String(a || "").toLowerCase(); if (!h) return "a wallet";
   if (h === String(myNodeKey() || "").toLowerCase()) return "your node";
@@ -2768,9 +2770,11 @@ function nbWho(a) {
   const O = window.TauOrigin; if (!O) return "a wallet";
   const own = O.name && O.name(h); if (own) return own;   // the showcase wallets: "Tau HUD's piggy bank" and so on
   const box = O.of("0", [[null, h]]); if (box && NB_BOX[box.tag]) return NB_BOX[box.tag];
-  const o = O.of(h, [], ""); if (o && NB_TAG[o.tag]) return NB_TAG[o.tag];
-  const ap = O.app && O.app(h), first = ap && (ap.born || ap.used[0]);   // a visitor's wallet that came from one of our apps (walletdays.py)
-  return (first && NB_APP[first]) || "a wallet";
+  // a visitor's wallet by what it mostly does with our apps, from our relay's record (walletdays.py): the app it was active in on the
+  // most days; a regular once that is 3 days or more. Else what the public blocks say (a player, an IDNI genesis wallet)
+  const ap = O.app && O.app(h);
+  if (ap && ap.main && NB_APP[ap.main]) return ap.days >= 3 ? NB_REG[ap.main] : NB_APP[ap.main];
+  const o = O.of(h, [], ""); return (o && NB_TAG[o.tag]) || "a wallet";
 }
 const nbSpan = a => `<span>${esc(nbWho(a))}</span>`;
 function plainBody(t) {
@@ -3220,7 +3224,7 @@ function renderUpdates() {
     : cur.status === "scheduled" ? `<b>“${esc(cur.title)}”</b> is agreed and becomes law at block #${cur.activateAt}, in ${Math.max(0, cur.activateAt - S.height)} blocks. Nobody has to upgrade anything.`
     : `<b>“${esc(cur.title)}”</b> is collecting agreement: ${cur.votes.size} of ${thr} validators so far. It becomes law at #${cur.activateAt} if enough agree.`;
 }
-const offerWho = a => { const n = window.TauOrigin && TauOrigin.name ? TauOrigin.name(a) : null; return n ? ` <em class="who">${esc(n)}</em>` : ""; };   // a wallet we know by name (the showcase wallets)
+const offerWho = a => { const n = nbWho(a); return n !== "a wallet" ? ` <em class="who">${esc(n)}</em>` : ""; };   // who a wallet is where we know it: a showcase wallet, a player, a Tau HUD user (nbWho)
 function renderOffers() {
   if (hold("offers", renderOffers)) return;
   const el = $("offers");
