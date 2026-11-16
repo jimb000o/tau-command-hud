@@ -3364,6 +3364,340 @@
   "text": "Rico guessed yesterday that the wave at the pier was the ferry. There is no ferry. Rico has been told. Repeatedly."
  },
  {
+  "who": "rico",
+  "text": "Eight o'clock! Good morning, island, and welcome to Coco Sunrise on Radio Coco! Two hours of songs, the night's news from the chain, and your calls. Coffee up!",
+  "how": "hype"
+ },
+ {
+  "who": "rico",
+  "text": "Good morning, lagoon! It's eight, the bakery is open, and this is Coco Sunrise! Rico has the night report, the Tau word of the day and the phone lines. Let's go!",
+  "how": "hype"
+ },
+ {
+  "who": "rico",
+  "text": "Good morning and welcome to Coco Sunrise, the morning show on Radio Coco. Songs, the night's news from the chain, and your calls, until ten."
+ },
+ {
+  "who": "rico",
+  "text": "You're up! Good. This is Coco Sunrise on Radio Coco, every morning from eight to ten. Pull up a chair."
+ },
+ {
+  "who": "rico",
+  "text": "Nine o'clock on Coco Sunrise. One more hour of songs and calls, and the lines are open."
+ },
+ {
+  "who": "rico",
+  "text": "It's nine! Half the island is at work, the other half is still looking for its sandals. Coco Sunrise keeps going until ten."
+ },
+ {
+  "who": "rico",
+  "text": "Ten o'clock, and that was Coco Sunrise. Thank you for every call. Back tomorrow at eight. Radio Coco plays on."
+ },
+ {
+  "who": "rico",
+  "text": "That's ten, and that's the morning show. Go and make something today, even if it's only a mistake on the testnet. Coco Sunrise is back tomorrow at eight."
+ },
+ {
+  "who": "rico",
+  "text": "Coco Sunrise. The sun is up, the lagoon is flat, and the chain kept counting all night. Somebody had to."
+ },
+ {
+  "who": "rico",
+  "text": "Morning tip from Rico: before your first payment of the day, read the address twice. Coffee first, then the address."
+ },
+ {
+  "who": "rico",
+  "text": "Good morning to everybody opening a shop on the island today. And to everybody opening a wallet: write the key down before anything else."
+ },
+ {
+  "who": "rico",
+  "text": "The fishermen are back, the bread is out of the oven, and the blocks keep coming. A normal morning on the lagoon."
+ },
+ {
+  "who": "rico",
+  "text": "Coco Sunrise, on Radio Coco. If you only have time for one song before work, this is the one."
+ },
+ {
+  "who": "rico",
+  "text": "Rico's morning rule: no payments before coffee, and no coffee before the bakery. It's not on the chain. Yet."
+ },
+ {
+  "who": "rico",
+  "text": "Rico's night report: since midnight our node counted a handful of new blocks. The chain did not sleep. Rico did, a little."
+ },
+ {
+  "who": "rico",
+  "text": "Rico's night report: since midnight our node counted dozens of new blocks. The chain did not sleep. Rico did, a little."
+ },
+ {
+  "who": "rico",
+  "text": "Rico's night report: since midnight our node counted hundreds of new blocks. The chain did not sleep. Rico did, a little."
+ },
+ {
+  "who": "rico",
+  "text": "Rico's night report: since midnight our node counted about a thousand new blocks. The chain did not sleep. Rico did, a little."
+ },
+ {
+  "who": "rico",
+  "text": "Rico's night report: since midnight our node counted thousands of new blocks. The chain did not sleep. Rico did, a little."
+ },
+ {
+  "who": "rico",
+  "text": "The night on the chain: a handful of transactions since midnight. Some of them ours, most of them not, all of them sealed."
+ },
+ {
+  "who": "rico",
+  "text": "The night on the chain: dozens of transactions since midnight. Some of them ours, most of them not, all of them sealed."
+ },
+ {
+  "who": "rico",
+  "text": "The night on the chain: hundreds of transactions since midnight. Some of them ours, most of them not, all of them sealed."
+ },
+ {
+  "who": "rico",
+  "text": "The night on the chain: about a thousand transactions since midnight. Some of them ours, most of them not, all of them sealed."
+ },
+ {
+  "who": "rico",
+  "text": "The night on the chain: thousands of transactions since midnight. Some of them ours, most of them not, all of them sealed."
+ },
+ {
+  "who": "rico",
+  "text": "News from the night: the testnet started over while you slept. The builders are updating it, and on a test network that's expected. Your key still works. Old balances stayed with the old blocks, so an empty wallet can get coins from the faucet again."
+ },
+ {
+  "who": "rico",
+  "text": "Heads up, early birds: the chain restarted during the night. Nothing you did. A new chain means fresh balances; your wallet is the same, the faucet fills it again."
+ },
+ {
+  "who": "rico",
+  "text": "A quiet night on the chain. Few transactions, steady blocks. The lagoon slept, and so did the wallets."
+ },
+ {
+  "who": "rico",
+  "text": "A busy night on the chain! Lots of traffic while the island slept. Somebody out there doesn't need sleep."
+ },
+ {
+  "who": "rico",
+  "text": "Today on the island: the Queen Mempool docks this afternoon. Her passengers are made up, but their payments are real test transactions. Watch the lagoon get busy."
+ },
+ {
+  "who": "rico",
+  "text": "Today on the island: the MS Dry Run is due this afternoon. A small ship with made-up passengers, and every payment they make is a real test transaction."
+ },
+ {
+  "who": "rico",
+  "text": "It's Monday on the island. Tobias calls it the start of the week. Everybody else calls it Monday."
+ },
+ {
+  "who": "rico",
+  "text": "Tuesday morning. Nothing special is planned, which on this island means something will happen."
+ },
+ {
+  "who": "rico",
+  "text": "It's Wednesday. Halfway through the week, and the chain hasn't taken a day off yet."
+ },
+ {
+  "who": "rico",
+  "text": "Thursday morning on the lagoon. Rico checked: still no ferry to the mainland. Still a good day."
+ },
+ {
+  "who": "rico",
+  "text": "It's Friday! The night market opens tonight, and the chain opens every block, as always."
+ },
+ {
+  "who": "rico",
+  "text": "Saturday morning. No school, no hurry, and the testnet doesn't care what day it is."
+ },
+ {
+  "who": "rico",
+  "text": "Sunday on the island. Slow coffee, slow waves, and blocks at the usual pace."
+ },
+ {
+  "who": "rico",
+  "text": "And tonight at eleven, the Night Line. Save your worries for Rico."
+ },
+ {
+  "who": "rico",
+  "text": "The Tau word of the day: sat. You give Tau a formula and ask: can this ever be true? If yes, it's satisfiable. Rico's breakfast is satisfiable. Barely."
+ },
+ {
+  "who": "rico",
+  "text": "Today's Tau word: valid. Not just true sometimes. True for every value you can put in. Like the bakery's opening time."
+ },
+ {
+  "who": "rico",
+  "text": "Tau word of the day: always. A rule with always must hold at every step, not just once. Rico tried always being on time. It held for two steps."
+ },
+ {
+  "who": "rico",
+  "text": "Today's Tau word: sometimes. It's enough if it's true at some step. Rico is sometimes on time. That one holds."
+ },
+ {
+  "who": "rico",
+  "text": "The Tau word of the day: i1, the first input stream. In a testnet rule the amount of the payment comes in on i1, step by step."
+ },
+ {
+  "who": "rico",
+  "text": "Today's Tau word: o5. That's where a testnet rule answers: 1 lets the payment through, 0 stops it."
+ },
+ {
+  "who": "rico",
+  "text": "Tau word of the day: t minus one. It means the step before. A rule can look back and ask what happened last time."
+ },
+ {
+  "who": "rico",
+  "text": "Today's Tau word is a small mark: the apostrophe. In Tau it means the complement: everything the thing is not."
+ },
+ {
+  "who": "rico",
+  "text": "The Tau word of the day is silence. A rule that says nothing answers 0, and 0 stops the payment. So say what you let through."
+ },
+ {
+  "who": "rico",
+  "text": "Today's Tau word: bv eight. A number with eight bits, from 0 to 255. Rico's coconut count fits easily."
+ },
+ {
+  "who": "rico",
+  "text": "Want more? The lessons are free on tauhud.com, under learn."
+ },
+ {
+  "who": "rico",
+  "text": "Who's up? A player in No Memo already sent a transaction this morning. The hackers are awake."
+ },
+ {
+  "who": "rico",
+  "text": "Who's up? Somebody sent a transaction from the Tau HUD wallet in the last few blocks. Good morning to you."
+ },
+ {
+  "who": "rico",
+  "text": "Who's up? Somebody fed Agorzilla in the last few blocks. The jungle has breakfast before Rico does."
+ },
+ {
+  "who": "rico",
+  "text": "Who's up? Most of the newest transactions come from the wallets the testnet started with, the builders' own. They're early."
+ },
+ {
+  "who": "rico",
+  "text": "Who's up? Wallets Rico doesn't know sent transactions in the last few blocks. Wallets, not people. Good morning, whoever you are."
+ },
+ {
+  "who": "rico",
+  "text": "Who's up? In the newest blocks, only the island's own made-up traffic. The first real payment of the day is still free to take. The faucet is open."
+ },
+ {
+  "who": "rico",
+  "text": "Coco Sunrise, you're on the air. Good morning!"
+ },
+ {
+  "who": "rico",
+  "text": "Morning caller! You're on Radio Coco. Go ahead."
+ },
+ {
+  "who": "rico",
+  "text": "The first line is blinking already. Good morning, you're on Coco Sunrise."
+ },
+ {
+  "who": "rico",
+  "text": "Thanks for calling, and have a good day. Here's a song for you."
+ },
+ {
+  "who": "rico",
+  "text": "Good morning to you too. The lines stay open until ten."
+ },
+ {
+  "who": "rico",
+  "text": "Thank you! Go get your coffee. Rico's getting his."
+ },
+ {
+  "who": "rico",
+  "text": "Here's Coco Sunrise."
+ },
+ {
+  "who": "rico",
+  "text": "Here's Steelpan Sunday."
+ },
+ {
+  "who": "rico",
+  "text": "Here's Lantern Bay."
+ },
+ {
+  "who": "rico",
+  "text": "Here's Breadfruit Shuffle."
+ },
+ {
+  "who": "rico",
+  "text": "Here's Coral Lullaby."
+ },
+ {
+  "who": "rico",
+  "text": "Here's Barrel Roll."
+ },
+ {
+  "who": "rico",
+  "text": "Here's Hammerhead Hop."
+ },
+ {
+  "who": "rico",
+  "text": "Here's Paper Boats."
+ },
+ {
+  "who": "rico",
+  "text": "Here's Fisherman's Dawn."
+ },
+ {
+  "who": "rico",
+  "text": "Here's Trade Winds."
+ },
+ {
+  "who": "rico",
+  "text": "Here's Starlight Ferry."
+ },
+ {
+  "who": "rico",
+  "text": "Coco Sunrise, the morning show's own tune. Rico wrote it before breakfast, and it shows."
+ },
+ {
+  "who": "rico",
+  "text": "Steelpan Sunday. It's Sunday somewhere, and somewhere is always this song."
+ },
+ {
+  "who": "rico",
+  "text": "Lantern Bay, on Radio Coco. Slow, warm, and best with the lights low."
+ },
+ {
+  "who": "rico",
+  "text": "Breadfruit Shuffle! Feet moving, hands free. Leave the fruit on the tree."
+ },
+ {
+  "who": "rico",
+  "text": "Coral Lullaby. Quiet now, the reef is sleeping."
+ },
+ {
+  "who": "rico",
+  "text": "Barrel Roll, straight from the harbour. Mind the barrels."
+ },
+ {
+  "who": "rico",
+  "text": "Hammerhead Hop! Fast and a little dangerous. Like the shark, only friendlier."
+ },
+ {
+  "who": "rico",
+  "text": "Paper Boats. Fold one, set it on the lagoon, see how far it goes."
+ },
+ {
+  "who": "rico",
+  "text": "Fisherman's Dawn. For everybody who was on the water before Rico was out of bed."
+ },
+ {
+  "who": "rico",
+  "text": "Trade Winds, on Radio Coco. Lean back and let the breeze do the work."
+ },
+ {
+  "who": "rico",
+  "text": "Starlight Ferry. The ferry never comes, but the song does."
+ },
+ {
   "who": "hana",
   "text": "Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first."
  },
@@ -6451,6 +6785,286 @@
   "who": "bert",
   "text": "Good. I don't trust moods. Night, lad.",
   "how": "night"
+ },
+ {
+  "who": "pearl",
+  "text": "Morning, Rico, it's Pearl. I sent a payment last night, and this morning it's simply not there. Not in a block, not anywhere."
+ },
+ {
+  "who": "rico",
+  "text": "Good morning, Pearl. Every transaction carries an expiry. If it isn't in a block by then, it's dropped."
+ },
+ {
+  "who": "pearl",
+  "text": "Dropped? So my coins are gone?"
+ },
+ {
+  "who": "rico",
+  "text": "No, the opposite. A dropped transaction never happened. Your coins are still in your wallet, and it cost you nothing."
+ },
+ {
+  "who": "pearl",
+  "text": "Oh. So I just send it again?"
+ },
+ {
+  "who": "rico",
+  "text": "Send it again, with a fresh expiry. And maybe not at three in the morning."
+ },
+ {
+  "who": "pearl",
+  "text": "Ha. Thanks, Rico."
+ },
+ {
+  "who": "gus",
+  "text": "Rico! Gus here. New wallet, first coffee, zero coins. How do I start?"
+ },
+ {
+  "who": "rico",
+  "text": "Good morning, Gus. Go to the faucet. It sends one hundred thousand test coins to a wallet that's empty."
+ },
+ {
+  "who": "gus",
+  "text": "Only when it's empty?"
+ },
+ {
+  "who": "rico",
+  "text": "Only when it's empty. It's a start, not a salary."
+ },
+ {
+  "who": "gus",
+  "text": "A start. I can work with that. Thanks!"
+ },
+ {
+  "who": "zia",
+  "text": "Good morning, Rico. Zia. My nephew keeps saying a rule is sat. What does that mean?"
+ },
+ {
+  "who": "rico",
+  "text": "Morning, Zia. Sat means satisfiable: there's at least one way for the rule to be true."
+ },
+ {
+  "who": "zia",
+  "text": "And if it isn't?"
+ },
+ {
+  "who": "rico",
+  "text": "Then the rule can never be true, whatever happens. Better to find that out before you put it on your wallet."
+ },
+ {
+  "who": "zia",
+  "text": "So sat is good news."
+ },
+ {
+  "who": "rico",
+  "text": "Sat is the minimum. Valid is the big news: true for everything."
+ },
+ {
+  "who": "zia",
+  "text": "Minimum, then big news. I'll tell him. Thank you, Rico!"
+ },
+ {
+  "who": "mae",
+  "text": "Rico, it's Mae from the bakery. Can I write my wallet address on the shop window, so people can pay me?"
+ },
+ {
+  "who": "rico",
+  "text": "Good morning, Mae. Yes. An address is made to be shared. It only lets people send to you."
+ },
+ {
+  "who": "mae",
+  "text": "And the key?"
+ },
+ {
+  "who": "rico",
+  "text": "The key never goes on a window. Not on a window, not in a chat, not on a bread bag."
+ },
+ {
+  "who": "mae",
+  "text": "Address on the window, key in the drawer."
+ },
+ {
+  "who": "rico",
+  "text": "Exactly. And remember, these are test coins. You can't buy flour with them. Yet."
+ },
+ {
+  "who": "mae",
+  "text": "Then I'll keep the real cash register too. Thanks, Rico!"
+ },
+ {
+  "who": "vik",
+  "text": "Morning, Rico, Vik here. I want to pay Mae for the bread and write for the bread in the payment. Where does the note go?"
+ },
+ {
+  "who": "rico",
+  "text": "Good morning, Vik. Nowhere. A transaction has a sender, a receiver, an amount, a fee limit, a sequence number and an expiry. No note."
+ },
+ {
+  "who": "vik",
+  "text": "No note at all?"
+ },
+ {
+  "who": "rico",
+  "text": "No note at all. If Mae needs to know what it's for, tell her at the counter."
+ },
+ {
+  "who": "vik",
+  "text": "Old school. I like it. Thanks!"
+ },
+ {
+  "who": "rudy",
+  "text": "Rico, it's Rudy. I put a rule on my wallet: block anything over five hundred. Now nothing goes through. Nothing!"
+ },
+ {
+  "who": "rico",
+  "text": "Good morning, Rudy. Did your rule also say what goes through?"
+ },
+ {
+  "who": "rudy",
+  "text": "Why would it? I only wanted to block the big ones."
+ },
+ {
+  "who": "rico",
+  "text": "Because a rule that says nothing answers 0, and 0 stops the payment. You told it when to say no, and never when to say yes."
+ },
+ {
+  "who": "rudy",
+  "text": "So I need to say yes out loud."
+ },
+ {
+  "who": "rico",
+  "text": "Out loud. Under five hundred: 1. Then it lets the small ones through."
+ },
+ {
+  "who": "rudy",
+  "text": "Yes out loud. Got it. Thanks, Rico."
+ },
+ {
+  "who": "nell",
+  "text": "Rico, Nell. Can somebody copy my payment and send it a second time? I'm worried."
+ },
+ {
+  "who": "rico",
+  "text": "Good morning, Nell. Every payment carries a sequence number from your wallet. Once it's used, it's used."
+ },
+ {
+  "who": "nell",
+  "text": "So the same payment can't go through twice?"
+ },
+ {
+  "who": "rico",
+  "text": "Not twice. A copy would have the same number, and the chain has already seen it."
+ },
+ {
+  "who": "nell",
+  "text": "That's a relief. Thank you, Rico."
+ },
+ {
+  "who": "dom",
+  "text": "Morning, Rico, Dom here. Who digs the blocks out at night? Somebody with a pickaxe?"
+ },
+ {
+  "who": "rico",
+  "text": "Good morning, Dom. Nobody digs. There's no mining on this testnet. The nodes agree on each block, and that's it."
+ },
+ {
+  "who": "dom",
+  "text": "No pickaxe? No noise?"
+ },
+ {
+  "who": "rico",
+  "text": "No pickaxe, no noise. Just agreement. Very quiet."
+ },
+ {
+  "who": "dom",
+  "text": "Better for the neighbours. Thanks, Rico."
+ },
+ {
+  "who": "hana",
+  "text": "Good morning, Rico. Hana from the school. I'm writing a lesson about wallet rules. Where does the amount come in?"
+ },
+ {
+  "who": "rico",
+  "text": "Morning, Hana. In a testnet rule the amount of the payment comes in on i1."
+ },
+ {
+  "who": "hana",
+  "text": "And where does the rule answer?"
+ },
+ {
+  "who": "rico",
+  "text": "On o5. 1 means let it through, 0 means stop it."
+ },
+ {
+  "who": "hana",
+  "text": "i1 in, o5 out. The children will remember that better than I do."
+ },
+ {
+  "who": "rico",
+  "text": "They always do. The free lessons on tauhud.com help, too."
+ },
+ {
+  "who": "hana",
+  "text": "Thank you, Rico."
+ },
+ {
+  "who": "lola",
+  "text": "Rico, it's Lola. Somebody paid my bar at six this morning. Who was it?"
+ },
+ {
+  "who": "rico",
+  "text": "Good morning, Lola. The chain shows the wallet that paid. Not the person."
+ },
+ {
+  "who": "lola",
+  "text": "Not even a name?"
+ },
+ {
+  "who": "rico",
+  "text": "Not even a name. Wallets, not people. If you want to know, ask at the bar who wants their receipt."
+ },
+ {
+  "who": "lola",
+  "text": "A mystery customer before breakfast. I'll take it. Thanks, Rico."
+ },
+ {
+  "who": "tano",
+  "text": "Morning, Rico. Tano. I play the drums. My grandson says Tau has always and sometimes. Is that like my drums?"
+ },
+ {
+  "who": "rico",
+  "text": "Good morning, Tano. A little. Always is your bass drum: it must be there on every beat."
+ },
+ {
+  "who": "tano",
+  "text": "And sometimes?"
+ },
+ {
+  "who": "rico",
+  "text": "Sometimes is your cymbal. Once is enough."
+ },
+ {
+  "who": "tano",
+  "text": "Then I've been playing Tau for forty years. Thank you, Rico."
+ },
+ {
+  "who": "bert",
+  "text": "Rico, Bert. I want to put a rule on my wallet today, but I'm scared I'll lock myself out."
+ },
+ {
+  "who": "rico",
+  "text": "Good morning, Bert. Try it in the rule builder on tauhud.com first. You see what your rule does before it's on your wallet."
+ },
+ {
+  "who": "bert",
+  "text": "Before? Without sending anything?"
+ },
+ {
+  "who": "rico",
+  "text": "Without sending anything. Write it, try a few amounts, and when it does what you want, then put it on the wallet."
+ },
+ {
+  "who": "bert",
+  "text": "Test first, then trust. That's my kind of morning. Thanks, Rico."
  },
  {
   "who": "ama",
