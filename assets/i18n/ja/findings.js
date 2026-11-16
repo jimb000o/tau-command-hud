@@ -164,5 +164,15 @@ TauI18n.add({ strings: {
   "IDNI closed the issue as completed.": "IDNI はこの issue を完了として閉じました。",
   "IDNI merged it.": "IDNI がマージしました。",
   "Read by our server from IDNI’s change": "私たちのサーバーが IDNI の変更から読み取りました：",
-  ", which says:": "、その記述："
+  ", which says:": "、その記述：",
+  "[bug] o5 clause verdict depends on how often its cached interpreter was stepped (`[t > 3]` / `[t = 0]` pass the clause screens)": "[bug] o5 ルール節の判定が、キャッシュされたインタプリタの実行回数で変わる（`[t > 3]` / `[t = 0]` がルール節の確認を通る）",
+  "A personal rule with a bare time condition can give two nodes different answers.": "時間だけの条件を持つ個人ルールが、二つのノードに違う答えを出させることがある。",
+  "A rule with a time condition such as [t > 3] passes the checks at the door, and its answer then depends on how often that node has run the rule before. On our private copy of the testnet, never the live one, one node took block 5 and another refused it with a state hash mismatch.": "[t > 3] のような時間の条件を持つルールは入口の確認を通り、その後の答えは、そのノードがそれまでにルールを何回動かしたかで変わります。私たちのテストネットの非公開コピーで（ライブでは決して試しません）、一つのノードはブロック 5 を受け入れ、もう一つは状態ハッシュの不一致で拒みました。",
+  "Every node must reach the same answer on every block. If any rule can make two nodes disagree, the chain can split.": "すべてのノードがすべてのブロックで同じ答えを出さなければなりません。どれか一つのルールでも二つのノードの意見を分けられるなら、チェーンは分かれ得ます。",
+  "We found it by reading the code, tried it on our own private copy chain, and added the result to the issue.": "コードを読んで見つけ、私たち自身の非公開コピーチェーンで試し、その結果を Issue に加えました。",
+  "[bug] replaying the committed Tau journal grows with every transfer and reaches the 60 s admission budget on a small node": "[bug] 確定済みの Tau ジャーナルの再生が送金のたびに長くなり、小さなノードで 60 秒の受付予算に届く",
+  "Checking a new payment gets slower with every transfer, until a waiting wallet gets no answer.": "新しい支払いの確認は送金のたびに遅くなり、待っているウォレットに答えが返らなくなる。",
+  "To check a new payment, the node replays its Tau journal from the last reset. That replay grows with every transfer: about 29 hours after the chain started it took 27 to 55 seconds on our small node, so a wallet that waits 20 seconds gets no answer.": "新しい支払いを確かめるため、ノードは最後のリセットから Tau のジャーナルを再生します。この再生は送金のたびに長くなり、チェーンが始まって約 29 時間後には私たちの小さなノードで 27〜55 秒かかったので、20 秒待つウォレットには答えが返りません。",
+  "A node has to answer a payment as quickly on day 100 as on day 1. Otherwise new payments time out the longer the chain runs.": "ノードは 100 日目にも 1 日目と同じ速さで支払いに答えなければなりません。そうでなければ、チェーンが長く動くほど新しい支払いが時間切れになります。",
+  "We measured it from our own node's log and named where the replay starts.": "私たち自身のノードのログから計測し、再生がどこから始まるかを示しました。"
 } });

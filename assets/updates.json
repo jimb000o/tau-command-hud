@@ -3247,5 +3247,11 @@
     "on": "2026-11-16",
     "link": "/roadmap/",
     "html": "Road to mainnet is up to date and now checks itself every week: two new items (busy hours that push a node to its limits, and a rule with a clock that can split two nodes), and the sync, join, validator and restart items now say what IDNI closed, fixed and said in November. Every Monday our server reads the list against IDNI’s issues and the testnet’s restarts and marks an item that may be out of date."
+  },
+  {
+    "tag": "Findings",
+    "on": "2026-11-16",
+    "link": "/findings/",
+    "html": "Findings lists our two newest reports to IDNI: checking a payment that gets slower with every transfer (#114), and a rule with a time condition that can give two nodes different answers (#115). Road to mainnet names the testnet restart of 13 November."
   }
 ]

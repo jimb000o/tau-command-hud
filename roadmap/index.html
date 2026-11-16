@@ -325,7 +325,7 @@ const ITEMS = [
     talks: ["octDev"] },
   { id: "upgrades", must: true, refs: [82], idni: "partly", title: "Restarts from block 0 come unannounced",
     brief: "The testnet has started over from block 0 several times; since 12 November a restart brings a new block 0 that nodes check.",
-    problem: "Until 1 November the testnet started over from block 0 on the same genesis, without a notice beforehand and without anything a node can check. Nodes that missed the restart of 1 November kept a dead chain. On 12 November IDNI merged pull request #93: a restart now comes with a new genesis, IDNI’s README names its block 0 hash, and nodes compare it when they connect. IDNI restarted the testnet that way after 12 November. The testnet started over twice more, on 14 and 15 November, each time shortly after busy hours on the chain.",
+    problem: "Until 1 November the testnet started over from block 0 on the same genesis, without a notice beforehand and without anything a node can check. Nodes that missed the restart of 1 November kept a dead chain. On 12 November IDNI merged pull request #93: a restart now comes with a new genesis, IDNI’s README names its block 0 hash, and nodes compare it when they connect. IDNI restarted the testnet that way on 13 November. The testnet started over twice more, on 14 and 15 November, each time shortly after busy hours on the chain.",
     why: "A mainnet cannot start over. The way to upgrade a running chain without a restart is best practised on the testnet first.",
     proof: [
       ["/stats/", "Stats page", "chain restarts our relay noticed"],
