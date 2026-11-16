@@ -1314,6 +1314,12 @@ def main(argv: list[str]) -> int:
             except Exception as e:  # noqa: BLE001
                 log.warning("news article: %s", e)
             try:
+                import feature_watch   # a new testnet feature: its article and post the same day, by itself
+                for did in feature_watch.step():
+                    log.info("feature post: %s", did)
+            except Exception as e:  # noqa: BLE001
+                log.warning("feature watch: %s", e)
+            try:
                 notes_tick()
                 site_pictures()
                 tick()

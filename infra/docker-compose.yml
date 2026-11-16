@@ -287,6 +287,15 @@ services:
       BLOG_POST_MAX_HOURS: ${BLOG_POST_MAX_HOURS:-30}
       # room between two posts on Telegram or X (minutes): the article, the pirates' clip and the hack post wait for it
       POST_GAP_MINUTES: ${POST_GAP_MINUTES:-120}
+      # a new feature on the testnet (IDNI's "feat:" changes on tau-testnet main, a newer Tau Language in its build, a
+      # Tau Language release): its article on the blog with its post on Telegram and X the same day, by itself
+      # (alerts/feature_watch.py, up features). Without the model, or with this month's Anthropic spend at
+      # FEATURE_AI_MONTH_MAX dollars, a short plain post from IDNI's own title. FEATURE_POSTS=false stops it
+      FEATURE_POSTS: ${FEATURE_POSTS:-true}
+      FEATURE_AI_MONTH_MAX: ${FEATURE_AI_MONTH_MAX:-8}
+      FEATURE_MAX_PER_DAY: ${FEATURE_MAX_PER_DAY:-2}
+      FEATURE_SETTLE_MINUTES: ${FEATURE_SETTLE_MINUTES:-45}
+      TAU_TESTNET_REF: ${TAU_TESTNET_REF}   # the commit our node runs ("Our node already runs it.")
       # the testnet this week as a blog post (alerts/testnet_week.py): counted from our public data, written as a draft and
       # told to the owner's private chat on IDNI_REPORT_WEEKDAY at IDNI_REPORT_HOUR (Sunday 18:00 German time); never
       # published by itself (up blog publish testnet-week-<year>-w<week>). TESTNET_WEEK=false stops it; up week shows it.
@@ -315,6 +324,7 @@ services:
       - ai_usage:/ai-usage      # what each draft cost (ai_meter.py)
       - /opt/sites/rico/art:/art:ro         # the island's paintings: each article's hero picture is made from them
       - ../rabbit/art/ships:/ships:ro       # the painted ships on that picture
+      - ./node/Dockerfile:/pins/Dockerfile:ro   # the commits our node is built from (feature_watch.py)
     depends_on: [relay]
     mem_limit: 384m        # the pirates' clip: Pillow frames into ffmpeg (two threads, 720p) for about a minute a week
     restart: unless-stopped
