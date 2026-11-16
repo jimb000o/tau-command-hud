@@ -564,6 +564,7 @@
        sparks {x,y}           sparks flying from a chimney
      "w": n mirrors a light in the water n units under it; "p" names the place the light belongs to. */
   const LIGHTS = [];
+  const XLAMP = {};   // id -> [x, y, r]: a lamp set from outside (COVE_SCENE.lamp)
   const LC = { fire: [255, 160, 76], warm: [255, 206, 140], cream: [255, 236, 204], pink: [255, 146, 198], teal: [92, 236, 214], cyan: [110, 212, 255], red: [255, 92, 72], moon: [192, 214, 255], gold: [255, 212, 116], green: [57, 255, 138] };
   const LANTERN = { red: [255, 104, 76], stripes: [255, 190, 160], warm: [255, 200, 120] };
   const BULBS = { warm: [[255, 214, 150]], pink: [[255, 150, 200], [255, 200, 226]], multi: [[255, 96, 80], [255, 210, 90], [90, 236, 214], [255, 150, 200]] };
@@ -634,6 +635,7 @@
       else if (L.k === "buoy") pool(L.x, L.y, 14, col, 0.6 * n * buoyAt(L, t));
       else if (L.k === "sparks") pool(L.x, L.y, 16, col, 0.45 * n * fl);
     }
+    for (const k in XLAMP) { const [x, y, r] = XLAMP[k]; pool(x, y, r, LC.cream, n); }   // lamps the other scripts set (walkers.js: the notice board)
     pool(SPOT.beam[0], SPOT.beam[1], 26, LC.green, 0.7 * n);   // the lighthouse lamp and the radio mast's light
     if (Math.floor(t / 700) % 2) pool(SPOT.blink[0], SPOT.blink[1], 14, LC.red, 0.6 * n);
     return c;
@@ -2308,6 +2310,8 @@
     onFrame(f) { S.onFrame = f; },
     /* more people in depth order: draw(g, t, dt, items, light) pushes [y, fn]; hit(x, y, tolerance) in world units → an id or null */
     extra(draw, hit) { S.extra = draw; S.extraHit = hit; },
+    /* a small lamp of another script's own (id, [x, y, r] in world units, or null to put it out): lit after dusk like the island's */
+    lamp(id, at) { if (at) XLAMP[id] = at; else delete XLAMP[id]; },
     /* the cruise ship in port or coming in (relay cruise.py: {name, style, phase, t0, end, at}), null when there is none;
        ping(place): one of its passengers' transactions was sealed there */
     ship(v) { SHIP.s = v || null; },
