@@ -249,6 +249,13 @@ async def main():
             check((await ask(ws, "getruleconflict " + "aa" * 20))["status"] == "error", "conflict report needs a 64-hex offer id")
             # /rules: who holds a personal rule, from the kept blocks and the node's own answer (no cap since IDNI 5ad1bb7)
             check(set(r.rule_candidates()) == {BOB, CAROL}, f"rule candidates from blocks {r.rule_candidates()}")
+            r.rules_text, r.rulenums_text, r.rules_asking = None, None, [3, 40]   # as right after a relay restart, mid-check
+            _, body = await get("/rules/numbers")
+            check(json.loads(body)["ready"] is False and json.loads(body)["asking"] == {"done": 3, "of": 40}, "before the first check /rules/numbers says it is not ready, so a page shows loading, not 0")
+            check(json.loads(body)["provisional"] is True and json.loads(body)["now"]["holders"]["people"] == 1, "and already counts the rules the kept blocks show (BOB), not 0")
+            _, body = await get("/rules")
+            prov = json.loads(body)
+            check(prov.get("provisional") is True and list(prov["bodies"]) == [BOB] and "offers" in prov, f"before the first check /rules hands the rules from the blocks at once {prov}")
             await r.poll_rules()
             ctype, body = await get("/rules")
             rules = json.loads(body)
@@ -257,6 +264,7 @@ async def main():
             # /rules/numbers: BOB's rule sorted by kind, written down for today, kept in a file across restarts
             ctype, body = await get("/rules/numbers")
             nums = json.loads(body)
+            check(nums["ready"] is True and nums["asking"] is None, "after the first check /rules/numbers is ready")
             today = time.strftime("%Y-%m-%d", time.gmtime())
             check(ctype == "application/json" and nums["now"]["holders"]["people"] == 1 and sum(nums["now"]["kinds"]["people"].values()) >= 1
                   and nums["history"]["days"][today]["new"]["people"] == 1 and nums["now"]["how"]["people"]["own"] == 1

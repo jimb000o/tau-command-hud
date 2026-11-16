@@ -824,6 +824,15 @@ small { font-size: 11px; }   /* type floor on desktop: nothing under 11px */
 .contrast .cap { font: 11px/1.5 var(--mono); color: var(--dim); }
 .contrast .cap b { color: var(--text); font-weight: 600; }
 .empty { color: var(--dim); font-size: 12px; padding: 6px 0; }
+/* the rules panels while the node is still asked who holds a rule (RLOAD) */
+.rload { color: var(--dim); font-size: 12px; padding: 6px 0; display: grid; gap: 5px; }
+.rload b { color: var(--text); font-weight: 600; }
+.rload .bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,.08); overflow: hidden; position: relative; }
+.rload .bar i { display: block; height: 100%; background: var(--ok); border-radius: 2px; transition: width .4s; }
+.rload .bar.sweep i { width: 30% !important; animation: rsweep 1.3s ease-in-out infinite; }
+@keyframes rsweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(340%); } }
+.rload.thin { padding: 0 0 6px; }
+@media (prefers-reduced-motion: reduce) { .rload .bar.sweep i { animation: none; width: 100% !important; opacity: .4; } }
 .upd { display: grid; gap: 6px; padding: 8px 8px; background: rgba(255,255,255,.025); border-radius: 0 4px 4px 0; border-left: 2px solid var(--amber); }
 .upd.active { border-left-color: var(--ok); }
 .upd.expired { border-left-color: var(--dim); opacity: .6; }
@@ -3236,13 +3245,13 @@ const offerWho = a => { const n = nbWho(a); return n !== "a wallet" ? ` <em clas
 function renderOffers() {
   if (hold("offers", renderOffers)) return;
   const el = $("offers");
-  const list = S.offers.slice(-6).reverse();
-  el.innerHTML = list.length ? list.map(o => `<div class="offer ${o.status}" data-ex="${exKey(() => explainOffer(o))}" data-detail="${dtKey(() => detailOffer(o))}">
+  const list = S.offers.slice(-6).reverse(), rl = rulesLoading();
+  el.innerHTML = rloadHtml(rl, list.length > 0) + (rl && !list.length ? "" : list.length ? list.map(o => `<div class="offer ${o.status}" data-ex="${exKey(() => explainOffer(o))}" data-detail="${dtKey(() => detailOffer(o))}">
       <div class="o1"><span>${acct(o.from)}${offerWho(o.from)}</span><span class="arrow">→</span><span>${acct(o.to)}${offerWho(o.to)}</span><span class="pill ${o.status}">${o.status}</span></div>
       <div class="o2"><b>${o.policy.name}</b> · ${esc(o.policy.label)}</div>
       <div class="chk"><i>shape ✓</i><i>reserved ✓</i><i>widths ✓</i><i>compile ✓</i><i class="${o.collides ? "warn" : ""}">${o.collides ? "replaces current rule" : "no collision"}</i></div></div>`).join("")
-    : `<div class="empty">No rules shared yet. Anyone can send a Tau rule to another account; the recipient reviews it and accepts or rejects it.</div>`;
-  $("offerCount").textContent = `${S.offers.filter(o => o.status === "offered").length} waiting`;
+    : `<div class="empty">No rules shared yet. Anyone can send a Tau rule to another account; the recipient reviews it and accepts or rejects it.</div>`);
+  $("offerCount").textContent = rl ? "loading…" : `${S.offers.filter(o => o.status === "offered").length} waiting`;
 }
 /* who holds a rule, for Intermediate and Expert: the name where we know the wallet (the same names as Beginner: showcase wallets,
    IDNI genesis, players), else its short address; Expert adds the short address next to a name */
@@ -3259,7 +3268,8 @@ function renderClauses() {
   const named = a => !!(window.TauOrigin && TauOrigin.name && TauOrigin.name(a)) && !(TauOrigin.role && TauOrigin.role(a) === "vault");   // the showcase wallets first: they never leave the list of 8
   const entries = [...S.clauses.entries()].sort((a, b) => named(b[0]) - named(a[0]) || (a[0] < b[0] ? -1 : 1));
   const open = S.approvals.filter(a => a.status === "open");
-  $("clauseCount").textContent = entries.length + " accounts" + (open.length ? ` · ${open.length} waiting for approval` : "");
+  const rl = rulesLoading();
+  $("clauseCount").textContent = (rl ? "loading…" : entries.length + " accounts") + (open.length ? ` · ${open.length} waiting for approval` : "");
   const shown = open.concat(S.approvals.filter(a => a.status !== "open").slice(-2));
   const appr = shown.length ? `<div class="appr">${shown.map(a => {
     const left = Math.max(0, a.expireAt - S.height);
@@ -3273,7 +3283,7 @@ function renderClauses() {
     }, LBL = { open: `waits for ${short(a.approver)} · ${left} blk`, approved: "approved ✓", signed: "signed ✓", declined: "declined ✕", expired: "expired", closed: "window closed" };
     return `<div class="ap ${a.status}" data-full="${esc(TIP[a.status] || "")}"><i></i><span>${acct(a.from)} → ${acct(a.to)} <b>${fmt(a.amount)} AGRS</b></span><span>${LBL[a.status] || a.status}</span></div>`;
   }).join("")}</div>` : "";
-  $("clauses").innerHTML = (entries.length ? entries.slice(0, 8).map(([acc, p]) =>
+  $("clauses").innerHTML = rloadHtml(rl, entries.length > 0) + (rl && !entries.length ? "" : entries.length ? entries.slice(0, 8).map(([acc, p]) =>
     `<div class="clause${p.lastRefused && ruleState(p).hot ? " refused" : ""}" data-acc="${esc(acc)}" data-ex="${exKey(() => explainClause(acc, p) + (p.lastRefused && ruleState(p).hot ? "\nJust refused a transfer from this account." : ""))}" data-detail="${dtKey(() => detailClause(acc, p))}"><i class="k-${p.kind}"></i><span>${clauseWho(acc)}</span><span>${p.name}</span><span class="pl"><b>${esc(nbWho(acc))}</b>${esc(nbRule(p))}${nbStops(p) ? `<small>${esc(nbStops(p))}</small>` : ""}</span></div>`).join("")
     : `<div class="empty">No personal rules yet. Each account can program its own transfer policy in Tau.</div>`) + appr;
   // The node composes all accepted clauses into ONE rule per stream (README · Rule sharing)
@@ -3804,6 +3814,24 @@ function liveSend(cmd) { if (LIVE.ws && LIVE.ws.readyState === 1) LIVE.ws.send(c
 /* lookups (an account's rules, a refusal's reason) share a small allowance on the relay with every other visitor: they go out one by one,
    a little apart, and one the relay turns away as busy goes back in the queue for a later try instead of into the node log */
 const LQ = { q: [], sent: [], tries: new Map(), t: 0, wait: 0 };
+/* Loading the rules in force: our relay first asks the node who holds a rule (GET /rules; after a relay restart that takes a few
+   minutes and the relay answers 503), then this page asks the node about each holder (getruleoffers). Until both are done, the
+   two rules panels say so, with how far it got, instead of showing 0. */
+const RLOAD = { total: null, want: new Set(), got: new Set(), relayBusy: false, since: Date.now() };
+function rulesLoading() {
+  if (S.mode !== "live" || S.simfeed) return null;
+  if (Date.now() - RLOAD.since > 240000) return null;   // never a spinner for ever: after four minutes the panels say what they have
+  if (RLOAD.total == null) return { busy: RLOAD.relayBusy };
+  const got = [...RLOAD.want].filter(a => RLOAD.got.has(a)).length;
+  return got < RLOAD.total ? { got, total: RLOAD.total } : null;
+}
+function rloadHtml(l, thin) {
+  if (!l) return "";
+  const head = l.busy ? "Our node is still finding out who holds a rule." : l.total == null ? "Asking our node who holds a rule…" : `Loading the rules in force: ${l.got} of ${l.total} accounts read.`;
+  const sub = l.busy ? "After a server update this takes a few minutes; the panel fills in by itself." : "";
+  const w = l.total ? Math.round(100 * l.got / l.total) : 0;
+  return `<div class="rload${thin ? " thin" : ""}" role="status" aria-live="polite"><span><b>${esc(head)}</b>${sub ? " " + esc(sub) : ""}</span><span class="bar${l.total ? "" : " sweep"}"><i style="width:${w}%"></i></span></div>`;
+}
 function lookup(cmd) { if (!LQ.q.includes(cmd)) LQ.q.push(cmd); pumpLQ(); }
 function pumpLQ() {
   if (LQ.t || !LQ.q.length) return;
@@ -3850,6 +3878,7 @@ function liveMessage(ev) {
   presenceFromMessage(d);
   if (msg.command === "getruleoffers") {   // an account's rule in force and the offers it sent or received, from before this page opened
     const a = String(d.address || "").toLowerCase(); let changed = false;
+    if (a && RLOAD.want.has(a) && !RLOAD.got.has(a)) { RLOAD.got.add(a); changed = true; }
     if (a && Array.isArray(d.accepted_clauses)) {   // the node's answer is the account's rule as it stands now: add it, replace it, or take it away
       const c = d.accepted_clauses.find(c => c && String(c.target_stream).replace(/^o/, "") === "5" && c.clause_body && !o5Neutral(c.clause_body)), had = S.clauses.get(a);
       const now = c && policyFromText(c.clause_body);
@@ -4000,11 +4029,35 @@ async function pollRules() {
   if (S.simfeed || !LIVE.ws || LIVE.ws.readyState !== 1 || $("wsurl").value.trim() !== RELAY) return;
   const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 8000);
   try {
-    const r = await fetch(relayBase() + "/rules", { cache: "no-store", signal: ctl.signal }); if (!r.ok) return;
+    const r = await fetch(relayBase() + "/rules", { cache: "no-store", signal: ctl.signal });
+    if (!r.ok) { if (r.status === 503 && RLOAD.total == null) { RLOAD.relayBusy = true; renderClauses(); renderOffers(); } return; }
     const d = await r.json(), holders = (Array.isArray(d.holders) ? d.holders : []).map(a => String(a).toLowerCase()).filter(a => /^[0-9a-f]{96}$/.test(a));
     if (S.simfeed || S.mode !== "live") return;
+    if (RLOAD.total == null) {
+      RLOAD.total = holders.length; RLOAD.want = new Set(holders); RLOAD.relayBusy = false;
+      holders.forEach(a => { if (S.clauses.has(a)) RLOAD.got.add(a); });   // already read from the blocks this page loaded: nothing to ask
+      setTimeout(() => { renderClauses(); renderOffers(); }, 240500);
+      renderClauses(); renderOffers();
+    }
+    // the relay hands every rule in force and the newest offers in this one answer, so both panels fill at once; the
+    // node is asked per account only for what the answer leaves out
+    const bodies = d.bodies && typeof d.bodies === "object" ? d.bodies : {}; let changed = false;
+    Object.entries(bodies).forEach(([k, text]) => {
+      const a = String(k).toLowerCase(); if (!/^[0-9a-f]{96}$/.test(a) || typeof text !== "string") return;
+      if (RLOAD.want.has(a) && !RLOAD.got.has(a)) { RLOAD.got.add(a); changed = true; }
+      const had = S.clauses.get(a), now = policyFromText(text);
+      if (!now || (had && had.seenAt && performance.now() - had.seenAt < 90000)) return;   // a block this page just read is newer than the relay's answer
+      if (!had || had.kind + had.label !== now.kind + now.label) { S.clauses.set(a, now); changed = true; }
+    });
+    (Array.isArray(d.offers) ? d.offers : []).forEach(o => {
+      if (!o || !o.id) return;
+      const known = S.offers.find(x => x.id === o.id);
+      if (known) { if (o.status && known.status !== o.status && known.status === "offered") { known.status = o.status; changed = true; } return; }
+      S.offers.push({ id: o.id, from: o.from, to: o.to, policy: policyFromText(o.text || ""), status: o.status || "offered", expire: Number(o.expire) || 0, at: Number(o.at) || 0, collides: false }); changed = true;
+    });
+    if (changed) { S.offers.sort((x, y) => (x.at || 0) - (y.at || 0)); if (S.offers.length > 200) S.offers.splice(0, S.offers.length - 200); renderClauses(); renderOffers(); readouts(); }
     const ask = a => { const at = RULE_ASK.get(a) || 0; if (Date.now() - at < 300000) return; RULE_ASK.set(a, Date.now()); lookup(`getruleoffers ${a} all`); };   // the lookup is costly for the node: once per account in 5 min
-    holders.forEach(a => { if (!S.clauses.has(a)) ask(a); });
+    holders.forEach(a => { if (!S.clauses.has(a) && !(a in bodies)) ask(a); });
     [...S.clauses.keys()].forEach(a => { if (!holders.includes(a)) ask(a); });
   } catch (e) {} finally { clearTimeout(timer); }
 }
@@ -4023,7 +4076,7 @@ function refusedTx(x) {
 /* forget every block and transaction: on connect, and when the relay reports that the node wiped a dead chain ("reset": true) */
 function liveClear() {
   Object.assign(S, { validators: [], blocks: [], mempool: [], txTotal: 0, blockTimes: [], lastInterval: null, minActBlocks: null, height: 0, updates: [], offers: [], refusedN: 0, approvals: [], reorgs: [], eligMode: "", modeHistory: [] });
-  TXST.st.clear(); TXST.busy = ""; RULE_ASK.clear(); RMEM.at = 0; RMEM.M = 0; SCAN.ids.clear(); SCAN.lo = null; SCAN.want = null;
+  TXST.st.clear(); TXST.busy = ""; RULE_ASK.clear(); Object.assign(RLOAD, { total: null, want: new Set(), got: new Set(), relayBusy: false, since: Date.now() }); RMEM.at = 0; RMEM.M = 0; SCAN.ids.clear(); SCAN.lo = null; SCAN.want = null;
   S.clauses = new Map(); S.byHeight = new Map(); S.memSeen = new Map(); S.chainStart = null; S.rulesLastBlock = null; LIVE.seenBlocks.clear(); LIVE.seenTx.clear(); DROP.seen.clear(); DROP.cards.clear(); DROP.first = true; LIVE.memOnce = false;
   $("ribbon").innerHTML = ""; $("feed").innerHTML = ""; $("feedRej").textContent = "0 refused"; $("feedRej").classList.remove("some");
   RIB.back = false; RIB.target = null; RIB.loading = false; ribbonHold.length = 0;

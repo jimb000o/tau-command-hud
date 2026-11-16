@@ -1171,6 +1171,59 @@ class Relay:
                     out[str(t.get("sender_pubkey") or "").lower()] = (app_of(t, h, sent) or "", h, self._height(b))
         return out
 
+    def rules_from_blocks(self, blocks: list[dict] | None = None) -> dict:
+        """{holder: rule text} read from the kept blocks alone: each account's newest rule (own or accepted offer), the
+        neutral clause meaning none. Right after a relay restart, before the node was asked (poll_rules), this is what
+        GET /rules answers, so the HUD's rules panels fill at once instead of waiting minutes."""
+        out: dict[str, str] = {}
+        for b in self.ordered_blocks() if blocks is None else blocks:
+            for t in b.get("transactions") or []:
+                if not isinstance(t, dict):
+                    continue
+                kind = t.get("tx_type") or "user_tx"
+                ops = t.get("operations") if isinstance(t.get("operations"), dict) else {}
+                text = ops.get("0") if kind == "user_tx" else t.get("rule_text") if kind == "rule_offer_accept" else None
+                pk = str(t.get("sender_pubkey") or "").lower()
+                if not isinstance(text, str) or "o5" not in text or not HEX.match(pk):
+                    continue
+                f = re.sub(r"\s+", "", text)
+                if f in (NEUTRAL_O5, NEUTRAL_O5[1:-1]) or f in (f"always({NEUTRAL_O5}).", f"always{NEUTRAL_O5}."):
+                    out.pop(pk, None)
+                else:
+                    out[pk] = text.strip()
+        return out
+
+    def rule_offer_list(self, blocks: list[dict] | None = None, keep: int = 30) -> list[dict]:
+        """The newest rule offers in the kept blocks with what became of them, for the HUD's Rule sharing panel (GET /rules
+        "offers"): {"id", "from", "to", "text", "status" offered|accepted|rejected|expired, "expire", "at"}. Public on the chain."""
+        blocks = self.ordered_blocks() if blocks is None else blocks
+        height, made, answer = self.height(), {}, {}
+        for b in blocks:
+            n = self._height(b)
+            for t in b.get("transactions") or []:
+                if not isinstance(t, dict):
+                    continue
+                kind = t.get("tx_type")
+                if kind == "rule_offer":
+                    frm, to, text = str(t.get("sender_pubkey") or "").lower(), str(t.get("recipient_pubkey") or "").lower(), str(t.get("rule_text") or "")
+                    try:
+                        exp = int(t.get("expire_at_height") or 0)
+                        oid = offer_id(frm, to, text, exp)
+                    except (TypeError, ValueError):
+                        oid = None
+                    if oid:
+                        made[oid] = {"id": oid, "from": frm, "to": to, "text": text[:2000], "status": "offered", "expire": exp, "at": n}
+                elif kind in ("rule_offer_accept", "rule_offer_reject"):
+                    answer[str(t.get("offer_id") or "").lower()] = "accepted" if kind == "rule_offer_accept" else "rejected"
+        out = []
+        for oid, o in made.items():
+            if oid in answer:
+                o["status"] = answer[oid]
+            elif height is not None and o["expire"] and o["expire"] < height:
+                o["status"] = "expired"
+            out.append(o)
+        return out[-keep:]
+
     def rule_why(self) -> dict:
         """For the server only (up rules status): every rule holder with what decides where its rule came from, so a
         surprising count on /rules/numbers can be checked. Never published (it ties wallets to apps)."""
@@ -1189,6 +1242,9 @@ class Relay:
         it was sent from, rule offers and their outcome, the size of each rule, and the day history (ruledays.py)."""
         who = self.rule_who()
         blocks = self.ordered_blocks()
+        ready = self.rules_text is not None
+        # before the node was asked after a restart: the rules the kept blocks show, marked provisional (no balances yet)
+        rule_bodies = self.rule_bodies if ready else self.rules_from_blocks(blocks)
         how: dict[str, tuple] = {}   # holder -> (own/offer, tx hash) of its newest rule in the kept blocks
         for b in blocks:
             ids = b.get("tx_ids") or []
@@ -1206,7 +1262,7 @@ class Relay:
         sent = {w: {"tauhud": 0, "elsewhere": 0} for w in WHO_RULES}
         pages: dict[str, int] = {}
         sizes = {w: [] for w in WHO_RULES}
-        for pk, body in self.rule_bodies.items():
+        for pk, body in rule_bodies.items():
             w = who(pk)
             way, h = how.get(pk, ("unknown", ""))
             ways[w][way] += 1
@@ -1224,8 +1280,11 @@ class Relay:
             rules = json.loads(self.rules_text) if self.rules_text else {}
         except ValueError:
             rules = {}
-        snap = self.ruledays.snapshot(self.rule_bodies, who, self.rule_balances, self.rule_origin(blocks))
-        return {"now": {**snap, "how": ways, "sent": sent, "pages": pages, "sizes": sizes,
+        snap = self.ruledays.snapshot(rule_bodies, who, self.rule_balances if ready else None, self.rule_origin(blocks))
+        asking = getattr(self, "rules_asking", None)
+        return {"ready": ready, "provisional": not ready,
+                "asking": {"done": asking[0], "of": asking[1]} if self.rules_text is None and asking else None,
+                "now": {**snap, "how": ways, "sent": sent, "pages": pages, "sizes": sizes,
                         "checked": rules.get("checked"), "candidates": rules.get("candidates"), "checked_at": rules.get("checked_at")},
                 "offers": rule_offers(blocks, self.height(), offer_id, who, lambda t, h: app_of(t, h, self.sources.sent)),
                 "texts": len(self.rulewall()), "kinds": list(RULE_KINDS), "who": list(WHO_RULES), "from": list(RULE_FROM), "max_comparisons": 32,
@@ -1241,7 +1300,12 @@ class Relay:
 
     async def poll_rules(self):
         holders, bodies, balances, cands = [], {}, {}, self.rule_candidates()
+        self.rules_asking = [0, min(len(cands), RULES_MAX_CHECKS)]   # how far this check got, for the pages while it runs
+        self.rulenums_text = None if self.rules_text is None else self.rulenums_text
         for i, a in enumerate(cands[:RULES_MAX_CHECKS]):
+            self.rules_asking[0] = i
+            if self.rules_text is None and i % 5 == 0:
+                self.rulenums_text = None   # the first check after a restart: let /rules/numbers show the progress
             if i:
                 await asyncio.sleep(2.5)   # getruleoffers is in the node's expensive tier (0.5/s)
             msg = await self.upstream.request(f"getruleoffers {a} in")
@@ -1258,7 +1322,7 @@ class Relay:
                     except (TypeError, ValueError):
                         balances[a] = 0
                     break
-        self.rules_text = json.dumps({"holders": holders, "taken": len(holders), "limit": None,
+        self.rules_text = json.dumps({"holders": holders, "bodies": bodies, "offers": self.rule_offer_list(), "taken": len(holders), "limit": None,
                                       "checked": min(len(cands), RULES_MAX_CHECKS), "candidates": len(cands),
                                       "checked_at": round(time.time())}, separators=(",", ":"))
         self.rule_bodies, self.rule_balances = bodies, balances
@@ -2578,7 +2642,15 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "public, max-age=60")])
             code = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
-            body = (self.rules_text or '{"error":"relay is still reading who holds a rule"}').encode()
+            asking = getattr(self, "rules_asking", None)
+            if not ready and self.blocks:   # before the node was asked: what the kept blocks say, marked as such
+                bodies = self.rules_from_blocks()
+                ready, code = True, HTTPStatus.OK
+                body = json.dumps({"holders": list(bodies), "bodies": bodies, "offers": self.rule_offer_list(), "provisional": True,
+                                   "asking": {"done": asking[0], "of": asking[1]} if asking else None}, separators=(",", ":")).encode()
+            else:
+                body = (self.rules_text or json.dumps({"error": "relay is still reading who holds a rule",
+                                                       "asking": {"done": asking[0], "of": asking[1]} if asking else None})).encode()
             return Response(code.value, code.phrase, headers, body)
         if path == "/community":
             headers = Headers([("Content-Type", "application/json"),
