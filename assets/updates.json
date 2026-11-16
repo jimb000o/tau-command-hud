@@ -3310,6 +3310,6 @@
   {
     "tag": "Troll box",
     "on": "2026-11-16",
-    "html": "Troll box: links to our own sites now go through and are clickable: any page of tauhud.com (also node.tauhud.com) and agorzilla.com, with or without https://. Every other link is still refused, so scam links stay out."
+    "html": "Troll box: links to our own sites now go through and are clickable: any page of tauhud.com (also node.tauhud.com), agorzilla.com and our shop tau-hud-shop.fourthwall.com, with or without https://. Every other link is still refused, so scam links stay out."
   }
 ]

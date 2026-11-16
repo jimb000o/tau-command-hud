@@ -68,10 +68,10 @@ TOKEN = re.compile(r"^[0-9a-f]{32}$")
 
 # no links: a scheme, www., or a word.tld with a common top level domain, t.me/ invites, @handles, e-mail addresses
 LINK = re.compile(r"(https?:|ftp:|www\.|\b[\w-]+(\.|\s*\(dot\)\s*|\s*\[dot\]\s*)(com|net|org|io|xyz|app|me|gg|co|cc|ru|cn|info|biz|site|online|link|ly|to|finance|money|exchange|top|club|vip|pro|live|fun|tk|ml|xxx|porn|sex|cam|tv)\b|t\.me/|\bt\s*\.\s*me\b|discord\s*\.?\s*gg|@\w{3,}|\b[\w.+-]+@[\w-]+\.\w+)", re.I)
-# our own sites, the one kind of link the troll box keeps: tauhud.com (any page, any subdomain such as node.tauhud.com) and
-# agorzilla.com, with or without https://. The host must end right there: "tauhud.com.evil.xyz", "faketauhud.com",
+# our own sites, the one kind of link the troll box keeps: tauhud.com (any page, any subdomain such as node.tauhud.com),
+# agorzilla.com and our shop tau-hud-shop.fourthwall.com (that host only), with or without https://. The host must end right there: "tauhud.com.evil.xyz", "faketauhud.com",
 # "tauhud.com@evil.com" or "tauhud.com:8080" are not ours, and what is left of them is refused by LINK below.
-OWN = re.compile(r"(?<![\w.@/-])(?:https?://)?(?:[a-z0-9-]+\.)*(?:tauhud|agorzilla)\.com(?![\w@:-]|\.[\w-])(?:[/?#][^\s<>\"'@]*)?", re.I)
+OWN = re.compile(r"(?<![\w.@/-])(?:https?://)?(?:(?:[a-z0-9-]+\.)*(?:tauhud|agorzilla)\.com|tau-hud-shop\.fourthwall\.com)(?![\w@:-]|\.[\w-])(?:[/?#][^\s<>\"'@]*)?", re.I)
 # price, trading and hype talk (testnet AGRS has no value; the site never talks prices)
 TALK = [
     r"\$", r"€", r"£", r"¥", r"\busdt?\b", r"\busdc\b", r"\beur\b", r"\bbtc\b", r"\beth\b", r"\bsats?\b",
@@ -126,7 +126,7 @@ LOOK = str.maketrans({"а": "a", "е": "e", "о": "o", "р": "p", "с": "c", "х
 EMOJI = re.compile("[\U0001F000-\U0001FAFF☀-➿⬀-⯿️]")
 
 REASONS = {
-    "link": "Only links to tauhud.com or agorzilla.com here; no handles.",
+    "link": "Only links to tauhud.com, agorzilla.com or our shop here; no handles.",
     "talk": "No price or trading talk: testnet AGRS has no value.",
     "addr": "No wallet addresses or keys here.",
     "scam": "That looks like a scam, so it is not posted.",
@@ -202,7 +202,7 @@ def judge(text: str, extra: list[str] | None = None, max_len: int = MAX_LEN) -> 
         return "link"
     if ADDR.search(text):
         return "addr"
-    if any(re.search(p, low) for p in TALK):
+    if any(re.search(p, rest.lower()) for p in TALK):   # a shop path is not price talk; the words around it are judged
         return "talk"
     caps = [ch for ch in text if ch.isalpha() and ch.isascii()]
     if len(caps) >= 12 and sum(ch.isupper() for ch in caps) / len(caps) > 0.7:
