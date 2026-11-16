@@ -2199,7 +2199,7 @@ class Relay:
         connected = st["upstream_connected"] and "getblocks" in self.updated
         canon, tip = st["canonical_height"], st["tip_height"]
         synced = bool(connected and canon and (tip is None or tip - canon <= SYNC_LAG))
-        stamps = [t for t in (self._ts(b) for b in self.ordered_blocks()[-11:]) if t is not None]
+        stamps = [t for t in (self._ts(b) for b in self.ordered_blocks()[-11:] if self._height(b) >= 1) if t]   # genesis #0 has timestamp 0
         pace = round((stamps[-1] - stamps[0]) / (len(stamps) - 1), 1) if len(stamps) > 1 and stamps[-1] > stamps[0] else None
         archived = [u for u in gov.get("archival_update_details") or [] if isinstance(u, dict)]
         activated = sum(1 for u in archived if u.get("lifecycle") == "activated")
