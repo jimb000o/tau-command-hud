@@ -3261,6 +3261,12 @@
     "html": "Chain core: the rule ring and the node orbit hold still while your pointer rests on them, the same way the waiting room already does, so you can read a rule or a node without chasing it. They ease to a stop and start turning again when you move away."
   },
   {
+    "tag": "Chain core",
+    "on": "2026-11-16",
+    "link": "/",
+    "html": "Chain core: click a dot on the rule ring to open that wallet’s rules on its account page. A rule another wallet offered and this one accepted now has a dashed halo, a rule the wallet set itself a solid one; the card says who offered it. On the chain both are the wallet’s own rule, stored the same way; only how it got there differs."
+  },
+  {
     "tag": "White Rabbit Key",
     "on": "2026-11-16",
     "link": "/rabbit/?islander=1",

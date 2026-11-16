@@ -1039,6 +1039,8 @@ function renderRules(now, ro) {
     html += `<h3>History</h3>` + hist.map(e => ruleCard({ text: e.rule }, "", `${blkLink(e.h)}<span>${esc(fmtWhen(e.ts))}</span><b>${e.kind === "rule_offer_accept" ? `accepted from ${e.offer ? accLink(e.offer.from) : "another account"}` : "set itself"}</b>${e.stream ? `<span>on ${esc(e.stream)}</span>` : ""}`)).join("");
   }
   $("rules").innerHTML = html;
+  // the chain core's rule ring links here with #rules: once, the page opens at this account's rules
+  if (location.hash === "#rules" && !renderRules.jumped) { renderRules.jumped = true; requestAnimationFrame(() => { const sec = $("rules").closest("section"); if (sec && sec.offsetParent) sec.scrollIntoView({ block: "start" }); }); }
 }
 const STATUS = { offered: ["waiting for an answer", "a"], accepted: ["accepted", "g"], refused: ["refused", ""], rejected: ["refused", ""], expired: ["expired", ""] };
 function renderOffers(ro) {
