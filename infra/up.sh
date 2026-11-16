@@ -393,6 +393,11 @@ if [ "${1:-}" = "idni" ]; then
   shift
   # devpulse writes the IDNI posts, alerts sends them: both with the code just pulled (the node and the relay stay)
   docker compose up -d --build --no-deps devpulse alerts >/dev/null 2>&1 || docker compose up -d devpulse >/dev/null 2>&1 || true
+  if [ "${1:-}" = "ai" ]; then        # does the Anthropic API answer? one tiny question; when it does, the news line writes again
+    docker compose up -d --no-deps --build blog >/dev/null 2>&1 || true   # the blog writer with the same plain reasons
+    docker compose exec -T devpulse python devpulse.py ai
+    exit $?
+  fi
   if [ "${1:-}" = "restart" ]; then   # what the post for the newest testnet restart would say now (restart_brief.py)
     docker compose exec -T devpulse python devpulse.py --restart
     exit $?
