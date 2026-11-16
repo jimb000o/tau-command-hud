@@ -755,6 +755,58 @@
     open();
   }
 
+  function mailWatch(a, page, tip) {
+    const demo = new URLSearchParams(location.search).get("mail") === "demo";
+    let pk = null; try { const k = JSON.parse(localStorage.getItem("tauhud-wallet-key") || "null"); if (k && /^[0-9a-f]{96}$/i.test(String(k.pk || ""))) pk = String(k.pk).toLowerCase(); } catch (e) {}
+    if ((SIM || !pk) && !demo) return;
+    const css = el("style"); css.textContent = ".tnav .tn-mail { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: #b9ffd6; border-color: rgba(57,255,138,.6); } .tnav .tn-mail b { font-variant-numeric: tabular-nums; } .tnav .tn-mail[hidden] { display: none; } .tn-mailfloat { position: fixed; z-index: 60; right: 12px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: 999px; background: rgba(9,9,10,.92); border: 1px solid rgba(57,255,138,.6); color: #b9ffd6; font: 600 13px var(--tn-mono, monospace); text-decoration: none; } @media (max-width: 700px) { .tnav .tn-mail:not([hidden]) ~ .tn-radio { display: none; } }";   /* a phone: the ✉ takes the radio's place while it shows */ document.head.append(css);
+    const KEY = "tauhud-mail-" + (pk || "demo").slice(0, 16), T = s => (window.TauI18n ? TauI18n.t(s) : s);
+    const show = d => {
+      const o = d ? d.offers || 0 : 0, c = d ? d.cosign || 0 : 0, n = o + c;
+      a.hidden = !n; if (!n) { const f = document.querySelector(".tn-mailfloat"); if (f) f.remove(); return; }
+      a.innerHTML = `<span aria-hidden="true">✉</span><b>${n}</b>`;
+      const parts = [o ? (o === 1 ? T("1 rule proposed to your wallet") : T("{n} rules proposed to your wallet").replace("{n}", o)) : "", c ? (c === 1 ? T("1 payment waits for your co-signature") : T("{n} payments wait for your co-signature").replace("{n}", c)) : ""].filter(Boolean);
+      a.setAttribute("aria-label", parts.join(", "));
+      /* a phone page whose top row has no room for it (the HUD): a small ✉ floats over the tab bar instead */
+      requestAnimationFrame(() => {
+        let f = document.querySelector(".tn-mailfloat");
+        if (a.offsetParent || page === "rabbit" || innerWidth > 700) { if (f) f.remove(); return; }
+        if (!f) { f = a.cloneNode(true); f.className = "tn-mailfloat"; document.body.append(f); }
+        f.innerHTML = a.innerHTML; f.href = a.href; f.setAttribute("aria-label", a.getAttribute("aria-label"));
+      });
+      tip(a, parts.join("\n") + "\n" + T("Open it to read and accept or decline. Only your own wallet can say yes."));
+    };
+    const cached = () => { try { return JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { return null; } };
+    const ask = () => new Promise(res => {
+      let ws, got = {}, done = false; const end = v => { if (done) return; done = true; try { ws.close(); } catch (e) {} res(v); };
+      try { ws = new WebSocket(`wss://${RELAY}`); } catch (e) { return res(null); }
+      const t = setTimeout(() => end(got.offers != null ? { offers: got.offers, cosign: got.cosign || 0 } : null), 15000);
+      ws.onopen = () => { ws.send("hello version=1"); ws.send("getruleoffers " + pk + " in"); ws.send("getapprovalrequests " + pk + " in"); };
+      ws.onmessage = ev => {
+        let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; }
+        if (!m || m.status !== "ok" || !m.data) return;
+        if (m.command === "getruleoffers") got.offers = (m.data.incoming || []).filter(x => x && x.status === "offered").length;
+        if (m.command === "getapprovalrequests") got.cosign = (m.data.incoming || []).filter(x => x && (x.status === "pending" || x.status === "open")).length;
+        if (got.offers != null && got.cosign != null) { clearTimeout(t); end({ offers: got.offers, cosign: got.cosign }); }
+      };
+      ws.onerror = ws.onclose = () => { clearTimeout(t); end(got.offers != null ? { offers: got.offers, cosign: got.cosign || 0 } : null); };
+    });
+    /* read at most every two minutes across this browser's pages (the node answers these in its expensive tier) */
+    const tick = async force => {
+      if (demo) return show({ offers: 2, cosign: 0 });
+      const c = cached(); if (c && !force && Date.now() - c.at < 120000) return show(c);
+      const d = await ask();
+      if (d) { try { localStorage.setItem(KEY, JSON.stringify({ ...d, at: Date.now() })); } catch (e) {} show(d); } else show(c);
+    };
+    a.addEventListener("click", e => {
+      if (page === "rabbit" && window.ISLE_OFFERS) { e.preventDefault(); ISLE_OFFERS.inbox(); }
+      else if (page === "wallet" && document.getElementById("activity")) { e.preventDefault(); document.getElementById("activity").scrollIntoView({ behavior: "smooth", block: "start" }); }
+    });
+    tick(); setInterval(() => { if (!document.hidden) tick(); }, 60000);
+    window.addEventListener("storage", e => { if (e.key === KEY) show(cached()); });
+    window.addEventListener("tauhud-mail", () => setTimeout(() => tick(true), 9000));   // an answer was just signed: read again once a block holds it
+  }
+
   /* subpages keep their own content column; the header rows span the full width like the HUD's (same 16px / 12px gutter).
      A page that scales its column to the screen (zoom or transform) keeps the header at the HUD's size instead. */
   function breakout(els) {
@@ -901,6 +953,11 @@
     upd.classList.add("tl"); tip(upd, TIPS.updates);
     const updWrap = el("span", "tn-upd"); updWrap.append(upd);
     upd.addEventListener("click", markSeen);
+    /* mail: rules other wallets proposed to this browser's test wallet, and payments waiting for its co-signature (the
+       wallet's "waiting for you"). Shown left of Search only when there is something; opens the island's inbox there,
+       the wallet's Activity everywhere else, where each one is accepted or declined. ?mail=demo shows a made-up count. */
+    const mail = el("a", "pill tn-mail"); mail.hidden = true; mail.href = ROOT + "wallet/?focus=feed#activity"; right.append(mail);
+    mailWatch(mail, page, tip);
     if (page !== "explorer" && page !== "account") {   // every page can look something up: block number, hash or address go to the Explorer
       const sf = el("form", "tn-search"); sf.action = ROOT + "explorer/"; sf.method = "get"; sf.setAttribute("role", "search");
       const si = el("input"); si.name = "q"; si.type = "search"; si.placeholder = "Search  ⌘K"; si.setAttribute("aria-label", "Search a block number, transaction hash or address"); si.autocomplete = "off"; si.spellcheck = false;

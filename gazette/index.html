@@ -201,6 +201,20 @@ h3 { font: 700 1.08em/1.12 var(--head); text-transform: uppercase; letter-spacin
 .pg.week .banner.big { font-size: 4.6em; line-height: .92; letter-spacing: -.01em; margin: .05em 0 .12em; }
 .pg.week .wline { font: italic 400 1.18em/1.25 var(--head); text-align: center; margin: 0 auto .45em; max-width: 42em; padding-bottom: .4em; border-bottom: 3px double var(--ink); }
 .pg.week .wlead .kick { margin-bottom: .35em; }
+/* Around Town: three dispatches from our own games, a notice for the crew and one for the shop */
+.tdeck { max-width: 46em; margin-left: auto; margin-right: auto; }
+.town { display: flex; flex-direction: column; }
+.tk i { font-style: italic; letter-spacing: .08em; text-transform: none; }
+.pg h3.th { margin-top: .3em; text-transform: none; letter-spacing: 0; font: 900 1.22em/1.1 var(--head); }
+.pg p.tb, .pg p.tmore { text-align: left; hyphens: auto; }
+.tphoto img { aspect-ratio: 16 / 9; object-fit: cover; max-height: 11em; }
+.tphoto.agz img { object-fit: contain; background: rgba(27,24,19,.06); }
+.tterm { display: flex; flex-direction: column; gap: .15em; margin: .2em 0 .45em; padding: .6em .7em; aspect-ratio: 16 / 9; max-height: 11em; border: 1px solid var(--ink); background: rgba(27,24,19,.88); color: #e9dfc6; font: 400 .82em/1.35 var(--wire); }
+.tmore { font-style: italic; margin-top: auto; }
+.tad p { font-size: .86em; }
+.tad.shop { display: flex; gap: .7em; align-items: center; text-align: left; }
+.pg .tad.shop img { width: 4.4em; max-width: 4.4em; height: auto; flex: 0 0 auto; filter: sepia(.35) contrast(1.05); mix-blend-mode: multiply; }
+.tad.shop p, .tad.shop .t { text-align: left; }
 .pg.week:not(.pocket) .wside .ad { margin-top: auto; }
 .blank .pg { justify-content: center; align-items: center; }
 .blank .ghost { opacity: .12; font: 400 4em var(--black); transform: scaleX(-1); }
@@ -1005,6 +1019,52 @@ const EN = {
       return e;
     } catch (e) { return null; } finally { clearTimeout(to); }
   })();
+  /* ----- Around Town: the week of our own games, the second page of a weekly edition (infra/alerts/gazette.py town()).
+     Each dispatch is the newest entry of the site's update log for that game in the edition's week, in the paper's type;
+     the pictures are the games' own: the island as the game paints it now, Agorzilla at the stage he has reached.
+     Under them one small notice for the crew and one for the shop: the paper is free, its readers keep it running. */
+  const TOWN_UI = {
+    en: { title: "Around Town", deck: "What changed this week in the places Tau HUD keeps on the testnet: an island, a back-alley terminal and a creature the readers feed.",
+      rabbit: ["White Rabbit Key", "By wireless from the island"], nomemo: ["No Memo", "From a terminal in the back alley"], agorzilla: ["Agorzilla", "From the feeding ground"],
+      n: n => n > 1 ? `One of ${n} changes there this week.` : "", go: { rabbit: "Sail over ›", nomemo: "Log in ›", agorzilla: "Pay him a visit ›" },
+      capR: "The island as the game paints it this week.", capA: "Agorzilla as his feeders have raised him so far.",
+      crewT: "The Crew", crewP: "This paper, the island, the terminal and the café cost money every month and charge nobody. A few readers keep them running as the Tau HUD crew; a membership is monthly and can be cancelled any time.", crewGo: "Join the crew ›",
+      shopT: "Wear the Chain", shopP: { rabbit: "The sweater from White Rabbit Key: Follow the rabbit to the next block.", nomemo: "The No Memo tee, for those who read the terminal.", mug: "A mug for waiting on the next block." }, shopGo: "In the shop ›" },
+    zh: { title: "城中消息", deck: "本周 Tau HUD 在测试网上经营的几个地方有什么变化：一座岛、一台后巷里的终端，以及一只由读者喂养的生物。",
+      rabbit: ["白兔岛", "岛上无线电发来"], nomemo: ["No Memo", "发自后巷的一台终端"], agorzilla: ["Agorzilla", "发自喂食场"],
+      n: n => n > 1 ? `这是那里本周 ${n} 项变化之一。` : "", go: { rabbit: "坐船过去 ›", nomemo: "登录 ›", agorzilla: "去看看它 ›" },
+      capR: "游戏本周画出的岛。", capA: "喂养者们至今把 Agorzilla 养成的样子。",
+      crewT: "船员", crewP: "这份报纸、这座岛、这台终端和这家咖啡馆每个月都要花钱，却不向任何人收费。几位读者以 Tau HUD 船员的身份让它们继续运转；会员按月计费，随时可以取消。", crewGo: "加入船员 ›",
+      shopT: "把链穿在身上", shopP: { rabbit: "白兔岛的毛衣：跟着兔子走向下一个区块。", nomemo: "No Memo T 恤，送给读得懂终端的人。", mug: "等待下一个区块时用的马克杯。" }, shopGo: "去商店看看 ›" },
+    ja: { title: "街の便り", deck: "Tau HUD がテストネットで営む場所の今週の変化。島がひとつ、裏通りの端末がひとつ、そして読者が餌をやる生き物が一匹。",
+      rabbit: ["ホワイトラビット・キー", "島から無線で"], nomemo: ["No Memo", "裏通りの端末から"], agorzilla: ["Agorzilla", "餌場から"],
+      n: n => n > 1 ? `今週あそこで起きた ${n} 件の変化のひとつ。` : "", go: { rabbit: "船で渡る ›", nomemo: "ログイン ›", agorzilla: "会いに行く ›" },
+      capR: "ゲームが今週描いた島。", capA: "餌をやる人たちがここまで育てた Agorzilla。",
+      crewT: "クルー", crewP: "この新聞も、島も、端末も、カフェも、毎月お金がかかるが誰からも料金を取らない。何人かの読者が Tau HUD のクルーとして支えている。メンバーシップは月ごとで、いつでもやめられる。", crewGo: "クルーになる ›",
+      shopT: "チェーンを身にまとう", shopP: { rabbit: "ホワイトラビット・キーのセーター：次のブロックへウサギを追え。", nomemo: "No Memo の T シャツ、端末が読める人へ。", mug: "次のブロックを待つためのマグ。" }, shopGo: "ショップで見る ›" },
+  };
+  const SHOP_PIECE = { rabbit: ["follow-the-rabbit-to-the-next-block", "sweater.png"], nomemo: ["no-memo-tee", "tee-nomemo.webp"], mug: ["waiting-for-the-next-block-mug", "mug.webp"] };
+  function townPage(e) {
+    const T = TOWN_UI[L] || TOWN_UI.en, items = (e.town || []).filter(x => x && TOWN_UI.en[x.game]);
+    if (!items.length) return null;
+    const stage = (() => { try { const s = localStorage.getItem("agz-stage"); return /^(kid|young|grown|elder|ancient)$/.test(s || "") ? s : null; } catch (x) { return null; } })();
+    const pic = x => x.game === "rabbit" ? `<figure class="photo tphoto"><img src="https://node.tauhud.com/island/today.jpg" alt="" loading="lazy" onerror="this.closest('figure').remove()"><figcaption>${T.capR}</figcaption></figure>`
+      : x.game === "agorzilla" ? `<figure class="photo tphoto agz"><img src="../assets/${stage ? "age/agorzilla-" + stage : "agorzilla"}.webp" alt="" loading="lazy"><figcaption>${T.capA}</figcaption></figure>`
+      : `<div class="tterm" aria-hidden="true"><span>NO MEMO · tauhud.com/nomemo</span><span>&gt; help</span><span>&gt; mail</span><span>&gt; _</span></div>`;
+    const span = items.length === 1 ? "s6" : items.length === 2 ? "s3" : "s2";
+    const col = (x, i) => `<div class="u ${span}${i ? " rl" : ""} town"><div class="kick tk">${esc(T[x.game][0])} · <i>${esc(T[x.game][1])}</i></div>${pic(x)}
+      <h3 class="th">${txt(x.h)}</h3>${txt(x.body) ? `<p class="ni tb">${txt(x.body)}</p>` : ""}<p class="ni tmore">${esc(T.n(x.n || 1))} <a href="${esc(x.link)}"${/^https?:/.test(x.link) ? ' target="_blank" rel="noopener"' : ""}>${esc(T.go[x.game])}</a></p></div>`;
+    const keys = items.map(x => x.game).filter(k => SHOP_PIECE[k]).concat("mug"), pk = keys[(e.no || 0) % keys.length];
+    const shop = `https://tau-hud-shop.fourthwall.com/products/${SHOP_PIECE[pk][0]}?utm_source=tauhud&utm_medium=gazette`;
+    return `<div class="pg week town-pg">
+  <div class="rh"><span>${UI.weekNo(e.no)}</span><span class="nm">{{NAME}}</span><span>${esc(T.title)}</span></div>
+  <div class="banner">${esc(T.title)}</div><div class="deck tdeck">${esc(T.deck)}</div>
+  <div class="grid">${items.map(col).join("")}
+    <div class="u s3 rt"><div class="ad tad"><div class="t">${esc(T.crewT)}</div><p>${esc(T.crewP)} <a href="/crew/">${esc(T.crewGo)}</a></p></div></div>
+    <div class="u s3 rl rt"><div class="ad tad shop"><img src="../assets/shop/${SHOP_PIECE[pk][1]}" alt="" loading="lazy"><div><div class="t">${esc(T.shopT)}</div><p>${esc(T.shopP[pk])} <a href="${shop}" target="_blank" rel="noopener">${esc(T.shopGo)}</a></p></div></div></div>
+  </div>
+</div>`;
+  }
   function weekPage(e) {
     const figs = (e.figures || []).map(f => `<tr><td>${txt(f.label)}</td><td>${txt(f.value)}</td></tr>`).join("");
     const story = st => st ? `<h3>${txt(st.h)}</h3>${(st.body || []).map((b, j) => `<p${j ? "" : ' class="ni"'}>${txt(b)}</p>`).join("")}` : "";
@@ -1056,7 +1116,7 @@ const EN = {
       tpl.innerHTML = fill(html);
       const src = tpl.content.querySelector(".pg"), banner = src.querySelector(".banner");
       const units = [...src.querySelectorAll(".grid > .u")].filter(u => u.textContent.trim() || u.querySelector("svg, img"));
-      const front = pi === OFF, wk = pi < OFF;
+      const front = pi === OFF, wk = pi === 0 && OFF > 0;   /* the week's cover; Around Town (page 1 of a weekly edition) opens like an inside page */
       const head = front || wk
         ? `<div class="mast" style="grid-template-columns:minmax(0,1fr)"><div><div class="title">${ED.name}</div><div class="motto">${ED.motto}</div></div></div><div class="dateline"><span>${wk ? UI.weekNo(WEEK.no) : "No. " + (HEIGHT != null ? HEIGHT.toLocaleString("en-US") : "—")}</span><span>${wk ? txt(WEEK.printed) : today}</span></div>${wk && WEEK.comingAt ? `<p class="next-ed">${UI.nextEd(new Date(WEEK.comingAt * 1000))}</p>` : ""}`
         : rh(pi, false);
@@ -1479,7 +1539,8 @@ const EN = {
   const startFrom = () => { build(null); if (want) { const k = Math.max(0, PAGES.findIndex(x => x.from === Math.max(0, +want[1] - 1) + OFF)); go(MODE.spread ? Math.ceil(k / 2) : k, false); } };
   const ready = async () => {
     WEEK = await weekFetch; window.GAZETTE_WEEK = WEEK;   /* the café walk takes this week's talk from it (cafe.js) */
-    if (WEEK) { ED.pages.unshift(weekPage(WEEK)); ED.toc.unshift(`${UI.week}: ${txt(WEEK.banner)}`); OFF = 1; }
+    if (WEEK) { const tp = townPage(WEEK); if (tp) { ED.pages.unshift(tp); ED.toc.unshift(`${UI.week}: ${(TOWN_UI[L] || TOWN_UI.en).title}`); }
+      ED.pages.unshift(weekPage(WEEK)); ED.toc.unshift(`${UI.week}: ${txt(WEEK.banner)}`); OFF = tp ? 2 : 1; }
     startFrom(); wire(); setInterval(() => { if (!document.hidden) wire(); }, 60000);
   };
   /* the paper's faces load only when first used; load them before measuring, and measure again if one arrives late */

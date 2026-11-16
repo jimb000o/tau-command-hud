@@ -827,4 +827,16 @@ TauI18n.add({ strings: {
   "Also sent through: {w}.": "その後の送信先：{w}。",
   "Sent through: {w}.": "送信に使ったアプリ：{w}。",
   "Read from our own server's record of what it sent and from the public blocks. A wallet is a key, not a person.": "私たちのサーバーが送った取引の記録と公開ブロックから読み取っています。ウォレットは鍵であり、人ではありません。",
+  /* No Memo's vaults by name (assets/origins.js) */
+  "No Memo’s till": "No Memo のレジ",
+  "No Memo’s reserve": "No Memo の準備金庫",
+  "No Memo’s window vault": "No Memo の窓の金庫",
+  "No Memo’s clock vault": "No Memo の時計の金庫",
+  "No Memo’s keeper": "No Memo の番人",
+  "a No Memo vault": "No Memo の金庫",
+  "1 rule proposed to your wallet": "あなたのウォレットへのルール提案 1 件",
+  "{n} rules proposed to your wallet": "あなたのウォレットへのルール提案 {n} 件",
+  "1 payment waits for your co-signature": "1 件の支払いがあなたの共同署名を待っています",
+  "{n} payments wait for your co-signature": "{n} 件の支払いがあなたの共同署名を待っています",
+  "Open it to read and accept or decline. Only your own wallet can say yes.": "開いて読み、受け入れるか断ってください。「はい」と言えるのはあなたのウォレットだけです。",
 } });
