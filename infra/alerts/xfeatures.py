@@ -16,7 +16,8 @@ What happens by itself (the xfeatures service, every 5 minutes):
      not between 22:00 and 08:00 German time
   3  a draft nobody sent is dropped 3 days after "from": news only while it is news
 
-What only the owner does (up x …): send posts it, after the caps below; drop throws it away; text sets new words; film
+What only the owner does (up x …): send posts it, after the caps below and only with its own film (never the text alone,
+which X would show with the linked page's old preview picture); drop throws it away; text sets new words; film
 films it again. Nothing in this file posts by itself.
 
 Caps (15 Nov 2026 playbook): @TauHUDcom at most 1 a day and 3 in any 7 days, inside X_DAILY_CAP, 2 h after the last post
@@ -329,7 +330,7 @@ def step(now: float, plan: list[dict], d: dict, film=want_film, cutter=cut, tell
                 did.append(f"{pid}: no film ({r['film_why']})")
         if r["state"] == "filmed" and p and not quiet(now):
             text = r.get("text_new") or r["text"]
-            msg = offer_text(p, text) + (f"\n\n(no film: {r['film_why']}; up x film {pid} tries again)" if r.get("film_why") else "")
+            msg = offer_text(p, text) + (f"\n\n(no film: {r['film_why']}. Without its film it cannot be posted; up x film {pid} tries again)" if r.get("film_why") else "")
             ok, err = teller(msg, r.get("film"))
             if ok:
                 r.update(state="offered", offered=round(now))
@@ -465,8 +466,13 @@ def main(argv: list[str]) -> int:
             print("not posted: " + "; ".join(why))
             return 1
         text = r.get("text_new") or r["text"]
+        film = r.get("film") if r.get("film") and os.path.exists(r["film"]) else None
+        if not film:   # 16 Nov 2026: rabbit-walkers went out without its film, and X showed the page's old link card instead
+            print(f"not posted: {pid} has no film of its own ({r.get('film_why') or 'not filmed yet'}); "
+                  f"a post on X always carries the picture made for it. Film it again: up x film {pid}")
+            return 1
         try:
-            sid = post(r["account"], text, r.get("film") if r.get("film") and os.path.exists(r["film"]) else None)
+            sid = post(r["account"], text, film)
         except Exception as e:  # noqa: BLE001
             print(f"not posted: {e}")
             return 1
