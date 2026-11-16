@@ -3253,5 +3253,11 @@
     "on": "2026-11-16",
     "link": "/findings/",
     "html": "Findings lists our two newest reports to IDNI: checking a payment that gets slower with every transfer (#114), and a rule with a time condition that can give two nodes different answers (#115). Road to mainnet names the testnet restart of 13 November."
+  },
+  {
+    "tag": "Chain core",
+    "on": "2026-11-16",
+    "link": "/",
+    "html": "Chain core: the rule ring and the node orbit hold still while your pointer rests on them, the same way the waiting room already does, so you can read a rule or a node without chasing it. They ease to a stop and start turning again when you move away."
   }
 ]
