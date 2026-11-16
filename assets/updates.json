@@ -3188,5 +3188,11 @@
     "on": "2026-11-16",
     "link": "/rabbit/?islander=1",
     "html": "White Rabbit Key: the islander studio now has its own button, “Your islander”, in the island’s top bar, next to The Book. Before, it opened only from your own islander’s card or the wallet page."
+  },
+  {
+    "tag": "Menu",
+    "on": "2026-11-16",
+    "link": "/wallet/?focus=feed#activity",
+    "html": "Top bar: a ✉ next to Search when other wallets proposed a rule to your test wallet, or a payment waits for your co-signature. It shows on every page of Tau HUD once this browser has a test wallet, with the number waiting; a click opens the island’s inbox on White Rabbit Key and your wallet’s Activity everywhere else, where you read each one and accept or decline it. Only your own wallet can say yes."
   }
 ]

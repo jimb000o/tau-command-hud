@@ -832,4 +832,9 @@ TauI18n.add({ strings: {
   "Also sent through: {w}.": "之后也通过这些发送过：{w}。",
   "Sent through: {w}.": "曾通过这些发送：{w}。",
   "Read from our own server's record of what it sent and from the public blocks. A wallet is a key, not a person.": "读取自我们服务器对其发送内容的记录和公开区块。钱包是一把密钥，不是一个人。",
+  "1 rule proposed to your wallet": "有 1 条规则提议给你的钱包",
+  "{n} rules proposed to your wallet": "有 {n} 条规则提议给你的钱包",
+  "1 payment waits for your co-signature": "有 1 笔付款等你共同签名",
+  "{n} payments wait for your co-signature": "有 {n} 笔付款等你共同签名",
+  "Open it to read and accept or decline. Only your own wallet can say yes.": "打开它阅读，然后接受或拒绝。只有你自己的钱包能同意。",
 } });
