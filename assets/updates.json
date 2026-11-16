@@ -3225,6 +3225,18 @@
     "html": "Top bar: the crew and online hovers are shorter. Crew says what a membership costs, that it cancels any time and that only the count shows; online keeps its privacy points (one person counts once, no cookies, hashed daily, memory only) in two lines."
   },
   {
+    "tag": "HUD",
+    "on": "2026-11-16",
+    "link": "/cruise/",
+    "html": "Top bar: the stress test hover is shorter. It says which ship docks at White Rabbit Key, that her simulated passengers send real test transactions at a capped pace, when she comes in your time, the last call's result and where a click leads."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/?islander=1",
+    "html": "Islander studio: fewer choices per part, each one clearly different (for example 4 face shapes instead of 6, 6 eyes instead of 10, larger noses that read apart). Looks chosen before still show as they were; a key's own face now comes from the same clearer choices."
+  },
+  {
     "tag": "Rule sharing",
     "on": "2026-11-16",
     "link": "/",
