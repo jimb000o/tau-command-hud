@@ -53,8 +53,10 @@ b = restart_report.brief(restarts, rows, now=T + 1700, link="https://node.tauhud
 check(b["tip"] == 1234 and b["calls"] == ["2026-11-16-queen"], "brief names the newest restart and its call")
 check("Hi Andrei" in b["reply"] and "#1234" in b["reply"] and "Queen Mempool" in b["reply"], "reply: block, ship")
 check("25 min into one of our test runs" in b["reply"], "reply: minutes into the run")
-check("3 restarts in the last 7 days, 3 of them during one of our runs; 1 of our other runs" in b["reply"],
-      "reply: the pattern, counted")
+check("3 restarts in the last 7 days, 3 of them during one of our runs (14, 15 and 16 Nov). 1 of our other runs" in b["reply"],
+      "reply: the pattern, counted, with the days")
+check("• We sent 16 transactions (16 pay)" in b["reply"] and "• 16 accepted" in b["reply"], "reply: what we sent and the answers")
+check("• Median answer time: 40 ms" in b["reply"], "reply: answer time in ms below a second")
 check("restarts/report.txt" in b["reply"], "reply carries the timeline link")
 for word in ("fault", "bug", "broke", "crash", "Uplink", "Matrix"):
     check(word not in b["reply"], f"reply never says '{word}'")
@@ -134,7 +136,7 @@ check("&& " not in txt and "&amp;&amp;" in txt, "the resume line's && is escaped
 
 # --- a restart the relay found after being away: no unknown block numbers in the reply
 b2 = restart_report.brief(restarts + [{"detected_at": T + 9000, "old": {"tip": None}}], rows, now=T + 9100)
-check("#None" not in b2["reply"] and "noticed it at" in b2["reply"], "reply without the old chain's end says only what is known")
+check("#None" not in b2["reply"] and "noticed it at " in b2["reply"] and " UTC" in b2["reply"], "reply without the old chain's end says only what is known")
 
 print("failed:", failed)
 sys.exit(1 if failed else 0)
