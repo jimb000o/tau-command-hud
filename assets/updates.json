@@ -3169,6 +3169,12 @@
     "tag": "White Rabbit Key",
     "on": "2026-11-16",
     "link": "/rabbit/",
+    "html": "White Rabbit Key: a walker’s card no longer says a wallet “has not used a Tau HUD app yet” when we simply do not know. A plain payment does not show which wallet app signed it, so the card now says “plain payments so far”, and names Tau HUD’s wallet when our server saw the wallet send through it, with the day its first transaction came from there."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/",
     "html": "White Rabbit Key and Radio Coco: no more good mornings in the middle of the night. Rico's morning openers and morning words now start at 06:00 (were 05:00), his “wake-up call” opener and “Midnight on the island” keep to their hours, the Night Line no longer says good morning when it closes at five, and the islanders greet you with “Morning!” only between 06:00 and noon, whatever day of the game it is. At other hours they say something else they know."
   }
 ]
