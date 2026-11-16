@@ -141,6 +141,8 @@
     else if (ph === "gone") out.push(L(v.why === "no landing" ? "We sailed on without landing: the testnet was not calm. That's the rule."
       : v.why === "refused" ? "We left early: the node refused too many of our transactions, so we took everyone back at once. The logbook says which, and why."
       : v.why === "stalled" ? "We left early: the testnet stalled, and we took everyone back at once. The incident report has the last transactions before it."
+      : v.why === "restarted" ? "We left early: the testnet started over from block one, so our call ended there. The logbook notes it, so nobody mistakes it for a stall."
+      : v.why === "recalled" ? "We left early: Tau HUD called us back. Not the testnet's doing; everything we sent is in the logbook."
       : "That's the visit. Everything we sent is in the logbook."));
     if (/^(landing|ashore|boarding)$/.test(ph)) {
       if (ship === "pirates") out.push(L("{n} tricks refused by the chain so far today. Every one with an answer. I keep the list; the chain keeps the score.", { n: (v.tricks || {}).stopped || 0 }));

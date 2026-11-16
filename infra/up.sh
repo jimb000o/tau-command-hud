@@ -184,12 +184,36 @@ print('released:', ', '.join(r))
   exit 0
 fi
 # up restarts [days]: what our ships sent right before each testnet restart, and every call side by side (read only,
-# nothing rebuilt; infra/restart-report.py), in English, ready to paste for IDNI
+# nothing rebuilt; relay/restart_report.py), in English, ready to paste for IDNI; the same text is served at
+# https://node.tauhud.com/restarts/report.txt. After each restart the owner gets it by himself (relay/restartwatch.py).
 if [ "${1:-}" = "restarts" ]; then
-  docker compose cp restart-report.py relay:/tmp/restart-report.py >/dev/null
   echo "---------------- copy from here into the chat ----------------"
-  docker compose exec -T relay python /tmp/restart-report.py ${2:-}
+  docker compose exec -T relay python restart_report.py ${2:-}
   echo "---------------- to here --------------------------------------"
+  echo "link for IDNI: https://${RELAY_DOMAIN:-node.tauhud.com}/restarts/report.txt"
+  exit 0
+fi
+# up restartwatch: the relay and alerts built with the code just pulled (the node left alone): after each testnet
+# restart a private note with the reply for IDNI, the ships' pause after RESTART_SHIP_PAUSE_AFTER restarts during calls
+if [ "${1:-}" = "restartwatch" ]; then
+  when=$(TZ=Europe/Berlin date +%u%H)
+  case "$when" in 216|217|218|219|315|316|317|410|411|613|614|615|616)
+    if [ "${2:-}" != "--now" ]; then
+      echo "a cruise ship or the hack replay is due or under way now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
+      echo "try again after the visit, or: up restartwatch --now"; exit 1
+    fi ;;
+  esac
+  docker compose up -d --build --no-deps relay alerts
+  echo "waiting 20 s for the relay to read the chain…"; sleep 20
+  docker compose exec -T relay python -c 'import urllib.request;print(urllib.request.urlopen("http://127.0.0.1:8080/restarts/status", timeout=20).read().decode())'
+  echo "link for IDNI: https://${RELAY_DOMAIN:-node.tauhud.com}/restarts/report.txt"
+  exit 0
+fi
+# up ships on: the cruise ships sail again after the pause restarts set (restartwatch.py); up ships leave: the ship in
+# port ends its call now; up ships  the pause and the ships' state. Nothing rebuilt.
+if [ "${1:-}" = "ships" ]; then
+  case "${2:-}" in on) p=/restarts/resume ;; leave) p=/cruise/leave ;; *) p=/restarts/status ;; esac
+  docker compose exec -T relay python -c "import urllib.request;print(urllib.request.urlopen('http://127.0.0.1:8080$p', timeout=20).read().decode())"
   exit 0
 fi
 # the pirates' clip after each Tuesday call (alerts/trick_clip.py, posted by itself), nothing rebuilt: up clip  the newest

@@ -879,11 +879,13 @@ class Cruise:
 
     @staticmethod
     def why(v: dict) -> str:
-        """Why a visit ended before its time: "no landing", "stalled", "refused", or "" (it did not)."""
+        """Why a visit ended before its time: "no landing", "restarted", "recalled", "stalled", "refused", or "" (it did
+        not). A testnet restart and Tau HUD's own brake (up ships leave) are never told as a stall."""
         if not v.get("left"):
             return ""
         note = v.get("note") or ""
-        return "no landing" if note.startswith("no landing") else "refused" if "refused" in note else "stalled"
+        return "no landing" if note.startswith("no landing") else "restarted" if "testnet restarted" in note \
+            else "recalled" if "Tau HUD called" in note else "refused" if "refused" in note else "stalled"
 
     def phase(self, v: dict, now: float) -> str:
         if v.get("left"):
@@ -966,6 +968,8 @@ class Cruise:
         self.write({"t": int(now), "visit": vid, "ship": ship, "kind": "chain restarted", "old_tip": old_tip,
                     "new_chain_began": int(new_start) if new_start else None, "note": note})
         log.warning("cruise: %s: %s", vid, note)
+        if v and v["id"] == vid and not v.get("left"):   # a call under way ends here: the passengers' wallets are gone with the chain
+            self.leave(now, "the testnet restarted during the call, so the call was cut short", "restarted")
 
     def leave(self, now: float, why: str, state: str | None):
         """The brake: the ship takes its passengers back at once; on a stall it writes an incident report."""
@@ -1914,6 +1918,14 @@ class Cruise:
             return self.snapshot()
         if path == "/cruise/held":
             return self.held() if internal else {"error": "only from inside the server"}
+        if path == "/cruise/leave":   # up ships leave: the ship in port ends its call now (the owner's brake)
+            if not internal:
+                return {"error": "only from inside the server"}
+            v = self.cur
+            if not v or v.get("left"):
+                return {"left": None, "note": "no ship in port"}
+            self.leave(self.clock(), "Tau HUD called the ship back", "recalled")
+            return {"left": v["id"]}
         if path == "/cruise/log":
             q = parse_qs(query or "")
             try:
