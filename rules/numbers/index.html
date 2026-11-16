@@ -85,6 +85,16 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .chart .grid { stroke: rgba(255,255,255,.07); }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--dim); font-size: 11px; margin-top: 6px; }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+/* through our apps */
+.share { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.share .big { font: 700 30px/1 var(--display); color: var(--ok); font-variant-numeric: tabular-nums; }
+.share .of { color: var(--dim); font-size: 12px; line-height: 1.35; flex: 1 1 160px; }
+.share .of b { color: #fff; font-weight: 600; }
+.stack .row.uses .bar i { background: var(--ok); opacity: .45; }
+.stack .row.dim .bar i { opacity: .4; }
+.nudge { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin-top: 10px; border: 1px solid rgba(57,255,138,.3); border-radius: 8px; padding: 8px 10px; color: var(--dim); font-size: 12px; line-height: 1.4; }
+.nudge > span { flex: 1 1 200px; }
+.nudge b { color: #fff; font-weight: 600; }
 /* small stacked bars */
 .split { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
 .stack { display: grid; gap: 6px; }
@@ -109,6 +119,7 @@ footer a { color: var(--dim); }
 #tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(340px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); white-space: pre-line; }
 [hidden] { display: none !important; }
 @media (min-width: 700px) { .split { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 999px) { #pTime { order: 1; } #pHow { order: 2; } #pOffers, #pNot { order: 3; } }   /* phones: our apps' share right after the chart */
 @media (min-width: 1000px) {
   .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, .95fr); grid-template-rows: auto auto; }
   #pKinds { grid-row: 1 / span 2; }
@@ -126,6 +137,17 @@ html.fit .intro { flex-wrap: nowrap; }
 html.fit .kind .not { display: none; }   /* on one screen the "cannot" line sits in the hover; phones show it */
 html.fit .kinds { gap: 7px; }
 html.fit .note { margin-top: 6px; }
+html.fit #pHow { display: flex; flex-direction: column; }
+html.fit #from { grid-template-columns: 1fr 1fr; gap: 3px 14px; }
+html.fit #pHow .row { font-size: 11.5px; }
+html.fit #howNote { display: none; }   /* own or offered and rule sizes: in the panel title's hover on one screen */
+html.fit .share { margin-bottom: 4px; }
+html.fit .share .big { font-size: 24px; }
+html.fit .nudge { margin-top: auto; padding: 5px 10px; }
+html.fit .nudge .b { min-height: 26px; }
+html.fit .intro > div:first-child { flex: 0 1 470px; }
+html.fit .lead { font-size: 26px; }
+html.fit .legend { gap: 2px 10px; font-size: 10.5px; }
 @media (max-width: 700px) {
   .seg button { min-height: 44px; padding: 5px 14px; }
   .b { min-height: 44px; flex: 1 1 auto; }
@@ -156,6 +178,7 @@ html.fit .note { margin-top: 6px; }
       <span class="seg" role="group" aria-label="Whose rules"><button type="button" data-who="people" aria-pressed="true" data-tip="People\nEvery account that is not ours and not IDNI's. Wallets, not people: one person can hold several.">People</button><button type="button" data-who="ours" aria-pressed="false" data-tip="Ours\nTau HUD's own server wallets: the showcase wallets, the island bot, cruise passengers, No Memo's.">Ours</button><button type="button" data-who="all" aria-pressed="false" data-tip="All\nEvery account with a rule, ours and IDNI's included.">All</button></span>
       <span class="kpi hot" data-tip="Accounts that hold a personal rule right now, as our node answers."><b id="kNow">–</b>with a rule now</span>
       <span class="kpi" data-tip="Rules set or changed today (UTC), counted when our node next checks."><b id="kNew">–</b>new today</span>
+      <span class="kpi hot" id="kOursBox" data-tip="Rules in force now whose rule transaction (an own rule, or an accepted offer) was sent through one of our apps: Tau HUD's wallet and rule builder, White Rabbit Key, No Memo, Agorzilla. People's rules only; our own server's wallets are not counted."><b id="kOurs">–</b>through our apps</span>
       <span class="kpi" data-tip="Test AGRS held by the wallets with a rule now, at our node's last check. Test AGRS have no value."><b id="kAgrs">–</b>AGRS under a rule</span>
       <span class="kpi" data-tip="Payments our node refused today (UTC) because the sender's own rule said no. Only what passed our node: refusals at other nodes never reach it."><b id="kHeld">–</b>held back today</span>
     </div>
@@ -177,9 +200,11 @@ html.fit .note { margin-top: 6px; }
       <p class="note" id="offersNote"></p>
     </section>
     <section class="panel" id="pHow">
-      <h2>How they got their rule</h2>
-      <div class="split"><div class="stack" id="how"></div><div class="stack" id="sent"></div></div>
+      <h2 id="howTitle">Through our apps <small id="fromSub">where the rules in force came from</small></h2>
+      <div class="share" id="share"></div>
+      <div class="stack" id="from"></div>
       <p class="note" id="howNote"></p>
+      <div class="nudge" id="nudge" data-tip="White Rabbit Key\nClick another islander and propose a rule to its wallet: a most per payment, or a second signature above an amount. Its owner reads it and accepts or declines; nobody can put a rule on another wallet."><span><b>Try it on White Rabbit Key:</b> propose a rule to an islander.</span><a class="b go" href="/rabbit/">Meet the islanders</a></div>
     </section>
     <section class="panel" id="pNot">
       <h2>What no personal rule does</h2>
@@ -225,12 +250,26 @@ const KIND = {
   other:   { name: "Something else", why: "Reads other inputs, such as custom ones from i26 on.", not: null },
 };
 const KINDS = Object.keys(KIND);
+/* where a rule came from (relay ruledays.FROM): the app its rule transaction was sent through, else what we know of the wallet */
+const APPS = ["tauhud", "rabbit", "nomemo", "agorzilla", "deja"];
+const FROM = {
+  tauhud:    { name: "Tau HUD", tip: "Signed in tauhud.com's wallet or rule builder and sent through our node." },
+  rabbit:    { name: "White Rabbit Key", tip: "Proposed to an islander, or accepted from one, on White Rabbit Key, the island game on tauhud.com." },
+  nomemo:    { name: "No Memo", tip: "Set by a player in No Memo, the terminal game on tauhud.com." },
+  agorzilla: { name: "Agorzilla", tip: "Sent from agorzilla.com or Déjà the café cat." },
+  uses:      { name: "Elsewhere, wallet uses our apps", tip: "The rule itself was signed somewhere else (or before the blocks our node keeps), but the same wallet plays or pays through our apps." },
+  elsewhere: { name: "Elsewhere", tip: "IDNI's web wallet, a node's own command line, scripts or other apps, by a wallet we know no app of." },
+  unknown:   { name: "Not known", tip: "Set before the blocks our node keeps, by a wallet we know no app of." },
+};
+const fromOf = (o, k) => k === "agorzilla" ? (o.agorzilla || 0) + (o.deja || 0) : (o[k] || 0);
+const ourOf = o => APPS.reduce((a, k) => a + (o[k] || 0), 0);
 const WHOS = ["people", "ours", "idni"];
 const S = { data: null, who: store.get("tauhud-rulenums-who") || "people", mode: "connecting" };
 if (!["people", "ours", "all"].includes(S.who)) S.who = "people";
 
 const pick = obj => S.who === "all" ? WHOS.reduce((a, w) => a + (obj && obj[w] || 0), 0) : (obj && obj[S.who]) || 0;
 const pickKinds = byWho => Object.fromEntries(KINDS.map(k => [k, S.who === "all" ? WHOS.reduce((a, w) => a + ((byWho[w] || {})[k] || 0), 0) : ((byWho[S.who] || {})[k] || 0)]));
+const pickFrom = byWho => { const o = {}; for (const w of (S.who === "all" ? WHOS : [S.who])) for (const [k, v] of Object.entries((byWho || {})[w] || {})) o[k] = (o[k] || 0) + v; return o; };
 const sumWho = (byWho, key) => S.who === "all" ? WHOS.reduce((a, w) => a + ((byWho[w] || {})[key] || 0), 0) : ((byWho[S.who] || {})[key] || 0);
 
 /* ---------- data: the relay's /rules/numbers; before it is deployed, the rules wall and /rules read here; in the simulation, the made-up chain ---------- */
@@ -316,6 +355,9 @@ function render() {
   const today = new Date().toISOString().slice(0, 10), hist = (d.history && d.history.days) || {};
   $("kNow").textContent = fmt(pick(d.now.holders));
   $("kNew").textContent = hist[today] ? fmt(pick(hist[today].new)) : "–";
+  const fr = d.now.from ? pickFrom(d.now.from) : null, frT = fr ? Object.values(fr).reduce((a, b) => a + b, 0) : 0;
+  $("kOursBox").hidden = S.who === "ours";
+  $("kOurs").textContent = fr && frT ? `${fmt(ourOf(fr))} / ${fmt(frT)}` : "–";
   $("kAgrs").textContent = d.now.agrs ? fmt(pick(d.now.agrs)) : "–";
   $("kHeld").textContent = hist[today] && hist[today].held ? fmt(pick(hist[today].held)) : "–";
   drawKinds(d); drawTime(d); drawOffers(d); drawHow(d);
@@ -347,8 +389,10 @@ function drawTime(d) {
   for (let t = +first; t <= +last; t += 864e5) all.push(new Date(t).toISOString().slice(0, 10));
   const H = d.history.days;
   let lastN = 0;
-  const rows = all.map(day => { const r = H[day]; if (r) lastN = pick(r.holders); return { day, n: r ? pick(r.holders) : lastN, nw: r ? pick(r.new) : 0, gone: r ? pick(r.gone) : 0, held: r && r.held ? pick(r.held) : 0, restart: !!(r && r.restart), seen: !!r }; });
-  const W = Math.max(240, box.clientWidth || 600), Hh = Math.max(120, box.clientHeight || 190), L = 34, R = 8, Tp = 8, B = 22, maxN = Math.max(4, ...rows.map(r => r.n)), maxB = Math.max(2, ...rows.map(r => Math.max(r.nw, r.gone)));
+  let sum = 0;
+  const rows = all.map(day => { const r = H[day]; if (r) lastN = pick(r.holders); const nw = r ? pick(r.new) : 0, nf = r && r.new_from ? pickFrom(r.new_from) : null; sum += nw;
+    return { day, n: r ? pick(r.holders) : lastN, nw, sum, ours: nf ? ourOf(nf) : 0, uses: nf ? nf.uses || 0 : 0, known: !!nf, gone: r ? pick(r.gone) : 0, held: r && r.held ? pick(r.held) : 0, restart: !!(r && r.restart), seen: !!r }; });
+  const W = Math.max(240, box.clientWidth || 600), Hh = Math.max(120, box.clientHeight || 190), L = 34, R = 8, Tp = 8, B = 22, maxN = Math.max(4, ...rows.map(r => Math.max(r.n, r.sum))), maxB = Math.max(2, ...rows.map(r => Math.max(r.nw, r.gone)));
   const x = i => L + (rows.length === 1 ? (W - L - R) / 2 : i * (W - L - R) / (rows.length - 1)), mid = Tp + (Hh - Tp - B) * .62;
   const y = n => mid - (mid - Tp) * n / maxN, bw = Math.max(2, Math.min(18, (W - L - R) / rows.length * .6));
   const svg = sv("svg", { viewBox: `0 0 ${W} ${Hh}`, role: "img", "aria-label": T("Accounts with a rule, day by day") });
@@ -356,9 +400,15 @@ function drawTime(d) {
   const below = Hh - B - mid;
   rows.forEach((r, i) => {
     if (r.restart) svg.append(Object.assign(sv("line", { x1: x(i), x2: x(i), y1: Tp, y2: Hh - B, stroke: "var(--sim)", "stroke-dasharray": "3 3", "data-tip": `${r.day}\n${T("Chain restart: every rule went with the old chain. Rules set again count as new.")}` })));
-    if (r.nw) svg.append(sv("rect", { x: x(i) - bw / 2, y: mid + 2, width: bw / 2 - .5, height: Math.max(1, below * .9 * r.nw / maxB), fill: "var(--ok)", opacity: .75 }));
-    if (r.gone) svg.append(sv("rect", { x: x(i) + .5, y: mid + 2, width: bw / 2 - .5, height: Math.max(1, below * .9 * r.gone / maxB), fill: "#fff", opacity: .4 }));
+    /* new rules that day, stacked from the line down: through our apps, by a wallet that uses them, the rest */
+    if (r.nw) {
+      const hh = n => below * .9 * n / maxB, parts = r.known ? [[r.ours, "var(--ok)", 1], [r.uses, "var(--ok)", .45], [r.nw - r.ours - r.uses, "#fff", .4]] : [[r.nw, "#fff", .22]];
+      let yy = mid + 2;
+      for (const [n, fill, op] of parts) if (n > 0) { const h = Math.max(1, hh(n)); svg.append(sv("rect", { x: x(i) - bw / 2, y: yy, width: bw * .62, height: h, fill, opacity: op })); yy += h; }
+    }
+    if (r.gone) svg.append(sv("rect", { x: x(i) + bw * .12 + .5, y: mid + 2, width: bw * .38 - .5, height: Math.max(1, below * .9 * r.gone / maxB), fill: "none", stroke: "#fff", "stroke-opacity": .45 }));
   });
+  svg.append(sv("polyline", { points: rows.map((r, i) => `${x(i)},${y(r.sum)}`).join(" "), fill: "none", stroke: "#fff", "stroke-opacity": .55, "stroke-width": 1.5, "stroke-dasharray": "4 3", "vector-effect": "non-scaling-stroke" }));
   svg.append(sv("polyline", { points: rows.map((r, i) => `${x(i)},${y(r.n)}`).join(" "), fill: "none", stroke: "var(--ok)", "stroke-width": 2, "vector-effect": "non-scaling-stroke" }));
   rows.forEach((r, i) => { if (r.seen) svg.append(sv("circle", { cx: x(i), cy: y(r.n), r: rows.length > 40 ? 1.5 : 3, fill: "var(--ok)" })); });
   /* payments held back by their own rule that day: a white tick above the line, taller with more */
@@ -366,15 +416,16 @@ function drawTime(d) {
   rows.forEach((r, i) => { if (r.held) svg.append(sv("line", { x1: x(i), x2: x(i), y1: Tp, y2: Tp + 4 + 14 * r.held / maxH, stroke: "#fff", "stroke-width": 2, opacity: .8 })); });
   /* hover targets, one per day */
   rows.forEach((r, i) => svg.append(sv("rect", { x: x(i) - (W - L - R) / rows.length / 2, y: Tp, width: Math.max(4, (W - L - R) / rows.length), height: Hh - Tp - B, fill: "transparent",
-    "data-tip": `${r.day}\n${F("{n} accounts with a rule", { n: fmt(r.n) })}\n${F("{n} set or changed", { n: fmt(r.nw) })} · ${F("{n} removed", { n: fmt(r.gone) })}${r.held ? "\n" + F("{n} payments held back by their own rule at our node", { n: fmt(r.held) }) : ""}${r.restart ? "\n" + T("Chain restart that day.") : ""}${r.seen ? "" : "\n" + T("Not checked that day: the last count carries over.")}` })));
+    "data-tip": `${r.day}\n${F("{n} accounts with a rule", { n: fmt(r.n) })}\n${F("{n} set or changed", { n: fmt(r.nw) })} · ${F("{n} removed", { n: fmt(r.gone) })}${r.nw ? "\n" + (r.known ? F("{o} of them through our apps, {u} more by wallets that use them", { o: fmt(r.ours), u: fmt(r.uses) }) : T("Where they came from was not written down yet that day.")) : ""}\n${F("{n} rules set since the first day, added up", { n: fmt(r.sum) })}${r.held ? "\n" + F("{n} payments held back by their own rule at our node", { n: fmt(r.held) }) : ""}${r.restart ? "\n" + T("Chain restart that day.") : ""}${r.seen ? "" : "\n" + T("Not checked that day: the last count carries over.")}` })));
   [0, rows.length - 1].filter((v, i, a) => a.indexOf(v) === i).forEach(i => { const t = sv("text", { class: "ax", x: x(i), y: Hh - 6, "text-anchor": rows.length === 1 ? "middle" : i ? "end" : "start" }); t.textContent = rows[i].day; svg.append(t); });
   box.replaceChildren(svg);
-  lg.replaceChildren(el("span", null, el("i", { style: "background:var(--ok)" }), T("accounts with a rule")), el("span", null, el("i", { style: "background:var(--ok);opacity:.75" }), T("set or changed that day")),
-    el("span", null, el("i", { style: "background:#fff;opacity:.4" }), T("removed")), el("span", null, el("i", { style: "background:#fff;opacity:.8" }), T("held back by its own rule")), el("span", null, el("i", { style: "background:var(--sim)" }), T("chain restart")));
+  lg.replaceChildren(el("span", null, el("i", { style: "background:var(--ok)" }), T("with a rule now")), el("span", null, el("i", { style: "background:none;border-top:2px dashed rgba(255,255,255,.55);border-radius:0;height:0;vertical-align:3px" }), T("set, added up")),
+    el("span", null, el("i", { style: "background:var(--ok)" }), T("new: our apps")), el("span", null, el("i", { style: "background:var(--ok);opacity:.45" }), T("new: wallets using them")), el("span", null, el("i", { style: "background:#fff;opacity:.4" }), T("new: elsewhere")),
+    el("span", null, el("i", { style: "background:none;border:1px solid rgba(255,255,255,.45)" }), T("removed")), el("span", null, el("i", { style: "background:#fff;opacity:.8" }), T("held back")), el("span", null, el("i", { style: "background:var(--sim)" }), T("chain restart")));
   $("timeSub").textContent = F("since {d}, kept across chain restarts", { d: days[0] });
 }
-function row(label, n, total, tipText, ok) {
-  return el("div", { class: "row" + (ok ? " ok" : ""), "data-tip": tipText || null }, el("span", { text: label }), el("b", { text: fmt(n) }), el("span", { class: "bar" }, el("i", { style: `width:${total ? (100 * n / total).toFixed(1) : 0}%` })));
+function row(label, n, total, tipText, ok, cls) {
+  return el("div", { class: "row" + (ok ? " ok" : "") + (cls ? " " + cls : ""), "data-tip": tipText || null }, el("span", { text: label }), el("b", { text: fmt(n) }), el("span", { class: "bar" }, el("i", { style: `width:${total ? (100 * n / total).toFixed(1) : 0}%` })));
 }
 function drawOffers(d) {
   const o = d.offers || { by: {} }, g = k => sumWho(o.by, k), made = g("made");
@@ -387,21 +438,39 @@ function drawOffers(d) {
   $("offersNote").textContent = d.partial ? T("Outcomes come with the next server update.") : T("From the blocks our node keeps; a chain restart starts them over.");
 }
 function drawHow(d) {
-  const h = d.now.how || {}, own = sumWho(h, "own"), off = sumWho(h, "offer"), unk = sumWho(h, "unknown"), tot = own + off + unk;
-  $("how").replaceChildren(...[el("h3", { text: T("Own or offered") }),
-    row(T("Wrote or picked it themselves"), own, tot, T("The account signed its own rule."), true),
-    row(T("Took an offer"), off, tot, T("Another account offered the rule; this one accepted it.")),
-    unk ? row(T("Before the kept blocks"), unk, tot, T("Set in a block older than the ones our node keeps.")) : null].filter(Boolean));
-  const s = d.now.sent;
-  if (!s) { $("sent").replaceChildren(el("h3", { text: T("Sent from") }), el("div", { class: "empty", text: T(S.mode === "sim" ? "Only on the live testnet." : "Comes with the next server update.") })); }
-  else {
-    const th = sumWho(s, "tauhud"), el2 = sumWho(s, "elsewhere"), tt = th + el2, pages = Object.entries(d.now.pages || {}).sort((a, b) => b[1] - a[1]).slice(0, 3);
-    $("sent").replaceChildren(el("h3", { text: T("Sent from") }),
-      row(T("Tau HUD pages"), th, tt, T("Signed in the visitor's browser and sent through our node's wallet door.") + (pages.length && S.who !== "ours" ? "\n" + pages.map(([p, n]) => `${p}: ${fmt(n)}`).join("\n") : ""), true),
-      row(T("Elsewhere"), el2, tt, T("IDNI's web wallet, a node's own command line, scripts or other apps.")));
-  }
+  const h = d.now.how || {}, own = sumWho(h, "own"), off = sumWho(h, "offer");
   const sizes = S.who === "all" ? WHOS.flatMap(w => (d.now.sizes || {})[w] || []) : ((d.now.sizes || {})[S.who] || []);
-  $("howNote").textContent = sizes.length ? F("Rules use {a} comparisons on average, the largest {m} of the 32 allowed.", { a: (sizes.reduce((a, b) => a + b, 0) / sizes.length).toFixed(1), m: Math.max(...sizes) }) : "";
+  const notes = [];
+  if (own + off) notes.push(F("{o} wrote or picked their rule themselves, {f} took an offer from another account.", { o: fmt(own), f: fmt(off) }));
+  if (sizes.length) notes.push(F("Rules use {a} comparisons on average, the largest {m} of the 32 allowed.", { a: (sizes.reduce((a, b) => a + b, 0) / sizes.length).toFixed(1), m: Math.max(...sizes) }));
+  $("howNote").textContent = notes.join(" ");
+  if (notes.length) $("howTitle").dataset.tip = notes.join("\n"); else delete $("howTitle").dataset.tip;
+  if (S.who === "ours") {
+    $("share").replaceChildren(); $("fromSub").textContent = T("our own server's wallets");
+    $("from").replaceChildren(el("div", { class: "empty", text: T("These are Tau HUD's own server wallets: the showcase wallets, the island bot, cruise passengers and No Memo's. They are never counted as people testing rules.") }));
+    return;
+  }
+  if (!d.now.from) {
+    $("share").replaceChildren(); $("fromSub").textContent = T("where the rules in force came from");
+    $("from").replaceChildren(el("div", { class: "empty", text: T(S.mode === "sim" ? "Only on the live testnet." : "Comes with the next server update.") }));
+    return;
+  }
+  const fr = pickFrom(d.now.from), tot = Object.values(fr).reduce((a, b) => a + b, 0), ours = ourOf(fr), uses = fr.uses || 0;
+  $("fromSub").textContent = T("where the rules in force came from");
+  /* every new rule since the relay began writing down where rules come from */
+  const H = (d.history && d.history.days) || {}, kept = Object.keys(H).filter(k => H[k].new_from).sort();
+  let nAll = 0, nOurs = 0, nUses = 0;
+  for (const k of kept) { const nf = pickFrom(H[k].new_from); nAll += Object.values(nf).reduce((a, b) => a + b, 0); nOurs += ourOf(nf); nUses += nf.uses || 0; }
+  const pc = (a, b) => b ? Math.round(100 * a / b) + " %" : "–";
+  $("share").replaceChildren(el("span", { class: "big", text: tot ? pc(ours, tot) : "–" }),
+    el("span", { class: "of", "data-tip": uses ? F("Counting the wallets that set their rule elsewhere but use our apps too: {p}.", { p: pc(ours + uses, tot) }) : null },
+      el("b", { text: F("{o} of {t} rules in force now", { o: fmt(ours), t: fmt(tot) }) }), " ", T("came through our apps."),
+      kept.length ? el("span", { style: "display:block" }, F("New since {d}: {n}, of them {o} through our apps.", { d: kept[0].slice(5), n: fmt(nAll), o: fmt(nOurs) })) : null));
+  const keys = ["tauhud", "rabbit", "nomemo", "agorzilla", "uses", "elsewhere", "unknown"];
+  $("from").replaceChildren(...keys.filter(k => k === "tauhud" || k === "rabbit" || fromOf(fr, k)).map(k => {
+    const n = fromOf(fr, k), cls = APPS.includes(k) ? "ok" : k === "uses" ? "uses" : "dim";
+    return row(T(FROM[k].name), n, tot, `${T(FROM[k].name)}\n${T(FROM[k].tip)}`, false, cls);
+  }));
 }
 document.querySelectorAll("[data-who]").forEach(b => b.addEventListener("click", () => { S.who = b.dataset.who; store.set("tauhud-rulenums-who", S.who); render(); }));
 

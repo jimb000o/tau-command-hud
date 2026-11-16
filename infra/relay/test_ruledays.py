@@ -70,5 +70,20 @@ check(o["matched"] and o["by"]["ours"] == {"made": 1, "accepted": 1, "rejected":
 o = ruledays.offers(blocks, 100, lambda *a: None, who)
 check(not o["matched"] and o["by"]["people"]["made"] == 3 and o["by"]["people"]["expired"] == 0, "without offer ids only made is sure")
 
+# where rules came from: today's new rules and the rules in force, counted per app (never which wallet)
+with tempfile.TemporaryDirectory() as d:
+    r = ruledays.RuleDays(os.path.join(d, "ruledays.json"))
+    C = "dd" * 48
+    org = {A: "rabbit", B: "uses", C: "nonsense"}.get
+    r.record({A: CAP, B: TIME, C: CAP}, {A, B, C}, who, now=day1, origin=lambda pk: org(pk) or "unknown")
+    r.record({A: CAP, B: TIME, C: CAP}, {A, B, C}, who, now=day1 + 60, origin=lambda pk: "tauhud")   # unchanged: nothing new
+    t = r.days[ruledays.day_of(day1)]
+    nf = t["new_from"]["people"]
+    check(nf["rabbit"] == 1 and nf["uses"] == 1 and nf["unknown"] == 1 and sum(nf.values()) == 3,
+          f"new rules by where they came from, an odd answer counts as unknown {nf}")
+    check(t["from"]["people"]["tauhud"] == 3, f"rules in force by where they came from, at the last check {t['from']['people']}")
+    check("from" not in ruledays.RuleDays.snapshot({A: CAP}, who) and "new_from" not in ruledays.RuleDays(os.path.join(d, "x.json"))._day(day1),
+          "no origin given: no origin counts")
+
 print("all ruledays checks passed" if not fails else f"{fails} ruledays checks failed")
 sys.exit(1 if fails else 0)
