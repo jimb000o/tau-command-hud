@@ -3277,5 +3277,11 @@
     "on": "2026-11-16",
     "link": "/rabbit/",
     "html": "White Rabbit Key: the island's notice board, the one with the islander and the number of wallets that walked the island today, now stands on the sand below Bar La Ola instead of in front of its string of lights. It is a little larger, has a dark frame, and after dusk a small lamp of its own, so the number reads at a glance by day and by night."
+  },
+  {
+    "tag": "Rules in numbers",
+    "on": "2026-11-16",
+    "link": "/rules/numbers/",
+    "html": "Rules in numbers: how many personal rules came through our apps. A new panel shows the share of people’s rules in force that were set through Tau HUD, White Rabbit Key, No Memo or Agorzilla, counted per app (our own server wallets never count). The chart now also shows all rules set so far and colours each day’s new rules by where they came from. And an invitation: propose a rule to an islander on White Rabbit Key."
   }
 ]
