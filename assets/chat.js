@@ -1,8 +1,8 @@
 /* Troll box: the HUD's public live chat (server side infra/relay/chat.py).
    A pill at the bottom right opens the room; only then a socket to the relay opens, and it closes with the panel.
    The name is the simulation's random animal name (TauSim.me), written to this browser only when the visitor sends a
-   message. The relay keeps a message 24 hours with that name and the text, never an address; links, price talk and slurs
-   are refused there, three reports hide a message. Include with <link rel="stylesheet" href="assets/chat.css"> and
+   message. The relay keeps a message 24 hours with that name and the text, never an address; links (except to tauhud.com and agorzilla.com), price talk and
+   slurs are refused there, links to our own sites are clickable, three reports hide a message. Include with <link rel="stylesheet" href="assets/chat.css"> and
    <script src="assets/chat.js" defer></script>; window.TAU_CHAT_RELAY overrides the relay (a host, or a ws:// address for tests).
    A page with a visible <div id="tbHost"> (the HUD on wide screens) gets the room as a panel inside it instead of the pill:
    always open, connected while the tab is visible. When the host is hidden (a smaller screen) it is the pill again.
@@ -18,11 +18,11 @@
   const DICT = {
     zh: {
       "Chat with everyone on Tau HUD": "和 Tau HUD 上的所有人聊天", "Close": "关闭",
-      "Be kind. No prices, trading or links. Messages vanish after 24 hours; three reports hide one.": "友善一点。不谈价格、交易，不发链接。消息 24 小时后消失；三次举报即隐藏。",
+      "Be kind. No prices or trading; links only to tauhud.com or agorzilla.com. Messages vanish after 24 hours; three reports hide one.": "友善一点。不谈价格和交易；只能发 tauhud.com 或 agorzilla.com 的链接。消息 24 小时后消失；三次举报即隐藏。",
       "Say something…": "说点什么…", "Send": "发送", "Report": "举报", "Reported": "已举报",
       "You are {x} until 00:00 UTC": "今天你是 {x}，00:00 UTC 换新名字", "connecting…": "连接中…", "No messages in the last 24 hours. Say hello.": "过去 24 小时没有消息。打个招呼吧。",
       "The chat can’t reach the relay right now.": "聊天暂时连不上中继。", "The chat is closed right now.": "聊天暂时关闭。",
-      "No links or handles here.": "这里不能发链接或账号。", "No price, trading or giveaway talk: testnet AGRS has no value.": "不谈价格、交易或赠送：测试网 AGRS 没有价值。",
+      "No links or handles here.": "这里不能发链接或账号。", "Only links to tauhud.com or agorzilla.com here; no handles.": "这里只能发 tauhud.com 或 agorzilla.com 的链接，不能发账号。", "No price, trading or giveaway talk: testnet AGRS has no value.": "不谈价格、交易或赠送：测试网 AGRS 没有价值。",
       "That word is not welcome here.": "这里不欢迎这个词。", "At most 200 characters.": "最多 200 个字符。", "Nothing to send.": "没有可发送的内容。",
       "One message every few seconds, please.": "请每隔几秒发一条。", "That is a lot for one hour; take a break.": "这一小时说得够多了，休息一下吧。",
       "You just said that.": "你刚说过这句。", "The room is busy; try again in a minute.": "聊天室太忙，请一分钟后再试。",
@@ -45,11 +45,11 @@
     },
     ja: {
       "Chat with everyone on Tau HUD": "Tau HUD のみんなとチャット", "Close": "閉じる",
-      "Be kind. No prices, trading or links. Messages vanish after 24 hours; three reports hide one.": "やさしく。価格・取引・リンクの話はなし。メッセージは 24 時間で消え、3 件の報告で非表示になります。",
+      "Be kind. No prices or trading; links only to tauhud.com or agorzilla.com. Messages vanish after 24 hours; three reports hide one.": "やさしく。価格・取引の話はなし。リンクは tauhud.com と agorzilla.com だけ。メッセージは 24 時間で消え、3 件の報告で非表示になります。",
       "Say something…": "なにか書く…", "Send": "送信", "Report": "報告", "Reported": "報告済み",
       "You are {x} until 00:00 UTC": "今日のあなたは {x}（00:00 UTC に新しい名前）", "connecting…": "接続中…", "No messages in the last 24 hours. Say hello.": "この 24 時間のメッセージはありません。あいさつをどうぞ。",
       "The chat can’t reach the relay right now.": "チャットは今リレーに接続できません。", "The chat is closed right now.": "チャットは今閉まっています。",
-      "No links or handles here.": "リンクやアカウント名は書けません。", "No price, trading or giveaway talk: testnet AGRS has no value.": "価格・取引・配布の話はなし：テストネットの AGRS に価値はありません。",
+      "No links or handles here.": "リンクやアカウント名は書けません。", "Only links to tauhud.com or agorzilla.com here; no handles.": "リンクは tauhud.com と agorzilla.com だけ、アカウント名は書けません。", "No price, trading or giveaway talk: testnet AGRS has no value.": "価格・取引・配布の話はなし：テストネットの AGRS に価値はありません。",
       "That word is not welcome here.": "その言葉はここでは歓迎されません。", "At most 200 characters.": "200 文字まで。", "Nothing to send.": "送る内容がありません。",
       "One message every few seconds, please.": "数秒に 1 件でお願いします。", "That is a lot for one hour; take a break.": "この 1 時間はたくさん書きました。少し休みましょう。",
       "You just said that.": "それはさっき書きました。", "The room is busy; try again in a minute.": "混み合っています。1 分後にもう一度。",
@@ -117,7 +117,7 @@
   const head = el("div", "tb-head"); head.append(el("span", "tb-tl", ROOM));
   if (ROOM !== (ROOMS.hud[L] || ROOMS.hud.en)) head.title = t("The same room as the Tau HUD troll box");
   const x = el("button", "tb-x", "×"); x.type = "button"; x.title = x.ariaLabel = t("Close"); head.append(x);
-  const rules = el("p", "tb-rules", t("Be kind. No prices, trading or links. Messages vanish after 24 hours; three reports hide one."));
+  const rules = el("p", "tb-rules", t("Be kind. No prices or trading; links only to tauhud.com or agorzilla.com. Messages vanish after 24 hours; three reports hide one."));
   const list = el("ol", "tb-list"); list.setAttribute("translate", "no"); list.setAttribute("aria-live", "polite");
   const note = el("p", "tb-note", t("connecting…"));
   const form = el("form", "tb-form");
@@ -131,6 +131,29 @@
   const stamp = s => { const d = new Date(s * 1000); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
   const setNote = s => { note.textContent = s || ""; note.hidden = !s; };
   const atBottom = () => list.scrollHeight - list.scrollTop - list.clientHeight < 40;
+  /* the message text, with links to our own sites clickable (the relay refuses every other link; OWN in chat.py).
+     Built from text nodes, never innerHTML; a trailing full stop or bracket stays text. */
+  const OWN = /(^|[^\w.@/-])((?:https?:\/\/)?(?:[a-z0-9-]+\.)*(?:tauhud|agorzilla)\.com(?![\w@:-]|\.[\w-])(?:[/?#][^\s<>"'@]*)?)/gi;
+  function linked(text) {
+    const span = el("span", "tb-tx");
+    let at = 0, m;
+    OWN.lastIndex = 0;
+    while ((m = OWN.exec(text))) {
+      let url = m[2];
+      const tail = (url.match(/[.,;:!?)\]]+$/) || [""])[0];
+      url = url.slice(0, url.length - tail.length);
+      const start = m.index + m[1].length;
+      span.append(text.slice(at, start));
+      const a = el("a", "tb-ln", url);
+      a.href = /^https?:/i.test(url) ? url.replace(/^http:/i, "https:") : "https://" + url;
+      a.target = "_blank"; a.rel = "noopener nofollow ugc";
+      span.append(a);
+      at = start + url.length;
+      OWN.lastIndex = at;
+    }
+    span.append(text.slice(at));
+    return span;
+  }
   function add(m) {
     if (seen.has(m.id)) return;
     seen.add(m.id);
@@ -138,7 +161,7 @@
     const nm = el("b", "tb-nm", nameOf(m)); nm.style.color = COLOURS[m.c] || COLOURS[7];
     const rp = el("button", "tb-rp", "⚑"); rp.type = "button"; rp.title = rp.ariaLabel = t("Report");
     rp.onclick = () => { if (!ws || ws.readyState !== 1 || reported.has(m.id)) return; reported.add(m.id); ws.send(`chat report ${m.id} ${ME(false).token}`); li.classList.add("gone"); rp.title = t("Reported"); };
-    li.append(el("time", "tb-t", stamp(m.ts)), nm, el("span", "tb-tx", m.text), rp);
+    li.append(el("time", "tb-t", stamp(m.ts)), nm, linked(m.text), rp);
     const stick = atBottom();
     list.append(li);
     while (list.children.length > 120) list.firstChild.remove();

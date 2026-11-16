@@ -10,7 +10,7 @@ The filter, all automatic (judge()): the text is folded first (NFKC, invisible c
 Greek letters and leetspeak to Latin, stretched letters squeezed), so "p0rn", "pоrn" with a Cyrillic o, "p o r n" and
 "poooorn" all read "porn".
 - hard, one strike: sexual content, slurs, threats and abuse aimed at someone, scams (seed phrase, "send me", fake support)
-- soft, a strike every SOFT_PER_STRIKE times: links and handles, price and trading talk, wallet addresses, shouting in
+- soft, a strike every SOFT_PER_STRIKE times: links (except to our own sites, OWN) and handles, price and trading talk, wallet addresses, shouting in
   capitals, emoji or letter floods, the same text again (also someone else's text within REPEAT_WINDOW: copy-paste bots),
   flooding the slow mode
 - not counted: too long, empty, the slow mode itself
@@ -68,6 +68,10 @@ TOKEN = re.compile(r"^[0-9a-f]{32}$")
 
 # no links: a scheme, www., or a word.tld with a common top level domain, t.me/ invites, @handles, e-mail addresses
 LINK = re.compile(r"(https?:|ftp:|www\.|\b[\w-]+(\.|\s*\(dot\)\s*|\s*\[dot\]\s*)(com|net|org|io|xyz|app|me|gg|co|cc|ru|cn|info|biz|site|online|link|ly|to|finance|money|exchange|top|club|vip|pro|live|fun|tk|ml|xxx|porn|sex|cam|tv)\b|t\.me/|\bt\s*\.\s*me\b|discord\s*\.?\s*gg|@\w{3,}|\b[\w.+-]+@[\w-]+\.\w+)", re.I)
+# our own sites, the one kind of link the troll box keeps: tauhud.com (any page, any subdomain such as node.tauhud.com) and
+# agorzilla.com, with or without https://. The host must end right there: "tauhud.com.evil.xyz", "faketauhud.com",
+# "tauhud.com@evil.com" or "tauhud.com:8080" are not ours, and what is left of them is refused by LINK below.
+OWN = re.compile(r"(?<![\w.@/-])(?:https?://)?(?:[a-z0-9-]+\.)*(?:tauhud|agorzilla)\.com(?![\w@:-]|\.[\w-])(?:[/?#][^\s<>\"'@]*)?", re.I)
 # price, trading and hype talk (testnet AGRS has no value; the site never talks prices)
 TALK = [
     r"\$", r"€", r"£", r"¥", r"\busdt?\b", r"\busdc\b", r"\beur\b", r"\bbtc\b", r"\beth\b", r"\bsats?\b",
@@ -122,7 +126,7 @@ LOOK = str.maketrans({"а": "a", "е": "e", "о": "o", "р": "p", "с": "c", "х
 EMOJI = re.compile("[\U0001F000-\U0001FAFF☀-➿⬀-⯿️]")
 
 REASONS = {
-    "link": "No links or handles here.",
+    "link": "Only links to tauhud.com or agorzilla.com here; no handles.",
     "talk": "No price or trading talk: testnet AGRS has no value.",
     "addr": "No wallet addresses or keys here.",
     "scam": "That looks like a scam, so it is not posted.",
@@ -193,7 +197,8 @@ def judge(text: str, extra: list[str] | None = None, max_len: int = MAX_LEN) -> 
     if any(re.search(p, f) or re.search(p, low) for p in SCAM):
         return "scam"
     # soft: links, addresses, price talk, shouting, floods
-    if LINK.search(text) or LINK.search(text.translate(LOOK)):
+    rest = OWN.sub(" ", text)   # links to our own sites are fine; any other link is refused
+    if LINK.search(rest) or LINK.search(rest.translate(LOOK)):
         return "link"
     if ADDR.search(text):
         return "addr"
