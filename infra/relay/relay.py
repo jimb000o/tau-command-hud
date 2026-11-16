@@ -1144,18 +1144,7 @@ class Relay:
         """pk -> where its rule came from (ruledays.FROM): the app its newest rule transaction in the kept blocks (an own
         rule or an accepted offer) was sent through, as walletdays.app_of reads it; else whether the wallet uses our apps
         at all. Only counts leave the relay (GET /rules/numbers)."""
-        sent = self.sources.sent
-        app: dict[str, str] = {}
-        for b in self.ordered_blocks() if blocks is None else blocks:
-            ids = b.get("tx_ids") or []
-            for i, t in enumerate(b.get("transactions") or []):
-                if not isinstance(t, dict):
-                    continue
-                kind = t.get("tx_type") or "user_tx"
-                ops = t.get("operations") if isinstance(t.get("operations"), dict) else {}
-                if (kind == "user_tx" and isinstance(ops.get("0"), str) and "o5" in ops["0"]) or kind == "rule_offer_accept":
-                    h = str(ids[i] if i < len(ids) else t.get("tx_hash") or "").lower()
-                    app[str(t.get("sender_pubkey") or "").lower()] = app_of(t, h, sent) or ""
+        app = {pk: a for pk, (a, _, _) in self.rule_txs(blocks).items()}
 
         def origin(pk: str) -> str:
             a = app.get(pk)
@@ -1165,6 +1154,35 @@ class Relay:
                 return "uses"
             return "elsewhere" if a == "" else "unknown"
         return origin
+
+    def rule_txs(self, blocks: list[dict] | None = None) -> dict:
+        """pk -> (app or "", tx hash, block height) of its newest rule transaction in the kept blocks (an own rule or an
+        accepted offer)."""
+        sent, out = self.sources.sent, {}
+        for b in self.ordered_blocks() if blocks is None else blocks:
+            ids = b.get("tx_ids") or []
+            for i, t in enumerate(b.get("transactions") or []):
+                if not isinstance(t, dict):
+                    continue
+                kind = t.get("tx_type") or "user_tx"
+                ops = t.get("operations") if isinstance(t.get("operations"), dict) else {}
+                if (kind == "user_tx" and isinstance(ops.get("0"), str) and "o5" in ops["0"]) or kind == "rule_offer_accept":
+                    h = str(ids[i] if i < len(ids) else t.get("tx_hash") or "").lower()
+                    out[str(t.get("sender_pubkey") or "").lower()] = (app_of(t, h, sent) or "", h, self._height(b))
+        return out
+
+    def rule_why(self) -> dict:
+        """For the server only (up rules status): every rule holder with what decides where its rule came from, so a
+        surprising count on /rules/numbers can be checked. Never published (it ties wallets to apps)."""
+        who, origin, txs, sent = self.rule_who(), self.rule_origin(), self.rule_txs(), self.sources.sent
+        out = []
+        for pk, body in self.rule_bodies.items():
+            a, h, n = txs.get(pk, ("", "", None))
+            k = self.wallets.index.get(pk)
+            out.append({"pk": pk, "who": who(pk), "from": origin(pk), "kind": rule_kinds(body)["kinds"], "block": n, "tx": h[:16],
+                        "note": sent.get(h) if h else None, "tag": self.wallets.tag[k] if k is not None else None,
+                        "apps": self.wallets.apps_of(pk), "sim": self.simulated().get(pk)})
+        return {"holders": out, "sent_known": len(sent), "sent_since": round(self.sources.since)}
 
     def rule_numbers(self) -> dict:
         """GET /rules/numbers: the rules in force by kind and by who holds them, how each holder got its rule and where
@@ -1209,7 +1227,7 @@ class Relay:
         snap = self.ruledays.snapshot(self.rule_bodies, who, self.rule_balances, self.rule_origin(blocks))
         return {"now": {**snap, "how": ways, "sent": sent, "pages": pages, "sizes": sizes,
                         "checked": rules.get("checked"), "candidates": rules.get("candidates"), "checked_at": rules.get("checked_at")},
-                "offers": rule_offers(blocks, self.height(), offer_id, who),
+                "offers": rule_offers(blocks, self.height(), offer_id, who, lambda t, h: app_of(t, h, self.sources.sent)),
                 "texts": len(self.rulewall()), "kinds": list(RULE_KINDS), "who": list(WHO_RULES), "from": list(RULE_FROM), "max_comparisons": 32,
                 "history": self.ruledays.history(), "height": self.height(), "oldest": self._height(blocks[0]) if blocks else None,
                 "generated_at": round(time.time())}
@@ -2546,6 +2564,9 @@ class Relay:
                                ("Access-Control-Allow-Origin", "*"),
                                ("Cache-Control", "public, max-age=60")])
             return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, self.rulewall_json().encode())
+        if path == "/rules/numbers/why" and not request.headers.get("X-Forwarded-For"):   # the server's own shell only
+            headers = Headers([("Content-Type", "application/json"), ("Cache-Control", "no-store")])
+            return Response(HTTPStatus.OK.value, HTTPStatus.OK.phrase, headers, json.dumps(self.rule_why()).encode())
         if path == "/rules/numbers":
             headers = Headers([("Content-Type", "application/json"),
                                ("Access-Control-Allow-Origin", "*"),

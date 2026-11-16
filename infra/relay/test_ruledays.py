@@ -85,5 +85,15 @@ with tempfile.TemporaryDirectory() as d:
     check("from" not in ruledays.RuleDays.snapshot({A: CAP}, who) and "new_from" not in ruledays.RuleDays(os.path.join(d, "x.json"))._day(day1),
           "no origin given: no origin counts")
 
+# offers through our apps: counted per app, made and accepted apart
+blocks = [{"tx_ids": ["h1", "h2", "h3"], "transactions": [
+    {"tx_type": "rule_offer", "sender_pubkey": A, "recipient_pubkey": B, "rule_text": CAP, "expire_at_height": 50},
+    {"tx_type": "rule_offer", "sender_pubkey": B, "recipient_pubkey": A, "rule_text": CAP, "expire_at_height": 50},
+    {"tx_type": "rule_offer_accept", "sender_pubkey": B, "offer_id": "x"}]}]
+o = ruledays.offers(blocks, 10, lambda *a: None, who, lambda t, h: {"h1": "rabbit", "h3": "tauhud"}.get(h))
+check(o["by"]["people"]["apps"] == {"rabbit": 1} and o["by"]["people"]["apps_accepted"] == {"tauhud": 1} and o["by"]["people"]["made"] == 2,
+      f"rule offers through our apps {o['by']['people']}")
+check("apps" not in ruledays.offers(blocks, 10, lambda *a: None, who)["by"]["people"], "no app reader: no app counts")
+
 print("all ruledays checks passed" if not fails else f"{fails} ruledays checks failed")
 sys.exit(1 if fails else 0)
