@@ -161,4 +161,9 @@ TauI18n.add({ strings: {
   "offers a policy rule with more comparisons than one clause may carry (over 32)": "1つの節が持てる比較の数（32）を超えるポリシールールを提出する",
   "{a} allowed, the fee rule asks {b}": "{a} を認める、手数料ルールは {b} を求める",
   "with {b} it went through": "{b} を認めると通った",
+  "From our blog": "ブログから",
+  "After each visit we write down what it showed about the testnet, from this very logbook. Only published articles appear here.": "寄港のたびに、この航海日誌をもとに、テストネットについて分かったことを書いています。ここには公開済みの記事だけが表示されます。",
+  "All articles": "すべての記事",
+  "Our article on this visit": "この寄港についての記事",
+  "Read what we learned on this visit": "この寄港で分かったことを読む",
 } });
