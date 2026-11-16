@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import blog  # noqa: E402
 import feature_watch as fw  # noqa: E402
 import idni_digest as idg  # noqa: E402
+fw.editor_review = lambda a: []   # the second read is a model call; the tests that need it pass their own
 
 failed = 0
 
@@ -99,9 +100,10 @@ g = idg.gather({"IDNI/tau-testnet": SRC}, {"IDNI/tau-testnet": "main"}, at("2026
 check(feat not in [c["sha"] for c in g["changes"] + g["pending"] + g["house"]] and fix in [c["sha"] for c in g["pending"] + g["house"]],
       "the daily IDNI post leaves the feature out (its own post), keeps the rest")
 
-out = fw.step(T0 + 50 * 60, fake([GOOD]))
+out = fw.step(T0 + 50 * 60, fake([GOOD, GOOD]), review_=lambda a: [{"quote": "A guard.", "rule": 3, "fix": "say what the guard does"}])
 bst = blog.state()
-check(len(out) == 1 and out[0] == "2026-11-16-testnet-feature" and len(asked) == 1, "after the wait: one article, one model call")
+check(len(out) == 1 and out[0] == "2026-11-16-testnet-feature" and len(asked) == 2 and "say what the guard does" in asked[1][1],
+      "after the wait: the article, and once more with the second read's notes")
 posts = blog.posts()["posts"]
 check(posts and posts[0]["id"] == out[0] and posts[0]["kind"] == "news" and out[0] in bst.get("announced", []),
       "on the blog at once with its one post (09:34 German time)")
