@@ -966,6 +966,84 @@ def fresh(ranked: list[dict], seen: set[str], no: int) -> tuple[dict, dict]:
     return top, v
 
 
+def printed_lines(e: dict, out: dict[str, int] | None = None) -> dict[str, int]:
+    """The English lines of an edition's articles and café answers, with the oldest edition number that printed each (renew())."""
+    out = {} if out is None else out
+    no = int(e.get("no") or 0)
+
+    def walk(x):
+        if isinstance(x, dict):
+            if isinstance(x.get("en"), str):
+                if x["en"].strip() and (x["en"] not in out or no < out[x["en"]]):
+                    out[x["en"]] = no
+                return
+            for v in x.values():
+                walk(v)
+        elif isinstance(x, list):
+            for v in x:
+                walk(v)
+    # what renew() keeps new: the words of the articles and the café answers, not the paper's headings and questions
+    walk([e.get("big"), e.get("teaser"), e.get("weather"), (e.get("lead") or {}).get("deck"), (e.get("lead") or {}).get("body"),
+          [st.get("body") for st in e.get("stories") or [] if isinstance(st, dict)],
+          [[c.get("greet"), c.get("a")] for c in (e.get("cafe") or {}).values() if isinstance(c, dict)]])
+    return out
+
+
+def renew(e: dict, top: dict, r: dict, printed: dict[str, int]) -> dict:
+    """Every edition an entirely new episode (Kilian, 2026-11-16): no article, paragraph or café answer is printed again
+    once an earlier edition carried it word for word. A repeated paragraph is left out; the lines that have to be there
+    (deck, weather, the big headline) take this week's own numbers instead; a story or an answer with nothing new left
+    says since which edition nothing changed, and how many editions that is (so even that line is new each week).
+    Headings, kickers, questions and the figures' labels are the paper's furniture and may stay."""
+    if not printed:
+        return e
+    no = int(e.get("no") or 0)
+    seen = lambda x: bool(x) and isinstance(x, dict) and x.get("en") in printed  # noqa: E731
+    blocks, pc = fmt_n(r["blocks"] + r["old_blocks"]), pace(r["pace"])
+
+    def since(k: int) -> dict:
+        n = max(1, no - k)
+        return t(f"Nothing new here since No. {k}, {word(n)['en']} edition{'s' if n != 1 else ''} ago.",
+                 f"自第 {k} 期以来，这里没有新的内容，已经过了{word(n)['zh']}期。",
+                 f"第 {k} 号から {word(n)['ja']} 号のあいだ、ここに新しいことはない。")
+
+    def told(k: int) -> dict:   # the same in a regular's own words
+        n = max(1, no - k)
+        return t(f"Nothing new on that since No. {k}, {word(n)['en']} edition{'s' if n != 1 else ''} back. Ask me again next week.",
+                 f"这件事自第 {k} 期以来没有新消息，已经过了{word(n)['zh']}期。下周再问我吧。",
+                 f"その件は第 {k} 号から {word(n)['ja']} 号のあいだ新しいことはない。来週また聞いてくれ。")
+
+    def keep_new(lst: list, say=since) -> list:
+        fresh = [x for x in lst if not seen(x)]
+        if fresh or not lst:
+            return fresh
+        return [say(min(printed[x["en"]] for x in lst if seen(x)))]
+
+    # the big headline over the front: a repeat gives way to the banner, which is never printed twice (fresh())
+    if seen(e.get("big")):
+        e["big"] = None
+    # the deck under the headline: this week's own line, with its numbers
+    if seen(e["teaser"]) and not seen(top.get("line")):
+        e["teaser"] = e["lead"]["deck"] = top["line"]
+        e["deck"], e["deck_zh"], e["deck_ja"] = top["line"]["en"], top["line"]["zh"], top["line"]["ja"]
+    if seen(e["lead"].get("h")):
+        e["lead"]["h"] = e["banner"]
+    if seen(e.get("weather")):
+        e["weather"] = t(f"{blocks} blocks fell this week, one about every {pc['en']}. Outlook: the climate may change by vote.",
+                         f"本周落下 {blocks} 个区块，大约每 {pc['zh']}一个。展望：气候可经投票改变。",
+                         f"今週降ったブロックは {blocks}、およそ {pc['ja']}に 1 つ。見通し：気候は投票で変更可能。")
+    e["lead"]["body"] = keep_new(e["lead"]["body"])
+    for st in e.get("stories") or []:
+        if st and isinstance(st.get("body"), list):
+            st["body"] = keep_new(st["body"])
+    for who, c in (e.get("cafe") or {}).items():
+        if isinstance(c.get("a"), list):
+            c["a"] = keep_new(c["a"], told)
+        if seen(c.get("greet")):
+            c["greet"] = None
+    return e
+
+
 def signature(e: dict) -> str:
     """What makes an edition its own, without its number and dates: the front page and the café talk."""
     keep = {k: e.get(k) for k in ("banner", "big", "line", "lead", "figures", "stories", "cafe")}
@@ -973,9 +1051,10 @@ def signature(e: dict) -> str:
 
 
 def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: float, chess: dict | None = None,
-            seen: set[str] | None = None) -> dict:
+            seen: set[str] | None = None, before: dict[str, int] | None = None) -> dict:
     """One weekly edition. r: recap.build(); props: proposals.json "proposals"; days: sim_day() of the week;
-    seen: the English banners of the editions already printed (none repeats, see fresh())."""
+    seen: the English banners of the editions already printed (none repeats, see fresh()); before: every English line
+    of the editions before, with the edition that first printed it (none is printed again, see renew())."""
     waiting = [p for p in props if p.get("status") == "agreed" and (p.get("activate_at") or 0) > (r.get("head") or 0)]
     ranked = news(r, waiting, days, props)
     top, banner = fresh(ranked, seen or set(), no)
@@ -988,7 +1067,7 @@ def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: f
             "steady": t("Testnet Alpha · the week", "Testnet Alpha · 本周", "テストネット Alpha · 今週"),
             "launch": t("Testnet Alpha · a new instrument", "Testnet Alpha · 新的观测台", "テストネット Alpha · 新しい観測器"),
             "simswitch": t("Simulation · not the real testnet", "模拟 · 不是真实的测试网", "シミュレーション · 本物のテストネットではない")}[kind]
-    return {
+    return renew({
         "v": 1, "no": no, "date": _d(printed_at).strftime("%Y-%m-%d"), "printed": printed(printed_at),
         "start": round(r["start"]), "end": round(r["end"]), "period": period(r["start"], r["end"]),
         "head": r.get("head"), "kind": kind, "extra": bool(top.get("extra")), "banner": banner, "teaser": deck,
@@ -1002,7 +1081,7 @@ def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: f
         # flat copies for the HUD's notice of the paper (index.html)
         "number": no, "headline": banner["en"], "headline_zh": banner["zh"], "headline_ja": banner["ja"],
         "deck": deck["en"], "deck_zh": deck["zh"], "deck_ja": deck["ja"],
-    }
+    }, top, r, before or {})
 
 
 def summary(e: dict) -> dict:

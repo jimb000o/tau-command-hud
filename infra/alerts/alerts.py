@@ -3836,7 +3836,15 @@ class Watcher:
         chess = self.chess(r["end"])
         # every edition is its own: no front-page headline printed twice (gazette.fresh), the same day's reprint aside
         seen = {(x.get("banner") or {}).get("en") for x in index if x.get("date") != date} - {None}
-        e = gazette.edition(r, props, days, no, printed_at, chess, seen)
+        # and no article, paragraph or café answer of any edition before word for word again (gazette.renew)
+        printed: dict = {}
+        for x in [x for x in index if x.get("date") != date]:
+            try:
+                with open(os.path.join(d, x["date"] + ".json")) as f:
+                    gazette.printed_lines(json.load(f), printed)
+            except (OSError, ValueError, KeyError, TypeError):
+                pass
+        e = gazette.edition(r, props, days, no, printed_at, chess, seen, printed)
         e["chess"] = chess and {k: chess.get(k) for k in ("date", "played")}
         e["drops"] = self.drops(printed_at)
         prev = next((x for x in index if x.get("date") != date), None)
