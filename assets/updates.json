@@ -3265,5 +3265,11 @@
     "on": "2026-11-16",
     "link": "/",
     "html": "Chain core: click a dot on the rule ring to open that wallet’s rules on its account page. A rule another wallet offered and this one accepted now has a dashed halo, a rule the wallet set itself a solid one; the card says who offered it. On the chain both are the wallet’s own rule, stored the same way; only how it got there differs."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/?islander=1",
+    "html": "Islander studio: “Sign and wear it” works for big changes too. A look with many changed parts is now sent in small payments (four parts each), because the testnet checks every transfer against its rules and one large payment took longer than the page waited, which then wrongly said nothing was sent. A slow answer is never shown as an error any more: the studio shows the block being forged, then celebrates with you when the block holds your new look. When the testnet does say no, the node’s own reason is shown."
   }
 ]

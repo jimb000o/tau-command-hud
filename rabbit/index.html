@@ -345,6 +345,23 @@ html.rk-full #cvFull { border-color: var(--ok); }
 .st-send.busy:disabled { opacity: 1; cursor: progress; background: rgba(111,168,255,.18); border-color: rgba(111,168,255,.7); color: #fff; }
 .st-send.busy::before { content: ""; display: inline-block; width: .8em; height: .8em; margin-right: 8px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; vertical-align: -1px; animation: stspin .8s linear infinite; }
 @keyframes stspin { to { transform: rotate(360deg); } }
+.st-forge { display: inline-flex; gap: 5px; align-items: flex-end; height: 16px; margin-right: 4px; }
+.st-forge i { width: 6px; border-radius: 2px; background: #6fa8ff; animation: stforge 1.1s ease-in-out infinite; }
+.st-forge i:nth-child(2) { animation-delay: .18s; background: #39ff8a; }
+.st-forge i:nth-child(3) { animation-delay: .36s; background: #ffb13b; }
+@keyframes stforge { 0%, 100% { height: 4px; opacity: .5; } 50% { height: 16px; opacity: 1; } }
+.st-msg.work { background: linear-gradient(90deg, rgba(111,168,255,.06), rgba(111,168,255,.16), rgba(111,168,255,.06)); background-size: 200% 100%; animation: pop .25s ease-out, stshine 2.4s linear infinite; }
+@keyframes stshine { from { background-position: 200% 0; } to { background-position: 0 0; } }
+.st-party { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; border-radius: inherit; background: radial-gradient(circle at 50% 40%, rgba(16,40,28,.99), rgba(8,12,16,.99) 62%); animation: pop .35s cubic-bezier(.2,.8,.2,1); overflow: hidden; }
+.st-confetti { position: absolute; inset: 0; pointer-events: none; }
+.st-party-in { position: relative; display: flex; flex-direction: column; align-items: center; gap: calc(6px * var(--k, 1)); padding: 16px; text-align: center; max-width: 92%; }
+.st-party-in canvas { border-radius: 50%; background: radial-gradient(circle, rgba(255,214,120,.25), rgba(57,255,138,.06) 70%); box-shadow: 0 0 0 3px var(--ok), 0 0 60px rgba(57,255,138,.45); }
+.st-party-k { margin: 6px 0 0; font: 700 calc(12px * var(--k, 1)) var(--mono, monospace); letter-spacing: .14em; text-transform: uppercase; color: var(--ok); }
+.st-party h3 { margin: 0; font: 800 calc(28px * var(--k, 1)) var(--display); color: #fff; }
+.st-party-s { margin: 0; color: var(--text); font-size: calc(13.5px * var(--k, 1)); line-height: 1.5; }
+.st-party-first { margin: 0; color: var(--amber); font: 700 calc(13.5px * var(--k, 1)) var(--display); }
+.st-party-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px; }
+.st-party-acts .cv-b { align-items: center; justify-content: center; min-width: 150px; min-height: calc(42px * var(--k, 1)); font-size: calc(14px * var(--k, 1)); }
 .st-foot { display: flex; flex-direction: column; gap: calc(8px * var(--k, 1)); flex: none; }
 .st-acts { display: flex; flex-wrap: wrap; gap: calc(6px * var(--k, 1)); }
 .st-acts .cv-b { flex: 1 1 auto; align-items: center; justify-content: center; min-height: calc(40px * var(--k, 1)); font-size: calc(13.5px * var(--k, 1)); text-decoration: none; text-align: center; }
@@ -369,6 +386,7 @@ html.rk-full #cvFull { border-color: var(--ok); }
   .st-foot .st-acts .st-send { grid-column: 1 / -1; }
   .st-msg { font-size: 12.5px; padding: 6px 10px; }
   .st-foot:has(.st-msg.show) .st-cost { display: none; }
+  .st-party { position: fixed; border-radius: 0; }
 }
 /* the wallets that walk on the island (walkers.js): their card, the list of today's walkers, choosing your own look */
 #cvTip { max-width: min(320px, 80vw); white-space: normal; }
