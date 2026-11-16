@@ -292,7 +292,18 @@
   const PLAYLIST = ["coco", "mango", "lowtide", "tinroof", "hammock", "moon", "sunrise", "steelpan", "lantern", "breadfruit", "coral",
     "barrel", "hammerhead", "paperboats", "fisherman", "tradewinds", "ferry"];
 
-  const S = { place: "island", placeT: "island", song: "coco", pl: 0, ctx: null, on: false, want: true, master: null, music: null, amb: null, rev: null, radio: null, mvol: 1, tense: false, bar: 0, step: 0, next: 0, timer: 0, noise: null, sea: null };
+  /* the first song is a different one each time the radio is turned on (Kilian 16.11), most often one of the newest
+     (NEW_FROM: the eleven added on 16 Nov), never the one this browser started with last time */
+  const NEW_FROM = 6;
+  const firstSong = () => {
+    let last = null; try { last = localStorage.getItem("radio-coco-first"); } catch (e) {}
+    const from = (Math.random() < 0.75 ? PLAYLIST.slice(NEW_FROM) : PLAYLIST).filter(id => id !== last);
+    const id = from[Math.floor(Math.random() * from.length)] || PLAYLIST[0];
+    try { localStorage.setItem("radio-coco-first", id); } catch (e) {}
+    return PLAYLIST.indexOf(id);
+  };
+  const PL0 = firstSong();
+  const S = { place: "island", placeT: "island", song: PLAYLIST[PL0], pl: PL0, ctx: null, on: false, want: true, master: null, music: null, amb: null, rev: null, radio: null, mvol: 1, tense: false, bar: 0, step: 0, next: 0, timer: 0, noise: null, sea: null };
   /* the island's sound is on when the game opens (the site's own rule: sound on by default); a player who turns it off is
      remembered for this tab only (sessionStorage), so a new visit starts with the sound again. The site's radio switch
      (assets/radio.js) does not reach in here: an island with the sound off is not what a visitor came for. */
