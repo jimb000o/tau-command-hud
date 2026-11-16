@@ -138,7 +138,8 @@ html.fit .kind .not { display: none; }   /* on one screen the "cannot" line sits
 html.fit .kinds { gap: 7px; }
 html.fit .note { margin-top: 6px; }
 html.fit #pHow { display: flex; flex-direction: column; }
-html.fit #from { grid-template-columns: 1fr 1fr; gap: 3px 14px; }
+html.fit #from, html.fit #offers { grid-template-columns: 1fr 1fr; gap: 3px 14px; }
+html.fit #offers .row { font-size: 11.5px; }
 html.fit #pHow .row { font-size: 11.5px; }
 html.fit #howNote { display: none; }   /* own or offered and rule sizes: in the panel title's hover on one screen */
 html.fit .share { margin-bottom: 4px; }
@@ -434,7 +435,19 @@ function drawOffers(d) {
     $("offersNote").textContent = ""; return;
   }
   const parts = d.partial ? [] : o.matched ? [["accepted", "Accepted", "The other account took the rule as its own.", true], ["rejected", "Rejected", "The other account said no."], ["expired", "Expired", "Nobody answered before the offer's last block."], ["open", "Still open", "Waiting for an answer."]] : [["accepted", "Accepted", "", true], ["rejected", "Rejected", ""]];
-  $("offers").replaceChildren(row(T("Offers made"), made, made, T("Rule offers sent in the blocks our node keeps.")), ...parts.map(([k, label, tipText, ok]) => row(T(label), g(k), made, tipText ? T(tipText) : null, ok)));
+  /* offers made, and accepts sent, through one of our apps (relay: per app, counts only) */
+  const appSum = key => { const per = pickFrom(Object.fromEntries(WHOS.map(w => [w, (o.by[w] || {})[key] || {}]))); return [ourOf(per), per]; };
+  const hasApps = WHOS.some(w => (o.by[w] || {}).apps);
+  const appTip = (head, per) => head + Object.entries(per).filter(([, n]) => n).map(([k, n]) => `\n${T(FROM[k === "deja" ? "agorzilla" : k].name)}: ${fmt(n)}`).join("");
+  const [mOurs, mPer] = appSum("apps"), [aOurs, aPer] = appSum("apps_accepted");
+  const via = hasApps && S.who !== "ours";
+  const rows = [row(T("Offers made"), made, made, T("Rule offers sent in the blocks our node keeps.")),
+    via ? row(T("Made through our apps"), mOurs, made, appTip(T("Offers sent from Tau HUD's wallet, White Rabbit Key, No Memo or Agorzilla."), mPer), true) : null];
+  for (const [k, label, tipText, ok] of parts) {
+    rows.push(row(T(label), g(k), made, tipText ? T(tipText) : null, ok));
+    if (k === "accepted" && via) rows.push(row(T("Accepted through our apps"), aOurs, made, appTip(T("Accepts signed in one of our apps, whoever made the offer."), aPer), true));
+  }
+  $("offers").replaceChildren(...rows.filter(Boolean));
   $("offersNote").textContent = d.partial ? T("Outcomes come with the next server update.") : T("From the blocks our node keeps; a chain restart starts them over.");
 }
 function drawHow(d) {

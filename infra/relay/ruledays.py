@@ -218,19 +218,30 @@ class RuleDays:
         return {"since": min(self.days) if self.days else None, "days": dict(sorted(self.days.items()))}
 
 
-def offers(blocks: list[dict], height: int | None, offer_id, who) -> dict:
+def offers(blocks: list[dict], height: int | None, offer_id, who, app=None) -> dict:
     """Rule offers in the kept blocks: made, accepted, rejected, expired, still open; per who made them.
-    offer_id(offerer, recipient, text, expire) -> id or None (showcase.offer_id; None without blake3)."""
+    offer_id(offerer, recipient, text, expire) -> id or None (showcase.offer_id; None without blake3).
+    app(tx, tx hash) -> which of our apps sent it, or None: then "apps" counts the offers made through each app, and
+    "apps_accepted" the accepts sent through each (counts only)."""
     made: dict[str, tuple] = {}
     acc, rej = set(), set()
     out = {w: {"made": 0, "accepted": 0, "rejected": 0, "expired": 0, "open": 0} for w in WHO}
+    if app is not None:
+        for o in out.values():
+            o["apps"], o["apps_accepted"] = {}, {}
     ids_ok = True
     for b in blocks:
-        for t in b.get("transactions") or []:
+        hs = b.get("tx_ids") or []
+        for i, t in enumerate(b.get("transactions") or []):
             if not isinstance(t, dict):
                 continue
             kind = t.get("tx_type")
             sender = str(t.get("sender_pubkey") or "").lower()
+            if app is not None and kind in ("rule_offer", "rule_offer_accept"):
+                a = app(t, str(hs[i] if i < len(hs) else t.get("tx_hash") or "").lower())
+                if a:
+                    d = out[who(sender)]["apps" if kind == "rule_offer" else "apps_accepted"]
+                    d[a] = d.get(a, 0) + 1
             if kind == "rule_offer":
                 to = str(t.get("recipient_pubkey") or "").lower()
                 try:

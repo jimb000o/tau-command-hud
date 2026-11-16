@@ -65,6 +65,7 @@
 #              up services   the relay rebuilt with the code just pulled (tauhud.com/services/ reads it), the node left alone;
 #                            refuses while a cruise ship is due (Wed 15-18, Sat 13-17 German time; up services --now overrides);
 #                            up services status  only what the directory finds now
+#              up rules      where each rule in force came from (relay rebuilt alone); up rules status  only the list
 #              up showcase   the three showcase wallets (relay/showcase.py): the relay rebuilt alone with the code just pulled
 #                            (the node left alone; not while a cruise ship is due), then each wallet's rule and last daily
 #                            try; up showcase status  only those
@@ -531,6 +532,34 @@ for k, x in (d.get("stories") or {}).items(): print("story %-8s %02d:00 %s: %s" 
 k = d.get("desk") or {}
 if k: print("rule desk: %s starter offers today of %s, %s waiting" % (k.get("today"), k.get("per_day"), k.get("waiting")))
 for n in d.get("log", [])[-6:]: print("  · %s %s: %s" % (time.strftime("%d.%m %H:%M", time.gmtime(n["t"])) + "Z", n["wallet"], n["note"][:110]))' 2>&1 || echo "relay /showcase not answering yet"
+  echo "---------------- to here --------------------------------------"
+  exit 0
+fi
+# Rules in numbers (relay/ruledays.py, tauhud.com/rules/numbers/): where each rule in force came from. up rules  the relay
+# rebuilt alone with the code just pulled (not while a cruise ship is due, --now overrides), then the list; up rules status
+# only the list, nothing rebuilt. The list ties wallets to apps, so it is printed here and never published.
+if [ "${1:-}" = "rules" ]; then
+  if [ "${2:-}" != "status" ]; then
+    when=$(TZ=Europe/Berlin date +%u%H)
+    case "$when" in 315|316|317|410|411|613|614|615|616)
+      if [ "${2:-}" != "--now" ]; then
+        echo "a cruise ship or the hack replay is due or under way now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
+        echo "try again after the visit, or: up rules --now"; exit 1
+      fi ;;
+    esac
+    docker compose up -d --build --no-deps relay
+    echo "waiting 90 s for the relay to read the chain and ask the node who holds a rule…"; sleep 90
+  fi
+  echo
+  echo "---------------- copy from here into the chat ----------------"
+  docker compose exec -T relay python -c 'import json,time,urllib.request,collections
+d=json.load(urllib.request.urlopen("http://127.0.0.1:8080/rules/numbers/why", timeout=20))
+h=d["holders"]
+print("rule holders: %d · sent notes kept: %d since %s" % (len(h), d["sent_known"], time.strftime("%d.%m %H:%M", time.gmtime(d["sent_since"]))))
+c=collections.Counter((x["who"], x["from"]) for x in h)
+for (w, f), n in sorted(c.items()): print("  %-7s %-10s %d" % (w, f, n))
+for x in sorted(h, key=lambda x: (x["who"], x["from"], x["block"] or 0)):
+    print("%s… %-6s %-9s block %-6s tag %-9s apps %-18s note %-14s sim %-9s %s" % (x["pk"][:10], x["who"], x["from"], x["block"], x["tag"], ",".join(x["apps"]) or "-", "none" if x["note"] is None else repr(x["note"]), x["sim"] or "-", "+".join(x["kind"])))' 2>&1 || echo "relay /rules/numbers/why not answering yet"
   echo "---------------- to here --------------------------------------"
   exit 0
 fi
