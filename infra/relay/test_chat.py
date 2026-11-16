@@ -48,13 +48,20 @@ cases = [
     ("🔥" * 9, "spam"), ("aaaaaaaaaaaa", "spam"), ("spam spam spam spam spam", "spam"), ("lolololololol", "spam"),
     ("x" * 201, "long"), ("   ", "empty"),
 ]
+cases += [(t, "link") for t in ("tauhud.com.evil.xyz", "faketauhud.com", "https://tauhud.com@evil.com", "tauhud.com:8080",
+                                  "t.me/tauHUDcom", "tauhud.com and evil.io", "tаuhud.com", "evil.com/tauhud.com", "tauhud.co",
+                                  "https://evil.xyz/https://tauhud.com", "evil-tauhud.com", "tauhud.com.ru", "tauhud.com/@scam",
+                                  "evil.fourthwall.com", "fake-tau-hud-shop.fourthwall.com", "x.tau-hud-shop.fourthwall.com")]
 for text, why in cases:
     got = chat.judge(chat.clean(text))
     check(got == why, f"refused ({why}): {text[:30]} -> {got}")
 for text in ["That is it. Me too", "investigate the spec", "block 88 sealed", "spicy raccoon", "fork? no fork, ever",
              "o5 = 0 for all", "I sent 50 AGRS to my other test wallet", "Essex is nice", "the cocktail party",
              "assess the classic pass", "Scunthorpe", "who is the validator of block 12?", "NASA and the ESA",
-             "gm everyone", "我喜欢这个规则", "ルールが変わった", "can you analyse this", "shiitake", "Dickens"]:
+             "gm everyone", "我喜欢这个规则", "ルールが変わった", "can you analyse this", "shiitake", "Dickens",
+             "look at tauhud.com/learn/", "https://tauhud.com/nomemo/ is fun", "node.tauhud.com/health", "agorzilla.com",
+             "https://www.tauhud.com.", "see tauhud.com/builder/?x=1#a, then agorzilla.com!", "tauhud.com/telegram/",
+             "join https://tau-hud-shop.fourthwall.com/supporters/pricing", "tau-hud-shop.fourthwall.com/products/buy-me"]:
     check(chat.judge(chat.clean(text)) is None, f"allowed: {text}")
 check(c.say("p1", "nope", 0, 1, 2, "hi")["error"] == "bad" and c.say("p1", tok(1), 99, 1, 2, "hi")["error"] == "bad", "a bad token or name is refused")
 check(chat.clean("a​‮b\n\n c") == "ab c", "invisible and control characters go, spaces fold")

@@ -3306,5 +3306,10 @@
     "on": "2026-11-16",
     "link": "/guardian/",
     "html": "Guardian: you can now lock your rule. IDNI added a rule lock to the testnet today (tau-testnet 211b780): with it, changing or removing an account’s rule waits for a co-signer. On the Guardian page the lock names the Guardian, so a change waits for a code from your app; without the code it goes through only after 1,000 blocks, and you can cancel it in that time. The wallet shows such a waiting change with a Cancel button, friends can approve a change that names them, and our pages no longer say a rule can never stop a stolen key."
+  },
+  {
+    "tag": "Troll box",
+    "on": "2026-11-16",
+    "html": "Troll box: links to our own sites now go through and are clickable: any page of tauhud.com (also node.tauhud.com), agorzilla.com and our shop tau-hud-shop.fourthwall.com, with or without https://. Every other link is still refused, so scam links stay out."
   }
 ]

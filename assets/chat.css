@@ -64,3 +64,6 @@ html.coreonly .tb-pill, html.coreonly .tb-box { display: none; }
 html.wide .panel.a-tb { flex: 0 1 auto; max-height: 48%; }
 html.wide .a-tb .tb-inline { flex: 0 1 auto; }
 .tb-inline .tb-list { flex: 0 1 auto; min-height: calc(6 * 1.32em + 8px); }
+/* links to our own sites (the only links the relay lets through): the text colour, underlined, the green accent on hover */
+.tb-ln { color: inherit; text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+.tb-ln:hover, .tb-ln:focus-visible { color: var(--ok, #39ff8a); }
