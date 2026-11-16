@@ -281,7 +281,7 @@ def budget_left(now: float) -> bool:
     return float(t.get("usd") or 0) < AI_MONTH_MAX
 
 
-def write(it: dict, now: float, ask_=None) -> tuple[str, dict]:
+def write(it: dict, now: float, ask_=None, review_=None) -> tuple[str, dict]:
     """The article as an unlisted draft; (its id, its check)."""
     import blog
     import news_article
@@ -295,9 +295,30 @@ def write(it: dict, now: float, ask_=None) -> tuple[str, dict]:
     ln = links(it)
     d = {"id": it["id"], "feature": True, "end": int(now), "shas": it["shas"], "links": ln,
          "sources": [{"href": x["url"], "label": x["what"]} for x in ln[:12]]}
-    did = news_article.write_draft(d, path_of(dp.TESTNET), now, ask_, facts=facts(it), aid=aid, retry=True)
+    f = facts(it)
+    did = news_article.write_draft(d, path_of(dp.TESTNET), now, ask_, facts=f, aid=aid, retry=True)
     a = blog.read_json(os.path.join(blog.PUBLIC, "drafts", blog.state()["drafts"][did] + ".json"), {})
+    # the second read against our house rules (editor.py), as for every draft: its notes go back to the writer once,
+    # since nobody reads this one before it goes up (on 16 Nov the daily post's article of the same change had six)
+    notes = (review_ or editor_review)(a)
+    if notes:
+        said = "; ".join(f'"{x["quote"]}": {x["fix"]}' if x.get("quote") else x["fix"] for x in notes)
+        base = ask_ or news_article.ask
+        again = lambda fx, note="": base(fx, "; ".join(x for x in (note, "an editor's notes against our rules: " + said) if x))  # noqa: E731
+        did = news_article.write_draft(d, path_of(dp.TESTNET), now, again, facts=f, aid=aid, retry=True)
+        a = blog.read_json(os.path.join(blog.PUBLIC, "drafts", blog.state()["drafts"][did] + ".json"), {})
+        a["editor_read"] = notes   # what the second read found in the first answer, kept for the owner
+        blog.write_json(os.path.join(blog.PUBLIC, "drafts", blog.state()["drafts"][did] + ".json"), a)
     return did, a.get("check") or {}
+
+
+def editor_review(a: dict) -> list[dict]:
+    try:
+        import editor
+        return editor.review(a)
+    except Exception as e:  # noqa: BLE001 - no second read beats no article
+        log.warning("editor: %s", e)
+        return []
 
 
 def publish(did: str, at: float, now: float) -> str:
@@ -364,7 +385,7 @@ NAMES = {"testnet": "New testnet feature", "lang": "Newer Tau Language in the te
 
 
 # ---------- each round of the blog loop ----------
-def step(now: float | None = None, ask_=None, post_=None) -> list[str]:
+def step(now: float | None = None, ask_=None, post_=None, review_=None) -> list[str]:
     """Called by blog.py's loop: finds, writes, publishes. Returns what it did (for the log and the tests)."""
     import blog
     if not ON:
@@ -390,7 +411,7 @@ def step(now: float | None = None, ask_=None, post_=None) -> list[str]:
                f"the writer failed for {FALLBACK / 3600:g} h ({it.get('error', '')[:200]})" if late and it.get("error") else "")
         if not why:
             try:
-                did, chk = write(it, now, ask_)
+                did, chk = write(it, now, ask_, review_)
             except Exception as e:  # noqa: BLE001 - tried again after RETRY, then the plain post
                 it["failed_at"], it["error"] = now, str(e)[:400]
                 log.warning("feature %s: %s", it["id"], e)
