@@ -125,5 +125,6 @@ TauI18n.add({ strings: {
   "These answers are usable today with a condition. They close when the company that uses Tau writes each condition into its own procedure (SOP) and validated system. Its quality unit does this, not IDNI, and it can start before IDNI does anything.": "这些答案今天在满足条件的前提下即可使用。当使用 Tau 的企业把每个条件写进自己的流程（SOP）和已验证系统时，它们就关闭了。这由企业的质量部门完成，而不是 IDNI，并且可以在 IDNI 采取任何行动之前就开始。",
   "In your own records, not on GitHub": "在你们自己的记录中，不在 GitHub 上",
   "Written into your own procedure (SOP) and validated system; no IDNI needed.": "写入你们自己的流程（SOP）和已验证系统；无需 IDNI。",
-  "Step 0": "第 0 步"
+  "Step 0": "第 0 步",
+  "Done by IDNI": "由 IDNI 完成"
 } });
