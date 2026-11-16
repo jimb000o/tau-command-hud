@@ -73,7 +73,9 @@ if (list) {
 
   if (process.env.BASE) {
     let base = [];
-    try { base = JSON.parse(await readFile(process.env.BASE, "utf8")); } catch (e) { console.log(`(no readable base log at ${process.env.BASE}, skipping the dropped-entry check)`); }
+    try { base = JSON.parse(await readFile(process.env.BASE, "utf8")); } catch (e) { console.log(`(no readable base log at ${process.env.BASE}, skipping the checks against the target branch)`); }
+    /* an unreadable base (e.g. merge markers left on main) says nothing about what is new here, so the checks below would flag every old entry */
+    if (base.length) {
     /* counted per tag and day, so rewording an old entry is fine but losing one is not */
     const count = l => l.reduce((m, e) => m.set(e.tag + " of " + e.on, (m.get(e.tag + " of " + e.on) || 0) + 1), new Map());
     const here = count(list);
@@ -94,6 +96,7 @@ if (list) {
       fail(`this pull request adds no entry to the Updates log. Every release gets one: append {tag, on, html} to assets/updates.json `
          + `(and its Chinese to assets/i18n/zh/hud.js); a new page or big feature also gets "major" for its own Telegram post. `
          + `Only a change no visitor would notice may say "[no log]" in its title.`);
+    }
   }
 
   /* the zh dictionary for the log; a dictionary only calls TauI18n.add */
