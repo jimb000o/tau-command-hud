@@ -3190,6 +3190,23 @@
     "html": "White Rabbit Key: the islander studio now has its own button, “Your islander”, in the island’s top bar, next to The Book. Before, it opened only from your own islander’s card or the wallet page."
   },
   {
+    "tag": "Cruise logbook",
+    "on": "2026-11-16",
+    "link": "/cruise/",
+    "html": "Cruise logbook: our blog articles about past cruises are now on the logbook itself. The newest ones stand next to the logbook’s title, and a visit with its own article carries a small ✎; choose that visit and “Read what we learned on this visit” leads straight to it."
+  },
+  {
+    "tag": "Newspaper",
+    "on": "2026-11-16",
+    "html": "Newspaper: The Daily Consensus gets an Around Town page. Each Monday it carries the week’s news from White Rabbit Key, No Memo and Agorzilla as short dispatches with pictures from the games, plus one small notice for the crew and one for the shop."
+  },
+  {
+    "tag": "Chain core",
+    "on": "2026-11-16",
+    "link": "/",
+    "html": "Chain core: the rule ring’s hover cards are short and the same for every wallet. Who the wallet is, whether its rule is in force, where it comes from (White Rabbit Key’s cruise ships, Agorzilla, No Memo’s vaults, a Tau HUD user, an IDNI genesis account, or unknown to us) and the rule in one plain sentence; a note only where a rule has a real catch. The repeated “Stops” and “Terms” lines are gone, and so is the promise that a limit holds even against the right key: whoever holds a wallet’s key can also change its rule."
+  },
+  {
     "tag": "Menu",
     "on": "2026-11-16",
     "link": "/wallet/?focus=feed#activity",

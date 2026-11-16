@@ -952,6 +952,81 @@ def cafe(r: dict, props: list[dict], days: list[dict], no: int, banner: dict, de
     }
 
 
+# ---------------- Around Town: our own games' week, told in the paper's world ----------------
+# The second page of a weekly edition (gazette/index.html townPage): what changed this week in White Rabbit Key, No Memo
+# and Agorzilla, read from the site's own update log (assets/updates.json, the same entries the Updates panel shows)
+# and its Chinese and Japanese dictionaries. Nothing is written by hand: a game with no entry in the week is left out.
+TOWN = [("rabbit", "White Rabbit Key", "/rabbit/"), ("nomemo", "No Memo", "/nomemo/"), ("agorzilla", "Agorzilla", "https://agorzilla.com/")]
+
+
+def site_dict(js: str | None) -> dict[str, str]:
+    """{English: translation} from a site dictionary file (assets/i18n/<lang>/hud.js): one "key": "value" pair a line."""
+    out = {}
+    for m in re.finditer(r'^\s*("(?:[^"\\\n]|\\.)*")\s*:\s*("(?:[^"\\\n]|\\.)*"),?\s*$', js or "", re.M):
+        try:
+            out[json.loads(m.group(1))] = json.loads(m.group(2))
+        except ValueError:
+            continue
+    return out
+
+
+def _sentences(s: str, cjk: bool) -> list[str]:
+    s = re.sub(r"<[^>]+>", "", s or "").strip()
+    parts = re.split(r"(?<=[。！？])" if cjk else r"(?<=[.!?])\s+(?=[A-Z“\"(])", s)
+    return [p.strip() for p in parts if p.strip()]
+
+
+def _untag(s: str, tag: str) -> str:
+    """'White Rabbit Key: the islanders walk…' → 'The islanders walk…' (also '白兔岛：…', the Japanese full-width colon)."""
+    s = re.sub(r"<[^>]+>", "", s or "").strip()
+    m = re.match(r"^[^:：。.]{1,40}[:：]\s*", s)
+    if m:
+        s = s[m.end():]
+    return s[:1].upper() + s[1:]
+
+
+def town(updates: list | None, zh: dict | None, ja: dict | None, start: float, end: float) -> list[dict]:
+    """Per game, the newest update of the week as a short dispatch: {game, name, link, n, h, body} (h and body in three
+    languages; a translation missing on the site leaves that language in English)."""
+    out = []
+    week = []
+    for e in updates or []:
+        try:
+            ts = datetime.strptime(e.get("on", ""), "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() + 43200
+        except (TypeError, ValueError):
+            continue
+        if start <= ts < end and isinstance(e.get("html"), str):
+            week.append(e)
+    for key, name, link in TOWN:
+        mine = [e for e in week if e.get("tag") == name or e["html"].startswith(name + ":")]
+        if not mine:
+            continue
+        e = mine[-1]   # the log is oldest first: the newest of the week
+
+        def told(lang_dict, cjk):
+            tr = (lang_dict or {}).get(e["html"]) or (lang_dict or {}).get(re.sub(r"\s+", " ", e["html"]).strip())
+            text = _untag(tr if tr else e["html"], name)
+            ss = _sentences(text, bool(tr) and cjk)
+            h, rest = (ss[0] if ss else text), ss[1:]
+            cut = 44 if (tr and cjk) else 90
+            if len(h) > cut:   # a long first sentence: its first clause is the heading, the rest opens the dispatch
+                m = re.search(r"[:：；;]\s*" if not (tr and cjk) else r"[：；，]", h[8:]) or re.search(r",\s+|、", h[8:])
+                if m:
+                    tail = h[8 + m.end():].strip()
+                    h, rest = h[:8 + m.start()], [tail[:1].upper() + tail[1:]] + rest
+            h = h.rstrip(".。")
+            body, n = [], 0
+            for x in rest:
+                if n + len(x) > (140 if (tr and cjk) else 340) and body:
+                    break
+                body.append(x); n += len(x)
+            return h, " ".join(body) if not (tr and cjk) else "".join(body)
+        (he, be), (hz, bz), (hj, bj) = told(None, False), told(zh, True), told(ja, True)
+        out.append({"game": key, "name": name, "link": e.get("link") or link, "n": len(mine),
+                    "h": t(he, hz, hj), "body": t(be, bz, bj)})
+    return out
+
+
 def fresh(ranked: list[dict], seen: set[str], no: int) -> tuple[dict, dict]:
     """(lead story, banner) so that no two editions carry the same front-page headline (Kilian, 2026-11-15: every
     episode of the paper is its own; the café's archive room lists them all by headline). The most newsworthy story
@@ -1051,7 +1126,7 @@ def signature(e: dict) -> str:
 
 
 def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: float, chess: dict | None = None,
-            seen: set[str] | None = None, before: dict[str, int] | None = None) -> dict:
+            seen: set[str] | None = None, before: dict[str, int] | None = None, around: list[dict] | None = None) -> dict:
     """One weekly edition. r: recap.build(); props: proposals.json "proposals"; days: sim_day() of the week;
     seen: the English banners of the editions already printed (none repeats, see fresh()); before: every English line
     of the editions before, with the edition that first printed it (none is printed again, see renew())."""
@@ -1077,6 +1152,7 @@ def edition(r: dict, props: list[dict], days: list[dict], no: int, printed_at: f
         "figures": figures(r),
         "stories": [coming_up(props, r.get("head"), r["pace"]), rehearsal(days, r, not any(x["kind"] == "simswitch" and x["score"] > 0 for x in ranked))] + ([m] if (m := riddle(r, props)) else []),
         "cafe": cafe(r, props, days, no, banner, deck, chess), "cafe_v": CAFE_V,
+        "town": around or [],
         "url": "https://tauhud.com/gazette/",
         # flat copies for the HUD's notice of the paper (index.html)
         "number": no, "headline": banner["en"], "headline_zh": banner["zh"], "headline_ja": banner["ja"],
