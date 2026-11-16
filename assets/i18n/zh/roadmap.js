@@ -287,5 +287,7 @@ TauI18n.add({ strings: {
   "Move the testnet to the newest Tau language once it is released (#111).": "最新的 Tau 语言发布后，把测试网升级到它（#111）。",
   "IDNI already refuses rules that read an earlier step, such as i1[t-1], for the same reason. A bare time condition is one more case for the same check.": "IDNI 已经出于同样的原因拒绝读取更早步骤的规则，例如 i1[t-1]。只带时间条件的规则是同一项检查的又一种情况。",
   "Our weekly check found something here that may be out of date. We are on it.": "我们的每周检查发现这里有些内容可能已经过时。我们正在处理。",
-  "Weekly check": "每周检查"
+  "Weekly check": "每周检查",
+  /* 16.11.2026: the rule lock (tau-testnet 211b780) */
+  "Since 16 November (IDNI’s change 211b780) an account can also lock its rule: a change then waits for a co-signer, or 1,000 blocks in which the owner can cancel it. Tau HUD’s Guardian offers that lock.": "自 11 月 16 日起（IDNI 的修改 211b780），账户还可以锁住自己的规则：之后修改要等联署人同意，或者等 1,000 个区块，期间主人可以取消。Tau HUD 的 Guardian 提供这把锁。",
 } });

@@ -248,6 +248,27 @@ class GuardianTest(unittest.TestCase):
         self.assertTrue(r["approved"])
         self.assertEqual(self.g.account(OWNER)["today"]["sum"], 200)   # a code-confirmed payment does not use the allowance
 
+    def test_a_rule_change_waits_for_the_code_even_with_an_allowance(self):
+        """The rule lock (tau-testnet 211b780): a rule-change request has no amount, so the daily allowance never signs it;
+        only the owner's code does (IDNI's TotpBot.decide_rule_change, at the node commit that has it)."""
+        if not hasattr(guardian.idni_totp.TotpBot, "decide_rule_change"):
+            print("skipped: this tau-testnet commit has no rule-change requests (before 211b780)")
+            return
+        secret = self.enrol()
+        self.g.confirm({"account": OWNER, "code": totp_at(secret, time.time() - 30)}, "1.1.1.1")
+        self.settings({"per": 100, "day": 500}, secret)
+        self.node.requests.append({"request_type": "rule_change", "request_id": RID, "sender_pubkey": OWNER, "kind": 1,
+                                   "kind_name": "set_policy", "body": "always ( (o5[t]:bv[24] = { #x000001 }:bv[24]) ).",
+                                   "status": "open", "escape_height": 1900, "expire_at_height": 2900,
+                                   "approvers": {"18": {"pubkey": self.g.pubkey, "state": "awaiting"}}})
+        self.g.bot.tick()
+        self.assertEqual(self.node.sent, [])   # not by itself, whatever the allowance
+        r = self.g.approve({"request_id": RID, "code": totp_at(secret, time.time() + 30)}, "1.1.1.1")
+        self.assertTrue(r["approved"])
+        self.assertEqual([t["request_id"] for t in self.node.sent], [RID])
+        self.assertIsNone(r["amount"])
+        self.assertEqual(self.g.account(OWNER)["today"]["sum"], 0)
+
     def test_a_new_day_starts_the_allowance_afresh_and_always_mode_never_signs_alone(self):
         secret = self.enrol()
         self.g.confirm({"account": OWNER, "code": totp_at(secret, time.time() - 30)}, "1.1.1.1")

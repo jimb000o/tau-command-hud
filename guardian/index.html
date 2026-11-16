@@ -168,6 +168,7 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
           <button class="b" type="button" id="btnUnrule" hidden>Remove the rule</button>
         </div>
         <p class="hint" id="whyRule"></p>
+        <div class="row lock" id="lockRow" hidden><span class="fine" id="lockText"></span><button class="b" type="button" id="btnLock"></button></div>
         <div class="row"><span class="pips" id="pips"></span></div>
         <p class="msg" id="msgRule"></p>
       </section>
@@ -186,7 +187,7 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
           <li><i>✓</i><span>The code never goes on the chain: it comes to our server, which checks it and signs. Each code works once; five wrong codes lock your account for 15 minutes.</span></li>
           <li><i>✓</i><span>Every account on Tau Testnet Alpha may hold its own personal rule, so the Guardian can guard any number of accounts at once.</span></li>
           <li class="no"><i>!</i><span>With "only payments above", many smaller payments are not stopped: a testnet rule sees only the payment at hand. The other two settings send every payment past the Guardian.</span></li>
-          <li class="no"><i>!</i><span>Whoever holds your wallet key can still change or remove the rule. The Guardian guards against a mistaken or tricked payment, not against a stolen key.</span></li>
+          <li class="no"><i>!</i><span>Without a rule lock, whoever holds your wallet key can still change or remove the rule. With one (new on the testnet since 16 November 2026), a change waits for your code, or for 1,000 blocks in which you can cancel it.</span></li>
           <li class="no"><i>!</i><span>If our server is down, payments that wait for your code run out unconfirmed; they never go through without the code.</span></li>
         </ul>
         <p class="fine">Built on the reference approver bot that IDNI ships with the testnet (<a href="https://github.com/IDNI/tau-testnet/blob/main/scripts/approval_bot_totp.py" target="_blank" rel="noopener" translate="no">approval_bot_totp.py</a>) and the co-signature rules of <a href="https://github.com/IDNI/tau-testnet/blob/main/docs/approvals.md" target="_blank" rel="noopener" translate="no">docs/approvals.md</a>. A testnet prototype: Tau HUD is a community project, <b>not run by IDNI</b>.</p>
@@ -215,7 +216,12 @@ const hex6 = n => Math.max(0, Math.min(MAX_AMOUNT, Math.floor(n))).toString(16).
 /* the wallet's co-signer rule (wallet/index.html coSignRule) with the Guardian in slot i18, so the wallet reads it back
    and sends a payment above the limit as a co-signature request by itself */
 const guardRule = (limit, g) => `always ( (i1[t]:bv[24] > { #x${hex6(limit)} }:bv[24] && !(i18[t]:bv[384] = { #x${g} }:bv[384])) ? ${BLOCK} : ${ALLOW} ).`;
-const W = { sk: null, pk: null, seq: null, tip: null, gov: null, clause: undefined, reqs: null, slots: null, lease: null };
+const W = { sk: null, pk: null, seq: null, tip: null, gov: null, clause: undefined, guard: undefined, reqs: null, slots: null, lease: null };
+/* the rule lock (tau-testnet 211b780, docs/approvals.md "Guarding policy changes"): IDNI's wallet template "Any policy change
+   needs co-signer X" with the Guardian as X in slot i18. Every change of the rule, and of the lock itself, then waits for the
+   Guardian's yes (your code), or 1,000 blocks in which you can cancel it. */
+const lockRule = g => `always ((i18[t]:bv[384] = { #x${g} }:bv[384]) ? ${ALLOW} : ${BLOCK}).`;
+const RC_WHAT = { 1: "A new rule for your account", 2: "Removing your rule", 3: "Accepting an offered rule", 4: "A new rule lock", 5: "Removing your rule lock" };
 const G = { info: null, acct: null, down: false };
 try { const k = JSON.parse(localStorage.getItem("tauhud-wallet-key") || "null"); if (k && /^[0-9a-f]{64}$/.test(k.sk) && /^[0-9a-f]{96}$/.test(k.pk)) { W.sk = k.sk; W.pk = k.pk; } } catch (e) {}
 const WORDS = "acorn amber anchor apple arrow atlas badge baker bamboo banjo barley basil beacon beaver berry bison blade blossom bonnet bottle bramble breeze brick bridge bronze brook bucket bugle cabin cactus camel candle canoe canyon carbon carrot castle cedar cello chalk cherry chess cider cinder circus clover cobalt comet copper coral cotton cougar crane crater cricket crystal cupola dahlia daisy delta denim desert dingo dolphin dragon drum eagle easel ember emerald engine falcon feather fennel fern fiddle flint forest fossil fox galaxy garden garnet gecko geyser ginger glacier goblet granite grape gravel guitar hammer harbor harp hazel heron hickory honey hornet husky iceberg igloo indigo iris island ivory jackal jade jaguar jasmine jelly jigsaw jungle kayak kernel kettle kiwi koala ladder lagoon lantern laurel lemon lilac lily linen lizard lobster locket lotus magnet mango maple marble meadow melon meteor mint mitten mosaic moss muffin nectar needle nickel nutmeg oak oasis olive onyx orbit orchid otter oyster paddle panda papaya parrot pebble pecan pelican pepper piano pine planet plum pollen poppy prism puffin pumpkin quartz quill rabbit radish raven reef ribbon river robin rocket rose ruby saddle saffron salmon sapphire satin shell sierra silver sparrow spruce squid statue stone summit sunset swan tango teapot thistle thunder tiger timber toucan tractor trumpet tulip tundra turtle umbrella valley velvet violet volcano walnut walrus willow window winter wizard yarrow yogurt zebra zenith zinc basket beetle bobcat cocoa cobra dune elm glove gopher jasper lark mammoth marsh opal osprey parsley quail rhubarb sable sequoia stork tapir topaz trout vanilla wombat yak nomad".split(" ");
@@ -343,7 +349,7 @@ async function refresh() {
     const s = await lookup(`getsequence ${W.pk}`);
     if (s && s.status === "ok") { W.seq = s.data.sequence_number; if (Number.isInteger(s.data.tip_height)) W.tip = s.data.tip_height; }
     const of = await lookup(`getruleoffers ${W.pk} all`);
-    if (of && of.status === "ok") { const c = (of.data.accepted_clauses || []).find(x => x.target_stream === "o5" || x.target_stream === 5); W.clause = c ? c.clause_body : null; }
+    if (of && of.status === "ok") { const c = (of.data.accepted_clauses || []).find(x => x.target_stream === "o5" || x.target_stream === 5); W.clause = c ? c.clause_body : null; W.guard = of.data.rule_change_guard || null; }
     const rq = await lookup(`getapprovalrequests ${W.pk} out`);
     if (rq && rq.status === "ok") W.reqs = rq.data;
   } finally { busy = false; }
@@ -368,10 +374,23 @@ function ruleTx(text, seq, life) {
   const d = { sender_pubkey: tx.sender_pubkey, sequence_number: tx.sequence_number, expiration_time: tx.expiration_time, fee_limit: tx.fee_limit, tx_type: tx.tx_type, expire_at_height: tx.expire_at_height, operations: tx.operations };
   return { ...tx, signature: B.bytesToHex(B.sign(new TextEncoder().encode(canon(d)), W.sk)) };
 }
+function changeTx(type, fields, seq) {
+  const tx = { tx_type: type, sender_pubkey: W.pk, sequence_number: seq, expiration_time: Math.floor(Date.now() / 1000) + 600,
+    expire_at_height: head() + 2000, fee_limit: type === "rule_change_cancel" ? "0" : String(baseFee() * 5), ...fields };
+  const d = { sender_pubkey: tx.sender_pubkey, sequence_number: tx.sequence_number, expiration_time: tx.expiration_time, fee_limit: tx.fee_limit, tx_type: tx.tx_type, expire_at_height: tx.expire_at_height, ...fields };
+  return { ...tx, signature: B.bytesToHex(B.sign(new TextEncoder().encode(canon(d)), W.sk)) };
+}
+/* kind 1..5 as a rule-change request that names the Guardian in slot 18 */
+const changeReq = (kind, text) => changeTx("rule_change_request", { kind, rule_text: text || "", offer_id: "", approvers: { "18": guardPk() } }, W.seq);
+const locked = () => !!(W.guard && guardPk() && W.guard.includes(guardPk()));
 async function sendRule(text) {
   if (DEMO) return demoRule(text);
   if (W.seq == null) return { ok: false, why: T("Our node has not answered yet; nothing was sent.") };
-  const tx = ruleTx(text, W.seq), body = JSON.stringify(tx);
+  if (W.guard && !locked()) return { ok: false, why: T("Your account has a rule lock with another co-signer; change the rule where that lock was set. Nothing was sent.") };
+  return sendTx(W.guard ? changeReq(1, text) : ruleTx(text, W.seq));
+}
+async function sendTx(tx) {
+  const body = JSON.stringify(tx);
   const chk = await rpc("checktx " + body);
   const bad = m => !m || m.status !== "ok" || (m.data && m.data.ok === false);
   const why = m => { const e = (m && (m.error || m.data)) || {}, t = String(e.message || e.code || ""); return F("The node refused it, nothing was sent: {x}", { x: (t || "no answer").slice(0, 160) }); };
@@ -398,6 +417,7 @@ function myMode() {
 const pickedMode = () => (document.querySelector('input[name="mode"]:checked') || {}).value || "allow";
 let touched = false;   // the visitor changed the choice: the page no longer overwrites it with what is set
 $("modes").addEventListener("input", () => { touched = true; render(); });
+const isChange = q => q.request_type === "rule_change";
 const waiting = () => (((W.reqs && W.reqs.outgoing) || []).filter(q => q.status === "open" || q.status === "pending")
   .filter(q => Object.values(q.approvers || {}).some(a => a.pubkey === guardPk() && a.state === "awaiting")));
 let shown = null;   // the secret behind the QR code on screen
@@ -451,6 +471,13 @@ function render() {
   $("codeRule").hidden = $("codeRuleL").hidden = !needSettings;
   $("whyRule").textContent = why || (W.clause && lim == null ? T("Your account has another rule now. Signing this one replaces it.") : "");
   $("btnUnrule").disabled = !(live && have && W.seq != null);
+  const lk = locked(), showLock = live && !DEMO && have && enrolled && mode != null && W.guard !== undefined;
+  $("lockRow").hidden = !showLock;
+  if (showLock) {
+    $("lockText").textContent = T(lk ? "Rule lock on: changing or removing this rule waits for your code, or 1,000 blocks in which you can cancel it." : W.guard ? "Your account has a rule lock with another co-signer." : "Rule lock off: anyone holding your key could replace this rule.");
+    $("btnLock").hidden = !!W.guard && !lk; $("btnLock").textContent = T(lk ? "Unlock" : "Lock the rule");
+    $("btnLock").disabled = W.seq == null || waiting().some(isChange);
+  }
   if (s) { const n = s.taken != null ? s.taken : (s.holders || []).length; $("pips").replaceChildren(Object.assign(document.createElement("span"), { className: "pip " + (mine || W.clause ? "mine" : "taken") }), document.createTextNode(F(n === 1 ? "1 account has a personal rule on the testnet; every account may have one" : "{n} accounts have a personal rule on the testnet; every account may have one", { n }))); }
   // 3: payments waiting for the code
   const list = live && have && guardPk() ? waiting() : [];
@@ -483,7 +510,9 @@ const hhmm = t => new Date(t * 1000).toLocaleTimeString(LANG === "en" ? "en-GB" 
 function payRow(q, want) {
   const li = document.createElement("li"); li.dataset.id = q.request_id; if (q.request_id === want) li.className = "hit";
   const t = document.createElement("div");
-  t.append(Object.assign(document.createElement("b"), { textContent: F("{n} test AGRS to {x}", { n: fmt(q.amount), x: words(q.recipient_pubkey) }) }),
+  if (isChange(q)) t.append(Object.assign(document.createElement("b"), { textContent: T(RC_WHAT[q.kind] || "A change of your rule") }),
+    Object.assign(document.createElement("small"), { textContent: T("Not you? Cancel it: anyone with your key can ask.") + " " + F("Without your code it goes through by itself at block {a}.", { a: q.escape_height }), title: q.body || "" }));
+  else t.append(Object.assign(document.createElement("b"), { textContent: F("{n} test AGRS to {x}", { n: fmt(q.amount), x: words(q.recipient_pubkey) }) }),
     Object.assign(document.createElement("small"), { textContent: short(q.recipient_pubkey) + " · " + F("waits for your code for {n} more blocks (until block {a})", { n: fmt(Math.max(0, q.expire_at_height - head())), a: q.expire_at_height }) }));
   const inp = Object.assign(document.createElement("input"), { className: "code", inputMode: "numeric", maxLength: 6, placeholder: "123456", autocomplete: "one-time-code" });
   inp.setAttribute("aria-label", T("Code from the app"));
@@ -495,11 +524,20 @@ function payRow(q, want) {
     btn.disabled = true; m.textContent = T("Checking the code…"); m.className = "msg wait";
     const r = await api("approve", { request_id: q.request_id, code });
     btn.disabled = false; inp.value = "";
-    if (r.ok) { m.textContent = T(DEMO ? "Co-signed (demo). On the real testnet the payment would go through with the next block." : "Co-signed. The payment goes through with the next block."); m.className = "msg ok"; btn.disabled = true; setTimeout(() => { if (DEMO) demoRefresh(); refresh(); loadGuardian(); }, DEMO ? 1200 : 5000); }
+    if (r.ok) { m.textContent = T(DEMO ? "Co-signed (demo). On the real testnet the payment would go through with the next block." : isChange(q) ? "Co-signed. The change is made with the next block." : "Co-signed. The payment goes through with the next block."); m.className = "msg ok"; btn.disabled = true; setTimeout(() => { if (DEMO) demoRefresh(); refresh(); loadGuardian(); }, DEMO ? 1200 : 5000); }
     else { m.textContent = r.why; m.className = "msg bad"; }
   };
   inp.onkeydown = e => { if (e.key === "Enter") btn.click(); };
   const a = document.createElement("span"); a.className = "acts"; a.append(inp, btn);
+  if (isChange(q)) {   // the owner's answer to a thief: cancel (feeless); the thief can ask again, you cancel again
+    const no = Object.assign(document.createElement("button"), { className: "b", type: "button", textContent: T("Cancel it") });
+    no.onclick = async () => {
+      no.disabled = true; m.textContent = T("Signing and sending…"); m.className = "msg wait";
+      const r = await sendTx(changeTx("rule_change_cancel", { request_id: q.request_id }, W.seq));
+      m.textContent = r.ok ? T("Cancelled. Once a block holds it, nothing changes.") : r.why; m.className = "msg " + (r.ok ? "ok" : "bad");
+    };
+    a.append(no);
+  }
   li.append(t, a, m);
   return li;
 }
@@ -534,6 +572,7 @@ $("btnRemove").onclick = async () => {
   const code = $("codeApp").value.replace(/\D/g, "");
   if (code.length !== 6) return msg("msgApp", T("Type the current code from the app to disconnect it."), "wait");
   if (myLimit() != null) return msg("msgApp", T("Remove the rule first, or your payments could never be confirmed."), "bad");
+  if (locked()) return msg("msgApp", T("Unlock the rule first, or a change of it could never be confirmed."), "bad");
   const r = await api("remove", { ...proof("remove"), code });
   $("codeApp").value = "";
   if (!r.ok) return msg("msgApp", r.why, "bad");
@@ -554,19 +593,27 @@ $("btnRule").onclick = async () => {
     G.acct = { ...G.acct, auto: r.data.auto };
     if (!needRule) { touched = false; msg("msgRule", T("Saved."), "ok"); render(); return; }
   }
-  if (waiting().length && !confirm(T("A new rule fails the payments that wait for your code now. Sign it anyway?"))) { render(); return; }
+  if (waiting().some(q => !isChange(q)) && !confirm(T("A new rule fails the payments that wait for your code now. Sign it anyway?"))) { render(); return; }
   $("btnRule").disabled = true; msg("msgRule", T("Signing and sending the rule…"), "wait");
   const r = await sendRule(guardRule(wantLim, guardPk()));
   touched = false;
-  msg("msgRule", r.ok ? T(DEMO ? "Set (demo). On the real testnet a block would hold the rule now; a play payment waits in step 3." : "Sent. Once a block holds the rule, the Guardian works as set here.") : r.why, r.ok ? "ok" : "bad");
+  msg("msgRule", r.ok ? T(DEMO ? "Set (demo). On the real testnet a block would hold the rule now; a play payment waits in step 3." : locked() ? "Sent. Your rule is locked, so the change waits for your code in step 3 once a block holds it." : "Sent. Once a block holds the rule, the Guardian works as set here.") : r.why, r.ok ? "ok" : "bad");
   render();
 };
 $("codeRule").onkeydown = e => { if (e.key === "Enter") $("btnRule").click(); };
+$("btnLock").onclick = async () => {
+  const lk = locked();
+  if (!confirm(T(lk ? "Unlock your rule? The request waits for your code in step 3; after that, whoever holds your key can change the rule at once again."
+    : "Lock your rule? From then on, changing or removing it (or the lock) waits for a code from your app. Without a code a change goes through only after 1,000 blocks, and you can cancel it in that time. Costs one fee."))) return;
+  msg("msgRule", T("Signing and sending…"), "wait");
+  const r = await sendTx(lk ? changeReq(5, "") : changeReq(4, lockRule(guardPk())));
+  msg("msgRule", r.ok ? T(lk ? "Sent. Once a block holds it, confirm it with your code in step 3." : "Sent. Once a block holds it, your rule is locked.") : r.why, r.ok ? "ok" : "bad");
+};
 $("btnUnrule").onclick = async () => {
   if (!confirm(T("Remove your rule? Payments then go through without a code, and payments waiting now fail."))) return;
   msg("msgRule", T("Signing and sending…"), "wait");
   const r = await sendRule(NEUTRAL);
-  msg("msgRule", r.ok ? T(DEMO ? "Removed (demo)." : "Sent. Once a block holds it, your rule is gone.") : r.why, r.ok ? "ok" : "bad");
+  msg("msgRule", r.ok ? T(DEMO ? "Removed (demo)." : locked() ? "Sent. Your rule is locked, so the removal waits for your code in step 3 once a block holds it." : "Sent. Once a block holds it, your rule is gone.") : r.why, r.ok ? "ok" : "bad");
 };
 
 render();

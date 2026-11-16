@@ -1386,7 +1386,7 @@ TauI18n.add({ strings: {
   "asking it to pay you {a} test AGRS; its rule decides": "{a} テスト AGRS を払うよう頼んでいる。決めるのはそのルール",
   "crack {n} <rule>: one line of Tau, the rule you want the keeper to hold. It says o5 = 1 to let a payment through, o5 = 0 to block it. Write #xME for your own address.": "crack {n} <rule>：番人に持たせたいルールを Tau で 1 行。o5 = 1 で支払いを通し、o5 = 0 で止める。自分のアドレスは #xME と書けばいい。",
   "The vaults are real wallets on the testnet; the simulation does not reach them. Switch to the live node in the header.": "金庫はテストネット上の本物のウォレットで、シミュレーションからは届かない。ヘッダーでライブノードに切り替えて。",
-  "What is real: each vault’s rule on the chain, the node’s yes or no, the payment in a block. What is game: our server holds each vault’s key and signs any plain payment you ask for, as if the key had leaked. It never changes a vault’s rule for you; a real thief with a real key could, so a rule protects against mistakes and tricks, not against a stolen key.": "本物の部分：各金庫のチェーン上のルール、ノードの可否、ブロックに入った支払い。ゲームの部分：私たちのサーバーが各金庫の鍵を持ち、頼まれた普通の支払いには鍵が漏れたかのように何でも署名する。金庫のルールをあなたのために変えることは決してない。本物の鍵を持つ本物の泥棒なら変えられる。だからルールが守るのはミスや詐欺からで、盗まれた鍵からではない。",
+  "What is real: each vault’s rule on the chain, the node’s yes or no, the payment in a block. What is game: our server holds each vault’s key and signs any plain payment you ask for, as if the key had leaked. It never changes a vault’s rule for you; a real thief with a real key could, unless the vault also had a rule lock (on the testnet since 16 November 2026): then a rule change waits for a co-signer, or for 1,000 blocks.": "本物の部分：各金庫のチェーン上のルール、ノードの可否、ブロックに入った支払い。ゲームの部分：私たちのサーバーが各金庫の鍵を持ち、頼まれた普通の支払いには鍵が漏れたかのように何でも署名する。金庫のルールをあなたのために変えることは決してない。本物の鍵を持つ本物の泥棒なら変えられる。ただし金庫にルールロック（2026 年 11 月 16 日からテストネットに追加）があれば、ルールの変更は共同署名者の同意か 1,000 ブロックを待つ。",
   "asking our relay for the vaults …": "リレーに金庫を問い合わせ中…",
   "The vaults are not answering just now. Try again in a minute.": "金庫がいま応答しない。1 分後にもう一度。",
   "The till": "レジ",
@@ -1438,5 +1438,8 @@ TauI18n.add({ strings: {
   "you already have a request under way: wait for its answer": "進行中の依頼がもうある。その答えを待って",
   "the keeper is busy with another player's rule; try again in a few minutes": "番人は別のプレイヤーのルールで手一杯。数分後にもう一度",
   "the keeper is not yours: crack it first (crack <level> <rule>), then drain it while your lease lasts": "番人はあなたのものではない。まず破って（crack <level> <rule>）、借用期間中に引き出そう",
-  "the vaults are closed just now": "金庫はいま閉まっている"
+  "the vaults are closed just now": "金庫はいま閉まっている",
+  /* 16.11.2026: the rule lock (tau-testnet 211b780) */
+  "a change of {h}’s rule: {k}": "{h} のルール変更：{k}",
+  "signing {h}’s request: {w}": "{h} の依頼に署名中：{w}",
 } });
