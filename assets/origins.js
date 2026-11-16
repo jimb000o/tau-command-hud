@@ -12,7 +12,7 @@
    A transaction sent from one of our games with a page of its own (No Memo) is named by its hash (GET /wallets/tags "via"):
    the same browser wallet plays White Rabbit Key and No Memo, so the wallet alone cannot say which game it came from.
    TauOrigin.of(sender, transfers, hash) -> { tag, name, what } or null. TauOrigin.ready(): a promise once the relay answered (or failed).
-   TauOrigin.app(pk) -> { born, day, used, short, line } or null: which of our apps a visitor's wallet came from (GET /wallets/tags
+   TauOrigin.app(pk) -> { born, day, used, main, days, short, line } or null: which of our apps a visitor's wallet came from (GET /wallets/tags
    "apps", walletdays.py). born = the app its first transaction we know of came from (only for wallets new to the relay's record
    after it began), used = every app it sent through. Never for IDNI's or our own server's wallets. */
 (() => {
@@ -183,7 +183,9 @@
     const more = names.filter(n => !born || n !== APPS[born === "deja" ? "agorzilla" : born][0]);
     if (more.length) lines.push(tr(born ? "Also sent through: {w}." : "Sent through: {w}.", { w: more.join(", ") }));
     const short = born ? tr("Started in {w}", { w: APPS[born === "deja" ? "agorzilla" : born][0] }) : tr("Uses {w}", { w: names[0] });
-    return { born, day: e.d || null, used, short, line: lines.join("\n") };
+    // what it mostly does with our apps: the app it was active in on the most days (the relay sorts used that way), and on how many
+    const main = used[0] || born, days = main && e.n && Number(e.n[main]) || 0;
+    return { born, day: e.d || null, used, main, days, short, line: lines.join("\n") };
   };
   // what we know about the wallet behind a rule, as lines (purpose, who runs it, the app it came from), or null when we know nothing
   const about = pk => {

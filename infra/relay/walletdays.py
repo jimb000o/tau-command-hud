@@ -40,9 +40,11 @@ GET /wallets/tags
              that a wallet started in Tau HUD. Only wallets that are not IDNI's and not our own server's.
              b = the app its first transaction we know of came from, d = that day (UTC). Written only when the wallet was
              new to a record that already ran on an earlier day, so a wallet from before the record began never gets one.
-             u = every app it has sent through since (and, for wallets recorded before apps were kept, the app its tag names).
+             u = every app it has sent through since (and, for wallets recorded before apps were kept, the app its tag names),
+             the one it was active in on the most days first: u[0] is what the wallet mostly does with our apps.
+             n = {app: days} the days it sent through each app, counted since 16 Nov 2026.
              Apps: tauhud (sent through this relay's wallet door from a tauhud.com page), nomemo (the same, from No Memo),
-             rabbit (a White Rabbit Key move, line or ballot), agorzilla (paid one of Agorzilla's addresses, or sent from
+             rabbit (a White Rabbit Key move, line or ballot, or anything sent from its pages, such as a rule proposed to an islander), agorzilla (paid one of Agorzilla's addresses, or sent from
              agorzilla.com), deja (fed Déjà, Agorzilla's café cat). A wallet is a key, not a person.
 Only counts leave the relay, and the apps above. The file keeps sender keys per day; they are public in the blocks anyway.
 """
@@ -65,6 +67,7 @@ WINDOWS = (1, 7, 30, 90)
 KEEP_DAYS = 400
 SAVE_SECONDS = 60
 APPS = ("tauhud", "nomemo", "rabbit", "agorzilla", "deja")   # our apps a visitor's wallet can come from (GET /wallets/tags "apps")
+RABBIT_VIA = ("rabbit", "islander")   # wallet-door pages that are White Rabbit Key's (rabbit/game.js, offers.js, studio.js)
 NOT_VISITOR = ("idni", "bot", "cruise")   # IDNI's genesis wallets and our own server's: never a visitor's app
 
 
@@ -85,7 +88,11 @@ def app_of(tx: dict, tx_hash: str, sent: dict) -> str | None:
     site, _, via = note.partition("|")
     if site:
         return site if site in APPS else None
-    return "nomemo" if via in GAME_VIA else "tauhud"
+    if via in GAME_VIA:
+        return "nomemo"
+    # White Rabbit Key's own pages: a move or ballot (game.js "via rabbit"), a rule proposed to an islander or the
+    # islander studio (offers.js, studio.js "via islander")
+    return "rabbit" if via.split("/")[0] in RABBIT_VIA else "tauhud"
 
 
 def day_of(ts: float) -> str:
@@ -105,7 +112,8 @@ class WalletDays:
         self.days: dict[str, set[int]] = {}
         self.play: dict[int, str] = {}     # key -> first day it made a White Rabbit Key transaction
         self.born: dict[int, tuple[str, str]] = {}   # key -> (app, day) its first transaction we know of came from
-        self.apps: dict[int, list[str]] = {}         # key -> our apps it sent through
+        self.apps: dict[int, list[str]] = {}         # key -> our apps it sent through, first used first
+        self.appdays: dict[int, dict[str, set[str]]] = {}   # key -> app -> days it sent through it
         self.bots: set[str] = set()        # filled by the relay: the island bot's and purses' keys
         self.cruise: set[str] = set()      # filled by the relay once cruise ships run: their passengers' keys
         self.dirty = False
@@ -126,6 +134,8 @@ class WalletDays:
                          if str(i).isdigit() and int(i) < n and isinstance(v, list) and len(v) == 2 and v[0] in APPS}
             self.apps = {int(i): [a for a in v if a in APPS] for i, v in (st.get("apps") or {}).items()
                          if str(i).isdigit() and int(i) < n and isinstance(v, list)}
+            self.appdays = {int(i): {a: {str(d) for d in ds if isinstance(d, str)} for a, ds in v.items() if a in APPS and isinstance(ds, list)}
+                            for i, v in (st.get("appdays") or {}).items() if str(i).isdigit() and int(i) < n and isinstance(v, dict)}
             if "apps" not in st:   # a record from before apps were kept: the app its tag names, nothing more
                 self.apps = {i: [t] for i, t in enumerate(self.tag) if t in ("rabbit", "agorzilla", "tauhud")}
                 self.dirty = bool(self.apps)
@@ -184,6 +194,9 @@ class WalletDays:
                 if app and app not in self.apps.get(k, ()):
                     self.apps.setdefault(k, []).append(app)
                     changed = True
+                if app and day not in self.appdays.setdefault(k, {}).setdefault(app, set()):
+                    self.appdays[k][app].add(day)
+                    changed = True
                 if rabbit(tx, {}) and (k not in self.play or day < self.play[k]):
                     self.play[k] = day
                     changed = True
@@ -209,7 +222,8 @@ class WalletDays:
         return {k: t for k, t in zip(self.keys, self.tag) if t in PUBLIC}
 
     def app_list(self) -> dict:
-        """{pubkey: {"b": app, "d": day, "u": [apps]}} for visitors' wallets we know an app of, for GET /wallets/tags."""
+        """{pubkey: {"b": app, "d": day, "u": [apps], "n": {app: days}}} for visitors' wallets we know an app of, for
+        GET /wallets/tags; u has the app it was active in on the most days first."""
         out = {}
         for k in sorted(set(self.born) | set(self.apps)):
             if self.tag[k] in NOT_VISITOR:
@@ -219,8 +233,12 @@ class WalletDays:
                 e["b"], e["d"] = self.born[k]
                 if e["b"] not in used:
                     used.insert(0, e["b"])
+            days = {a: len(ds) for a, ds in self.appdays.get(k, {}).items() if ds}
+            used.sort(key=lambda a: -days.get(a, 0))   # stable: among equal days, the one used first
             if used:
                 e["u"] = used
+            if days:
+                e["n"] = days
             if e:
                 out[self.keys[k]] = e
         return out
@@ -240,7 +258,8 @@ class WalletDays:
                            "days": {d: sorted(v) for d, v in sorted(self.days.items())},
                            "play": {str(k): d for k, d in self.play.items()},
                            "born": {str(k): list(v) for k, v in self.born.items()},
-                           "apps": {str(k): v for k, v in self.apps.items()}}, f, separators=(",", ":"))
+                           "apps": {str(k): v for k, v in self.apps.items()},
+                           "appdays": {str(k): {a: sorted(ds) for a, ds in v.items()} for k, v in self.appdays.items()}}, f, separators=(",", ":"))
             os.replace(tmp, self.path)
             self.dirty = False
         except OSError as exc:

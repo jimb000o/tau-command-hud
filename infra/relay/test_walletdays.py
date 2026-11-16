@@ -106,22 +106,32 @@ from txsources import DEJA  # noqa: E402
 NEWHUD, NEWNM, NEWCAT, OLDHUD, ELSE = "f1" * 48, "f2" * 48, "f3" * 48, "f4" * 48, "f5" * 48
 w4 = walletdays.WalletDays(os.path.join(tempfile.mkdtemp(), "a.json"))
 w4.bots = {BOT}
-sent = {"x1": "", "x2": "|nomemo", "x3": "|wallet", "x4": "|start", "x5": "", "x6": "agorzilla"}
+sent = {"x1": "", "x2": "|nomemo", "x3": "|wallet", "x4": "|start", "x5": "", "x6": "agorzilla", "x7": "|islander"}
 w4.add_blocks([block(D0 + 10, tx(OLDHUD, h="x1"), tx(BOT, h="x5"), tx(IDNI, BOWL))], sent)   # the record's first day
 w4.add_blocks([block(D0 + DAY, tx(NEWHUD, h="x3"), tx(NEWNM, h="x2"), tx(NEWCAT, DEJA), tx(ELSE)),
                block(D0 + DAY + 60, tx(NEWHUD, BOWL), tx(NEWHUD, RABBIT_COUNCIL, h="x4"), tx(ELSE, h="x6"))], sent)
 ap = w4.app_list()
-check(ap.get(NEWHUD) == {"b": "tauhud", "d": "2026-11-02", "u": ["tauhud", "agorzilla", "rabbit"]},
+check(ap.get(NEWHUD) == {"b": "tauhud", "d": "2026-11-02", "u": ["tauhud", "agorzilla", "rabbit"], "n": {"tauhud": 1, "agorzilla": 1, "rabbit": 1}},
       "a wallet new to the record: started in Tau HUD, then fed Agorzilla and played White Rabbit Key")
 check(ap.get(NEWNM, {}).get("b") == "nomemo" and ap.get(NEWCAT, {}).get("b") == "deja", "No Memo and Déjà start a wallet too")
-check(ap.get(OLDHUD) == {"u": ["tauhud"]}, "a wallet from the record's first day used Tau HUD, but no start is claimed")
-check(ap.get(ELSE) == {"u": ["agorzilla"]}, "a wallet that started elsewhere: no start, then a send from agorzilla.com")
+check(ap.get(OLDHUD) == {"u": ["tauhud"], "n": {"tauhud": 1}}, "a wallet from the record's first day used Tau HUD, but no start is claimed")
+check(ap.get(ELSE) == {"u": ["agorzilla"], "n": {"agorzilla": 1}}, "a wallet that started elsewhere: no start, then a send from agorzilla.com")
 check(BOT not in ap and IDNI not in ap, "never our own server's wallets or IDNI's")
+w4.save(D0 + 2 * DAY, force=True)
+RULER = "f6" * 48
+w4.add_blocks([block(D0 + DAY + 90, {"sender_pubkey": RULER, "tx_type": "rule_offer", "tx_hash": "x7"})], sent)
+ap = w4.app_list()
+check(ap.get(RULER, {}).get("b") == "rabbit", "a rule proposed to an islander on White Rabbit Key: the proposer started in White Rabbit Key")
+# NEWHUD feeds Agorzilla on two more days: that is now what it mostly does with our apps
+w4.add_blocks([block(D0 + 2 * DAY + 5, tx(NEWHUD, BOWL)), block(D0 + 3 * DAY + 5, tx(NEWHUD, BOWL)), block(D0 + 3 * DAY + 9, tx(NEWHUD, BOWL))], sent)
+ap = w4.app_list()
+check(ap[NEWHUD]["u"][0] == "agorzilla" and ap[NEWHUD]["n"]["agorzilla"] == 3 and ap[NEWHUD]["b"] == "tauhud",
+      "the app it was active in on the most days comes first; a day counts once; where it started stays")
 w4.save(D0 + 2 * DAY, force=True)
 check(walletdays.WalletDays(w4.path).app_list() == ap, "apps kept in the file")
 with open(w4.path) as f:
     old = json.load(f)
-del old["apps"], old["born"]
+del old["apps"], old["born"], old["appdays"]
 with open(w4.path, "w") as f:
     json.dump(old, f)
 back = walletdays.WalletDays(w4.path).app_list()

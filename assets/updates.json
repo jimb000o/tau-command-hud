@@ -3223,5 +3223,11 @@
     "on": "2026-11-16",
     "link": "/crew/",
     "html": "Top bar: the crew and online hovers are shorter. Crew says what a membership costs, that it cancels any time and that only the count shows; online keeps its privacy points (one person counts once, no cookies, hashed daily, memory only) in two lines."
+  },
+  {
+    "tag": "Rule sharing",
+    "on": "2026-11-16",
+    "link": "/",
+    "html": "Rule sharing names both sides: an offer between two wallets now says who they are where our server saw them, by what each mostly does with our apps (a White Rabbit Key player, a No Memo regular, a Tau HUD user, an Agorzilla regular after three days or more), also in the offer’s hover. A rule proposed to an islander on White Rabbit Key counts for White Rabbit Key now, not for Tau HUD in general. A wallet we have no record of keeps its short address."
   }
 ]
