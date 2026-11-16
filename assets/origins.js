@@ -120,6 +120,7 @@
     agorzilla: ["Agorzilla", "Started in Agorzilla: its first transaction we know of was a meal or a vote on agorzilla.com, on {d}."],
     deja: ["Déjà the café cat", "Started with Déjà: its first transaction we know of fed Agorzilla’s café cat, on {d}."],
   };
+  const VAULT = { till: "No Memo’s till", reserve: "No Memo’s reserve", window: "No Memo’s window vault", clock: "No Memo’s clock vault", keeper: "No Memo’s keeper" };
   const sim = () => !!(window.TauSim && TauSim.on);
   let known = new Map(), via = new Map(), names = new Map(), roles = new Map(), apps = new Map();
   const get = async path => { try { const r = await fetch("https://node.tauhud.com" + path, { cache: "no-store" }); return r.ok ? await r.json() : null; } catch (e) { return null; } };
@@ -127,7 +128,7 @@
     if (sim()) return;
     // the relay's record of wallets seen before, plus our own server wallets straight from their lists, so the island bot
     // and the cruise passengers are named even before their first transaction reached a block (or before the relay knows /wallets/tags)
-    const [tags, isle, ship, show] = await Promise.all([get("/wallets/tags"), get("/island"), get("/cruise"), get("/showcase")]);
+    const [tags, isle, ship, show, vlt] = await Promise.all([get("/wallets/tags"), get("/island"), get("/cruise"), get("/showcase"), get("/vaults")]);
     const m = new Map(Object.entries((tags && tags.tags) || {}).filter(([, v]) => TAGS[v]));
     const add = (keys, tag) => keys.forEach(k => { if (typeof k === "string" && k) m.set(k.toLowerCase(), tag); });
     if (isle) { add(Object.values(isle.wallets || {}), "bot"); add(Object.values(isle.purses || {}), "bot"); }
@@ -135,6 +136,8 @@
     // the showcase wallets (relay showcase.py), each with its own name: "Tau HUD's piggy bank" and so on
     const nm = new Map(), rl = new Map();
     if (show && show.wallets) [...Object.entries(show.wallets), ["cosigner", show.cosigner], ...Object.entries(show.sharers || {})].forEach(([role, w]) => { if (w && typeof w.pk === "string" && w.name) { m.set(w.pk.toLowerCase(), "showcase"); nm.set(w.pk.toLowerCase(), String(w.name)); rl.set(w.pk.toLowerCase(), role); } });
+    // No Memo's vaults (relay vaults.py): wallets our server runs, each guarded only by its own rule; named, never tagged as a player
+    if (vlt && vlt.vaults) Object.entries(vlt.vaults).forEach(([k, v]) => { if (v && typeof v.pk === "string" && v.pk) { nm.set(v.pk.toLowerCase(), VAULT[k] || "a No Memo vault"); rl.set(v.pk.toLowerCase(), "vault"); } });
     if (nm.size) { names = nm; roles = rl; }
     if (m.size || tags) known = m;
     if (tags && tags.via) via = new Map(Object.entries(tags.via).filter(([, v]) => TAGS[v]));
@@ -191,5 +194,7 @@
     if (a && a.line) out.push(...a.line.split("\n"));
     return out.length ? out : null;
   };
-  window.TauOrigin = { of, label, name, about, app, tags: TAGS, ready: () => first };
+  // a showcase wallet's role (piggy, foureyes, feeding, cosigner, apprentice, stranger, desk), else null
+  const role = pk => (!sim() && roles.get(String(pk || "").toLowerCase())) || null;
+  window.TauOrigin = { of, label, name, about, app, role, tags: TAGS, ready: () => first };
 })();
