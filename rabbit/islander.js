@@ -38,6 +38,28 @@
     ["earned", "Earned on the chain", ["None", "Rule writer's sash", "No Memo goggles", "Banana brooch", "Old hand's scarf", "Guardian badge", "Winner's laurel", "Voter's feather", "Heart pin", "Paw patch"]],
   ];
   const N = SLOTS.map(s => (Array.isArray(s[2]) ? s[2].length : s[2]));
+  /* what the studio offers per part (16.11): fewer choices, each one clearly different from the others. A choice is
+     still its number in SLOTS, so every look chosen before still reads; a key's own face comes from these lists too
+     (relay walkers.py OFFER, the same lists). The first of beard, marks and glasses is "none". */
+  const SHOW = [
+    [0, 2, 3],                          // build: average, round, tall
+    [0, 1, 3, 5, 7, 9],                 // skin
+    [0, 1, 2, 3, 4, 8, 10, 11, 12, 14], // hair or hat: short, long, bun, straw hat, cap, bald, big curls, braids, mohawk, headscarf
+    [0, 2, 4, 5, 6, 7, 9],              // hair colour
+    [0, 2, 3, 5, 6, 7],                 // clothes: T-shirt, collar, hoodie, poncho, vest, overalls
+    [0, 1, 2, 3, 4, 5, 6, 11],          // clothes colour
+    [0, 2, 3, 6],                       // trousers
+    [0, 1, 4],                          // walk: stroll, bounce, sway
+    [0, 1, 3, 5],                       // face: round, oval, heart, wide
+    [0, 3, 4, 5, 6, 9],                 // eyes: dots, wide, smiling, almond, lashes, wink
+    [0, 2, 3, 4, 6],                    // brows: light, arched, thick, stern, bushy
+    [0, 2, 3, 6],                       // nose: button, long, wide, hooked
+    [0, 1, 2, 4, 6],                    // mouth: smile, grin, calm, open, laugh
+    [0, 2, 3, 4, 5, 7],                 // beard: none, moustache, full, goatee, curly moustache, long
+    [0, 1, 3, 4, 7],                    // marks: none, freckles, rosy cheeks, scar, face paint
+    [0, 1, 3, 4, 6, 8, 9],              // glasses and jewellery: none, round, sunglasses, monocle, hoops, flower, eye patch
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],     // earned on the chain
+  ];
   const PART = 1600, STRIDE = 32, MARK = 1, PICK = 41;
   /* the trait a wallet needs to wear an earned piece (relay walkers.py EARN, the same list) */
   const EARN = [null, "lawmaker", "hacker", "feeder", "veteran", "guardian", "winner", "voter", "hearts", "catfriend"];
@@ -59,7 +81,8 @@
       const c = chosen && Number.isInteger(chosen[i]) && chosen[i] >= 0 && chosen[i] < N[i] ? chosen[i] : null;
       if (c != null) return c;
       const b = parseInt(k.slice(2 * i, 2 * i + 2), 16);
-      return i === 16 ? 0 : i >= 13 ? (b < 180 ? 0 : 1 + b % (N[i] - 1)) : b % N[i];   // beard, marks, glasses: most keys have none
+      const L = SHOW[i];
+      return i === 16 ? 0 : i >= 13 ? (b < 180 ? 0 : L[1 + b % (L.length - 1)]) : L[b % L.length];   // beard, marks, glasses: most keys have none
     });
   }
   /* an older look code (0..383 = skin * 64 + hair * 8 + shirt) as choices */
@@ -334,7 +357,8 @@
     }
   }
   function nose(g, n, c, cx, y) {
-    g.strokeStyle = c; g.fillStyle = c; g.lineWidth = 2.6;
+    g.save(); g.translate(cx, y); g.scale(1.45, 1.45); g.translate(-cx, -y);   // drawn larger, so the four noses read apart
+    g.strokeStyle = c; g.fillStyle = c; g.lineWidth = 2.2;
     if (n === 0) { g.beginPath(); g.ellipse(cx, y + 2, 4.4, 3.2, 0, 0, Math.PI * 2); g.fill(); }
     else if (n === 1) { g.beginPath(); g.moveTo(cx - 3, y + 4); g.quadraticCurveTo(cx, y + 7, cx + 3, y + 4); g.stroke(); }
     else if (n === 2) { g.beginPath(); g.moveTo(cx + 1, y - 14); g.lineTo(cx + 3, y + 4); g.quadraticCurveTo(cx, y + 8, cx - 4, y + 5); g.stroke(); }
@@ -343,6 +367,7 @@
     else if (n === 5) { g.globalAlpha = 0.6; g.beginPath(); g.arc(cx, y + 2, 6.4, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
     else if (n === 6) { g.beginPath(); g.moveTo(cx - 1, y - 12); g.quadraticCurveTo(cx + 9, y - 2, cx + 4, y + 6); g.quadraticCurveTo(cx, y + 7, cx - 3, y + 4); g.stroke(); }
     else { g.beginPath(); g.moveTo(cx - 2, y - 6); g.quadraticCurveTo(cx + 5, y + 2, cx + 2, y + 4); g.stroke(); g.beginPath(); g.arc(cx - 3, y + 5, 1.4, 0, Math.PI * 2); g.arc(cx + 3, y + 5, 1.4, 0, Math.PI * 2); g.fill(); }
+    g.restore();
   }
   function mouth(g, m, cx, y) {
     g.strokeStyle = "#5a2a2a"; g.lineWidth = 2.6; g.fillStyle = "#6b2e2e";
@@ -403,5 +428,5 @@
     }
   }
 
-  window.ISLANDER = { SLOTS, N, FACE, PART, STRIDE, MARK, PICK, pays, EARN, EARN_HOW, COLOURS, parts, fromLook, figure, bust, name, sig, cost };
+  window.ISLANDER = { SLOTS, N, SHOW, FACE, PART, STRIDE, MARK, PICK, pays, EARN, EARN_HOW, COLOURS, parts, fromLook, figure, bust, name, sig, cost };
 })();
