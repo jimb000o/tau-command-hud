@@ -102,6 +102,12 @@ figcaption { margin: .7em auto 0; width: var(--col); max-width: 100%; color: var
 .why ul { margin: 0; }
 .src { margin-top: 2.4em; padding-top: 1em; border-top: 1px solid var(--line); color: var(--dim); font: 400 .78em/1.6 var(--display); overflow-wrap: anywhere; }
 .src a { color: var(--dim); }
+.next { margin-top: 2em; padding: 1.1em 1.2em; border: 1px solid var(--hair); border-radius: 10px; }
+.next h3 { margin: 0 0 .5em; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+.next p { margin: 0 0 .9em; }
+.next .end { margin-top: 0; }
+.next .back.go { background: #fff; color: #000; }
+.next .back.go:hover, .next .back.go:focus-visible { background: none; color: #fff; }
 #art p a, #art li a { color: #fff; text-decoration: underline; text-decoration-color: var(--accent, #39ff8a); text-underline-offset: .18em; text-decoration-thickness: 1px; }
 #art p a:hover, #art li a:hover { text-decoration-thickness: 2px; }
 figcaption a.live { color: var(--accent, #39ff8a); text-decoration: none; white-space: nowrap; }
@@ -258,6 +264,30 @@ footer p { margin: 0; }
       + figs.filter(f => !f.after || f.after > parts.length).map(fig).join("");
   }
 
+  /* the article's next step (Kilian, 16 Nov 2026: every article should lead readers to try the testnet or join us):
+     the page that fits its subject best, and our Telegram group. An article may name its own with "next": {href, label} */
+  const NEXT = [
+    [/guard|co-?sign|guardian|second key|stolen key|rule lock/i, "/guardian/", "Lock your test wallet's rule with the Guardian, a second key from your phone"],
+    [/tau language|formula|lesson|tau engine|the engine/i, "/learn/", "Write your first Tau formula in the browser; a real Tau engine answers"],
+    [/rule|policy|clause|limit/i, "/builder/", "Say in plain words what your test wallet may do, and set it as your own rule"],
+    [/no memo|black sequence/i, "/nomemo/", "Play No Memo: each contract is a real transaction from your test wallet"],
+    [/white rabbit|island|cruise|ship|passenger/i, "/rabbit/", "Walk White Rabbit Key and send your own test transaction on the island"],
+  ];
+  const START = ["/start/", "Make a free test wallet and try Tau Net in four steps"];
+  function nextStep(p) {
+    if (p.next && okHref(p.next.href || "")) return [p.next.href, pick(p.next.label) || T(START[1])];
+    const text = [pick(p.title), pick(p.dek), ...(p.why || []).map(pick)].join(" ") + " " + (p.title && p.title.en || "") + " " + (p.dek && p.dek.en || "");
+    const hit = p.kind === "cruise" ? NEXT[4] : NEXT.find(([re]) => re.test(text));
+    return hit ? [hit[1], T(hit[2])] : [START[0], T(START[1])];
+  }
+  function nextBox(p) {
+    const [href, line] = nextStep(p);
+    return `<div class="next"><h3>${esc(T("Try it yourself"))}</h3><p>${esc(line)}</p><div class="end">
+      <a class="back go" href="${esc(href)}">${esc(T("Try it now"))} ›</a>
+      <a class="back" href="/telegram/">${esc(T("Talk with us on Telegram"))}</a></div>
+      ${href === "/learn/" ? "" : `<p class="src" style="border:0;margin:.9em 0 0;padding:0">${esc(T("Test coins only: they have no value, and the testnet can start over."))}</p>`}</div>`;
+  }
+
   function show(p, mark) {
     $("list").hidden = true; $("one").hidden = false;
     linked = new Set();
@@ -270,6 +300,7 @@ footer p { margin: 0; }
       ${p.image ? `<figure class="hero">${img(p.image, pick(p.image_alt) || pick(p.title), "hero")}</figure>` : ""}
       ${why ? `<div class="why"><h3>${esc(T("Why it matters"))}</h3><ul>${why}</ul></div>` : ""}
       ${bodyWith(p, mark)}
+      ${nextBox(p)}
       <p class="src">${esc(T(p.kind === "cruise" ? "Every number comes from our public logbooks:" : "Sources:"))} ${src}</p>
 `;
     /* under a published article: what the site costs and the way to Support, and the shop */
