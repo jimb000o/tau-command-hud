@@ -907,6 +907,80 @@
             }
           ]
         }
+      ],
+      "you": [
+        {
+          "t": {
+            "en": "A second person checks every translation into rules",
+            "zh": "每次把流程翻译成规则，都由第二个人复核",
+            "ja": "手順からルールへの翻訳ごとに、別の人が確認する"
+          },
+          "w": {
+            "en": "Write into your procedure (SOP) that a second person compares each set of Tau rules with the written procedure it comes from. Before first use, run a set of rules you know to contradict and show that the engine reports the contradiction.",
+            "zh": "在你们的流程（SOP）中写明：由第二个人把每一组 Tau 规则与其来源的书面流程逐一对照。首次使用前，先运行一组已知互相矛盾的规则，证明引擎能报告该矛盾。",
+            "ja": "自社の手順書（SOP）に、各 Tau ルールを元の手順書と別の人が照合することを書き込む。初回使用の前に、矛盾すると分かっているルールを実行し、エンジンが矛盾を報告することを示す。"
+          },
+          "done": {
+            "en": "The SOP section is approved, and the known-contradiction run and the first second-person review are on record.",
+            "zh": "SOP 中的这一节已获批准，已知矛盾的运行记录和第一次复核记录均已存档。",
+            "ja": "SOP の該当節が承認され、既知の矛盾の実行と最初のダブルチェックが記録されている。"
+          },
+          "ans": "l-meaning"
+        },
+        {
+          "t": {
+            "en": "Only an explicit answer counts",
+            "zh": "只有明确的答案才算数",
+            "ja": "明確な答えだけを数える"
+          },
+          "w": {
+            "en": "Write into the procedure that only an explicit satisfiable or unsatisfiable answer counts. UNKNOWN, an error or a stopped run means not checked and goes to a person.",
+            "zh": "在流程中写明：只有明确的“可满足”或“不可满足”才算数。UNKNOWN、错误或被中止的运行一律视为未检查，交由人处理。",
+            "ja": "手順書に、充足可能・充足不能という明確な答えだけを数えると書く。UNKNOWN、エラー、停止した実行は未確認とし、人に回す。"
+          },
+          "done": {
+            "en": "The rule is in the approved SOP and the people who run checks are trained on it.",
+            "zh": "这条规定已写入获批的 SOP，执行检查的人员已接受培训。",
+            "ja": "このルールが承認済み SOP にあり、チェックを行う人がその教育を受けている。"
+          },
+          "ans": "l-unknown"
+        },
+        {
+          "t": {
+            "en": "One fixed, recorded build",
+            "zh": "一个固定且有记录的构建",
+            "ja": "固定し記録されたビルド"
+          },
+          "w": {
+            "en": "Build the engine once without the natural-language type and qualify that build. Every check records the engine version and every option used.",
+            "zh": "一次性构建不含自然语言类型的引擎，并对该构建做确认。每次检查都记录引擎版本和所用的全部选项。",
+            "ja": "自然言語型なしでエンジンを一度ビルドし、そのビルドを適格性確認する。各チェックにエンジンのバージョンと使ったすべてのオプションを記録する。"
+          },
+          "done": {
+            "en": "The installation record names the build, and every check record carries version and options.",
+            "zh": "安装记录写明了该构建，每条检查记录都带有版本和选项。",
+            "ja": "据付記録にビルドが記され、すべてのチェック記録にバージョンとオプションがある。"
+          },
+          "ans": "l-repeat"
+        },
+        {
+          "t": {
+            "en": "The record lives in your validated system",
+            "zh": "记录保存在你们已验证的系统中",
+            "ja": "記録は自社のバリデート済みシステムに置く"
+          },
+          "w": {
+            "en": "Keep the rule text, the engine version and options, and the complete output of each check in your own validated system. A named person signs the conclusion there.",
+            "zh": "把每次检查的规则文本、引擎版本和选项以及完整输出保存在你们自己已验证的系统中，由一位署名人员在那里签署结论。",
+            "ja": "各チェックのルール本文、エンジンのバージョンとオプション、出力全体を自社のバリデート済みシステムに保管し、氏名のある担当者がそこで結論に署名する。"
+          },
+          "done": {
+            "en": "One completed check is in the system with all of these parts and a signature.",
+            "zh": "系统中已有一条完整的检查记录，包含上述全部内容和签名。",
+            "ja": "上記すべてと署名を備えたチェックが一件、システムにある。"
+          },
+          "ans": "l-records"
+        }
       ]
     },
     {
@@ -2103,6 +2177,26 @@
               }
             }
           ]
+        }
+      ],
+      "you": [
+        {
+          "t": {
+            "en": "Review each rule's formula against the procedure",
+            "zh": "对照流程复核每条规则的公式",
+            "ja": "各ルールの式を手順書と照合する"
+          },
+          "w": {
+            "en": "Write into your procedure that a second person compares the formula of each rule in use with the written procedure, and that an UNKNOWN or an error never counts as a pass.",
+            "zh": "在你们的流程中写明：由第二个人把每条在用规则的公式与书面流程对照，并且 UNKNOWN 或错误永远不算通过。",
+            "ja": "手順書に、使用中の各ルールの式を別の人が手順書と照合すること、UNKNOWN やエラーを合格と数えないことを書く。"
+          },
+          "done": {
+            "en": "The SOP section is approved and a review is on record for every rule in use.",
+            "zh": "SOP 中的这一节已获批准，每条在用规则都有复核记录。",
+            "ja": "SOP の該当節が承認され、使用中のすべてのルールに照合記録がある。"
+          },
+          "ans": "proof"
         }
       ]
     }
