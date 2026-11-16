@@ -198,5 +198,15 @@
   };
   // a showcase wallet's role (piggy, foureyes, feeding, cosigner, apprentice, stranger, desk), else null
   const role = pk => (!sim() && roles.get(String(pk || "").toLowerCase())) || null;
-  window.TauOrigin = { of, label, name, about, app, role, tags: TAGS, ready: () => first };
+  // what an address is, when it belongs to an app or owner we know (a rule's recipient or co-signer), else null
+  const place = pk => {
+    const h = String(pk || "").toLowerCase();
+    if (!h || sim()) return null;
+    if (h === DEJA) return tr("Déjà the café cat");
+    if (AGORZILLA.has(h)) return tr("Agorzilla");
+    if (RABBIT.has(h)) return tr("White Rabbit Key");
+    if (GENESIS.has(h)) return tr("an IDNI genesis account");
+    return name(h);
+  };
+  window.TauOrigin = { of, label, name, about, app, role, place, tags: TAGS, ready: () => first };
 })();

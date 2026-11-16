@@ -179,7 +179,7 @@ html.fit .legend { gap: 2px 10px; font-size: 10.5px; }
       <span class="seg" role="group" aria-label="Whose rules"><button type="button" data-who="people" aria-pressed="true" data-tip="People\nEvery account that is not ours and not IDNI's. Wallets, not people: one person can hold several.">People</button><button type="button" data-who="ours" aria-pressed="false" data-tip="Ours\nTau HUD's own server wallets: the showcase wallets, the island bot, cruise passengers, No Memo's.">Ours</button><button type="button" data-who="all" aria-pressed="false" data-tip="All\nEvery account with a rule, ours and IDNI's included.">All</button></span>
       <span class="kpi hot" data-tip="Accounts that hold a personal rule right now, as our node answers."><b id="kNow">–</b>with a rule now</span>
       <span class="kpi" data-tip="Rules set or changed today (UTC), counted when our node next checks."><b id="kNew">–</b>new today</span>
-      <span class="kpi hot" id="kOursBox" data-tip="Rules in force now whose rule transaction (an own rule, or an accepted offer) was sent through one of our apps: Tau HUD's wallet and rule builder, White Rabbit Key, No Memo, Agorzilla. People's rules only; our own server's wallets are not counted."><b id="kOurs">–</b>through our apps</span>
+      <span class="kpi hot" id="kOursBox" data-tip="Rules in force now whose rule transaction (an own rule, or an accepted offer) was sent through one of our apps: Tau HUD's wallet and rule builder, White Rabbit Key, No Memo, Agorzilla. Under People, people's rules only. Under All, the rules our own server runs count too, in their own row."><b id="kOurs">–</b>through our apps</span>
       <span class="kpi" data-tip="Test AGRS held by the wallets with a rule now, at our node's last check. Test AGRS have no value."><b id="kAgrs">–</b>AGRS under a rule</span>
       <span class="kpi" data-tip="Payments our node refused today (UTC) because the sender's own rule said no. Only what passed our node: refusals at other nodes never reach it."><b id="kHeld">–</b>held back today</span>
     </div>
@@ -260,17 +260,28 @@ const FROM = {
   agorzilla: { name: "Agorzilla", tip: "Sent from agorzilla.com or Déjà the café cat." },
   uses:      { name: "Elsewhere, wallet uses our apps", tip: "The rule itself was signed somewhere else (or before the blocks our node keeps), but the same wallet plays or pays through our apps." },
   elsewhere: { name: "Elsewhere", tip: "IDNI's web wallet, a node's own command line, scripts or other apps, by a wallet we know no app of." },
+  server:    { name: "Run by our server", tip: "Tau HUD's own wallets: the showcase wallets, No Memo's vaults and keeper, the island bot. Our server sets their rules straight on the node, as part of our apps." },
+  idni:      { name: "IDNI's genesis accounts", tip: "The accounts the testnet started with, set up by IDNI." },
   unknown:   { name: "Not known", tip: "Set before the blocks our node keeps, by a wallet we know no app of." },
 };
 const fromOf = (o, k) => k === "agorzilla" ? (o.agorzilla || 0) + (o.deja || 0) : (o[k] || 0);
-const ourOf = o => APPS.reduce((a, k) => a + (o[k] || 0), 0);
+const ourOf = o => APPS.reduce((a, k) => a + (o[k] || 0), 0) + (o.server || 0);
 const WHOS = ["people", "ours", "idni"];
 const S = { data: null, who: store.get("tauhud-rulenums-who") || "people", mode: "connecting" };
 if (!["people", "ours", "all"].includes(S.who)) S.who = "people";
 
 const pick = obj => S.who === "all" ? WHOS.reduce((a, w) => a + (obj && obj[w] || 0), 0) : (obj && obj[S.who]) || 0;
 const pickKinds = byWho => Object.fromEntries(KINDS.map(k => [k, S.who === "all" ? WHOS.reduce((a, w) => a + ((byWho[w] || {})[k] || 0), 0) : ((byWho[S.who] || {})[k] || 0)]));
-const pickFrom = byWho => { const o = {}; for (const w of (S.who === "all" ? WHOS : [S.who])) for (const [k, v] of Object.entries((byWho || {})[w] || {})) o[k] = (o[k] || 0) + v; return o; };
+/* where rules came from, for the chosen holders; under "All", our own server's wallets and IDNI's are one row each
+   (our server sets its rules straight on the node, so their transaction never shows an app) */
+const pickFrom = byWho => {
+  const o = {};
+  for (const w of (S.who === "all" ? WHOS : [S.who])) for (const [k, v] of Object.entries((byWho || {})[w] || {})) {
+    const key = S.who === "all" && w === "ours" ? "server" : S.who === "all" && w === "idni" ? "idni" : k;
+    o[key] = (o[key] || 0) + v;
+  }
+  return o;
+};
 const sumWho = (byWho, key) => S.who === "all" ? WHOS.reduce((a, w) => a + ((byWho[w] || {})[key] || 0), 0) : ((byWho[S.who] || {})[key] || 0);
 
 /* ---------- data: the relay's /rules/numbers; before it is deployed, the rules wall and /rules read here; in the simulation, the made-up chain ---------- */
@@ -477,11 +488,11 @@ function drawHow(d) {
   const pc = (a, b) => b ? Math.round(100 * a / b) + " %" : "–";
   $("share").replaceChildren(el("span", { class: "big", text: tot ? pc(ours, tot) : "–" }),
     el("span", { class: "of", "data-tip": uses ? F("Counting the wallets that set their rule elsewhere but use our apps too: {p}.", { p: pc(ours + uses, tot) }) : null },
-      el("b", { text: F("{o} of {t} rules in force now", { o: fmt(ours), t: fmt(tot) }) }), " ", T("came through our apps."),
+      el("b", { text: F("{o} of {t} rules in force now", { o: fmt(ours), t: fmt(tot) }) }), " ", T(S.who === "all" ? "came through our apps or are run by our own server." : "came through our apps."),
       kept.length ? el("span", { style: "display:block" }, F("New since {d}: {n}, of them {o} through our apps.", { d: kept[0].slice(5), n: fmt(nAll), o: fmt(nOurs) })) : null));
-  const keys = ["tauhud", "rabbit", "nomemo", "agorzilla", "uses", "elsewhere", "unknown"];
+  const keys = ["tauhud", "rabbit", "nomemo", "agorzilla", "server", "uses", "idni", "elsewhere", "unknown"];
   $("from").replaceChildren(...keys.filter(k => k === "tauhud" || k === "rabbit" || fromOf(fr, k)).map(k => {
-    const n = fromOf(fr, k), cls = APPS.includes(k) ? "ok" : k === "uses" ? "uses" : "dim";
+    const n = fromOf(fr, k), cls = APPS.includes(k) || k === "server" ? "ok" : k === "uses" ? "uses" : "dim";
     return row(T(FROM[k].name), n, tot, `${T(FROM[k].name)}\n${T(FROM[k].tip)}`, false, cls);
   }));
 }
