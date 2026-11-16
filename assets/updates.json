@@ -3269,6 +3269,12 @@
   {
     "tag": "White Rabbit Key",
     "on": "2026-11-16",
+    "link": "/rabbit/?islander=1",
+    "html": "Islander studio: “Sign and wear it” works for big changes too. A look with many changed parts is now sent in small payments (four parts each), because the testnet checks every transfer against its rules and one large payment took longer than the page waited, which then wrongly said nothing was sent. A slow answer is never shown as an error any more: the studio shows the block being forged, then celebrates with you when the block holds your new look. When the testnet does say no, the node’s own reason is shown."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
     "link": "/rabbit/",
     "html": "White Rabbit Key: the island's notice board, the one with the islander and the number of wallets that walked the island today, now stands on the sand below Bar La Ola instead of in front of its string of lights. It is a little larger, has a dark frame, and after dusk a small lamp of its own, so the number reads at a glance by day and by night."
   }
