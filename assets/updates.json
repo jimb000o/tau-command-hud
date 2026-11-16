@@ -3241,5 +3241,11 @@
     "on": "2026-11-16",
     "link": "/",
     "html": "Rule sharing names both sides: an offer between two wallets now says who they are where our server saw them, by what each mostly does with our apps (a White Rabbit Key player, a No Memo regular, a Tau HUD user, an Agorzilla regular after three days or more), also in the offer’s hover. A rule proposed to an islander on White Rabbit Key counts for White Rabbit Key now, not for Tau HUD in general. A wallet we have no record of keeps its short address."
+  },
+  {
+    "tag": "Road to mainnet",
+    "on": "2026-11-16",
+    "link": "/roadmap/",
+    "html": "Road to mainnet is up to date and now checks itself every week: two new items (busy hours that push a node to its limits, and a rule with a clock that can split two nodes), and the sync, join, validator and restart items now say what IDNI closed, fixed and said in November. Every Monday our server reads the list against IDNI’s issues and the testnet’s restarts and marks an item that may be out of date."
   }
 ]
