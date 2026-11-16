@@ -3306,5 +3306,6 @@
     "on": "2026-11-16",
     "link": "/guardian/",
     "html": "Guardian: you can now lock your rule. IDNI added a rule lock to the testnet today (tau-testnet 211b780): with it, changing or removing an account’s rule waits for a co-signer. On the Guardian page the lock names the Guardian, so a change waits for a code from your app; without the code it goes through only after 1,000 blocks, and you can cancel it in that time. The wallet shows such a waiting change with a Cancel button, friends can approve a change that names them, and our pages no longer say a rule can never stop a stolen key."
-  }
+  },
+  {"tag": "Blog", "on": "2026-11-16", "link": "/blog/?p=2026-11-16-tau-language-0-8", "html": "Blog: what is in Tau Language 0.8.0. Over the weekend IDNI merged its development work into Tau Language’s main branch and pointed the downloads to 0.8.0; a new article says what it gives someone writing rules, and that the Tau Net testnet still builds its Tau engine from a commit of 14 October. Every article now ends with a next step: the page that fits it best to try it on the testnet, and our Telegram group.", "major": {"id": "blog-tau-language-0-8", "title": "Tau Language 0.8.0 is taking shape on IDNI's main branch", "text": "Whole numbers, more words for time, Tau from Python, JavaScript and the browser. What IDNI merged over the weekend, and what the Tau Net testnet uses today.", "link": "/blog/?p=2026-11-16-tau-language-0-8", "image": "/assets/shots/blog-tau-language-0-8.png"}}
 ]

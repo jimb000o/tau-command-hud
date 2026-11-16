@@ -1,6 +1,86 @@
 {
  "posts": [
   {
+   "id": "2026-11-16-tau-language-0-8",
+   "on": "2026-11-16",
+   "kind": "news",
+   "release": "v0.8.0",
+   "kicker": "News · Tau Language · 16 November 2026",
+   "title": {
+    "en": "Tau Language 0.8.0 is taking shape on IDNI's main branch",
+    "zh": "Tau Language 0.8.0 正在 IDNI 的主分支上成形",
+    "ja": "Tau Language 0.8.0、IDNI のメインブランチで形に"
+   },
+   "dek": {
+    "en": "Over the weekend IDNI merged its development work into Tau Language's main branch and pointed the downloads to 0.8.0. What is in it, and what the Tau Net testnet uses today.",
+    "zh": "这个周末，IDNI 把开发工作合并进了 Tau Language 的主分支，并把下载链接指向了 0.8.0。里面有什么，以及 Tau Net 测试网今天用的是哪一版。",
+    "ja": "この週末、IDNI は開発の成果を Tau Language のメインブランチにマージし、ダウンロードを 0.8.0 に向けました。中身は何か、そして Tau Net テストネットが今日使っているのはどれか。"
+   },
+   "why": [
+    {
+     "en": "For you: rules can count with whole numbers and reason over time with more words, and Tau runs from Python, JavaScript and the browser.",
+     "zh": "对你：规则可以用整数计算，用更多的词表达时间上的推理；Tau 也能从 Python、JavaScript 和浏览器中运行。",
+     "ja": "あなたにとって：ルールが整数で計算でき、時間についてもっと多くの言葉で推論でき、Tau は Python、JavaScript、ブラウザから動きます。"
+    },
+    {
+     "en": "For Tau Net: the language that checks every rule on the network grows by versions, each change written down in IDNI's own changelog.",
+     "zh": "对 Tau Net：检查网络上每条规则的语言按版本成长，每项变化都写在 IDNI 自己的更新日志里。",
+     "ja": "Tau Net にとって：ネットワークのすべてのルールを検査する言語がバージョンごとに育ち、変更はすべて IDNI 自身の変更履歴に記されています。"
+    },
+    {
+     "en": "Limit: on 16 November the 0.8.0 release is not tagged yet, and the testnet still builds Tau from a commit of 14 October.",
+     "zh": "边界：截至 11 月 16 日，0.8.0 版本还没有打标签，测试网仍在用 10 月 14 日的一个提交构建 Tau。",
+     "ja": "限界：11 月 16 日時点で 0.8.0 のリリースにはまだタグがなく、テストネットは今も 10 月 14 日のコミットから Tau をビルドしています。"
+    }
+   ],
+   "body": {
+    "en": "## What changed\nTau Language is the language every rule on Tau Net is written in, and the Tau engine is the program that checks those rules. IDNI develops it in the open, in its tau-lang repository.\n\nOn 15 November 2026 IDNI merged its development branch into the main branch of tau-lang; its changelog says main now holds all of that work. On 16 November IDNI pointed the download links of the README to 0.8.0 packages for Linux, Windows and macOS, on x86_64 and arm64, with macOS listed for the first time. The changelog collects everything since the only earlier version, 0.7-alpha, under 0.8.0.\n\nThe weekend's own changes are small and practical: a program that uses Tau from Python can now set and read every option by its name, two more commands now decide rules that combine several specifications as sets of programs, and the demos show the features added in November.\n\n## What it gives you\nThe 0.8.0 list is long. A few parts matter most to someone writing rules:\n- **Whole numbers.** A value can be a whole number of a fixed width, such as 32 bits, with addition, subtraction, comparisons and more. The changelog calls it the largest single addition since the alpha.\n- **Reasoning over time.** Rules can say \"eventually\", \"until\", \"since\", and look back with \"once\" and \"historically\", not only \"always\" and \"sometimes\".\n- **Can a rule be met at all?** Tau can decide whether some program can always keep a specification, whatever its inputs do, and build that program when it can. When it cannot, a command names the smallest part no program can meet.\n- **Types.** Tau works out the types you leave unwritten and reports a clear error when two uses disagree.\n- **Everywhere.** Tau runs as a library from Python and from JavaScript, in Node and in web pages, and its prompt runs in a browser.\n\n## Where it stops\nTau Net does not run all of this yet. The Tau Net testnet builds its Tau engine from a tau-lang commit of 14 October; tau-lang's main branch is 566 commits further on. Until IDNI moves the testnet to a newer Tau, a rule you send to the testnet is checked by the October engine, and a feature from this list may not be there.\n\nAs of 16 November at noon, there is no 0.8.0 tag and no release page on GitHub yet: the README's links point to packages that IDNI has not published so far.\n\n## What is still open\nWhen the 0.8.0 release appears, and when the testnet's build moves to a newer Tau, Tau HUD will tell it the same day. Until then you can try Tau Language in your browser: the lessons on Tau HUD let a real Tau engine answer what you type.",
+    "zh": "## 发生了什么变化\nTau Language 是 Tau Net 上每条规则所用的语言，Tau 引擎则是检查这些规则的程序。IDNI 在其公开的 tau-lang 仓库中开发它。\n\n2026 年 11 月 15 日，IDNI 把开发分支合并进了 tau-lang 的主分支；它的更新日志说，主分支现在包含了全部这些工作。11 月 16 日，IDNI 把 README 中的下载链接指向了 0.8.0 版本的安装包，覆盖 Linux、Windows 和 macOS，支持 x86_64 和 arm64，其中 macOS 是第一次列出。更新日志把自此前唯一的版本 0.7-alpha 以来的所有变化都归在 0.8.0 之下。\n\n这个周末本身的改动不大，但很实用：从 Python 使用 Tau 的程序现在可以按名称设置和读取每个选项；另外两个命令现在也能判定把多个规范组合成程序集合的规则；示例也展示了 11 月新增的功能。\n\n## 它给你带来什么\n0.8.0 的清单很长。对写规则的人来说，最重要的是这几点：\n- **整数。** 一个值可以是固定位宽的整数，比如 32 位，支持加法、减法、比较等运算。更新日志称这是自 alpha 版以来最大的一项新增。\n- **关于时间的推理。** 规则不仅能说\"总是\"和\"有时\"，还能说\"最终\"、\"直到\"、\"自从\"，并能用\"曾经\"和\"一直以来\"回看过去。\n- **规则究竟能否被满足？** Tau 可以判定是否存在某个程序，无论输入如何都能始终遵守一个规范；如果存在，就把这个程序构建出来。如果不存在，有一个命令会指出没有任何程序能满足的最小部分。\n- **类型。** 你没写出的类型，Tau 会自己推断；两处用法冲突时，会给出清楚的错误。\n- **到处可用。** Tau 可以作为库从 Python 和 JavaScript（Node 和网页中）调用，它的命令行提示也能在浏览器里运行。\n\n## 它的边界\nTau Net 还没有运行这一切。Tau Net 测试网的 Tau 引擎是用 10 月 14 日的一个 tau-lang 提交构建的；tau-lang 的主分支已经领先 566 个提交。在 IDNI 把测试网升级到更新的 Tau 之前，你发送到测试网的规则由 10 月的引擎检查，这份清单中的某项功能可能并不在其中。\n\n截至 11 月 16 日中午，GitHub 上还没有 0.8.0 的标签，也没有发布页面：README 的链接指向的安装包，IDNI 目前还没有发布。\n\n## 还没有定下来的\n当 0.8.0 版本发布时，以及当测试网的构建升级到更新的 Tau 时，Tau HUD 会在当天告诉你。在那之前，你可以在浏览器里试试 Tau Language：Tau HUD 上的课程会让真正的 Tau 引擎回答你输入的内容。",
+    "ja": "## 何が変わったか\nTau Language は Tau Net のすべてのルールを書くための言語で、Tau エンジンはそのルールを検査するプログラムです。IDNI はこれを公開の tau-lang リポジトリで開発しています。\n\n2026 年 11 月 15 日、IDNI は開発ブランチを tau-lang のメインブランチにマージしました。変更履歴によると、メインブランチにはその作業がすべて入っています。11 月 16 日には、README のダウンロードリンクを 0.8.0 のパッケージに向けました。Linux、Windows、macOS 向けで、x86_64 と arm64 に対応し、macOS が載ったのは初めてです。変更履歴は、これまで唯一のバージョンである 0.7-alpha 以降のすべてを 0.8.0 の下にまとめています。\n\n週末そのものの変更は小さく、実用的なものです。Python から Tau を使うプログラムが、すべてのオプションを名前で設定・読み取りできるようになり、さらに二つのコマンドが、複数の仕様をプログラムの集合として組み合わせたルールを判定できるようになりました。デモも 11 月に追加された機能を紹介しています。\n\n## あなたにとっての意味\n0.8.0 の一覧は長いものです。ルールを書く人にとって特に大事なのは次の点です。\n- **整数。** 値を 32 ビットのような固定幅の整数にでき、足し算、引き算、比較などが使えます。変更履歴は、これを alpha 以来最大の追加と呼んでいます。\n- **時間についての推論。** ルールは「常に」「ときどき」だけでなく、「いずれ」「〜まで」「〜以来」と言えるようになり、「かつて」「これまでずっと」で過去を振り返ることもできます。\n- **そもそもルールは守れるのか。** Tau は、入力がどうであっても仕様を守り続けるプログラムが存在するかを判定し、存在すればそのプログラムを作ります。存在しなければ、どのプログラムも満たせない最小の部分をコマンドが示します。\n- **型。** 書かなかった型は Tau が推論し、二つの使い方が食い違えば分かりやすいエラーを出します。\n- **どこでも。** Tau は Python と JavaScript（Node とウェブページ）からライブラリとして使え、プロンプトはブラウザでも動きます。\n\n## どこまでか\nTau Net はまだこのすべてを動かしてはいません。Tau Net テストネットの Tau エンジンは、10 月 14 日の tau-lang のコミットからビルドされています。tau-lang のメインブランチはそこから 566 コミット先に進んでいます。IDNI がテストネットを新しい Tau に移すまで、テストネットに送ったルールは 10 月のエンジンが検査し、この一覧の機能がそこにあるとは限りません。\n\n11 月 16 日の正午の時点で、GitHub にはまだ 0.8.0 のタグもリリースページもありません。README のリンクが指すパッケージは、IDNI がまだ公開していないものです。\n\n## まだ決まっていないこと\n0.8.0 のリリースが出たとき、そしてテストネットのビルドが新しい Tau に移ったとき、Tau HUD はその日のうちにお知らせします。それまでは、ブラウザで Tau Language を試せます。Tau HUD のレッスンでは、入力したものに本物の Tau エンジンが答えます。"
+   },
+   "sources": [
+    "https://github.com/IDNI/tau-lang/blob/main/CHANGELOG.md",
+    "https://github.com/IDNI/tau-lang/commit/4b23127c559fb67a853777a5753545b690f897d0",
+    "https://github.com/IDNI/tau-lang/commit/53b7331d74933eb500ed253b78851345ab9b06e2",
+    "https://github.com/IDNI/tau-testnet/blob/main/Dockerfile.standalone"
+   ],
+   "card": [
+    "Tau Language 0.8.0 takes shape",
+    "What IDNI merged over the weekend",
+    "## Why it matters",
+    "- Whole numbers and more time words",
+    "- Tau from Python, JavaScript, browser",
+    "- Testnet still on the October engine",
+    "Tau HUD blog · community project, not run by IDNI"
+   ],
+   "next": {
+    "href": "/learn/",
+    "label": {
+     "en": "Write your first Tau formula in the browser; a real Tau engine answers",
+     "zh": "在浏览器里写下你的第一个 Tau 公式，由真正的 Tau 引擎作答",
+     "ja": "ブラウザで最初の Tau の式を書いてみよう。本物の Tau エンジンが答えます"
+    }
+   },
+   "stats": [
+    [
+     "0.7 → 0.8.0",
+     "Tau Language version on main"
+    ],
+    [
+     "566",
+     "tau-lang commits the testnet's build is behind"
+    ],
+    [
+     "14 Oct",
+     "the Tau engine the testnet builds from"
+    ],
+    [
+     "15–16 Nov",
+     "merged to main, downloads pointed to 0.8.0"
+    ]
+   ]
+  },
+  {
    "id": "2026-11-13-support-tau-hud",
    "on": "2026-11-13",
    "kind": "news",

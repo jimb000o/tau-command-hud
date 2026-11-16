@@ -28,5 +28,15 @@ TauI18n.add({ strings: {
   "Link copied": "リンクをコピーしました",
   "{n} min read": "約 {n} 分で読めます",
   "See it live": "ライブで見る",
-  "Sources:": "出典："
+  "Sources:": "出典：",
+  "Try it yourself": "自分で試す",
+  "Try it now": "今すぐ試す",
+  "Talk with us on Telegram": "Telegram で話そう",
+  "Test coins only: they have no value, and the testnet can start over.": "使うのはテスト用コインだけです。価値はなく、テストネットはやり直されることがあります。",
+  "Lock your test wallet's rule with the Guardian, a second key from your phone": "Guardian でテストウォレットのルールをロック：スマホにある二つ目の鍵",
+  "Write your first Tau formula in the browser; a real Tau engine answers": "ブラウザで最初の Tau の式を書いてみよう。本物の Tau エンジンが答えます",
+  "Say in plain words what your test wallet may do, and set it as your own rule": "テストウォレットに許すことを普通の言葉で書き、自分のルールに設定しよう",
+  "Play No Memo: each contract is a real transaction from your test wallet": "No Memo をプレイ：どの契約もテストウォレットからの本物の取引です",
+  "Walk White Rabbit Key and send your own test transaction on the island": "White Rabbit Key を歩き、島で自分のテスト取引を送ろう",
+  "Make a free test wallet and try Tau Net in four steps": "無料のテストウォレットを作り、四つのステップで Tau Net を試そう"
 } });

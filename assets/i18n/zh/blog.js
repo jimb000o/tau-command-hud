@@ -28,5 +28,15 @@ TauI18n.add({ strings: {
   "Link copied": "链接已复制",
   "{n} min read": "约 {n} 分钟读完",
   "See it live": "查看实时数据",
-  "Sources:": "来源："
+  "Sources:": "来源：",
+  "Try it yourself": "自己试试",
+  "Try it now": "现在就试试",
+  "Talk with us on Telegram": "在 Telegram 上和我们聊聊",
+  "Test coins only: they have no value, and the testnet can start over.": "只用测试币：它们没有价值，测试网也可能重新开始。",
+  "Lock your test wallet's rule with the Guardian, a second key from your phone": "用 Guardian 锁住你测试钱包的规则：手机上的第二把钥匙",
+  "Write your first Tau formula in the browser; a real Tau engine answers": "在浏览器里写下你的第一个 Tau 公式，由真正的 Tau 引擎作答",
+  "Say in plain words what your test wallet may do, and set it as your own rule": "用平实的话说出你的测试钱包可以做什么，并把它设为你自己的规则",
+  "Play No Memo: each contract is a real transaction from your test wallet": "玩 No Memo：每份合约都是你测试钱包发出的一笔真实交易",
+  "Walk White Rabbit Key and send your own test transaction on the island": "在 White Rabbit Key 岛上走走，发出你自己的测试交易",
+  "Make a free test wallet and try Tau Net in four steps": "免费创建测试钱包，四步试用 Tau Net"
 } });
