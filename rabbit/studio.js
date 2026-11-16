@@ -207,78 +207,141 @@
     });
   }
   const toWallet = () => el("a", { class: "st-link", href: "/wallet/", target: "_blank", rel: "noopener", text: T("Open the wallet page") });
+  /* the animated wait while the testnet forges the next block: never an error, only time passing */
+  const forge = t => el("span", { class: "st-forge", "aria-hidden": "true" }, el("i"), el("i"), el("i"));
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const PER_TX = 4;   // parts per transaction: the node runs Tau once per transfer (two per part), so 8 transfers answer in seconds
   async function send(b) {
     if (S.busy) return;
     const W = WK(), B = window.TauBLS, R = W.relay(); let k = null;
     try { const s = JSON.parse(store.get(R.WKEY) || "null"); if (B && s && /^[0-9a-f]{64}$/.test(s.sk)) k = { sk: B.hexToBytes(s.sk), pk: s.pk || B.bytesToHex(B.pubOf(B.hexToBytes(s.sk))) }; } catch (e) {}
     if (!k) { say(T("This browser has no test wallet yet: start a campaign on the island or open the wallet page first."), "warn", toWallet()); return; }
     const pick = S.pick.slice(), base = S.base.slice();
-    const ops = IS.pays(base, pick).map(a => [k.pk, R.BOX, String(a)]);
-    if (!ops.length) return;
-    const parts = ops.length / 2, amount = IS.cost(base, pick);
+    const changed = pick.map((v, i) => (v !== base[i] ? i : -1)).filter(i => i >= 0);
+    if (!changed.length) return;
+    const groups = [];
+    for (let g = 0; g < changed.length; g += PER_TX) groups.push(changed.slice(g, g + PER_TX));
+    const parts = changed.length, amount = IS.cost(base, pick);
     S.busy = true; S.worn = false; if (b) b.disabled = true;
     sendLabel(T("Signing…"), true); say(T("Signing in this browser: your key never leaves it."), "work");
     const c = await Promise.race([socket(R.WS), new Promise(r => setTimeout(() => r(null), 8000))]);
-    let sent = false;
+    const hashes = [], done = base.slice();
+    let unanswered = false, busy = 0;
     try {
-      if (!c) throw new Error("relay");
+      if (!c) throw Object.assign(new Error("relay"), { why: "" });
       const gv = await c.ask("getgovernance"), m = /o9\[t\]:bv\[24\]\s*=\s*\{\s*#x([0-9a-fA-F]+)/.exec((gv && gv.data && gv.data.consensus_rules) || ""), fee = m ? parseInt(m[1], 16) : 10;
       await c.ask("via islander", 4000);
-      const st = await c.ask("getsequence " + k.pk); if (!st || st.status !== "ok") throw new Error("seq");
-      if (st.data && st.data.balance != null && Number(st.data.balance) < amount + fee * 5) {
-        say(F("Your test wallet needs {a} test AGRS for this and has {b}. Change fewer parts, or get test AGRS on the wallet page (the faucet pays a wallet that is at 0).", { a: nf(amount + fee * 5), b: nf(st.data.balance) }), "warn", toWallet());
+      const st = await c.ask("getsequence " + k.pk); if (!st || st.status !== "ok") throw Object.assign(new Error("relay"), { why: "" });
+      const need = amount + fee * 5 * groups.length;
+      if (st.data && st.data.balance != null && Number(st.data.balance) < need) {
+        say(F("Your test wallet needs {a} test AGRS for this and has {b}. Change fewer parts, or get test AGRS on the wallet page (the faucet pays a wallet that is at 0).", { a: nf(need), b: nf(st.data.balance) }), "warn", toWallet());
         return;
       }
-      const seq = st.data.sequence_number || 0;
-      const tx = { tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: seq, expiration_time: Math.floor(Date.now() / 1000) + 600,
-        expire_at_height: (st.data.tip_height || 0) + 1000, fee_limit: String(fee * 5), operations: { "1": ops } };
-      const d = { sender_pubkey: tx.sender_pubkey, sequence_number: tx.sequence_number, expiration_time: tx.expiration_time, fee_limit: tx.fee_limit, tx_type: tx.tx_type, expire_at_height: tx.expire_at_height, operations: tx.operations };
-      tx.signature = B.bytesToHex(B.sign(new TextEncoder().encode(canon(d)), k.sk));
-      sendLabel(T("Sending…"), true);
-      const r = await c.ask("sendtx " + JSON.stringify(tx), 20000);
-      if (!(r && r.status === "ok" && !(r.data && r.data.ok === false))) {
-        const why = String((r && (r.message || (r.data && (r.data.error || r.data.reason)))) || "");
-        throw new Error(/o5|own (policy|rule)/i.test(why) ? "rule" : "refused");
+      let seq = st.data.sequence_number || 0;
+      for (let g = 0; g < groups.length; g++) {
+        const ops = groups[g].flatMap(i => [[k.pk, R.BOX, String(IS.MARK + i)], [k.pk, R.BOX, String(IS.PICK + pick[i])]]);
+        const tx = { tx_type: "user_tx", sender_pubkey: k.pk, sequence_number: seq, expiration_time: Math.floor(Date.now() / 1000) + 900,
+          expire_at_height: (st.data.tip_height || 0) + 1000, fee_limit: String(fee * 5), operations: { "1": ops } };
+        const d = { sender_pubkey: tx.sender_pubkey, sequence_number: tx.sequence_number, expiration_time: tx.expiration_time, fee_limit: tx.fee_limit, tx_type: tx.tx_type, expire_at_height: tx.expire_at_height, operations: tx.operations };
+        tx.signature = B.bytesToHex(B.sign(new TextEncoder().encode(canon(d)), k.sk));
+        sendLabel(groups.length > 1 ? F("Sending {n} of {m}…", { n: g + 1, m: groups.length }) : T("Sending…"), true);
+        say(T("The testnet checks each payment against its rules. That takes a few seconds."), "work", forge());
+        const r = await c.ask("sendtx " + JSON.stringify(tx), 90000);
+        const er = (r && r.error) || {};
+        if (!r || er.code === "NO_ANSWER") { unanswered = true; break; }   // no answer in time: the node may still be checking it, so this is no refusal
+        if ((er.code === "BUSY" || er.code === "RATE_LIMITED") && ++busy < 6) { g -= 1; await wait(8000); continue; }   // the relay asks us to wait a moment
+        if (!(r.status === "ok" && !(r.data && r.data.ok === false))) {
+          const why = String(er.message || r.message || (r.data && (r.data.error || r.data.reason)) || er.code || r.status || "").slice(0, 160);
+          try { console.warn("[islander] sendtx refused", r); } catch (x) {}
+          throw Object.assign(new Error(/o5|own (policy|rule)|user policy/i.test(why) ? "rule" : "refused"), { why });
+        }
+        if (r.data && /^[0-9a-f]{64}$/i.test(r.data.tx_hash || "")) hashes.push(r.data.tx_hash);
+        groups[g].forEach(i => { done[i] = pick[i]; });
+        seq += 1;
       }
-      sent = true;
-      W.wear(k.pk, pick); S.base = pick.slice(); S.happyUntil = performance.now() + 2500;
+      W.wear(k.pk, done); S.base = done.slice(); S.happyUntil = performance.now() + 2500;
       render();
-      /* waiting for a block: the node's answer to gettxstatus (the sequence number counts the mempool, so it cannot tell) */
-      const h = r.data && /^[0-9a-f]{64}$/i.test(r.data.tx_hash || "") ? r.data.tx_hash : null;
+      /* waiting for the block: the node's own answer for the last transaction (the sequence number counts the mempool) */
+      const h = hashes[hashes.length - 1] || null;
       const lang = window.TauI18n && TauI18n.lang !== "en" ? "&lang=" + TauI18n.lang : "";
       const ex = () => h ? el("a", { class: "st-link", href: "/explorer/?tx=" + h + lang, target: "_blank", rel: "noopener", text: T("See it in the explorer") }) : null;
       const t0 = Date.now();
       let held = null, out = null, n = 0;
-      say(parts === 1 ? T("Sent. The testnet puts it in the next block, usually within a minute. Your islander here wears it already.") : F("Sent: {n} parts in one transaction. The testnet puts it in the next block, usually within a minute. Your islander here wears it already.", { n: parts }), "work", ex());
-      while (h && S.box && Date.now() - t0 < 180000) {
-        sendLabel(F("Waiting for a block · {n} s", { n: Math.round((Date.now() - t0) / 1000) }), true);
-        await new Promise(res => setTimeout(res, 1000));
-        if (++n % 4) continue;   // the label counts every second, the node is asked every four
-        const q = await c.ask("gettxstatus " + h, 6000); if (!q || q.status !== "ok") continue;
-        const dd = q.data || {}, stt = String(dd.status || dd.state || "").toLowerCase();
-        if (dd.block_number != null || /confirmed|included|mined|sealed|applied/.test(stt)) { held = dd.block_number ?? dd.height ?? true; break; }
-        if (/reject|fail|dropped|expired|invalid/.test(stt)) { out = dd.reason || dd.error || stt; break; }
+      while (S.box && Date.now() - t0 < 600000) {
+        const s2 = Math.round((Date.now() - t0) / 1000);
+        sendLabel(F("Forging the block · {n} s", { n: s2 }), true);
+        if (n % 10 === 0) say(unanswered ? T("The testnet is still checking your payments. Nothing is wrong: your islander changes as soon as a block holds them.")
+          : parts === 1 ? T("Sent. The testnet is forging the next block; your islander here wears it already.") : F("Sent: {n} parts. The testnet is forging the next block; your islander here wears them already.", { n: parts }), "work", el("span", null, forge(), ex()));
+        await wait(1000);
+        if (++n % 4) continue;   // the label counts every second, the node (or the relay) is asked every four
+        if (h) {
+          const q = await c.ask("gettxstatus " + h, 6000); if (!q || q.status !== "ok") continue;
+          const dd = q.data || {}, stt = String(dd.status || dd.state || "").toLowerCase();
+          if (dd.block_number != null || /confirmed|included|mined|sealed|applied/.test(stt)) { held = dd.block_number ?? dd.height ?? true; break; }
+          if (/reject|fail|dropped|expired|invalid/.test(stt)) { out = dd.reason || dd.error || stt; break; }
+        } else {   // no hash to ask about: the relay's card says what the chain holds for this wallet
+          const cd = await W.cardOf(k.pk, true);
+          if (cd && Array.isArray(cd.chosen) && changed.every(i => cd.chosen[i] === pick[i])) { held = true; break; }
+        }
       }
       if (!S.box) return;
       if (held) {
+        if (unanswered) { W.wear(k.pk, pick); S.base = pick.slice(); }
         S.worn = true; S.happyUntil = performance.now() + 6000; S.party = performance.now();
         say((held === true ? T("A block holds it") : F("Block {n} holds it", { n: nf(held) })) + ": " + T("everyone on the island sees your new look now."), "ok",
           el("button", { type: "button", class: "st-link", onclick: () => { close(); if (W.find) W.find(); } }, T("Show me on the island")));
+        celebrate(held, k.pk);
       } else if (out) {
         say(F("The testnet dropped it: {x}. Nothing changed on the chain; try again.", { x: String(out).slice(0, 80) }), "warn", ex());
-      } else if (h) {
-        say(T("Sent, but no block has taken it yet: the testnet may be resting. Your islander here wears it; the island catches up with the next block."), "warn", ex());
       } else {
-        S.worn = true; S.party = performance.now();
-        say(T("Sent. Your islander here wears it now; the island shows it to everyone once a block holds it."), "ok");
+        say(T("Still no block after ten minutes: the testnet is resting. Your islander here wears it; the island catches up with the next block."), "work", ex());
       }
     } catch (e) {
-      if (sent) return;
-      say(e.message === "rule" ? T("Your wallet's own rule said no to this payment. The rule works: change the rule on the wallet page, or keep your look.")
+      const part = done.some((v, i) => v !== base[i]);
+      if (part) { W.wear(k.pk, done); S.base = done.slice(); }
+      say((e.message === "rule" ? T("Your wallet's own rule said no to this payment. The rule works: change the rule on the wallet page, or keep your look.")
         : e.message === "relay" ? T("The testnet cannot be reached just now. Nothing was sent; try again in a minute.")
-        : T("The testnet did not take it just now. Nothing was sent; try again in a minute."), "warn");
+        : T("The testnet said no to this payment.")) + (e.why ? " " + F("The node's answer: {x}", { x: e.why }) : "") + (part ? " " + T("The parts sent before it are worn.") : ""), "warn");
     }
     finally { S.busy = false; if (c) c.close(); if (S.box) render(); }
+  }
+
+  /* ---------- the moment a block holds the new look: the whole studio celebrates with the player ---------- */
+  function celebrate(block, pk) {
+    if (!S.box) return;
+    const W = WK(), old = S.box.querySelector(".st-party"); if (old) old.remove();
+    const size = Math.round(Math.min(260 * S.k, S.box.clientHeight * 0.48));
+    const [face, fg] = canvas(size, size), [fx, gx] = canvas(S.box.clientWidth, S.box.clientHeight);
+    fx.className = "st-confetti";
+    const first = S.faceSig && S.box.querySelector(".st-first.ok") && /first wearer|第一位|最初/.test(S.box.querySelector(".st-first").textContent);
+    const box = el("div", { class: "st-party", role: "alertdialog", "aria-label": T("Your new look is on the chain") }, fx,
+      el("div", { class: "st-party-in" }, face,
+        el("p", { class: "st-party-k", text: block === true ? T("A block holds it") : F("Block {n}", { n: nf(block) }) }),
+        el("h3", { text: T("Your new look is on the chain!") }),
+        el("p", { class: "st-party-s", text: (W && pk ? W.nameOf(pk) + " · " : "") + T("Everyone on the island sees it now, and anyone can check it in the blocks.") }),
+        first ? el("p", { class: "st-party-first", text: "★ " + T("You are the first wearer of this face.") }) : null,
+        el("div", { class: "st-party-acts" },
+          el("button", { type: "button", class: "cv-b go", onclick: () => { close(); if (W && W.find) W.find(); } }, T("Show me on the island")),
+          el("button", { type: "button", class: "cv-b", onclick: () => pass() }, T("Islander pass")),
+          el("button", { type: "button", class: "cv-b", onclick: () => box.remove() }, T("Keep editing")))));
+    S.box.append(box);
+    const bits = Array.from({ length: 140 }, (_, i) => ({ x: Math.random() * fx.width, y: -20 - Math.random() * fx.height * 0.6, v: 1.6 + Math.random() * 3, w: (Math.random() - 0.5) * 0.2, r: Math.random() * 6, c: ["#39ff8a", "#ffb13b", "#ff6fa0", "#6fa8ff", "#ffffff", "#c9a0ff"][i % 6] }));
+    const t0 = performance.now(), cw = S.box.clientWidth, ch = S.box.clientHeight;
+    (function tick(t) {
+      if (!box.isConnected) return;
+      const q = (t - t0) / 1000;
+      fg.setTransform(DPR(), 0, 0, DPR(), 0, 0); fg.clearRect(0, 0, size, size);
+      IS.bust(fg, 0, 0 - Math.max(0, 1 - q * 2) * 30, size, S.pick, { mood: "happy", blink: (t % 3000) < 120 });
+      gx.setTransform(DPR(), 0, 0, DPR(), 0, 0); gx.clearRect(0, 0, cw, ch);
+      if (q < 6) for (const b of bits) {
+        b.y += b.v; b.x += Math.sin(q * 3 + b.r) * 1.2; b.r += b.w;
+        gx.globalAlpha = Math.max(0, Math.min(1, 6 - q)); gx.fillStyle = b.c;
+        gx.save(); gx.translate(b.x, b.y); gx.rotate(b.r); gx.fillRect(-4, -2, 8, 4); gx.restore();
+      }
+      gx.globalAlpha = 1;
+      requestAnimationFrame(tick);
+    })(t0);
+    setTimeout(() => { const g = box.querySelector(".cv-b.go"); if (g && !matchMedia("(pointer: coarse)").matches) g.focus({ preventScroll: true }); }, 60);
   }
 
   /* ---------- the islander pass: 1200 × 675, drawn here, saved or shared by you ---------- */
@@ -328,7 +391,7 @@
     return out;
   }
 
-  window.ISLE_STUDIO = { open, close, pass };
+  window.ISLE_STUDIO = { open, close, pass, celebrate };   // celebrate(block): the moment a block holds the look (also for tests)
 })();
 
 /* the "Your islander" chip in the top bar opens the studio (so nobody has to find it on a card) */

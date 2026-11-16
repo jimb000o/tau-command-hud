@@ -3259,5 +3259,11 @@
     "on": "2026-11-16",
     "link": "/",
     "html": "Chain core: the rule ring and the node orbit hold still while your pointer rests on them, the same way the waiting room already does, so you can read a rule or a node without chasing it. They ease to a stop and start turning again when you move away."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/?islander=1",
+    "html": "Islander studio: “Sign and wear it” works for big changes too. A look with many changed parts is now sent in small payments (four parts each), because the testnet checks every transfer against its rules and one large payment took longer than the page waited, which then wrongly said nothing was sent. A slow answer is never shown as an error any more: the studio shows the block being forged, then celebrates with you when the block holds your new look. When the testnet does say no, the node’s own reason is shown."
   }
 ]
