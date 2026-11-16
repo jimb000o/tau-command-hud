@@ -1,5 +1,6 @@
 /* Simplified Chinese for the shared header and strings used on several pages. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "You could be the first.": "你可以成为第一位。",
   /* 14.11.2026: the moment you did something (assets/win.js) */
   "Your heart is in a block": "你的心已进入区块",
   "It tells us which parts you love most, so we build those first. Public on the chain, without a name.": "它告诉我们你最喜欢哪些部分，我们会优先做这些。在链上公开，没有名字。",
@@ -802,11 +803,11 @@ TauI18n.add({ strings: {
   "You just wrote a rule with always. A rule of the same kind is knitted into our Christmas sweater: always o1[t] = i1[t].": "你刚刚用 always 写了一条规则。我们的圣诞毛衣上织着一条同类的规则：always o1[t] = i1[t]。",
   "Two ways, both optional. No crypto wallet?": "两种方式，都出于自愿。没有加密钱包？",
   "Or a donation:": "或者捐赠：",
-  "The Tau HUD crew: people who support the site every month. Read from our shop every 15 minutes, as a number only, no names.\nThe light is red while there is none, turns greener with each member and is full green when the crew covers the site's monthly bills. Click to see what the site costs and how to support it monthly, cancel any time.": "Tau HUD 船员：每月支持本站的人。每 15 分钟从我们的商店读取一次，只有数字，没有名字。\n没有人时灯是红色，每多一位就更绿一些，船员付清本站每月账单时全绿。点击查看本站的开销，以及如何按月支持，可随时取消。",
+  "The crew keeps Tau HUD running: from €4.17 a month, cancel any time. We show the count, never names.\nThe light turns from red to green as the crew covers the monthly bills. Click to join.": "船员让 Tau HUD 持续运行：每月 €4.17 起，随时可取消。只显示人数，从不显示名字。\n船员承担的每月账单越多，灯就越从红转绿。点击加入。",
   "crew": "船员",
-  "Right now: {n} in the crew, covering {p} % of the monthly bills.": "目前：船员 {n} 人，承担每月账单的 {p} %。",
-  "Right now: {n} in the crew, covering less than 1 % of the monthly bills.": "目前：船员 {n} 人，承担每月账单不到 1 %。",
-  "About {m} more at the smallest level would cover them.": "大约再有 {m} 位最低档成员就能付清。",
+  "Right now: {n} in the crew, {p} % of the bills covered.": "目前：船员 {n} 人，已承担账单的 {p} %。",
+  "Right now: {n} in the crew, less than 1 % of the bills covered.": "目前：船员 {n} 人，已承担账单不到 1 %。",
+  "About {m} more at the Deckhand level would cover them.": "大约再有 {m} 位 Deckhand 就能付清。",
   "The bills are covered.": "账单已付清。",
   "Three ways, all optional. No crypto wallet?": "三种方式，都出于自愿。没有加密钱包？",
   "A paid membership with no duties, not a donation. Something to wear or to drink from?": "这是付费会员，没有任何义务，不是捐赠。想要能穿的、能用来喝水的？",

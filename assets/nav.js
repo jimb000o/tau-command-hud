@@ -135,7 +135,7 @@
     simBadge: "Everything on this page is simulated: invented but protocol-true activity, generated in your browser. Nothing here happened on the real testnet. Opens the full notice.",
     unoff: "Built by Tau community members, not by IDNI or the Tau team. No claim of accuracy. Opens the full notice.",
     mode: "Live: this page reads the real testnet through the community relay at node.tauhud.com.",
-    crew: "The Tau HUD crew: people who support the site every month. Read from our shop every 15 minutes, as a number only, no names.\nThe light is red while there is none, turns greener with each member and is full green when the crew covers the site's monthly bills. Click to see what the site costs and how to support it monthly, cancel any time.",
+    crew: "The crew keeps Tau HUD running: from €4.17 a month, cancel any time. We show the count, never names.\nThe light turns from red to green as the crew covers the monthly bills. Click to join.",
     online: "People looking at Tau HUD right now, counted by the community relay; no cookies, no analytics, nobody is identified. “—” means the relay has not answered yet.",
     net: "Network id " + "tau-testnet-v2" + ": the chain every page shows, read from the community node.",
     height: "Newest block the community node has verified.",
@@ -1219,8 +1219,9 @@
       const part = f.part == null ? (f.n > 0 ? .05 : 0) : f.n > 0 ? Math.max(f.part, .003) : 0, col = `hsl(${Math.round(Math.sqrt(part) * 145)} 100% ${part >= 1 ? 61 : 58}%)`;
       b.textContent = String(f.n); d.className = "dot" + (part > 0 ? "" : " off"); d.style.background = col; d.style.boxShadow = "0 0 8px " + col; b.style.color = col;
       let now = "";
-      if (f.part != null) now = tr(f.part > 0 && f.part < .01 ? `Right now: ${f.n} in the crew, covering less than 1 % of the monthly bills.` : `Right now: ${f.n} in the crew, covering ${Math.floor(f.part * 100)} % of the monthly bills.`)
-        + (f.more > 0 ? " " + tr(`About ${f.more} more at the smallest level would cover them.`) : f.more === 0 ? " " + tr("The bills are covered.") : "");
+      if (f.part != null) now = tr(f.part > 0 && f.part < .01 ? `Right now: ${f.n} in the crew, less than 1 % of the bills covered.` : `Right now: ${f.n} in the crew, ${Math.floor(f.part * 100)} % of the bills covered.`)
+        + (f.more > 0 ? " " + tr(`About ${f.more} more at the Deckhand level would cover them.`) : f.more === 0 ? " " + tr("The bills are covered.") : "")
+        + (f.n === 0 ? " " + tr("You could be the first.") : "");
       c.setAttribute(attr, tr(TIPS.crew) + (now ? "\n" + now : "")); c.hidden = false;
     }).catch(() => {});
     read(); setInterval(read, 15 * 60000);

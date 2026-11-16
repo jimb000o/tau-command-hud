@@ -1,5 +1,6 @@
 /* Japanese for the shared header and strings used on several pages. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "You could be the first.": "最初の 1 人になりませんか。",
   /* 14.11.2026: the moment you did something (assets/win.js) */
   "Your heart is in a block": "あなたのハートがブロックに入りました",
   "It tells us which parts you love most, so we build those first. Public on the chain, without a name.": "どの部分がいちばん好かれているかがわかり、そこから先に作ります。チェーン上で公開、名前はありません。",
@@ -797,11 +798,11 @@ TauI18n.add({ strings: {
   "You just wrote a rule with always. A rule of the same kind is knitted into our Christmas sweater: always o1[t] = i1[t].": "いま always を使ったルールを書きました。同じ種類のルールが、私たちのクリスマスセーターに編み込まれています：always o1[t] = i1[t]。",
   "Two ways, both optional. No crypto wallet?": "方法は 2 つ、どちらも任意です。暗号資産のウォレットがない方は：",
   "Or a donation:": "または寄付：",
-  "The Tau HUD crew: people who support the site every month. Read from our shop every 15 minutes, as a number only, no names.\nThe light is red while there is none, turns greener with each member and is full green when the crew covers the site's monthly bills. Click to see what the site costs and how to support it monthly, cancel any time.": "Tau HUD クルー：毎月サイトを支えている人たちです。15 分ごとにショップから読み取り、数字だけで名前は出ません。\n0 人のあいだランプは赤で、1 人増えるごとに緑に近づき、クルーがサイトの毎月の請求をまかなえたとき完全な緑になります。クリックすると、サイトの費用と、いつでも解約できる毎月のサポート方法が見られます。",
+  "The crew keeps Tau HUD running: from €4.17 a month, cancel any time. We show the count, never names.\nThe light turns from red to green as the crew covers the monthly bills. Click to join.": "クルーが Tau HUD を支えています。月 €4.17 から、いつでも解約できます。表示するのは人数だけで、名前は出しません。\nクルーが毎月の請求をまかなうほど、ランプは赤から緑に変わります。クリックで参加。",
   "crew": "クルー",
-  "Right now: {n} in the crew, covering {p} % of the monthly bills.": "現在：クルー {n} 人、毎月の請求の {p} % をまかなっています。",
-  "Right now: {n} in the crew, covering less than 1 % of the monthly bills.": "現在：クルー {n} 人、毎月の請求の 1 % 未満をまかなっています。",
-  "About {m} more at the smallest level would cover them.": "最小レベルであと約 {m} 人いれば、すべてまかなえます。",
+  "Right now: {n} in the crew, {p} % of the bills covered.": "現在：クルー {n} 人、請求の {p} % をまかなっています。",
+  "Right now: {n} in the crew, less than 1 % of the bills covered.": "現在：クルー {n} 人、請求の 1 % 未満をまかなっています。",
+  "About {m} more at the Deckhand level would cover them.": "Deckhand があと約 {m} 人いれば、すべてまかなえます。",
   "The bills are covered.": "請求はすべてまかなわれています。",
   "Three ways, all optional. No crypto wallet?": "方法は 3 つ、どれも任意です。暗号資産ウォレットがない方は：",
   "A paid membership with no duties, not a donation. Something to wear or to drink from?": "義務のない有料メンバーシップで、寄付ではありません。着るもの、飲むためのものがいいですか？",
