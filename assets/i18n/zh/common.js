@@ -832,4 +832,11 @@ TauI18n.add({ strings: {
   "Also sent through: {w}.": "之后也通过这些发送过：{w}。",
   "Sent through: {w}.": "曾通过这些发送：{w}。",
   "Read from our own server's record of what it sent and from the public blocks. A wallet is a key, not a person.": "读取自我们服务器对其发送内容的记录和公开区块。钱包是一把密钥，不是一个人。",
+  /* No Memo's vaults by name (assets/origins.js) */
+  "No Memo’s till": "No Memo 的收银台",
+  "No Memo’s reserve": "No Memo 的储备金库",
+  "No Memo’s window vault": "No Memo 的窗口金库",
+  "No Memo’s clock vault": "No Memo 的时钟金库",
+  "No Memo’s keeper": "No Memo 的守门人",
+  "a No Memo vault": "一个 No Memo 金库"
 } });
