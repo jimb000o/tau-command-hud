@@ -492,9 +492,11 @@ if [ "${1:-}" = "services" ]; then
   fi
   echo
   echo "---------------- copy from here into the chat ----------------"
-  docker compose exec -T relay python -c 'import json,urllib.request
+  docker compose exec -T relay python -c 'import json,time,urllib.request
 d=json.load(urllib.request.urlopen("http://127.0.0.1:8080/services", timeout=20)); t=d["totals"]
-print("services: %s found (co-signers %s, rule givers %s, paid with terms %s, paid by many %s), %s wallets served, blocks since %s" % (t["services"], t["cosign"], t["rules"], t["terms"], t["paid"], t["wallets"], d.get("since")))
+print("services: %s found (co-signers %s, rule givers %s, paid with terms %s, paid by many %s), %s wallets served, blocks since %s UTC" % (t["services"], t["cosign"], t["rules"], t["terms"], t["paid"], t["wallets"], time.strftime("%d.%m %H:%M", time.gmtime(d["since"])) if d.get("since") else "-"))
+r = d.get("read") or {}
+if r: print("          read %s blocks, %s transactions (%s from our own server wallets, left out), %s other senders" % (r["blocks"], r["txs"], r["ours"], r["senders"]))
 for r in d["services"][:12]: print("  %-10s %s… %s, %s wallets" % (r["app"] or "", r["address"][:12], "+".join(r["kinds"]), r["wallets"]))' 2>&1 || echo "relay /services not answering yet"
   curl -s -o /dev/null -w "          page https://tauhud.com/services/ answers %{http_code}\n" https://tauhud.com/services/ || true
   echo "---------------- to here --------------------------------------"
