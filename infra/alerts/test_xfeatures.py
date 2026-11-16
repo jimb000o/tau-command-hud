@@ -80,6 +80,23 @@ class Loop(unittest.TestCase):
         self.assertIsNone(told[0][1])
 
 
+class SendOnlyWithFilm(unittest.TestCase):
+    def test_no_film_no_post(self):
+        """16 Nov 2026: rabbit-walkers went out with its text alone and X showed the old link card of /rabbit/."""
+        posted, saved = [], []
+        keep = X.load, X.save, X.post, X.room
+        try:
+            X.load = lambda: {"drafts": {"rabbit-walkers": {"state": "offered", "account": "hud", "text": GOOD["text"],
+                                                            "at": 0, "film": None, "film_why": "no film after 2 h"}}, "sent": []}
+            X.save = lambda d: saved.append(d)
+            X.post = lambda *a: posted.append(a) or "1"
+            X.room = lambda *a, **k: []
+            self.assertEqual(X.main(["x", "send", "rabbit-walkers", "--now"]), 1)
+            self.assertEqual((posted, saved), ([], []))
+        finally:
+            X.load, X.save, X.post, X.room = keep
+
+
 class Room(unittest.TestCase):
     NONE = {"hud": {}, "agorzilla": {}}
 
