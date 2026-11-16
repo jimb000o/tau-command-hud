@@ -46,7 +46,7 @@ from simwallet import SimWallet
 from cruise import Cruise
 from hackweek import HackWeek
 from showcase import Showcase, offer_id
-from ruledays import KINDS as RULE_KINDS, WHO as WHO_RULES, RuleDays, offers as rule_offers, kinds as rule_kinds
+from ruledays import FROM as RULE_FROM, KINDS as RULE_KINDS, WHO as WHO_RULES, RuleDays, offers as rule_offers, kinds as rule_kinds
 from island import Island
 from isle import Isle
 from nomemo import NoMemo
@@ -54,7 +54,7 @@ from vaults import Vaults
 from nomemo_feedback import Feedback as NoMemoFeedback
 from load import Load
 from txsources import GENESIS, TxSources, deja as deja_day
-from walletdays import WalletDays
+from walletdays import WalletDays, app_of
 from chainhist import ChainHistory
 from hearts import Hearts
 from walkers import Walkers
@@ -1140,6 +1140,32 @@ class Relay:
         ours = self.walker_ours()
         return lambda pk: "ours" if pk in ours else "idni" if pk in GENESIS else "people"
 
+    def rule_origin(self, blocks: list[dict] | None = None):
+        """pk -> where its rule came from (ruledays.FROM): the app its newest rule transaction in the kept blocks (an own
+        rule or an accepted offer) was sent through, as walletdays.app_of reads it; else whether the wallet uses our apps
+        at all. Only counts leave the relay (GET /rules/numbers)."""
+        sent = self.sources.sent
+        app: dict[str, str] = {}
+        for b in self.ordered_blocks() if blocks is None else blocks:
+            ids = b.get("tx_ids") or []
+            for i, t in enumerate(b.get("transactions") or []):
+                if not isinstance(t, dict):
+                    continue
+                kind = t.get("tx_type") or "user_tx"
+                ops = t.get("operations") if isinstance(t.get("operations"), dict) else {}
+                if (kind == "user_tx" and isinstance(ops.get("0"), str) and "o5" in ops["0"]) or kind == "rule_offer_accept":
+                    h = str(ids[i] if i < len(ids) else t.get("tx_hash") or "").lower()
+                    app[str(t.get("sender_pubkey") or "").lower()] = app_of(t, h, sent) or ""
+
+        def origin(pk: str) -> str:
+            a = app.get(pk)
+            if a:
+                return a
+            if self.wallets.apps_of(pk):
+                return "uses"
+            return "elsewhere" if a == "" else "unknown"
+        return origin
+
     def rule_numbers(self) -> dict:
         """GET /rules/numbers: the rules in force by kind and by who holds them, how each holder got its rule and where
         it was sent from, rule offers and their outcome, the size of each rule, and the day history (ruledays.py)."""
@@ -1180,11 +1206,11 @@ class Relay:
             rules = json.loads(self.rules_text) if self.rules_text else {}
         except ValueError:
             rules = {}
-        snap = self.ruledays.snapshot(self.rule_bodies, who, self.rule_balances)
+        snap = self.ruledays.snapshot(self.rule_bodies, who, self.rule_balances, self.rule_origin(blocks))
         return {"now": {**snap, "how": ways, "sent": sent, "pages": pages, "sizes": sizes,
                         "checked": rules.get("checked"), "candidates": rules.get("candidates"), "checked_at": rules.get("checked_at")},
                 "offers": rule_offers(blocks, self.height(), offer_id, who),
-                "texts": len(self.rulewall()), "kinds": list(RULE_KINDS), "who": list(WHO_RULES), "max_comparisons": 32,
+                "texts": len(self.rulewall()), "kinds": list(RULE_KINDS), "who": list(WHO_RULES), "from": list(RULE_FROM), "max_comparisons": 32,
                 "history": self.ruledays.history(), "height": self.height(), "oldest": self._height(blocks[0]) if blocks else None,
                 "generated_at": round(time.time())}
 
@@ -1218,7 +1244,7 @@ class Relay:
                                       "checked": min(len(cands), RULES_MAX_CHECKS), "candidates": len(cands),
                                       "checked_at": round(time.time())}, separators=(",", ":"))
         self.rule_bodies, self.rule_balances = bodies, balances
-        self.ruledays.record(bodies, set(cands[:RULES_MAX_CHECKS]), self.rule_who(), balances=balances)
+        self.ruledays.record(bodies, set(cands[:RULES_MAX_CHECKS]), self.rule_who(), balances=balances, origin=self.rule_origin())
         self.ruledays.save()
         self.rulenums_text = None
 

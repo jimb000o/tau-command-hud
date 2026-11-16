@@ -41,6 +41,10 @@ log = logging.getLogger("relay.ruledays")
 
 KINDS = ("cap", "only", "time", "cosign", "reserve", "freeze", "other")
 WHO = ("people", "ours", "idni")
+# where a rule came from (relay.rule_origin): the app its rule transaction (own rule or accepted offer) was sent through,
+# else "uses" (sent elsewhere or before the kept blocks, by a wallet that uses our apps), "elsewhere" (sent elsewhere by a
+# wallet we know no app of), "unknown" (older than the kept blocks, wallet unknown to our apps). Counts only, never keys.
+FROM = ("tauhud", "rabbit", "nomemo", "agorzilla", "deja", "uses", "elsewhere", "unknown")
 KEEP_DAYS = 400
 COSIGN = {f"i{n}" for n in range(18, 26)}
 KNOWN = {"i1", "i2", "i4", "i5"} | COSIGN
@@ -142,27 +146,34 @@ class RuleDays:
         self._day(time.time() if now is None else now)["held"][w if w in WHO else "people"] += 1
         self.dirty = True
 
-    def record(self, bodies: dict, checked, who, now: float | None = None, balances: dict | None = None) -> dict:
+    def record(self, bodies: dict, checked, who, now: float | None = None, balances: dict | None = None, origin=None) -> dict:
         """One check of the node: bodies = {holder: rule text} in force now, checked = every account asked (an account
-        not asked this time keeps its last state), who(pk) -> people/ours/idni. Writes today's numbers; returns them."""
+        not asked this time keeps its last state), who(pk) -> people/ours/idni, origin(pk) -> one of FROM. Writes today's
+        numbers; returns them."""
         now = time.time() if now is None else now
         d = self._day(now)
         for pk, body in bodies.items():
             if self.last.get(pk) != flat(body):
                 d["new"][who(pk)] += 1
+                if origin is not None:
+                    nf = d.setdefault("new_from", {w: {c: 0 for c in FROM} for w in WHO})
+                    c = origin(pk)
+                    nf[who(pk)][c if c in FROM else "unknown"] += 1
                 self.last[pk] = flat(body)
         for pk in [p for p in checked if p in self.last and p not in bodies]:
             d["gone"][who(pk)] += 1
             del self.last[pk]
-        d.update(self.snapshot(bodies, who, balances))
+        d.update(self.snapshot(bodies, who, balances, origin))
         d["at"] = round(now)
         self.dirty = True
         return d
 
     @staticmethod
-    def snapshot(bodies: dict, who, balances: dict | None = None) -> dict:
-        """Rules in force by kind and holder; with balances ({holder: test AGRS}), the AGRS those wallets hold."""
+    def snapshot(bodies: dict, who, balances: dict | None = None, origin=None) -> dict:
+        """Rules in force by kind and holder; with balances ({holder: test AGRS}), the AGRS those wallets hold; with
+        origin(pk), where each rule in force came from (FROM)."""
         kinds_by = {w: {k: 0 for k in KINDS} for w in WHO}
+        frm = {w: {c: 0 for c in FROM} for w in WHO}
         holders = {w: 0 for w in WHO}
         agrs = {w: 0 for w in WHO}
         for pk, body in bodies.items():
@@ -171,7 +182,12 @@ class RuleDays:
             agrs[w] += int((balances or {}).get(pk) or 0)
             for k in kinds(body)["kinds"]:
                 kinds_by[w][k] += 1
+            if origin is not None:
+                c = origin(pk)
+                frm[w][c if c in FROM else "unknown"] += 1
         out = {"holders": holders, "kinds": kinds_by}
+        if origin is not None:
+            out["from"] = frm
         if balances is not None:
             out["agrs"] = agrs
         return out

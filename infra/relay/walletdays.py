@@ -221,6 +221,16 @@ class WalletDays:
         """{pubkey: tag} for the public tags (PUBLIC), for GET /wallets/tags."""
         return {k: t for k, t in zip(self.keys, self.tag) if t in PUBLIC}
 
+    def apps_of(self, pk: str) -> list[str]:
+        """Our apps this visitor's wallet sent through (its first app included); [] for our own and IDNI's wallets."""
+        k = self.index.get(str(pk or "").lower())
+        if k is None or self.tag[k] in NOT_VISITOR:
+            return []
+        used = list(self.apps.get(k, []))
+        if k in self.born and self.born[k][0] not in used:
+            used.insert(0, self.born[k][0])
+        return used
+
     def app_list(self) -> dict:
         """{pubkey: {"b": app, "d": day, "u": [apps], "n": {app: days}}} for visitors' wallets we know an app of, for
         GET /wallets/tags; u has the app it was active in on the most days first."""

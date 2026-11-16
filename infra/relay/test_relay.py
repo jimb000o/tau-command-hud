@@ -263,6 +263,9 @@ async def main():
                   and nums["offers"]["by"]["people"]["made"] == 0, f"/rules/numbers counts BOB's rule {nums}")
             with open(EVENTS + ".ruledays") as f:
                 check(BOB in json.load(f)["last"], "the rule record is on disk")
+            frm, nfr = nums["now"]["from"]["people"], nums["history"]["days"][today]["new_from"]["people"]
+            check(sum(frm.values()) == 1 and frm["tauhud"] == 0 and sum(nfr.values()) == 1 and nfr["tauhud"] == 0,
+                  f"BOB's rule did not come through our apps: counted where it came from, never as ours {frm} {nfr}")
             check(nums["now"]["agrs"]["people"] == 100000, f"the AGRS behind the rules {nums['now'].get('agrs')}")
             pay = {**good, "fee_limit": "11", "operations": {"1": [["ab" * 48, "cd" * 48, "5"]]}}
             check((await ask(ws, "sendtx " + json.dumps(pay)))["status"] == "error", "a payment its own rule refuses")
