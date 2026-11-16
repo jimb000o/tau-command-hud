@@ -2588,6 +2588,7 @@ TauI18n.add({ strings: {
   "You are the first wearer of this face.": "あなたがこの顔の最初の持ち主です。",
   "No wallet has chosen this face yet: wear it and you are its first wearer.": "この顔を選んだウォレットはまだありません。身につければ、あなたが最初の持ち主です。",
   "{x} chose this face first. You can still wear it.": "{x} が最初にこの顔を選びました。あなたも使えます。",
+  "Choose your islander's face, hair and clothes": "島民の顔、髪、服を選ぶ",
   "Islander studio": "島民スタジオ",
   "Your name comes from your key's letters: the same key, the same name. It is not on the chain.": "名前は鍵の文字から作られます：同じ鍵なら同じ名前。チェーンには載りません。",
   "This browser has no test wallet yet: open tauhud.com/wallet/ first, then your islander gets its own face from your key.": "このブラウザにはまだテストウォレットがありません。先に tauhud.com/wallet/ を開くと、島民が鍵から自分の顔を得ます。",
