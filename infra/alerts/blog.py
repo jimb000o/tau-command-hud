@@ -221,6 +221,18 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
         f["the testnet started over"] = {"noticed at": clock(restart["t"]), "old chain ended at block": restart.get("old_tip"),
                                          "new chain began at": clock(restart["new_chain_began"]) if restart.get("new_chain_began") else None,
                                          "what it means": restart.get("note")}
+        if landed:   # when it happened, from the ship's side: during her call it ends the call, whatever the ship did after
+            began = restart.get("new_chain_began") or restart["t"]
+            end = (left or {}).get("t") or s.get("end") or landed["t"] + 90 * 60
+            at = min(restart["t"], began) if began >= landed["t"] else restart["t"]
+            during = landed["t"] <= at <= end
+            f["the testnet started over"]["during her call"] = during
+            if during:   # 15 Nov 2026: our node followed the new chain at once, the ship never "left", the call still ended there
+                m = max(0, round((at - landed["t"]) / 60))
+                f["the testnet started over"]["minutes after she landed"] = m
+                if not left:
+                    f["minutes in port"] = m
+                    f["call cut short by the restart"] = True
     f["sent and accepted"] = {k: v for k, v in (s.get("sent") or {}).items() if v} or \
         dict(Counter(e["kind"] for e in sends if e.get("ok") is True))
     refused = {k: v for k, v in (s.get("refused") or {}).items() if v} or \
