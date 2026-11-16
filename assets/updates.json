@@ -3176,5 +3176,11 @@
     "on": "2026-11-16",
     "link": "/rabbit/",
     "html": "White Rabbit Key and Radio Coco: no more good mornings in the middle of the night. Rico's morning openers and morning words now start at 06:00 (were 05:00), his “wake-up call” opener and “Midnight on the island” keep to their hours, the Night Line no longer says good morning when it closes at five, and the islanders greet you with “Morning!” only between 06:00 and noon, whatever day of the game it is. At other hours they say something else they know."
+  },
+  {
+    "tag": "Newspaper",
+    "on": "2026-11-16",
+    "link": "/gazette/",
+    "html": "Newspaper: every Monday edition of The Daily Consensus is now a new episode from start to finish. A paragraph, an article or a café answer that an earlier edition already printed word for word is not printed again; the week’s own numbers take its place, or the story says since which edition nothing has changed."
   }
 ]

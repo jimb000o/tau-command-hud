@@ -139,7 +139,8 @@ idx = json.load(open(os.path.join(g, "editions.json")))
 check(e2["no"] == 2 and e3["no"] == 2 and [x["no"] for x in idx] == [2, 1], "the Monday edition is No. 2; written again the same day it keeps its number")
 check(set(idx[0]) >= {"no", "date", "banner", "teaser", "url"}, "the archive lists number, date, headline, teaser and link")
 check(len({x["banner"]["en"] for x in idx}) == len(idx) and all(x.get("sig") for x in idx), "no two editions in the archive share a headline")
-check(e2["stories"][1]["body"][0]["en"].startswith("Across town from the real testnet") and "In the simulation, where the visitors decide, two hourly" in json.dumps(e2["stories"][1]), "the week's noted day goes into the rehearsal hall")
+hall = gazette.rehearsal([{**d, "day": "2026-11-05"}], w.recap_numbers(END))
+check(hall["body"][0]["en"].startswith("Across town from the real testnet") and "In the simulation, where the visitors decide, two hourly" in json.dumps(hall), "the week's noted day goes into the rehearsal hall")
 alerts.PUBLIC_DIR, w0 = TMP, alerts.Watcher
 alerts.Watcher = Relay
 code = alerts.gazette_cli(reprint=True)
@@ -159,10 +160,26 @@ check(all(x["banner"]["zh"] and x["banner"]["ja"] for x in eds) and eds[1]["bann
 check(len({gazette.signature(x) for x in eds}) == 5 and gazette.summary(eds[0])["sig"] == gazette.signature(eds[0]), "each edition has its own signature in the archive list")
 check(eds[1]["banner"]["en"] in json.dumps(eds[1]["cafe"]["sully"]), "Sully calls the headline as printed")
 
+# ---- every edition an entirely new episode: nothing printed again word for word ----
+before, eds = {}, []
+for k in range(4):   # four quiet weeks, nearly the same numbers
+    x = gazette.edition(week(blocks=10500 + k * 300, txs=640 + k), [], [], 20 + k, END + k * 7 * 86400, seen={y["banner"]["en"] for y in eds}, before=dict(before))
+    again = [s_ for s_, n in gazette.printed_lines(x).items() if s_ in before and not s_.endswith("?")]
+    check(not again, f"No. {x['no']}: no article, paragraph or answer of an earlier edition again {again[:2]}")
+    gazette.printed_lines(x, before); eds.append(x)
+x = eds[2]
+check(x["big"] is None and x["teaser"]["en"].startswith("11,100 blocks") and x["lead"]["deck"] == x["teaser"] and x["deck"] == x["teaser"]["en"], "a repeated big headline gives way, the deck takes the week's own numbers")
+check(x["stories"][0]["body"][0]["en"] == "Nothing new here since No. 20, two editions ago." and x["stories"][0]["body"][0]["zh"] and x["stories"][0]["body"][0]["ja"], "a story with nothing new says since which edition")
+check(all(c["a"] for c in x["cafe"].values()) and "Ask me again next week" in json.dumps(x["cafe"]), "every regular still answers, in their own words when nothing is new")
+check(gazette.edition(week(), [], [], 1, END)["lead"]["body"] == gazette.edition(week(), [], [], 1, END, before={})["lead"]["body"], "the first edition is printed whole")
+
 
 # ---- the café walk's talk of the week ----
 c = e2["cafe"]
-check(set(c) == {"mae", "elias", "prof", "sully"} and all(v["greet"]["en"] and v["q"]["en"] and v["a"] for v in c.values()), "each regular has a line, a question and an answer for the week")
+# e2 is the same week as No. 1 in numbers, so the lines No. 1 already printed are left out (renew); the talk as written:
+c = gazette.cafe(w.recap_numbers(END), props, [{**d, "day": "2026-11-05"}], e2["no"], e2["banner"], e2["teaser"])
+check(e2["cafe"]["sully"]["greet"] and all(v["a"] for v in e2["cafe"].values()), "printed: Sully calls the new headline and every regular answers")
+check(set(c) == {"mae", "elias", "prof", "sully"} and all((v["greet"] is None or v["greet"]["en"]) and v["q"]["en"] and v["a"] for v in c.values()) and c["sully"]["greet"], "each regular has a question and an answer for the week, and a new line unless it would repeat one")
 check("Friday's pie" in c["mae"]["greet"]["en"] and "practice votes in the simulation" in json.dumps(c["mae"]), "Mae: the pie of the week, and the visitors' practice votes called practice")
 check("10,500 blocks" in c["elias"]["greet"]["en"] and "front page" in c["sully"]["greet"]["en"] and e2["banner"]["en"].rstrip(".!") in c["sully"]["greet"]["en"], "Elias counts the week's blocks, Sully calls the headline")
 check(gazette.cafe(week(), [], [], 1, e2["banner"], e2["teaser"])["mae"]["greet"] != gazette.cafe(week(), [], [], 2, e2["banner"], e2["teaser"])["mae"]["greet"], "the running jokes turn with the edition")
