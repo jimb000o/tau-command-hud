@@ -164,5 +164,15 @@ TauI18n.add({ strings: {
   "IDNI closed the issue as completed.": "IDNI 已将该 issue 作为完成关闭。",
   "IDNI merged it.": "IDNI 已合并。",
   "Read by our server from IDNI’s change": "由我们的服务器从 IDNI 的这次改动中读出：",
-  ", which says:": "，其中写道："
+  ", which says:": "，其中写道：",
+  "[bug] o5 clause verdict depends on how often its cached interpreter was stepped (`[t > 3]` / `[t = 0]` pass the clause screens)": "[bug] o5 规则的判定取决于其缓存解释器被步进的次数（`[t > 3]` / `[t = 0]` 能通过规则检查）",
+  "A personal rule with a bare time condition can give two nodes different answers.": "一条只带时间条件的个人规则可能让两个节点得出不同答案。",
+  "A rule with a time condition such as [t > 3] passes the checks at the door, and its answer then depends on how often that node has run the rule before. On our private copy of the testnet, never the live one, one node took block 5 and another refused it with a state hash mismatch.": "像 [t > 3] 这样带时间条件的规则能通过入口处的检查，之后它的答案取决于该节点此前运行这条规则的次数。在我们私有的测试网副本上（从不在线上测试网），一个节点接受了区块 5，另一个以状态哈希不一致拒绝了它。",
+  "Every node must reach the same answer on every block. If any rule can make two nodes disagree, the chain can split.": "每个节点对每个区块都必须得出相同的答案。只要有任何规则能让两个节点意见不一，链就可能分叉。",
+  "We found it by reading the code, tried it on our own private copy chain, and added the result to the issue.": "我们通过阅读代码发现了它，在自己私有的副本链上试过，并把结果补充到了 issue 里。",
+  "[bug] replaying the committed Tau journal grows with every transfer and reaches the 60 s admission budget on a small node": "[bug] 重放已提交的 Tau 日志随每次转账变长，在小节点上达到 60 秒的准入预算",
+  "Checking a new payment gets slower with every transfer, until a waiting wallet gets no answer.": "检查一笔新付款的时间随每次转账变长，直到等待的钱包得不到回答。",
+  "To check a new payment, the node replays its Tau journal from the last reset. That replay grows with every transfer: about 29 hours after the chain started it took 27 to 55 seconds on our small node, so a wallet that waits 20 seconds gets no answer.": "为了检查一笔新付款，节点会从上次重置开始重放它的 Tau 日志。这个重放随每次转账变长：链启动约 29 小时后，在我们的小节点上要 27 到 55 秒，所以等待 20 秒的钱包得不到回答。",
+  "A node has to answer a payment as quickly on day 100 as on day 1. Otherwise new payments time out the longer the chain runs.": "节点在第 100 天回答付款必须和第 1 天一样快。否则链运行得越久，新付款就越容易超时。",
+  "We measured it from our own node's log and named where the replay starts.": "我们根据自己节点的日志测量了它，并指出了重放从哪里开始。"
 } });

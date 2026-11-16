@@ -33,6 +33,8 @@ log = logging.getLogger("roadmap_review")
 STATE = os.environ.get("ROADMAP_REVIEW_PATH", "/state/devpulse/roadmap-review.json")
 WEEKDAY = int(os.environ.get("ROADMAP_REVIEW_WEEKDAY", 0))   # 0 = Monday
 HOUR = int(os.environ.get("ROADMAP_REVIEW_HOUR", 10))        # German time; a fix pull request opened earlier that morning is named
+LAST_CALL = int(os.environ.get("ROADMAP_REVIEW_LAST_CALL", 18))   # German time: with findings but no fix pull request yet the
+                                                                   # note waits for one (checked every pass) until this hour
 OURS = [x.strip() for x in os.environ.get("ROADMAP_OUR_LOGINS", "jimb000o").split(",") if x.strip()]
 OUR_REPO = os.environ.get("ROADMAP_OUR_REPO", "jimb000o/tau-command-hud")
 BERLIN = ZoneInfo("Europe/Berlin")
@@ -125,10 +127,14 @@ def note(r: dict) -> str:
     if r["merged"]:
         lines.append("IDNI merged into main this week (read next to the items):")
         lines += [f"- {m['en']}" for m in r["merged"][:6] if m["en"]]
-    if r["prs"]:
-        lines.append("A fix for the page is waiting, merge it: " + " ".join(p["url"] for p in r["prs"]))
-    elif r["flags"] or r["missing"]:
-        lines.append("A weekly review in the project opens a fix pull request for these; if none comes, paste this note into the project chat.")
+    waiting = [p for p in r["prs"] if not p.get("merged")]
+    merged = [p for p in r["prs"] if p.get("merged")]
+    if waiting:
+        lines.append("Fix pull request, merge it: " + " ".join(p["url"] for p in waiting))
+    if merged:
+        lines.append("Already merged: " + " ".join(p["url"] for p in merged))
+    if not r["prs"] and (r["flags"] or r["missing"]):
+        lines.append("No fix pull request came today. Paste this note into the project chat and a thread opens one.")
     return "\n".join(lines)
 
 
@@ -143,9 +149,19 @@ def ours_open(get=_get) -> list[dict]:
     return sorted({m["n"]: m for m in out}.values(), key=lambda m: m["n"])
 
 
-def fix_prs(get=_get) -> list[dict]:
-    rows = get(f"https://api.github.com/repos/{OUR_REPO}/pulls?state=open&per_page=50") or []
-    return [{"n": p["number"], "url": p["html_url"]} for p in rows if "road to mainnet" in str(p.get("title") or "").lower()]
+def fix_prs(now: float, get=_get) -> list[dict]:
+    """Our "Road to mainnet" pull requests that are open, or were merged in the last day (the morning review's fix)."""
+    rows = get(f"https://api.github.com/repos/{OUR_REPO}/pulls?state=all&sort=updated&direction=desc&per_page=50") or []
+    out = []
+    for p in rows:
+        if "road to mainnet" not in str(p.get("title") or "").lower():
+            continue
+        merged = p.get("merged_at")
+        if p.get("state") == "open":
+            out.append({"n": p["number"], "url": p["html_url"]})
+        elif merged and now - dt.datetime.fromisoformat(merged.replace("Z", "+00:00")).timestamp() <= 86400:
+            out.append({"n": p["number"], "url": p["html_url"], "merged": True})
+    return out
 
 
 # ---------------- state ----------------
@@ -199,10 +215,16 @@ def step(now: float, states: dict | None, news: list[dict], restarts: list[float
         except Exception:  # noqa: BLE001
             fnums = set()
         try:
-            r = check(page, fnums, states, st.get("states") or {}, ours_open(get), restarts, news, fix_prs(get), now)
+            r = check(page, fnums, states, st.get("states") or {}, ours_open(get), restarts, news, fix_prs(now, get), now)
         except Exception as e:  # noqa: BLE001 - GitHub or network: try again in two hours
             log.warning("roadmap review: %s", e)
             st["failed_at"] = now
+            save(st)
+            return public(st, page)
+        if not force and (r["flags"] or r["missing"]) and not r["prs"] \
+                and dt.datetime.fromtimestamp(now, BERLIN).hour < LAST_CALL:
+            log.info("roadmap review: findings, no fix pull request yet; the note waits for one")
+            st["failed_at"] = now - 7200 + 1800   # look again in half an hour
             save(st)
             return public(st, page)
         ok, why = tell(note(r))

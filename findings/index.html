@@ -288,6 +288,20 @@ const CACHE_KEY = "tauhud-findings-v3", CACHE_MS = 10 * 60 * 1000;
 // Issues we filed with IDNI. Add a new one here; title and status come from GitHub.
 const FINDINGS = [
   {
+    n: 115, title: "[bug] o5 clause verdict depends on how often its cached interpreter was stepped (`[t > 3]` / `[t = 0]` pass the clause screens)",
+    brief: "A personal rule with a bare time condition can give two nodes different answers.",
+    found: "A rule with a time condition such as [t > 3] passes the checks at the door, and its answer then depends on how often that node has run the rule before. On our private copy of the testnet, never the live one, one node took block 5 and another refused it with a state hash mismatch.",
+    impact: "Every node must reach the same answer on every block. If any rule can make two nodes disagree, the chain can split.",
+    ours: "We found it by reading the code, tried it on our own private copy chain, and added the result to the issue.",
+  },
+  {
+    n: 114, title: "[bug] replaying the committed Tau journal grows with every transfer and reaches the 60 s admission budget on a small node",
+    brief: "Checking a new payment gets slower with every transfer, until a waiting wallet gets no answer.",
+    found: "To check a new payment, the node replays its Tau journal from the last reset. That replay grows with every transfer: about 29 hours after the chain started it took 27 to 55 seconds on our small node, so a wallet that waits 20 seconds gets no answer.",
+    impact: "A node has to answer a payment as quickly on day 100 as on day 1. Otherwise new payments time out the longer the chain runs.",
+    ours: "We measured it from our own node's log and named where the replay starts.",
+  },
+  {
     n: 111, title: "[bug] o5 co-signer clause with 10 guards per author crashes the engine worker (stack overflow in pinned tau-lang c3ea334)",
     brief: "A long co-signer rule crashed the Tau engine's worker; the payment stayed pending.",
     idniBrief: "rules are now judged one account at a time; the engine is unchanged and we have not measured again.",

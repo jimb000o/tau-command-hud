@@ -76,14 +76,17 @@ def get(url):
     if "creator=" in url:
         return [{"number": 777, "title": "our new one"}, {"number": 778, "title": "a pr", "pull_request": {}}]
     if "/pulls" in url:
-        return [{"number": 5, "html_url": "https://github.com/x/y/pull/5", "title": "Road to mainnet: weekly fixes"},
-                {"number": 6, "html_url": "https://github.com/x/y/pull/6", "title": "Something else"}]
+        return [{"number": 5, "state": "open", "html_url": "https://github.com/x/y/pull/5", "title": "Road to mainnet: weekly fixes"},
+                {"number": 6, "state": "open", "html_url": "https://github.com/x/y/pull/6", "title": "Something else"},
+                {"number": 4, "state": "closed", "merged_at": "2026-11-23T07:50:00Z", "html_url": "https://github.com/x/y/pull/4", "title": "Road to mainnet: older fix"},
+                {"number": 3, "state": "closed", "merged_at": "2026-11-10T07:50:00Z", "html_url": "https://github.com/x/y/pull/3", "title": "Road to mainnet: last week"}]
     return []
 
 
 out = rr.step(utc("2026-11-22 09:30"), states, [], [], get=get, tell=lambda t: told.append(t) or (True, ""))
 check(not told and out is None, "Sunday: no check, nothing to show yet")
 out = rr.step(utc("2026-11-23 09:30"), states, [], [], get=get, tell=lambda t: told.append(t) or (True, ""))
+check("pull/4" in told[0] and "Already merged" in told[0] and "pull/3" not in told[0], "... and this morning's merged fix, not last week's")
 check(len(told) == 1 and "#777" in told[0] and "#778" not in told[0] and "pull/5" in told[0] and "pull/6" not in told[0],
       "Monday: one note, our open issue (not a pull request) and the waiting fix")
 check(out and out["at"] == int(utc("2026-11-23 09:30")) and out["flag"] == [], "the page gets the date of the check")
@@ -94,6 +97,25 @@ st = rr.load()
 st["last"]["flags"] = {"sync": ["x"]}
 check(rr.public(st, page)["flag"] == ["sync"], "a flag shows while the page is unchanged")
 check(rr.public(st, page + " ")["flag"] == [], "... and goes once the page's text changes")
+
+# ---------------- findings but no fix pull request yet: the note waits for one ----------------
+os.remove(rr.STATE)
+told.clear()
+nopr = lambda url: [{"number": 777, "title": "our new one"}] if "creator=" in url else []
+rr.step(utc("2026-11-23 09:30"), states, [], [], get=nopr, tell=lambda t: told.append(t) or (True, ""))
+check(not told, "10:30 with a finding and no fix pull request: the note waits")
+rr.step(utc("2026-11-23 09:45"), states, [], [], get=nopr, tell=lambda t: told.append(t) or (True, ""))
+check(not told, "... and does not look again for half an hour")
+rr.step(utc("2026-11-23 10:05"), states, [], [], get=get, tell=lambda t: told.append(t) or (True, ""))
+check(len(told) == 1 and "pull/5" in told[0], "the fix pull request is there: the note goes out with its link")
+os.remove(rr.STATE)
+told.clear()
+rr.step(utc("2026-11-23 17:05"), states, [], [], get=nopr, tell=lambda t: told.append(t) or (True, ""))
+check(len(told) == 1 and "No fix pull request came today" in told[0], "18:05: the note goes out without one and says so")
+os.remove(rr.STATE)
+told.clear()
+rr.step(utc("2026-11-23 03:05"), states, [], [], force=True, get=nopr, tell=lambda t: told.append(t) or (True, ""))
+check(len(told) == 1, "up idni roadmap now: right away")
 
 print("all ok" if not failed else f"{failed} FAILED")
 sys.exit(1 if failed else 0)
