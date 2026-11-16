@@ -3282,6 +3282,12 @@
     "tag": "Rules in numbers",
     "on": "2026-11-16",
     "link": "/rules/numbers/",
-    "html": "Rules in numbers: how many personal rules came through our apps. A new panel shows the share of people’s rules in force that were set through Tau HUD, White Rabbit Key, No Memo or Agorzilla, counted per app (our own server wallets never count). The chart now also shows all rules set so far and colours each day’s new rules by where they came from. Rule offers now also say how many were made and accepted through our apps. And an invitation: propose a rule to an islander on White Rabbit Key."
+    "html": "Rules in numbers: how many personal rules came through our apps. A new panel shows the share of people’s rules in force that were set through Tau HUD, White Rabbit Key, No Memo or Agorzilla, counted per app (our own server wallets never count). The chart now also shows all rules set so far and colours each day’s new rules by where they came from. And an invitation: propose a rule to an islander on White Rabbit Key."
+  },
+  {
+    "tag": "Rules in numbers",
+    "on": "2026-11-16",
+    "link": "/rules/numbers/",
+    "html": "Rules in numbers: rule offers now say how many were made, and how many accepted, through our apps (Tau HUD, White Rabbit Key, No Memo, Agorzilla), counted per app."
   }
 ]
