@@ -536,7 +536,7 @@ def ask_ai(facts: dict, tries: int = 2, shaped: bool = True, room: int = ROOM) -
         log.warning("the API answered %s for model %s: %s", e.code, AI_MODEL, reason)
         if e.code == 400 and shaped:   # the model does not take the shaped answer: ask the plain way, the JSON in the text
             return ask_ai(facts, tries, shaped=False, room=room)
-        raise RuntimeError(f"the API answered {e.code} for model {AI_MODEL}: {reason}") from None
+        raise RuntimeError(f"{ai_meter.reason(e.code, reason)} (model {AI_MODEL})") from None
     ai_meter.meter("blog", AI_MODEL, j.get("usage"))
     stop = j.get("stop_reason")
     if stop == "refusal":

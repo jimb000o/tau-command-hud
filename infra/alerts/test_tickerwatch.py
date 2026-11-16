@@ -69,6 +69,9 @@ check("every dated item has left" in p2["stale"], "stale says the line ran empty
 p3 = tw.problems(ln, {**pulse, "news_ai": "no key (NEWS_AI_KEY or CHAT_AI_KEY in infra/.env)"}, NOW)
 check("idni" in p3 and "no key" in p3["idni"], "headline writer without key is a problem")
 check("idni" not in tw.problems(ln, {**pulse, "news_ai": "waiting to retry after a failed try"}, NOW), "a retry wait is not")
+p4 = tw.problems(ln, {**pulse, "news_ai": "failed: Anthropic monthly limit reached, raise it at https://console.anthropic.com/settings/limits"}, NOW)
+check("idni" in p4 and p4["idni"].startswith("Anthropic monthly limit reached") and "settings/limits" in p4["idni"],
+      "the spend limit is told plainly, with its link")
 check("idni" in tw.problems(ln, None, NOW), "devpulse.json missing")
 stale_cfg = {"headlines": [{"text": "A", "since": "2026-11-01"}, {"text": "B", "since": "2026-11-02"}, {"text": "C", "since": "2026-11-03"}]}
 ps = tw.problems(tw.line(stale_cfg, [], [], {**pulse, "news": []}, at("2026-11-11")), pulse, at("2026-11-11"))

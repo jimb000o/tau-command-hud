@@ -44,6 +44,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from collections import Counter, defaultdict
@@ -451,8 +452,11 @@ def ask_ai(prompt: str) -> dict:
                        "messages": [{"role": "user", "content": prompt}]}).encode()
     req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body, headers={
         "x-api-key": NEWS_AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
-    with urllib.request.urlopen(req, timeout=180) as r:
-        j = json.load(r)
+    try:
+        with urllib.request.urlopen(req, timeout=180) as r:
+            j = json.load(r)
+    except urllib.error.HTTPError as e:   # the reason, not a bare 'HTTP Error 400' (the spend limit, 16.11.2026)
+        raise ai_meter.api_error(e) from None
     ai_meter.meter("news", NEWS_AI_MODEL, j.get("usage"))
     text = "".join(b.get("text", "") for b in j.get("content", []) if b.get("type") == "text")
     m = re.search(r"\{.*\}", text, re.S)
@@ -752,5 +756,33 @@ def nap(started: float, known: int) -> None:
     time.sleep(max(0.0, EVERY - (time.time() - started)))
 
 
+def ai_check() -> int:
+    """`python devpulse.py ai`: one tiny question to the API (a few tokens) and its answer in plain words; when it
+    answers, the headline writer's wait after a failed try is cleared, so the next pass (within 30 minutes) writes."""
+    if not NEWS_AI_KEY:
+        print("anthropic: no key (NEWS_AI_KEY or CHAT_AI_KEY in infra/.env)")
+        return 1
+    body = json.dumps({"model": NEWS_AI_MODEL, "max_tokens": 5, "messages": [{"role": "user", "content": "Say ok."}]}).encode()
+    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body, headers={
+        "x-api-key": NEWS_AI_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            j = json.load(r)
+        ai_meter.meter("news", NEWS_AI_MODEL, j.get("usage"))
+    except urllib.error.HTTPError as e:
+        print("anthropic: " + str(ai_meter.api_error(e)))
+        return 1
+    except OSError as e:
+        print(f"anthropic: not reachable ({e})")
+        return 1
+    st = load_headlines()
+    st["failed_at"] = 0
+    write_atomic(HEADLINES, json.dumps(st))
+    print(f"anthropic: answers again ({NEWS_AI_MODEL}); the news line writes on its next pass, within 30 minutes")
+    return 0
+
+
 if __name__ == "__main__":
+    if sys.argv[1:] == ["ai"]:
+        sys.exit(ai_check())
     main()

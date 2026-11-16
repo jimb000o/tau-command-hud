@@ -110,7 +110,7 @@ def ask(facts: dict) -> dict:
         with urllib.request.urlopen(req, timeout=900) as r:
             j = json.load(r)
     except urllib.error.HTTPError as e:
-        raise RuntimeError(f"the API answered {e.code}: {e.read().decode('utf-8', 'replace')[:400]}") from None
+        raise ai_meter.api_error(e) from None
     ai_meter.meter("blog", blog.AI_MODEL, j.get("usage"))
     if j.get("stop_reason") in ("refusal", "max_tokens"):
         raise RuntimeError(f"no article: {j.get('stop_reason')}")
