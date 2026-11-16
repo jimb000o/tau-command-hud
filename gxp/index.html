@@ -297,7 +297,7 @@ function fixHtml(d, x) {
   const st = x.step && (d.route || []).findIndex(s => s.id === x.step);
   const tags = x.step
     ? `<span class="tag" translate="no">${esc(T("Needs IDNI"))}</span><button type="button" class="tag" data-step="${esc(x.step)}" translate="no">${esc(T(`Step ${st + 1} of the route`))}</button>`
-    : `<span class="tag you" translate="no">${esc(T("Your side, possible today"))}</span>`;
+    : `<button type="button" class="tag you" data-step="you" translate="no">${esc(T("The company's own part"))}</button>`;
   return `<div class="fix"><span class="who">${tags}</span><div translate="no"><b>${esc(T("To close it"))}</b>${esc(pick(x.fix))}</div></div>`;
 }
 
@@ -346,7 +346,7 @@ function routeHtml(d) {
         const st = liveState(x.live);
         return `<li class="${st || ""}"><span class="ic" aria-hidden="true">${st === "found" ? "✓" : x.live ? "○" : "·"}</span><div><b translate="no">${esc(pick(x.t))}</b>` +
           `<div class="w" translate="no">${esc(pick(x.w))}</div><div class="dn" translate="no">${esc(T("Done when:"))} ${esc(pick(x.done))}</div>` +
-          `<div class="lv">${esc(T(st ? LIVE_TXT[st] : "GitHub not read"))}</div></div></li>`;
+          `<div class="lv">${esc(T(cls === " you" ? "In your own records, not on GitHub" : st ? LIVE_TXT[st] : "GitHub not read"))}</div></div></li>`;
       }).join("") + `</ul></div>` : "") +
       `<div><h5>${esc(T("Answers this step moves"))}</h5><div class="mv">${mv.map(ansHtml).join("")}</div></div>` + (extra || "") + `</div></details>`;
   };
@@ -360,7 +360,8 @@ function routeHtml(d) {
     `<span><b>${found.length}</b>${esc(T(`of ${checkable.length} checkable deliverables found on IDNI's GitHub`))}</span></div>`;
   if (you.length) {
     left -= you.length;
-    h += step("you", "0", " you", T("Your side, possible today"), T("Now"), T("Conditions the regulated company meets in its own procedure and validated system. They need nothing from IDNI."), [], you);
+    h += step("you", "0", " you", T("The company's own part"), T("No IDNI needed"), T("These answers are usable today with a condition. They close when the company that uses Tau writes each condition into its own procedure (SOP) and validated system. Its quality unit does this, not IDNI, and it can start before IDNI does anything."), d.you || [], you,
+      `<button type="button" class="lnk" data-copy="you">${esc(T("Copy this step as a checklist"))}</button>`);
   }
   d.route.forEach((s, i) => {
     const mv = open.filter(x => x.step === s.id);
@@ -373,10 +374,12 @@ function routeHtml(d) {
 
 /* the step as Markdown, for IDNI or anyone to paste into their own tracker; nothing is sent anywhere */
 function stepMarkdown(d, id) {
-  const s = d.route.find(x => x.id === id); if (!s) return "";
+  const you = id === "you";
+  const s = you ? { t: { en: T("The company's own part") }, d: { en: T("Written into your own procedure (SOP) and validated system; no IDNI needed.") }, do: d.you || [] } : d.route.find(x => x.id === id);
+  if (!s) return "";
   const i = d.route.indexOf(s) + 1;
-  const mv = d.items.filter(x => x.step === id);
-  return [`## ${T(`Step ${i}`)}: ${pick(s.t)} (${T(EFFORT[s.effort] || "")})`, "", pick(s.d), "",
+  const mv = d.items.filter(x => x.fix && x.r !== "ok" && (you ? !x.step : x.step === id));
+  return [`## ${T(`Step ${you ? 0 : i}`)}: ${pick(s.t)}${you ? "" : ` (${T(EFFORT[s.effort] || "")})`}`, "", pick(s.d), "",
     ...(s.do || []).map(x => `- [ ] **${pick(x.t)}**: ${pick(x.w)} ${T("Done when:")} ${pick(x.done)}`), "",
     `${T("Answers this step moves")}: ${mv.map(x => pick(x.q)).join("; ")}`, "",
     `${T("Source")}: https://tauhud.com/gxp/?view=route${S.use === "net" ? "&use=net" : ""} (${T("Tau HUD's proposal, not IDNI's plan")})`].join("\n");
