@@ -112,6 +112,13 @@ ul.facts b { color: #fff; font-weight: 600; }
 .b { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; font: 600 11px var(--display); letter-spacing: .06em; text-decoration: none; color: var(--text); background: none; border: 1px solid var(--hair); border-radius: 7px; padding: 5px 12px; }
 .b:hover { color: #000; background: #fff; border-color: #fff; }
 .b.go { color: #000; background: var(--ok); border-color: var(--ok); }
+.rload { display: grid; gap: 6px; color: var(--dim); font-size: 12px; padding: 4px 0; grid-column: 1 / -1; }
+.rload b { color: var(--text); font-weight: 600; }
+.rload .bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,.08); overflow: hidden; }
+.rload .bar i { display: block; height: 100%; background: var(--ok); border-radius: 2px; transition: width .4s; }
+.rload .bar.sweep i { width: 30% !important; animation: rsweep 1.3s ease-in-out infinite; }
+@keyframes rsweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(340%); } }
+@media (prefers-reduced-motion: reduce) { .rload .bar.sweep i { animation: none; width: 100% !important; opacity: .4; } }
 .empty { border: 1px dashed var(--hair); border-radius: 8px; padding: 12px; color: var(--dim); font-size: 12px; }
 .empty b { color: var(--text); }
 footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
@@ -187,7 +194,7 @@ html.fit .legend { gap: 2px 10px; font-size: 10.5px; }
   <main class="main">
     <section class="panel" id="pKinds">
       <h2>What the rules check <small id="kindsSub">rules in force now</small></h2>
-      <div class="kinds" id="kinds"></div>
+      <div class="kinds" id="kinds"><div class="rload" role="status"><b>Reading the rules from our node…</b><span class="bar sweep"><i></i></span></div></div>
       <p class="note" id="kindsNote">One rule can check several things, so it can count in more than one line.</p>
     </section>
     <section class="panel" id="pTime">
@@ -267,7 +274,7 @@ const FROM = {
 const fromOf = (o, k) => k === "agorzilla" ? (o.agorzilla || 0) + (o.deja || 0) : (o[k] || 0);
 const ourOf = o => APPS.reduce((a, k) => a + (o[k] || 0), 0) + (o.server || 0);
 const WHOS = ["people", "ours", "idni"];
-const S = { data: null, who: store.get("tauhud-rulenums-who") || "people", mode: "connecting" };
+const S = { loading: null, data: null, who: store.get("tauhud-rulenums-who") || "people", mode: "connecting" };
 if (!["people", "ours", "all"].includes(S.who)) S.who = "people";
 
 const pick = obj => S.who === "all" ? WHOS.reduce((a, w) => a + (obj && obj[w] || 0), 0) : (obj && obj[S.who]) || 0;
@@ -327,7 +334,7 @@ async function load() {
   if (SIM) {
     const head = TauSim.head(), blocks = [];
     for (let n = 0; n <= head; n++) { const b = TauSim.block(n); if (b) blocks.push(b); }
-    S.data = fromBlocks(blocks, null, head); S.mode = "sim";
+    S.data = fromBlocks(blocks, null, head); S.mode = "sim"; S.loading = S.confirming = null;
     setState("sim", "Simulation", "Simulation\nThe rules on the made-up chain, the same for every visitor.\nThe day history is kept only on the live testnet.");
     return render();
   }
@@ -338,6 +345,10 @@ async function load() {
     const j = await r.json();
     if (!j || !j.now) throw new Error("no numbers yet");
     S.data = j; S.mode = "live";
+    // right after a server update: the rules the kept blocks show come at once ("provisional"); only with none of those the panels wait
+    const some = Object.values((j.now && j.now.holders) || {}).some(n => n > 0);
+    S.loading = j.ready === false && !(j.provisional && some) ? (j.asking || {}) : null;
+    S.confirming = j.ready === false && j.provisional && some ? (j.asking || {}) : null;
     setState("ok", "Live", "Live\nOur node checks who holds a rule every few minutes.\nThis page reads again every minute.");
   } catch (e) {
     try {   // a relay from before /rules/numbers: the same reading from the rules wall, without history or offers outcome
@@ -345,7 +356,7 @@ async function load() {
       const holders = new Set(rules.holders || []), blocks = [];
       (wall.rules || []).forEach(r => r.users.forEach(u => blocks.push({ n: r.last, transactions: [{ sender_pubkey: u, operations: { "0": r.text } }] })));
       blocks.sort((a, b) => a.n - b.n);
-      S.data = fromBlocks(blocks, holders); S.data.texts = (wall.rules || []).length; S.data.partial = true; S.mode = "live";
+      S.loading = S.confirming = null; S.data = fromBlocks(blocks, holders); S.data.texts = (wall.rules || []).length; S.data.partial = true; S.mode = "live";
       setState("ok", "Live", "Live\nRead from the rules wall; the day history starts with the next server update.");
     } catch (x) {
       S.mode = S.data ? S.mode : "off";
@@ -364,6 +375,7 @@ function render() {
     const off = el("div", { class: "empty" }, el("b", { text: T("Our node is not answering.") }), " ", T("This page tries again in a minute."));
     $("kinds").replaceChildren(off); return;
   }
+  if (S.loading) return renderLoading(d, S.loading);
   const today = new Date().toISOString().slice(0, 10), hist = (d.history && d.history.days) || {};
   $("kNow").textContent = fmt(pick(d.now.holders));
   $("kNew").textContent = hist[today] ? fmt(pick(hist[today].new)) : "–";
@@ -373,6 +385,21 @@ function render() {
   $("kAgrs").textContent = d.now.agrs ? fmt(pick(d.now.agrs)) : "–";
   $("kHeld").textContent = hist[today] && hist[today].held ? fmt(pick(hist[today].held)) : "–";
   drawKinds(d); drawTime(d); drawOffers(d); drawHow(d);
+}
+/* right after a server update our node first asks every account again who holds a rule: until then the numbers would read 0,
+   so the panels show how far it got instead; the chart keeps its day history */
+function loadingBox(l) {
+  const n = l && l.of, k = l && l.done || 0;
+  return el("div", { class: "rload", role: "status", "aria-live": "polite" },
+    el("span", null, el("b", { text: n ? F("Our node is asking who holds a rule: {k} of {n} accounts.", { k: fmt(k), n: fmt(n) }) : T("Our node is asking who holds a rule…") }), " ",
+      T("After a server update this takes a few minutes; the numbers fill in by themselves.")),
+    el("span", { class: "bar" + (n ? "" : " sweep") }, el("i", { style: `width:${n ? Math.round(100 * k / n) : 0}%` })));
+}
+function renderLoading(d, l) {
+  ["kNow", "kNew", "kAgrs", "kHeld", "kOurs"].forEach(id => { $(id).textContent = "…"; });
+  $("kinds").replaceChildren(loadingBox(l)); $("kindsNote").textContent = "";
+  $("share").replaceChildren(); $("from").replaceChildren(loadingBox(l)); $("howNote").textContent = "";
+  drawTime(d); drawOffers(d);
 }
 function drawKinds(d) {
   const k = pickKinds(d.now.kinds), total = pick(d.now.holders), max = Math.max(1, ...Object.values(k));
@@ -386,7 +413,8 @@ function drawKinds(d) {
   }));
   const c = d.now.checked, all = d.now.candidates;
   $("kindsNote").textContent = T("One rule can check several things, so it can count in more than one line.")
-    + (c != null && all != null && all > c ? " " + F("Our node asks about the {c} newest of {a} accounts that ever set a rule.", { c: fmt(c), a: fmt(all) }) : "");
+    + (c != null && all != null && all > c ? " " + F("Our node asks about the {c} newest of {a} accounts that ever set a rule.", { c: fmt(c), a: fmt(all) }) : "")
+    + (S.confirming ? " " + (S.confirming.of ? F("Read from the blocks; our node is confirming them: {k} of {n} accounts.", { k: fmt(S.confirming.done || 0), n: fmt(S.confirming.of) }) : T("Read from the blocks; our node is confirming them.")) : "");
 }
 function drawTime(d) {
   const box = $("chart"), days = Object.keys((d.history && d.history.days) || {}).sort();
@@ -530,6 +558,7 @@ if (SIM) TauSim.mark();
 fit();
 load();
 setInterval(() => { if (!document.hidden) load(); }, 60000);
+setInterval(() => { if (!document.hidden && (S.loading || S.confirming)) load(); }, 8000);   // while our node is still asking, read again more often
 </script>
 </body>
 </html>

@@ -247,4 +247,9 @@ TauI18n.add({ strings: {
   "propose a rule to an islander.": "向一位岛民提议一条规则。",
   "Meet the islanders": "去见岛民",
   "came through our apps.": "来自我们的应用。",
+  "Our node is asking who holds a rule: {k} of {n} accounts.": "我们的节点正在询问谁持有规则：{n} 个账户中的 {k} 个。",
+  "Our node is asking who holds a rule…": "我们的节点正在询问谁持有规则……",
+  "After a server update this takes a few minutes; the numbers fill in by themselves.": "服务器更新后需要几分钟；数字会自动填满。",
+  "Read from the blocks; our node is confirming them: {k} of {n} accounts.": "从区块中读取；我们的节点正在确认：{n} 个账户中的 {k} 个。",
+  "Read from the blocks; our node is confirming them.": "从区块中读取；我们的节点正在确认。",
 } });

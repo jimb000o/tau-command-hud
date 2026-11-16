@@ -3295,5 +3295,10 @@
     "on": "2026-11-16",
     "link": "/rules/",
     "html": "Rules wall: each card now says whose rule it is (a wallet that started in White Rabbit Key or uses Tau HUD, one of our showcase wallets, an IDNI genesis account), names addresses that belong to an app we know, and says what a hand-written rule checks. A new filter shows only people’s rules, only our apps’ players, or ours and IDNI’s. Rules in numbers: under All, the rules our own server runs (showcase wallets, No Memo’s vaults) get their own row instead of counting as “elsewhere”."
+  },
+  {
+    "tag": "Rules load",
+    "on": "2026-11-16",
+    "html": "Personal money rules and Rule sharing fill as soon as the HUD opens: the relay now hands over every rule in force and the newest offers in one answer, instead of the page asking our node about each account in turn. While our node is still reading after a server update, both panels and Rules in numbers show how far it got."
   }
 ]
