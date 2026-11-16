@@ -60,7 +60,10 @@ coin talk, no exclamation marks, no emoji, no names of people.
 that adds to the title.
 - why: three lines, each at most 160 characters: for the user, for Tau Net, and one honest limit.
 - body: Markdown with "## " section headings, short paragraphs and "- " lists. Sections in this order: "What \
-changed", "What it gives you", "Where it stops", "What is still open". No title in body, no tables, no links.
+changed", "What it gives you", "Where it stops", "What is still open". No title in body, no tables.
+- Links: where body first names a change, link it as Markdown, [a few words](url), with an exact URL from "links" in the \
+input (IDNI's commits, pull requests, issues, changelog); every change you describe gets its link, in zh and ja too. \
+No other links, never a URL you made up.
 - Numbers of 1,000 and more with commas (100,000).
 - zh: Simplified Chinese, ja: Japanese, same meaning and the same numbers; keep Tau Net, Tau, IDNI and AGRS in Latin \
 letters.
@@ -94,9 +97,46 @@ def change_text(path: str, sha: str) -> str:
     return out
 
 
+def commit_links(path: str, shas: list[str], repo: str = REPO) -> list[dict]:
+    """Each change's commit, and its pull request when the merge names one: {"url", "what"} for the writer to link."""
+    out = []
+    for sha in shas[:CHANGES]:
+        try:
+            subject, body = (_git(path, "log", "-1", "--format=%s%x1f%b", sha).split("\x1f") + [""])[:2]
+        except subprocess.CalledProcessError:
+            subject, body = "", ""
+        what = subject.strip()
+        m = re.match(r"merge pull request #(\d+)", what, re.I) or re.search(r"\(#(\d+)\)\s*$", what)
+        if re.match(r"merge pull request", what, re.I):
+            what = next((x.strip() for x in body.splitlines() if x.strip()), what)
+        out.append({"url": f"https://github.com/{repo}/commit/{sha}", "what": what or sha[:7]})
+        if m:
+            out.append({"url": f"https://github.com/{repo}/pull/{m.group(1)}", "what": "pull request of: " + (what or sha[:7])})
+    return out
+
+
 def facts_of(d: dict, path: str) -> dict:
     return {"the daily post": {"title": d.get("title"), "points": d.get("points"), "why": d.get("why")},
-            "changes": [change_text(path, s) for s in (d.get("shas") or [])[:CHANGES]]}
+            "changes": [change_text(path, s) for s in (d.get("shas") or [])[:CHANGES]],
+            "links": d.get("links") or commit_links(path, d.get("shas") or [])}
+
+
+LINK = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
+HEAD = {"en": "The changes on GitHub", "zh": "GitHub 上的改动", "ja": "GitHub 上の変更"}
+
+
+def proof(body: dict, links: list[dict]) -> dict:
+    """Only the input's own links stay links (any other keeps its words); a language whose text links none of them
+    gets them as a list at its end, so every article points to the exact changes it tells of."""
+    ok = {x["url"] for x in links if x.get("url")}
+    out = {}
+    for lang, text in body.items():
+        text = LINK.sub(lambda m: m.group(0) if m.group(2) in ok else m.group(1), text)
+        if ok and not any(m.group(2) in ok for m in LINK.finditer(text)):
+            text = text.rstrip() + f"\n\n## {HEAD.get(lang, HEAD['en'])}\n" + "\n".join(
+                f"- [{x['what'].replace('[', '(').replace(']', ')')[:120]}]({x['url']})" for x in links[:12] if x.get("url"))
+        out[lang] = text
+    return out
 
 
 def ask(facts: dict, note: str = "") -> dict:
@@ -128,17 +168,20 @@ def ask(facts: dict, note: str = "") -> dict:
 def article(d: dict, facts: dict, out: dict, now: float, aid: str | None = None) -> dict:
     import blog
     title, dek, body = blog.three(out.get("title"), 90), blog.three(out.get("dek"), 220), blog.three(out.get("body"), 9000)
+    if body:
+        body = proof(body, facts.get("links") or [])
     why = [w for w in (blog.three(x, 200) for x in (out.get("why") or [])[:3]) if w]
     if not (title and dek and body and why):
         raise ValueError("the answer misses a title, dek, why or body in one of the languages")
-    en = " ".join([title["en"], dek["en"], body["en"], *[w["en"] for w in why], str(out.get("x") or "")])
+    en = " ".join([title["en"], dek["en"], LINK.sub(r"\1", body["en"]), *[w["en"] for w in why], str(out.get("x") or "")])
     on = blog.local(d.get("end") or now).strftime("%Y-%m-%d")
     plain = lambda t: re.sub(r"(?<=\d),(?=\d{3}(?![\d,]))", "", t)   # 100,000 in the text is 100000 in the code
     check = {"unknown_numbers": blog.unknown_numbers(plain(en), json.loads(plain(json.dumps(facts, ensure_ascii=False)))),
              "hype": sorted({m.group(0) for m in blog.HYPE.finditer(en)} | {m.group(0) for m in blog.BLAME.finditer(en)})}
     return {"id": aid or f"{on}-idni-news", "on": on, "kind": "news", "digest": d.get("id"), "t0": int(d.get("end") or now),
             "title": title, "dek": dek, "why": why, "body": body, "x": " ".join(str(out.get("x") or "").split())[:240],
-            "sources": d.get("sources") or [f"https://github.com/{REPO}/commit/{s}" for s in (d.get("shas") or [])[:CHANGES]],
+            "sources": d.get("sources") or [{"href": x["url"], "label": x["what"]} for x in (facts.get("links") or [])[:CHANGES]]
+                       or [f"https://github.com/{REPO}/commit/{s}" for s in (d.get("shas") or [])[:CHANGES]],
             "check": check, "card": blog.card_of(out.get("card"), title["en"]), "written": int(now), "model": blog.AI_MODEL}
 
 

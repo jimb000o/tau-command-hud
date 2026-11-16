@@ -99,7 +99,7 @@ st = blog.state()
 a = json.load(open(os.path.join(TMP, "blog", "drafts", st["drafts"][did] + ".json")))
 check(did == "2026-11-15-idni-news" and a["kind"] == "news" and a["status"] == "draft" and a["t0"] == end
       and st["news_drafted"] == {big["id"]: did} and did in st["drafted_at"], "one draft, unlisted like a ship's article, remembered")
-check(len(asked) == 1 and "Every account can hold its own rule" in json.dumps(asked[0]) and a["sources"] == [f"https://github.com/IDNI/tau-testnet/commit/{sha}"],
+check(len(asked) == 1 and "Every account can hold its own rule" in json.dumps(asked[0]) and a["sources"] == [{"href": f"https://github.com/IDNI/tau-testnet/commit/{sha}", "label": "feat(policy): judge each payment by its sender's own rule"}],
       "written from the daily post and the changes, with the changes as sources")
 check(a["check"] == {"unknown_numbers": [], "hype": []}, "every number is in the changes: clean, may go out by itself")
 check(na.tick(end + 7200, fake(GOOD)) is None and len(asked) == 1, "never twice")
@@ -110,5 +110,9 @@ check("40" in a2["check"]["unknown_numbers"] and a2["check"]["hype"], "a number 
 check(blog.ID_RE.match(did) and blog.kicker(a).startswith("News · 15 November 2026") and not blog.island_story(a),
       "an id up blog publish takes, the News kicker and the site's own picture")
 
+u = f"https://github.com/IDNI/tau-testnet/commit/{sha}"
+b = na.proof({"en": f"See [the change]({u}) and [a guess](https://github.com/IDNI/tau-testnet/commit/deadbee) and [evil](https://evil.example/x)."},
+             [{"url": u, "what": "the change"}])
+check(b["en"] == f"See [the change]({u}) and a guess and evil.", "only the input's own links stay links; made-up ones keep their words")
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)

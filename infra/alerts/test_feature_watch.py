@@ -106,7 +106,12 @@ posts = blog.posts()["posts"]
 check(posts and posts[0]["id"] == out[0] and posts[0]["kind"] == "news" and out[0] in bst.get("announced", []),
       "on the blog at once with its one post (09:34 German time)")
 check("judge transfers" not in json.dumps(asked[0][0]) and "rule-change guard" in json.dumps(asked[0][0])
-      and posts[0]["sources"] == [f"https://github.com/IDNI/tau-testnet/commit/{feat}"], "written from the feature's own change")
+      and posts[0]["sources"] == [{"href": f"https://github.com/IDNI/tau-testnet/commit/{feat}",
+                                   "label": "feat: co-signed policy changes through a rule-change guard"}], "written from the feature's own change")
+url = f"https://github.com/IDNI/tau-testnet/commit/{feat}"
+check(f"]({url})" in posts[0]["body"]["en"] and "## The changes on GitHub" in posts[0]["body"]["en"]
+      and f"]({url})" in posts[0]["body"]["zh"] and "GitHub 上的改动" in posts[0]["body"]["zh"],
+      "the writer linked nothing: the exact change is listed at the end, in every language")
 check(fw.load()["items"][0]["status"] == "published" and fw.step(T0 + 3 * 3600, fake([GOOD])) == [], "once")
 
 # --- a second feature late in the evening: the next morning; hype twice: the plain post ---
@@ -138,7 +143,7 @@ blog.AI_KEY = key
 os.makedirs(LSRC)
 run(LSRC, "init", "-q", "-b", "main")
 l1 = commit(LSRC, {"CHANGELOG.md": "# Changelog\n## [v0.8.0](x)\n### Added\n- Old thing. (PRs: none / Commits: none)\n### Fixed\n- A fix.\n"}, "one", at("2026-11-10T09:00:00Z"))
-l2 = commit(LSRC, {"CHANGELOG.md": "# Changelog\n## [v0.8.0](x)\n### Added\n- Old thing. (PRs: none / Commits: [a](b))\n- Sets of programs as terms. (PRs: none)\n### Fixed\n- A fix.\n- Another fix.\n"}, "two", at("2026-11-15T09:00:00Z"))
+l2 = commit(LSRC, {"CHANGELOG.md": "# Changelog\n## [v0.8.0](x)\n### Added\n- Old thing. (PRs: none / Commits: [a](b))\n- Sets of programs as terms. (PRs: [#7](https://github.com/IDNI/tau-lang/pull/7))\n### Fixed\n- A fix.\n- Another fix.\n"}, "two", at("2026-11-15T09:00:00Z"))
 check(fw.added(open(os.path.join(LSRC, "CHANGELOG.md")).read()) == ["Old thing.", "Sets of programs as terms."], "the Added lines, without their links")
 commit(SRC, {"Dockerfile.standalone": f"ARG TAU_LANG_REF={l1}\n"}, "build: pin tau-lang", at("2026-11-17T11:00:00Z"))
 st = fw.load()
@@ -148,6 +153,9 @@ commit(SRC, {"Dockerfile.standalone": f"ARG TAU_LANG_REF={l2}\n"}, "build: bump 
 fw.scan(st, at("2026-11-18T09:05:00Z"))
 lang = [i for i in st["items"] if i["kind"] == "lang"]
 check(len(lang) == 1 and lang[0]["titles"] == ["Sets of programs as terms."], "the build moved: what IDNI's changelog added in between")
+ln = fw.links(lang[0])
+check(ln[0]["url"] == f"https://github.com/IDNI/tau-lang/compare/{l1}...{l2}" and any(x["url"].endswith("/pull/7") for x in ln),
+      "a Tau Language item links the compare view, the changelog and the pull requests its lines name")
 run(LSRC, "tag", "v0.8.0")
 fw.scan(st, at("2026-11-18T09:10:00Z"))
 rel = [i for i in st["items"] if i["kind"] == "release"]

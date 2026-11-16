@@ -122,16 +122,34 @@ def changelog(path: str, ref: str) -> str:
         return ""
 
 
-def added(text: str) -> list[str]:
-    """The "- " lines under every "### Added" of a changelog, without their source links (those change on their own)."""
+def added(text: str, raw: bool = False) -> list[str]:
+    """The "- " lines under every "### Added" of a changelog, without their source links (those change on their own);
+    raw: as written, with them."""
     out, on = [], False
     for line in text.splitlines():
         if line.startswith("#"):
             on = line.strip().lower() == "### added"
             continue
         if on and line.startswith("- "):
-            out.append(re.sub(r"\s*\(PRs:.*\)\s*$", "", line[2:]).strip())
+            out.append(line[2:].strip() if raw else re.sub(r"\s*\(PRs:.*\)\s*$", "", line[2:]).strip())
     return out
+
+
+GH = re.compile(r"\[([^\]]*)\]\((https://github\.com/IDNI/(?:tau-testnet|tau-lang)/(?:commit|pull|issues)/[0-9a-f]{7,40}|"
+                r"https://github\.com/IDNI/(?:tau-testnet|tau-lang)/(?:pull|issues)/\d+)\)")
+
+
+def changelog_links(lines: list[str], cap: int = 40) -> list[dict]:
+    """The commits, pull requests and issues a changelog's own lines link, each with the line it belongs to."""
+    out, seen = [], set()
+    for line in lines:
+        what = re.sub(r"\s*\(PRs:.*$", "", line.lstrip("- ")).strip()
+        what = re.sub(r"`", "", what)[:110]
+        for m in GH.finditer(line):
+            if m.group(2) not in seen:
+                seen.add(m.group(2))
+                out.append({"url": m.group(2), "what": what})
+    return out[:cap]
 
 
 def section(text: str, tag: str) -> str:
@@ -168,10 +186,12 @@ def scan(st: dict, now: int) -> None:
     pin = dp.lang_pin(tn, branch)
     old = st.get("lang_pin")
     if pin and old and pin != old:
-        new = [b for b in added(changelog(lp, pin)) if b not in set(added(changelog(lp, old)))]
-        if new:
+        before = set(added(changelog(lp, old)))
+        now_raw = added(changelog(lp, pin), raw=True)
+        pairs = [(b, r) for b, r in zip(added(changelog(lp, pin)), now_raw) if b not in before]
+        if pairs:
             st["items"].append({"id": f"lang-{pin[:8]}", "kind": "lang", "status": "pending", "shas": [pin], "from": old,
-                                "titles": new[:40], "first": now, "last": now})
+                                "titles": [b for b, _ in pairs][:40], "raw": [r for _, r in pairs][:40], "first": now, "last": now})
     if pin:
         st["lang_pin"] = pin
     tags = sorted(t for t in dp.git(lp, "tag", "-l").split() if TAG.match(t))
@@ -223,15 +243,28 @@ def facts(it: dict) -> dict:
         tn = path_of(dp.TESTNET)
         return {"what this is": "New features IDNI merged into the Tau Net testnet's code (tau-testnet main), each with "
                                 "IDNI's own title, the diff and IDNI's documentation changed with it.",
-                "changes": [news_article.change_text(tn, s) for s in it["shas"][:news_article.CHANGES]]}
+                "changes": [news_article.change_text(tn, s) for s in it["shas"][:news_article.CHANGES]],
+                "links": links(it)}
     built = it["kind"] == "lang"
-    return {"what this is": ("The Tau Net testnet's build now uses a newer Tau Language (IDNI/tau-lang). These are the "
+    return {"links": links(it), "what this is": ("The Tau Net testnet's build now uses a newer Tau Language (IDNI/tau-lang). These are the "
                              "lines IDNI's own Tau Language changelog lists as Added between the old and the new version "
                              "the testnet uses; they are what someone writing Tau rules on the testnet can now use.")
             if built else
             (f"IDNI released Tau Language {it['tag']} (IDNI/tau-lang). This is IDNI's own changelog of the release. "
              "Whether the Tau Net testnet uses this version yet is not said here, so do not say it does."),
             "changelog": ("\n".join("- " + b for b in it["titles"]) if built else it.get("changelog", ""))[:30000]}
+
+
+def links(it: dict) -> list[dict]:
+    """The exact changes an item tells of, {"url", "what"}: the article links them in its text and lists them."""
+    import news_article
+    if it["kind"] == "testnet":
+        return news_article.commit_links(path_of(dp.TESTNET), it["shas"], dp.TESTNET)
+    head = [{"url": sources(it)[0], "what": "Tau Language changes in the testnet's build" if it["kind"] == "lang"
+             else f"Tau Language {it['tag']} release"},
+            {"url": f"https://github.com/{LANG}/blob/main/CHANGELOG.md", "what": "IDNI's Tau Language changelog"}]
+    lines = it.get("raw") or (it.get("changelog") or "").splitlines()
+    return head + changelog_links([x for x in lines if x.lstrip().startswith("- ") or it.get("raw")])
 
 
 def sources(it: dict) -> list[str]:
@@ -259,7 +292,9 @@ def write(it: dict, now: float, ask_=None) -> tuple[str, dict]:
     taken = set(st.get("drafts") or {}) | {p["id"] for p in blog.posts()["posts"]}
     while aid in taken:
         aid, n = f"{base}-{n}", n + 1
-    d = {"id": it["id"], "feature": True, "end": int(now), "shas": it["shas"], "sources": sources(it)}
+    ln = links(it)
+    d = {"id": it["id"], "feature": True, "end": int(now), "shas": it["shas"], "links": ln,
+         "sources": [{"href": x["url"], "label": x["what"]} for x in ln[:12]]}
     did = news_article.write_draft(d, path_of(dp.TESTNET), now, ask_, facts=facts(it), aid=aid, retry=True)
     a = blog.read_json(os.path.join(blog.PUBLIC, "drafts", blog.state()["drafts"][did] + ".json"), {})
     return did, a.get("check") or {}
