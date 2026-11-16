@@ -47,6 +47,8 @@ jobs:
         run: node tests/ticker.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: The crew of No Memo has every spoken line listed (nomemo/voices.json)
         run: node tests/nomemo-voices.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Radio Coco's morning show opens at eight, closes at ten and reads the relay right; every song has its lines
+        run: node tests/morning.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: The cruise captains aboard in White Rabbit Key have every line in zh and ja and say the relay's own limits
         run: node tests/captain.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: The facts for AI assistants (llms.txt, tauhud.com/facts/) say what facts/facts.json says

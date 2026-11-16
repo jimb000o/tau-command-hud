@@ -745,6 +745,84 @@
     /* Rico does not know everything: who is behind a wallet, or why */
     dk1: "A listener asks who is behind the biggest wallet on the lagoon. Rico does not know. The Book does not know. The wallet knows, and the wallet is not calling in.",
     dk2: "Rico guessed yesterday that the wave at the pier was the ferry. There is no ferry. Rico has been told. Repeatedly.",
+    /* Coco Sunrise, the morning show (08:00 to 10:00 German time): the openers (shouted for joy, SETS.wakeMs), the welcome for
+       whoever tunes in later, nine and ten o'clock, the night report from the chain, what's on today, the Tau word of the day,
+       who's up (the newest blocks' senders), the morning phone, and the eleven songs added on 16 Nov */
+    msO1: "Eight o'clock! Good morning, island, and welcome to Coco Sunrise on Radio Coco! Two hours of songs, the night's news from the chain, and your calls. Coffee up!",
+    msO2: "Good morning, lagoon! It's eight, the bakery is open, and this is Coco Sunrise! Rico has the night report, the Tau word of the day and the phone lines. Let's go!",
+    msJ1: "Good morning and welcome to Coco Sunrise, the morning show on Radio Coco. Songs, the night's news from the chain, and your calls, until ten.",
+    msJ2: "You're up! Good. This is Coco Sunrise on Radio Coco, every morning from eight to ten. Pull up a chair.",
+    msH1: "Nine o'clock on Coco Sunrise. One more hour of songs and calls, and the lines are open.",
+    msH2: "It's nine! Half the island is at work, the other half is still looking for its sandals. Coco Sunrise keeps going until ten.",
+    msC1: "Ten o'clock, and that was Coco Sunrise. Thank you for every call. Back tomorrow at eight. Radio Coco plays on.",
+    msC2: "That's ten, and that's the morning show. Go and make something today, even if it's only a mistake on the testnet. Coco Sunrise is back tomorrow at eight.",
+    mt1: "Coco Sunrise. The sun is up, the lagoon is flat, and the chain kept counting all night. Somebody had to.",
+    mt2: "Morning tip from Rico: before your first payment of the day, read the address twice. Coffee first, then the address.",
+    mt3: "Good morning to everybody opening a shop on the island today. And to everybody opening a wallet: write the key down before anything else.",
+    mt4: "The fishermen are back, the bread is out of the oven, and the blocks keep coming. A normal morning on the lagoon.",
+    mt5: "Coco Sunrise, on Radio Coco. If you only have time for one song before work, this is the one.",
+    mt6: "Rico's morning rule: no payments before coffee, and no coffee before the bakery. It's not on the chain. Yet.",
+    ov1: "Rico's night report: since midnight our node counted {n} new blocks. The chain did not sleep. Rico did, a little.",
+    ov2: "The night on the chain: {n} transactions since midnight. Some of them ours, most of them not, all of them sealed.",
+    ovR1: "News from the night: the testnet started over while you slept. The builders are updating it, and on a test network that's expected. Your key still works. Old balances stayed with the old blocks, so an empty wallet can get coins from the faucet again.",
+    ovR2: "Heads up, early birds: the chain restarted during the night. Nothing you did. A new chain means fresh balances; your wallet is the same, the faucet fills it again.",
+    ovQ1: "A quiet night on the chain. Few transactions, steady blocks. The lagoon slept, and so did the wallets.",
+    ovB1: "A busy night on the chain! Lots of traffic while the island slept. Somebody out there doesn't need sleep.",
+    tdQ: "Today on the island: the Queen Mempool docks this afternoon. Her passengers are made up, but their payments are real test transactions. Watch the lagoon get busy.",
+    tdD: "Today on the island: the MS Dry Run is due this afternoon. A small ship with made-up passengers, and every payment they make is a real test transaction.",
+    td1: "It's Monday on the island. Tobias calls it the start of the week. Everybody else calls it Monday.",
+    td2: "Tuesday morning. Nothing special is planned, which on this island means something will happen.",
+    td3: "It's Wednesday. Halfway through the week, and the chain hasn't taken a day off yet.",
+    td4: "Thursday morning on the lagoon. Rico checked: still no ferry to the mainland. Still a good day.",
+    td5: "It's Friday! The night market opens tonight, and the chain opens every block, as always.",
+    td6: "Saturday morning. No school, no hurry, and the testnet doesn't care what day it is.",
+    td7: "Sunday on the island. Slow coffee, slow waves, and blocks at the usual pace.",
+    tdN: "And tonight at eleven, the Night Line. Save your worries for Rico.",
+    tw1: "The Tau word of the day: sat. You give Tau a formula and ask: can this ever be true? If yes, it's satisfiable. Rico's breakfast is satisfiable. Barely.",
+    tw2: "Today's Tau word: valid. Not just true sometimes. True for every value you can put in. Like the bakery's opening time.",
+    tw3: "Tau word of the day: always. A rule with always must hold at every step, not just once. Rico tried always being on time. It held for two steps.",
+    tw4: "Today's Tau word: sometimes. It's enough if it's true at some step. Rico is sometimes on time. That one holds.",
+    tw5: "The Tau word of the day: i1, the first input stream. In a testnet rule the amount of the payment comes in on i1, step by step.",
+    tw6: "Today's Tau word: o5. That's where a testnet rule answers: 1 lets the payment through, 0 stops it.",
+    tw7: "Tau word of the day: t minus one. It means the step before. A rule can look back and ask what happened last time.",
+    tw8: "Today's Tau word is a small mark: the apostrophe. In Tau it means the complement: everything the thing is not.",
+    tw9: "The Tau word of the day is silence. A rule that says nothing answers 0, and 0 stops the payment. So say what you let through.",
+    tw10: "Today's Tau word: bv eight. A number with eight bits, from 0 to 255. Rico's coconut count fits easily.",
+    twMore: "Want more? The lessons are free on tauhud.com, under learn.",
+    rcNomemo: "Who's up? A player in No Memo already sent a transaction this morning. The hackers are awake.",
+    rcHud: "Who's up? Somebody sent a transaction from the Tau HUD wallet in the last few blocks. Good morning to you.",
+    rcJungle: "Who's up? Somebody fed Agorzilla in the last few blocks. The jungle has breakfast before Rico does.",
+    rcIdni: "Who's up? Most of the newest transactions come from the wallets the testnet started with, the builders' own. They're early.",
+    rcOther: "Who's up? Wallets Rico doesn't know sent transactions in the last few blocks. Wallets, not people. Good morning, whoever you are.",
+    rcNone: "Who's up? In the newest blocks, only the island's own made-up traffic. The first real payment of the day is still free to take. The faucet is open.",
+    msr1: "Coco Sunrise, you're on the air. Good morning!",
+    msr2: "Morning caller! You're on Radio Coco. Go ahead.",
+    msr3: "The first line is blinking already. Good morning, you're on Coco Sunrise.",
+    msb1: "Thanks for calling, and have a good day. Here's a song for you.",
+    msb2: "Good morning to you too. The lines stay open until ten.",
+    msb3: "Thank you! Go get your coffee. Rico's getting his.",
+    nx_sunrise: "Here's Coco Sunrise.",
+    nx_steelpan: "Here's Steelpan Sunday.",
+    nx_lantern: "Here's Lantern Bay.",
+    nx_breadfruit: "Here's Breadfruit Shuffle.",
+    nx_coral: "Here's Coral Lullaby.",
+    nx_barrel: "Here's Barrel Roll.",
+    nx_hammerhead: "Here's Hammerhead Hop.",
+    nx_paperboats: "Here's Paper Boats.",
+    nx_fisherman: "Here's Fisherman's Dawn.",
+    nx_tradewinds: "Here's Trade Winds.",
+    nx_ferry: "Here's Starlight Ferry.",
+    sn_sunrise: "Coco Sunrise, the morning show's own tune. Rico wrote it before breakfast, and it shows.",
+    sn_steelpan: "Steelpan Sunday. It's Sunday somewhere, and somewhere is always this song.",
+    sn_lantern: "Lantern Bay, on Radio Coco. Slow, warm, and best with the lights low.",
+    sn_breadfruit: "Breadfruit Shuffle! Feet moving, hands free. Leave the fruit on the tree.",
+    sn_coral: "Coral Lullaby. Quiet now, the reef is sleeping.",
+    sn_barrel: "Barrel Roll, straight from the harbour. Mind the barrels.",
+    sn_hammerhead: "Hammerhead Hop! Fast and a little dangerous. Like the shark, only friendlier.",
+    sn_paperboats: "Paper Boats. Fold one, set it on the lagoon, see how far it goes.",
+    sn_fisherman: "Fisherman's Dawn. For everybody who was on the water before Rico was out of bed.",
+    sn_tradewinds: "Trade Winds, on Radio Coco. Lean back and let the breeze do the work.",
+    sn_ferry: "Starlight Ferry. The ferry never comes, but the song does.",
   };
   /* which lines can stand in for each other: Rico picks one he has not said lately (game.js remembers what he said) */
   const SETS = {
@@ -768,7 +846,7 @@
     legend: ["agz1", "agz2", "agz3", "agz4", "agz5", "agz6"],
     morning: ["am1", "am2"], afternoon: ["pm1", "pm2"], evening: ["ev1", "ev2"], night: ["nt1", "nt2"],
     wake: ["wake1", "wake2", "wake3", "wake4"], wakeAm: ["wakeAm", "wakeAm2", "wakeAm3"], wakePm: ["wakePm2", "wakePm3"], wakeEv: ["wakeEv", "wakeEv2", "wakeEv3"], wakeNt: ["wakeNt2", "wakeNt3"],   // picked by ear, 3 Nov
-    songs: ["sn_coco", "sn_mango", "sn_lowtide", "sn_tinroof", "sn_hammock", "sn_moon"],
+    songs: ["sn_coco", "sn_mango", "sn_lowtide", "sn_tinroof", "sn_hammock", "sn_moon", "sn_sunrise", "sn_steelpan", "sn_lantern", "sn_breadfruit", "sn_coral", "sn_barrel", "sn_hammerhead", "sn_paperboats", "sn_fisherman", "sn_tradewinds", "sn_ferry"],
     bye: Array.from({ length: 8 }, (_, i) => "bye" + (i + 1)),
     solo: Array.from({ length: 8 }, (_, i) => "solo" + (i + 1)), postman: ["postman1", "postman2"], duet: ["duet1", "duet2"],
     fresh: Array.from({ length: 5 }, (_, i) => "fresh" + (i + 1)), record: ["record1", "record2"],
@@ -824,14 +902,18 @@
     pirCut: ["pp_cut1"],
     pirNext: ["pp_next1", "pp_next2", "pp_next3", "pp_next4"],
     shipSkip: ["sk_skip1", "sk_skip2"],
+    /* Coco Sunrise (brk): the openers are named wake* so that make.py shouts them like the show's wake-up opener (tests/voices.mjs "hype") */
+    wakeMs: ["msO1", "msO2"], msJoin: ["msJ1", "msJ2"], msNine: ["msH1", "msH2"], msClose: ["msC1", "msC2"], msTalk: ["mt1", "mt2", "mt3", "mt4", "mt5", "mt6"],
+    msRestart: ["ovR1", "ovR2"], msWord: Array.from({ length: 10 }, (_, i) => "tw" + (i + 1)), msRing: ["msr1", "msr2", "msr3"], msBye: ["msb1", "msb2", "msb3"],
   };
   /* the numbers in a wave line are shown exactly and spoken as a band, so every line has its clips: {n} a count of
      transactions or wallets (BANDS.count) or an amount of lagoon coins (BANDS.coins); a count line never says "one" (a
      single transaction gets a line without a number). Each band is one clip, made like any other line. {where} is the
      block, shown as "block 1234" (a name that starts with b, n, m, a, c, h, g or e would be read as a number or a hash by
      assets/i18n.js). */
-  const BANDS = { count: ["a couple of", "a handful of", "a dozen", "dozens of", "a hundred and more"], coins: ["a few hundred", "thousands of", "tens of thousands of", "a hundred thousand and more"] };
-  const NUMERIC = { fw4: "count", pl1: "count", pl2: "count", pl3: "count", pl4: "count", pl5: "count", pl6: "count", pl7: "count", rv1: "count", rv2: "count", rv3: "count", rv4: "count", cz1: "count", cz2: "count", un2: "count", rf1: "count", rf2: "count", dk3: "count", isN: "count", ndm1: "count", ndm2: "count", ndm3: "count", ndm4: "count", ngm1: "count", un1: "coins", un3: "coins", sl_total1: "count", sl_total2: "count", sl_block1: "count", sl_block2: "count", sl_recap: "count", pp_recap: "count", sk_skip1: "count", sk_skip2: "count", sk_quiet: "count" };
+  const BANDS = { count: ["a couple of", "a handful of", "a dozen", "dozens of", "a hundred and more"], coins: ["a few hundred", "thousands of", "tens of thousands of", "a hundred thousand and more"],
+    big: ["a handful of", "dozens of", "hundreds of", "about a thousand", "thousands of"] };   // the morning show's night report (msBand)
+  const NUMERIC = { fw4: "count", pl1: "count", pl2: "count", pl3: "count", pl4: "count", pl5: "count", pl6: "count", pl7: "count", rv1: "count", rv2: "count", rv3: "count", rv4: "count", cz1: "count", cz2: "count", un2: "count", rf1: "count", rf2: "count", dk3: "count", isN: "count", ndm1: "count", ndm2: "count", ndm3: "count", ndm4: "count", ngm1: "count", un1: "coins", un3: "coins", sl_total1: "count", sl_total2: "count", sl_block1: "count", sl_block2: "count", sl_recap: "count", pp_recap: "count", sk_skip1: "count", sk_skip2: "count", sk_quiet: "count", ov1: "big", ov2: "big" };
   const VARIANTS = { dejaN: [{ n: "one" }, { n: "two" }], isWin: NAMES.map(x => ({ x })), isGov: NAMES.map(x => ({ x })) };   // the other fills a line takes, one clip each
   const BLOCK = { where: "the latest block" };   // how the block is spoken
   /* callers who phone the studio, each in their own voice through the telephone: listeners (ready voices, make.py
@@ -1470,6 +1552,80 @@
     "Sit, sit, the lounger is free. So, straight to business: {n} coins, today, and you propose “{x}” before the election. Right now my guests drag their suitcases uphill from the pier, and last week a yoga teacher cried.",
     "My investors call me every morning at six and ask the same thing: has our candidate proposed “{x}” yet? Please. Give me something to tell them.",
     "No business today, my friend: “{x}” is law already, and there’s nothing left for me to buy. My investors will think I’m on holiday. Sit anyway, the loungers are free."] };
+  /* Coco Sunrise's callers (brk, 08:00 to 10:00 German time): a morning question about the testnet, always technically
+     right; same shape as CALLS, Rico's pick-up and goodbye from SETS.msRing and SETS.msBye */
+  const MORNING = [
+    { who: "pearl", say: ["Morning, Rico, it's Pearl. I sent a payment last night, and this morning it's simply not there. Not in a block, not anywhere.",
+      "Good morning, Pearl. Every transaction carries an expiry. If it isn't in a block by then, it's dropped.",
+      "Dropped? So my coins are gone?",
+      "No, the opposite. A dropped transaction never happened. Your coins are still in your wallet, and it cost you nothing.",
+      "Oh. So I just send it again?",
+      "Send it again, with a fresh expiry. And maybe not at three in the morning.",
+      "Ha. Thanks, Rico."] },
+    { who: "gus", say: ["Rico! Gus here. New wallet, first coffee, zero coins. How do I start?",
+      "Good morning, Gus. Go to the faucet. It sends one hundred thousand test coins to a wallet that's empty.",
+      "Only when it's empty?",
+      "Only when it's empty. It's a start, not a salary.",
+      "A start. I can work with that. Thanks!"] },
+    { who: "zia", say: ["Good morning, Rico. Zia. My nephew keeps saying a rule is sat. What does that mean?",
+      "Morning, Zia. Sat means satisfiable: there's at least one way for the rule to be true.",
+      "And if it isn't?",
+      "Then the rule can never be true, whatever happens. Better to find that out before you put it on your wallet.",
+      "So sat is good news.",
+      "Sat is the minimum. Valid is the big news: true for everything.",
+      "Minimum, then big news. I'll tell him. Thank you, Rico!"] },
+    { who: "mae", say: ["Rico, it's Mae from the bakery. Can I write my wallet address on the shop window, so people can pay me?",
+      "Good morning, Mae. Yes. An address is made to be shared. It only lets people send to you.",
+      "And the key?",
+      "The key never goes on a window. Not on a window, not in a chat, not on a bread bag.",
+      "Address on the window, key in the drawer.",
+      "Exactly. And remember, these are test coins. You can't buy flour with them. Yet.",
+      "Then I'll keep the real cash register too. Thanks, Rico!"] },
+    { who: "vik", say: ["Morning, Rico, Vik here. I want to pay Mae for the bread and write for the bread in the payment. Where does the note go?",
+      "Good morning, Vik. Nowhere. A transaction has a sender, a receiver, an amount, a fee limit, a sequence number and an expiry. No note.",
+      "No note at all?",
+      "No note at all. If Mae needs to know what it's for, tell her at the counter.",
+      "Old school. I like it. Thanks!"] },
+    { who: "rudy", say: ["Rico, it's Rudy. I put a rule on my wallet: block anything over five hundred. Now nothing goes through. Nothing!",
+      "Good morning, Rudy. Did your rule also say what goes through?",
+      "Why would it? I only wanted to block the big ones.",
+      "Because a rule that says nothing answers 0, and 0 stops the payment. You told it when to say no, and never when to say yes.",
+      "So I need to say yes out loud.",
+      "Out loud. Under five hundred: 1. Then it lets the small ones through.",
+      "Yes out loud. Got it. Thanks, Rico."] },
+    { who: "nell", say: ["Rico, Nell. Can somebody copy my payment and send it a second time? I'm worried.",
+      "Good morning, Nell. Every payment carries a sequence number from your wallet. Once it's used, it's used.",
+      "So the same payment can't go through twice?",
+      "Not twice. A copy would have the same number, and the chain has already seen it.",
+      "That's a relief. Thank you, Rico."] },
+    { who: "dom", say: ["Morning, Rico, Dom here. Who digs the blocks out at night? Somebody with a pickaxe?",
+      "Good morning, Dom. Nobody digs. There's no mining on this testnet. The nodes agree on each block, and that's it.",
+      "No pickaxe? No noise?",
+      "No pickaxe, no noise. Just agreement. Very quiet.",
+      "Better for the neighbours. Thanks, Rico."] },
+    { who: "hana", say: ["Good morning, Rico. Hana from the school. I'm writing a lesson about wallet rules. Where does the amount come in?",
+      "Morning, Hana. In a testnet rule the amount of the payment comes in on i1.",
+      "And where does the rule answer?",
+      "On o5. 1 means let it through, 0 means stop it.",
+      "i1 in, o5 out. The children will remember that better than I do.",
+      "They always do. The free lessons on tauhud.com help, too.",
+      "Thank you, Rico."] },
+    { who: "lola", say: ["Rico, it's Lola. Somebody paid my bar at six this morning. Who was it?",
+      "Good morning, Lola. The chain shows the wallet that paid. Not the person.",
+      "Not even a name?",
+      "Not even a name. Wallets, not people. If you want to know, ask at the bar who wants their receipt.",
+      "A mystery customer before breakfast. I'll take it. Thanks, Rico."] },
+    { who: "tano", say: ["Morning, Rico. Tano. I play the drums. My grandson says Tau has always and sometimes. Is that like my drums?",
+      "Good morning, Tano. A little. Always is your bass drum: it must be there on every beat.",
+      "And sometimes?",
+      "Sometimes is your cymbal. Once is enough.",
+      "Then I've been playing Tau for forty years. Thank you, Rico."] },
+    { who: "bert", say: ["Rico, Bert. I want to put a rule on my wallet today, but I'm scared I'll lock myself out.",
+      "Good morning, Bert. Try it in the rule builder on tauhud.com first. You see what your rule does before it's on your wallet.",
+      "Before? Without sending anything?",
+      "Without sending anything. Write it, try a few amounts, and when it does what you want, then put it on the wallet.",
+      "Test first, then trust. That's my kind of morning. Thanks, Rico."] },
+  ];
   const CAST = [
     ["hana", "Pick a law. The other three candidates vote; two yes and it is law. The Book checks it against the laws in force first."],
     ["sam", "So it is true, Marisol: your name is on the list, in my own hand. Four candidates, one governor’s chair under the council tree, and on Sunday night the ten islanders who vote choose who sits in it. You hear everything first at your café. This week the island hears about you. Every move you make goes into this Book."],   // the first scene of a campaign: game.js WELCOME.marisol
@@ -1519,7 +1675,7 @@
       else if (s.includes("{")) out.push(fill(s, BLOCK));
       else out.push(s);
     }
-    return [...out.map(t => ["rico", t]), ...CAST, ...CALLS.flatMap(c => c.say.map((t, i) => [i % 2 ? "rico" : c.who, t])), ...NIGHT.flatMap(c => c.say.map((t, i) => [i % 2 ? "rico" : c.who, t])), ...(window.RABBIT_TALK_LINES ? window.RABBIT_TALK_LINES() : [])];   // talk.js: coming back, asking more
+    return [...out.map(t => ["rico", t]), ...CAST, ...CALLS.flatMap(c => c.say.map((t, i) => [i % 2 ? "rico" : c.who, t])), ...NIGHT.flatMap(c => c.say.map((t, i) => [i % 2 ? "rico" : c.who, t])), ...MORNING.flatMap(c => c.say.map((t, i) => [i % 2 ? "rico" : c.who, t])), ...(window.RABBIT_TALK_LINES ? window.RABBIT_TALK_LINES() : [])];   // talk.js: coming back, asking more
   }
 
   /* the clips the server has made so far */
@@ -1534,7 +1690,7 @@
   }
   /* which radio lines have their clips already (Rico's L keys, and the calls whose every line is spoken): game.js
      prefers those, so the radio keeps talking while new lines still wait for their voices */
-  const VOICED = { l: null, c: null, n: null };
+  const VOICED = { l: null, c: null, n: null, m: null };
   async function learn() {
     if (!have || !have.size || !window.crypto || !crypto.subtle) return;
     const l = new Set(), c = new Set();
@@ -1551,13 +1707,18 @@
       const x = NIGHT[i], ks = await Promise.all(x.say.map((t, j) => key(j % 2 ? "rico" : x.who, t)));
       if (ks.every(k => have.has(k))) n.add(i);
     }
-    VOICED.l = l; VOICED.c = c; VOICED.n = n;
+    const m = new Set();
+    for (let i = 0; i < MORNING.length; i++) {
+      const x = MORNING[i], ks = await Promise.all(x.say.map((t, j) => key(j % 2 ? "rico" : x.who, t)));
+      if (ks.every(k => have.has(k))) m.add(i);
+    }
+    VOICED.l = l; VOICED.c = c; VOICED.n = n; VOICED.m = m;
   }
   ready = list();
   const again = () => { if (have && !have.size && Date.now() - tried > 30000) ready = list(); return ready; };
   /* true or false once known; null while the clip list is still loading (or a line with a name in it; a line with a
      number spoken as a band is known: true once every band has its clip) */
-  const voiced = k => { if (!VOICED.l) return null; if (/^call:/.test(k)) return VOICED.c.has(+k.slice(5)); if (/^night:/.test(k)) return VOICED.n.has(+k.slice(6)); return L[k] == null || (L[k].includes("{") && !NUMERIC[k]) ? null : VOICED.l.has(k); };
+  const voiced = k => { if (!VOICED.l) return null; if (/^call:/.test(k)) return VOICED.c.has(+k.slice(5)); if (/^night:/.test(k)) return VOICED.n.has(+k.slice(6)); if (/^morning:/.test(k)) return VOICED.m.has(+k.slice(8)); return L[k] == null || (L[k].includes("{") && !NUMERIC[k]) ? null : VOICED.l.has(k); };
   const cache = new Map();
   const clip = k => { if (!cache.has(k)) cache.set(k, fetch(BASE + k + ".mp3").then(r => (r.ok ? r.arrayBuffer() : null), () => null)); return cache.get(k); };
   /* speak a line in someone's voice: all its spoken parts, in order, or nothing at all when one clip is missing */
@@ -1694,6 +1855,105 @@
     const page = Object.entries(via).sort((a, b) => b[1] - a[1])[0];
     return { set: c / tot >= 0.8 ? top : "wxHome", page: top === "wxHud" && c / tot >= 0.8 && page ? page[0] : null, n: tot };
   }
+  /* Coco Sunrise, Radio Coco's morning show (Kilian 16.11): every morning from eight to ten, German time (or ?morningshow=1
+     to try it). The first break opens it (at eight the shouted opener, later the welcome for whoever tunes in), the first
+     break after nine names the hour, the first one after ten closes it. In between, breaks take turns (MS_TURN): a
+     morning caller (MORNING), a segment, Rico's usual word, only the next song's name, and again (some eight callers an hour).
+     The segments (MS_SEGS), each skipped when it has nothing to say: the night report from our node (relay /history:
+     blocks and transactions since midnight German time, shown exactly and spoken as a band, BANDS.big; a restart in the
+     night said in its own words), what's on today (the day of the week, a ship from the relay's timetable /cruise that
+     docks today, the Night Line tonight), the Tau word of the day, who's up (the senders in the newest blocks,
+     /api/v1/sources/recent: a No Memo player, Tau HUD's wallet, Agorzilla, the testnet's first wallets, others; the
+     island's own simulated senders never count as anybody) and a morning word. Nothing from the relay in a simulation,
+     and no morning show at all until its opener has a voice (the show waits for its clips, ?morningshow=1 does not). */
+  const MS_AT = 8, MS_END = 10;
+  const MS_TURN = ["call", "seg", "usual", "nx", "call", "seg", "usual", "nx"], MS_SEGS = ["ov", "today", "word", "roll", "mt"];
+  const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  function berlin(t = Date.now()) {
+    try {
+      const p = {}; new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", weekday: "short", hourCycle: "h23" })
+        .formatToParts(new Date(t)).forEach(x => (p[x.type] = x.value));
+      return { h: +p.hour % 24, m: +p.minute, s: +p.second, dow: DOW.indexOf(p.weekday), day: p.year + "-" + p.month + "-" + p.day, t };
+    } catch (e) { const d = new Date(t); return { h: d.getHours(), m: d.getMinutes(), s: d.getSeconds(), dow: d.getDay(), day: d.toDateString(), t }; }
+  }
+  const morning = (b = berlin()) => (QS && QS.get("morningshow") === "1") || (b.h >= MS_AT && b.h < MS_END);
+  const MS = { open: false, hr: null, n: 0, seg: 0, said: {}, d: null, at: 0 };
+  const msSim = () => !!(window.TauSim && TauSim.on);
+  const msBand = n => BANDS.big[n < 10 ? 0 : n < 100 ? 1 : n < 900 ? 2 : n < 1500 ? 3 : 4];
+  /* what the relay says, read for the show: night {blocks, txs, restart} since midnight German time, roll (who's up), ship (one docking today) */
+  function msRead(h, src, cr, b = berlin()) {
+    const now = Math.floor(b.t / 1000), mid = now - (b.h * 3600 + b.m * 60 + b.s), sec = x => (Number(x) > 1e12 ? Number(x) / 1000 : Number(x) || 0), out = {};
+    if (h && Array.isArray(h.hours) && Array.isArray(h.fields)) {
+      const bi = h.fields.indexOf("blocks") + 2, ti = h.fields.indexOf("txs") + 2;
+      const rows = h.hours.filter(r => Array.isArray(r) && Number(r[0]) >= mid && Number(r[0]) <= now);
+      out.night = { blocks: rows.reduce((a, r) => a + (Number(r[bi]) || 0), 0), txs: rows.reduce((a, r) => a + (Number(r[ti]) || 0), 0),
+        restart: (h.chains || []).some(c => c && sec(c.start) >= mid && sec(c.start) <= now && (h.chains || []).length > 1) };
+    }
+    const n = src && src.n;
+    if (n && typeof n === "object") {
+      const g = { nomemo: 0, hud: 0, jungle: 0, idni: 0, other: 0, own: 0 };
+      for (const [k, c0] of Object.entries(n)) {
+        const c = Number(c0) || 0; if (c <= 0) continue;
+        if (k === "nomemo") g.nomemo += c; else if (k.startsWith("tauhud") && k !== "tauhud:relay") g.hud += c; else if (k === "agorzilla" || k === "deja") g.jungle += c;
+        else if (k === "idni") g.idni += c; else if (k === "other") g.other += c; else g.own += c;   // rabbit, bot, cruise, nmsrv, hack, the relay: our own
+      }
+      out.roll = g.nomemo ? "rcNomemo" : g.hud ? "rcHud" : g.jungle ? "rcJungle" : g.other > g.idni ? "rcOther" : g.idni ? "rcIdni" : g.own ? "rcNone" : null;
+    }
+    const nx = cr && cr.next;
+    if (nx && (nx.ship === "queen" || nx.ship === "dryrun") && sec(nx.t0) > now && berlin(sec(nx.t0) * 1000).day === b.day) out.ship = nx.ship;
+    return out;
+  }
+  function msFetch() {
+    if (msSim() || typeof fetch !== "function" || Date.now() - MS.at < 600000) return;
+    MS.at = Date.now();
+    const get = u => fetch("https://node.tauhud.com/" + u, { cache: "no-store" }).then(r => (r.ok ? r.json() : null), () => null);
+    Promise.all([get("history"), get("api/v1/sources/recent"), get("cruise")]).then(([h, s, c]) => { MS.d = msRead(h, s, c); }, () => {});
+  }
+  function sunrise(b, f) {
+    const { pick, line } = f;
+    if (!morning(b)) {
+      if (!MS.open) return null;
+      MS.open = false;
+      if (b.h !== MS_END) return null;
+      const k = pick(SETS.msClose); return { k, parts: [line(k)] };
+    }
+    if (!MS.open && !(QS && QS.get("morningshow") === "1") && voiced("msO1") === false && voiced("msO2") === false) return null;   // no voice yet
+    msFetch();
+    if (!MS.open) {
+      MS.open = true; MS.hr = b.h; MS.n = 0; MS.said = {};
+      const k = pick(b.h === MS_AT && b.m < 20 ? SETS.wakeMs : b.h === MS_AT + 1 && b.m < 10 ? SETS.msNine : SETS.msJoin); return { k, parts: [line(k)] };
+    }
+    if (b.h !== MS.hr) { MS.hr = b.h; MS.said = { ov: MS.said.ov }; const k = pick(SETS.msNine); return { k, parts: [line(k)] }; }
+    const turn = MS_TURN[MS.n++ % MS_TURN.length];
+    if (turn === "nx" && L["nx_" + f.to]) return { k: "nx_" + f.to, parts: f.next() };
+    if (turn === "call") {
+      const k = pick(MORNING.map((c, i) => "morning:" + i)), ring = pick(SETS.msRing), bye = pick(SETS.msBye);
+      return { k, also: [ring, bye], parts: call(MORNING[+k.slice(8)], ring, bye), call: true };
+    }
+    if (turn === "seg") for (let i = 0; i < MS_SEGS.length; i++) { const x = seg(MS_SEGS[MS.seg++ % MS_SEGS.length]); if (x) return x; }
+    return f.usual();
+    function seg(s) {
+      const d = msSim() ? {} : MS.d || {};
+      if (MS.said[s] && s !== "mt") return null;
+      let x = null;
+      if (s === "ov" && d.night && d.night.blocks > 0) {
+        const nt = d.night, r = nt.restart ? pick(SETS.msRestart) : null;
+        const parts = [...(r ? [line(r)] : []), f.num("ov1", nt.blocks), ...(nt.txs > 0 ? [f.num("ov2", nt.txs)] : []), ...(nt.txs < 20 ? [line("ovQ1")] : nt.txs >= 1500 ? [line("ovB1")] : [])];
+        x = { k: r || "ov1", also: ["ov2"], parts };
+      } else if (s === "today") {
+        const k = "td" + (b.dow === 0 ? 7 : b.dow), ship = d.ship === "queen" ? "tdQ" : d.ship === "dryrun" ? "tdD" : null;
+        if (L[k]) x = { k, parts: [line(k), ...(ship ? [line(ship)] : []), line("tdN")] };
+      } else if (s === "word") {
+        const k = pick(SETS.msWord); x = { k, parts: [line(k), ...(Math.random() < 0.5 ? [line("twMore")] : []), ...f.next()] };
+      } else if (s === "roll" && d.roll) {
+        x = { k: d.roll, parts: [line(d.roll), ...f.next()] };
+      } else if (s === "mt") {
+        const k = pick(SETS.msTalk); x = { k, parts: [line(k), ...f.next()] };
+      }
+      if (x) MS.said[s] = true;
+      return x;
+    }
+  }
   function brk(from, to, o = {}) {
     const pick = o.pick || pickOwn, hr = o.hr != null ? o.hr : new Date().getHours(), line = k => ({ t: tr(L[k]), v: L[k] });
     const next = () => (L["nx_" + to] ? [line("nx_" + to)] : []);
@@ -1711,6 +1971,8 @@
       return { k, also: [ring, bye], parts: call(NIGHT[+k.slice(6)], ring, bye), call: true };
     }
     if (NL.open) { NL.open = false; if (!NL.extra) { const k = pick(SETS.nlClose); return { k, parts: [line(k)] }; } }
+    const sun = sunrise(o.berlin || berlin(), { pick, line, next, usual, to, num: (k, n) => ({ t: tr(fill(L[k], { n })), v: fill(L[k], { n: msBand(n) }) }) });
+    if (sun) return sun;
     return usual();
     /* the usual word between two songs: on the pair of songs, the wellness investor now and then, or the listener's hour */
     function usual() {
@@ -1721,5 +1983,5 @@
       return { k, parts: [line(k), ...next()] };
     }
   }
-  window.RICO = { L, SETS, CAST, CALLS, NIGHT, brk, night, wxSource, NAMES, BANDS, NUMERIC, BLOCK, all, speak, fill, key, hud, call, wake, voiced, check, stop: () => { if (EL && !EL.paused) { EL.onended = null; EL.pause(); } }, get why() { return why.last; } };
+  window.RICO = { L, SETS, CAST, CALLS, NIGHT, MORNING, brk, night, morning, msRead, wxSource, NAMES, BANDS, NUMERIC, BLOCK, all, speak, fill, key, hud, call, wake, voiced, check, stop: () => { if (EL && !EL.paused) { EL.onended = null; EL.pause(); } }, get why() { return why.last; } };
 })();
