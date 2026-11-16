@@ -3265,5 +3265,11 @@
     "on": "2026-11-16",
     "link": "/",
     "html": "Chain core: click a dot on the rule ring to open that wallet’s rules on its account page. A rule another wallet offered and this one accepted now has a dashed halo, a rule the wallet set itself a solid one; the card says who offered it. On the chain both are the wallet’s own rule, stored the same way; only how it got there differs."
+  },
+  {
+    "tag": "White Rabbit Key",
+    "on": "2026-11-16",
+    "link": "/rabbit/",
+    "html": "White Rabbit Key: the island's notice board, the one with the islander and the number of wallets that walked the island today, now stands on the sand below Bar La Ola instead of in front of its string of lights. It is a little larger, has a dark frame, and after dusk a small lamp of its own, so the number reads at a glance by day and by night."
   }
 ]
