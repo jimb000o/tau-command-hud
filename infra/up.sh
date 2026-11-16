@@ -790,6 +790,13 @@ fi
 # up blog publish <id>  puts one on the blog and posts it once (--at=2026-11-16T08:00Z: by itself at that time, UTC;
 # --at=off takes it back), up blog draft <visit-id>  writes one anew,
 # up blog unpublish <id>  takes one off again, up blog pictures  makes every article's hero picture and link preview anew
+# new testnet features posted the same day by themselves (alerts/feature_watch.py): the blog service rebuilt with the
+# code just pulled (safe any time, the node left alone), then what was found and what happened to it
+if [ "${1:-}" = "features" ]; then
+  docker compose up -d --no-deps --build blog >/dev/null 2>&1 || docker compose up -d blog >/dev/null 2>&1 || true
+  docker compose exec -T blog python feature_watch.py
+  exit $?
+fi
 if [ "${1:-}" = "blog" ]; then
   shift
   [ -n "${1:-}" ] || set -- drafts

@@ -162,8 +162,9 @@ def gather(paths: dict, branches: dict, start: int, end: int, pin: str | None, n
     by_sha = {s: it for it in news.get("items") or [] for s in it.get("shas") or []}
     seen = news.get("seen") or {}
     done = done or set()
+    import feature_watch   # a feature gets its own post the same day (feature_watch.py): not in the daily one too
     for c in first_parent(tn, branches.get(dp.TESTNET) or "main", late if late is not None else start, end):
-        if c["sha"] in done:
+        if c["sha"] in done or feature_watch.skip_in_digest(tn, c):
             continue
         if c["ts"] < start:   # written before this window, pushed after the last post: only real changes come along
             if c["sha"] in by_sha or (c["sha"] not in seen and is_candidate(tn, c)):

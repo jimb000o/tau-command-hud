@@ -37,8 +37,9 @@ IDNI, the team that builds Tau Net. Tau Net is the network; its test network is 
 testnet). Tau Language is the language its rules are written in, and the Tau engine checks them. Never call the \
 network just "Tau".
 
-You get IDNI's changes of one window that our daily post already summed up (its text is included), each with its \
-commit message, files, code diff and the changes to IDNI's own documentation. Write the article that goes deeper than \
+You get IDNI's changes of one window (when our daily post already summed them up, its text is included), each with \
+its commit message, files, code diff and the changes to IDNI's own documentation; for Tau Language, IDNI's own \
+changelog lines instead. Write the article that goes deeper than \
 the post, for curious people who are not developers: what changed, what it gives someone who uses the Tau Net testnet, \
 where it stops, and what is still open.
 
@@ -98,10 +99,13 @@ def facts_of(d: dict, path: str) -> dict:
             "changes": [change_text(path, s) for s in (d.get("shas") or [])[:CHANGES]]}
 
 
-def ask(facts: dict) -> dict:
+def ask(facts: dict, note: str = "") -> dict:
+    """One article from the model; `note` names what a first answer got wrong (feature_watch.py asks once more)."""
     import ai_meter
     import blog
-    prompt = "IDNI's changes and our daily post about them (JSON):\n\n" + json.dumps(facts, ensure_ascii=False, indent=1)[:150000]
+    prompt = "IDNI's changes and what we know about them (JSON):\n\n" + json.dumps(facts, ensure_ascii=False, indent=1)[:150000]
+    if note:
+        prompt += "\n\nA first answer had these problems; write the whole article again without them: " + note
     body = {"model": blog.AI_MODEL, "max_tokens": blog.ROOM_MAX, "system": SYSTEM, "messages": [{"role": "user", "content": prompt}],
             "output_config": {"format": {"type": "json_schema", "schema": blog.ARTICLE_SHAPE}}}
     req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=json.dumps(body).encode(), headers={
@@ -121,7 +125,7 @@ def ask(facts: dict) -> dict:
     return json.loads(m.group(0))
 
 
-def article(d: dict, facts: dict, out: dict, now: float) -> dict:
+def article(d: dict, facts: dict, out: dict, now: float, aid: str | None = None) -> dict:
     import blog
     title, dek, body = blog.three(out.get("title"), 90), blog.three(out.get("dek"), 220), blog.three(out.get("body"), 9000)
     why = [w for w in (blog.three(x, 200) for x in (out.get("why") or [])[:3]) if w]
@@ -132,18 +136,26 @@ def article(d: dict, facts: dict, out: dict, now: float) -> dict:
     plain = lambda t: re.sub(r"(?<=\d),(?=\d{3}(?![\d,]))", "", t)   # 100,000 in the text is 100000 in the code
     check = {"unknown_numbers": blog.unknown_numbers(plain(en), json.loads(plain(json.dumps(facts, ensure_ascii=False)))),
              "hype": sorted({m.group(0) for m in blog.HYPE.finditer(en)} | {m.group(0) for m in blog.BLAME.finditer(en)})}
-    return {"id": f"{on}-idni-news", "on": on, "kind": "news", "digest": d.get("id"), "t0": int(d.get("end") or now),
+    return {"id": aid or f"{on}-idni-news", "on": on, "kind": "news", "digest": d.get("id"), "t0": int(d.get("end") or now),
             "title": title, "dek": dek, "why": why, "body": body, "x": " ".join(str(out.get("x") or "").split())[:240],
-            "sources": [f"https://github.com/{REPO}/commit/{s}" for s in (d.get("shas") or [])[:CHANGES]],
+            "sources": d.get("sources") or [f"https://github.com/{REPO}/commit/{s}" for s in (d.get("shas") or [])[:CHANGES]],
             "check": check, "card": blog.card_of(out.get("card"), title["en"]), "written": int(now), "model": blog.AI_MODEL}
 
 
-def write_draft(d: dict, path: str, now: float | None = None, ask_=None) -> str:
-    """The draft for one digest window, unlisted under /blog/drafts/ like a ship's article; returns its id."""
+def write_draft(d: dict, path: str, now: float | None = None, ask_=None, facts: dict | None = None,
+                aid: str | None = None, retry: bool = False) -> str:
+    """The draft for one digest window, unlisted under /blog/drafts/ like a ship's article; returns its id. With
+    `retry` an answer whose check is not clean is asked for once more, naming the numbers and words to leave out."""
     import blog
     now = now or time.time()
-    facts = facts_of(d, path)
-    a = article(d, facts, (ask_ or ask)(facts), now)
+    facts = facts if facts is not None else facts_of(d, path)
+    a = article(d, facts, (ask_ or ask)(facts), now, aid)
+    chk = a["check"]
+    if retry and (chk["unknown_numbers"] or chk["hype"]):
+        note = "; ".join(x for x in (
+            chk["unknown_numbers"] and "these numbers are not in the input, leave them out: " + ", ".join(chk["unknown_numbers"]),
+            chk["hype"] and "leave out these words: " + ", ".join(chk["hype"])) if x)
+        a = article(d, facts, (ask_ or ask)(facts, note), now, aid)
     try:
         a = blog.pictures(a)
     except Exception as e:  # noqa: BLE001 - an article without its picture beats no article
@@ -152,7 +164,8 @@ def write_draft(d: dict, path: str, now: float | None = None, ask_=None) -> str:
     name = st["drafts"].get(a["id"]) or f"{a['id']}-{secrets.token_hex(4)}"
     st["drafts"][a["id"]] = name
     st.setdefault("drafted_at", {})[a["id"]] = round(now)
-    st.setdefault("news_drafted", {})[d["id"]] = a["id"]
+    if not d.get("feature"):   # feature_watch.py keeps its own record
+        st.setdefault("news_drafted", {})[d["id"]] = a["id"]
     a["status"] = "draft"
     blog.write_json(os.path.join(blog.PUBLIC, "drafts", name + ".json"), a)
     blog.write_json(blog.STATE, st)
