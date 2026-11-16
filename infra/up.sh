@@ -196,6 +196,13 @@ fi
 # up restartwatch: the relay and alerts built with the code just pulled (the node left alone): after each testnet
 # restart a private note with the reply for IDNI, the ships' pause after RESTART_SHIP_PAUSE_AFTER restarts during calls
 if [ "${1:-}" = "restartwatch" ]; then
+  when=$(TZ=Europe/Berlin date +%u%H)
+  case "$when" in 216|217|218|219|315|316|317|410|411|613|614|615|616)
+    if [ "${2:-}" != "--now" ]; then
+      echo "a cruise ship or the hack replay is due or under way now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
+      echo "try again after the visit, or: up restartwatch --now"; exit 1
+    fi ;;
+  esac
   docker compose up -d --build --no-deps relay alerts
   echo "waiting 20 s for the relay to read the chain…"; sleep 20
   docker compose exec -T relay python -c 'import urllib.request;print(urllib.request.urlopen("http://127.0.0.1:8080/restarts/status", timeout=20).read().decode())'

@@ -240,8 +240,12 @@ def brief(restarts: list, rows: list | None = None, now: float | None = None, da
     ms = [e["ms"] for e in before if isinstance(e.get("ms"), int)]
     # the reply, line by line, only from what is known
     when = f"{time.strftime('%d %b', time.gmtime(tip_ts or r.get('detected_at') or now)).lstrip('0')}"
-    lines = [f"Hi Andrei, the testnet restarted again ({when}): the old chain's last block was #{tip} at {hm(tip_ts)}"
-             + (f", new block 1 at {hm(b1)}." if b1 else ".")]
+    again = " again" if len(restarts) > 1 else ""
+    if tip_ts:
+        lines = [f"Hi Andrei, the testnet restarted{again} ({when}): the old chain's last block was #{tip} at {hm(tip_ts)}"
+                 + (f", new block 1 at {hm(b1)}." if b1 else ".")]
+    else:   # the relay was away when it happened: only what it found after
+        lines = [f"Hi Andrei, the testnet restarted{again} ({when}); our relay noticed it at {hm(r.get('detected_at'))}."]
     if calls:
         ship = ", ".join(ship_name(v) for v in calls)
         lines.append(f"It came {((tip_ts - first) / 60):.0f} min into one of our test runs ({ship}: simulated wallets "

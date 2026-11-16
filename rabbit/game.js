@@ -1694,7 +1694,7 @@
   const SHIP_P = { approach: 0.4, wait: 0.45, land: 0.45, here: 0.4, board: 0.45 };
   const shipOdds = st => !st ? 0 : SHIP_P[st.stage] != null ? SHIP_P[st.stage]
     : st.after != null ? 0.05 + 0.3 * Math.exp(-st.after / 1.5) : Math.min(0.35, 0.04 + 0.45 * Math.exp(-st.h / 8));
-  const shipWhy = note => /^no landing/.test(note || "") ? "no landing" : /^left early/.test(note || "") ? (/refused/.test(note) ? "refused" : "stalled") : "";
+  const shipWhy = note => /^no landing/.test(note || "") ? "no landing" : /^left early/.test(note || "") ? (/testnet restarted/.test(note) ? "restarted" : /Tau HUD called/.test(note) ? "recalled" : /refused/.test(note) ? "refused" : "stalled") : "";
   function shipStage() {
     const f = shipFacts(); if (!f.ship) return null;
     const now = Date.now() / 1000, ship = f.queen ? "queen" : "dryrun", v = SHIPV.v && SHIPV.v.style !== "pirate" ? SHIPV.v : null, pv = QS.get("ship") === ship;
@@ -1950,6 +1950,8 @@
         : v.phase === "waiting" ? T("Waiting off the island: it lands only while the testnet is calm.")
         : v.phase === "gone" ? T(v.why === "no landing" ? "It sailed on without landing: the testnet was not calm."
           : v.why === "refused" ? "It left early: the node refused its passengers’ transactions, and the ship took them back at once."
+          : v.why === "restarted" ? "It left early: the testnet started over from block one, so the call ended there."
+          : v.why === "recalled" ? "It left early: Tau HUD called it back. The testnet had nothing to do with it."
           : "It left early: the testnet stalled, and the ship took its passengers back at once.")
         : v.style === "pirate" ? F("{n} pirates aboard, at anchor until {t}: {b} tricks refused by the chain so far.", { n: v.passengers, t: berlinHM(v.end), b: (v.tricks || {}).stopped || 0 })
         : F("{a} of {n} passengers ashore, in port until {t}.", { a: v.ashore || 0, n: v.passengers, t: berlinHM(v.end) });

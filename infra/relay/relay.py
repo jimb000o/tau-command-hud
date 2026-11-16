@@ -943,18 +943,21 @@ class Relay:
             except Exception:
                 log.exception("uptime sample failed")
             try:
-                self.restartwatch.tick(self.state["restarts"], self.rules_back(), self.canonical_height())
+                rs = self.state["restarts"]
+                self.restartwatch.tick(rs, self.rules_back((rs[-1].get("detected_at") or 0) if rs else 0), self.canonical_height())
             except Exception:
                 log.exception("restartwatch tick failed")
 
-    def rules_back(self) -> dict:
-        """The rules our own wallets set again after a restart: {group: {wallet: in force}} (restartwatch.py)."""
+    def rules_back(self, since: float = 0) -> dict:
+        """The rules our own wallets set again after a restart: {group: {wallet: in force}} (restartwatch.py). A rule
+        counts only when the node was asked about it after the restart (`since`), never from the old chain's answer."""
         now, out = time.time(), {}
         sc, va = self.showcase, self.vaults
+        fresh = lambda w: bool(w.get("in_force")) and (w.get("checked") or 0) >= since
         if sc.enabled and sc.ready:
-            out["Schaufenster-Wallets"] = {n: bool(sc.w(n).get("in_force")) or sc.opened(n, now) for n in SC_WALLETS}
+            out["Schaufenster-Wallets"] = {n: fresh(sc.w(n)) or sc.opened(n, now) for n in SC_WALLETS}
         if va.enabled and va.ready:
-            out["No-Memo-Vaults"] = {n: bool(va.v(n).get("in_force")) for n in VAULT_KEYS}
+            out["No-Memo-Vaults"] = {n: fresh(va.v(n)) for n in VAULT_KEYS}
         return out
 
     def chain_stalls(self, since: float) -> list[dict]:

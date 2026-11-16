@@ -120,9 +120,8 @@ class RestartWatch:
             return None
         missing = [f"{g}: {n}" for g, ws in rules.items() for n, ok in ws.items() if not ok]
         age = now - at
-        if age < NOTE_MIN or (missing and age < NOTE_MAX) or not height:
-            if not (age >= NOTE_MAX and height):
-                return None
+        if not height or age < NOTE_MIN or (missing and age < NOTE_MAX):
+            return None   # no block on the new chain yet, or the rules still coming back (at most NOTE_MAX)
         b = restart_report.brief(restarts, self.rows_fn(), now, days=int(PAUSE_DAYS), link=PUBLIC) or {}
         note = {"key": key, "at": int(now), "detected_at": at, "height": height, "brief": b,
                 "rules": {g: {"in_force": sum(1 for ok in ws.values() if ok), "of": len(ws)} for g, ws in rules.items()},
@@ -182,7 +181,7 @@ def owner_text(n: dict) -> str:
         lines.append("Noch nicht: " + escape(", ".join(n["missing"])) + " (setzt sich weiter von selbst)")
     if n.get("paused"):
         lines.append("⏸ <b>Schiffe pausiert</b> (" + str(n["paused"].get("restarts")) + " Neustarts während Anläufen). "
-                     "Wieder an: <code>ssh root@node.tauhud.com \"cd /opt/tau-command-hud && sh infra/up.sh ships on\"</code>")
+                     "Wieder an: <code>" + escape('ssh root@node.tauhud.com "cd /opt/tau-command-hud && sh infra/up.sh ships on"') + "</code>")
     lines.append("")
     lines.append("Antwort für Andrei zum Kopieren (nichts wurde an IDNI geschickt):")
     lines.append("<pre>" + escape(b.get("reply") or "") + "</pre>")

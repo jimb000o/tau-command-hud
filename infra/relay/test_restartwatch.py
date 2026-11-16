@@ -121,5 +121,20 @@ cruise.Cruise.chain_restarted(c, T + 1600, 1234, T + 1540)
 check(wrote and wrote[0]["kind"] == "chain restarted", "logbook: chain restarted")
 check(left and left[0][1] == "restarted" and "cut short" in left[0][0], "the ship in port ends its call")
 
+# --- the island never tells a restart (or Tau HUD's own brake) as a stall
+check(cruise.Cruise.why({"left": 1, "note": "left early: the testnet restarted during the call, so the call was cut short"}) == "restarted",
+      "why: a restart is 'restarted', not 'stalled'")
+check(cruise.Cruise.why({"left": 1, "note": "left early: Tau HUD called the ship back"}) == "recalled", "why: up ships leave")
+check(cruise.Cruise.why({"left": 1, "note": "left early: no new block reached our node"}) == "stalled", "why: a stall stays a stall")
+
+# --- Telegram HTML: every & escaped, the reply in a copy block
+n["paused"] = {"restarts": 3}
+txt = restartwatch.owner_text(n)
+check("&& " not in txt and "&amp;&amp;" in txt, "the resume line's && is escaped for Telegram")
+
+# --- a restart the relay found after being away: no unknown block numbers in the reply
+b2 = restart_report.brief(restarts + [{"detected_at": T + 9000, "old": {"tip": None}}], rows, now=T + 9100)
+check("#None" not in b2["reply"] and "noticed it at" in b2["reply"], "reply without the old chain's end says only what is known")
+
 print("failed:", failed)
 sys.exit(1 if failed else 0)
