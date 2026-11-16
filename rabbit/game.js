@@ -696,12 +696,14 @@
     /* a cruise ship near: which one, and whether it comes in a few days, tomorrow, today, is here or has left (shipFacts) */
     f.reefPurse = reefPurse();   // the reef law of the week binds the North Wind's purse on the chain
     f.dark = darkNow();
+    f.morn = mornNow();   // a "good morning" only between six and noon by the clock (German time, as the island's light), whatever the game's day
     /* what Tau Net shows today: the wallets that walk here and the personal rules on the chain (islelive.js) */
     if (window.RABBIT_LIVE_WHEN) Object.assign(f, window.RABBIT_LIVE_WHEN());
     return Object.assign(f, shipFacts());
   }
   /* after dark in Germany (the island's own sky: ?hour=22:00 too): roughly half an hour after sunset to sunrise, by month */
   const SUNSET = [16.6, 17.4, 18.3, 20.1, 20.9, 21.5, 21.4, 20.7, 19.6, 18.5, 16.6, 16.1], SUNRISE = [8.2, 7.6, 6.6, 6.5, 5.4, 4.8, 5.0, 5.8, 6.7, 7.5, 7.3, 8.1];
+  function mornNow() { const b = berlin(), q = /^(\d{1,2}):/.exec(QS.get("hour") || ""), h = q ? +q[1] : b.h; return h >= 6 && h < 12; }
   function darkNow() {
     const b = berlin(), q = /^(\d{1,2}):(\d{2})$/.exec(QS.get("hour") || ""), h = q ? +q[1] + q[2] / 60 : b.h + b.m / 60;
     return h >= SUNSET[b.mo - 1] + 0.5 || h < SUNRISE[b.mo - 1];
@@ -1179,7 +1181,8 @@
       el("p", { class: "joke", text: joke }));
     openCard(null, b => {
       b.classList.add("paper"); b.append(box); const pend = G.pending.splice(0);
-      const after = () => { if (E) setTimeout(() => onAir([S(E.rico)], true), 600); offerAmbition(); };
+      /* the game's day starts with its morning paper at any hour; Rico's "Morning, island." only when it is morning by the clock */
+      const after = () => { if (E) setTimeout(() => onAir([mornNow() ? S(E.rico) : S(E.rico.replace(/^Morning, island\. /, ""))], true), 600); offerAmbition(); };
       const start = btn(pend.length ? (pend.length === 1 ? T("To the council: one law to vote on") : F("To the council: {n} laws to vote on", { n: pend.length })) : T("Start the day"), () => { if (pend.length) councilQueue(pend, after); else { closeCard(); after(); } }, { go: true });
       const acts = el("div", { class: "cv-acts" }, start); b.append(acts);
       if (ev) eventMorning(ev, b, acts, start);
@@ -1827,7 +1830,7 @@
       return done({ k: "pp_recap", parts: [banded("pp_recap", stopped), Q("({n} tricks refused by the chain)", { n: stopped }), Q(LOGQ)] });
     }
     return done((r < 0.15 ? shipCall() : null) || (st.f.pirateClean && st.stage === "gone" && r < 0.5 ? line(S.pirClean, Q(LOGQ)) : null)
-      || line(st.stage === "next" ? S.pirNext : S.pirGone));
+      || line(st.stage === "next" ? S.pirNext.filter(k => mornNow() || !/^pp_next[34]$/.test(k)) : S.pirGone));   // "Morning, lagoon" only in the morning
   }
   /* ---------- what a ship learned (rico.js sk_*, ex_*): from her logbook, each thing once ----------
      Before her next call: what she changed for it, and why (the relay's tune log, "last_of" her last visit). After a
@@ -2205,7 +2208,7 @@
     ROT.n++;
     /* the show opens with a shout, after the drum roll and the station horn */
     if (ROT.n === 1) { const k = RICO.wake(); return { k, parts: [V(k)], wake: true }; }
-    if (ROT.n === 2) { const hr = new Date().getHours(); return one(Math.random() < 0.5 ? "open" : hr >= 5 && hr < 11 ? "morning" : hr < 17 && hr >= 11 ? "afternoon" : hr >= 17 && hr < 22 ? "evening" : "night"); }
+    if (ROT.n === 2) { const hr = new Date().getHours(); return one(Math.random() < 0.5 ? "open" : hr >= 6 && hr < 11 ? "morning" : hr < 17 && hr >= 11 ? "afternoon" : hr >= 17 && hr < 22 ? "evening" : "night"); }
     const big = RADAR.news.some(n => /^(now|to|restart|midnight)/.test(n.set));
     if (ROT.n % 4 === 3 && !big && RADAR.snap && performance.now() - RADAR.snap.at < 180000) { ROT.newsLast = false; return { k: null, parts: weather(RADAR.snap) }; }
     RADAR.news = RADAR.news.filter(n => performance.now() - n.at < 600000);
