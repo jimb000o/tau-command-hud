@@ -111,6 +111,7 @@ class Services:
         offers: dict[tuple[str, str], str] = {}     # (recipient, rule text) -> who offered it
         policy: dict[str, str] = {}                 # author -> their latest personal rule (flat text)
         since = None
+        read = {"blocks": 0, "txs": 0, "ours": 0, "senders": set()}   # what was read, for up services status
 
         def row(addr: str, ts) -> dict:
             r = acc.get(addr)
@@ -126,6 +127,7 @@ class Services:
             return r
 
         for b in blocks:
+            read["blocks"] += 1
             ts = (b.get("header") or {}).get("timestamp")
             ts = ts if isinstance(ts, (int, float)) and ts > 0 else None
             if ts and since is None:
@@ -135,8 +137,11 @@ class Services:
                     continue
                 kind = t.get("tx_type") or "user_tx"
                 who = str(t.get("sender_pubkey") or "").lower()
+                read["txs"] += 1
                 if not KEY.match(who) or who in ours:
+                    read["ours"] += 1
                     continue
+                read["senders"].add(who)
                 if kind == "approval_request":
                     for pk in (t.get("approvers") or {}).values() if isinstance(t.get("approvers"), dict) else ():
                         pk = str(pk).lower()
@@ -247,4 +252,5 @@ class Services:
         everyone = set().union(*(r.pop("_served") for r in out))
         totals = {k: sum(1 for r in out if k in r["kinds"]) for k in ("cosign", "rules", "terms", "paid")}
         return {"services": out, "totals": {"services": len(out), **totals, "wallets": len(everyone)},
-                "rules": {"terms_min": TERMS_MIN, "paid_min": PAID_MIN}, "since": round(since) if since else None}
+                "rules": {"terms_min": TERMS_MIN, "paid_min": PAID_MIN}, "since": round(since) if since else None,
+                "read": {**read, "senders": len(read["senders"])}}

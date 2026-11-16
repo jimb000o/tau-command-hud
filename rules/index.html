@@ -77,6 +77,9 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .card .meta { color: var(--dim); font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .card .meta a { color: var(--dim); }
 .card .chip { display: inline-flex; align-items: center; gap: 6px; font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--ok); border: 1px solid rgba(57,255,138,.45); border-radius: 999px; padding: 2px 8px; }
+.card .who { display: inline-flex; align-items: center; font: 600 10.5px var(--display); letter-spacing: .06em; color: var(--text); border: 1px solid var(--hair); border-radius: 999px; padding: 1px 8px; cursor: help; }
+.card .who.app { color: var(--ok); border-color: rgba(57,255,138,.4); }
+.card .who.ours, .card .who.idni { color: var(--dim); }
 .card .chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); }
 .agree { display: flex; align-items: center; gap: 8px; color: var(--dim); font-size: 12px; }
 .agree .dots { display: inline-flex; gap: 3px; flex-wrap: wrap; }
@@ -123,6 +126,9 @@ html.fit .side { min-height: 0; overflow: auto; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/rulefacts.js"></script>
+<script src="../assets/rulekinds.js"></script>
+<script src="../assets/origins.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -146,7 +152,7 @@ html.fit .side { min-height: 0; overflow: auto; }
   </div>
   <main class="main">
     <section class="panel">
-      <h2>The wall <span class="seg" role="group" aria-label="Order"><button type="button" id="sortTop" aria-pressed="true">Most taken</button><button type="button" id="sortNew" aria-pressed="false">Newest</button></span></h2>
+      <h2>The wall <span class="seg" role="group" aria-label="Whose rules" id="whoSeg"><button type="button" data-who="all" aria-pressed="true" data-tip="Every rule on the chain.">All</button><button type="button" data-who="people" aria-pressed="false" data-tip="Rules written by people: not by IDNI's genesis accounts and not by our own server wallets. Wallets, not people: one person can hold several.">People</button><button type="button" data-who="apps" aria-pressed="false" data-tip="Rules written by wallets that use our apps: Tau HUD, White Rabbit Key, No Memo, Agorzilla.">Our apps' players</button><button type="button" data-who="ours" aria-pressed="false" data-tip="Our own server wallets (showcase, island bot, cruise passengers, No Memo's) and IDNI's genesis accounts.">Ours and IDNI</button></span> <span class="seg" role="group" aria-label="Order"><button type="button" id="sortTop" aria-pressed="true">Most taken</button><button type="button" id="sortNew" aria-pressed="false">Newest</button></span></h2>
       <div class="wall" id="wall" aria-live="polite"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
     </section>
     <div class="side">
@@ -187,7 +193,25 @@ const lang = (() => { const l = window.TauI18n && TauI18n.lang; return l && l !=
 const me = (() => { try { const k = JSON.parse(store.get("tauhud-wallet-key") || "null"); return k && k.pk; } catch (e) { return null; } })();
 /* names from the visitor's own address book, so a rule "only to Mia" reads like that */
 const BOOK = (() => { try { return JSON.parse(store.get(`tauhud-wallet-book-${SIM ? "sim" : "live"}`) || "[]"); } catch (e) { return []; } })();
-const tag = a => { const c = BOOK.find(c => c && c.addr === a); return c ? c.name : a === me ? T("you") : short(a); };
+const tag = a => {
+  const c = BOOK.find(c => c && c.addr === a);
+  if (c) return c.name;
+  if (a === me) return T("you");
+  const p = window.TauOrigin && TauOrigin.place ? TauOrigin.place(a) : null;
+  return p ? `${p} (${short(a)})` : short(a);
+};
+/* what we know of the account behind a rule, from the chain and our relay (assets/origins.js): its app, or that it is ours or IDNI's */
+function whoIs(a) {
+  const O = window.TauOrigin;
+  if (!O || SIM) return null;
+  const o = O.of(a, [], ""), nm = O.name(a), ap = O.app(a), about = (O.about(a) || []).join("\n");
+  if (o && o.tag === "idni") return { cls: "idni", group: "ours", text: T("IDNI genesis"), tip: about };
+  if (nm || (o && ["bot", "cruise", "showcase"].includes(o.tag))) return { cls: "ours", group: "ours", text: nm || T(O.label(o.tag)), tip: about || T("One of our own server wallets.") };
+  if (ap) return { cls: "app", group: "apps", text: ap.short, tip: ap.line };
+  if (o && ["rabbit", "nomemo", "agorzilla", "deja"].includes(o.tag)) return { cls: "app", group: "apps", text: T(O.label(o.tag)), tip: about };
+  return null;
+}
+const groupOf = a => { const w = whoIs(a); return w ? w.group : "people"; };
 
 /* ---------- reading a rule: the wallet's shapes (wallet/index.html readRule), plus the hand-written shapes the simulation uses ---------- */
 const NEUTRAL = "always ( (o5[t]:bv[24] = { #x000001 }:bv[24]) ).", FREEZE = "always ( (o5[t]:bv[24] = { #x000000 }:bv[24]) ).";
@@ -220,12 +244,18 @@ function extra(text) {
   if (to && !out.length) out.push(F("Payments only to {x}.", { x: tag(to[1].toLowerCase()) }));
   return out;
 }
+const KIND_WORD = { cap: "the amount of each payment", only: "the recipient", time: "the block time", cosign: "a second signature", reserve: "the balance left", freeze: "nothing may leave" };
 const dayOf = secs => new Date(secs * 1000).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" });
 function describe(text) {
   const r = readRule(text);
   if (!r) return [T("Every payment goes through as signed.")];
   if (r.freeze) return [T("Nothing leaves this account.")];
-  if (r.unknown) { const x = extra(text); return x.length ? x : [T("A rule of its own, written by hand. Read it in Tau below.")]; }
+  if (r.unknown) {
+    const x = extra(text);
+    if (x.length) return x;
+    const k = window.RuleKinds ? RuleKinds.kinds(text).kinds.filter(k => k !== "other") : [];
+    return k.length ? [T("Written by hand."), F("It checks: {k}.", { k: k.map(k => T(KIND_WORD[k])).join(", ") })] : [T("A rule of its own, written by hand. Read it in Tau below.")];
+  }
   const out = [];
   if (r.only.length) out.push(F("Payments only to {x}.", { x: r.only.map(tag).join(", ") }));
   if (r.cap != null) out.push(F("At most {n} test AGRS per payment.", { n: fmt(r.cap) }));
@@ -235,7 +265,7 @@ function describe(text) {
 }
 
 /* ---------- the wall: from the relay (live), or built here from the simulated chain ---------- */
-const W = { rules: null, holders: new Set(), sort: "top" };
+const W = { rules: null, holders: new Set(), sort: "top", who: "all" };
 function wallFrom(blocks) {   // the same reading as the relay's /rulewall (infra/relay/relay.py rulewall)
   const neutral = new Set([flat(NEUTRAL), flat("(o5[t]:bv[24]={#x000001}:bv[24])")]), rules = new Map();
   for (const b of blocks) {
@@ -280,10 +310,12 @@ function render() {
   if (W.rules == null) { wall.replaceChildren(el("div", { class: "empty" }, el("b", { text: T("The wall could not be read.") }), " ", T("Our node is not answering; this page tries again in a minute."))); return; }
   newest = new Map();
   [...W.rules].sort((a, b) => a.last - b.last).forEach(r => r.users.forEach(u => newest.set(u, r)));
-  const list = [...W.rules].sort(W.sort === "top" ? (a, b) => b.users.length - a.users.length || b.last - a.last : (a, b) => b.first - a.first);
+  const pool = W.who === "all" ? W.rules : W.rules.filter(r => W.who === "people" ? groupOf(r.author) !== "ours" : groupOf(r.author) === W.who);
+  const list = [...pool].sort(W.sort === "top" ? (a, b) => b.users.length - a.users.length || b.last - a.last : (a, b) => b.first - a.first);
   $("kRules").textContent = fmt(W.rules.length);
   $("kWallets").textContent = fmt(new Set(W.rules.flatMap(r => r.users)).size);
   $("kNow").textContent = SIM ? "–" : fmt(W.rules.filter(inForce).length);
+  if (!list.length && W.rules.length) { wall.replaceChildren(el("div", { class: "empty" }, el("b", { text: T("No rule in this group yet.") }), " ", T("Pick All to see every rule on the chain."))); return; }
   if (!list.length) { wall.replaceChildren(el("div", { class: "empty" }, el("b", { text: T("No rules on the chain yet.") }), " ", T("Be the first: write one in the wallet, and it shows up here after the next block."))); return; }
   /* a screenful of cards first (a phone showed 900 cards in one 56,000 px page), the rest on request */
   const first = Math.min(list.length, W.shown || (innerWidth < 700 ? 10 : 24));
@@ -309,7 +341,8 @@ function card(r, i) {
     el("div", { class: "agree" }, dots, el("span", null, el("b", { text: fmt(n) }), " ", T(n === 1 ? "wallet runs it" : "wallets took it"))),
     el("div", { class: "meta" },
       live ? el("span", { class: "chip", text: T("in force now") }) : null,
-      el("span", null, T("by") + " ", el("a", { href: "/account/?a=" + r.author + (SIM ? "&mode=sim" : ""), translate: "no", text: tag(r.author) })),
+      el("span", null, T("by") + " ", el("a", { href: "/account/?a=" + r.author + (SIM ? "&mode=sim" : ""), translate: "no", text: whoIs(r.author) && !BOOK.some(c => c && c.addr === r.author) && r.author !== me ? short(r.author) : tag(r.author) })),
+      (w => w ? el("span", { class: "who " + w.cls, "data-tip": w.tip || null, text: w.text }) : null)(whoIs(r.author)),
       el("span", { text: F("first in block #{n}", { n: r.first }) })),
     el("details", null, el("summary", { text: T("Read it in Tau") }), el("pre", { translate: "no", text: r.text })),
     el("div", { class: "acts" }, take,
@@ -320,6 +353,8 @@ function takeRule(r) {
   store.set("tauhud-wallet-draft", JSON.stringify({ freeze: r.freeze, only: r.only, cap: r.cap, from: r.from, co: r.co }));
   location.href = "/wallet/?from=rules" + (SIM ? "&mode=sim" : "") + lang + "#rules-mine";
 }
+document.querySelectorAll("#whoSeg [data-who]").forEach(b => b.addEventListener("click", () => { W.who = b.dataset.who; W.shown = 0; document.querySelectorAll("#whoSeg [data-who]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); render(); }));
+if (window.TauOrigin && !SIM) TauOrigin.ready().then(() => { if (W.rules) render(); });
 $("sortTop").onclick = () => { W.sort = "top"; $("sortTop").setAttribute("aria-pressed", "true"); $("sortNew").setAttribute("aria-pressed", "false"); render(); };
 $("sortNew").onclick = () => { W.sort = "new"; $("sortNew").setAttribute("aria-pressed", "true"); $("sortTop").setAttribute("aria-pressed", "false"); render(); };
 
