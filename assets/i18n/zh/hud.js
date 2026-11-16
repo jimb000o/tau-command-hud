@@ -3005,4 +3005,6 @@ TauI18n.add({ strings: {
   "Rules load": "规则加载",
   /* 16.11.2026: the rule lock (tau-testnet 211b780) */
   "Guardian: you can now lock your rule. IDNI added a rule lock to the testnet today (tau-testnet 211b780): with it, changing or removing an account’s rule waits for a co-signer. On the Guardian page the lock names the Guardian, so a change waits for a code from your app; without the code it goes through only after 1,000 blocks, and you can cancel it in that time. The wallet shows such a waiting change with a Cancel button, friends can approve a change that names them, and our pages no longer say a rule can never stop a stolen key.": "Guardian：现在你可以锁住自己的规则了。IDNI 今天给测试网加了规则锁（tau-testnet 211b780）：有了它，修改或移除账户的规则都要等联署人同意。在 Guardian 页面上，这把锁指定 Guardian 为联署人，所以修改要等你应用里的验证码；没有验证码，修改要过 1,000 个区块才会生效，期间你可以取消。钱包会显示这样等待中的修改，并附带取消按钮；朋友可以批准指定他们的修改；我们的页面也不再说规则永远挡不住被盗的密钥。",
+  /* 16.11.2026: own links in the troll box */
+  "Troll box: links to our own sites now go through and are clickable: any page of tauhud.com (also node.tauhud.com) and agorzilla.com, with or without https://. Every other link is still refused, so scam links stay out.": "Troll box：现在可以发我们自己网站的链接了，而且可以点击：tauhud.com 的任何页面（包括 node.tauhud.com）和 agorzilla.com，带不带 https:// 都行。其他链接仍然一律拒绝，诈骗链接进不来。",
 } });
