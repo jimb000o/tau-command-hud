@@ -833,5 +833,10 @@ TauI18n.add({ strings: {
   "No Memo’s window vault": "No Memo の窓の金庫",
   "No Memo’s clock vault": "No Memo の時計の金庫",
   "No Memo’s keeper": "No Memo の番人",
-  "a No Memo vault": "No Memo の金庫"
+  "a No Memo vault": "No Memo の金庫",
+  "1 rule proposed to your wallet": "あなたのウォレットへのルール提案 1 件",
+  "{n} rules proposed to your wallet": "あなたのウォレットへのルール提案 {n} 件",
+  "1 payment waits for your co-signature": "1 件の支払いがあなたの共同署名を待っています",
+  "{n} payments wait for your co-signature": "{n} 件の支払いがあなたの共同署名を待っています",
+  "Open it to read and accept or decline. Only your own wallet can say yes.": "開いて読み、受け入れるか断ってください。「はい」と言えるのはあなたのウォレットだけです。",
 } });

@@ -838,5 +838,10 @@ TauI18n.add({ strings: {
   "No Memo’s window vault": "No Memo 的窗口金库",
   "No Memo’s clock vault": "No Memo 的时钟金库",
   "No Memo’s keeper": "No Memo 的守门人",
-  "a No Memo vault": "一个 No Memo 金库"
+  "a No Memo vault": "一个 No Memo 金库",
+  "1 rule proposed to your wallet": "有 1 条规则提议给你的钱包",
+  "{n} rules proposed to your wallet": "有 {n} 条规则提议给你的钱包",
+  "1 payment waits for your co-signature": "有 1 笔付款等你共同签名",
+  "{n} payments wait for your co-signature": "有 {n} 笔付款等你共同签名",
+  "Open it to read and accept or decline. Only your own wallet can say yes.": "打开它阅读，然后接受或拒绝。只有你自己的钱包能同意。",
 } });

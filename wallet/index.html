@@ -1792,6 +1792,7 @@ async function answerOffer(o, yes) {
   const r = await submit(yes ? base("rule_offer_accept", { offer_id: o.offer_id, rule_text: text }) : base("rule_offer_reject", { offer_id: o.offer_id }),
     yes ? F("Accepted the rule from {x}", { x: tag(o.offerer_pubkey) }) : F("Declined the rule from {x}", { x: tag(o.offerer_pubkey) }), yes ? "accept" : "decline");
   $("actAside").textContent = r.ok ? "" : r.why;
+  if (r.ok) dispatchEvent(new Event("tauhud-mail"));   // the ✉ in the top bar (nav.js) reads again
 }
 /* the node's own check of an offered rule against what you have, before you accept (advisory: it cannot prove a rule free of contradictions) */
 const CONF = new Map();
@@ -1824,6 +1825,7 @@ async function askDesk() {
 async function answerRequest(q, yes) {
   const r = await submit(base("transfer_vote", { request_id: q.request_id, approve: yes }), yes ? F("Co-signed {n} test AGRS from {x}", { n: fmt(q.amount), x: tag(q.sender_pubkey) }) : F("Declined to co-sign for {x}", { x: tag(q.sender_pubkey) }), "vote");
   $("actAside").textContent = r.ok ? "" : r.why;
+  if (r.ok) dispatchEvent(new Event("tauhud-mail"));   // the ✉ in the top bar (nav.js) reads again
 }
 async function takeBack(t) {
   const r = await submit(base("retract_transfer", { retractable_id: t.retractable_id }), F("Took back {n} test AGRS", { n: fmt(t.amount) }), "retract");

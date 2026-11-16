@@ -222,7 +222,7 @@
           if (yes && !text && !DEMO) { b.disabled = false; msg.textContent = T("Could not read the proposed rule; try again."); return; }
           const res = await send(yes ? "rule_offer_accept" : "rule_offer_reject", yes ? { offer_id: o.offer_id, rule_text: text } : { offer_id: o.offer_id });
           b.disabled = false;
-          if (res.ok) { O.inc = O.inc.filter(x => x.offer_id !== o.offer_id); chip(); msg.textContent = yes ? T("Accepted. From the next block your wallet’s own payments must pass this rule.") : T("Declined. Nothing changes for your wallet."); setTimeout(poll, 8000); box.querySelector(`[data-o="${o.offer_id}"]`)?.remove(); }
+          if (res.ok) { O.inc = O.inc.filter(x => x.offer_id !== o.offer_id); chip(); dispatchEvent(new Event("tauhud-mail")); msg.textContent = yes ? T("Accepted. From the next block your wallet’s own payments must pass this rule.") : T("Declined. Nothing changes for your wallet."); setTimeout(poll, 8000); box.querySelector(`[data-o="${o.offer_id}"]`)?.remove(); }
           else msg.textContent = res.why;
         };
         const sure = el("div", { class: "of-sure", hidden: true }, el("span", { text: hasRule ? T("Take it? It replaces the rule your wallet holds now.") : T("Take it? From the next block your own payments must pass it.") }),

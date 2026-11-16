@@ -3205,5 +3205,11 @@
     "on": "2026-11-16",
     "link": "/",
     "html": "Chain core: the rule ring’s hover cards are short and the same for every wallet. Who the wallet is, whether its rule is in force, where it comes from (White Rabbit Key’s cruise ships, Agorzilla, No Memo’s vaults, a Tau HUD user, an IDNI genesis account, or unknown to us) and the rule in one plain sentence; a note only where a rule has a real catch. The repeated “Stops” and “Terms” lines are gone, and so is the promise that a limit holds even against the right key: whoever holds a wallet’s key can also change its rule."
+  },
+  {
+    "tag": "Menu",
+    "on": "2026-11-16",
+    "link": "/wallet/?focus=feed#activity",
+    "html": "Top bar: a ✉ next to Search when other wallets proposed a rule to your test wallet, or a payment waits for your co-signature. It shows on every page of Tau HUD once this browser has a test wallet, with the number waiting; a click opens the island’s inbox on White Rabbit Key and your wallet’s Activity everywhere else, where you read each one and accept or decline it. Only your own wallet can say yes."
   }
 ]
