@@ -106,6 +106,7 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .det .fit { border-left: 2px solid var(--ok); padding: 4px 10px; background: rgba(57,255,138,.04); }
 .det .fit a { color: var(--dim); }
 .det .src { margin-top: 3px; font-size: 11px; color: var(--dim); }
+.det .stale { color: var(--behind); font-size: 12px; margin: 6px 0 0; }
 .det .src a { color: var(--dim); }
 .det .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 
@@ -214,7 +215,7 @@ p.sub, .sub, .rules, .det p, .said li { max-width: 76ch; }
   </main>
 
   <footer>
-    <p>Status from the public GitHub API, checked every hour by our server (the chip beside each linked IDNI issue or pull request), and from IDNI’s own git history: a fix on IDNI’s main that names an item’s issue marks it partly fixed by itself. Quotes from IDNI’s monthly videos on the Tau Net YouTube channel. Comments are kept by the same moderator as the troll box. <a href="/findings/">Findings</a> · <a href="/status/">Status</a> · <a href="/devpulse/">Build pulse</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BRoadmap%5D%20" target="_blank" rel="noopener">Feedback</a></p>
+    <p>Status from the public GitHub API, checked every hour by our server (the chip beside each linked IDNI issue or pull request), and from IDNI’s own git history: a fix on IDNI’s main that names an item’s issue marks it partly fixed by itself. Every Monday our server also reads the items against IDNI’s issues and the testnet’s restarts and flags what may be out of date. Quotes from IDNI’s monthly videos on the Tau Net YouTube channel. Comments are kept by the same moderator as the troll box. <a href="/findings/">Findings</a> · <a href="/status/">Status</a> · <a href="/devpulse/">Build pulse</a> · <a href="https://github.com/jimb000o/tau-command-hud/issues/new?labels=feedback&title=%5BRoadmap%5D%20" target="_blank" rel="noopener">Feedback</a></p>
   </footer>
 </div>
 
@@ -232,6 +233,8 @@ const TALK = {
   sep: { id: "Qfpfaj-Q75I", t: "When will Tau Be Demo-Ready · Sept 2026 Q&A" },
   oct: { id: "1bhpCoBY4zI", t: "Q&A: AI Agents, Agoras Fees & Testnet Rules · Oct 2026" },
   octDev: { id: "ZlvC1YcJDew", t: "Dev: Co-Signed Transfers & Faster Rules · Oct 2026" },
+  nov: { id: "_4DnQImw4tQ", t: "Q&A · Nov 2026" },
+  novDev: { id: "ELdMig6EfDg", t: "Development update · Nov 2026" },
 };
 const talk = k => `<a href="${yt(TALK[k].id)}" target="_blank" rel="noopener" translate="no">${TALK[k].t} ↗</a>`;   // video titles stay as published
 
@@ -248,7 +251,7 @@ const SAID = [
 const ITEMS = [
   { id: "rule-places", must: true, refs: [85], idni: "done", title: "Only two personal rules for the whole network",
     brief: "Until 12 November only two accounts on the whole testnet could hold a personal rule; now every account can hold its own.",
-    problem: "Until 12 November the testnet let two accounts at a time hold a personal rule (a spending limit, a co-signer, an allow list), and two genesis accounts held both places. IDNI then changed how personal rules work: each account’s rule is judged on its own and only for that account’s payments, and nothing limits how many accounts hold one. The testnet restarted on that code. The issue is still open.",
+    problem: "Until 12 November the testnet let two accounts at a time hold a personal rule (a spending limit, a co-signer, an allow list), and two genesis accounts held both places. IDNI then changed how personal rules work: each account’s rule is judged on its own and only for that account’s payments, and nothing limits how many accounts hold one. The testnet restarted on that code. Our issue #85 is still open at IDNI, but what it asked for is done, so we mark the item fixed.",
     why: "IDNI’s own product focus is a wallet where people write rules for their own money. On a mainnet that needs a rule per user, not two for everyone.",
     proof: [
       [`${IDNI}/commit/0905c19feba670c8bb1f7d9cf6584d5548edb854`, "IDNI’s change 0905c19", "each payment is judged by its sender’s own rule"],
@@ -262,7 +265,7 @@ const ITEMS = [
     talks: ["sep", "octDev"] },
   { id: "validators", must: true, refs: [80, 83], title: "One validator makes every block",
     brief: "Every block on the testnet comes from one IDNI key; nobody outside has produced one yet.",
-    problem: "Every block on the public testnet is sealed by one IDNI validator. Votes from any account count, but block production has never been shared with an outside node.",
+    problem: "Every block on the public testnet is sealed by one IDNI validator. Votes from any account count, but block production has never been shared with an outside node. In its November Q&A IDNI said validators stay limited on purpose while the testnet is at its engineering stage; adding one is a consensus rule change and a vote, and proof of stake may come later.",
     why: "A mainnet cannot rest on one key. What happens when a validator is offline, or two disagree, has to be seen on a public chain first.",
     proof: [
       ["/account/", "Validator profile on Tau HUD", "what it sealed and when"],
@@ -275,20 +278,22 @@ const ITEMS = [
       "Run the stake-based eligibility IDNI built in August on the live chain once.",
     ],
     fit: "IDNI already tests with three validator agents of its own and built the switch to stake. The path moves both onto the public chain.",
-    talks: ["augDev", "oct"] },
-  { id: "sync", must: true, refs: [78], idni: "partly", title: "Two sync bugs stop fresh nodes",
+    talks: ["augDev", "oct", "nov"] },
+  { id: "sync", must: true, refs: [78], title: "Two sync bugs stop fresh nodes",
     brief: "Header sync read one 64 KB frame and stopped after 2,000 headers; IDNI fixed both on 29 October.",
-    problem: "A new node fetching the chain read only one 64 KB frame of a reply and never asked past the first 2,000 headers. IDNI fixed the wrong genesis from the same report within a day and both sync bugs on 29 October (e6c8f92); the issue is still open.",
+    problem: "A new node fetching the chain read only one 64 KB frame of a reply and never asked past the first 2,000 headers. IDNI fixed the wrong genesis from the same report within a day and both sync bugs on 29 October (e6c8f92), and closed the issue on 5 November.",
     why: "Every new operator, exchange or explorer starts with a sync. On a long chain these bugs stop them for good.",
     proof: [
       [`${IDNI}/issues/78`, "IDNI issue #78", "the report, genesis part fixed in 539d1e2"],
       [`${IDNI}/commit/e6c8f9283f29fb53ba2a6d3b9448f4faebfd83a8`, "IDNI’s fix e6c8f92", "sync reads a whole reply and pages until caught up"],
+      [`${IDNI}/pull/105`, "IDNI pull request #105", "every read between peers gets a size cap and a time limit"],
     ],
     path: [
       "Done in IDNI’s main on 29 October, with a header-sync test of its own.",
+      "On 12 November IDNI also put a size cap and a time limit on every read between peers (pull request #105).",
     ],
     fit: "IDNI credits merged pull requests and issues that name the cause. In October it merged four from one community member.",
-    talks: ["octDev"] },
+    talks: ["octDev", "novDev"] },
   { id: "reconnect", must: true, refs: [86], title: "A node that loses every peer stays alone",
     brief: "After the 29 October outage, nodes stayed at 0 peers until restarted by hand.",
     problem: "On 29 October IDNI’s bootnode refused new peers for about three hours. Nodes that lost it never dialed it again and kept an old chain until someone restarted them.",
@@ -306,7 +311,7 @@ const ITEMS = [
     talks: ["augDev", "octDev"] },
   { id: "mempool", must: true, refs: [81], title: "Sealed transactions stay “pending”",
     brief: "Transactions already in a block stay in the mempool for up to an hour.",
-    problem: "A fully synced node keeps transactions as pending after the very same transactions are sealed in a block, until they expire after 60 minutes. gettxstatus answers “queued” for them.",
+    problem: "A fully synced node keeps transactions as pending after the very same transactions are sealed in a block, until they expire after 60 minutes. gettxstatus answers “queued” for them. We saw this in late October and have not checked it again on the code of mid-November.",
     why: "Wallets and explorers would tell people a confirmed payment is still waiting, and a payment could look like it went through twice.",
     proof: [
       [`${IDNI}/issues/81`, "IDNI issue #81", "the report with the RPC replies"],
@@ -320,7 +325,7 @@ const ITEMS = [
     talks: ["octDev"] },
   { id: "upgrades", must: true, refs: [82], idni: "partly", title: "Restarts from block 0 come unannounced",
     brief: "The testnet has started over from block 0 several times; since 12 November a restart brings a new block 0 that nodes check.",
-    problem: "Until 1 November the testnet started over from block 0 on the same genesis, without a notice beforehand and without anything a node can check. Nodes that missed the restart of 1 November kept a dead chain. On 12 November IDNI merged pull request #93: a restart now comes with a new genesis, IDNI’s README names its block 0 hash, and nodes compare it when they connect. IDNI restarted the testnet that way after 12 November.",
+    problem: "Until 1 November the testnet started over from block 0 on the same genesis, without a notice beforehand and without anything a node can check. Nodes that missed the restart of 1 November kept a dead chain. On 12 November IDNI merged pull request #93: a restart now comes with a new genesis, IDNI’s README names its block 0 hash, and nodes compare it when they connect. IDNI restarted the testnet that way after 12 November. The testnet started over twice more, on 14 and 15 November, each time shortly after busy hours on the chain.",
     why: "A mainnet cannot start over. The way to upgrade a running chain without a restart is best practised on the testnet first.",
     proof: [
       ["/stats/", "Stats page", "chain restarts our relay noticed"],
@@ -334,21 +339,51 @@ const ITEMS = [
     ],
     fit: "Tau changes its own rules by vote without new node versions. An upgrade that keeps the chain is the same idea for the node software.",
     talks: ["augDev"] },
+  { id: "busy", must: true, refs: [108, 114], title: "Busy hours push a node to its limits",
+    brief: "A node refuses new addresses once it knows 254, checking a payment gets slower with every transfer, and the testnet restarted twice after busy hours.",
+    problem: "Three things we saw in November, on small numbers: hundreds of wallets, not millions. On 11 November our node answered every payment from an address it had not seen before with “temporarily unavailable”, because its table of addresses was full at 254; sending again never helped (#108). Checking a new payment replays the Tau journal, and that replay grows with every transfer: after about 29 hours it took 27 to 55 seconds on our small node, so a wallet that waits 20 seconds gets no answer (#114). And on 14 and 15 November the testnet started over shortly after our busiest hours. We do not know whether these are linked.",
+    why: "A mainnet has to take its busiest day without turning new people away or starting over. These limits show up at testnet sizes already.",
+    proof: [
+      [`${IDNI}/issues/108`, "IDNI issue #108", "new addresses refused once a node holds 254"],
+      [`${IDNI}/issues/114`, "IDNI issue #114", "the replay grows with every transfer, with our node’s log"],
+      ["/stats/", "Stats page", "chain restarts our relay noticed"],
+    ],
+    path: [
+      "Let the address table grow when it fills, instead of refusing new addresses (#108).",
+      "Replay only what a payment needs, or start from a saved point, so checking a payment costs the same on day 1 and on day 100 (#114).",
+      "Measure each release under a fixed load, new wallets and payments per minute, before a limit moves.",
+    ],
+    fit: "IDNI says this work is under way: in its November dev update, keeping only the current version of each rule cut a replay of 60 rule changes from 3.5 minutes to half a second, and a time budget keeps one slow transaction from holding the whole node.",
+    talks: ["nov", "novDev"] },
+  { id: "rule-clock", must: true, refs: [115, 111], title: "A rule with a clock can split two nodes",
+    brief: "On our private copy of the testnet, one personal rule with a time condition made two nodes disagree about a block.",
+    problem: "IDNI’s code says a personal rule’s answer depends only on the rule and the payment. A rule with a bare time condition such as [t > 3] passes the checks at the door, and its answer then depends on how often that node has run the rule before. On 15 November we tried one such rule on our private copy of the testnet, never on the live one: one node took block 5, the other refused it with a state hash mismatch, and a fresh node replaying the chain stopped at block 4. Separately, a long co-signer rule crashed the engine worker on the Tau version the testnet uses (#111); that crash is gone in the newest Tau language, which the testnet does not run yet.",
+    why: "Every node must reach the same answer on every block, or the chain splits. On a mainnet anyone can write a personal rule, so no rule may be able to do this.",
+    proof: [
+      [`${IDNI}/issues/115`, "IDNI issue #115", "the time condition, with our follow-up from the copy chain"],
+      [`${IDNI}/issues/111`, "IDNI issue #111", "a long co-signer rule crashes the engine worker"],
+    ],
+    path: [
+      "Refuse bare time conditions at the door, as rules that look back in time already are, or make the step count part of the chain state.",
+      "Move the testnet to the newest Tau language once it is released (#111).",
+    ],
+    fit: "IDNI already refuses rules that read an earlier step, such as i1[t-1], for the same reason. A bare time condition is one more case for the same check.",
+    talks: ["octDev"] },
   { id: "join", must: false, refs: [82, 79], idni: "partly", title: "Joining as a new operator hits walls",
     brief: "Missing settings in the join profile and a build that needs more memory than a small server has.",
-    problem: "A node on default settings stops at the first vote from a non-validator, advertises the address 0.0.0.0 to its peers, and the build from a clean checkout needs more than 4 GB of memory.",
+    problem: "In late October a node on default settings stopped at the first vote from a non-validator, advertised the address 0.0.0.0 to its peers, and the build from a clean checkout needed more than 4 GB of memory. Since then IDNI closed our build report, its README explains how to advertise a public address and how many build jobs to use, and in its November dev update IDNI said a new node can now join smoothly. We have not checked the vote case again on the newest code.",
     why: "Many independent nodes are what make a mainnet. Each wall here loses some of the people who would run one.",
     proof: [
       [`${IDNI}/issues/82`, "IDNI issue #82", "join profile gaps"],
-      [`${IDNI}/issues/79`, "IDNI issue #79", "build failures; three of four fixed by IDNI"],
+      [`${IDNI}/issues/79`, "IDNI issue #79", "build failures; closed by IDNI on 5 November"],
       ["/kit/", "Our node operator kit", "a node in one command, with the workarounds"],
     ],
     path: [
-      "Put open admission and the public address into the join profile and the example settings.",
-      "Pick the number of build jobs from the free memory, or publish a ready-built image.",
+      "Let a read node on default settings follow votes from non-validators. IDNI’s README asks public networks to keep open admission off, so in our view the fix belongs in the node, not in a setting.",
+      "Publish a ready-built image, so a small server does not have to build Tau itself.",
     ],
-    fit: "IDNI already fixed most of the build report. The rest is configuration and documentation, the smallest kind of change.",
-    talks: ["octDev"] },
+    fit: "IDNI already fixed the build report and documented the public address. What is left is a small change in the node and a published image.",
+    talks: ["octDev", "novDev"] },
   { id: "governance", must: false, refs: [83, 84], title: "Rule changes are rarely seen on the live chain",
     brief: "The chain stopped where a rule change passed by one vote was due; open governance is off since 1 November.",
     problem: "Before the restart of 1 November the live chain had seen three rule proposals, two of them changing nothing, each taking 3 to 4 days to apply. On 31 October the chain stopped at block 5028, the block where a consensus rule change approved by a single vote was due to take effect. IDNI restarted the chain and said it turned off open governance. The consensus switch IDNI showed in its demos has not run on the public chain.",
@@ -376,18 +411,19 @@ const ITEMS = [
     talks: ["octDev"] },
   { id: "language", must: false, refs: [], title: "IDNI’s own list: tables, speed, ease of use",
     brief: "What IDNI says is left for the Tau language itself; we only follow it.",
-    problem: "Asked what is left before mainnet, Ohad Asor named tables, optimisations and making the language easier to use. In October the team said the next big step is merging the development branch into the main branch before the next release.",
+    problem: "Asked what is left before mainnet, Ohad Asor named tables, optimisations and making the language easier to use. In October the team said the next big step is merging the development branch into the main branch before the next release. In its November Q&A IDNI named what the next release of the language still needs: the anti-prenexing algorithm finished, functions and tables, and speed. In the November dev update it said the part of anti-prenexing for bit-vectors without arithmetic is built and the arithmetic part is in progress.",
     why: "This is IDNI’s list, not a finding of ours. We put it here so ours is read next to it.",
     proof: [
       [yt(TALK.aug.id), "Aug 2026 Q&A", "the answer on what is left"],
       [yt(TALK.octDev.id), "Oct 2026 Dev update", "the development branch and the next release"],
+      [yt(TALK.nov.id), "Nov 2026 Q&A", "what the next release of the language still needs"],
       ["/devpulse/", "Build pulse", "how the code moves, live"],
     ],
     path: [
       "What we could do, not yet offered to IDNI: time each new release on our own node and publish how long the rules people use take to load and check.",
     ],
     fit: "Timings from a node outside IDNI help decide which optimisation matters most.",
-    talks: ["aug", "octDev"] },
+    talks: ["aug", "nov", "novDev"] },
 ];
 ITEMS.forEach((it, i) => { it.no = i + 1; });
 
@@ -438,7 +474,7 @@ async function fetchPulse() {
     const r = await fetch(PULSE_URL, { cache: "no-store" });
     if (!r.ok) return null;
     const j = await r.json();
-    return j && j.refs ? { items: j.refs.items || {}, news: j.news || [], states: j.refs.states || null, fixed: j.refs.fixed || {} } : null;
+    return j && j.refs ? { items: j.refs.items || {}, news: j.news || [], states: j.refs.states || null, fixed: j.refs.fixed || {}, review: j.refs.review || null } : null;
   } catch { return null; }
 }
 /* GitHub's state of every IDNI issue and pull request the page links, checked once an hour by our server
@@ -589,12 +625,18 @@ function pick(it, user) {
   if (ws && ws.readyState === 1) ws.send(`roadmap get ${it.id}`);
   if (user && !document.documentElement.classList.contains("fit")) $("det").scrollIntoView({ behavior: "smooth", block: "start" });
 }
+/* The weekly check by our server (infra/alerts/roadmap_review.py, devpulse.json refs.review): when it last read this
+   page against IDNI's issues, our own open issues and the testnet's restarts, and which items it flagged. A flag stays
+   until the page's text changes. */
+const reviewed = () => { const r = PULSE && PULSE.review; return r && r.at ? `<span>Weekly check <span translate="no">${new Date(r.at * 1000).toISOString().slice(0, 10)}</span></span>` : ""; };
+const stale = it => !!(PULSE && PULSE.review && (PULSE.review.flag || []).includes(it.id));
 function renderDetail() {
   const it = SEL, [cls, label] = status(it);
   const refs = it.refs.map(n => `<a href="${IDNI}/${n === 86 || n === 88 ? "pull" : "issues"}/${n}" target="_blank" rel="noopener">#${n}</a>`).join(" ");
   $("det").innerHTML = `
     <p class="title">${it.no}. ${esc(it.title)}</p>
-    <div class="meta"><span class="badge b-${cls}">${label}</span><span>${it.must ? "Must be fixed" : "Should be fixed"}</span>${refs ? `<span>At IDNI: ${refs}</span>` : ""}</div>
+    <div class="meta"><span class="badge b-${cls}">${label}</span><span>${it.must ? "Must be fixed" : "Should be fixed"}</span>${refs ? `<span>At IDNI: ${refs}</span>` : ""}${reviewed()}</div>
+    ${stale(it) ? `<p class="stale">Our weekly check found something here that may be out of date. We are on it.</p>` : ""}
     <h3>The problem</h3><p>${esc(it.problem)}</p>
     <h3>Why it matters for mainnet</h3><p>${esc(it.why)}</p>
     <h3>Proof</h3><ul class="proof">${it.proof.map(([h, t, d]) => `<li><a href="${h}"${/^https?:/.test(h) ? ' target="_blank" rel="noopener"' : ""}>${esc(t)}</a>${linkNo(h) ? chip(linkNo(h)) : ""} <span>${esc(d)}</span></li>`).join("")}</ul>

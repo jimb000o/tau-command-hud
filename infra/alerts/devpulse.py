@@ -713,6 +713,14 @@ def main():
                     data["refs"]["fixed"] = fx
             except Exception as e:  # noqa: BLE001 - never stops the pulse
                 log.warning("fixwatch: %s", e)
+            try:   # the weekly check of the Road to mainnet page (roadmap_review.py): a note to the owner, flags on the page
+                import roadmap_review
+                rv = roadmap_review.step(started, links, data.get("news") or [],
+                                         [float(r["at"]) for r in restarts() if r.get("at")])
+                if rv and isinstance(data.get("refs"), dict):
+                    data["refs"]["review"] = rv
+            except Exception as e:  # noqa: BLE001 - never stops the pulse
+                log.warning("roadmap review: %s", e)
             if data["repos"]:
                 write_atomic(PUBLIC_PATH, json.dumps(data, separators=(",", ":")))
                 try:   # Tau today for AI assistants and tauhud.com/facts/ (knowledge.py): facts, live numbers, IDNI's work
