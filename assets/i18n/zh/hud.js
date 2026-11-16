@@ -1,5 +1,6 @@
 /* Simplified Chinese for this page. Keys are the English text; {n} {h} … are placeholders. */
 TauI18n.add({ strings: {
+  "Top bar: the stress test hover is shorter. It says which ship docks at White Rabbit Key, that her simulated passengers send real test transactions at a capped pace, when she comes in your time, the last call's result and where a click leads.": "顶栏：压力测试的悬停说明变短了。它写明哪艘船停靠 White Rabbit Key、模拟乘客以限定速度发送真实测试交易、按你的当地时间何时到港、上一次到港的结果，以及点击后打开什么。",
   "Top bar: the crew and online hovers are shorter. Crew says what a membership costs, that it cancels any time and that only the count shows; online keeps its privacy points (one person counts once, no cookies, hashed daily, memory only) in two lines.": "顶栏：船员和在线人数的悬停说明变短了。船员一栏写明会员费用、可随时取消、只显示人数；在线一栏用两行保留隐私要点（一个人只算一次、没有 cookie、每日哈希、只存内存）。",
   "You could be the first.": "你可以成为第一位。",
   "Newspaper: every Monday edition of The Daily Consensus is now a new episode from start to finish. A paragraph, an article or a café answer that an earlier edition already printed word for word is not printed again; the week’s own numbers take its place, or the story says since which edition nothing has changed.": "报纸：《共识日报》每周一的每一期，现在从头到尾都是新的一期。之前某一期已经一字不差印过的段落、文章或咖啡馆里的回答不会再印一次；取而代之的是本周自己的数字，或者由这篇报道说明自哪一期以来没有变化。",
