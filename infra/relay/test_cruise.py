@@ -598,6 +598,9 @@ c_ = P.tune_after({"ship": "pirates", "landed": True, "left": None, "refused": {
 check(c_ and c_[0]["to"] == cruise.RATE - 1 and P.rate_of("pirates") == cruise.RATE - 1 and "no answer" in c_[0]["because"], "unanswered sends: one a minute slower next time")
 c_ = P.tune_after({"ship": "pirates", "landed": True, "left": None, "refused": {}, "trial": []}, {"unanswered": 0, "half": 0})
 check(c_ and c_[0]["to"] == cruise.RATE and P.rate_of("pirates") == cruise.RATE, "a clean visit: back up, never above the limit")
+c_ = P.tune_after({"ship": "pirates", "landed": True, "left": 1, "note": "the testnet restarted during the call, so the call was cut short",
+                   "refused": {}, "trial": []}, {"unanswered": cruise.TUNE_UNANSWERED + 3, "half": 4})
+check(c_ == [] and P.rate_of("pirates") == cruise.RATE, "a call the testnet restart ended teaches no pace (17 Nov 2026: 12 -> 11 for its timeouts)")
 P.tune["pirates"]["rate"] = 1
 check(P.rate_of("pirates") == cruise.RATE_MIN, f"never below {cruise.RATE_MIN} a minute, whatever the state says")
 P.tune["pirates"]["rate"] = 99

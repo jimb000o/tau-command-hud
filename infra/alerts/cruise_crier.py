@@ -514,7 +514,10 @@ def clip_post(t: dict, video: str) -> list[str]:
 def report_text(f: dict) -> str:
     lines = [f"{f.get('ship')}, {f.get('date')}: the visit is over"] + ["• " + n for n in blog.numbers_of(f)]
     if isinstance(f.get("landed"), dict):
-        lines.append(f"• planned {f['landed'].get('transactions planned')}, skipped {f.get('stops skipped', 0)}, first send {f.get('first send')}, last {f.get('last send')}")
+        cut = f.get("left early") or f.get("call cut short by the restart")
+        lines.append(f"• planned {f['landed'].get('transactions planned')}, "
+                     + (f"not sent {f.get('stops skipped', 0)} (most because the call ended early)" if cut else f"skipped {f.get('stops skipped', 0)}")
+                     + f", first send {f.get('first send')}, last {f.get('last send')}")
     a = f.get("our node's answer time to a send, seconds")
     if a:
         lines.append(f"• our node's answer time: median {a['median']} s, 8 of 10 within {a.get('8 of 10 within', '?')} s, slowest tenth from {a['slowest tenth from']} s, slowest {a['slowest']} s")
@@ -530,6 +533,8 @@ def report_text(f: dict) -> str:
                      + (f", {tr['refused with another answer']} with another answer" if tr.get("refused with another answer") else "")
                      + (f", {tr['held back']} HELD BACK (see the separate message)" if tr.get("held back") else ""))
     for c in f.get("the ship changed for its next call") or []:
+        if not c.get("held") and f.get("sends our node did not answer in time (not refusals)") and "no answer" in str(c.get("because")):
+            continue   # already said with the timeouts (blog.numbers_of)
         lines.append("• learned: " + ("a pirate trick, held back" if c.get("held") else f"{c['what']} {c['from']} → {c['to']} ({c['because']})"))
     lines += [f"Logbook: {LOGBOOK}?visit={f.get('visit')}",
               "The blog draft follows within 3 hours, I tell you here.",

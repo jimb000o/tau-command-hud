@@ -283,7 +283,9 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
             f["sends at half pace because our own node had just left a send unanswered (not the testnet)"] = s["half_node"]
     elif s.get("half") is not None:   # before, every half-pace send came from the strained verdict
         f["sends at half pace because the testnet looked strained"] = s.get("half")
-    ms = sorted(e["ms"] for e in sends if isinstance(e.get("ms"), int))
+    # only sends the node answered: an unanswered one logs the relay's wait (its 20 s limit), not an answer time (17 Nov
+    # 2026: six timeouts made every figure "20.0 s"); relay/cruise.py counts its own medians the same way
+    ms = sorted(e["ms"] for e in sends if isinstance(e.get("ms"), int) and e.get("ok") is not None)
     if ms:   # how long our node took to answer a sendtx (logged since 6 November 2026), in seconds
         sec = lambda m: round(m / 1000, 1)  # noqa: E731
         f["our node's answer time to a send, seconds"] = {"median": sec(ms[len(ms) // 2]), "8 of 10 within": sec(ms[min(len(ms) - 1, len(ms) * 8 // 10)]),
@@ -291,7 +293,7 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
         a0 = min(e["t"] for e in sends)
         per: dict = {}
         for e in sends:
-            if isinstance(e.get("ms"), int):
+            if isinstance(e.get("ms"), int) and e.get("ok") is not None:
                 per.setdefault((e["t"] - a0) // 600, []).append(e["ms"])
         f["median answer time per 10 minutes, seconds"] = [sec(sorted(per[k])[len(per[k]) // 2]) if per.get(k) else 0
                                                            for k in range(int(max(per)) + 1)]
@@ -855,6 +857,13 @@ def held(did: str) -> str:
     return str((blog_notes.NOTES.get(did) or {}).get("hold") or "")
 
 
+def restart_hit(a: dict) -> bool:
+    """True when the testnet started over during the article's call (facts_of): such a draft never publishes itself."""
+    f = a.get("facts") or {}
+    return bool(f.get("call cut short by the restart") or (f.get("the testnet started over") or {}).get("during her call")
+                or "restarted" in str((f.get("left early") or {}).get("why") or ""))
+
+
 def notes_tick() -> int:
     """Every waiting draft with a note gets its hand-written sections (the preview link shows them at once)."""
     st, n = state(), 0
@@ -972,6 +981,8 @@ def auto_publish(now: float | None = None) -> str | None:
             continue
         a = read_json(os.path.join(PUBLIC, "drafts", st["drafts"][did] + ".json"), {})
         chk = a.get("check") or {}
+        if restart_hit(a):
+            continue   # a call the testnet restart ended waits for a read (the 14, 15 and 17 Nov drafts all needed one)
         if not a or chk.get("unknown_numbers") or chk.get("hype") or a.get("by_hand") or a.get("editor"):
             continue   # waits for a look and up blog publish (--force); the weekly testnet post always waits for the owner's OK
         if not too_late_to_post(a, now) and gap_left(now):
@@ -1019,6 +1030,8 @@ def auto_note(st: dict, did: str, a: dict) -> str:
         return "never by itself: written before drafts published themselves, only by hand"
     if held(did):
         return "never by itself, held: " + held(did)
+    if restart_hit(a):
+        return "never by itself: the testnet restarted during this call, it waits for your read (up blog publish " + did + ")"
     if (st.get("publish_at") or {}).get(did):
         t = st["publish_at"][did]
         return f"goes up by itself {dt.datetime.fromtimestamp(t, dt.timezone.utc):%a %d.%m. %H:%M} UTC, the time you set (--at=off takes it back)"
@@ -1093,13 +1106,15 @@ def numbers_of(f: dict) -> list[str]:
     tr = f.get("pirate tricks") or {}
     if tr.get("tried"):
         out.append(f"{tr['tried']} pirate tricks, {tr.get('refused with the expected answer', 0)} refused by the chain with the expected answer")
-    for c in f.get("the ship changed for its next call") or []:
-        if not c.get("held"):
-            out.append(f"the ship changed {c['what']} from {c['from']} to {c['to']}: {c['because']}")
     una = f.get("sends our node did not answer in time (not refusals)")
+    for c in f.get("the ship changed for its next call") or []:
+        if not c.get("held") and not (una and "no answer" in str(c.get("because"))):   # that one is told with the timeouts below
+            out.append(f"the ship changed {c['what']} from {c['from']} to {c['to']}: {c['because']}")
     if una:
+        pace = next((c for c in f.get("the ship changed for its next call") or [] if not c.get("held") and "no answer" in str(c.get("because"))), None)
         out.append(f"{una} got no answer from our node in time" + (f", {f['of those, reached the chain after all']} of them reached the chain all the same"
-                                                                   if f.get("of those, reached the chain after all") else ""))
+                                                                   if f.get("of those, reached the chain after all") else "")
+                   + (f"; so the ship goes {pace['to']} {pace['what']} instead of {pace['from']} next time" if pace else ""))
     left = f.get("left early")
     if isinstance(left, dict) and left.get("minutes in port") is not None:
         why = left.get("why") or "no reason logged"
