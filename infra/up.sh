@@ -99,7 +99,7 @@ ln -sf "$(pwd)/up.sh" /usr/local/bin/up 2>/dev/null && chmod +x up.sh 2>/dev/nul
 # cache is below 6 GB; never the tau-lang stage of the node image (building that again takes hours).
 [ "${1:-}" = "cache" ] || (setsid nohup python3 buildcache/buildcache.py daily >/dev/null 2>&1 &) || true
 if [ "$1" != "--pulled" ]; then
-  git -C .. pull --ff-only
+  git -C .. pull --ff-only >&2   # on stderr: what up prints on stdout can go into a file (up x stats csv > x-stats.csv)
   exec sh "$(pwd)/up.sh" --pulled "$@"
 fi
 shift
