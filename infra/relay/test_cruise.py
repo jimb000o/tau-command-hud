@@ -601,6 +601,15 @@ check(c_ and c_[0]["to"] == cruise.RATE and P.rate_of("pirates") == cruise.RATE,
 c_ = P.tune_after({"ship": "pirates", "landed": True, "left": 1, "note": "the testnet restarted during the call, so the call was cut short",
                    "refused": {}, "trial": []}, {"unanswered": cruise.TUNE_UNANSWERED + 3, "half": 4})
 check(c_ == [] and P.rate_of("pirates") == cruise.RATE, "a call the testnet restart ended teaches no pace (17 Nov 2026: 12 -> 11 for its timeouts)")
+P.tune["pirates"]["rate"] = cruise.RATE - 1
+P.visits.append({"id": "2026-11-17-pirates", "ship": "pirates", "note": "left: the testnet restarted during the call, so the call was cut short",
+                 "changed": [{"what": "transactions a minute", "from": cruise.RATE, "to": cruise.RATE - 1, "because": "6 sends got no answer"}]})
+P.unlearn_restarts()
+check(P.rate_of("pirates") == cruise.RATE and P.visits[-1]["changed"][0]["undone"], "a pace a restart taught earlier is taken back once")
+P.tune["pirates"]["rate"] = cruise.RATE - 2
+P.unlearn_restarts()
+check(P.rate_of("pirates") == cruise.RATE - 2, "never twice, nor over a pace learned since")
+P.visits.pop()
 P.tune["pirates"]["rate"] = 1
 check(P.rate_of("pirates") == cruise.RATE_MIN, f"never below {cruise.RATE_MIN} a minute, whatever the state says")
 P.tune["pirates"]["rate"] = 99
