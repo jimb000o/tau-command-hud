@@ -368,6 +368,9 @@ def plain_post(it: dict) -> str:
         if not out.enabled():
             said.append(f"{out.name}: not set up")
             continue
+        if out.name == "x" and not alerts.xgate.allow("idni_feature", "hud")[0]:
+            said.append("x: kept off X by the posting plan")
+            continue
         ok, _, err = out.send_text(text, None)
         said.append(f"{out.name}: {'posted' if ok else 'not posted: ' + err}")
     return "; ".join(said)

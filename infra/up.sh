@@ -99,7 +99,7 @@ ln -sf "$(pwd)/up.sh" /usr/local/bin/up 2>/dev/null && chmod +x up.sh 2>/dev/nul
 # cache is below 6 GB; never the tau-lang stage of the node image (building that again takes hours).
 [ "${1:-}" = "cache" ] || (setsid nohup python3 buildcache/buildcache.py daily >/dev/null 2>&1 &) || true
 if [ "$1" != "--pulled" ]; then
-  git -C .. pull --ff-only
+  git -C .. pull --ff-only >&2   # on stderr: what up prints on stdout can go into a file (ssh … up <sub> csv > file.csv)
   exec sh "$(pwd)/up.sh" --pulled "$@"
 fi
 shift
@@ -235,17 +235,13 @@ fi
 # alone, safe any time: up x  both services built and started with the code just pulled, then every draft and what it
 # waits for; up x send <id>  posts it (caps, 2 h room and ship hours first; --now sets room and ship hours aside),
 # up x drop <id>, up x film <id>  filmed again, up x text <id> "new words"  (\n for a line break), up x week  this week's
-# posts, up x check  the plan read against the rules, up x stats [run|csv]  what the posts did (read daily, ~$1/month). Drafts come to the owner's Telegram by themselves (up owner).
+# posts, up x check  the plan read against the rules. Drafts come to the owner's Telegram by themselves (up owner).
 if [ "${1:-}" = "x" ]; then
   shift
   if [ -z "${1:-}" ]; then
     docker compose up -d --build --no-deps xfeatures films >/dev/null 2>&1 || docker compose up -d --build --no-deps xfeatures films
   else
     docker compose up -d --no-deps xfeatures films >/dev/null 2>&1 || true
-  fi
-  if [ "${1:-}" = "stats" ] && [ "${2:-}" = "csv" ]; then   # plain CSV, for: ssh … > x-stats.csv
-    docker compose exec -T xfeatures python xfeatures.py stats csv
-    exit $?
   fi
   echo "---------------- copy from here into the chat ----------------"
   [ $# -gt 0 ] || set -- list

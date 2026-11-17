@@ -389,7 +389,7 @@ def post(t: dict, pic: str) -> list[str]:
     else:
         said.append("telegram: not set up")
     if t.get("on_x") is False or not t.get("x"):
-        said.append("x: not for this ship (its one X post is the blog's)")
+        said.append("x: " + (t.get("x_kept") or "not for this ship (its one X post is the blog's)"))
     elif alerts.X().enabled():
         try:
             said.append("x: " + post_image.x_photo(pic, t["x"]))
@@ -430,6 +430,9 @@ def announce(now: float, cruise: dict | None, st: dict) -> str | None:
     if vid in st["announced"]:
         return None
     t = compose(ship, t0)
+    import xgate
+    if t.get("on_x") is not False and t.get("x") and not xgate.allow("ship", "hud", now)[0]:
+        t["on_x"], t["x_kept"] = False, "kept off X by the posting plan"
     pic = picture(t, f"/tmp/cruise-{ship}.jpg")   # a failure here is tried again in 10 minutes
     clip = ship_clip(vid, t, pic)   # the same picture as a video, when Kling's clip of it is there (kling.py)
     st["announced"][vid] = {"at": round(now), "result": "posting"}
@@ -503,7 +506,7 @@ def clip_post(t: dict, video: str) -> list[str]:
     import kling
     said = kling.post_video(video, clip_texts(t))
     if t.get("on_x") is False or not t.get("x"):
-        said.append("x: not for this ship (its one X post is the blog's)")
+        said.append("x: " + (t.get("x_kept") or "not for this ship (its one X post is the blog's)"))
     return [s + " (video)" for s in said]
 
 
