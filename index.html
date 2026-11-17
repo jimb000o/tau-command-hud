@@ -46,6 +46,8 @@
 <script src="assets/ticker.js" defer></script>
 <script src="assets/cruisebar.js" defer></script>
 <script src="assets/hearts.js" defer></script>
+<link rel="stylesheet" href="assets/room.css">
+<script src="assets/room.js" defer></script>
 <link rel="stylesheet" href="assets/agz-look.css">
 </head>
 <body>
@@ -5300,6 +5302,8 @@ pollNext(); setInterval(() => { if (!document.hidden) pollNext(); }, 60000); set
   });
   $("fbForm").addEventListener("submit", e => { e.preventDefault(); link.click(); });
 })();
+/* the 1999 room (assets/room.js) reads the chain from here: read only, it never changes the HUD */
+window.TauRoom = { S, LOG, LIVE, PRESENCE, liveChain, offline, threshold, short, fmt };
 
 })();
 

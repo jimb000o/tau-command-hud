@@ -1,0 +1,142 @@
+/* The room, 1999 (assets/room.js): the HUD on the screens of a late-90s desk. Everything inside .rm-cam is in room px
+   (1600 × 900) and the camera scales it; the buttons in .rm-ui are plain page px. */
+html.room-on, html.room-on body { overflow: hidden !important; }
+#room { position: fixed; inset: 0; z-index: 2147483000; background: #040505; overflow: hidden; color: #39ff8a;
+  font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; -webkit-user-select: none; user-select: none; }
+#room * { box-sizing: border-box; }
+.rm-cam { position: absolute; left: 0; top: 0; width: 1600px; height: 900px; transform-origin: 0 0; }
+.rm-cam.moving { transition: transform 1.25s cubic-bezier(.55, .05, .25, 1); will-change: transform; }
+.rm-cam.moving.quick { transition-duration: .7s; }
+.rm-cam > * { position: absolute; }
+.rm-art { left: 0; top: 0; width: 1600px; height: 900px; display: block; pointer-events: none; }
+
+/* light: the lamp lights the desk; off, the screens are the only light */
+.rm-light { left: 0; top: 480px; width: 760px; height: 420px; pointer-events: none; transition: opacity .25s;
+  background: radial-gradient(ellipse 46% 40% at 30% 66%, rgba(255, 252, 240, .16), rgba(255, 252, 240, .05) 55%, transparent 75%),
+              radial-gradient(ellipse 6% 3% at 20.5% 26.5%, rgba(255, 255, 245, .55), transparent 80%); mix-blend-mode: screen; }
+.rm-dark { left: 0; top: 0; width: 1600px; height: 900px; pointer-events: none; background: rgba(0, 0, 0, .34); opacity: 0; transition: opacity .25s; }
+#room.lamp-off .rm-light { opacity: 0; }
+#room.lamp-off .rm-dark { opacity: 1; }
+.rm-vig { left: -40px; top: -40px; width: 1680px; height: 980px; pointer-events: none;
+  background: radial-gradient(ellipse 70% 72% at 50% 46%, transparent 55%, rgba(0, 0, 0, .55) 100%); }
+
+/* the green light the screens throw on the bezels, the desk and the wall */
+.rm-glow { pointer-events: none; mix-blend-mode: screen; opacity: .85; transition: opacity .5s; }
+.rm-glow.main { left: 330px; top: 120px; width: 940px; height: 780px; background: radial-gradient(ellipse 50% 50% at 50% 42%, rgba(57, 255, 138, .13), rgba(57, 255, 138, .04) 50%, transparent 72%); }
+.rm-glow.left { left: 80px; top: 300px; width: 540px; height: 520px; background: radial-gradient(ellipse 50% 50% at 50% 38%, rgba(57, 255, 138, .09), transparent 70%); }
+.rm-glow.right { left: 980px; top: 300px; width: 540px; height: 520px; background: radial-gradient(ellipse 50% 50% at 50% 38%, rgba(57, 255, 138, .09), transparent 70%); }
+#room.st-sim .rm-glow { filter: hue-rotate(-95deg) saturate(1.3); }
+.rm-glow.pulse { animation: rmPulse .9s ease-out; }
+@keyframes rmPulse { 0% { opacity: 1.6; } 100% { opacity: .85; } }
+.rm-scr.off ~ .rm-glow, #room.booting .rm-glow.left, #room.booting .rm-glow.right { opacity: 0; }
+
+/* rain on the open lower half of the window */
+.rm-rain { left: 64px; top: 266px; width: 344px; height: 202px; pointer-events: none; opacity: .22; mix-blend-mode: screen;
+  background: repeating-linear-gradient(103deg, transparent 0 9px, rgba(200, 220, 210, .55) 9px 10px, transparent 10px 23px);
+  background-size: 120px 240px; animation: rmRain .55s linear infinite; }
+@keyframes rmRain { to { background-position: -40px 240px; } }
+
+/* screens: black glass, phosphor text, scan lines, a soft curve at the edges */
+.rm-scr { overflow: hidden; background: #020604; container-type: size; cursor: zoom-in; border-radius: 6% / 8%; }
+.rm-scr.big { cursor: zoom-out; }
+.rm-scr::before { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .28) 0 1px, transparent 1px 3px); }
+.rm-scr::after { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit;
+  background: radial-gradient(ellipse 75% 70% at 50% 45%, rgba(57, 255, 138, .05), transparent 60%),
+              radial-gradient(ellipse 110% 110% at 50% 50%, transparent 62%, rgba(0, 0, 0, .7) 100%),
+              linear-gradient(160deg, rgba(255, 255, 255, .07), transparent 30%);
+  box-shadow: inset 0 0 3cqw rgba(0, 0, 0, .9); }
+.rm-in { position: absolute; inset: 0; padding: 5cqh 5.5cqw; display: flex; flex-direction: column; line-height: 1.28;
+  text-shadow: 0 0 .35em rgba(57, 255, 138, .55); animation: rmFlick 4s steps(1) infinite; }
+@keyframes rmFlick { 0%, 100% { opacity: 1; } 47% { opacity: .96; } 48% { opacity: 1; } 81% { opacity: .98; } }
+.rm-scr.main .rm-in { font-size: 3.15cqw; }
+.rm-scr.side .rm-in { font-size: 4.7cqw; }
+.rm-in .h { display: flex; justify-content: space-between; gap: 1em; white-space: nowrap; border-bottom: 1px solid rgba(57, 255, 138, .35); padding-bottom: .25em; margin-bottom: .4em; letter-spacing: .06em; }
+.rm-in .h b { font-weight: 700; }
+.rm-in .muted { opacity: .62; }
+.rm-in .warn, .rm-in .st-sim { color: #ffb13b; text-shadow: 0 0 .35em rgba(255, 177, 59, .5); }
+.rm-in .bad { color: #e5484d; text-shadow: 0 0 .35em rgba(229, 72, 77, .45); }
+.rm-in .st-off { color: #ff4d6d; text-shadow: 0 0 .35em rgba(255, 77, 109, .5); }
+.rm-in .sys { color: #d8ffe8; }
+.rm-term { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; min-height: 0; }
+.rm-term.rm-post { justify-content: flex-start; }
+.rm-term p { margin: 0; overflow-wrap: anywhere; }
+.rm-term p .t { opacity: .5; margin-right: .6em; }
+.rm-cur { display: inline-block; width: .6em; height: 1.05em; vertical-align: -.15em; background: currentColor; animation: rmBlink 1.06s steps(1) infinite; }
+@keyframes rmBlink { 50% { opacity: 0; } }
+.rm-big { margin: .1em 0 .35em; line-height: .92; white-space: pre; font-weight: 700; letter-spacing: 0; }
+.rm-rows { white-space: pre; overflow: hidden; }
+.rm-rows .new { animation: rmNew 1.4s ease-out; }
+@keyframes rmNew { 0% { background: rgba(57, 255, 138, .35); } 100% { background: transparent; } }
+.rm-kv { display: grid; grid-template-columns: auto 1fr; column-gap: .9em; white-space: nowrap; }
+.rm-kv span:nth-child(2n) { text-align: right; }
+.rm-bar { letter-spacing: -.05em; }
+.rm-scr.flash .rm-in { animation: rmSeal .7s ease-out; }
+@keyframes rmSeal { 0% { filter: brightness(2.2); } 100% { filter: none; } }
+/* a screen powering on: the tube's line opens */
+.rm-scr.off .rm-in { opacity: 0; }
+.rm-scr.on .rm-in { animation: rmOn .55s ease-out, rmFlick 4s steps(1) .55s infinite; }
+@keyframes rmOn { 0% { transform: scale(1, .006); filter: brightness(4); opacity: 1; } 45% { transform: scale(1, .006); } 100% { transform: none; filter: none; } }
+.rm-scr.glitch .rm-in { animation: rmGlitch .32s steps(4); }
+@keyframes rmGlitch { 0% { transform: translateX(-2%) skewX(8deg); filter: hue-rotate(60deg); } 50% { transform: translateX(3%) skewX(-6deg); clip-path: inset(20% 0 40% 0); }
+  100% { transform: none; filter: none; clip-path: none; } }
+
+/* small things on the desk */
+.rm-hot { background: transparent; border: 0; padding: 0; margin: 0; cursor: pointer; border-radius: 12px; }
+.rm-hot:focus-visible { outline: 2px solid #39ff8a; outline-offset: 4px; }
+.rm-lcd { left: 496px; top: 797px; width: 60px; height: 24px; border-radius: 3px; background: #6f8a72; color: #102010; font: 700 15px/24px "JetBrains Mono", monospace;
+  text-align: center; letter-spacing: .02em; box-shadow: inset 0 0 6px rgba(0, 0, 0, .55); pointer-events: none; text-shadow: none; overflow: hidden; }
+#room.lamp-off .rm-lcd { background: #3d4d3f; }
+.rm-lcd.lit { background: #9fe0a9; }
+.buzz { animation: rmBuzz .08s linear 6; }
+@keyframes rmBuzz { 0%, 100% { translate: 0 0; } 25% { translate: -2px 0; } 75% { translate: 2px 0; } }
+.rm-leds { left: 302px; top: 742px; width: 172px; height: 6px; display: flex; justify-content: space-between; pointer-events: none; }
+.rm-leds i { width: 6px; height: 6px; border-radius: 50%; background: #1b2a1f; }
+.rm-leds i.on { background: #39ff8a; box-shadow: 0 0 6px #39ff8a; }
+.rm-leds i.amber.on { background: #ffb13b; box-shadow: 0 0 6px #ffb13b; }
+.rm-pc { left: 1531px; top: 622px; width: 12px; height: 26px; pointer-events: none; }
+.rm-pc i { display: block; width: 7px; height: 7px; margin-bottom: 7px; border-radius: 50%; background: #1b2a1f; }
+.rm-pc i.on { background: #39ff8a; box-shadow: 0 0 5px #39ff8a; }
+.rm-pc i.hdd.on { background: #ffb13b; box-shadow: 0 0 5px #ffb13b; }
+.rm-led { width: 6px; height: 6px; border-radius: 50%; background: #39ff8a; box-shadow: 0 0 5px #39ff8a; pointer-events: none; }
+.rm-phone.ring { animation: rmRing .12s linear infinite; }
+@keyframes rmRing { 0%, 100% { rotate: 0deg; } 25% { rotate: -2.5deg; } 75% { rotate: 2.5deg; } }
+.rm-bell { left: 1236px; top: 676px; font: 700 15px/1 "JetBrains Mono", monospace; color: #d8ffe8; letter-spacing: .2em; pointer-events: none; opacity: 0; text-shadow: 0 0 8px rgba(57, 255, 138, .8); }
+#room.ringing .rm-bell { opacity: 1; animation: rmBlink .5s steps(1) infinite; }
+.rm-note { left: 996px; top: 224px; width: 92px; height: 56px; padding: 6px 7px; background: #b9c4a0; color: #1b2116; rotate: 5deg; font: 600 8.2px/1.35 "JetBrains Mono", monospace;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .5); pointer-events: none; text-shadow: none; }
+#room.lamp-off .rm-note, #room.lamp-off .rm-cal { filter: brightness(.6); }
+.rm-cal { left: 1102px; top: 92px; width: 108px; height: 158px; background: #262826; color: #8c978f; pointer-events: none; text-shadow: none;
+  font: 600 7.5px/1 "JetBrains Mono", monospace; padding: 0 6px 6px; box-shadow: 0 3px 6px rgba(0, 0, 0, .5); }
+.rm-cal .pic { height: 58px; margin: 0 -6px 6px; background: linear-gradient(170deg, #1c201e 0 55%, #2c332f 55% 70%, #161a18 70%); }
+.rm-cal .mo { text-align: center; letter-spacing: .14em; margin-bottom: 5px; color: #b9c4bc; }
+.rm-cal .g { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 4px; text-align: center; }
+.rm-cal .g b { font-weight: 600; position: relative; }
+.rm-cal .g b.today::after { content: ""; position: absolute; left: 50%; top: 50%; width: 13px; height: 12px; translate: -50% -55%; border: 1.4px solid #c43a4a; border-radius: 50%; }
+
+/* page px: the buttons and the hint over the room */
+.rm-ui { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; z-index: 5; }
+.rm-ui button { font: 600 12px/1 "JetBrains Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: #cfeedd; background: rgba(6, 10, 8, .72);
+  border: 1px solid rgba(57, 255, 138, .35); border-radius: 999px; padding: 0 14px; min-height: 34px; cursor: pointer; backdrop-filter: blur(4px); }
+.rm-ui button:hover, .rm-ui button:focus-visible { border-color: #39ff8a; color: #fff; outline: none; }
+.rm-hint { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; z-index: 5; max-width: min(720px, 92vw); padding: 9px 16px; border-radius: 10px;
+  background: rgba(4, 8, 6, .78); border: 1px solid rgba(57, 255, 138, .28); color: #cfeedd; font: 500 13px/1.4 "JetBrains Mono", monospace; text-align: center;
+  transition: opacity .8s; pointer-events: none; }
+.rm-hint.gone { opacity: 0; }
+.rm-skip { position: absolute; right: 16px; bottom: 14px; z-index: 5; font: 500 12px/1 "JetBrains Mono", monospace; color: rgba(207, 238, 221, .6); letter-spacing: .06em; }
+#room:not(.booting) .rm-skip { display: none; }
+#room.booting .rm-ui, #room.booting .rm-hint { display: none; }
+
+/* the way in, beside the settings in the HUD's header */
+.tn-room { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; padding: 0 9px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line, rgba(255, 255, 255, .09)); background: transparent; color: var(--text, #ebebee); font: 600 11px/1 var(--mono, monospace); letter-spacing: .08em; gap: 6px; }
+.tn-room:hover, .tn-room:focus-visible { border-color: #39ff8a; color: #39ff8a; outline: none; }
+.tn-room svg { width: 16px; height: 16px; }
+/* laptops: the header has no room to spare, so the way in there is Explore → The room · 1999 */
+@media (max-width: 1679px) { .tn-room { display: none; } }
+@media (max-width: 899px), (max-aspect-ratio: 6/5) { .tn-room { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rm-cam.moving { transition: none; }
+  .rm-rain, .rm-in, .rm-phone.ring, .buzz, .rm-scr.on .rm-in, .rm-scr.glitch .rm-in { animation: none !important; }
+}
