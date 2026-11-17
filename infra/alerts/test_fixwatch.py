@@ -153,7 +153,7 @@ check(p["status"] == "draft" and p["ns"] == [85, 108] and p["by"] == "model" and
 tg = fw.tg_text(p)
 check(tg.startswith("🎉 <b>Two reports solved by IDNI</b>") and "• <b>#85</b> Every account" in tg and "not run by IDNI" in tg
       and "tauhud.com/findings/" in tg, "Telegram: what is solved now, thanks, the Findings page, not affiliated")
-x = alerts.x_post(fw.x_lines(p), foot=fw.X_FOOT, keep=2)
+x = alerts.x_post(fw.x_lines(p), foot=fw.X_FOOT)
 check("http" not in x and alerts.x_len(x) <= 280 and x.startswith("🎉 Two reports"), "X: no link, under 280")
 bad = fw.write_post([85, 108], fw.load()["fixed"], {r["n"]: r for r in reps},
                     lambda pr: dict(post_answer, x_text="IDNI finally fixed 3 things!"))

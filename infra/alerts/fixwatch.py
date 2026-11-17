@@ -344,7 +344,8 @@ Fields (English only):
 - title: at most 70 characters, what is solved now.
 - items: for each report in the input, in its order, one sentence of at most 180 characters: what works now that did \
 not before.
-- x_text: at most 200 characters for X, no link, no hashtag.
+- x_text: one or two sentences, at most 130 characters in all, for X, no link, no hashtag (it goes under the title with \
+room for the source line and tags in 280).
 
 Answer with JSON only: {"title":"","items":[""],"x_text":""}"""
 
@@ -409,11 +410,18 @@ def tg_text(p: dict) -> str:
                         "<i>Tau HUD is a community project, not run by IDNI.</i>"])
 
 
+def first_sentence(t: str) -> str:
+    """The first sentence of t (as alerts.sentences splits them)."""
+    return re.split(r"(?<=[.!?])\s+(?=[A-Z“\"(])", t or "")[0]
+
+
 X_FOOT = "🛠 Tau HUD build watch, not run by IDNI"
 
 
-def x_lines(p: dict) -> list[str]:
-    return [f"🎉 {p['title']}", p.get("x_text") or p["items"][0]]
+def x_lines(p: dict) -> list:
+    """Headline and the gist, whole sentences only: a gist too long for the post gives way to a shorter one (17 Nov 2026)."""
+    gist = [p.get("x_text"), *p["items"], *(first_sentence(x) for x in [p.get("x_text") or "", *p["items"]])]
+    return [f"🎉 {p['title']}", list(dict.fromkeys(g for g in gist if g))]
 
 
 def plan_post(st: dict, by_n: dict, now: float, tell=_tell, ask_=None) -> None:
@@ -444,7 +452,7 @@ def plan_post(st: dict, by_n: dict, now: float, tell=_tell, ask_=None) -> None:
     st["post"] = p
     if p["status"] == "draft":
         tell("Draft of the post “Reported by us, solved by IDNI” (Telegram, then X without a link). Nothing is sent yet.\n\n"
-             + re.sub(r"<[^>]+>", "", tg_text(p)) + "\n\nX: " + " · ".join(x_lines(p))
+             + re.sub(r"<[^>]+>", "", tg_text(p)) + "\n\nX: " + " · ".join(x if isinstance(x, str) else x[0] for x in x_lines(p))
              + "\n\nSend it: up idni fixed send · leave it: nothing to do · from now on without asking: up idni fixed auto")
 
 
