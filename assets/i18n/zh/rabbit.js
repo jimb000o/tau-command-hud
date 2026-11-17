@@ -3252,7 +3252,7 @@ TauI18n.add({ strings: {
   "Tau word of the day: t minus one. It means the step before. A rule can look back and ask what happened last time.": "今日 Tau 词：t 减一。意思是上一步。规则可以回头看，问上一次发生了什么。",
   "Today's Tau word is a small mark: the apostrophe. In Tau it means the complement: everything the thing is not.": "今日 Tau 词是一个小记号：撇号。在 Tau 里它表示补：这个东西不是的一切。",
   "The Tau word of the day is silence. A rule that says nothing answers 0, and 0 stops the payment. So say what you let through.": "今日 Tau 词是沉默。什么都不说的规则回答 0，0 会拦下付款。所以要说出你放行什么。",
-  "Today's Tau word: bv eight. A number with eight bits, from 0 to 255. Rico's coconut count fits easily.": "今日 Tau 词：bv 八。一个八位的数，从 0 到 255。Rico 的椰子数量轻松装得下。",
+  "Today's Tau word: bv eight. A number with eight bits, from zero to two hundred and fifty-five. Rico's coconut count fits easily.": "今日 Tau 词：bv 八。一个八位的数，从 0 到 255。Rico 的椰子数量轻松装得下。",
   "Want more? The lessons are free on tauhud.com, under learn.": "想学更多？tauhud.com 的 learn 里有免费课程。",
   "Who's up? A player in No Memo already sent a transaction this morning. The hackers are awake.": "谁起来了？No Memo 的一位玩家今天早上已经发了一笔交易。黑客们醒了。",
   "Who's up? Somebody sent a transaction from the Tau HUD wallet in the last few blocks. Good morning to you.": "谁起来了？最近几个区块里，有人从 Tau HUD 钱包发了一笔交易。早上好。",
