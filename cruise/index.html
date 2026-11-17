@@ -119,9 +119,14 @@ footer a { color: var(--dim); }
   .bk { min-height: 44px; } .reads { flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-start; margin: 0; } .reads a { min-height: 44px; max-width: 100%; } #postSmall a { display: inline-block; min-height: 44px; line-height: 44px; } .bk a { display: inline-block; min-width: 28px; line-height: 40px; text-align: center; }
   footer a { display: inline-block; min-height: 44px; line-height: 44px; }
 }
+/* wide screens (2560 × 1440, ultrawide): the whole width, zoomed until the page fills the screen (assets/widefit.js) */
+html.wfit .wrap { max-width: none; zoom: var(--z); }
+html.wfit .sub { max-width: 150ch; }
+html.wfit p.note { max-width: 220ch; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/widefit.js" defer></script>
 </head>
 <body>
 <div class="wrap">
@@ -301,7 +306,7 @@ function render() {
     tb.append(el("tr", null,
       el("td", { text: when(r.t) }),
       el("td", { text: SHIPS[r.ship] || r.ship || "" }),
-      el("td", { text: ev ? "" : F("no. {n}", { n: r.p }) }),
+      el("td", { text: ev || r.p == null ? "" : F("no. {n}", { n: r.p }) }),   // a ship's own line (bookings checked, visit over) has no passenger
       el("td", null, ev ? el("span", { class: "ev", text: T(KINDS[r.kind] || r.kind) }) : T(KINDS[r.kind] || r.kind)),
       el("td", { class: r.kind === "trick" && r.trick ? "trick" : null, text: r.kind === "trick" && r.trick ? T(TRICKS[r.trick] || r.trick) : r.to ? T(PLACES[r.to] || r.to) : "" }),
       el("td", { class: "n", text: r.amount != null ? N(r.amount) : "" }),
