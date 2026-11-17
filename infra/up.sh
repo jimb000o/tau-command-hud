@@ -235,13 +235,17 @@ fi
 # alone, safe any time: up x  both services built and started with the code just pulled, then every draft and what it
 # waits for; up x send <id>  posts it (caps, 2 h room and ship hours first; --now sets room and ship hours aside),
 # up x drop <id>, up x film <id>  filmed again, up x text <id> "new words"  (\n for a line break), up x week  this week's
-# posts, up x check  the plan read against the rules. Drafts come to the owner's Telegram by themselves (up owner).
+# posts, up x check  the plan read against the rules, up x stats [run|csv]  what the posts did (read daily, ~$1/month). Drafts come to the owner's Telegram by themselves (up owner).
 if [ "${1:-}" = "x" ]; then
   shift
   if [ -z "${1:-}" ]; then
     docker compose up -d --build --no-deps xfeatures films >/dev/null 2>&1 || docker compose up -d --build --no-deps xfeatures films
   else
     docker compose up -d --no-deps xfeatures films >/dev/null 2>&1 || true
+  fi
+  if [ "${1:-}" = "stats" ] && [ "${2:-}" = "csv" ]; then   # plain CSV, for: ssh … > x-stats.csv
+    docker compose exec -T xfeatures python xfeatures.py stats csv
+    exit $?
   fi
   echo "---------------- copy from here into the chat ----------------"
   [ $# -gt 0 ] || set -- list
