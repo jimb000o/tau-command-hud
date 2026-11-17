@@ -119,9 +119,24 @@ check(tg.startswith("🛠 <b>IDNI testnet progress · 5 Nov</b>") and "<b>Why it
       and all(f"\n\n• {p}" in tg for p in d["points"])
       and "Our node does not run it yet; its code is from 3 Nov." in tg and "github.com/IDNI/tau-testnet/commits/main" in tg,
       "Telegram: the day, the points, why it matters, what our node runs, the links, not affiliated")
-x = alerts.x_post(idg.x_lines(d), foot=idg.X_FOOT, keep=2)
+x = alerts.x_post(idg.x_lines(d), foot=idg.X_FOOT)
 check(alerts.x_len(x) <= 280 and "http" not in x and x.startswith("🛠 IDNI testnet: Block makers") and x.endswith("#TauNet"),
       "X: no link, under 280, the headline first, the tags last")
+long = dict(d, title="Tau Net testnet now checks every block's proof before adopting a fork",
+            x_text="IDNI merged a fix so Tau Net testnet nodes check the proof of every block they ingest, and block proofs are now checked in about 2 ms instead of far longer.",
+            why="A node no longer adopts a fork it has not proven block by block.")
+x = alerts.x_post(idg.x_lines(long), foot=idg.X_FOOT)
+check(alerts.x_len(x) <= 280 and "…" not in x and "A node no longer adopts a fork" in x and "inste" not in x,
+      "a gist too long for X (17 Nov 2026, '…inste…'): the why line in whole sentences instead, never cut mid-word")
+real = dict(d, title="Tau Net testnet nodes handle refused checks, half-open links and quick reconnects",
+            x_text="Three fixes landed: valid block headers survive a refused helper check, half-open gossip links reset after 30 seconds, and quick reconnects keep their peer.",
+            why="Block checking and peer connections are core to a node running reliably, and all three changes make them handle edge cases correctly.",
+            points=["A valid block header is no longer rejected when the helper check refuses a step; the node now falls back to its built-in check.",
+                    "A node that reconnects quickly now gets its handshake."])
+x = alerts.x_post(idg.x_lines(real), foot=idg.X_FOOT)
+check(alerts.x_len(x) <= 280 and "…" not in x and len(x.split("\n\n")) >= 3
+      and "A valid block header is no longer rejected when the helper check refuses a step" in x,
+      "17 Nov 2026 preview: a long gist and why line no longer leave the headline alone; a point stands in")
 
 bad = dict(GOOD, why="IDNI finally fixed what was broken for 12 days!")
 d2 = idg.write(g, paths, at("2026-11-04T00:00:00Z"), at("2026-11-07T10:00:00Z"), None, at("2026-11-07T10:01:00Z"), fake(bad))

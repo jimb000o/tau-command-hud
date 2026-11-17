@@ -182,4 +182,6 @@ TauI18n.add({ strings: {
   "Sent. Once a block holds it, your rule is locked.": "已发送。一旦进入区块，你的规则就锁上了。",
   "Sent. Your rule is locked, so the change waits for your code in step 3 once a block holds it.": "已发送。你的规则已上锁，所以进入区块后，这次修改会在第 3 步等你的验证码。",
   "Sent. Your rule is locked, so the removal waits for your code in step 3 once a block holds it.": "已发送。你的规则已上锁，所以进入区块后，这次移除会在第 3 步等你的验证码。",
+  "Why it matters": "为什么重要",
+  "With one key, whoever copies it can empty the wallet. With the Guardian and a rule lock, a copied key alone can no longer send more than your daily allowance, and changing the rule takes your code or 1,000 blocks in which you can cancel it.": "只有一把密钥时，谁复制了它就能清空钱包。有了 Guardian 和规则锁，仅凭一把被复制的密钥最多只能发出你的每日额度；更改规则需要你的验证码，或者等待 1,000 个区块，期间你可以取消。",
 } });

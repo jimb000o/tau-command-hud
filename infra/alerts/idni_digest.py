@@ -230,7 +230,8 @@ Fields (English only):
 - points: two to four short points, each at most 160 characters, most important first; one point per purpose, \
 several commits for one purpose make one point.
 - why: one sentence, at most 200 characters: why this matters (the "why it matters" line).
-- x_text: one or two sentences, at most 200 characters, for X: the gist, no link, no hashtag.
+- x_text: one sentence, at most 120 characters, for X: the gist, no link, no hashtag (it goes under the title with \
+room for the source line and tags in 280).
 - reason: a few words why you chose post/x as you did (not published).
 
 Answer with JSON only, no other text:
@@ -396,11 +397,26 @@ def tg_text(d: dict) -> str:
     return "\n\n".join(parts)
 
 
+def first_sentence(t: str) -> str:
+    """The first sentence of t (as alerts.sentences splits them)."""
+    return re.split(r"(?<=[.!?])\s+(?=[A-Z“\"(])", t or "")[0]
+
+
+def first_clause(t: str) -> str:
+    """The first sentence up to its first ";", as a sentence of its own ("A; b." → "A.")."""
+    head = first_sentence(t).split(";")[0].rstrip(" ,:")
+    return head if head.endswith((".", "!", "?")) else head + "." if head else ""
+
+
 X_FOOT = "🛠 Tau HUD build watch, not run by IDNI"
 
 
-def x_lines(d: dict) -> list[str]:
-    return [f"🛠 IDNI testnet: {d['title']}", d["x_text"], "Why it matters: " + d["why"]]
+def x_lines(d: dict) -> list:
+    """Headline, the gist, why it matters: the gist as whole sentences only (a longer one gives way to its first sentence or
+    to the why line, then to a point, each also as its first clause before a ";"; never cut mid-word: 17 Nov 2026), then why
+    it matters where there is room."""
+    gist = [v for t in [d["x_text"], d["why"], *(d.get("points") or [])] for v in (t, first_sentence(t), first_clause(t))]
+    return [f"🛠 IDNI testnet: {d['title']}", list(dict.fromkeys(g for g in gist if g)), "Why it matters: " + d["why"]]
 
 
 # ---------- by hand ----------
@@ -417,7 +433,7 @@ def _show(d: dict, x_post) -> None:
         print("  --- Telegram ---")
         print("  " + tg_text(d).replace("\n", "\n  "))
         print("  --- X " + ("(would go out on X too)" if d.get("x") else "(would stay off X: a small day, Telegram only)") + " ---")
-        print("  " + x_post(x_lines(d), foot=X_FOOT, keep=2).replace("\n", "\n  "))
+        print("  " + x_post(x_lines(d), foot=X_FOOT).replace("\n", "\n  "))
 
 
 def cli(argv: list[str]) -> int:

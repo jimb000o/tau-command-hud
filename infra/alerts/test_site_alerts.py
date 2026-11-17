@@ -327,10 +327,29 @@ check(alerts.about_tau("The Tau Net testnet restarted") and not alerts.about_tau
 alerts.TAU_TAG_PATH = os.path.join(tempfile.mkdtemp(), "tau-tag.json")
 alerts.TAU_TAG_PER_DAY = 2
 t1 = alerts.tau_tag("Tau Net testnet restarted. #TauNet", at("2026-11-13", "10:00"))
-check(t1.endswith(" @taulogicai") and alerts.tau_tag(t1, at("2026-11-13", "10:00")) == t1, "tagged once per post")
+check(t1.endswith(" @TauLogicAI") and alerts.tau_tag(t1, at("2026-11-13", "10:00")) == t1, "tagged once per post")
 alerts.tau_tag("Tau Language news", at("2026-11-13", "11:00"))
 check(alerts.tau_tag("More Tau news", at("2026-11-13", "12:00")) == "More Tau news", "at most two tagged posts a day")
-check(alerts.tau_tag("More Tau news", at("2026-11-14", "12:00")).endswith("@taulogicai"), "a new day, room again")
+check(alerts.tau_tag("More Tau news", at("2026-11-14", "12:00")).endswith("@TauLogicAI"), "a new day, room again")
+
+t2 = alerts.tau_tag("🛠 IDNI testnet: Tau Net checks proofs\n\nIDNI merged a fix. IDNI's nodes run it.\n\n🛠 not run by IDNI · #TauNet",
+                    at("2026-11-15", "10:00"))
+check("\n\nIDNI (@TauLogicAI) merged a fix. IDNI's nodes" in t2 and t2.startswith("🛠 IDNI testnet:") and t2.endswith("not run by IDNI · #TauNet"),
+      "where the text names IDNI, the tag goes there once: IDNI (@TauLogicAI), not in the headline or the source line")
+check(alerts.tau_tag_inline("Tau Net news\n\nNothing here.\n\n🛠 not run by IDNI · #TauNet") is None, "no IDNI in the text: the tag goes at the end")
+long = "A" * 120 + " Tau Net\n\nIDNI " + "b" * 140
+check(alerts.tau_tag(long, at("2026-11-16", "10:00")) == long, "no room for the tag: the post stays as it is")
+# 17 Nov 2026: the build-watch post stopped at "inste…"; a gist too long now gives way to a whole shorter sentence
+head = "🛠 IDNI testnet: Tau Net testnet now checks every block's proof before adopting a fork"
+gist = ("IDNI merged a fix so Tau Net testnet nodes check the proof of every block they ingest, and block proofs are now "
+        "checked in about 2 ms instead of much longer")
+why = "Nodes no longer adopt a fork with an unproven block."
+x = alerts.x_post([head, [gist, why]], foot="🛠 Tau HUD build watch, not run by IDNI")
+check(alerts.x_len(x) <= 280 and "…" not in x and why in x and gist not in x, "a whole shorter sentence instead of one cut mid-word")
+x = alerts.x_post([head, gist], foot="🛠 Tau HUD build watch, not run by IDNI")
+check(alerts.x_len(x) <= 280 and "…" not in x and gist not in x and x.startswith(head), "no choice: the line goes, the headline stays whole")
+x = alerts.x_post([head, gist], foot="🛠 Tau HUD build watch, not run by IDNI", keep=2)
+check(alerts.x_len(x) <= 280 and " in about 2 ms…" in x, "a line that must stay is cut at a word, never mid-word")
 
 print("FAILED" if failed else "all ok")
 sys.exit(1 if failed else 0)
