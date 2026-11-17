@@ -10,8 +10,8 @@
      click on it prints the line state. The lamp switches on and off. Click a screen to lean in, again or Esc to sit back.
    - Way in: the ▣ button beside the settings, Explore → "The room · 1999", or ?room=1. Esc or "Stand up" leaves it.
      It needs a window 900 px wide and wider than tall; below that the button is hidden.
-   - Start: the main screen fills the window, the PC boots (a short POST, then it dials the node and says CONNECT or NO
-     CARRIER for what the HUD really shows), and the camera sits back to show the room. Return visits are shorter; a
+   - Start: the whole room shows at once, lights low; the main screen boots (a short POST, then it dials the node and says CONNECT or NO
+     CARRIER for what the HUD really shows), then the lights come up and the other two tubes switch on. Return visits are shorter; a
      click or key skips it; no boot with prefers-reduced-motion.
    - Sound (dial tone and handshake at the start, the phone's ring) only after a click and only while "Sound" is on;
      remembered in localStorage (tauhud-room-sound).
@@ -157,6 +157,11 @@
         maskImage: mu, webkitMaskImage: mu, maskSize: "100% 100%", webkitMaskSize: "100% 100%", maskComposite: "intersect", webkitMaskComposite: "source-in" });
     }
     if (!VAR) return;
+    /* each screen takes the exact shape of its painted glass (glass-*.png, traced from the picture) */
+    for (const k in scr) {
+      const g = (VAR.glass || {})[k], gu = g ? `url("${BASE + g}")` : "";
+      Object.assign(scr[k].style, { maskImage: gu, webkitMaskImage: gu, maskSize: "100% 100%", webkitMaskSize: "100% 100%", borderRadius: g ? "0" : "" });
+    }
     for (const k of ["main", "left", "right"]) {
       const [x, y, w, h] = GEO.scr[k], f = k === "main" ? 1.9 : 2.1;
       place(cam.querySelector(".rm-glow." + k), [x + w / 2 - w * f / 2, y + h / 2 - h * f * .55, w * f, h * f * 1.15]);
@@ -270,7 +275,9 @@
     booting = true; el.classList.add("booting"); st.skip = false;
     const skip = e => { if (e.type === "keydown" && e.key === "Escape") return; st.skip = true; };
     addEventListener("keydown", skip, true); el.addEventListener("pointerdown", skip, true);
-    shoot(onScreen("main", true), false);
+    /* the whole room from the first frame, lights low, only the main tube awake; nothing zooms */
+    shoot(fitBox(), false);
+    const art = cam.querySelector(".rm-art"); try { if (!art.complete) await Promise.race([art.decode(), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
     main.classList.remove("off"); main.classList.add("on");
     box.innerHTML = '<div class="rm-term rm-post"></div>'; const term = box.firstChild;
     const line = (t, cls) => { const p = mk("p", cls || "", esc(t)); term.append(p); return p; };
@@ -302,10 +309,10 @@
     main.classList.add("glitch"); setTimeout(() => main.classList.remove("glitch"), 360);
     removeEventListener("keydown", skip, true); el.removeEventListener("pointerdown", skip, true);
     put("tauhud-room-seen", "1");
-    booting = false; el.classList.remove("booting");
+    booting = false; el.classList.add("waking"); el.classList.remove("booting"); setTimeout(() => el.classList.remove("waking"), 1800);
     st.lastLog = null; st.term = null;
     render(true);
-    shoot(fitBox(), true);
+    shoot(fitBox(), false);
     setTimeout(() => powerOn("left"), 650); setTimeout(() => powerOn("right"), 900);
     hint();
   }
