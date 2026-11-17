@@ -23,6 +23,7 @@ os.environ.update(BLOG_ART=ART, BLOG_SHIPS=SHIPS, PUBLIC_DIR=TMP, BLOG_STATE=os.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import blog  # noqa: E402
 import cruise_crier as cc  # noqa: E402
+blog.CRUISE_DRAFTS = True   # the per-call drafts (off by default since 17 Nov 2026) are tested here
 
 failed = 0
 
@@ -271,5 +272,12 @@ check("4 passengers paid their fare days ahead" in ta["telegram"] and "at 16:00 
 check(ta["x"] == t["x"] and "days ahead" not in t["telegram"], "X unchanged, and no line without bookings")
 check(not blog.HYPE.search(ta["telegram"]) and not blog.BLAME.search(ta["telegram"]), "no hype or blame words in it")
 
+blog.CRUISE_DRAFTS = False
+rt = cc.report_text({"ship": "Black Sequence", "date": "Tuesday", "visit": "2026-11-17-pirates"})
+check("Sunday's weekly post" in rt and "blog draft follows" not in rt, "one post a week: the report points to Sunday's weekly post")
+calls = []
+blog.get = lambda path: calls.append(path) or {}
+blog.tick(0)
+check(not calls, "one post a week: no per-call draft is written")
 print("all ok" if not failed else f"{failed} FAILED")
 sys.exit(1 if failed else 0)

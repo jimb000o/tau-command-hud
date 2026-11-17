@@ -198,7 +198,18 @@ fi
 if [ "${1:-}" = "restartwatch" ]; then
   when=$(TZ=Europe/Berlin date +%u%H)
   case "$when" in 216|217|218|219|315|316|317|410|411|613|614|615|616)
-    if [ "${2:-}" != "--now" ]; then
+    # 17 Nov 2026: a call a testnet restart ended early still blocked the whole window. Inside a cruise window the relay
+    # is asked: when today's call is over (ended within the last 3 hours), no ship is in port and none is due within
+    # 30 minutes, it goes ahead; any doubt (relay silent, hack replay hours) keeps the old refusal.
+    over=$(case "$when" in 41*) echo no ;; *) docker compose exec -T relay python -c 'import json,time,urllib.request
+s=json.load(urllib.request.urlopen("http://127.0.0.1:8080/cruise", timeout=10)); t=time.time(); v=s.get("now") or {}
+busy=bool(v) and v.get("phase")!="gone" and not v.get("why") and float(v.get("end") or 0)>t
+due=float((s.get("next") or {}).get("t0") or 0)-t
+ended=any(t-3*3600<float(b[1])<=t for b in s.get("bands") or [])
+print("yes" if ended and not busy and not 0<due<1800 else "no")' 2>/dev/null || echo no ;; esac)
+    if [ "${2:-}" != "--now" ] && [ "$over" = "yes" ]; then
+      echo "today's call is already over and no ship is due: the relay is rebuilt now"
+    elif [ "${2:-}" != "--now" ]; then
       echo "a cruise ship or the hack replay is due or under way now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
       echo "try again after the visit, or: up restartwatch --now"; exit 1
     fi ;;

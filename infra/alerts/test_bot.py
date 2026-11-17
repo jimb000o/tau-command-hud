@@ -265,6 +265,16 @@ async def main():
         assert "Block #372" in r["text"] and "t.me/tauhud_alerts_bot?start=help" in json.dumps(r["reply_markup"]), r
         await until(lambda: TG.get("deleteMessage"), "command post removed")
         assert TG["deleteMessage"] == [{"chat_id": -100123, "message_id": mid}]
+        # "X left the group" in a group: removed right away; a join line stays
+        with TG["lock"]:
+            for i, key in ((900, "left_chat_member"), (901, "new_chat_members")):
+                who = {"id": 77, "is_bot": False, "first_name": "Bob"}
+                TG["updates"].append({"update_id": TG["next"], "message": {"message_id": i, "date": int(time.time()), "chat": {
+                    "id": -100777, "type": "supergroup"}, "from": who, key: [who] if key == "new_chat_members" else who}})
+                TG["next"] += 1
+        await until(lambda: len(TG["deleteMessage"]) > 1, "leave line removed")
+        await asyncio.sleep(0.5)
+        assert TG["deleteMessage"][1:] == [{"chat_id": -100777, "message_id": 900}], TG["deleteMessage"]
         channel_post("A normal post")
         channel_post("/height", chat_id=-100999, username="someoneelse")
         await asyncio.sleep(1.2)

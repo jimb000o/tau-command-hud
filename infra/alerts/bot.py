@@ -25,7 +25,8 @@ discussion group, Tau HUD's own group (answered in the topic the command was
 written in), and the channel's Direct Messages (Telegram's "message the
 channel" button, when switched on). Into the alerts channel itself it writes
 only when a channel admin posts a command there; the command post is then
-removed and the answer stays. `python bot.py --post-howto` posts an "Ask the
+removed and the answer stays. In groups where it may delete messages it removes
+"X left the group" lines right away (join lines stay). `python bot.py --post-howto` posts an "Ask the
 bot" message with buttons to the channel and pins it. Each person gets a few questions a minute;
 past that the bot says so once and then stays quiet until the budget refills.
 
@@ -596,6 +597,11 @@ class Bot:
         chat, user = msg.get("chat") or {}, msg.get("from") or {}
         if not chat or self.channel_chat(chat) or msg.get("is_automatic_forward"):
             return  # the channel itself, or a channel post copied into its discussion group
+        if msg.get("left_chat_member") and chat.get("type") in ("group", "supergroup"):
+            # "X left the group" helps nobody: removed right away (needs the admin right "Delete messages";
+            # without it Telegram refuses and the line stays). Join lines are kept.
+            await asyncio.to_thread(self.tg.call, "deleteMessage", {"chat_id": chat["id"], "message_id": msg.get("message_id")})
+            return
         sender = msg.get("sender_chat") or {}
         if sender and sender.get("id") != chat.get("id"):
             return  # someone writing as a channel

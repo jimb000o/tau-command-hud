@@ -326,8 +326,15 @@ def text(f: dict) -> dict:
             line = f"- {v['day']}, {v['ship']}: {n(v['accepted'])} accepted, {n(v['refused'])} refused"
             if v["timeouts"]:
                 line += f", {n(v['timeouts'])} sends our own node did not answer in time"
+            tr = v.get("tricks") or {}
+            if tr.get("tried"):
+                line += f", {n(tr['tried'])} pirate tricks, {n(tr.get('refused with the expected answer', 0))} refused by the chain as they should be"
+            if v.get("over") and v.get("minutes") is not None and v["minutes"] < 90:
+                line += f"; in port {n(v['minutes'])} of 90 minutes" + (", a testnet restart ended the call" if v.get("restart") else "")
             if not v["over"]:
                 line += " (still under way)"
+            for c in v.get("changed") or []:   # what the ship learned, since 17 Nov 2026 one post a week tells it
+                line += f"; next time {c['what']} {c['from']} → {c['to']} ({c['because']})"
             L.append(line + f" ([logbook]({blog.NODE}/cruise/log?visit={v['id']}))")
         L.append("")
 
