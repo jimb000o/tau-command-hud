@@ -236,6 +236,12 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
                 if not left:
                     f["minutes in port"] = m
                     f["call cut short by the restart"] = True
+    warn = [e for e in rows if e.get("kind") == "restart warning"]
+    if warn:   # relay/cruise.py quiet_run, since 17 Nov 2026: no answer and no new block, the ship waited
+        f["restart warnings: no answer and no new block, the ship waited"] = {"first at": clock(warn[0]["t"]), "times": len(warn)}
+    mk = next((e for e in rows if e.get("kind") == "make-up call"), None)
+    if mk:   # relay/cruise.py makeup_after, since 17 Nov 2026
+        f["make-up call"] = {"at": clock(mk["at"]) if mk.get("at") else None, "note": mk.get("note")}
     f["sent and accepted"] = {k: v for k, v in (s.get("sent") or {}).items() if v} or \
         dict(Counter(e["kind"] for e in sends if e.get("ok") is True))
     refused = {k: v for k, v in (s.get("refused") or {}).items() if v} or \
@@ -1126,7 +1132,13 @@ def numbers_of(f: dict) -> list[str]:
         if old and "refus" in why and ref <= 0:
             why = "its brake took the missing answers for refusals"
         out.append(f"the ship left after {left['minutes in port']} minutes: {why}")
-    elif f.get("landed") is False:
+    w = f.get("restart warnings: no answer and no new block, the ship waited")
+    if w:
+        out.append(f"from {w['first at']} our node did not answer and no new block came: the ship waited, a restart might be coming")
+    mk = f.get("make-up call")
+    if mk and mk.get("at"):
+        out.append(f"the ship comes back for a make-up call at {mk['at']}")
+    if f.get("landed") is False and not (isinstance(left, dict) and left.get("minutes in port") is not None):
         out.append("the ship did not land" + (f": {f['why not landed']}" if f.get("why not landed") else ""))
     if f.get("incidents"):
         out.append(f"{len(f['incidents'])} incident report{'s' if len(f['incidents']) != 1 else ''} written during the visit")

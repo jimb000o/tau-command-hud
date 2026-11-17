@@ -150,6 +150,8 @@ UNRELEASED = 3 * 60        # a booking still open this long after its time is re
 REFUSE_STOP, REFUSE_WINDOW = 5, 20   # refusals among the visit's last sends that send the ship away
 QUIET_HOLD = 30            # seconds the ship waits after a send the node did not answer in time (relay UPSTREAM_TIMEOUT)
 QUIET_SLOW = 10 * 60       # and for this long after it, half pace: the node is slow, the ship gives it room
+QUIET_RUN = 3              # unanswered sends in a row at one block height: a restart may be coming (Cruise.quiet_run)
+QUIET_WAIT = 5 * 60        # then the ship waits this long before each next send, until one is answered again
 PLAN_MARGIN = 0.85         # stops planned per minute: this share of what our node can answer (one send waits for the last answer)
 PLAN_MIN_SENDS = 20        # answered sends a visit needs before its answer time counts
 PLAN_QUANTILE = 0.8        # the answer time kept: this share of the visit's sends were answered within it (not the median: half the sends can be slow)
@@ -157,6 +159,7 @@ PLAN_WINDOW = 10           # minutes: the plan is thinned window by window, so t
 RATE_MIN = 6               # the slowest a ship tunes itself down to, transactions a minute
 TUNE_UNANSWERED = 3        # sends our node left unanswered in one visit that make the next visit one a minute slower
 TRICK_GAP = 120            # seconds between two pirate tricks, at least
+FIRST_TRICKS = ("forged", "expired", "overspend")   # tricks that need no earlier payment: one goes in the first 2 minutes
 TRICK_START, TRICK_MIN, TRICK_CALM = 4, 2, 3   # each trick a visit at first; at least; visits stopped rightly before fewer
 MAX_TRANSFERS = 64         # tau-testnet MAX_TRANSFERS_PER_TX: the transfers one payment may carry; a payment over it is refused whole
 POISON_TRANSFERS = 10      # the "poison" trick's transfers: the first ones the wallet can pay, the last it cannot, so the node applies none
@@ -357,9 +360,17 @@ EXTRA_CALLS = [
 ]
 
 
+# Make-up calls the ship set itself (Cruise.makeup_after, kept in the state file): a restart ended a call within its
+# first MAKEUP_WITHIN minutes, so the ship comes back MAKEUP_AFTER after the chain is back, at most one a German day.
+MAKEUP: list[tuple[str, int, str]] = []
+MAKEUP_WITHIN = 30 * 60
+MAKEUP_AFTER = 60 * 60
+MAKEUP_LAST_HOUR = 21      # a make-up call arrives at 21:00 German time at the latest, else none that day
+
+
 def extra_calls() -> list[tuple[dt.date, int, str]]:
     out = []
-    for day, hour, ship in EXTRA_CALLS + [tuple(x.split()) for x in os.environ.get("CRUISE_EXTRA", "").split(";") if len(x.split()) == 3]:
+    for day, hour, ship in EXTRA_CALLS + list(MAKEUP) + [tuple(x.split()) for x in os.environ.get("CRUISE_EXTRA", "").split(";") if len(x.split()) == 3]:
         try:
             if ship in SHIPS:
                 out.append((dt.date.fromisoformat(str(day)), int(hour), ship))
@@ -412,7 +423,12 @@ def thin(acts: list[dict], t0: int, per_min: float, R: random.Random) -> list[di
 
 
 def visit_id(t0: int, ship: str) -> str:
-    return berlin_day(t0).isoformat() + "-" + ship
+    d = berlin_day(t0)
+    vid = d.isoformat() + "-" + ship
+    # a make-up call on the ship's own day (17 Nov 2026 on): its own name, so it never takes the cut-short call's logbook
+    if ship in SHIPS and d.weekday() == SHIPS[ship]["weekday"] and t0 != berlin_t(d, SHIPS[ship]["hour"]):
+        vid += "-makeup"
+    return vid
 
 
 def plan(ship: str, t0: int, trial: set | None = None, allowed: set | None = None, tricks: dict | None = None,
@@ -473,6 +489,15 @@ def plan(ship: str, t0: int, trial: set | None = None, allowed: set | None = Non
             R.shuffle(row)
             bag += row
         t, last = t0 + (landing(ship) + 1) * 60, end - 5 * 60
+        # 17 Nov 2026 (Kilian's pick): a restart ended the call after 8 minutes before any trick; one trick that needs
+        # no earlier payment now goes in the first minutes, by the first pirate to pay the pier, a minute after (his
+        # wallet is known to the chain by then), so even a short call shows the chain saying no
+        first = next((k for k in FIRST_TRICKS if k in bag), None)
+        pier = min((a for a in acts if a["kind"] == "pay" and a["to"] == "pier"), key=lambda a: a["t"], default=None)
+        if first and pier and S.get("aboard"):
+            bag.remove(first)
+            acts.append({"t": pier["t"] + R.uniform(60, 90), "p": pier["p"], "kind": "trick", "trick": first,
+                         "to": "market", "amount": S["stops"]["market"][0], "early": True})
         step_ = max(TRICK_GAP, (last - t) / max(1, len(bag)))
         for k in bag:
             if t >= last:
@@ -643,6 +668,7 @@ class Cruise:
             self._saved_cur = st.get("cur") if isinstance(st.get("cur"), dict) else None
             self.escrow = {k: v for k, v in (st.get("escrow") or {}).items() if isinstance(v, dict) and v.get("ship") in SHIPS}
             self.node = st.get("node") if isinstance(st.get("node"), dict) else {}
+            MAKEUP[:] = [tuple(x) for x in st.get("makeup") or [] if isinstance(x, list) and len(x) == 3]
         except (OSError, ValueError, TypeError, AttributeError):
             self._saved_cur = None
         self.unlearn_restarts()
@@ -669,7 +695,8 @@ class Cruise:
             tmp = self.state_path + ".tmp"
             with open(tmp, "w") as f:
                 esc = dict(sorted(self.escrow.items(), key=lambda kv: kv[1].get("t0", 0))[-ESCROW_KEEP:])
-                json.dump({"tried": self.tried, "visits": self.visits[-VISITS_KEEP:], "cur": cur, "escrow": esc, "tune": self.tune, "node": self.node}, f, separators=(",", ":"))
+                json.dump({"tried": self.tried, "visits": self.visits[-VISITS_KEEP:], "cur": cur, "escrow": esc, "tune": self.tune, "node": self.node,
+                       "makeup": [list(x) for x in MAKEUP]}, f, separators=(",", ":"))
             os.replace(tmp, self.state_path)
         except OSError as exc:
             log.warning("cannot write %s: %r", self.state_path, exc)
@@ -760,7 +787,7 @@ class Cruise:
             saved = getattr(self, "_saved_cur", None)
             if saved and saved.get("id") == vid:   # the relay restarted during this visit: carry on where it was
                 for k in ("landed", "left", "note", "trial", "allowed", "sent", "refused", "skipped", "unsent", "brake_half", "wait", "booked", "landed_at", "unanswered", "quiet", "quiet_took", "quiet_lost", "half_strained", "half_node",
-                          "tricks", "tricks_n", "took", "plan_per_min", "left_out", "left_out_stops", "last_ok"):
+                          "tricks", "tricks_n", "took", "plan_per_min", "left_out", "left_out_stops", "last_ok", "quiet_run", "warnings"):
                     if k in saved:
                         self.cur[k] = saved[k]
                 self.cur["done"] = set(saved.get("done") or [])
@@ -987,6 +1014,34 @@ class Cruise:
         log.warning("cruise: %s: %s", vid, note)
         if v and v["id"] == vid and not v.get("left"):   # a call under way ends here: the passengers' wallets are gone with the chain
             self.leave(now, "the testnet restarted during the call, so the call was cut short", "restarted")
+            if v.get("landed") and now - v["t0"] <= MAKEUP_WITHIN:
+                self.makeup_after(v, now, new_start)
+
+    def makeup_after(self, v: dict, now: float, new_start=None) -> tuple[int, str] | None:
+        """A restart ended the call early (17 Nov 2026, Kilian's pick): the ship comes back on the first full hour that
+        is MAKEUP_AFTER after the chain began again and after this call's own window, when no other call is near, at most
+        once a German day and never after MAKEUP_LAST_HOUR. A make-up call ended by a restart gets none of its own."""
+        ship = v["ship"]
+        if v["id"].endswith("-makeup"):
+            return None
+        back = max(float(new_start or 0), now)
+        start = max(back + MAKEUP_AFTER, v["t0"] + (VISIT_MIN + APPROACH) * 60)
+        t0 = int(-(-start // 3600) * 3600)   # the next full hour (German hours are whole UTC hours)
+        d = berlin_day(t0)
+        if d != berlin_day(v["t0"]) or any(dt.date.fromisoformat(x[0]) == d for x in MAKEUP) \
+                or t0 > berlin_t(d, MAKEUP_LAST_HOUR):
+            why = "none: too late in the day, or one already today"
+        elif any(abs(t - t0) < (VISIT_MIN + APPROACH) * 60 for t, _ in calls_near(now, 2) if t != v["t0"]):
+            why = "none: another call is too near"
+        else:
+            MAKEUP[:] = [x for x in MAKEUP if dt.date.fromisoformat(x[0]) >= d - dt.timedelta(days=8)]
+            MAKEUP.append((d.isoformat(), int(round((t0 - berlin_t(d, 0)) / 3600)), ship))
+            why = ""
+        self.write({"t": int(now), "visit": v["id"], "ship": ship, "kind": "make-up call", "at": None if why else t0,
+                    "note": why or f"the ship comes back at {time.strftime('%H:%M UTC', time.gmtime(t0))} for a make-up call"})
+        log.warning("cruise: %s make-up call %s", v["id"], why or time.strftime("%H:%M UTC", time.gmtime(t0)))
+        self.save_state()
+        return None if why else (t0, ship)
 
     def leave(self, now: float, why: str, state: str | None):
         """The brake: the ship takes its passengers back at once; on a stall it writes an incident report."""
@@ -1113,12 +1168,37 @@ class Cruise:
             v[k] = v.get(k, 0) + 1
         v["done"].add(act["i"])
         self.last_send = now
+        before = int(v.get("unanswered") or 0)
         try:
             await self.send(v, act, ask, gov, state)
         except Exception as exc:   # one bad answer must not stop the ship or the bot
             log.warning("cruise %s %s failed: %r", v["id"], act["kind"], exc)
+        self.quiet_run(v, now, int(v.get("unanswered") or 0) > before)
         self.save_state()
         return True
+
+    def quiet_run(self, v: dict, now: float, unanswered: bool) -> None:
+        """No answer and no new block (17 Nov 2026, Kilian's pick): on 16 and 17 Nov our node stopped answering minutes
+        before each testnet restart. QUIET_RUN unanswered sends in a row at the same block height are logged once as a
+        warning and the ship waits QUIET_WAIT before its next send, instead of sending into the gap."""
+        if not unanswered:
+            v.pop("quiet_run", None)
+            return
+        h = next((e.get("height") for e in reversed(self.logbook) if e.get("visit") == v["id"] and e.get("kind") in KINDS), None)
+        r = v.get("quiet_run") or {}
+        if r.get("tip") != h:
+            r = {"n": 0, "tip": h, "told": False}
+        r["n"] += 1
+        v["quiet_run"] = r
+        if r["n"] >= QUIET_RUN:
+            self.hold_until = max(self.hold_until, now + QUIET_WAIT)
+            if not r["told"]:
+                r["told"] = True
+                v["warnings"] = v.get("warnings", 0) + 1
+                self.write({"t": int(now), "visit": v["id"], "ship": v["ship"], "kind": "restart warning", "height": h,
+                            "note": f"{r['n']} sends in a row got no answer and no new block came (still at {h}): the testnet "
+                                    f"may be about to restart, so the ship waits {QUIET_WAIT // 60} minutes between sends"})
+                log.warning("cruise: %s: no answer and no new block at %s, the ship waits", v["id"], h)
 
     def build(self, ship: str, act: dict, seq: int, tip: int, fee: int, rid: str | None = None, signer: str | None = None) -> dict:
         """The passenger's signed transaction. Two of the pirates' tricks are made here: act "expired" (its time ran out
