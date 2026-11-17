@@ -1140,6 +1140,9 @@ def announce(a: dict, dry: bool) -> None:
         if not out.enabled():
             print(f"{out.name}: not set up, not posted")
             continue
+        if out.name == "x" and not alerts.xgate.allow("article", "hud")[0]:
+            print("x: kept off X by the posting plan (xgate.py)")
+            continue
         if out.name == "telegram":
             ok, _, err = out.send_text(text, picture=pic)
         elif X_BLOG_LINK:

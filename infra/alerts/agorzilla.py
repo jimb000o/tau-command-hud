@@ -41,11 +41,13 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import sys
 import time
 import urllib.request
 
 from alerts import X, fetch_picture, x_post
+import xgate
 
 log = logging.getLogger("tau-agorzilla")
 
@@ -210,7 +212,7 @@ def x_fit(lines: list[str]) -> str:
     head, mid, last = lines[0], [x for x in lines[1:-1] if x], lines[-1] if len(lines) > 1 else ""
     while True:
         out = [head] + mid + ([last] if last else [])
-        msg = x_post(out, keep=len(out), foot=X_FOOT, tag=X_TAG)
+        msg = x_post(out, keep=len(out), foot=X_FOOT, tag=X_TAG, with_link=False)   # a picture goes with it: no link
         if all(" ".join(x.split()) in msg for x in out) or not (mid or last):
             return msg
         if mid:
@@ -227,7 +229,7 @@ def x_text(r: dict, latest: dict, was: str | None = None) -> str:
     if is_rule(r):
         head, body = rule_head(r, latest, was, html=False)
         later = [tonight(latest, html=False)]
-        return x_post([head, body] + later, foot=X_FOOT, tag=X_TAG)
+        return x_post([head, body] + later, foot=X_FOOT, tag=X_TAG, with_link=False)
     n = r.get("feeders")
     fed = f"{plural(n, 'wallet', 'wallets')} fed Agorzilla today" if n else "Agorzilla's feeders voted today"
     part = str(r.get("category") or "look").lower()
@@ -267,6 +269,9 @@ def post_x(msg: str, state: dict, now: float | None = None, png: bytes | None = 
         state["x_day"], state["x_n"] = day, 0
     if state["x_n"] >= X_DAILY_CAP:
         log.info("x: daily cap reached, left out")
+        return False
+    kind = "agorzilla_growth" if re.search(r"\bgr[eo]w[s]? into\b", msg) else "agorzilla_evening"
+    if not xgate.allow(kind, "agorzilla", now)[0]:   # an owner's posting plan keeps it off X for now
         return False
     png = png or now_picture() or card()
     media = X_OUT.upload(png, "agorzilla.png")[0] if png else None

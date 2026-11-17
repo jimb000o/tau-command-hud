@@ -146,7 +146,10 @@ def post(t: dict, pic: str) -> list[str]:
             said.append(f"telegram: {e}")
     else:
         said.append("telegram: not set up")
-    if alerts.X().enabled():
+    import xgate
+    if not xgate.allow("hack", "hud")[0]:
+        said.append("x: kept off X by the posting plan")
+    elif alerts.X().enabled():
         try:
             said.append("x: " + post_image.x_photo(pic, t["x"]))
         except Exception as e:  # noqa: BLE001

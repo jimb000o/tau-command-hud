@@ -119,6 +119,7 @@ import crewlog
 import earnings
 import idni_digest
 import restart_brief
+import xgate
 import fixwatch
 import recap
 import rulefacts
@@ -770,8 +771,11 @@ def x_post(lines: list[str], link: str | None = None, keep: int = 1, foot: str =
     (never the first `keep`), then it is cut at a word. A line may be a list of choices, longest first: the first one that
     fits whole is taken, so a caller that gives a short choice never gets a post that stops mid-sentence (17 Nov 2026:
     "…in about 2 ms inste…" on X). `foot` and the hashtag always close it; the link joins them only with
-    X_LINKS (it makes a post 13 times dearer), or where the caller says so for this one post (`with_link`)."""
-    links = X_LINKS if with_link is None else with_link
+    X_LINKS (it makes a post 13 times dearer), or where the caller says so for this one post (`with_link`), or while an
+    owner's posting plan says so (xgate.py): then a post without a link of its own carries the site's."""
+    by_plan = with_link is None and not X_LINKS and bool(xgate.links())
+    links = (X_LINKS or by_plan) if with_link is None else with_link
+    link = link or (SITE + "/" if by_plan else None)
     tag = " ".join([tag] + [t for t in X_MUST if t not in (tag or "").split()]).strip()
     tail = "\n\n" + " · ".join(x for x in (foot, link if link and links else None, tag) if x)
     def tidy(x) -> str:
@@ -1971,10 +1975,23 @@ def note_public_post(channel: str, now: float | None = None) -> None:
     except (OSError, ValueError):
         d = {}
     d[channel] = round(now if now is not None else time.time())
+    times = d.get("times") if isinstance(d.get("times"), dict) else {}
+    times[channel] = ((times.get(channel) or []) + [d[channel]])[-40:]   # recent ones, for an X posting plan (xgate.py)
+    d["times"] = times
     try:
         write_atomic(LAST_POSTS_PATH, json.dumps(d))
     except OSError as e:
         log.warning("last post not noted: %s", e)
+
+
+def recent_posts(channel: str = "x") -> list[float]:
+    """Times of this channel's recent posts (at most 40), oldest first."""
+    try:
+        with open(LAST_POSTS_PATH) as f:
+            d = json.load(f)
+        return [float(t) for t in (d.get("times") or {}).get(channel) or []]
+    except (OSError, ValueError, TypeError, AttributeError):
+        return []
 
 
 def post_gap_left(channels=("telegram", "x"), now: float | None = None) -> float:
@@ -2322,7 +2339,11 @@ class X(Outlet):
         media_id = self.upload(png)[0] if png else None
         if png and not media_id:
             log.info("x: picture %s not uploaded, posting the text alone", picture)
-        return self.send_text(text, media_id)
+        res = self.send_text(text, media_id)
+        if media_id and not res[0] and res[2].startswith("HTTP 403") and re.search(r"https?://", text):
+            log.info("x: picture with a link refused (403), posting the text with its link card instead")   # seen 3 Nov 2026
+            res = self.send_text(text, None)
+        return res
 
     ME = "https://api.x.com/2/users/me"
 
@@ -2341,8 +2362,8 @@ class X(Outlet):
         res = self.call_once(req, want_reply)
         if record:
             note_send(self.name, res[0], res[2])
-            if res[0] and req.full_url == self.URL and not self.prefix:   # a post on @TauHUDcom (not Agorzilla's, not an upload)
-                note_public_post("x")
+            if res[0] and req.full_url == self.URL:   # a post (not an upload): @TauHUDcom's as "x", Agorzilla's as "x_agorzilla"
+                note_public_post("x" if self.keys is X_KEYS else "x_agorzilla")
         return res
 
     def call_once(self, req, want_reply=False):
@@ -2734,6 +2755,10 @@ class Watcher:
                     log.info("x: over the daily or monthly cap, left out: %s", it["headline"])
                     self.save_state()
                     continue
+                if o.name == "x" and not xgate.allow("restart" if it["kind"] == "restart" else "chain", "hud")[0]:
+                    it["posted"][o.name] = "skip"  # an owner's posting plan keeps it off X for now (xgate.py)
+                    self.save_state()
+                    continue
                 ok, retry, err = await asyncio.to_thread(o.send, it)
                 if ok:
                     it["posted"][o.name] = "ok"
@@ -2805,14 +2830,17 @@ class Watcher:
         st["today"], st["this_month"] = st.get("today", 0) + 1, st.get("this_month", 0) + 1
 
     async def post_x(self, text: str, what: str, now: float | None = None, picture: str | None = None, spare: bool = False,
-                     urgent: bool = False) -> bool:
+                     urgent: bool = False, kind: str = "") -> bool:
         """The X copy of a post that just went to Telegram. One try: X never holds Telegram up, and a post that failed is
-        not sent hours late; over the caps, or within POST_GAP_MINUTES of the last X post (unless urgent), it is left out."""
+        not sent hours late; over the caps, or within POST_GAP_MINUTES of the last X post (unless urgent), it is left out,
+        and so is a kind an owner's posting plan keeps off X for now (xgate.py)."""
         o = self.x_on()
         if not o:
             return False
         if not self.x_room(now, spare):
             log.info("x: %s not posted (daily or monthly cap, or paused)", what)
+            return False
+        if kind and not xgate.allow(kind, "hud", now)[0]:
             return False
         gap = 0 if urgent else post_gap_left("x")
         if gap:
@@ -2943,7 +2971,7 @@ class Watcher:
                 if st.get("x_day") != day:
                     st["x_day"], st["x_today"] = day, 0
                 if st["x_today"] < findings.X_DAILY:
-                    if await self.post_x(x_post(m["x"]), "finding " + m["what"], now, urgent=True):
+                    if await self.post_x(x_post(m["x"]), "finding " + m["what"], now, urgent=True, kind="finding_busy" if m["what"] == "summary" else "finding"):
                         st["x_today"] += 1
             if m.get("tg_done") or not tg:
                 if not tg:
@@ -3006,7 +3034,7 @@ class Watcher:
                     log.warning("firsts post failed (%s); trying again later", err)
                 if st.get("x_keys") != x_keys:   # X does not wait for a failing Telegram; once for these firsts
                     st["x_keys"] = x_keys
-                    await self.post_x(x_post(firsts.x_lines(due)), what, now, f"{SHARE_HTTP}/og/hud.png")
+                    await self.post_x(x_post(firsts.x_lines(due)), what, now, f"{SHARE_HTTP}/og/hud.png", kind="first")
                 self.save_state()
                 return
         st["tries"] = 0
@@ -3016,7 +3044,7 @@ class Watcher:
             log.info("%s not posted to telegram (off)", what)
         if st.get("x_keys") != x_keys:
             st["x_keys"] = x_keys
-            await self.post_x(x_post(firsts.x_lines(due)), what, now, f"{SHARE_HTTP}/og/hud.png")
+            await self.post_x(x_post(firsts.x_lines(due)), what, now, f"{SHARE_HTTP}/og/hud.png", kind="first")
         self.save_state()
 
     # ---------- new nodes on the network ----------
@@ -3081,14 +3109,14 @@ class Watcher:
                     log.warning("new node post failed (%s); trying again next check", err)
                     if fresh[0]["key"] not in st.setdefault("x_done", []):   # X does not wait for a failing Telegram
                         st["x_done"] = (st["x_done"] + [n["key"] for n in fresh])[-60:]
-                        await self.post_x(newnode_x(fresh, online), what, now, f"{SHARE_HTTP}/og/hud.png")
+                        await self.post_x(newnode_x(fresh, online), what, now, f"{SHARE_HTTP}/og/hud.png", kind="newnode")
                     self.save_state()
                     return
             st["day"], st["posted"] = day, posted + 1
             log.info("newnodes: posted %s%s", " ".join(keys), "" if tg else " (telegram off: X only)")
             if fresh[0]["key"] not in st.setdefault("x_done", []):
                 st["x_done"] = (st["x_done"] + [n["key"] for n in fresh])[-60:]
-                await self.post_x(newnode_x(fresh, online), what, now, f"{SHARE_HTTP}/og/hud.png")
+                await self.post_x(newnode_x(fresh, online), what, now, f"{SHARE_HTTP}/og/hud.png", kind="newnode")
         else:
             log.info("newnodes: %s recorded without a post (daily cap)", " ".join(keys))
         for n in fresh:
@@ -3131,7 +3159,7 @@ class Watcher:
             if X_SIM and key not in st["x_posted"] and (key in st["posted"] or self.x_alone(st, now)):
                 st["x_posted"][key] = round(now)
                 changed = True
-                await self.post_x(sim_x(ev), "simulation " + key, now, spare=True)
+                await self.post_x(sim_x(ev), "simulation " + key, now, spare=True, kind="sim")
         for d in (st["posted"], st["x_posted"]):
             for k in [k for k, t in d.items() if now - t > 7 * 86400]:
                 del d[k]
@@ -3183,7 +3211,7 @@ class Watcher:
         if st.get("x_slot", 0) < slot and (st.get("slot", 0) >= slot or self.x_alone(st, now)):
             st["x_slot"] = slot
             if today_worth_x(r):
-                await self.post_x(today_x(r), "testnet today", now, f"{SHARE_HTTP}/og/hud.png")
+                await self.post_x(today_x(r), "testnet today", now, f"{SHARE_HTTP}/og/hud.png", kind="today")
             else:
                 log.info("testnet today: quiet day, Telegram only")
         self.save_state()
@@ -3315,7 +3343,7 @@ class Watcher:
             st["x_posted"][pid] = round(now)
             self.save_state()
             if (st["n"] - 1) % DEEPDIVE_X_EVERY == 0:
-                await self.post_x(deepdive_x(p), "deepdive " + pid, now, pic, spare=True)
+                await self.post_x(deepdive_x(p), "deepdive " + pid, now, pic, spare=True, kind="deepdive")
             else:
                 log.info("deepdive %s: Telegram only (X gets every %s one)", pid, ordinal(DEEPDIVE_X_EVERY))
         if pid in st["posted"] and pid in st["x_posted"]:
@@ -3369,7 +3397,7 @@ class Watcher:
             st["day"], st["current"] = day, did
             self.save_state()
             if d.get("x"):
-                await self.post_x(x_post(idni_digest.x_lines(d), foot=idni_digest.X_FOOT), "idni digest", now, spare=True)
+                await self.post_x(x_post(idni_digest.x_lines(d), foot=idni_digest.X_FOOT), "idni digest", now, spare=True, kind="idni")
             else:
                 log.info("idni digest %s: Telegram only (a small day)", did)
         for k in ("posted", "x_posted"):
@@ -3406,7 +3434,7 @@ class Watcher:
             st["x_posted"][pid] = round(now)
             st["posted"].setdefault(pid, round(now))
             self.save_state()
-            await self.post_x(x_post(fixwatch.x_lines(post), foot=fixwatch.X_FOOT), "fixed post", now, spare=True)
+            await self.post_x(x_post(fixwatch.x_lines(post), foot=fixwatch.X_FOOT), "fixed post", now, spare=True, kind="fixed")
         self.save_state()
 
     # ---------- the Key Crier: White Rabbit Key's shared island, the day before (relay /isle) ----------
@@ -3468,7 +3496,7 @@ class Watcher:
             self.save_state()
             if r["week"] or island_story(r) and (not last_x or (now - last_x) >= (ISLAND_X_EVERY_DAYS - 0.5) * 86400):
                 pic = await asyncio.to_thread(island_picture, island_card(r), "crier.jpg")
-                await self.post_x(island_x(r), "island " + day, now, pic, spare=True)
+                await self.post_x(island_x(r), "island " + day, now, pic, spare=True, kind="island")
             else:
                 st["x_posted"][day] = 0   # Telegram only: no election won and no law passed, or X had the island lately
                 log.info("island %s: Telegram only", day)
@@ -3550,7 +3578,7 @@ class Watcher:
                 st["x_posted"][pid] = round(now)
                 did = True
                 self.save_state()
-                await self.post_x(x_post(p["x"], foot=p.get("foot") or PLAN_FOOT), "plan " + pid, now, pic)
+                await self.post_x(x_post(p["x"], foot=p.get("foot") or PLAN_FOOT), "plan " + pid, now, pic, kind="plan")
             if did:
                 return  # one planned post per check
 
@@ -3672,7 +3700,7 @@ class Watcher:
                 st["x_done"] = (st["x_done"] + [m["key"] for m in for_x])[-60:]
                 self.save_state()
                 pic = None if X_SITE_LINK else next((p for p in (post_picture(m.get("image"), m.get("link")) for m in for_x) if p), None)
-                await self.post_x(text_x, "site " + ", ".join(m["key"] for m in for_x), now, pic)
+                await self.post_x(text_x, "site " + ", ".join(m["key"] for m in for_x), now, pic, kind="site")
             self.save_state()
             return
 
@@ -3711,7 +3739,7 @@ class Watcher:
             if st.get("x_digest") != keys:   # the same digest, sent alone to X earlier while Telegram failed, not again
                 st["x_digest"] = keys
                 self.save_state()
-                await self.post_x(digest_x(items), "site digest", now, spare=True)
+                await self.post_x(digest_x(items), "site digest", now, spare=True, kind="digest")
         self.save_state()
 
     def article_ready(self, m: dict, now: float) -> bool:
@@ -4261,7 +4289,7 @@ class Watcher:
             got = st["posted"].get(o.name)
             if not o.enabled() or got == "ok" or (isinstance(got, int) and got >= 3) or st.get("pause_until", 0) > time.time():
                 continue
-            if o.name == "x" and not self.x_room():
+            if o.name == "x" and (not self.x_room() or not xgate.allow("recap", "hud")[0]):
                 continue
             try:
                 with open(os.path.join(PUBLIC_DIR, "recap", st["file"]), "rb") as f:
