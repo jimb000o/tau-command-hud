@@ -438,4 +438,10 @@ TauI18n.add({ strings: {
   "a day": "每天",
   "Click for its chart over time.": "点击查看它随时间变化的图表。",
   "Average visitors per day over the last 7 full days,\ncompared with the 7 days before.\nClick for its chart over time.": "最近 7 个完整日每天的平均访客，\n与之前 7 天相比。\n点击查看它随时间变化的图表。",
+  "24H avg": "24小时平均",
+  "7D avg": "7天平均",
+  "Average over": "平均范围",
+  "visitors that day": "当天访客",
+  "Its line is the white one in the Growth panel.": "它的曲线是“增长”面板中的白线。",
+  "Average visitors per day over the last 7 full days,\ncompared with the 7 days before.\nIts line is the white one in the Growth panel.": "最近 7 个完整日每天的平均访客，\n与之前 7 天相比。\n它的曲线是“增长”面板中的白线。",
 } });
