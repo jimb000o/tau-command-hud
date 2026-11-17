@@ -1,0 +1,100 @@
+{
+ "about": "Your hands on the cabin keyboard (hands.js). Per cabin painting: base = the resting hands over cabin.json \"hands\" (transparent around them); poses = one finger each, cut from the same picture (box = x0,y0,x1,y1 as fractions of the hands picture); a pressed key taps that finger down. Painted with Gemini on 17.11.2026 (D:\\\\Knowledge Bases\\\\nomemo-hands), lined up with the painting.",
+ "variants": {
+  "cabin-16x9.webp": {
+   "base": "16x9-hands.webp",
+   "poses": {
+    "l5": {
+     "src": "16x9-l5.webp",
+     "box": [
+      0.2098,
+      0.4281,
+      0.2545,
+      0.6031
+     ]
+    },
+    "l4": {
+     "src": "16x9-l4.webp",
+     "box": [
+      0.2424,
+      0.3761,
+      0.2924,
+      0.5685
+     ]
+    },
+    "l3": {
+     "src": "16x9-l3.webp",
+     "box": [
+      0.278,
+      0.3674,
+      0.3318,
+      0.5511
+     ]
+    },
+    "l2": {
+     "src": "16x9-l2.webp",
+     "box": [
+      0.3159,
+      0.4021,
+      0.3788,
+      0.5771
+     ]
+    },
+    "lt": {
+     "src": "16x9-lt.webp",
+     "box": [
+      0.3235,
+      0.5147,
+      0.4061,
+      0.6551
+     ]
+    },
+    "thumb": {
+     "src": "16x9-thumb.webp",
+     "box": [
+      0.5333,
+      0.5199,
+      0.6045,
+      0.6551
+     ]
+    },
+    "r2": {
+     "src": "16x9-r2.webp",
+     "box": [
+      0.5621,
+      0.3761,
+      0.6288,
+      0.5511
+     ]
+    },
+    "r3": {
+     "src": "16x9-r3.webp",
+     "box": [
+      0.6136,
+      0.3761,
+      0.6667,
+      0.5338
+     ]
+    },
+    "r4": {
+     "src": "16x9-r4.webp",
+     "box": [
+      0.653,
+      0.4107,
+      0.7045,
+      0.5685
+     ]
+    },
+    "r5": {
+     "src": "16x9-r5.webp",
+     "box": [
+      0.6894,
+      0.4402,
+      0.7394,
+      0.6118
+     ]
+    }
+   }
+  }
+ }
+}

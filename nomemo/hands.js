@@ -3,8 +3,8 @@
    that would press it, at the same moment.
 
    - nomemo/art/hands/hands.json lists, per cabin painting, the resting hands (a picture over cabin.json "hands") and one
-     small cut-out per finger pressing a key (box = where it sits, as fractions of the hands picture). Until it is
-     there, nothing shows.
+     small cut-out per finger (box = where it sits, as fractions of the hands picture); a pressed key taps that finger
+     down onto the keyboard, and its hand gives a little. Until it is there, nothing shows.
    - Fingers by touch typing: l5 … l2 the left hand from the little finger, r2 … r5 the right hand, thumb the space bar.
    - Any key typed while the page has focus counts (the terminal's command line most of all); the finger stays down while
      the key is held, at least 90 ms, so a fast typist still sees every tap. */
@@ -13,7 +13,8 @@
   const FINGER = {};
   for (const [f, keys] of Object.entries({ l5: "`1qaz!~", l4: "2wsx@", l3: "3edc#", l2: "45rtfgvb$%", r2: "67yuhjnm^&", r3: "8ik,*<", r4: "9ol.(>", r5: "0p;/-=[]'\\\")_+{}:?|" }))
     for (const k of keys) FINGER[k] = f;
-  const SPECIAL = { " ": "thumb", Enter: "r5", Backspace: "r5", Tab: "l5", Escape: "l5", ArrowUp: "r3", ArrowDown: "r3", ArrowLeft: "r2", ArrowRight: "r4", Delete: "r5" };
+  let thumbs = 0;
+  const SPECIAL = { " ": () => (thumbs++ % 2 ? "lt" : "thumb"), Enter: "r5", Backspace: "r5", Tab: "l5", Escape: "l5", ArrowUp: "r3", ArrowDown: "r3", ArrowLeft: "r2", ArrowRight: "r4", Delete: "r5" };
   let cabin = null, art = null, layer = null, src = null;
   const down = {}, since = {};
 
@@ -39,14 +40,14 @@
   function press(f, on) {
     if (!layer) return;
     const i = layer.querySelector('img[data-f="' + f + '"]'); if (!i) return;
-    if (on) { down[f] = (down[f] || 0) + 1; since[f] = performance.now(); i.classList.add("down"); }
+    if (on) { down[f] = (down[f] || 0) + 1; since[f] = performance.now(); i.classList.add("down"); layer.classList.add(f[0] === "l" ? "dip-l" : "dip-r"); }
     else {
       down[f] = Math.max(0, (down[f] || 0) - 1); if (down[f]) return;
       const left = 90 - (performance.now() - (since[f] || 0));
-      setTimeout(() => { if (!down[f]) i.classList.remove("down"); }, Math.max(0, left));
+      setTimeout(() => { if (down[f]) return; i.classList.remove("down"); if (!layer.querySelector(".down")) layer.classList.remove("dip-l", "dip-r"); }, Math.max(0, left));
     }
   }
-  const fingerOf = e => SPECIAL[e.key] || FINGER[(e.key || "").toLowerCase()] || (e.key && e.key.length === 1 ? "r2" : null);
+  const fingerOf = e => (typeof SPECIAL[e.key] === "function" ? SPECIAL[e.key]() : SPECIAL[e.key]) || FINGER[(e.key || "").toLowerCase()] || (e.key && e.key.length === 1 ? "r2" : null);
   const held = new Map();
   addEventListener("keydown", e => {
     if (!root.classList.contains("scene") || e.ctrlKey || e.metaKey || e.altKey) return;
