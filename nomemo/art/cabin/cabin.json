@@ -1,5 +1,5 @@
 {
- "about": "The cabin of the Black Sequence around No Memo's screen. Fractions of the picture: screen = x0,y0,x1,y1 of the black glass; lamp = the lantern flame; windows = where the sea is. live = short painted loops (made with Kling from crops of the painting) that play over it through a soft mask: box = x0,y0,x1,y1 of the clip; rough = the sea during the Tuesday op.",
+ "about": "The cabin of the Black Sequence around No Memo's screen. Fractions of the picture: screen = x0,y0,x1,y1 of the black glass; lamp = the lantern flame; windows = where the sea is. live = short painted loops (made with Kling from crops of the painting) that play over it through a soft mask: box = x0,y0,x1,y1 of the clip; rough = the sea during the Tuesday op. bell = the ship's bell: box and pivot (where it hangs) of the bell, rope = its lanyard, patch = where the wall behind the rope is borrowed from (a shift in picture widths). keys = the painted keyboard (on a monitor 1600 px and wider the camera sits back so it shows), hands = the part the painted hands (art/hands/) cover.",
  "variants": [
   {
    "src": "cabin-16x9.webp",
@@ -56,6 +56,43 @@
       0.7086
      ]
     }
+   ],
+   "bell": {
+    "box": [
+     0.7874,
+     0.1823,
+     0.8642,
+     0.3509
+    ],
+    "pivot": [
+     0.8259,
+     0.1836
+    ],
+    "rope": {
+     "box": [
+      0.8191,
+      0.3346,
+      0.8352,
+      0.5143
+     ],
+     "pivot": [
+      0.827,
+      0.3359
+     ]
+    },
+    "patch": -0.0205
+   },
+   "keys": [
+    0.309,
+    0.732,
+    0.7,
+    0.898
+   ],
+   "hands": [
+    0.2799,
+    0.6243,
+    0.7304,
+    1.0
    ]
   },
   {
@@ -130,6 +167,43 @@
       0.9204
      ]
     }
+   ],
+   "bell": {
+    "box": [
+     0.786,
+     0.1488,
+     0.8599,
+     0.3534
+    ],
+    "pivot": [
+     0.8213,
+     0.1518
+    ],
+    "rope": {
+     "box": [
+      0.8155,
+      0.3311,
+      0.83,
+      0.5632
+     ],
+     "pivot": [
+      0.8228,
+      0.3333
+     ]
+    },
+    "patch": -0.0174
+   },
+   "keys": [
+    0.317,
+    0.891,
+    0.69,
+    1.0
+   ],
+   "hands": [
+    0.3074,
+    0.5506,
+    0.7077,
+    1.0
    ]
   }
  ]
