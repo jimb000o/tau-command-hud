@@ -111,6 +111,17 @@ footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); 
 footer a { color: var(--dim); }
 #tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(340px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); white-space: pre-line; }
 [hidden] { display: none !important; }
+/* 17.11.2026: by level. Beginner: the six checks fold into one line (a check that is not a ✓ stays open), the Tau tools
+   step back and the way to the wallet is the one big button. Intermediate: as before. Expert: the rule in Tau is open. */
+.sum { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; }
+.sum.ok { border-color: rgba(57,255,138,.45); background: rgba(57,255,138,.06); }
+.sum.bad { border-color: rgba(229,72,77,.5); } .sum.warn { border-color: rgba(255,177,59,.5); }
+.sum .big { font: 600 20px/1.25 var(--display); color: #fff; } .sum.ok .big::before { content: "✓ "; color: var(--ok); }
+.sum .d { color: var(--dim); font-size: 12px; }
+.sum button { align-self: flex-start; margin-top: 4px; background: none; border: 0; padding: 4px 0; color: var(--ok); font: 12px var(--mono); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+html[data-level="new"] #btnCopy, html[data-level="new"] #btnAgain, html[data-level="new"] .panel h2 .langs { display: none; }
+html[data-level="new"] #btnWallet { min-height: 44px; padding: 10px 20px; font-size: 13px; }
+html[data-level="new"] #btnWallet[aria-disabled="false"] { box-shadow: 0 0 0 3px rgba(57,255,138,.3), 0 0 26px -6px rgba(57,255,138,.7); }
 @media (min-width: 1100px) { .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr); } }
 /* landscape from laptop size up: one screen; long lists scroll inside their panel */
 html.fit body { height: 100vh; overflow: hidden; padding-top: 0; padding-bottom: 0; }
@@ -153,6 +164,7 @@ html.fit .main > .panel { min-height: 0; overflow: auto; }
     </section>
     <section class="panel" id="p2">
       <h2><b>2</b> The checks</h2>
+      <div class="sum" id="sum" hidden aria-live="polite"></div>
       <ul class="proof" id="proof" aria-live="polite"></ul>
       <div class="fix" id="fixBox" hidden><span>This rule only says when to block. Give the other case an answer too, and it does what it reads like.</span> <button class="b" type="button" id="btnFix">Answer both cases</button></div>
       <details class="tau" id="tauBox" hidden><summary>The rule in Tau</summary><pre id="tauText" translate="no"></pre></details>
@@ -184,6 +196,8 @@ html.fit .main > .panel { min-height: 0; overflow: auto; }
 const $ = id => document.getElementById(id);
 const RELAY = "https://node.tauhud.com", CHECK_URL = RELAY + "/check";
 const SIM = !!(window.TauSim && TauSim.on), MODE = SIM ? "sim" : "live";
+const LV = () => document.documentElement.dataset.level || "mid";   // nav.js: new, mid, pro ("" = no level picked = Intermediate)
+let allChecks = false;   // a beginner opened the six checks by hand
 const T = s => (window.TauI18n ? TauI18n.t(s) : s);
 const F = (s, v) => T(s.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)));
 const short = h => h ? `${h.slice(0, 8)}…${h.slice(-4)}` : "";
@@ -327,14 +341,16 @@ async function askEngine() {
     E.won = tau;
     TauWin.moment({ key: "builder-ok", at: $("tests"), title: T("Your rule works: the Tau engine takes it"),
       meaning: F("All {n} test payments did what you said they should. Next: sign it in your wallet, and it guards your account on the testnet.", { n: runs.length }),
-      proof: F("{n} of {n} test payments as expected", { n: runs.length }) + (E.res.ms != null ? " · " + E.res.ms + " ms" : "") });
+      proof: F("{n} of {n} test payments as expected", { n: runs.length }) + (E.res.ms != null ? " · " + E.res.ms + " ms" : ""),
+      go: $("btnWallet").getAttribute("aria-disabled") === "false" ? { href: $("btnWallet").href, text: T("Sign it in my wallet ›"), onclick: handOver } : null });
+    TauWin.glow($("btnWallet"));
   }
 }
 function setEngine(on) {
   $("state").className = "state " + (on ? "ok" : "off");
   $("stateText").textContent = T(on ? "Tau engine: online" : "Tau engine: not reachable");
 }
-let timer = null, engineTimer = null, touched = false;
+let timer = null, engineTimer = null, touched = false, tauOpened = false;
 function changed(now) {
   clearTimeout(timer); clearTimeout(engineTimer);
   timer = setTimeout(() => {
@@ -417,11 +433,24 @@ function proofRows() {
 const agrees = (t, run) => t.expect === "pass" ? run.ok && run.o5 != null && run.o5 !== 0 : t.expect === "block" ? run.ok && run.o5 === 0 : !run.ok || run.o5 == null;
 const MARK = { ok: "✓", warn: "!", bad: "✕", wait: "…", off: "–" };
 function renderProof() {
-  const rows = proofRows();
-  $("proof").replaceChildren(...(rows.length ? rows.map((x, i) => el("li", { class: x.state }, el("i", { text: MARK[x.state] }), el("div", {}, el("div", { class: "t", text: (i + 1) + " · " + T(x.t) }), el("div", { class: "d", text: x.d }))))
-    : [el("li", { class: "off" }, el("i", { text: "–" }), el("div", { class: "d", text: T("The checks appear once there is a rule.") }))]));
+  const rows = proofRows(), lv = LV(), fold = lv === "new" && rows.length && !allChecks;
+  /* Beginner: one line for all checks; a check that is not a ✓ is still listed under it */
+  const sum = $("sum"); sum.hidden = lv !== "new" || !rows.length;
+  if (!sum.hidden) {
+    const ok = rows.filter(x => x.state === "ok").length, bad = rows.some(x => x.state === "bad"), warn = rows.some(x => x.state === "warn"), wait = rows.some(x => x.state === "wait");
+    sum.className = "sum " + (bad ? "bad" : warn ? "warn" : ok === rows.length ? "ok" : "");
+    sum.replaceChildren(el("div", { class: "big", text: ok === rows.length ? F("All {n} checks passed", { n: rows.length }) : F("{a} of {n} checks passed", { a: ok, n: rows.length }) }),
+      el("div", { class: "d", text: T(bad ? "Something is wrong with this rule: see the check below. Do not sign it like this." : warn ? "It works, with one thing worth a look below." : wait ? "The real Tau engine on our node is checking it now…"
+        : ok === rows.length ? "Your browser and the real Tau engine checked it: every payment gets one answer, money can still leave, and the engine answers as predicted." : "Some checks could not run right now; the ones that ran are fine.") }),
+      el("button", { type: "button", text: T(allChecks ? "Fold the checks" : "Show all checks ›"), onclick: () => { allChecks = !allChecks; renderProof(); } }));
+  }
+  const list = fold ? rows.map((x, i) => [x, i]).filter(([x]) => x.state !== "ok") : rows.map((x, i) => [x, i]);
+  $("proof").hidden = fold && !list.length;
+  $("proof").replaceChildren(...(list.length ? list.map(([x, i]) => el("li", { class: x.state }, el("i", { text: MARK[x.state] }), el("div", {}, el("div", { class: "t", text: (i + 1) + " · " + T(x.t) }), el("div", { class: "d", text: x.d }))))
+    : rows.length ? [] : [el("li", { class: "off" }, el("i", { text: "–" }), el("div", { class: "d", text: T("The checks appear once there is a rule.") }))]));
   $("fixBox").hidden = !S.fix;
-  $("tauBox").hidden = !S.tau; $("tauText").textContent = S.tau || "";
+  $("tauBox").hidden = !S.tau || lv === "new"; $("tauText").textContent = S.tau || "";
+  if (lv === "pro" && !tauOpened) { $("tauBox").open = true; tauOpened = true; }   // Expert: the rule in Tau is open from the start
 }
 function renderTests() {
   const runs = E.runs || new Map(), tb = $("tests");
@@ -460,7 +489,7 @@ function renderActs() {
 }
 function render() { renderGot(); renderProof(); renderTests(); renderActs(); }
 /* the hand-over: the wallet's own draft (as the rules wall does), and names for addresses its address book does not know yet */
-$("btnWallet").addEventListener("click", () => {
+function handOver() {
   const r = S.rule; if (!r || r.freeze) return;
   const book = (() => { try { return JSON.parse(store.get(BOOK_KEY) || "[]"); } catch (e) { return []; } })(), has = a => book.some(c => c && c.addr === a);
   let n = 0;
@@ -468,7 +497,9 @@ $("btnWallet").addEventListener("click", () => {
   for (const a of r.only) if (!has(a)) book.push({ name: "Payee " + (++n), addr: a });
   store.set(BOOK_KEY, JSON.stringify(book));
   store.set("tauhud-wallet-draft", JSON.stringify({ freeze: false, only: r.only, cap: r.cap, from: r.from, co: r.co ? { limit: r.co.limit, who: r.co.who.slice(0, 1), slots: [[18, r.co.who[0]]], need: "any" } : null }));
-});
+}
+$("btnWallet").addEventListener("click", handOver);
+addEventListener("tau-level", () => render());   // the level switch in the header changes this page at once
 
 /* ---------- hover tips ---------- */
 const tip = $("tip");
