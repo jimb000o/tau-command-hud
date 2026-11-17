@@ -67,7 +67,7 @@
   {
    "name": "thunder",
    "kind": "oneshot",
-   "gain": 0.7,
+   "gain": 0.55,
    "what": "Thunder after the lightning",
    "when": "click the window",
    "eleven": "Rolling thunder over a city at night heard from indoors through a window, a close crack then a long deep rumble fading away, rain continuing",
@@ -85,20 +85,20 @@
   {
    "name": "ring",
    "kind": "oneshot",
-   "gain": 0.6,
-   "what": "The desk phone rings",
+   "gain": 0.34,
+   "what": "The phone: a warm, rounded double purr in A, soft on and off. Drawn on purpose (no service version), so it never startles.",
    "when": "a rule change is proposed",
-   "eleven": "A late-1990s beige office desk telephone ringing once, electronic warbling ring, in a small room",
-   "sec": 3
+   "sec": 1.9,
+   "drawn": true
   },
   {
    "name": "pager",
    "kind": "oneshot",
-   "gain": 0.45,
-   "what": "The pager buzzes on the desk",
+   "gain": 0.32,
+   "what": "The pager humming twice against the wooden desk, no beep. Drawn on purpose.",
    "when": "every block",
-   "eleven": "A 1990s pager vibrating on a wooden desk, short buzz rattling against the wood, then a small beep",
-   "sec": 1.2
+   "sec": 0.75,
+   "drawn": true
   },
   {
    "name": "disk",
@@ -112,11 +112,11 @@
   {
    "name": "crt",
    "kind": "oneshot",
-   "gain": 0.4,
-   "what": "A tube monitor switches on",
+   "gain": 0.32,
+   "what": "A tube switching on: a soft thunk and a low hum, no high whine. Drawn on purpose.",
    "when": "the screens power on",
-   "eleven": "A CRT monitor switching on, a degauss thunk and a rising high-pitched whine, static crackle",
-   "sec": 2
+   "sec": 1.4,
+   "drawn": true
   },
   {
    "name": "key-1",

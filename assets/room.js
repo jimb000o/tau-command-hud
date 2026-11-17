@@ -31,10 +31,10 @@
   const L = {
     zh: { "Stand up": "起身", "Sound on": "声音 开", "Sound off": "声音 关", "Music on": "音乐 开", "Music off": "音乐 关", "Full screen": "全屏",
       "Click a screen to lean in. The phone rings when someone proposes a rule change; the pager buzzes at every block.": "点击屏幕凑近看。有人提出规则变更时电话会响；每出一个区块，寻呼机就会震动。",
-      "click or any key: skip": "点击或按任意键跳过", "Type help and press Enter. Click a screen to lean in; the phone rings at each rule change, the pager buzzes at every block.": "输入 help 并按回车。点击屏幕凑近看；每次规则变更电话会响，每出一个区块寻呼机就会震动。", "The room, 1999": "1999 年的房间", "The room needs a wider window (900 px and up, wider than tall).": "这个房间需要更宽的窗口（900 px 以上，横向）。" },
+      "click or any key: skip": "点击或按任意键跳过", "Ask the main screen in plain words and press Enter, like: what is a block? Click a screen to lean in; the phone rings at each rule change, the pager buzzes at every block.": "用平常的话向主屏幕提问并按回车，比如：什么是区块？点击屏幕凑近看；每次规则变更电话会响，每出一个区块寻呼机就会震动。", "The room, 1999": "1999 年的房间", "The room needs a wider window (900 px and up, wider than tall).": "这个房间需要更宽的窗口（900 px 以上，横向）。" },
     ja: { "Stand up": "立ち上がる", "Sound on": "音 オン", "Sound off": "音 オフ", "Music on": "音楽 オン", "Music off": "音楽 オフ", "Full screen": "全画面",
       "Click a screen to lean in. The phone rings when someone proposes a rule change; the pager buzzes at every block.": "画面をクリックすると近づきます。ルール変更が提案されると電話が鳴り、ブロックごとにポケベルが震えます。",
-      "click or any key: skip": "クリックまたは任意のキーでスキップ", "Type help and press Enter. Click a screen to lean in; the phone rings at each rule change, the pager buzzes at every block.": "help と入力して Enter を押してください。画面をクリックすると近づきます。ルール変更のたびに電話が鳴り、ブロックごとにポケベルが震えます。", "The room, 1999": "1999 年の部屋", "The room needs a wider window (900 px and up, wider than tall).": "この部屋には広い画面が必要です（幅 900 px 以上、横長）。" },
+      "click or any key: skip": "クリックまたは任意のキーでスキップ", "Ask the main screen in plain words and press Enter, like: what is a block? Click a screen to lean in; the phone rings at each rule change, the pager buzzes at every block.": "メイン画面にふだんの言葉で質問して Enter を押してください（例：ブロックとは？）。画面をクリックすると近づきます。ルール変更のたびに電話が鳴り、ブロックごとにポケベルが震えます。", "The room, 1999": "1999 年の部屋", "The room needs a wider window (900 px and up, wider than tall).": "この部屋には広い画面が必要です（幅 900 px 以上、横長）。" },
   };
   const T = s => ((L[window.TauI18n && TauI18n.lang] || {})[s] || s);
 
@@ -134,7 +134,7 @@
     if (!(document.fullscreenEnabled && root.requestFullscreen)) bf.hidden = true;
     const bx = mk("button", "", T("Stand up") + " ✕"); bx.type = "button"; bx.addEventListener("click", e => { e.stopPropagation(); leave(); });
     ui.append(bs, bm, bf, bx); el.append(ui);
-    el.append(mk("div", "rm-hint gone", esc(T("Type help and press Enter. Click a screen to lean in; the phone rings at each rule change, the pager buzzes at every block."))));
+    el.append(mk("div", "rm-hint gone", esc(T("Ask the main screen in plain words and press Enter, like: what is a block? Click a screen to lean in; the phone rings at each rule change, the pager buzzes at every block."))));
     el.append(mk("div", "rm-skip", esc(T("click or any key: skip"))));
     el.addEventListener("click", () => { if (view) lean(null); });
     el.addEventListener("pointerdown", () => { st.gesture = true; soundUp(); }, true);
@@ -142,6 +142,13 @@
     layout();
   }
   /* everything in room px follows GEO: the SVG room keeps its CSS places, the painting sets them here */
+  /* the CSS matrix3d that maps a w×h box onto four corners (top-left, top-right, bottom-right, bottom-left) */
+  function quadMatrix(w, h, [[x0, y0], [x1, y1], [x2, y2], [x3, y3]]) {
+    const dx1 = x1 - x2, dx2 = x3 - x2, dx3 = x0 - x1 + x2 - x3, dy1 = y1 - y2, dy2 = y3 - y2, dy3 = y0 - y1 + y2 - y3, det = dx1 * dy2 - dx2 * dy1;
+    const g = det ? (dx3 * dy2 - dx2 * dy3) / det : 0, hh = det ? (dx1 * dy3 - dx3 * dy1) / det : 0;
+    const a = x1 - x0 + g * x1, b = x3 - x0 + hh * x3, d = y1 - y0 + g * y1, e = y3 - y0 + hh * y3;
+    return `matrix3d(${[a / w, d / w, 0, g / w, b / h, e / h, 0, hh / h, 0, 0, 1, 0, x0, y0, 0, 1].map(v => +v.toFixed(6)).join(",")})`;
+  }
   function layout() {
     if (!cam) return;
     const art = cam.querySelector(".rm-art"); if (!art.src.endsWith("/" + GEO.art)) art.src = BASE + GEO.art;
@@ -163,6 +170,11 @@
     for (const k in scr) {
       const g = (VAR.glass || {})[k], gu = g ? `url("${BASE + g}")` : "";
       Object.assign(scr[k].style, { maskImage: gu, webkitMaskImage: gu, maskSize: "100% 100%", webkitMaskSize: "100% 100%", borderRadius: g ? "0" : "" });
+    }
+    /* a screen turned toward you is not a flat rectangle: its picture follows the painted glass in perspective (room.json quad) */
+    for (const k in scr) {
+      const q = (VAR.quad || {})[k], inn = scr[k].querySelector(".rm-in"), [, , w, h] = GEO.scr[k];
+      inn.style.transformOrigin = "0 0"; inn.style.transform = q ? quadMatrix(w, h, q.map(([u, v]) => [u * w, v * h])) : "";
     }
     for (const k of ["main", "left", "right"]) {
       const [x, y, w, h] = GEO.scr[k], f = k === "main" ? 1.9 : 2.1;
@@ -216,10 +228,12 @@
   let ac = null, out = null;
   function audio() {
     if (!st.sound || !st.gesture) return null;
-    if (RS()) { ac = RS().ctx(); if (!out && ac) { out = ac.createGain(); out.gain.value = .14; out.connect(RS().bus()); } return ac; }
-    try { if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); out = ac.createGain(); out.gain.value = .14; out.connect(ac.destination); }
+    if (RS()) { ac = RS().ctx(); if (!out && ac) { out = soft(ac, RS().bus()); } return ac; }
+    try { if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); out = soft(ac, ac.destination); }
       if (ac.state === "suspended") ac.resume(); return ac; } catch (e) { return null; }
   }
+  /* every drawn tone goes through a warm low-pass: the room calls you, it never startles you */
+  function soft(a, to) { const g = a.createGain(), lp = a.createBiquadFilter(); g.gain.value = .07; lp.type = "lowpass"; lp.frequency.value = 2200; lp.Q.value = .5; g.connect(lp); lp.connect(to); return g; }
   function soundUp() { if (on && st.sound && st.gesture && RS()) { RS().set({ music: st.music }); RS().start(); } }
   function hush() { if (RS()) RS().stop(); else if (ac) { try { ac.close(); } catch (e) {} ac = null; out = null; } }
   const sample = (n, o) => !!(RS() && RS().running && RS().play(n, Object.assign({ late: false }, o)));
@@ -239,13 +253,13 @@
   /* the dial: tone, the number, then the two modems agreeing (short; skipped without a click) */
   function dialSound() {
     if (!audio()) return;
-    tone([350, 440], 0, .55, .5);
+    tone([350, 440], 0, .55, .3);
     const D = { 1: [697, 1209], 2: [697, 1336], 3: [697, 1477], 4: [770, 1209], 5: [770, 1336], 6: [770, 1477], 7: [852, 1209], 8: [852, 1336], 9: [852, 1477], 0: [941, 1336] };
-    "5550199".split("").forEach((c, i) => tone(D[c], .65 + i * .1, .07, .5));
-    const t = 1.5; tone([2100], t, .45, .35); tone([1650, 1850], t + .5, .35, .3, "square"); noise(t + .5, .9, .5); tone([980, 1180], t + .9, .45, .25, "sawtooth");
+    "5550199".split("").forEach((c, i) => tone(D[c], .65 + i * .1, .07, .25));
+    const t = 1.5; tone([2100], t, .45, .14); tone([1650, 1850], t + .5, .35, .1, "triangle"); noise(t + .5, .9, .16); tone([980, 1180], t + .9, .45, .1, "triangle");
   }
-  const ringSound = () => { if (!sample("ring")) for (let i = 0; i < 2; i++) tone([440, 480], i * .5, .4, .45); };
-  const click = () => tone([2400], 0, .02, .25, "square");
+  const ringSound = () => { if (!sample("ring")) for (let i = 0; i < 2; i++) tone([440, 554.37], i * .62, .42, .22); };
+  const click = () => tone([1400], 0, .03, .18);
   function rumble(t0, dur, vol, freq) {
     const a = audio(); if (!a) return;
     const b = a.createBuffer(1, Math.floor(a.sampleRate * dur), a.sampleRate), d = b.getChannelData(0);
@@ -273,7 +287,7 @@
   function lava() { el.classList.toggle("lava-on"); click(); }
   function disk() {
     const real = sample("disk");
-    for (let i = 0; i < 7; i++) setTimeout(() => { blink(".rm-pc .hdd", 70); if (!real) tone([90 + Math.random() * 60], 0, .03, .5, "square"); }, i * 110 + Math.random() * 60);
+    for (let i = 0; i < 7; i++) setTimeout(() => { blink(".rm-pc .hdd", 70); if (!real) tone([90 + Math.random() * 60], 0, .03, .3, "triangle"); }, i * 110 + Math.random() * 60);
     const S = R ? R.S : null; if (!S) return;
     say(`C:\\> mem · ${S.blocks.length} blocks kept on this page · ${S.mempool.length} tx waiting · ${S.validators.length || "?"} validators`);
   }
@@ -326,7 +340,7 @@
     setTimeout(() => powerOn("left"), 650); setTimeout(() => powerOn("right"), 900);
     hint(); welcome();
   }
-  function welcome() { setTimeout(() => { if (on) { say("type help and press Enter · this shell only reads the chain, nothing you type can break anything", "sys"); sh.last = performance.now() - 45000; } }, 1200); }
+  function welcome() { setTimeout(() => { if (on) { say(pick1(["the line is open. ask me anything about the chain, in plain words.", "hi. i'm the line into this node. ask me something, like: what is a block?"]), "ai"); sh.last = performance.now() - 45000; } }, 1200); }
   function powerOn(k) { const s = scr[k]; if (!s || !on) return; sample("crt", { gain: .5, pan: k === "left" ? -.5 : .5 }); s.classList.remove("off"); s.classList.add("on"); render(true); }
   function hint() {
     const h = el.querySelector(".rm-hint"); if (!h || get("tauhud-room-hint") === "3") return;
@@ -360,25 +374,26 @@
     const s = status(), box = scr.main.querySelector(".rm-in");
     let term = box.querySelector(".rm-term");
     if (!term || !box.querySelector(".h")) {
-      box.innerHTML = head("TAU TESTNET ALPHA · node log", s) + '<div class="rm-term"></div><p class="rm-prompt">root@tau:~# <span class="rm-typed"></span><span class="rm-cur"></span></p>';
+      box.innerHTML = head("TAU TESTNET ALPHA · node log", s) + '<div class="rm-term"></div><p class="rm-prompt">› <span class="rm-typed"></span><span class="rm-cur"></span><span class="rm-think"><i></i><i></i><i></i></span></p>';
       term = box.querySelector(".rm-term"); term.dataset.n = "0";
     }
     const hd = box.querySelector(".h"), want = `<span>TAU TESTNET ALPHA · #${num(R.S.height || 0)}</span>${TAG[s]}`;
     if (hd.innerHTML !== want) hd.innerHTML = want;
     const typed = box.querySelector(".rm-typed"); if (typed && typed.textContent !== sh.line) typed.textContent = sh.line;
+    box.querySelector(".rm-prompt").classList.toggle("thinking", !!sh.think);
     const have = +term.dataset.n || 0, list = st.term || [];
     if (have > list.length) { term.innerHTML = ""; term.dataset.n = "0"; return renderMain(); }
     for (let k = have; k < list.length; k++) {
-      const e = list[k], p = mk("p", e.cls, `<span class="t">${esc(e.t)}</span>`), span = mk("span", "", "");
+      const e = list[k], talk = e.cls === "ai" || e.cls === "you" || e.cls === "call", p = mk("p", e.cls, talk ? (e.cls === "you" ? "› " : "") : `<span class="t">${esc(e.t)}</span>`), span = mk("span", "", "");
       p.append(span); term.append(p);
-      if (e.fresh && !REDUCED) type(span, e.txt); else span.textContent = e.txt;
+      if (e.fresh && !REDUCED && e.cls !== "you") type(span, e.txt, e.cls === "ai" || e.cls === "call"); else span.textContent = e.txt;
     }
     term.dataset.n = String(list.length);
     while (term.children.length > 40) { term.firstChild.remove(); }
   }
-  function type(span, txt) {
-    let n = 0; const step = Math.max(2, Math.ceil(txt.length / 28));
-    const go = () => { n = Math.min(txt.length, n + step); span.textContent = txt.slice(0, n); if (n < txt.length) setTimeout(go, 22); };
+  function type(span, txt, steady) {   // steady: the line's own voice, about 75 letters a second
+    let n = 0; const step = steady ? 1 : Math.max(2, Math.ceil(txt.length / 28));
+    const go = () => { n = Math.min(txt.length, n + step); span.textContent = txt.slice(0, n); if (n < txt.length) setTimeout(go, steady ? 13 : 22); };
     go();
   }
 
@@ -431,13 +446,13 @@
     if (st.seenU == null) st.seenU = new Set(S.updates.map(u => u.id));
     if (S.height !== st.h) {
       const first = !st.h; st.h = S.height; st.newBlock = !first;
-      if (!first && !booting && sh.watch) { const b = S.blocks[S.blocks.length - 1]; if (b) say(`#${b.n} ${ts(b)} · ${(b.txs || []).length} tx · sealed by ${R.short(b.proposer || "") || "?"}`, ""); }
+      if (!first && !booting && sh.watch) { const b = S.blocks[S.blocks.length - 1]; if (b) say(`#${num(b.n)} · ${(b.txs || []).length} tx · sealed by ${R.short(b.proposer || "") || "?"}`, "ai"); }
       if (!first && !booting) {
         for (const k of ["left"]) { scr[k].classList.remove("flash"); void scr[k].offsetWidth; scr[k].classList.add("flash"); }
         const p = el.querySelector(".rm-lcd"), pb = el.querySelector(".rm-hot.rm-pager");
         p.classList.add("lit"); setTimeout(() => p.classList.remove("lit"), 1800);
         if (!REDUCED) for (const n of [p, pb]) { n.classList.remove("buzz"); void n.offsetWidth; n.classList.add("buzz"); }
-        sample("pager", { gain: .7, pan: -.3 }); if (RS()) RS().block();
+        sample("pager", { gain: .8, pan: -.3 }); if (RS()) RS().block();
         blink('.rm-leds [data-l="RD"]', 420); blink(".rm-pc .hdd", 260); setTimeout(() => blink(".rm-pc .hdd", 180), 340);
         const g = el.querySelector(".rm-glow.left"); g.classList.remove("pulse"); void g.offsetWidth; g.classList.add("pulse");
       }
@@ -455,7 +470,7 @@
   function ring(u) {
     st.ring = u; el.classList.add("ringing"); const ph = el.querySelector(".rm-hot.rm-phone"); if (!REDUCED) ph.classList.add("ring");
     clearInterval(st.ringT); let n = 0; ringSound(); if (RS()) RS().mood("ring");
-    st.ringT = setInterval(() => { if (++n >= 4 || !on) { stopRing(); return; } ringSound(); }, 2600);
+    st.ringT = setInterval(() => { if (++n >= 3 || !on) { stopRing(); return; } ringSound(); }, 4200);   // three calm rings, then it waits for you
   }
   function stopRing() { if (RS() && !sh.call) RS().mood("night"); clearInterval(st.ringT); st.ringT = null; el.classList.remove("ringing"); el.querySelector(".rm-hot.rm-phone").classList.remove("ring"); }
   function answer() {
@@ -479,87 +494,130 @@
      A small 1999 shell on the main screen. Every answer is read from the HUD on this page (read only: nothing typed
      here is signed or sent). The node log pauses while you type and comes back after a minute of quiet. */
   const sh = {
-    line: "", hist: [], hi: 0, last: 0, n: 0, watch: false, call: null,
+    line: "", hist: [], hi: 0, last: 0, n: 0, watch: false, call: null, topic: null, think: false, q: [], qT: null,
     busy() { return performance.now() - this.last < 60000 || this.watch; },
   };
-  const pad = (v, n) => String(v).padEnd(n);
-  const ts = b => { const t = Number(b && b.ts); return t > 1.5e9 ? new Date(t * 1000).toTimeString().slice(0, 8) : "--:--:--"; };
-  const amt = t => t.amount ? ` ${num(t.amount)} AGRS` : (t.transfers && t.transfers.length ? ` ${t.transfers.length} transfer${t.transfers.length > 1 ? "s" : ""}` : "");
-  const txLine = t => `  ${pad(R.short(t.id || ""), 13)} ${pad(t.type || "tx", 22)} from ${R.short(t.sender || "") || "?"}${amt(t)}`;
+  /* ---------------- the line: a small mind in the node that reads the chain with you ----------------
+     You write in plain words (or the old commands); it answers in two or three short lines, from the live chain,
+     remembers what you talked about ("more", "why", "yes" go deeper) and always offers the next step. It is a
+     small program in this page, not a language model: it only knows this chain, but it knows it live.
+     Each exchange clears the screen, so an answer always fits the glass. */
+  const ago2 = b => { const a = ago(b); return a ? a + " ago" : "just now"; };
+  const tx1 = t => `${t.type || "transaction"} from ${R.short(t.sender || "") || "?"}${t.amount ? ", " + num(t.amount) + " AGRS" : ""}`;
+  const lastTx = () => { for (const b of R.S.blocks.slice().reverse()) { const t = (b.txs || []).slice(-1)[0]; if (t) return [t, b]; } return [null, null]; };
+  const pick1 = a => a[Math.random() * a.length | 0];
+  const TOPIC = {
+    hello: { say() { return [pick1(["hi. i'm the line into this node.", "hey. good to have company on the night shift.", "hello. the node is awake, so am i."]),
+        "i read the chain live and say what it means. ask in plain words, or try: what is a block?"]; },
+      more() { return TOPIC.me.say(); } },
+    me: { say() { return ["i'm a small program in this room, not a big language model. i only know this chain, but i know it live.", "ask me about blocks, rules, transactions or who keeps it all running."]; },
+      more() { return ["everything i say comes from the same feed as the screens. if the node goes quiet, so do i."]; } },
+    help: { say() { return ["just ask, in your own words. good first questions:", "what is a block? · who seals them? · what are the rules? · show me a transaction"]; },
+      more() { return ["the old commands work too: blocks, block 12, tx a1fe, pending, rules, changes, validators, watch, lamp, clear, exit."]; } },
+    block: { say(a) {
+        const S = R.S, n = a && /\d/.test(a) ? Number(String(a).replace(/\D/g, "")) : S.height, b = S.byHeight.get(n) || S.blocks.find(x => x.n === n);
+        if (!b) return [`#${num(n)} is older than what this page keeps (#${S.blocks[0] ? num(S.blocks[0].n) : "?"} to #${num(S.height)}).`, "ask for a newer one, or just: the newest block."];
+        sh.blk = b; const t = (b.txs || []).length;
+        return [`block #${num(b.n)}: sealed ${ago2(b)} by ${R.short(b.proposer || "") || "?"}, ${t} transaction${t === 1 ? "" : "s"} inside.`,
+          "a block is one page of the shared record. once sealed, nobody can change it. want to look inside? say: more"]; },
+      more() {
+        const b = sh.blk || R.S.byHeight.get(R.S.height); if (!b) return ["no block yet. give it a few seconds."];
+        const t = b.txs || [];
+        return [`its fingerprint is ${String(b.hash || "?").slice(0, 12)}…, and it names the page before it, #${num(b.n - 1)}. that link is the chain.`,
+          t.length ? `first thing inside: ${tx1(t[0])}.` : "this one carries no transactions, just the beat of the chain.", "next: who seals these pages? or: what are the rules?"]; } },
+    blocks: { say() { const b = R.S.blocks.slice(-3).reverse(); if (!b.length) return ["no blocks yet. the chain is warming up."];
+        return [b.map(x => `#${num(x.n)} ${(x.txs || []).length}tx ${ago(x) || ""}`).join(" · "), "a new page every few seconds. ask about one: block " + b[0].n]; },
+      more() { return TOPIC.block.more(); } },
+    tx: { say(a) {
+        let hit = null, where = "";
+        if (a && a.length >= 4) { const k = a.toLowerCase();
+          for (const b of R.S.blocks.slice().reverse()) { const t = (b.txs || []).find(x => String(x.id || "").toLowerCase().startsWith(k)); if (t) { hit = t; where = "sealed in #" + num(b.n); break; } }
+          if (!hit) { hit = R.S.mempool.find(x => String(x.id || "").toLowerCase().startsWith(k)); where = hit ? "still waiting for a block" : ""; }
+          if (!hit) return [`i don't see a transaction starting with ${a} on this page.`, "say: show me a transaction, and i'll pick the newest."];
+        } else { const [t, b] = lastTx(); if (!t) return ["no transaction on this page yet.", "they arrive in waves. ask again in a minute."]; hit = t; where = "sealed in #" + num(b.n) + " " + ago2(b); }
+        sh.tx = hit;
+        return [`the newest: ${tx1(hit)}, ${where}.`, "before it got in, the rules checked it at the door. want to know which rules? say: rules"]; },
+      more() { const t = sh.tx; if (!t) return TOPIC.tx.say();
+        return [`id ${String(t.id || "?").slice(0, 16)}…, fee ${t.fee}${t.to ? ", to " + R.short(t.to) : ""}.`, "a payment here is just: from, to, amount, a fee limit and a number in line. no hidden notes."]; } },
+    pending: { say() { const m = R.S.mempool.length;
+        return [m ? `${m} transaction${m === 1 ? "" : "s"} waiting for the next block.` : "nothing waiting. every sent transaction is already sealed.", "they passed the rules at the door; a validator puts them in the next page."]; },
+      more() { return TOPIC.validators.say(); } },
+    rules: { say() { const S = R.S, N = S.validators.length;
+        return [`right now: ${N || "?"} validator${N === 1 ? "" : "s"}, ${N ? R.threshold() : "?"} vote${R.threshold() === 1 ? "" : "s"} needed, fee ${S.fee} per step, ${S.clauses.size} personal rules.`,
+          "here the rules live on the chain itself, written in the Tau language. want to know how they change? say: yes"]; },
+      more() { return TOPIC.changes.say(); } },
+    changes: { say() { const u = R.S.updates.filter(x => x.status === "voting" || x.status === "scheduled").slice(-1)[0];
+        const a = u ? `open now: "${String(u.title || "a rule change").slice(0, 40)}", ${u.votes.size}/${R.threshold()} votes${u.status === "scheduled" ? ", agreed, active at #" + num(u.activateAt) : ""}.` : "no rule change open right now.";
+        return [a, "a change is a proposal to rewrite the rules. it counts only when enough validators agree. the phone rings when one comes in."]; },
+      more() { return ["and anyone can add a personal rule for their own wallet, say: no payment above 50. the chain then refuses it, even for whoever holds the key."]; } },
+    validators: { say() { const v = R.S.validators;
+        if (!v.length) return ["i don't have the validator list yet."];
+        return [`${v.length} validator${v.length === 1 ? "" : "s"} keep${v.length === 1 ? "s" : ""} this chain: ${v.slice(0, 3).map(R.short).join(", ")}${v.length > 3 ? " …" : ""}.`, "they take turns sealing pages and vote on rule changes. wallets, not people."]; },
+      more() { return TOPIC.rules.say(); } },
+    fee: { say() { return [`one step costs ${R.S.fee}. the fee stops anyone from flooding the chain for free.`, "on this testnet balances are test balances, no real value."]; }, more() { return TOPIC.rules.say(); } },
+    tau: { say() { return ["Tau is a language for rules that a machine can check for contradictions before they go live.", "Tau Net is the network that runs on it: its own rules can be changed by agreement. ask: what are the rules?"]; },
+      more() { return ["so a rule change is checked against the rules in force first. a contradiction never reaches the chain."]; } },
+    start: { say() { return ["to make real moves you need a wallet: tauhud.com/wallet/ , three levels, beginner first.", "or play No Memo, a game on the same chain. here you read; there you act."]; }, more() { return TOPIC.help.say(); } },
+    thanks: { say() { return [pick1(["anytime.", "that's what i'm here for.", "sure. the night is long."]), "anything else on your mind? the rules are a good next stop."]; }, more() { return TOPIC.rules.say(); } },
+    status: { say() { const s = status(); return [s === "live" ? `the line is live: node.tauhud.com, block #${num(R.S.height)}.` : s === "off" ? "the node doesn't answer right now. the page keeps trying." : "this browser runs a simulation right now, not the live chain.", "the modem's CD lamp says the same."]; }, more() { return TOPIC.blocks.say(); } },
+  };
+  /* what you wrote → what it is about. Plain words in English (and a few in German), the old commands still work. */
+  const INTENT = [
+    [/^(hi|hey|hello|hallo|moin|yo|good (evening|night|morning))\b/, "hello"],
+    [/(who|what) are you|are you (an? )?(ai|bot|llm|human|real)|wer bist du/, "me"],
+    [/^(help|\?|ls|commands?|hilfe)$|what can (i|you)|how does this work/, "help"],
+    [/thank|thx|danke|cheers/, "thanks"],
+    [/^tx\b|transaction|payment|transfer|überweisung/, "tx"],
+    [/^(pending|mempool|wait)\b|waiting|queue|warte/, "pending"],
+    [/^changes?\b|rule change|proposal|vote|abstimm|änderung/, "changes"],
+    [/^rules?\b|regel|law/, "rules"],
+    [/validator|who (seals|makes|signs|runs)|proposer|\bwer\b/, "validators"],
+    [/fee|cost|gebühr|kost/, "fee"],
+    [/^blocks$|last blocks|recent/, "blocks"],
+    [/^block\b|block|height|newest|latest|chain|page|block/, "block"],
+    [/\btau\b|tau net|tau language|what is this/, "tau"],
+    [/wallet|start|begin|play|how do i|sign|send/, "start"],
+    [/^status$|online|live|connect|node/, "status"],
+  ];
+  const MORE = /^(more|yes|y|ja|why|warum|go on|and|ok|okay|tell me more|open it|inside|weiter|mehr|explain|how)\b/;
+  function think(txt) {
+    const s = txt.trim().toLowerCase(), [w, ...rest] = s.split(/\s+/), arg = rest.join(" ");
+    if (w === "clear" || w === "cls") { CMDS.clear(); return null; }
+    if (w === "exit" || w === "quit") { leave(); return null; }
+    if (w === "lamp") { lampSwitch(); return [el.classList.contains("lamp-off") ? "lamp off. the screens are brighter now." : "lamp on. cosier."]; }
+    if (w === "watch") { sh.watch = true; return ["watching the chain with you. every new block lands here. any key stops."]; }
+    if (MORE.test(s) && sh.topic) return TOPIC[sh.topic].more(arg);
+    for (const [re, k] of INTENT) if (re.test(s)) { sh.topic = k; return TOPIC[k].say(k === "block" ? (/\d/.test(s) ? s : "") : k === "tx" ? (/^tx\s/.test(s) ? arg : "") : arg); }
+    if (/^#?\d+$/.test(s)) { sh.topic = "block"; return TOPIC.block.say(s); }
+    return [pick1(["hm, that one's outside what i can see.", "i only know this chain, and that's not on it.", "not sure i follow."]), "try: what is a block? · who seals them? · what are the rules?"];
+  }
+  /* an answer arrives like someone typing it: a short pause to think, then line after line */
+  function reply(lines) {
+    if (!lines || !lines.length) return;
+    sh.think = true; renderMain();
+    const wait = REDUCED ? 0 : 380 + Math.random() * 420;
+    setTimeout(() => {
+      sh.think = false; if (!on) return;
+      let at = 0;
+      for (const l of lines.slice(0, 3)) { setTimeout(() => { if (on) say(l, "ai"); }, at); at += REDUCED ? 0 : Math.min(1500, 120 + l.length * 13); }
+      renderMain();
+    }, wait);
+  }
   const wr = (txt, cls) => say(txt, cls || "");
-  const why = txt => say("  › " + txt, "muted");   // the plain-words line for beginners
   const CMDS = {
-    help() {
-      wr("commands (read only, nothing is sent):", "sys");
-      wr("  block [n]    trace a block: hash, state, proposer, its transactions");
-      wr("  blocks       the last blocks · pending   what waits to be sealed");
-      wr("  tx <id>      find a transaction by the start of its id");
-      wr("  rules        the rules in force · changes   open rule changes");
-      wr("  validators   who seals the blocks · status   the line to the node");
-      wr("  watch        follow the chain block by block (any key stops)");
-      wr("  whoami · lamp · clear · exit");
-      why("new here? start with: blocks, then block, then rules. Each answer says in plain words what it means.");
-    },
-    status() { modemSays(); },
-    whoami() { wr("guest@node.tauhud.com · you read the chain, you sign nothing. Real moves are made with a wallet, in No Memo for one."); },
-    blocks() { const b = R.S.blocks.slice(-8).reverse(); if (!b.length) return wr("no blocks yet", "warn"); b.forEach(x => wr(`#${pad(x.n, 7)} ${ts(x)}  ${pad((x.txs || []).length + " tx", 6)} sealed by ${R.short(x.proposer || "") || "?"}`));
-      why("a block is one page of the shared record. Every few seconds a validator seals the next page; nobody can change a sealed page."); },
-    block(a) {
-      const S = R.S, n = a ? Number(String(a).replace("#", "")) : S.height, b = S.byHeight.get(n) || S.blocks.find(x => x.n === n);
-      if (!b) return wr(`#${a} is not on this page (it keeps the last ${S.blocks.length} blocks; ${S.blocks[0] ? "#" + S.blocks[0].n + " to #" + S.height : "none yet"})`, "warn");
-      trace(`block #${b.n}`, () => {
-        wr(`#${b.n} · sealed ${ts(b)} by ${R.short(b.proposer || "") || "?"}`, "sys");
-        wr(`  hash  ${b.hash || "?"}`); wr(`  prev  ${b.prev || (S.byHeight.get(b.n - 1) || {}).hash || "?"}`); wr(`  state ${b.state || "?"}`);
-        const t = b.txs || []; wr(`  ${t.length} transaction${t.length === 1 ? "" : "s"}`); t.slice(0, 6).forEach(x => wr(txLine(x))); if (t.length > 6) wr(`  … ${t.length - 6} more`, "muted");
-        why("hash = this page's fingerprint, prev = the page before it, so the pages form a chain. state = the fingerprint of every balance and rule after this page.");
-      });
-    },
-    pending() { const m = R.S.mempool; if (!m.length) wr("nothing waits · every sent transaction is sealed"); else { wr(`${m.length} waiting:`, "sys"); m.slice(-8).forEach(x => wr(txLine(x))); }
-      why("a sent transaction first passes the rules at the door, then waits here until a validator seals it into the next block."); },
-    tx(a) {
-      if (!a || a.length < 4) return wr("tx <first 4+ characters of the id>", "warn");
-      const k = a.toLowerCase(); let hit = null, where = "";
-      for (const b of R.S.blocks.slice().reverse()) { const t = (b.txs || []).find(x => String(x.id || "").toLowerCase().startsWith(k)); if (t) { hit = t; where = "sealed in #" + b.n; break; } }
-      if (!hit) { hit = R.S.mempool.find(x => String(x.id || "").toLowerCase().startsWith(k)); where = hit ? "waiting, not sealed yet" : ""; }
-      if (!hit) return wr(`no transaction ${a}… on this page`, "warn");
-      trace("tx " + a, () => { wr(`${hit.id}`, "sys"); wr(`  ${hit.type} · ${where}`); wr(`  from ${hit.sender || "?"}`); if (hit.to) wr(`  to   ${hit.to}`); if (hit.amount) wr(`  amount ${num(hit.amount)} AGRS`); wr(`  fee ${hit.fee}`); });
-    },
-    rules() {
-      const S = R.S, N = S.validators.length;
-      wr(`validators ${N || "?"} · votes needed ${N ? R.threshold() : "?"} · fee ${S.fee} per step · spec revision ${S.specRev} · personal rules ${S.clauses.size}`);
-      why("on Tau Net the rules themselves live on the chain, written in the Tau language. Validators change them by vote; anyone can add a personal rule for their own wallet.");
-    },
-    changes() {
-      const u = R.S.updates.filter(x => x.status === "voting" || x.status === "scheduled").slice(-4);
-      why("a rule change is a proposal to rewrite part of the network's rules. It takes effect only when enough validators vote for it.");
-      if (!u.length) return wr("no open rule change");
-      u.forEach(x => wr(`"${String(x.title || "rule change").slice(0, 50)}" · ${x.votes.size}/${R.threshold()} ${x.status === "scheduled" ? "agreed, takes effect at #" + num(x.activateAt) : "voting"}`));
-    },
-    validators() { const v = R.S.validators; if (!v.length) return wr("no validator list yet", "warn"); v.forEach((x, i) => wr(`  ${i + 1}. ${R.short(x)}`));
-      why("validators take turns sealing blocks and vote on rule changes. Each one is a wallet, shown by the start of its key."); },
-    watch() { sh.watch = true; wr("watching the chain · any key stops", "sys"); },
-    lamp() { lampSwitch(); },
+    help() {}, blocks() {}, block() {}, tx() {}, pending() {}, mempool() {}, rules() {}, changes() {}, validators() {}, watch() {}, status() {}, whoami() {}, lamp() {},
     clear() { st.term = []; const t = scr.main.querySelector(".rm-term"); if (t) { t.innerHTML = ""; t.dataset.n = "0"; } },
     exit() { leave(); },
   };
-  CMDS["?"] = CMDS.help; CMDS.ls = CMDS.help; CMDS.mempool = CMDS.pending; CMDS.wait = CMDS.pending; CMDS.cls = CMDS.clear; CMDS.quit = CMDS.exit;
-  /* a trace prints a short search before the answer: the feeling of finding it yourself */
-  function trace(what, done) {
-    if (REDUCED) return done();
-    wr(`tracing ${what} `, "muted"); let k = 0;
-    const hex = () => Array.from({ length: 24 }, () => "0123456789abcdef"[Math.random() * 16 | 0]).join("");
-    const t = setInterval(() => { if (!on) return clearInterval(t); if (++k > 4) { clearInterval(t); done(); return; } wr(`  ${hex()} … ${k * 25}%`, "muted"); tone([900 + k * 120], 0, .03, .2, "square"); }, 140);
-  }
   function run(cmd) {
-    const [c, ...a] = cmd.trim().split(/\s+/); if (!c) return;
-    wr(`root@tau:~# ${cmd}`, "sys");
+    if (!cmd.trim()) return;
     sh.hist.push(cmd); sh.hi = sh.hist.length; sh.n++;
     blink(".rm-pc .hdd", 120);
-    if (!R) return wr("no carrier", "bad");
-    const f = CMDS[c.toLowerCase()];
+    CMDS.clear(); say(cmd, "you");   // each exchange gets the whole screen
+    if (!R) return say("no carrier. the line is dead right now.", "bad");
     if (sh.call && sh.call.wait) return callAnswer(cmd);
-    if (f) f(a.join(" ")); else wr(`${c}: not a command here · type help`, "warn");
-    if (sh.n === 3 && !get("tauhud-room-call")) setTimeout(nightCall, 2400);
+    reply(think(cmd));
+    if (sh.n === 4 && !get("tauhud-room-call")) setTimeout(nightCall, 5200);
   }
   function key(e) {
     if (!on || booting || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -571,11 +629,11 @@
     else if (k === "ArrowUp") { sh.hi = Math.max(0, sh.hi - 1); sh.line = sh.hist[sh.hi] || ""; }
     else if (k === "ArrowDown") { sh.hi = Math.min(sh.hist.length, sh.hi + 1); sh.line = sh.hist[sh.hi] || ""; }
     else if (k === "Tab") { const m = Object.keys(CMDS).filter(x => x.startsWith(sh.line.toLowerCase())); if (m.length === 1) sh.line = m[0] + " "; }
-    else if (k.length === 1 && sh.line.length < 60) sh.line += k;
+    else if (k.length === 1 && sh.line.length < 80) sh.line += k;
     else return;
     e.preventDefault(); sh.last = performance.now();
     st.gesture = true; soundUp();
-    if (k.length === 1 || k === "Backspace" || k === "Enter") { if (RS() && RS().running) RS().key(k); else tone([180 + Math.random() * 80], 0, .018, .35, "square"); }
+    if (k.length === 1 || k === "Backspace" || k === "Enter") { if (RS() && RS().running) RS().key(k); else tone([180 + Math.random() * 80], 0, .025, .3, "triangle"); }
     if (view && view !== "main" && k === "Enter") lean("main");
     renderMain();
   }
@@ -591,23 +649,22 @@
       { q: "what does one step cost, the fee? (same screen)", a: () => String(S.fee) },
       { q: "and the newest block, its number? (left screen, the big digits)", a: () => String(S.height), near: 2 },
     ];
-    sh.call = { Q, i: 0, wait: true, ok: 0 }; if (RS()) RS().mood("call");
+    sh.call = { Q, i: 0, wait: true, ok: 0 }; if (RS()) RS().mood("call"); CMDS.clear();
     ringSound(); el.classList.add("ringing"); setTimeout(() => el.classList.remove("ringing"), 1600);
-    wr("", ""); wr("*** talk request from nobody@0.0.0.0 ***", "warn");
-    wr("nobody: you're up late. reading the chain by hand?", "warn");
-    wr("nobody: let's see if you can. answer here.", "warn");
-    setTimeout(() => wr("nobody: " + Q[0].q, "warn"), 900);
+    wr("*** talk request from nobody@0.0.0.0 ***", "call");
+    wr("nobody: you're up late. reading the chain by hand? let's see. answer here.", "call");
+    setTimeout(() => wr("nobody: " + Q[0].q, "call"), 900);
   }
   function callAnswer(txt) {
     const c = sh.call, q = c.Q[c.i], want = q.a(), got = txt.trim().replace(/[#,.\s]/g, "");
     const ok = q.near ? Math.abs(Number(got) - Number(want)) <= q.near : got === want;
-    if (ok) { c.ok++; wr("nobody: right.", "warn"); if (RS()) RS().good(); } else { wr(`nobody: no. ${want}. look at the screens.`, "warn"); if (RS()) RS().bad(); }
+    if (ok) { c.ok++; wr("nobody: right.", "call"); if (RS()) RS().good(); } else { wr(`nobody: no. ${want}. look at the screens.`, "call"); if (RS()) RS().bad(); }
     c.i++;
-    if (c.i < c.Q.length) { setTimeout(() => wr("nobody: " + c.Q[c.i].q, "warn"), 700); return; }
+    if (c.i < c.Q.length) { setTimeout(() => wr("nobody: " + c.Q[c.i].q, "call"), 700); return; }
     c.wait = false; sh.call = null; put("tauhud-room-call", "1"); if (RS()) RS().mood(c.ok === c.Q.length ? "awake" : "night");
     if (c.ok === c.Q.length) {
-      setTimeout(() => { wr("nobody: you read it like plain text. most people only see the lights.", "warn"); wr("nobody: the rest is on the chain. *** connection closed ***", "warn"); awaken(); }, 800);
-    } else setTimeout(() => { wr(`nobody: ${c.ok} of 3. come back when you can read it. *** connection closed ***`, "warn"); }, 800);
+      setTimeout(() => { wr("nobody: you read it like plain text. most people only see the lights.", "call"); wr("nobody: the rest is on the chain. *** connection closed ***", "call"); awaken(); }, 800);
+    } else setTimeout(() => { wr(`nobody: ${c.ok} of 3. come back when you can read it. *** connection closed ***`, "call"); }, 800);
   }
   function awaken() {
     for (const k in scr) { scr[k].classList.remove("flash"); void scr[k].offsetWidth; scr[k].classList.add("flash"); }
