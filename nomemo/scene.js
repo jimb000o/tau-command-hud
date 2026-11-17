@@ -12,6 +12,7 @@
    - Living paintings: `live` in cabin.json lists short painted loops (sea, moon, lantern flame, hourglass sand) cut
      from the painting and played over it through a soft mask, so only what moves changes; during the Tuesday op the
      sea runs rough where a `rough` loop exists. No loops with reduced motion or Save-Data; paused in a hidden tab.
+     The 21:9 hourglass (`once`, `turn`) runs out over a minute and stays empty; a click on it turns it and the sand runs again.
    - Sitting down: on load the cabin shows whole, then the camera comes to the screen (a click skips it).
    - `scene off` / `stand up` and `scene on` / `sit down` in the terminal, or the ⌂ button in the top bar; remembered in
      localStorage (tauhud-nomemo-scene). prefers-reduced-motion: no rocking, no flicker, no camera move. */
@@ -30,12 +31,14 @@
       "The cabin is still being painted. The terminal works the same.": "船舱还在绘制中。终端照常工作。",
       "You stand up from the desk. scene on sits you down again.": "你从桌前站起来。输入 scene on 再坐下。",
       "The cabin needs a wider window (900 px and up). The terminal works the same.": "船舱需要更宽的窗口（900 px 以上）。终端照常工作。",
-      "You sit down at the ship's terminal. scene off stands you up.": "你在船上的终端前坐下。输入 scene off 起身。" },
+      "You sit down at the ship's terminal. scene off stands you up.": "你在船上的终端前坐下。输入 scene off 起身。",
+      "Turn the hourglass": "把沙漏翻过来" },
     ja: { "stand up (scene off)": "立ち上がる（scene off）", "sit down at the ship's terminal (scene on)": "船の端末の前に座る（scene on）",
       "The cabin is still being painted. The terminal works the same.": "船室はまだ描いている途中です。端末はいつも通り使えます。",
       "You stand up from the desk. scene on sits you down again.": "机から立ち上がった。scene on でまた座る。",
       "The cabin needs a wider window (900 px and up). The terminal works the same.": "船室には広い画面（900 px 以上）が必要です。端末はいつも通り使えます。",
-      "You sit down at the ship's terminal. scene off stands you up.": "船の端末の前に座った。scene off で立ち上がる。" },
+      "You sit down at the ship's terminal. scene off stands you up.": "船の端末の前に座った。scene off で立ち上がる。",
+      "Turn the hourglass": "砂時計をひっくり返す" },
   };
   const T = s => ((L[window.TauI18n && TauI18n.lang] || {})[s] || s);
 
@@ -64,12 +67,14 @@
   function place(v, W, H, Y0) {
     const AW = W, AH = H - Y0, [x0, y0, x1, y1] = v.screen, sw = (x1 - x0) * v.w, sh = (y1 - y0) * v.h;
     const cover = Math.max(W / v.w, H / v.h);
-    const need = Math.max(Math.min(1040, AW - 24) / sw, Math.min(520, AH - 24) / sh);
+    const wide = W >= 1600 && v.keys, minW = wide ? 960 : 1040, minH = wide ? 480 : 520;   // a big monitor: the camera sits back so the keyboard (and your hands) show
+    const need = Math.max(Math.min(minW, AW - 24) / sw, Math.min(minH, AH - 24) / sh);
     const most = Math.min((AW - 8) / sw, (AH - 8) / sh);
     const s = Math.min(Math.max(cover, need), most), iw = v.w * s, ih = v.h * s;
     let left = AW / 2 - (x0 + x1) / 2 * iw, top = Y0 + AH / 2 - (y0 + y1) / 2 * ih;
     if (iw >= W) left = Math.min(0, Math.max(W - iw, left)); else left = (W - iw) / 2;
     if (ih >= H) top = Math.min(0, Math.max(H - ih, top));
+    if (wide) top = Math.max(H - ih, Math.min(top, H - 6 - Math.min(1, v.keys[3]) * ih));   // the keyboard's lower edge inside the window
     const gy = top + y0 * ih;                          // the screen must stay below the header and inside the window
     if (gy < Y0 + 4) top += Y0 + 4 - gy;
     const gb = top + y1 * ih; if (gb > H - 4) top -= gb - (H - 4);
@@ -104,10 +109,29 @@
       Object.assign(i.style, { left: w[0] * 100 + "%", top: w[1] * 100 + "%", width: (w[2] - w[0]) * 100 + "%", height: (w[3] - w[1]) * 100 + "%" });
       sway.append(i);
     }
+    bell(v, sway);
     const lamp = el.querySelector(".cab-lamp");
     lamp.style.left = v.lamp[0] * 100 + "%"; lamp.style.top = v.lamp[1] * 100 + "%";
     lamp.style.width = 36 * v.h / v.w + "%";
     live(v);
+  }
+
+  /* the ship's bell (cabin.json bell): the bell and its rope cut from the painting, so bell.js can swing them; the rope's
+     own place is covered with the wall beside it, so a swinging rope leaves no second rope behind */
+  function bell(v, sway) {
+    sway.querySelectorAll(".cab-bell, .cab-rope, .cab-rope-wall").forEach(n => n.remove());
+    const b = v.bell; if (!b) return;
+    const cut = (cls, box, piv, dx) => {
+      const [x0, y0, x1, y1] = box, w = x1 - x0, h = y1 - y0, i = document.createElement("i"); i.className = cls;
+      Object.assign(i.style, { left: x0 * 100 + "%", top: y0 * 100 + "%", width: w * 100 + "%", height: h * 100 + "%",
+        backgroundImage: "url(" + BASE + v.src + ")", backgroundSize: 100 / w + "% " + 100 / h + "%",
+        backgroundPosition: ((x0 + (dx || 0)) / (1 - w)) * 100 + "% " + (y0 / (1 - h)) * 100 + "%",
+        transformOrigin: piv ? ((piv[0] - x0) / w) * 100 + "% " + ((piv[1] - y0) / h) * 100 + "%" : "" });
+      sway.append(i); return i;
+    };
+    cut("cab-rope-wall", b.rope.box, null, b.patch);
+    cut("cab-rope", b.rope.box, b.rope.pivot);
+    cut("cab-bell", b.box, b.pivot);
   }
 
   /* the painted loops over the painting; each fades in once it can play, so a slow line shows the still picture */
@@ -120,12 +144,18 @@
     for (const c of v.live || []) {
       const [x0, y0, x1, y1] = c.box, m = "url(" + BASE + c.mask + ")";
       const vid = document.createElement("video");
-      vid.className = "cab-live"; vid.muted = true; vid.loop = true; vid.playsInline = true; vid.preload = "auto";
+      vid.className = "cab-live"; vid.muted = true; vid.loop = !c.once; vid.playsInline = true; vid.preload = "auto";
       vid.setAttribute("muted", ""); vid.setAttribute("playsinline", ""); vid.setAttribute("aria-hidden", "true");
       Object.assign(vid.style, { left: x0 * 100 + "%", top: y0 * 100 + "%", width: (x1 - x0) * 100 + "%", height: (y1 - y0) * 100 + "%",
         webkitMaskImage: m, maskImage: m });
       vid.dataset.calm = BASE + c.src; if (c.rough) vid.dataset.rough = BASE + c.rough;
       vid.addEventListener("playing", () => { vid.classList.add("on"); root.classList.add("cab-alive"); });
+      if (c.once) vid.addEventListener("ended", () => { vid.dataset.done = "1"; });
+      if (c.turn) {
+        /* the hourglass: it runs out once and stays empty; a click turns it and the sand runs again */
+        vid.classList.add("cab-turn"); vid.title = T("Turn the hourglass");
+        vid.addEventListener("click", () => { delete vid.dataset.done; vid.currentTime = 0; wake(vid); });
+      }
       img.after(vid);
       seen.observe(vid);   // loaded only once it is in view: on a laptop the camera sits close and most loops stay outside
     }
@@ -134,7 +164,7 @@
     for (const e of es) { e.target.inView = e.isIntersecting; wake(e.target); }
   }) : { observe: v => { v.inView = true; wake(v); } };
   function wake(vid) {
-    if (vid.inView && shown && !document.hidden) { if (!vid.getAttribute("src")) vid.src = sea(vid); vid.play().catch(() => {}); }
+    if (vid.inView && shown && !document.hidden) { if (!vid.getAttribute("src")) vid.src = sea(vid); if (!vid.dataset.done) vid.play().catch(() => {}); }
     else vid.pause();
   }
   /* each loop is there as .webm (VP9, smaller) and .mp4 (H.264); the browser gets the one it plays */

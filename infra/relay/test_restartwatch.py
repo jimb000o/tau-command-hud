@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 tmp = tempfile.mkdtemp()
 os.environ["CRUISE_DATA"] = tmp
 os.environ["RESTART_SHIP_PAUSE_AFTER"] = "3"
+os.environ["RESTART_NOTE_REPLY"] = "1"
 import restart_report  # noqa: E402
 import restartwatch  # noqa: E402
 
@@ -137,6 +138,15 @@ check("&& " not in txt and "&amp;&amp;" in txt, "the resume line's && is escaped
 # --- a restart the relay found after being away: no unknown block numbers in the reply
 b2 = restart_report.brief(restarts + [{"detected_at": T + 9000, "old": {"tip": None}}], rows, now=T + 9100)
 check("#None" not in b2["reply"] and "noticed it at " in b2["reply"] and " UTC" in b2["reply"], "reply without the old chain's end says only what is known")
+
+# --- the defaults since 16.11.2026: no pause, no reply in the note (IDNI: restarts come from its updates)
+restartwatch.PAUSE_AFTER, restartwatch.NOTE_REPLY = 0, False
+ship3 = Ship()
+w5 = restartwatch.RestartWatch(os.path.join(tmp, "rw5.json"), rows_fn=lambda: rows)
+check(not w5.on_restart(restarts, ship3, now=T + 1600) and ship3.enabled, "pause off: the ships keep sailing")
+n5 = w5.tick(restarts, rules_ok, 9, now=at + 15 * 60)
+check(n5 and "Hi Andrei" not in n5["text"] and "Volle Zeitleiste" in n5["text"] and "3/3" in n5["text"],
+      "reply off: the note keeps the rules and the timeline link, no reply")
 
 print("failed:", failed)
 sys.exit(1 if failed else 0)

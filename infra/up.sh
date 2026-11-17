@@ -194,7 +194,7 @@ if [ "${1:-}" = "restarts" ]; then
   exit 0
 fi
 # up restartwatch: the relay and alerts built with the code just pulled (the node left alone): after each testnet
-# restart a private note with the reply for IDNI, the ships' pause after RESTART_SHIP_PAUSE_AFTER restarts during calls
+# restart a private note (rules back, timeline link); RESTART_SHIP_PAUSE_AFTER / RESTART_NOTE_REPLY in .env switch on the ships' pause and the reply for IDNI
 if [ "${1:-}" = "restartwatch" ]; then
   when=$(TZ=Europe/Berlin date +%u%H)
   case "$when" in 216|217|218|219|315|316|317|410|411|613|614|615|616)
