@@ -2941,6 +2941,7 @@ TauI18n.add({ strings: {
   "Radio Coco: the radio no longer starts with the same song every time. Each time you turn it on it begins with a different one, most often one of the eleven new songs, never the one it started with last time in your browser.": "Radio Coco：收音机不再每次都从同一首歌开始。每次打开都会换一首开头，多数是十一首新歌之一，并且不会和你的浏览器上次开头的那首相同。",
   "Radio Coco: a page change no longer interrupts the radio. Moving to another page of the site keeps the song that was playing and carries on from where it was, instead of starting a new song. A new song comes only when the last one has ended.": "Radio Coco：切换页面不再打断电台。在本站换到另一个页面时，正在播放的歌会保留并从原来的位置继续，而不是换一首新歌。只有上一首播完后才会换歌。",
   "Radio Coco: one of Rico's Tau words of the day now says “from zero to two hundred and fifty-five” in words, so its voice clip is made like every other line.": "Radio Coco：Rico 的一个今日 Tau 词现在用文字说出“从零到二百五十五”，这样它的配音和其他台词一样制作。",
+  "No Memo: in the cabin on a wide screen the hourglass now really runs. Sand falls through the neck, the top empties over a minute and the heap below grows. When it has run out, click it to turn it. On the other cabin picture the saber over the screen is whole again.": "No Memo：宽屏船舱里的沙漏现在真的在流动。沙子穿过细颈落下，上半部分在一分钟内流空，下面的沙堆越堆越高。流完后，点击它就能把它翻过来。另一幅船舱画里，屏幕上方的弯刀也恢复完整了。",
   /* rule ring hover: who, where from, the rule, one note (index.html ruleHover) */
   "Whoever holds a wallet’s key can also change its rule.": "持有钱包密钥的人也可以更改它的规则。",
   "White Rabbit Key’s cruise ships · run by our server": "White Rabbit Key 的游轮 · 由我们的服务器运行",

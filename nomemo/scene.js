@@ -12,6 +12,7 @@
    - Living paintings: `live` in cabin.json lists short painted loops (sea, moon, lantern flame, hourglass sand) cut
      from the painting and played over it through a soft mask, so only what moves changes; during the Tuesday op the
      sea runs rough where a `rough` loop exists. No loops with reduced motion or Save-Data; paused in a hidden tab.
+     The 21:9 hourglass (`once`, `turn`) runs out over a minute and stays empty; a click on it turns it and the sand runs again.
    - Sitting down: on load the cabin shows whole, then the camera comes to the screen (a click skips it).
    - `scene off` / `stand up` and `scene on` / `sit down` in the terminal, or the ⌂ button in the top bar; remembered in
      localStorage (tauhud-nomemo-scene). prefers-reduced-motion: no rocking, no flicker, no camera move. */
@@ -30,12 +31,14 @@
       "The cabin is still being painted. The terminal works the same.": "船舱还在绘制中。终端照常工作。",
       "You stand up from the desk. scene on sits you down again.": "你从桌前站起来。输入 scene on 再坐下。",
       "The cabin needs a wider window (900 px and up). The terminal works the same.": "船舱需要更宽的窗口（900 px 以上）。终端照常工作。",
-      "You sit down at the ship's terminal. scene off stands you up.": "你在船上的终端前坐下。输入 scene off 起身。" },
+      "You sit down at the ship's terminal. scene off stands you up.": "你在船上的终端前坐下。输入 scene off 起身。",
+      "Turn the hourglass": "把沙漏翻过来" },
     ja: { "stand up (scene off)": "立ち上がる（scene off）", "sit down at the ship's terminal (scene on)": "船の端末の前に座る（scene on）",
       "The cabin is still being painted. The terminal works the same.": "船室はまだ描いている途中です。端末はいつも通り使えます。",
       "You stand up from the desk. scene on sits you down again.": "机から立ち上がった。scene on でまた座る。",
       "The cabin needs a wider window (900 px and up). The terminal works the same.": "船室には広い画面（900 px 以上）が必要です。端末はいつも通り使えます。",
-      "You sit down at the ship's terminal. scene off stands you up.": "船の端末の前に座った。scene off で立ち上がる。" },
+      "You sit down at the ship's terminal. scene off stands you up.": "船の端末の前に座った。scene off で立ち上がる。",
+      "Turn the hourglass": "砂時計をひっくり返す" },
   };
   const T = s => ((L[window.TauI18n && TauI18n.lang] || {})[s] || s);
 
@@ -120,12 +123,18 @@
     for (const c of v.live || []) {
       const [x0, y0, x1, y1] = c.box, m = "url(" + BASE + c.mask + ")";
       const vid = document.createElement("video");
-      vid.className = "cab-live"; vid.muted = true; vid.loop = true; vid.playsInline = true; vid.preload = "auto";
+      vid.className = "cab-live"; vid.muted = true; vid.loop = !c.once; vid.playsInline = true; vid.preload = "auto";
       vid.setAttribute("muted", ""); vid.setAttribute("playsinline", ""); vid.setAttribute("aria-hidden", "true");
       Object.assign(vid.style, { left: x0 * 100 + "%", top: y0 * 100 + "%", width: (x1 - x0) * 100 + "%", height: (y1 - y0) * 100 + "%",
         webkitMaskImage: m, maskImage: m });
       vid.dataset.calm = BASE + c.src; if (c.rough) vid.dataset.rough = BASE + c.rough;
       vid.addEventListener("playing", () => { vid.classList.add("on"); root.classList.add("cab-alive"); });
+      if (c.once) vid.addEventListener("ended", () => { vid.dataset.done = "1"; });
+      if (c.turn) {
+        /* the hourglass: it runs out once and stays empty; a click turns it and the sand runs again */
+        vid.classList.add("cab-turn"); vid.title = T("Turn the hourglass");
+        vid.addEventListener("click", () => { delete vid.dataset.done; vid.currentTime = 0; wake(vid); });
+      }
       img.after(vid);
       seen.observe(vid);   // loaded only once it is in view: on a laptop the camera sits close and most loops stay outside
     }
@@ -134,7 +143,7 @@
     for (const e of es) { e.target.inView = e.isIntersecting; wake(e.target); }
   }) : { observe: v => { v.inView = true; wake(v); } };
   function wake(vid) {
-    if (vid.inView && shown && !document.hidden) { if (!vid.getAttribute("src")) vid.src = sea(vid); vid.play().catch(() => {}); }
+    if (vid.inView && shown && !document.hidden) { if (!vid.getAttribute("src")) vid.src = sea(vid); if (!vid.dataset.done) vid.play().catch(() => {}); }
     else vid.pause();
   }
   /* each loop is there as .webm (VP9, smaller) and .mp4 (H.264); the browser gets the one it plays */
