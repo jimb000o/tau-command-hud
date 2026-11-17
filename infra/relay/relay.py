@@ -38,6 +38,7 @@ from websockets.http11 import Request, Response
 
 from chat import Chat, parse_say
 from chatai import ChatAI
+from roomline import RoomLine
 from roadmap import Roadmap, parse_say as parse_road_say
 from simpredict import SimPredict
 from simprops import SimProps
@@ -447,6 +448,7 @@ class Relay:
         self.chat = Chat()       # the troll box (chat.py); pushes go to the sockets that joined it
         self.chat_subs: set[ServerConnection] = set()
         self.chatai = ChatAI()   # optional second look by Claude (chatai.py); off without CHAT_AI_KEY
+        self.roomline = RoomLine()   # the room's line answers what its script does not understand (roomline.py)
         self.chat_checks: set[asyncio.Task] = set()
         self.chat.on_hide = self.chat_hidden
         self.roadmap = Roadmap(self.chat)   # comments on the road-to-mainnet page, same moderation (roadmap.py)
@@ -1733,6 +1735,9 @@ class Relay:
 
         if cmd == "roadmap":
             return self.roadmap_command(args, ws)
+
+        if cmd == "roomask":   # the room, 1999: a question its line's script did not understand (roomline.py)
+            return envelope_ok("roomask", await self.roomline.ask(ip, args[0] if len(args) == 1 else ""))
 
         if cmd == "report":
             return self.report(args, ip)

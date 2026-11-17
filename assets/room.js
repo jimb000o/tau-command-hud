@@ -510,7 +510,7 @@
     hello: { say() { return [pick1(["hi. i'm the line into this node.", "hey. good to have company on the night shift.", "hello. the node is awake, so am i."]),
         "i read the chain live and say what it means. ask in plain words, or try: what is a block?"]; },
       more() { return TOPIC.me.say(); } },
-    me: { say() { return ["i'm a small program in this room, not a big language model. i only know this chain, but i know it live.", "ask me about blocks, rules, transactions or who keeps it all running."]; },
+    me: { say() { return ["i'm a small program in this room. what i know by heart comes from the live chain; a question i don't know, i pass to a language model for a moment.", "ask me about blocks, rules, transactions or who keeps it all running."]; },
       more() { return ["everything i say comes from the same feed as the screens. if the node goes quiet, so do i."]; } },
     help: { say() { return ["just ask, in your own words. good first questions:", "what is a block? · who seals them? · what are the rules? · show me a transaction"]; },
       more() { return ["the old commands work too: blocks, block 12, tx a1fe, pending, rules, changes, validators, watch, lamp, clear, exit."]; } },
@@ -589,8 +589,34 @@
     if (MORE.test(s) && sh.topic) return TOPIC[sh.topic].more(arg);
     for (const [re, k] of INTENT) if (re.test(s)) { sh.topic = k; return TOPIC[k].say(k === "block" ? (/\d/.test(s) ? s : "") : k === "tx" ? (/^tx\s/.test(s) ? arg : "") : arg); }
     if (/^#?\d+$/.test(s)) { sh.topic = "block"; return TOPIC.block.say(s); }
-    return [pick1(["hm, that one's outside what i can see.", "i only know this chain, and that's not on it.", "not sure i follow."]), "try: what is a block? · who seals them? · what are the rules?"];
+    return null;   // not mine: ask the line (roomline.py on the relay), or say so
   }
+  const NOT_MINE = () => [pick1(["hm, that one's outside what i can see.", "i only know this chain, and that's not on it.", "not sure i follow."]), "try: what is a block? · who seals them? · what are the rules?"];
+  /* the chain as the page sees it, in one line, for the line's harder questions */
+  function facts() {
+    const S = R.S, b = S.byHeight.get(S.height) || S.blocks[S.blocks.length - 1], N = S.validators.length, [t, tb] = lastTx();
+    const u = S.updates.filter(x => x.status === "voting" || x.status === "scheduled").slice(-1)[0];
+    return [`mode ${status()}`, `newest block #${S.height}${b ? ", sealed " + ago2(b) + " by " + R.short(b.proposer || "") + ", " + (b.txs || []).length + " tx" : ""}`,
+      `${N} validators, ${N ? R.threshold() : "?"} votes needed`, `fee ${S.fee} per step`, `spec revision ${S.specRev}`, `${S.clauses.size} personal rules`,
+      `${S.mempool.length} tx waiting`, u ? `open rule change "${String(u.title || "").slice(0, 60)}" ${u.votes.size}/${R.threshold()} ${u.status}` : "no open rule change",
+      t ? `newest tx: ${tx1(t)} in #${tb.n}` : "no tx on this page"].join(" · ");
+  }
+  const LINE = { ws: null, open: null, wait: null };
+  function askLine(q) {
+    return new Promise(done => {
+      let fin = false; const end = v => { if (fin) return; fin = true; clearTimeout(to); LINE.wait = null; done(v); };
+      const to = setTimeout(() => end(null), 7000);
+      const send = ws => { LINE.wait = end; try { ws.send("roomask " + encodeURIComponent(JSON.stringify({ q, f: facts(), h: (sh.talk || []).slice(-2) }))); } catch (e) { end(null); } };
+      if (LINE.ws && LINE.ws.readyState === 1) return send(LINE.ws);
+      try {
+        const ws = LINE.ws = new WebSocket("wss://node.tauhud.com");
+        ws.onopen = () => { ws.send("hello version=1"); send(ws); };
+        ws.onmessage = ev => { let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; } if (m && m.command === "roomask" && LINE.wait) LINE.wait(m.data && m.data.lines); };
+        ws.onclose = ws.onerror = () => { if (LINE.ws === ws) LINE.ws = null; if (LINE.wait) LINE.wait(null); };
+      } catch (e) { end(null); }
+    });
+  }
+  function remember(q, a) { if (!a) return; (sh.talk = sh.talk || []).push([q, a.join(" ")]); if (sh.talk.length > 4) sh.talk.shift(); }
   /* an answer arrives like someone typing it: a short pause to think, then line after line */
   function reply(lines) {
     if (!lines || !lines.length) return;
@@ -616,7 +642,9 @@
     CMDS.clear(); say(cmd, "you");   // each exchange gets the whole screen
     if (!R) return say("no carrier. the line is dead right now.", "bad");
     if (sh.call && sh.call.wait) return callAnswer(cmd);
-    reply(think(cmd));
+    const mine = think(cmd);
+    if (mine !== null || !navigator.onLine) { reply(mine === null ? NOT_MINE() : mine); remember(cmd, mine); }
+    else { sh.think = true; renderMain(); askLine(cmd).then(l => { sh.think = false; const a = l && l.length ? l : NOT_MINE(); reply(a); remember(cmd, a); }); }
     if (sh.n === 4 && !get("tauhud-room-call")) setTimeout(nightCall, 5200);
   }
   function key(e) {
