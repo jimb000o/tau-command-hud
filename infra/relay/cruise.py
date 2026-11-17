@@ -853,6 +853,11 @@ class Cruise:
             else:
                 t["calm"][k] = 0
         one = None
+        if self.why(v) in ("restarted", "recalled"):
+            # 17 Nov 2026: a testnet restart (or our own recall) ended the call; the sends left unanswered around it say
+            # nothing about the pace our node can take, so the pace and the kinds stay as they were (Black Sequence went
+            # 12 -> 11 a minute for six timeouts of a restart). A trick that got through is still held above.
+            return changes
         rate, una = self.rate_of(ship), int(s.get("unanswered") or 0)
         clean = not v.get("left") and una == 0 and not s.get("half") and not sum((v.get("refused") or {}).values())
         refused_tried = [k for k in TRIAL if (v.get("refused") or {}).get(k) and k not in (v.get("trial") or []) and self.tried.get(k)]
