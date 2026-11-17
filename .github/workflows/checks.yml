@@ -61,6 +61,8 @@ jobs:
         run: node tests/rulewords.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Rule kinds (rules in numbers)
         run: node tests/rulekinds.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: The room's line understands beginners' questions and the ones it suggests
+        run: node tests/room-line.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Shared scripts parse
         run: for f in assets/*.js assets/i18n/*/*.js; do node --check "$f" || exit 1; done
 
