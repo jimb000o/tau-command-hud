@@ -4,12 +4,12 @@ The relay already follows a restart by itself (relay.poll_blocks: the old chain'
 and No Memo's vaults set their rules again, the rule numbers start a new day). What used to need the owner was the
 report for IDNI (`up restarts`). Now, once per restart:
 
-  1. right away: when this restart came during a ship call and it is the PAUSE_AFTER-th such restart in PAUSE_DAYS
-     days (counted from the owner's last `up ships on`), the cruise ships pause until the owner turns them on again
-     (our test load stops; a restart is never IDNI's fault in what we write, only a fact);
+  1. right away, only with RESTART_SHIP_PAUSE_AFTER > 0 (off by default): when this restart came during a ship call
+     and it is the PAUSE_AFTER-th such restart in PAUSE_DAYS days (counted from the owner's last `up ships on`), the
+     cruise ships pause until the owner turns them on again (a restart is never IDNI's fault in what we write);
   2. once the rules are back (all in force) or NOTE_MAX minutes passed: one note for the owner's private Telegram chat
-     (alerts.maybe_restart_note reads GET /restarts/notes and sends it): what re-set itself and what not yet, and a
-     short English reply for IDNI made only of facts (restart_report.brief), with the link to the full timeline.
+     (alerts.maybe_restart_note reads GET /restarts/notes and sends it): what re-set itself and what not yet, with the
+     link to the full timeline; with RESTART_NOTE_REPLY=1 also a short English reply for IDNI made only of facts.
 
   GET /restarts/report.txt   the full timeline with tx hashes (restart_report.report), to send IDNI
   GET /restarts/notes        (internal) the notes, newest last
@@ -30,7 +30,10 @@ STATE = os.environ.get("RESTARTWATCH_PATH", os.path.join(DATA, "restartwatch.jso
 NOTE_MIN = float(os.environ.get("RESTART_NOTE_MIN_MINUTES", 8)) * 60     # the rules get a few minutes to come back
 NOTE_MAX = float(os.environ.get("RESTART_NOTE_MAX_MINUTES", 40)) * 60    # then the note goes anyway, with what is missing
 NOTE_AGE = 24 * 3600                                                     # a restart older than this (relay was away) gets no note
-PAUSE_AFTER = int(os.environ.get("RESTART_SHIP_PAUSE_AFTER", 3))          # 0 = the ships never pause by themselves
+# 0 (the default since 16.11.2026: IDNI said its restarts come from its own updates, "restarts are expected for now",
+# not from our load): the ships never pause by themselves; 3 = after 3 restarts during calls in PAUSE_DAYS days
+PAUSE_AFTER = int(os.environ.get("RESTART_SHIP_PAUSE_AFTER", 0))
+NOTE_REPLY = os.environ.get("RESTART_NOTE_REPLY", "0") == "1"   # 1: the note carries a ready reply for IDNI too
 PAUSE_DAYS = float(os.environ.get("RESTART_SHIP_PAUSE_DAYS", 7))
 REPORT_DAYS = int(os.environ.get("RESTART_REPORT_DAYS", 14))
 REPORT_CACHE = 120
@@ -182,8 +185,9 @@ def owner_text(n: dict) -> str:
     if n.get("paused"):
         lines.append("⏸ <b>Schiffe pausiert</b> (" + str(n["paused"].get("restarts")) + " Neustarts während Anläufen). "
                      "Wieder an: <code>" + escape('ssh root@node.tauhud.com "cd /opt/tau-command-hud && sh infra/up.sh ships on"') + "</code>")
-    lines.append("")
-    lines.append("Antwort für Andrei zum Kopieren (nichts wurde an IDNI geschickt):")
-    lines.append("<pre>" + escape(b.get("reply") or "") + "</pre>")
+    if NOTE_REPLY and b.get("reply"):
+        lines.append("")
+        lines.append("Antwort für Andrei zum Kopieren (nichts wurde an IDNI geschickt):")
+        lines.append("<pre>" + escape(b["reply"]) + "</pre>")
     lines.append(f"Volle Zeitleiste: {escape(n.get('report') or '')}")
     return "\n".join(lines)

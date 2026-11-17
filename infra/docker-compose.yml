@@ -71,6 +71,8 @@ services:
       ROADMAP_ENABLED: ${ROADMAP_ENABLED:-1}   # comments on tauhud.com/roadmap/ (relay/roadmap.py, moderated with the troll box); 0 closes them, reading stays
       CRUISE_EXTRA: ${CRUISE_EXTRA:-}   # calls outside the timetable, "2026-11-22 15 queen; 2026-11-25 17 dryrun" (German day and hour)
       CRUISE_ENABLED: ${CRUISE_ENABLED:-1}   # cruise ships at White Rabbit Key (relay/cruise.py): simulated passengers, real test transactions; 0 keeps them away
+      RESTART_SHIP_PAUSE_AFTER: ${RESTART_SHIP_PAUSE_AFTER:-0}   # after a testnet restart (relay/restartwatch.py): 3 pauses the ships after 3 restarts during calls in 7 days; 0 never
+      RESTART_NOTE_REPLY: ${RESTART_NOTE_REPLY:-0}   # 1: the owner's private restart note also carries a ready reply for IDNI
       HACK_ENABLED: ${HACK_ENABLED:-1}   # the hack of the week replayed on the testnet, Thursdays 11:00 German time (relay/hackweek.py); 0 stops it
       NOMEMO_ENABLED: ${NOMEMO_ENABLED:-1}   # No Memo's crew purse (relay/nomemo.py): pays the chapters' shares back; 0 switches it off
       NOMEMO_TRACER: ${NOMEMO_TRACER:-1}   # the Tracer: dust from a lookalike of the drop after the first chapter; 0 keeps it quiet
