@@ -821,4 +821,6 @@ TauI18n.add({ strings: {
   "always o1[t] = i1[t] on a sweater: the shortest rule in Tau, from the Tau HUD shop.": "印在毛衣上的 always o1[t] = i1[t]：Tau 里最短的规则，来自 Tau HUD 商店。",
   "block {a}": "区块 {a}",
   "{x}: your rule shows on the answers page a few minutes after its block.": "{x}：区块封入几分钟后，你的规则会出现在答案页上。",
+  "From the rule builder: your rule is filled in below. Check it, then sign it.": "来自规则搭建器：你的规则已填在下面。检查一下，然后签署。",
+  "From the rule builder: your rule is filled in. Make your account first, then sign it.": "来自规则搭建器：你的规则已填好。先创建你的账户，然后签署。",
 } });

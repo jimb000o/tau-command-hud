@@ -9,7 +9,8 @@
      pro  one compact line with the proof; 4 s, no glow
    The first time of a kind in this browser (key) gets a "first time" tag and a few sparks. Reduced motion: it just appears.
 
-   TauWin.moment({ title, meaning, proof, href, at, key, once })   title: what you did · meaning: what it means · proof: "block #12 · tx ab12…"
+   TauWin.moment({ title, meaning, proof, href, at, key, once, go })   title: what you did · meaning: what it means · proof: "block #12 · tx ab12…"
+                                                             go: { href, text, onclick } a button for the next step (the card then stays 14 s)
                                                              href: where the proof is · at: the element to glow · key: kind of first
    TauWin.glow(el)                                           the element glows once
    TauWin.count(el, to, ms)                                  a number counts up to its new value */
@@ -42,6 +43,9 @@
 .twin .tw-m{display:block;color:#b9cbbf;margin-top:2px}
 .twin .tw-p{display:inline-block;margin-top:4px;font:500 11.5px/1.3 "JetBrains Mono",ui-monospace,monospace;color:#39ff8a;text-decoration:none;border-bottom:1px dotted rgba(57,255,138,.5)}
 .twin .tw-p:hover{color:#fff}
+.twin .tw-go{display:inline-flex;align-items:center;min-height:36px;margin-top:8px;padding:6px 14px;border-radius:8px;background:#39ff8a;color:#000;font:600 12px/1.2 "Sora",system-ui,sans-serif;letter-spacing:.04em;text-decoration:none}
+.twin .tw-go:hover{background:#fff}
+.twin.pro .tw-go{margin:0 0 0 10px;min-height:30px;padding:4px 10px}
 .twin .tw-x{flex:none;align-self:flex-start;width:44px;height:44px;margin:-8px -8px -8px 0;border:0;border-radius:10px;background:none;color:#8aa596;font-size:20px;line-height:1;cursor:pointer}
 .twin .tw-x:hover{color:#fff;background:rgba(255,255,255,.06)}
 .twin.pro{padding:8px 8px 8px 12px;gap:10px}.twin.pro .tw-mark,.twin.pro .tw-mark svg{width:26px;height:26px}.twin.pro .tw-t{display:inline;font-size:13px}.twin.pro .tw-p{margin:0 0 0 10px}
@@ -84,13 +88,15 @@
     const sparks = isFirst && lv !== "pro" ? Array.from({ length: 10 }, (_, k) => { const a = k / 10 * Math.PI * 2, r = 26 + (k % 3) * 6; return `<i class="tw-sp" style="--x:${Math.round(Math.cos(a) * r)}px;--y:${Math.round(Math.sin(a) * r)}px;animation-delay:${.55 + (k % 4) * .04}s"></i>`; }).join("") : "";
     const proof = o.proof && lv !== "new" ? (o.href ? `<a class="tw-p" href="${esc(o.href)}">${esc(o.proof)} →</a>` : `<span class="tw-p">${esc(o.proof)}</span>`) : "";
     const meaning = o.meaning && lv !== "pro" ? `<span class="tw-m">${esc(o.meaning)}</span>` : "";
+    const go = o.go && o.go.href ? `<a class="tw-go" href="${esc(o.go.href)}">${esc(o.go.text)}</a>` : "";
     c.innerHTML = `<span class="tw-mark"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="tw-fill" cx="20" cy="20" r="17"/><circle class="tw-ring" cx="20" cy="20" r="17" pathLength="1"/><path class="tw-ck" d="M12.5 20.5l5 5L28 14.5" pathLength="1"/></svg>${sparks}</span>`
-      + `<span class="tw-txt"><span class="tw-t">${esc(o.title)}${isFirst ? `<span class="tw-tag">${esc(T("first time"))}</span>` : ""}</span>${meaning}${proof}</span>`
+      + `<span class="tw-txt"><span class="tw-t">${esc(o.title)}${isFirst ? `<span class="tw-tag">${esc(T("first time"))}</span>` : ""}</span>${meaning}${proof}${go ? (lv === "pro" ? "" : "<br>") + go : ""}</span>`
       + `<button type="button" class="tw-x" aria-label="${esc(T("Close"))}">×</button>`;
     c.querySelector(".tw-x").onclick = close;
+    if (go && o.go.onclick) c.querySelector(".tw-go").addEventListener("click", o.go.onclick);
     document.body.appendChild(c); card = c;
     if (lv !== "pro") glow(o.at);
-    let left = lv === "pro" ? 4000 : lv === "new" ? 8000 : 7000;
+    let left = go ? 14000 : lv === "pro" ? 4000 : lv === "new" ? 8000 : 7000;
     const run = () => { clearTimeout(timer); timer = setTimeout(close, left); };
     c.onmouseenter = () => clearTimeout(timer); c.onmouseleave = () => { left = 2500; run(); };
     run();
