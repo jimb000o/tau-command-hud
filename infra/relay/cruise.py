@@ -645,6 +645,7 @@ class Cruise:
             self.node = st.get("node") if isinstance(st.get("node"), dict) else {}
         except (OSError, ValueError, TypeError, AttributeError):
             self._saved_cur = None
+        self.unlearn_restarts()
         c = self._saved_cur
         if c and c.get("id") and c.get("ship") in SHIPS and self.clock() >= int(c.get("t0") or 0) + VISIT_MIN * 60 \
                 and not any(v.get("id") == c["id"] for v in self.visits):   # it ended while the relay was down
@@ -826,6 +827,17 @@ class Cruise:
     def tricks_of(self, ship: str) -> dict:
         n = (self.tune.get(ship) or {}).get("tricks") or {}
         return {k: max(1, min(TRICK_START, int(n.get(k, TRICK_START)))) for k in TRICKS}
+
+    def unlearn_restarts(self) -> None:
+        """A pace a restart-ended call taught before tune_after knew better (17 Nov 2026: Black Sequence 12 -> 11 for six
+        timeouts of a testnet restart) is taken back, once, while the ship still goes at that pace."""
+        for s in reversed(self.visits):
+            t = self.tune.get(s.get("ship")) or {}
+            for c in s.get("changed") or []:
+                if c.get("what") == "transactions a minute" and "testnet restarted" in str(s.get("note") or "") \
+                        and not c.get("undone") and t.get("rate") == c.get("to"):
+                    t["rate"], c["undone"] = c.get("from"), True
+                    log.info("cruise: %s back to %s a minute, a testnet restart taught it %s", s.get("ship"), c.get("from"), c.get("to"))
 
     def tune_after(self, v: dict, s: dict) -> list[dict]:
         """What the ship changes for its next call, by fixed rules from what this visit's logbook counted (see the top)."""
