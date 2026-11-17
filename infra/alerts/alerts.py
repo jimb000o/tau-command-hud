@@ -703,7 +703,8 @@ def air(text):
 # The official Tau profile on X is tagged where a post is about Tau itself (Kilian, 13 Nov 2026): once per post at most,
 # never where "Tau" only names a Tau rule, Tau HUD or the hashtag, and at most TAU_TAG_PER_DAY posts a day so the
 # profile is not over-tagged. TAU_TAG_X= (empty) switches it off.
-TAU_TAG_X = os.environ.get("TAU_TAG_X", "taulogicai").strip().lstrip("@")
+# Where the post names IDNI in its text, the tag goes there as "IDNI (@TauLogicAI)" (Kilian, 17 Nov 2026), else at the end.
+TAU_TAG_X = os.environ.get("TAU_TAG_X", "TauLogicAI").strip().lstrip("@")
 TAU_TAG_PER_DAY = int(os.environ.get("TAU_TAG_PER_DAY", 2))
 
 
@@ -718,11 +719,25 @@ TAU_TAG_PATH = os.environ.get("TAU_TAG_PATH", os.path.join(os.path.dirname(os.en
                                                             "tau-tag.json"))
 
 
+def tau_tag_inline(text: str) -> str | None:
+    """The text with "IDNI" made "IDNI (@TauLogicAI)" at its first mention below the headline and above the foot, or None."""
+    head, sep, rest = text.partition("\n")
+    body, foot_sep, foot = rest.rpartition("\n\n") if "\n\n" in rest else ("", "", rest)
+    m = re.search(r"\bIDNI\b(?!['’]s|\s*\()", body)
+    if not sep or not m:
+        return None
+    return head + sep + body[:m.end()] + f" (@{TAU_TAG_X})" + body[m.end():] + foot_sep + foot
+
+
 def tau_tag(text: str, now: float | None = None) -> str:
-    """The X post with @TAU_TAG_X added once at its end, when it is about Tau, fits in 280 and the day has room."""
+    """The X post with @TAU_TAG_X added once, when it is about Tau, fits in 280 and the day has room: right after the first
+    "IDNI" in the text below the headline ("IDNI (@TauLogicAI) merged …"), else at its end. The source line at the foot
+    ("not run by IDNI") is never tagged."""
     if not TAU_TAG_X or not isinstance(text, str) or ("@" + TAU_TAG_X).lower() in text.lower() or not about_tau(text):
         return text
-    out = text.rstrip() + " @" + TAU_TAG_X
+    out = tau_tag_inline(text)
+    if not out or x_len(out) > 280:
+        out = text.rstrip() + " @" + TAU_TAG_X
     if x_len(out) > 280:
         return text
     day = time.strftime("%Y-%m-%d", time.gmtime(now if now is not None else time.time()))
@@ -752,25 +767,36 @@ def x_final(text: str, tag: bool = True) -> str:
 def x_post(lines: list[str], link: str | None = None, keep: int = 1, foot: str = X_REAL, tag: str = X_TAG,
            with_link: bool | None = None) -> str:
     """Lines as one post of at most 280 (first line the headline): the last line loses sentences, then whole lines go
-    (never the first `keep`), then it is cut. `foot` and the hashtag always close it; the link joins them only with
+    (never the first `keep`), then it is cut at a word. A line may be a list of choices, longest first: the first one that
+    fits whole is taken, so a caller that gives a short choice never gets a post that stops mid-sentence (17 Nov 2026:
+    "…in about 2 ms inste…" on X). `foot` and the hashtag always close it; the link joins them only with
     X_LINKS (it makes a post 13 times dearer), or where the caller says so for this one post (`with_link`)."""
     links = X_LINKS if with_link is None else with_link
     tag = " ".join([tag] + [t for t in X_MUST if t not in (tag or "").split()]).strip()
     tail = "\n\n" + " · ".join(x for x in (foot, link if link and links else None, tag) if x)
-    out = [" ".join(str(x).split()) for x in lines if x and str(x).strip()]
-    if not links:
-        out = [re.sub(r"\s*https?://\S+", "", x) for x in out]
+    def tidy(x) -> str:
+        x = " ".join(str(x).split())
+        return x if links else re.sub(r"\s*https?://\S+", "", x)
+    out = []
+    for x in lines:
+        alts = [tidy(a) for a in (x if isinstance(x, (list, tuple)) else [x]) if a and str(a).strip()]
+        alts = [a for a in alts if a]
+        if not alts:
+            continue
+        fit = [a for a in alts if x_len(x_join(out + [a]) + tail) <= 280]
+        out.append(fit[0] if fit and out else alts[-1] if out else alts[0])   # else the shortest, to lose sentences
     while out and x_len(x_join(out) + tail) > 280:
         n = len(re.split(r"(?<=[.!?])\s+(?=[A-Z“\"(])", out[-1]))
         if n > 1:
             out[-1] = sentences(out[-1], n - 1)
-        elif len(out) > keep:
+        elif len(out) > max(keep, 1):
             out.pop()
         else:
-            text = x_join(out)
-            while text and x_len(text + "…" + tail) > 280:
-                text = text[:-1]
-            out = [text.rstrip(" ,;:.\n") + "…"]
+            words = x_join(out).split(" ")
+            while len(words) > 1 and x_len(" ".join(words) + "…" + tail) > 280:
+                words.pop()
+            out = [" ".join(words).rstrip(" ,;:.—-\n") + "…"]
+            break
     return x_join(out) + tail
 
 
@@ -3343,7 +3369,7 @@ class Watcher:
             st["day"], st["current"] = day, did
             self.save_state()
             if d.get("x"):
-                await self.post_x(x_post(idni_digest.x_lines(d), foot=idni_digest.X_FOOT, keep=2), "idni digest", now, spare=True)
+                await self.post_x(x_post(idni_digest.x_lines(d), foot=idni_digest.X_FOOT), "idni digest", now, spare=True)
             else:
                 log.info("idni digest %s: Telegram only (a small day)", did)
         for k in ("posted", "x_posted"):
@@ -3380,7 +3406,7 @@ class Watcher:
             st["x_posted"][pid] = round(now)
             st["posted"].setdefault(pid, round(now))
             self.save_state()
-            await self.post_x(x_post(fixwatch.x_lines(post), foot=fixwatch.X_FOOT, keep=2), "fixed post", now, spare=True)
+            await self.post_x(x_post(fixwatch.x_lines(post), foot=fixwatch.X_FOOT), "fixed post", now, spare=True)
         self.save_state()
 
     # ---------- the Key Crier: White Rabbit Key's shared island, the day before (relay /isle) ----------
