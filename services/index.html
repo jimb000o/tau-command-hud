@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-wfit="one" data-wfit-in=".grid, aside">
 <head>
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
@@ -123,9 +123,16 @@ footer a { color: var(--dim); }
   .btn, .search { min-height: 44px; }
   .grid { grid-template-columns: minmax(0, 1fr); }
 }
+/* wide screens (2560 × 1440, ultrawide): the whole width, zoomed until the directory fills the screen (assets/widefit.js) */
+html.wfit .wrap { max-width: none; zoom: var(--z); height: var(--wfH); }
+html.wfit .sub { max-width: 110ch; }
+.why { margin: 6px 0 0; color: var(--text); font-size: 12.5px; max-width: 110ch; }
+.why b { color: var(--ok); font-weight: 600; margin-right: 6px; }
+@media (min-width: 1001px) and (max-height: 820px) { .why { display: none; } }   /* a laptop keeps its one screen; the page says it again further down */
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/widefit.js" defer></script>
 </head>
 <body>
 <div class="wrap">
@@ -137,6 +144,7 @@ footer a { color: var(--dim); }
     <div>
       <p class="lead">Services on the Tau testnet</p>
       <p class="sub">What people build on Tau Testnet Alpha, in one directory. An account shows up here <b>by itself</b> once the chain shows it serving other wallets: nobody signs up, nobody approves, the numbers come from the blocks. Ours are listed first and marked.</p>
+      <p class="why"><b>Why it matters</b>On Tau Net an account's own rule can ask another account to co-sign, give it a rule or hold a payment, so anyone can offer a service to other wallets on the chain itself. This directory shows which ones already do, counted from the blocks.</p>
     </div>
     <div class="stats" aria-live="polite">
       <div class="stat"><b id="nServices">–</b><span>services found</span></div>

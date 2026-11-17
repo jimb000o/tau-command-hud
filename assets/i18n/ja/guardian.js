@@ -182,4 +182,6 @@ TauI18n.add({ strings: {
   "Sent. Once a block holds it, your rule is locked.": "送信しました。ブロックに入ると、ルールがロックされます。",
   "Sent. Your rule is locked, so the change waits for your code in step 3 once a block holds it.": "送信しました。ルールはロックされているので、ブロックに入った後、変更はステップ 3 であなたのコードを待ちます。",
   "Sent. Your rule is locked, so the removal waits for your code in step 3 once a block holds it.": "送信しました。ルールはロックされているので、ブロックに入った後、削除はステップ 3 であなたのコードを待ちます。",
+  "Why it matters": "なぜ大事か",
+  "With one key, whoever copies it can empty the wallet. With the Guardian and a rule lock, a copied key alone can no longer send more than your daily allowance, and changing the rule takes your code or 1,000 blocks in which you can cancel it.": "鍵が一つだけなら、それをコピーした人がウォレットを空にできます。Guardian とルールロックがあれば、コピーされた鍵だけでは一日の上限を超えて送れません。ルールの変更にはあなたのコード、または取り消せる 1,000 ブロックの待ち時間が必要です。",
 } });

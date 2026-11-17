@@ -92,6 +92,10 @@ footer { color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); 
 footer a { color: var(--dim); }
 footer p { margin: 0; }
 #tip { position: fixed; z-index: 70; pointer-events: none; max-width: min(340px, calc(100vw - 24px)); background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; font: 12px/1.45 var(--mono); color: var(--text); box-shadow: 0 10px 30px -10px #000; }
+/* wide screens: the whole width, the charts take a share of the screen's height (assets/widefit.js sets --z and --wfH) */
+html.wfit .wrap { max-width: none; }
+html.wfit svg.ch { height: calc(var(--wfH) * .34); max-height: none; }
+html.wfit .sub { max-width: 110ch; }
 #tip .tv { font: 600 15px var(--display); color: #fff; }
 @media (max-width: 700px) {
   .ship { font-size: 11px; }
@@ -102,9 +106,13 @@ footer p { margin: 0; }
 }
 @media (min-width: 900px) and (max-height: 720px) { svg.ch { height: calc(104px - var(--ship, 0px)) !important; } .note { font-size: 11px; line-height: 1.4; } .tile { padding: 6px 12px; } }
 @media (min-width: 900px) and (max-height: 860px) { .sub { display: none; } svg.ch { height: calc(clamp(96px, 17vh, 180px) - var(--ship, 0px)); } .wrap { gap: 9px; } }
+.why { margin: 6px 0 0; color: var(--text); font-size: 12.5px; max-width: 110ch; }
+.why b { color: var(--ok); font-weight: 600; margin-right: 6px; }
+@media (min-width: 1001px) and (max-height: 820px) { .why { display: none; } }   /* a laptop keeps its one screen; the page says it again further down */
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/widefit.js" defer></script>
 </head>
 <body>
 <div class="wrap">
@@ -117,6 +125,7 @@ footer p { margin: 0; }
     <div>
       <p class="lead">How hard the testnet is working.</p>
       <p class="sub">Every move in White Rabbit Key is a real test transfer, so the more people play, the more the testnet has to carry. This page shows what it carries, minute by minute, for the last six hours: what gets sealed, what waits, and how long a transaction waits for its block.</p>
+      <p class="why"><b>Why it matters</b>One validator seals every block on the testnet today. How it holds up when many people play shows, in the open, where the limits are before Tau Net carries anything real.</p>
       <p class="ship" id="ship" hidden data-tip="A cruise ship at White Rabbit Key.\nIts passengers are simulated, their transactions real: at most 12 a minute, half as many while the testnet strains, none once it stalls."><span id="shipText"></span><a id="shipLog" href="/cruise/">Logbook</a></p>
     </div>
     <div class="verdict" id="verdict" data-tip="Load right now.\nFrom the last ten minutes: waiting times, gaps between blocks and refused sends."><b><i></i><span id="vWord">…</span></b><span id="vWhy">Reading the relay</span></div>
@@ -302,7 +311,7 @@ function shipLine(sh) {
 function roomForShip() {
   const root = document.documentElement, el = $("ship"), z = parseFloat(root.style.getPropertyValue("--z")) || 1;
   root.style.setProperty("--ship", "0px");
-  if (innerWidth < 900 || el.hidden) return;
+  if (innerWidth < 900 || el.hidden || root.classList.contains("wfit")) return;   // wide screens: widefit.js sizes the page
   const over = root.scrollHeight - innerHeight;
   if (over > 0) root.style.setProperty("--ship", Math.round(Math.min(over, el.getBoundingClientRect().height + 8 * z) / z) + "px");
 }
@@ -332,18 +341,10 @@ async function tick() {
 }
 tick();
 if (!SAMPLE) setInterval(tick, 30000);
-/* wide screens (an ultrawide 3440 × 1305, a TV): the page grows with the screen instead of standing in a narrow column */
-function fit() {
-  const root = document.documentElement, z0 = root.style.getPropertyValue("--z"); root.style.setProperty("--z", "1");
-  if (innerWidth > 1700) {
-    const w = document.querySelector(".wrap"), r = w.getBoundingClientRect(), h = r.height + 44;   // the page's own height at its normal size: it grows only as far as the screen has room
-    root.style.setProperty("--z", Math.max(1, Math.min((innerWidth - 40) / 1280, (innerHeight - r.top) / h)).toFixed(3));
-  }
-  if (LAST && root.style.getPropertyValue("--z") !== z0) render(LAST);   // drawn again at the new size (a ship line may wrap differently)
-}
-fit();
-addEventListener("resize", () => { fit(); if (LAST) render(LAST); });
-document.fonts && document.fonts.ready.then(fit);
+/* wide screens (an ultrawide 3440 × 1440, a TV): the page uses the whole width and grows until it fills the height (assets/widefit.js) */
+function fit() { if (window.TauWideFit) TauWideFit.fit(); }
+addEventListener("tau:widefit", () => { if (LAST) render(LAST); });   // drawn again at the new size
+addEventListener("resize", () => { if (LAST && !document.documentElement.classList.contains("wfit")) render(LAST); });
 /* the charts are drawn for the width they really have, also when the layout settles after the first draw */
 if (window.ResizeObserver) { let w = 0; new ResizeObserver(es => { const n = Math.round(es[0].contentRect.width); if (n !== w) { w = n; if (LAST) render(LAST); } }).observe($("c1")); }
 </script>

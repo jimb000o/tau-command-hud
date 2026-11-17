@@ -86,5 +86,7 @@ TauI18n.add({ strings: {
   "Simulated cruise passengers book a call days ahead with a retractable test payment to the ship's till, released when the ship arrives. If the call is called off before, our server takes each booking back. Only the sender can take one back, so no third party decides.": "模拟的游轮乘客提前几天用一笔可撤回的测试付款预订停靠，付到船的收银处，船到达时放款。如果停靠在此之前取消，我们的服务器会把每笔预订撤回。只有付款方能撤回，所以没有第三方做决定。",
   "paid out to the ship's till": "已付给船的收银处",
   "refunded": "已退回",
-  "in escrow": "托管中"
+  "in escrow": "托管中",
+  "Why it matters": "为什么重要",
+  "On Tau Net an account's own rule can ask another account to co-sign, give it a rule or hold a payment, so anyone can offer a service to other wallets on the chain itself. This directory shows which ones already do, counted from the blocks.": "在 Tau Net 上，一个账户自己的规则可以请另一个账户共同签名、给它一条规则或代管一笔付款，所以任何人都可以直接在链上为其他钱包提供服务。这个目录显示哪些服务已经在这样做，数字来自区块。"
 } });
