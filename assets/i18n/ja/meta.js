@@ -447,4 +447,16 @@ TauI18n.add({ strings: {
   "No Memo's own wallets on our server: the relay purse paying a claimed contract, the Tracer's lookalike dust, the bank topping up the drop. Real transactions, but sent by the game, not by players: never counted as user transactions.": "私たちのサーバー上の No Memo 自身のウォレット：請求された契約へのリレー財布の支払い、Tracer のそっくりなダスト、銀行によるドロップへの補充。実際の取引ですが、プレイヤーではなくゲームが送ったもの：ユーザー取引には数えません。",
   "hack of the week": "今週のハック",
   "The hack of the week's four test wallets on our server, trying one known trick against the testnet each Thursday. Real transactions, but no people: never counted as user transactions.": "私たちのサーバー上にある今週のハックの4つのテストウォレット。毎週木曜日に既知の手口をひとつテストネットで試します。実際の取引ですが、人ではありません：ユーザー取引には数えません。",
+  // the 7-day chip's own chart
+  "Added up": "累計",
+  "7-day average": "7日平均",
+  "Chart": "グラフ",
+  "The 7-day average starts once a full week is counted.": "7日平均は丸1週間分を数えてから表示されます。",
+  "Visitors a day, 7-day average": "1日あたりの訪問者、7日平均",
+  "visitors a day, 7-day average": "1日あたりの訪問者、7日平均",
+  "against the 7 days before": "前の7日と比べて",
+  "last 7 full days": "直近の丸7日",
+  "a day": "1日あたり",
+  "Click for its chart over time.": "クリックで推移のグラフを表示。",
+  "Average visitors per day over the last 7 full days,\ncompared with the 7 days before.\nClick for its chart over time.": "直近の丸7日の1日あたり平均訪問者数、\nその前の7日との比較。\nクリックで推移のグラフを表示。",
 } });

@@ -55,6 +55,14 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .kpi { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--dim); font-size: 12px; white-space: nowrap; background: rgba(16,16,18,.86); }
 .kpi b { color: #fff; font: 600 13px var(--display); margin-right: 4px; font-variant-numeric: tabular-nums; }
 .kpi.up b { color: var(--ok); }
+/* the 7-day chip opens its own chart (the Growth panel's "7-day average" view) */
+.kpi.go { cursor: pointer; }
+.kpi.go:hover, .kpi.go:focus-visible { border-color: var(--hair); color: #fff; outline: none; }
+.kpi.go.on { border-color: rgba(57,255,138,.6); }
+.gview { display: inline-flex; gap: 4px; }
+.gview button { font: 600 11px var(--display); letter-spacing: .12em; background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 0 10px; min-height: 24px; cursor: pointer; text-transform: uppercase; }
+.gview button:hover { color: #fff; border-color: var(--hair); }
+.gview button[aria-pressed="true"] { color: var(--ok); border-color: rgba(57,255,138,.6); }
 .main { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
 .col { display: grid; gap: 14px; min-width: 0; align-content: start; }
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; display: flex; flex-direction: column; }
@@ -219,7 +227,7 @@ html.fit .chart { min-height: 0; }
 html.fit.wide .wrap > .main { grid-template-columns: minmax(0, 1fr) 420px 420px; }
 html.fit.wide .col.side { display: contents; }
 @media (max-width: 700px) {
-  .range button, .kind button, .sites button { min-height: 44px; padding: 0 10px; }
+  .range button, .kind button, .sites button, .gview button { min-height: 44px; padding: 0 10px; }
   .chart { min-height: 200px; }
   td.hide-s, th.hide-s { display: none; }
   /* One day: four columns on a phone; the headings take less spacing and may break, so the table stays inside the panel */
@@ -269,7 +277,7 @@ html.fit.wide .col.side { display: contents; }
       </section>
       <div class="row2">
         <section class="panel" id="pGrowth">
-          <h2><span id="growthTitle">Growth</span> <span class="aside" id="growthNote"></span></h2>
+          <h2><span id="growthTitle">Growth</span> <span class="gview" id="gView" role="group" aria-label="Chart" hidden><button type="button" data-g="sum">Added up</button><button type="button" data-g="avg">7-day average</button></span> <span class="aside" id="growthNote"></span></h2>
           <div class="chart small" id="cGrowth"></div>
         </section>
         <section class="panel who">
@@ -516,7 +524,7 @@ const monthDate = t => new Date(t).toLocaleDateString(LOC || "en-GB", { month: "
    number (no axis of its own), hairline grid, a crosshair and a small card on hover.
    pts: [{t, v, vol?, open?}] in time order; opts: {label, lo0, avg, onPick, tip(pt) -> html} */
 function lineChart(box, pts, opts) {
-  const { start, end, first, step } = domain();
+  const { start, end, first, step } = opts.dom || domain();
   const w = Math.max(box.clientWidth, 10), h = Math.max(box.clientHeight, 10);
   const vals = pts.map(p => p.v), hi = Math.max(opts.bars ? 1 : 1, ...vals), lo = opts.lo0 ? 0 : Math.min(...vals);
   const tk = ticks(opts.lo0 ? 0 : lo - (hi - lo) * .15, hi + (hi - lo || hi) * .12);
@@ -739,9 +747,40 @@ function drawNodesVs(box) {
   $("growthNote").textContent = `${T("Tau HUD launch")}: ${dayLabel(dayKey(LAUNCH))}, 16:45 UTC`;
 }
 
+/* visitors of one of our sites (Tau HUD or Agorzilla), where the 7-day chip means visitors a day */
+const VIS = () => !NET() && !NM() && !RB() && !ND();
+let gview = "sum";
+try { if (localStorage.getItem("tauhud-meta-gview") === "avg") gview = "avg"; } catch (e) {}
+/* the 7-day chip as a chart: for every day, the average visitors a day over that day and the six before it, so the
+   chip's number can be followed back to the first week. 24H and 7D show the last two weeks, one point a day. */
+function drawWeekAvg(box) {
+  $("growthTitle").textContent = T("Growth");
+  const keys = Object.keys(data.days).sort(), v = k => (data.days[k] || [0])[0];
+  if (!keys.length) { box.innerHTML = `<p class="empty">${esc(T("The climb starts with the first visitors."))}</p>`; $("growthNote").textContent = ""; return; }
+  const end = Date.parse(data.today + "T00:00:00Z"), first = Date.parse(keys[0] + "T00:00:00Z"), from = first + 6 * DAY;
+  const span = range && range < 14 ? 14 : range;
+  const start = span ? end - (span - 1) * DAY : Math.min(first, end - 13 * DAY);
+  const avgAt = t => { if (t < from) return null; let sum = 0; for (let i = 0; i < 7; i++) sum += v(dayKey(t - i * DAY)); return sum / 7; };
+  const pts = [];
+  for (let t = start; t <= end; t += DAY) { const a = avgAt(t), b = avgAt(t - 7 * DAY); pts.push({ k: dayKey(t), t, v: a == null ? null : Math.round(a * 10) / 10, prev: b, open: t === end }); }
+  if (!pts.some(p => p.v != null)) { box.innerHTML = `<p class="empty">${esc(T("The 7-day average starts once a full week is counted."))}</p>`; $("growthNote").textContent = ""; return; }
+  const chg = p => p.prev ? Math.round(100 * (p.v - p.prev) / p.prev) : null;
+  lineChart(box, pts, {
+    label: T("Visitors a day, 7-day average"), lo0: true, bars: kind === "bar", dom: { start, end, first: from, step: DAY },
+    tip: p => { const c = chg(p); return `<div class="d">${esc(dayLabel(p.k, true))}${p.open ? " · " + esc(T("still counting")) : ""}</div><b>${fmt(p.v)}</b> ${esc(T("visitors a day, 7-day average"))}` + (c == null ? "" : `<br>${c >= 0 ? "▲" : "▼"}${Math.abs(c)}% ${esc(T("against the 7 days before"))}`); },
+    onPick: p => { sel = p.k; render(); },
+  });
+  // the same numbers as the chip: the last 7 full days against the 7 before
+  const y = end - DAY, a = avgAt(y), b = avgAt(y - 7 * DAY), c = a != null && b ? Math.round(100 * (a - b) / b) : null;
+  $("growthNote").textContent = a == null ? "" : `${T("last 7 full days")}: ${fmt(Math.round(a))} ${T("a day")}` + (c == null ? "" : ` · ${c >= 0 ? "▲" : "▼"}${Math.abs(c)}%`);
+}
 function drawGrowth() {
   const box = $("cGrowth"), days = rangeDays(), all = Object.keys(data.days).sort(), net = NET() || NM();
   box.classList.remove("vsbox");
+  $("gView").hidden = !VIS();
+  document.querySelectorAll("#gView button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.g === gview)));
+  $("kWeekBox").classList.toggle("on", VIS() && gview === "avg");
+  if (VIS() && gview === "avg") return drawWeekAvg(box);
   if (RB()) return drawRabbitGrowth(box, days, all);
   if (ND()) return drawNodesVs(box);
   $("growthTitle").textContent = T(net ? (hourly() ? "Transactions added up" : "Wallets reached") : "Growth");
@@ -1256,6 +1295,7 @@ function nodesKpis() {
 
 function kpis() {
   drawPlaying();
+  const wk = $("kWeekBox"); wk.classList.remove("go", "on"); wk.removeAttribute("tabindex"); wk.removeAttribute("role");
   if (NET()) return netKpis();
   if (ND()) return nodesKpis();
   if (RB()) return rabbitKpis();
@@ -1273,6 +1313,8 @@ function kpis() {
   $("kWeekBox").hidden = w1 == null;
   if (w1 != null) $("kWeek").textContent = fmt(Math.round(w1)) + (w0 ? ` ${w1 >= w0 ? "▲" : "▼"}${Math.abs(Math.round(100 * (w1 - w0) / w0))}%` : "");
   $("kWeekBox").classList.toggle("up", !!(w0 && w1 > w0));
+  $("kWeekBox").classList.add("go"); $("kWeekBox").tabIndex = 0; $("kWeekBox").setAttribute("role", "button");
+  $("kWeekBox").dataset.tip = "Average visitors per day over the last 7 full days,\ncompared with the 7 days before.\nClick for its chart over time.";
   $("kAll").textContent = fmt(Object.values(data.days).reduce((a, d) => a + d[0], 0));
   const best = Object.entries(data.days).sort((a, b) => b[1][0] - a[1][0])[0];
   $("kBest").textContent = best && best[1][0] ? `${fmt(best[1][0])} · ${dayLabel(best[0])}` : "–";
@@ -1331,6 +1373,11 @@ async function load() {
 }
 
 document.querySelectorAll(".kind button").forEach(b => b.addEventListener("click", () => { kind = b.dataset.kind; render(); }));
+const setGview = g => { gview = g; try { localStorage.setItem("tauhud-meta-gview", g); } catch (e) {} render(); };
+document.querySelectorAll("#gView button").forEach(b => b.addEventListener("click", () => setGview(b.dataset.g)));
+// the 7-day chip opens its chart (and closes it again) where it means visitors a day
+$("kWeekBox").addEventListener("click", () => { if (!VIS()) return; setGview(gview === "avg" ? "sum" : "avg"); if (gview === "avg" && !document.documentElement.classList.contains("fit")) $("pGrowth").scrollIntoView({ behavior: "smooth", block: "nearest" }); });
+$("kWeekBox").addEventListener("keydown", e => { if (VIS() && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); $("kWeekBox").click(); } });
 document.querySelectorAll(".sites button").forEach(b => b.addEventListener("click", () => {
   site = b.dataset.site; sel = null; pickSite(); render();
   const u = new URL(location.href); u.searchParams.delete("site"); u.searchParams.set("view", VIEW_OF[site]); history.replaceState(null, "", u);
