@@ -29,10 +29,10 @@
 
   /* the room's few words in Chinese and Japanese, so the page's dictionaries stay untouched */
   const L = {
-    zh: { "Stand up": "起身", "Sound on": "声音 开", "Sound off": "声音 关", "Full screen": "全屏",
+    zh: { "Stand up": "起身", "Sound on": "声音 开", "Sound off": "声音 关", "Music on": "音乐 开", "Music off": "音乐 关", "Full screen": "全屏",
       "Click a screen to lean in. The phone rings when someone proposes a rule change; the pager buzzes at every block.": "点击屏幕凑近看。有人提出规则变更时电话会响；每出一个区块，寻呼机就会震动。",
       "click or any key: skip": "点击或按任意键跳过", "Type help and press Enter. Click a screen to lean in; the phone rings at each rule change, the pager buzzes at every block.": "输入 help 并按回车。点击屏幕凑近看；每次规则变更电话会响，每出一个区块寻呼机就会震动。", "The room, 1999": "1999 年的房间", "The room needs a wider window (900 px and up, wider than tall).": "这个房间需要更宽的窗口（900 px 以上，横向）。" },
-    ja: { "Stand up": "立ち上がる", "Sound on": "音 オン", "Sound off": "音 オフ", "Full screen": "全画面",
+    ja: { "Stand up": "立ち上がる", "Sound on": "音 オン", "Sound off": "音 オフ", "Music on": "音楽 オン", "Music off": "音楽 オフ", "Full screen": "全画面",
       "Click a screen to lean in. The phone rings when someone proposes a rule change; the pager buzzes at every block.": "画面をクリックすると近づきます。ルール変更が提案されると電話が鳴り、ブロックごとにポケベルが震えます。",
       "click or any key: skip": "クリックまたは任意のキーでスキップ", "Type help and press Enter. Click a screen to lean in; the phone rings at each rule change, the pager buzzes at every block.": "help と入力して Enter を押してください。画面をクリックすると近づきます。ルール変更のたびに電話が鳴り、ブロックごとにポケベルが震えます。", "The room, 1999": "1999 年の部屋", "The room needs a wider window (900 px and up, wider than tall).": "この部屋には広い画面が必要です（幅 900 px 以上、横長）。" },
   };
@@ -66,7 +66,7 @@
   const fits = () => innerWidth >= 900 && innerHeight >= 480 && innerWidth / innerHeight >= 1.2;
 
   let el = null, cam = null, scr = {}, view = null, on = false, booting = false, R = null, timer = null, hintT = null;
-  const st = { h: 0, mem: 0, lastLog: null, seenU: null, ring: null, ringT: null, typing: [], sound: get("tauhud-room-sound") !== "off", gesture: false };
+  const st = { h: 0, mem: 0, lastLog: null, seenU: null, ring: null, ringT: null, typing: [], sound: get("tauhud-room-sound") !== "off", music: get("tauhud-room-music") !== "off", gesture: false };
 
   const mk = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -108,7 +108,7 @@
     const pc = mk("div", "rm-pc", '<i class="pw on"></i><i class="hdd"></i>'); cam.append(pc);
     /* the things you can touch */
     /* in the painting each one is cut from the picture itself, so it can shake, ring and light up on hover */
-    const DO = { lamp: () => { el.classList.toggle("lamp-off"); click(); }, phone: () => answer(), pager: () => lean("left"), modem: () => modemSays(),
+    const DO = { lamp: () => lampSwitch(), phone: () => answer(), pager: () => lean("left"), modem: () => modemSays(),
       window: () => thunder(), cat: () => purr(), lava: () => lava(), tower: () => disk() };
     const svgImg = f => `<img alt="" src="${BASE}${f}" style="width:100%;height:100%;display:block">`;
     for (const k of ["window", "lava", "tower", "cat", "lamp", "modem", "pager", "phone"]) {
@@ -126,16 +126,18 @@
     /* page px */
     const ui = mk("div", "rm-ui");
     const bs = mk("button", "", ""); bs.type = "button"; const sl = () => { bs.textContent = T(st.sound ? "Sound on" : "Sound off"); bs.setAttribute("aria-pressed", st.sound); };
-    sl(); bs.addEventListener("click", e => { e.stopPropagation(); st.sound = !st.sound; put("tauhud-room-sound", st.sound ? "on" : "off"); sl(); if (!st.sound) hush(); });
+    sl(); bs.addEventListener("click", e => { e.stopPropagation(); st.sound = !st.sound; put("tauhud-room-sound", st.sound ? "on" : "off"); sl(); if (!st.sound) hush(); else soundUp(); });
+    const bm = mk("button", "", ""); bm.type = "button"; const ml = () => { bm.textContent = T(st.music ? "Music on" : "Music off"); bm.setAttribute("aria-pressed", st.music); };
+    ml(); bm.addEventListener("click", e => { e.stopPropagation(); st.music = !st.music; put("tauhud-room-music", st.music ? "on" : "off"); ml(); if (RS()) RS().set({ music: st.music }); });
     const bf = mk("button", "", "⛶"); bf.type = "button"; bf.title = T("Full screen"); bf.setAttribute("aria-label", T("Full screen"));
     bf.addEventListener("click", e => { e.stopPropagation(); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else if (root.requestFullscreen) root.requestFullscreen().catch(() => {}); });
     if (!(document.fullscreenEnabled && root.requestFullscreen)) bf.hidden = true;
     const bx = mk("button", "", T("Stand up") + " ✕"); bx.type = "button"; bx.addEventListener("click", e => { e.stopPropagation(); leave(); });
-    ui.append(bs, bf, bx); el.append(ui);
+    ui.append(bs, bm, bf, bx); el.append(ui);
     el.append(mk("div", "rm-hint gone", esc(T("Type help and press Enter. Click a screen to lean in; the phone rings at each rule change, the pager buzzes at every block."))));
     el.append(mk("div", "rm-skip", esc(T("click or any key: skip"))));
     el.addEventListener("click", () => { if (view) lean(null); });
-    el.addEventListener("pointerdown", () => { st.gesture = true; }, true);
+    el.addEventListener("pointerdown", () => { st.gesture = true; soundUp(); }, true);
     document.body.append(el);
     layout();
   }
@@ -208,14 +210,19 @@
   }
   function frame() { if (!on || booting) return; shoot(view ? onScreen(view) : fitBox(), false); }
 
-  /* ---------------- sound: made here, nothing to load ---------------- */
+  /* ---------------- sound: the room, its music and the samples live in assets/room-sound.js (TauRoomSound); the small
+     tones here (the modem's handshake, clicks) go through the same mixer, and stand in where a sample has not loaded ---------------- */
+  const RS = () => window.TauRoomSound || null;
   let ac = null, out = null;
   function audio() {
     if (!st.sound || !st.gesture) return null;
+    if (RS()) { ac = RS().ctx(); if (!out && ac) { out = ac.createGain(); out.gain.value = .14; out.connect(RS().bus()); } return ac; }
     try { if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); out = ac.createGain(); out.gain.value = .14; out.connect(ac.destination); }
       if (ac.state === "suspended") ac.resume(); return ac; } catch (e) { return null; }
   }
-  function hush() { if (ac) { try { ac.close(); } catch (e) {} ac = null; out = null; } }
+  function soundUp() { if (on && st.sound && st.gesture && RS()) { RS().set({ music: st.music }); RS().start(); } }
+  function hush() { if (RS()) RS().stop(); else if (ac) { try { ac.close(); } catch (e) {} ac = null; out = null; } }
+  const sample = (n, o) => !!(RS() && RS().running && RS().play(n, Object.assign({ late: false }, o)));
   function tone(fs, t0, dur, vol = 1, type = "sine") {
     const a = audio(); if (!a) return;
     const g = a.createGain(); g.gain.setValueAtTime(0, a.currentTime + t0); g.gain.linearRampToValueAtTime(vol, a.currentTime + t0 + .01);
@@ -237,7 +244,7 @@
     "5550199".split("").forEach((c, i) => tone(D[c], .65 + i * .1, .07, .5));
     const t = 1.5; tone([2100], t, .45, .35); tone([1650, 1850], t + .5, .35, .3, "square"); noise(t + .5, .9, .5); tone([980, 1180], t + .9, .45, .25, "sawtooth");
   }
-  const ringSound = () => { for (let i = 0; i < 2; i++) tone([440, 480], i * .5, .4, .45); };
+  const ringSound = () => { if (!sample("ring")) for (let i = 0; i < 2; i++) tone([440, 480], i * .5, .4, .45); };
   const click = () => tone([2400], 0, .02, .25, "square");
   function rumble(t0, dur, vol, freq) {
     const a = audio(); if (!a) return;
@@ -252,18 +259,21 @@
   function thunder() {
     poke(cam.querySelector(".rm-flash"), "go", 1600);
     if (REDUCED) return;
-    setTimeout(() => rumble(0, 2.6, 1.6, 140), 450);
+    if (!sample("thunder", { delay: .45 })) setTimeout(() => rumble(0, 2.6, 1.6, 140), 450);
   }
   function purr() {
     poke(cam.querySelector(".rm-purr"), "go", 2400);
+    if (sample("purr")) return;
     const a = audio(); if (!a) return;
     const r = rumble(0, 2.2, 1.1, 110); if (!r) return;
     const lfo = a.createOscillator(), lg = a.createGain(); lfo.frequency.value = 24; lg.gain.value = .9; lfo.connect(lg); lg.connect(r.g.gain);
     lfo.start(); lfo.stop(a.currentTime + 2.2);
   }
+  function lampSwitch() { el.classList.toggle("lamp-off"); click(); if (RS()) RS().lamp(el.classList.contains("lamp-off")); }
   function lava() { el.classList.toggle("lava-on"); click(); }
   function disk() {
-    for (let i = 0; i < 7; i++) setTimeout(() => { blink(".rm-pc .hdd", 70); tone([90 + Math.random() * 60], 0, .03, .5, "square"); }, i * 110 + Math.random() * 60);
+    const real = sample("disk");
+    for (let i = 0; i < 7; i++) setTimeout(() => { blink(".rm-pc .hdd", 70); if (!real) tone([90 + Math.random() * 60], 0, .03, .5, "square"); }, i * 110 + Math.random() * 60);
     const S = R ? R.S : null; if (!S) return;
     say(`C:\\> mem · ${S.blocks.length} blocks kept on this page · ${S.mempool.length} tx waiting · ${S.validators.length || "?"} validators`);
   }
@@ -317,7 +327,7 @@
     hint(); welcome();
   }
   function welcome() { setTimeout(() => { if (on) { say("type help and press Enter · this shell only reads the chain, nothing you type can break anything", "sys"); sh.last = performance.now() - 45000; } }, 1200); }
-  function powerOn(k) { const s = scr[k]; if (!s || !on) return; s.classList.remove("off"); s.classList.add("on"); render(true); }
+  function powerOn(k) { const s = scr[k]; if (!s || !on) return; sample("crt", { gain: .5, pan: k === "left" ? -.5 : .5 }); s.classList.remove("off"); s.classList.add("on"); render(true); }
   function hint() {
     const h = el.querySelector(".rm-hint"); if (!h || get("tauhud-room-hint") === "3") return;
     put("tauhud-room-hint", String((+get("tauhud-room-hint") || 0) + 1));
@@ -427,6 +437,7 @@
         const p = el.querySelector(".rm-lcd"), pb = el.querySelector(".rm-hot.rm-pager");
         p.classList.add("lit"); setTimeout(() => p.classList.remove("lit"), 1800);
         if (!REDUCED) for (const n of [p, pb]) { n.classList.remove("buzz"); void n.offsetWidth; n.classList.add("buzz"); }
+        sample("pager", { gain: .7, pan: -.3 }); if (RS()) RS().block();
         blink('.rm-leds [data-l="RD"]', 420); blink(".rm-pc .hdd", 260); setTimeout(() => blink(".rm-pc .hdd", 180), 340);
         const g = el.querySelector(".rm-glow.left"); g.classList.remove("pulse"); void g.offsetWidth; g.classList.add("pulse");
       }
@@ -443,10 +454,10 @@
 
   function ring(u) {
     st.ring = u; el.classList.add("ringing"); const ph = el.querySelector(".rm-hot.rm-phone"); if (!REDUCED) ph.classList.add("ring");
-    clearInterval(st.ringT); let n = 0; ringSound();
+    clearInterval(st.ringT); let n = 0; ringSound(); if (RS()) RS().mood("ring");
     st.ringT = setInterval(() => { if (++n >= 4 || !on) { stopRing(); return; } ringSound(); }, 2600);
   }
-  function stopRing() { clearInterval(st.ringT); st.ringT = null; el.classList.remove("ringing"); el.querySelector(".rm-hot.rm-phone").classList.remove("ring"); }
+  function stopRing() { if (RS() && !sh.call) RS().mood("night"); clearInterval(st.ringT); st.ringT = null; el.classList.remove("ringing"); el.querySelector(".rm-hot.rm-phone").classList.remove("ring"); }
   function answer() {
     const S = R ? R.S : null; if (!S) return;
     const u = st.ring || S.updates.filter(x => x.status === "voting" || x.status === "scheduled").slice(-1)[0];
@@ -527,7 +538,7 @@
     validators() { const v = R.S.validators; if (!v.length) return wr("no validator list yet", "warn"); v.forEach((x, i) => wr(`  ${i + 1}. ${R.short(x)}`));
       why("validators take turns sealing blocks and vote on rule changes. Each one is a wallet, shown by the start of its key."); },
     watch() { sh.watch = true; wr("watching the chain · any key stops", "sys"); },
-    lamp() { el.classList.toggle("lamp-off"); click(); },
+    lamp() { lampSwitch(); },
     clear() { st.term = []; const t = scr.main.querySelector(".rm-term"); if (t) { t.innerHTML = ""; t.dataset.n = "0"; } },
     exit() { leave(); },
   };
@@ -563,7 +574,8 @@
     else if (k.length === 1 && sh.line.length < 60) sh.line += k;
     else return;
     e.preventDefault(); sh.last = performance.now();
-    if (k.length === 1 || k === "Backspace" || k === "Enter") tone([180 + Math.random() * 80], 0, .018, .35, "square");
+    st.gesture = true; soundUp();
+    if (k.length === 1 || k === "Backspace" || k === "Enter") { if (RS() && RS().running) RS().key(k); else tone([180 + Math.random() * 80], 0, .018, .35, "square"); }
     if (view && view !== "main" && k === "Enter") lean("main");
     renderMain();
   }
@@ -579,7 +591,7 @@
       { q: "what does one step cost, the fee? (same screen)", a: () => String(S.fee) },
       { q: "and the newest block, its number? (left screen, the big digits)", a: () => String(S.height), near: 2 },
     ];
-    sh.call = { Q, i: 0, wait: true, ok: 0 };
+    sh.call = { Q, i: 0, wait: true, ok: 0 }; if (RS()) RS().mood("call");
     ringSound(); el.classList.add("ringing"); setTimeout(() => el.classList.remove("ringing"), 1600);
     wr("", ""); wr("*** talk request from nobody@0.0.0.0 ***", "warn");
     wr("nobody: you're up late. reading the chain by hand?", "warn");
@@ -589,10 +601,10 @@
   function callAnswer(txt) {
     const c = sh.call, q = c.Q[c.i], want = q.a(), got = txt.trim().replace(/[#,.\s]/g, "");
     const ok = q.near ? Math.abs(Number(got) - Number(want)) <= q.near : got === want;
-    if (ok) { c.ok++; wr("nobody: right.", "warn"); } else wr(`nobody: no. ${want}. look at the screens.`, "warn");
+    if (ok) { c.ok++; wr("nobody: right.", "warn"); if (RS()) RS().good(); } else { wr(`nobody: no. ${want}. look at the screens.`, "warn"); if (RS()) RS().bad(); }
     c.i++;
     if (c.i < c.Q.length) { setTimeout(() => wr("nobody: " + c.Q[c.i].q, "warn"), 700); return; }
-    c.wait = false; sh.call = null; put("tauhud-room-call", "1");
+    c.wait = false; sh.call = null; put("tauhud-room-call", "1"); if (RS()) RS().mood(c.ok === c.Q.length ? "awake" : "night");
     if (c.ok === c.Q.length) {
       setTimeout(() => { wr("nobody: you read it like plain text. most people only see the lights.", "warn"); wr("nobody: the rest is on the chain. *** connection closed ***", "warn"); awaken(); }, 800);
     } else setTimeout(() => { wr(`nobody: ${c.ok} of 3. come back when you can read it. *** connection closed ***`, "warn"); }, 800);
@@ -615,6 +627,7 @@
     R = window.TauRoom || null;
     if (!q.has("room")) { try { const u = new URL(location.href); u.searchParams.set("room", "1"); history.replaceState(history.state, "", u); } catch (e) {} }
     for (const k in scr) { scr[k].classList.add("off"); scr[k].classList.remove("on", "big"); scr[k].querySelector(".rm-in").innerHTML = ""; delete scr[k].querySelector(".rm-in").dataset.k; }
+    setTimeout(soundUp, 0);
     st.h = R ? R.S.height : 0; st.mem = R ? R.S.mempool.length : 0; st.seenU = null;
     clearInterval(timer); timer = setInterval(tick, 400); tick();
     if (REDUCED || q.get("intro") === "0" || navigator.webdriver && q.get("intro") !== "1") {
@@ -625,7 +638,7 @@
   }
   function leave() {
     if (!on) return;
-    on = false; st.skip = true; clearInterval(timer); stopRing(); hush();
+    on = false; st.skip = true; clearInterval(timer); stopRing(); hush(); out = null;
     el.hidden = true; root.classList.remove("room-on");
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     try { const u = new URL(location.href); u.searchParams.delete("room"); history.replaceState(history.state, "", u); } catch (e) {}
