@@ -442,6 +442,94 @@ html.wl-new .wl-here { border-color: rgba(57,255,138,.55); box-shadow: 0 0 0 1px
 .bgate { margin: 0 0 8px; border-radius: 6px; padding: 7px 11px; font: 600 13px/1.4 var(--display); color: #000; background: var(--ok); }
 .bgate.s1 { background: none; color: var(--text); border: 1px dashed var(--hair); font-weight: 500; }
 @media (prefers-reduced-motion: reduce) { .wl-lock { transition: none; } }
+/* 17.11.2026: the moment you sign a rule, in the middle of the screen (sealOpen) */
+.seal-bg { position: fixed; inset: 0; z-index: 2147482000; display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;
+  background: radial-gradient(ellipse at 50% 45%, rgba(57,255,138,.10), rgba(0,0,0,.82) 60%); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); animation: seal-fade .35s ease-out both; }
+.seal-bg[hidden] { display: none; }
+@keyframes seal-fade { from { opacity: 0; } }
+.seal { position: relative; box-sizing: border-box; width: min(880px, 100%); max-height: calc(100dvh - 32px); overflow: auto; overscroll-behavior: contain;
+  padding: 22px 24px 18px; border: 1px solid rgba(57,255,138,.45); border-radius: 16px; background: linear-gradient(180deg, rgba(10,22,15,.98), rgba(6,8,7,.98));
+  box-shadow: 0 30px 90px -20px rgba(0,0,0,.9), 0 0 60px -20px rgba(57,255,138,.5); color: var(--text); font: 13px/1.5 var(--mono); animation: seal-in .55s cubic-bezier(.2,1.25,.4,1) both; }
+@keyframes seal-in { from { opacity: 0; transform: translateY(26px) scale(.96); } }
+.seal .sx { position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; border: 0; border-radius: 10px; background: none; color: var(--dim); font-size: 22px; cursor: pointer; }
+.seal .sx:hover { color: #fff; background: rgba(255,255,255,.06); }
+.seal-top { display: flex; gap: 18px; align-items: center; padding-right: 36px; }
+.seal-mark { position: relative; flex: none; width: 84px; height: 84px; }
+.seal-mark svg { width: 84px; height: 84px; overflow: visible; }
+.seal-mark .orb { fill: none; stroke: rgba(57,255,138,.55); stroke-width: 2; stroke-dasharray: 3 7; transform-origin: 50% 50%; animation: seal-spin 2.4s linear infinite; }
+.seal-mark .ring { fill: none; stroke: var(--ok); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1 1; stroke-dashoffset: 1; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset .7s ease-out; }
+.seal-mark .ck { fill: none; stroke: var(--ok); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 1; stroke-dashoffset: 1; transition: stroke-dashoffset .35s .55s ease-out; }
+.seal-mark .core { fill: rgba(57,255,138,.0); transform-origin: 50% 50%; transition: fill .5s; }
+.seal.s-sent .ring { stroke-dashoffset: .34; } .seal.s-sign .ring { stroke-dashoffset: .72; }
+.seal.s-in .ring, .seal.s-in .ck { stroke-dashoffset: 0; } .seal.s-in .orb { animation: none; stroke: transparent; transition: stroke .4s; }
+.seal.s-in .core { fill: rgba(57,255,138,.14); animation: seal-pop .6s .45s cubic-bezier(.2,1.7,.4,1) both; }
+.seal.s-no .orb, .seal.s-out .orb { animation: none; stroke: rgba(229,72,77,.6); } .seal.s-no .ring, .seal.s-out .ring { stroke: var(--refused); stroke-dashoffset: 0; }
+@keyframes seal-spin { to { transform: rotate(360deg); } }
+@keyframes seal-pop { from { transform: scale(.4); } }
+.seal-mark .sp { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 10px var(--ok); opacity: 0; }
+.seal.s-in .sp { animation: seal-spark 1s .6s ease-out forwards; }
+@keyframes seal-spark { 0% { opacity: 1; transform: translate(0,0); } 100% { opacity: 0; transform: translate(var(--x), var(--y)) scale(.3); } }
+.seal-kick { font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--ok); }
+.seal-kick .sim { color: var(--sim); margin-left: 8px; }
+.seal h2 { margin: 2px 0 2px; font: 600 clamp(22px, 2.6vw, 30px)/1.2 var(--display); color: #fff; }
+.seal.s-in h2 { animation: seal-title .6s ease-out; }
+@keyframes seal-title { 0% { color: var(--ok); text-shadow: 0 0 22px rgba(57,255,138,.8); } }
+.seal-m { margin: 0; color: #c4d2c9; font: 400 14px/1.45 var(--display); }
+.seal-rule { position: relative; margin: 14px 0 0; padding: 10px 14px 10px 16px; border-left: 3px solid var(--ok); border-radius: 0 10px 10px 0; background: rgba(57,255,138,.05); }
+.seal-rule .k { display: block; font: 600 10.5px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin-bottom: 2px; }
+.seal-rule .l { display: block; font: 500 16px/1.4 var(--display); color: #fff; }
+.seal.s-in .seal-rule { padding-right: 190px; }
+.seal-stamp { position: absolute; right: 12px; top: 50%; padding: 6px 12px; border: 2px solid var(--ok); border-radius: 8px; color: var(--ok); font: 700 13px/1.25 var(--display); letter-spacing: .12em; text-transform: uppercase; text-align: center;
+  background: rgba(6,14,10,.9); transform: translateY(-50%) rotate(-6deg); box-shadow: 0 0 24px -6px rgba(57,255,138,.7); animation: seal-stamp .5s .25s cubic-bezier(.3,1.6,.5,1) both; pointer-events: none; }
+.seal-stamp small { display: block; font: 600 11px var(--mono); letter-spacing: .04em; }
+@keyframes seal-stamp { from { opacity: 0; transform: translateY(-50%) rotate(-14deg) scale(2.2); } }
+.seal-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.seal-steps li { display: flex; gap: 9px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--line, rgba(255,255,255,.09)); border-radius: 10px; min-width: 0; }
+.seal-steps li i { flex: none; width: 20px; height: 20px; margin-top: 1px; border-radius: 50%; border: 1.5px solid var(--hair, rgba(255,255,255,.25)); box-sizing: border-box; display: grid; place-items: center; font: 700 11px var(--display); font-style: normal; color: var(--dim); }
+.seal-steps li b { display: block; font: 600 13px/1.3 var(--display); color: var(--dim); }
+.seal-steps li span { display: block; font-size: 11.5px; color: var(--dim); overflow-wrap: anywhere; }
+.seal-steps li.done { border-color: rgba(57,255,138,.3); } .seal-steps li.done i { background: var(--ok); border-color: var(--ok); color: #000; } .seal-steps li.done b { color: #fff; }
+.seal-steps li.now { border-color: rgba(57,255,138,.55); } .seal-steps li.now b { color: #fff; }
+.seal-steps li.now i { border-color: var(--ok); border-top-color: transparent; animation: seal-spin .9s linear infinite; }
+.seal-steps li.bad { border-color: rgba(229,72,77,.5); } .seal-steps li.bad i { border-color: var(--refused); color: var(--refused); } .seal-steps li.bad b { color: #fff; }
+.seal-facts { margin: 10px 0 0; display: flex; flex-wrap: wrap; gap: 4px 16px; color: #c4d2c9; font-size: 12px; }
+.seal-facts .fit { color: var(--ok); }
+.seal-facts a { color: var(--ok); }
+.seal-next h3 { margin: 14px 0 8px; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+.seal-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.seal-tile { position: relative; display: flex; gap: 10px; align-items: flex-start; min-height: 44px; padding: 10px 12px; box-sizing: border-box; border: 1px solid var(--hair, rgba(255,255,255,.18)); border-radius: 10px;
+  background: rgba(255,255,255,.02); color: var(--text); text-decoration: none; text-align: left; font: inherit; cursor: pointer; transition: border-color .2s, background .2s, transform .2s; animation: seal-tile .45s ease-out both; }
+.seal-tile:hover, .seal-tile:focus-visible { border-color: var(--ok); background: rgba(57,255,138,.07); transform: translateY(-1px); }
+.seal-tile .ic { flex: none; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: rgba(57,255,138,.12); color: var(--ok); font: 600 15px var(--display); }
+.seal-tile img.ic { object-fit: cover; background: #fff; }
+.seal-tile b { display: block; font: 600 13.5px/1.3 var(--display); color: #fff; }
+.seal-tile span { display: block; font-size: 11.5px; line-height: 1.4; color: #b4c3b9; }
+.seal-tile.main { border-color: var(--ok); background: rgba(57,255,138,.1); }
+.seal-tile.main .ic { background: var(--ok); color: #000; }
+@keyframes seal-tile { from { opacity: 0; transform: translateY(8px); } }
+.seal-share { margin-top: 12px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.seal-share img { width: 100%; aspect-ratio: 1200 / 630; border-radius: 10px; border: 1px solid var(--hair, rgba(255,255,255,.18)); display: block; background: #050605; }
+.seal-share .acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.seal-share .acts .b { min-height: 40px; display: inline-flex; align-items: center; text-decoration: none; box-sizing: border-box; }
+.seal-share .acts a.b { font: 600 11px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--text); border: 1px solid var(--hair); border-radius: 6px; padding: 6px 13px; }
+.seal-share .acts a.b:hover { border-color: var(--ok); color: #fff; }
+.seal-share .msg { margin: 8px 0 0; min-height: 1.4em; color: var(--ok); font-size: 12px; }
+.seal-share .note { margin: 6px 0 0; color: var(--dim); font-size: 11.5px; }
+.seal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+.seal-foot .b { min-height: 40px; }
+@media (max-width: 700px) {
+  .seal { padding: 16px 14px 14px; } .seal-top { gap: 12px; } .seal-mark, .seal-mark svg { width: 60px; height: 60px; }
+  .seal h2 { font-size: 21px; } .seal-m { font-size: 13px; } .seal-kick { font-size: 10px; letter-spacing: .1em; }
+  .seal-steps { gap: 5px; } .seal-steps li { padding: 6px 6px; gap: 5px; flex-direction: column; align-items: center; text-align: center; } .seal-steps li span { display: none; } .seal-steps li b { font-size: 11.5px; }
+  .seal-tiles { grid-template-columns: 1fr 1fr; gap: 6px; } .seal-tile { padding: 8px 10px; } .seal-tile .ic { display: none; }
+  .seal-tile span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 11px; }
+  .seal-share { grid-template-columns: 1fr; }
+  .seal.s-in .seal-rule { padding-right: 14px; }
+  .seal-stamp { position: static; display: inline-block; margin-top: 8px; transform: rotate(-3deg); animation: none; }
+  .seal-rule .l { font-size: 14.5px; }
+}
+@media (max-height: 760px) and (min-width: 701px) { .seal { padding: 16px 20px 14px; } .seal-tile span { font-size: 11px; } .seal-mark, .seal-mark svg { width: 70px; height: 70px; } }
+@media (prefers-reduced-motion: reduce) { .seal-bg, .seal, .seal *, .seal-stamp { animation: none !important; transition: none !important; } }
 /* Intermediate: each test payment now and after signing */
 .probe.cmp { grid-template-columns: 10px minmax(0, 1fr) auto 4.2em; }
 .probe.cmp.head { color: var(--dim); font: 600 11px var(--display); letter-spacing: .08em; }
@@ -976,10 +1064,10 @@ async function followLog() {   // queued → in a block, by tx hash
     if (!m || m.status !== "ok") continue;
     const d = m.data || {}, s = String(d.status || d.state || "").toLowerCase();
     if (d.block_number != null || /confirmed|included|mined|sealed|applied/.test(s)) { x.status = "in"; x.block = d.block_number ?? d.height ?? null; landed = landed || x; }
-    else if (/reject|fail|dropped|expired|invalid/.test(s)) { x.status = "out"; x.why = d.reason || d.error || s; }
+    else if (/reject|fail|dropped|expired|invalid/.test(s)) { x.status = "out"; x.why = d.reason || d.error || s; if (x.kind === "rule") sealLanded(x); }
   }
   if (W.pk) store.set(logKey(), JSON.stringify(W.log));
-  if (landed) landedMoment(landed);
+  if (landed && !(landed.kind === "rule" && sealLanded(landed))) landedMoment(landed);
 }
 /* the moment one of your transactions is in a block: what you did, what it means now, and the block as proof (assets/win.js) */
 const LANDED = {
@@ -1586,15 +1674,182 @@ function fitRules() {
   if (probesFolded || !det.open || getComputedStyle(box).overflowY !== "auto") return;
   if (box.scrollHeight > box.clientHeight + 1) { det.open = false; probesFolded = true; }
 }
-async function sendRule(text, label, res) {
+async function sendRule(text, label, res, seal) {
   res.className = "result wait"; res.textContent = T("Signing in your browser, then asking the node…");
+  if (seal) sealOpen(seal);
   const r = await submit(base("user_tx", { operations: { "0": text } }), label, "rule");
   res.className = "result " + (r.ok ? "ok" : "no");
   res.textContent = r.ok ? T("Sent. The rule is in force from the block that takes it in.") : r.why;
+  if (seal && SEAL.box) { if (r.ok) sealSet("sent", { hash: r.hash }); else sealSet("no", { why: r.why }); }
+  else if (!r.ok && res.scrollIntoView) res.scrollIntoView({ block: "nearest", behavior: "smooth" });   // a refusal is said where you can see it
+}
+
+/* ---------- 17.11.2026: the moment you sign a rule ----------
+   Before, the only answer was a small "Sent." under the button, often below the fold. Now a sheet opens in the middle of
+   the screen: the seal draws itself while this browser signs and the node checks, and it says honestly where the rule is:
+   signed → taken by the node → waiting for a block → in block #N. Only the block puts a rule in force, so "in force" is
+   said only then (followLog → sealLanded). Then what to do with it: share it as a picture (names from your address book
+   never go on it), see your islander carry it on White Rabbit Key, this week's challenge, your Tau card, No Memo, the rule
+   on a sweater. Freeze, unfreeze and remove keep the plain line and the small card (landedMoment). */
+const SEAL = { box: null, o: null, st: null, hash: null, block: null, why: "", share: false, pic: null };
+function shareLines(r) {   // the rule in words for strangers: no names from the address book, no addresses
+  if (!r || r.unknown) return [T("A rule written by hand, in Tau.")];
+  if (r.freeze) return [T("Nothing leaves this account.")];
+  const out = [];
+  if (r.only.length) out.push(T("Payments only to addresses I picked."));
+  if (r.cap != null) out.push(F("At most {n} test AGRS per payment.", { n: fmt(r.cap) }));
+  if (r.from != null) out.push(FX("Nothing leaves before {x}.", {}, { x: dayOf(r.from) }));
+  if (r.co) out.push(F("Above {n} test AGRS, a second key must co-sign.", { n: fmt(r.co.limit) }));
+  return out;
+}
+function sealData(r, lines) {
+  const firsts = (() => { try { return JSON.parse(store.get("tauhud-firsts") || "{}") || {}; } catch (e) { return {}; } })();
+  const fit = !SIM && CHAL && CHAL_FITS[CHAL.id] && r && !r.unknown && CHAL_FITS[CHAL.id](r);
+  let tests = null;
+  if (r && !r.unknown && !r.freeze) { const js = probeCases(r).map(([, p]) => judge(r, p)); tests = { n: js.length, stop: js.filter(j => j.why.length).length, wait: js.filter(j => !j.why.length && j.co).length }; tests.go = tests.n - tests.stop - tests.wait; }
+  return { r, lines, share: shareLines(r), first: !myRule() && !firsts["wallet-rule"] && !firsts["wallet-seal"], fit, tests };
+}
+function sealOpen(o) {
+  SEAL.o = o; SEAL.hash = null; SEAL.block = null; SEAL.why = ""; SEAL.share = false; SEAL.pic = null;
+  if (!SEAL.box) {
+    SEAL.box = el("div", { class: "seal-bg", role: "dialog", "aria-modal": "true", "aria-labelledby": "sealT", onclick: e => { if (e.target === SEAL.box) sealClose(); } });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && SEAL.box && !SEAL.box.hidden) sealClose(); });
+    document.body.append(SEAL.box);
+  }
+  SEAL.box.hidden = false;
+  sealSet("sign");
+}
+function sealClose() {
+  if (!SEAL.box || SEAL.box.hidden) return;
+  SEAL.box.hidden = true;
+  const b = $("btnRule"); if (b) { b.focus({ preventScroll: true }); if (window.TauWin) TauWin.glow($("ruleNow")); }
+}
+function sealSet(st, v) {
+  Object.assign(SEAL, v || {}); SEAL.st = st;
+  if (st === "in" && SEAL.o.first) { try { const f = JSON.parse(store.get("tauhud-firsts") || "{}") || {}; f["wallet-seal"] = new Date().toISOString().slice(0, 10); store.set("tauhud-firsts", JSON.stringify(f)); } catch (e) {} }
+  sealRender();
+}
+/* the block took it in (or the chain dropped it): only for the rule this sheet is about */
+function sealLanded(x) {
+  if (!SEAL.box || SEAL.box.hidden || !x.hash || x.hash !== SEAL.hash) return false;
+  if (x.status === "in") sealSet("in", { block: x.block }); else sealSet("out", { why: x.why || "" });
+  return true;
+}
+function sealRender() {
+  const o = SEAL.o, st = SEAL.st, eta = inTime(1), blk = SEAL.block != null ? "#" + SEAL.block : "";
+  const title = { sign: T("Signing your rule…"), sent: T("Signed. Your rule is on its way."), in: T(o.first ? "Your first rule is in force." : "Your rule is in force."),
+    no: T("Not sent"), out: T("The chain did not take it in") }[st];
+  const meaning = {
+    sign: T("Your key signs it here in your browser; then the node checks it before anything is sent."),
+    sent: T("It is in force from the block that takes it in. Until then nothing has changed yet.") + (eta ? " " + F("The next block is usually {x} away.", { x: eta }) : ""),
+    in: blk ? F("From block {a} on, every node checks each payment from your account against it, before the payment can leave.", { a: blk }) : T("Every node now checks each payment from your account against it, before the payment can leave."),
+    no: SEAL.why, out: T("Nothing changed on your account. You can sign it again.") + (SEAL.why ? " (" + String(SEAL.why).slice(0, 120) + ")" : "") }[st];
+  const sparks = Array.from({ length: 12 }, (_, k) => { const a = k / 12 * Math.PI * 2, d = 46 + (k % 3) * 10; return el("i", { class: "sp", style: `--x:${Math.round(Math.cos(a) * d)}px;--y:${Math.round(Math.sin(a) * d)}px;animation-delay:${.6 + (k % 4) * .05}s` }); });
+  const mark = el("div", { class: "seal-mark", "aria-hidden": "true" });
+  mark.innerHTML = `<svg viewBox="0 0 84 84"><circle class="orb" cx="42" cy="42" r="40"/><circle class="core" cx="42" cy="42" r="33"/><circle class="ring" cx="42" cy="42" r="33" pathLength="1"/><path class="ck" d="M27 43l10 10 21-22" pathLength="1"/></svg>`;
+  mark.append(...(o.first ? sparks : sparks.slice(0, 6)));
+  const step = (cls, n, b, s) => el("li", { class: cls }, el("i", { text: cls === "done" ? "✓" : cls === "bad" ? "!" : String(n) }), el("div", {}, el("b", { text: b }), s ? el("span", { text: s }) : null));
+  const took = st === "no" ? "bad" : st === "sign" ? "now" : "done";
+  const steps = el("ol", { class: "seal-steps" },
+    step("done", 1, T("Signed in your browser"), T("Your key never left it.")),
+    step(took, 2, st === "no" ? T("The node said no") : st === "sign" ? T("The node checks it…") : T("The node took it"), st === "no" ? T("Nothing was sent.") : SEAL.hash ? "tx " + short(SEAL.hash) : ""),
+    step(st === "in" ? "done" : st === "sent" ? "now" : st === "out" ? "bad" : "", 3, st === "in" ? F("Sealed in block {a}", { a: blk || "" }).trim() : T("Sealed in a block"),
+      st === "in" ? T("In force now.") : st === "sent" ? T("Waiting for the next block…") : st === "out" ? T("Dropped before a block took it in.") : T("Then it is in force.")));
+  const rule = el("div", { class: "seal-rule" }, el("span", { class: "k", text: T("Your rule, in plain words") }), ...o.lines.map(t => el("span", { class: "l", text: t })),
+    st === "in" ? el("div", { class: "seal-stamp" }, T("In force"), el("small", { text: blk ? F("block {a}", { a: blk }) : "" })) : null);
+  const facts = [];
+  if (o.tests && st !== "no" && st !== "out") facts.push(el("span", { text: F(!o.tests.go && !o.tests.wait ? "Tried against {n} test payments, it stops all of them." : o.tests.wait ? "Of {n} test payments it stops {s}, lets {g} through and holds {w} for a co-signature." : "Of {n} test payments it stops {s} and lets {g} through.", { n: o.tests.n, s: o.tests.stop, g: o.tests.go, w: o.tests.wait }) }));
+  if (o.fit && st !== "no" && st !== "out") facts.push(el("span", { class: "fit" }, "✓ " + T("It answers this week's challenge."), " ", el("a", { href: "/challenge/", text: T("Answers") + " ›" })));
+  const kids = [el("button", { type: "button", class: "sx", "aria-label": T("Close"), text: "×", onclick: sealClose }),
+    el("div", { class: "seal-top" }, mark, el("div", {}, el("div", { class: "seal-kick" }, T(o.first ? "Your first rule" : "Your rule"), " · ", T("Tau Net testnet"), SIM ? el("span", { class: "sim", text: T("simulation") }) : null),
+      el("h2", { id: "sealT", text: title }), el("p", { class: "seal-m", text: meaning }))),
+    rule, steps, facts.length ? el("p", { class: "seal-facts" }, ...facts) : null];
+  if (st === "sent" || st === "in") kids.push(SEAL.share ? sealShare() : sealNext());
+  kids.push(el("div", { class: "seal-foot" }, st === "no" || st === "out" ? el("button", { type: "button", class: "b go", text: T("Back to my rule"), onclick: sealClose })
+    : el("button", { type: "button", class: "b" + (st === "sign" ? "" : " go"), text: T("Back to my wallet"), onclick: sealClose })));
+  const card = el("div", { class: "seal s-" + st, "aria-live": "polite" }, ...kids);
+  SEAL.box.replaceChildren(card);
+  if (SEAL.share) { const sh = card.querySelector(".seal-share"); if (sh && sh.scrollIntoView) sh.scrollIntoView({ block: "nearest" }); }
+}
+/* what to do next: share first, then the places where this rule shows up again */
+function sealNext() {
+  const o = SEAL.o, st = SEAL.st;
+  const tile = (ic, b, s, attrs) => el(attrs.href ? "a" : "button", { class: "seal-tile" + (attrs.main ? " main" : ""), type: attrs.href ? null : "button", href: attrs.href || null, target: attrs.ext ? "_blank" : null, rel: attrs.ext ? "noopener" : null, onclick: attrs.onclick || null, style: `animation-delay:${attrs.d || 0}ms` },
+    typeof ic === "string" ? el("span", { class: "ic", "aria-hidden": "true", text: ic }) : ic, el("div", {}, el("b", { text: b }), el("span", { text: s })));
+  const t = [tile("↗", T("Share your rule"), T("A picture of it in plain words, for X, Telegram or your phone. No names from your address book."), { main: true, onclick: () => { SEAL.share = true; sealRender(); } })];
+  let d = 60;
+  if (!SIM) t.push(tile("☺", T("See your islander"), T(st === "in" ? "On White Rabbit Key your wallet walks as an islander. A few minutes after this block it carries a scroll: Rule writer." : "On White Rabbit Key your wallet walks as an islander. Once a block seals this rule, it carries a scroll: Rule writer."), { href: "/rabbit/?islander=1", d: d += 60 }));
+  if (!SIM && CHAL) { const L = window.TauI18n ? TauI18n.lang : "en", tx = x => (x && (x[L] || x.en)) || "";
+    t.push(tile("★", T(o.fit ? "Your answer to the challenge" : "This week's challenge"), o.fit ? FX("{x}: your rule shows on the answers page a few minutes after its block.", {}, { x: tx(CHAL.title) }) : tx(CHAL.title) + ": " + tx(CHAL.task), { href: "/challenge/", d: d += 60 })); }
+  if (!SIM) t.push(tile("▣", T("Your Tau card"), T("Rules written goes up by one. A card of what your account did, to keep or share."), { href: "/card/", d: d += 60 }));
+  t.push(tile("▶", T("Play No Memo"), T("A hacker game in a 1999 cabin, played with real testnet transactions."), { href: "/nomemo/", d: d += 60 }));
+  if (window.TauNav && TauNav.pieceUrl) t.push(tile(el("img", { class: "ic", src: "../assets/shop/sweater-rule.png", alt: "", width: 30, height: 30, loading: "lazy" }), T("Wear a rule"), T("always o1[t] = i1[t] on a sweater: the shortest rule in Tau, from the Tau HUD shop."), { href: TauNav.pieceUrl("rule", "wallet-signed"), ext: true, d: d += 60 }));
+  return el("div", { class: "seal-next" }, el("h3", { text: T(st === "in" ? "What now" : "While the block comes") }), el("div", { class: "seal-tiles" }, ...t));
+}
+/* the share picture: 1200×630, drawn here in the page's language, in the site's monochrome and green */
+async function sealPicture() {
+  const o = SEAL.o, st = SEAL.st, c = document.createElement("canvas"); c.width = 1200; c.height = 630;
+  try { await Promise.all(["600 60px Sora", "500 34px Sora", "600 20px 'JetBrains Mono'"].map(f => document.fonts.load(f))); } catch (e) {}
+  const g = c.getContext("2d"), SANS = "Sora, 'Segoe UI', sans-serif", MONO = "'JetBrains Mono', ui-monospace, monospace", OK = "#39ff8a";
+  const bg = g.createRadialGradient(950, 120, 40, 950, 120, 900); bg.addColorStop(0, "#0d2117"); bg.addColorStop(1, "#050605"); g.fillStyle = bg; g.fillRect(0, 0, 1200, 630);
+  g.strokeStyle = "rgba(255,255,255,.035)"; g.lineWidth = 1; for (let x = 0; x <= 1200; x += 40) { g.beginPath(); g.moveTo(x + .5, 0); g.lineTo(x + .5, 630); g.stroke(); } for (let y = 0; y <= 630; y += 40) { g.beginPath(); g.moveTo(0, y + .5); g.lineTo(1200, y + .5); g.stroke(); }
+  g.fillStyle = OK; g.fillRect(0, 0, 1200, 6);
+  const pill = (x, y, text, col) => { g.font = `600 18px ${MONO}`; const w = g.measureText(text).width + 32; g.strokeStyle = col; g.lineWidth = 2; g.beginPath(); g.roundRect(x, y, w, 38, 19); g.stroke(); g.fillStyle = col; g.fillText(text, x + 16, y + 26); return w; };
+  g.textBaseline = "alphabetic";
+  let px = 64 + pill(64, 52, "TAU HUD · " + T("Testnet").toUpperCase(), OK) + 12;
+  if (SIM) pill(px, 52, T("PRACTICE CHAIN"), "#ffb13b");
+  // the seal
+  g.save(); g.translate(1060, 140); g.strokeStyle = OK; g.lineWidth = 6; g.beginPath(); g.arc(0, 0, 62, 0, Math.PI * 2); g.stroke();
+  g.fillStyle = "rgba(57,255,138,.14)"; g.beginPath(); g.arc(0, 0, 56, 0, Math.PI * 2); g.fill();
+  g.lineWidth = 9; g.lineCap = "round"; g.lineJoin = "round"; g.beginPath(); g.moveTo(-26, 2); g.lineTo(-7, 21); g.lineTo(28, -18); g.stroke(); g.restore();
+  const wrap = (text, font, max) => { g.font = font; const words = /[぀-ヿ㐀-鿿]/.test(text) ? [...text] : text.split(" "), sep = /[぀-ヿ㐀-鿿]/.test(text) ? "" : " "; const out = []; let line = "";
+    for (const w of words) { const t2 = line ? line + sep + w : w; if (g.measureText(t2).width > max && line && !/^[、。，．！？：；」）]/.test(w)) { out.push(line); line = w; } else line = t2; } if (line) out.push(line); return out; };   // CJK: a stop never starts a line
+  let y = 190;
+  g.fillStyle = "#fff";
+  for (const l of wrap(T(o.first ? "My first rule on the chain." : "My account has its own rule."), `600 60px ${SANS}`, 900).slice(0, 2)) { g.fillText(l, 64, y); y += 70; }
+  y += 22;
+  const n = o.share.length, size = n > 3 ? 32 : n > 2 ? 36 : 40, lh = Math.round(size * 1.38);
+  const lines = o.share.flatMap(t => wrap(t, `500 ${size}px ${SANS}`, 1020)).slice(0, 5), top = y;
+  g.fillStyle = "#e6efe9"; g.font = `500 ${size}px ${SANS}`;
+  for (const l of lines) { g.fillText(l, 92, y + size * .3); y += lh; }
+  g.fillStyle = OK; g.fillRect(64, top - size * .75, 5, y - top + size * .15);
+  // the proof, as a stamp: in force since block #N, or honestly still waiting
+  const proof = st === "in" && SEAL.block != null ? F("In force since block #{a}", { a: SEAL.block }) : T("Signed · waiting for its block");
+  g.font = `700 24px ${MONO}`; const pw = g.measureText(proof).width + 40;
+  g.strokeStyle = st === "in" ? OK : "#9aa89f"; g.lineWidth = 3; g.beginPath(); g.roundRect(64, 528, pw, 54, 10); g.stroke();
+  g.fillStyle = st === "in" ? OK : "#c9d4cd"; g.fillText(proof, 84, 563);
+  g.fillStyle = "#9aa89f"; g.font = `500 20px ${MONO}`; g.textAlign = "right"; g.fillText(T("Every node checks my payments against it."), 1136, 546); g.fillStyle = "#fff"; g.font = `600 24px ${MONO}`; g.fillText("tauhud.com/wallet", 1136, 580); g.textAlign = "left";
+  return c;
+}
+const SHARE_URL = "https://tauhud.com/wallet/";
+function shareText() { const o = SEAL.o; return T(o.first ? "I gave my testnet account its first rule:" : "My testnet account has its own rule:") + " " + o.share.join(" ") + " " + T("Every node checks my payments against it."); }
+function sealShare() {
+  const box = el("div", { class: "seal-share" }), img = el("img", { alt: T("Your rule as a picture") }), msg = el("p", { class: "msg", "aria-live": "polite" });
+  const say = t => { msg.textContent = t; };
+  const blob = () => new Promise(res => SEAL.pic ? SEAL.pic.toBlob(b => res(b), "image/png") : res(null));
+  const save = async () => { const b = await blob(); if (!b) return; const a = el("a", { href: URL.createObjectURL(b), download: "my-tau-rule.png" }); document.body.append(a); a.click(); a.remove(); say(T("Picture saved.")); };
+  const e = encodeURIComponent, text = shareText();
+  const acts = el("div", { class: "acts" });
+  const native = el("button", { type: "button", class: "b go", text: T("Share…"), hidden: "", onclick: async () => {
+    const b = await blob(), f = b && new File([b], "my-tau-rule.png", { type: "image/png" });
+    try { if (f && navigator.canShare && navigator.canShare({ files: [f] })) await navigator.share({ files: [f], text: text + " " + SHARE_URL }); else await navigator.share({ text, url: SHARE_URL }); } catch (err) {}
+  } });
+  if (navigator.share) native.removeAttribute("hidden");
+  acts.append(native,
+    el("button", { type: "button", class: "b" + (navigator.share ? "" : " go"), text: T("Save picture"), onclick: save }),
+    el("a", { class: "b", href: `https://x.com/intent/post?text=${e(text + " #TauNet")}&url=${e(SHARE_URL)}`, target: "_blank", rel: "noopener", text: "X" }),
+    el("a", { class: "b", href: `https://t.me/share/url?url=${e(SHARE_URL)}&text=${e(text)}`, target: "_blank", rel: "noopener", text: "Telegram" }),
+    el("button", { type: "button", class: "b", text: T("Copy text"), onclick: async () => { try { await navigator.clipboard.writeText(text + " " + SHARE_URL); say(T("Text copied.")); } catch (err) { say(T("Copy blocked by the browser.")); } } }));
+  box.append(img, el("div", {}, acts, msg, el("p", { class: "note", text: T("On X and Telegram the link shows the wallet's own preview; add the saved picture to your post to show your rule.") }),
+    el("button", { type: "button", class: "b", style: "margin-top:8px", text: "‹ " + T("Back"), onclick: () => { SEAL.share = false; sealRender(); } })));
+  const key = SEAL.st + (SEAL.block || "");
+  if (SEAL.pic && SEAL.pic.dataset.key === key) img.src = SEAL.pic.toDataURL("image/png");
+  else sealPicture().then(c => { c.dataset.key = key; SEAL.pic = c; img.src = c.toDataURL("image/png"); });
+  return box;
 }
 $("btnRule").onclick = () => {
-  if (LV === "pro" && XHAND) { const t = xText(), rr = xReadable(t); if (t) sendRule(t, T("Rule: ") + (rr ? describe(rr).join(" ") : T("a clause written by hand")), $("ruleRes")); return; }
-  const d = ruleDraft(); if (d.ok) sendRule(d.text, T("Rule: ") + describe(d.r).join(" "), $("ruleRes"));
+  if (LV === "pro" && XHAND) { const t = xText(), rr = xReadable(t); if (t) sendRule(t, T("Rule: ") + (rr ? describe(rr).join(" ") : T("a clause written by hand")), $("ruleRes"), sealData(rr || { unknown: true }, rr ? describe(rr) : [T("A clause written by hand.")])); return; }
+  const d = ruleDraft(); if (d.ok) sendRule(d.text, T("Rule: ") + describe(d.r).join(" "), $("ruleRes"), sealData(d.r, describe(d.r)));
 };
 $("btnFreeze").onclick = () => { const r = myRule(); if (r && r.freeze) sendRule(NEUTRAL, T("Unfrozen"), $("ruleRes")); else sendRule(FREEZE, T("Account frozen: nothing leaves"), $("ruleRes")); };
 $("btnRuleOff").onclick = () => sendRule(NEUTRAL, T("Rule removed"), $("ruleRes"));
