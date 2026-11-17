@@ -216,10 +216,12 @@
   let ac = null, out = null;
   function audio() {
     if (!st.sound || !st.gesture) return null;
-    if (RS()) { ac = RS().ctx(); if (!out && ac) { out = ac.createGain(); out.gain.value = .14; out.connect(RS().bus()); } return ac; }
-    try { if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); out = ac.createGain(); out.gain.value = .14; out.connect(ac.destination); }
+    if (RS()) { ac = RS().ctx(); if (!out && ac) { out = soft(ac, RS().bus()); } return ac; }
+    try { if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); out = soft(ac, ac.destination); }
       if (ac.state === "suspended") ac.resume(); return ac; } catch (e) { return null; }
   }
+  /* every drawn tone goes through a warm low-pass: the room calls you, it never startles you */
+  function soft(a, to) { const g = a.createGain(), lp = a.createBiquadFilter(); g.gain.value = .1; lp.type = "lowpass"; lp.frequency.value = 2200; lp.Q.value = .5; g.connect(lp); lp.connect(to); return g; }
   function soundUp() { if (on && st.sound && st.gesture && RS()) { RS().set({ music: st.music }); RS().start(); } }
   function hush() { if (RS()) RS().stop(); else if (ac) { try { ac.close(); } catch (e) {} ac = null; out = null; } }
   const sample = (n, o) => !!(RS() && RS().running && RS().play(n, Object.assign({ late: false }, o)));
@@ -239,13 +241,13 @@
   /* the dial: tone, the number, then the two modems agreeing (short; skipped without a click) */
   function dialSound() {
     if (!audio()) return;
-    tone([350, 440], 0, .55, .5);
+    tone([350, 440], 0, .55, .3);
     const D = { 1: [697, 1209], 2: [697, 1336], 3: [697, 1477], 4: [770, 1209], 5: [770, 1336], 6: [770, 1477], 7: [852, 1209], 8: [852, 1336], 9: [852, 1477], 0: [941, 1336] };
-    "5550199".split("").forEach((c, i) => tone(D[c], .65 + i * .1, .07, .5));
-    const t = 1.5; tone([2100], t, .45, .35); tone([1650, 1850], t + .5, .35, .3, "square"); noise(t + .5, .9, .5); tone([980, 1180], t + .9, .45, .25, "sawtooth");
+    "5550199".split("").forEach((c, i) => tone(D[c], .65 + i * .1, .07, .25));
+    const t = 1.5; tone([2100], t, .45, .14); tone([1650, 1850], t + .5, .35, .1, "triangle"); noise(t + .5, .9, .16); tone([980, 1180], t + .9, .45, .1, "triangle");
   }
-  const ringSound = () => { if (!sample("ring")) for (let i = 0; i < 2; i++) tone([440, 480], i * .5, .4, .45); };
-  const click = () => tone([2400], 0, .02, .25, "square");
+  const ringSound = () => { if (!sample("ring")) for (let i = 0; i < 2; i++) tone([440, 554.37], i * .62, .42, .22); };
+  const click = () => tone([1400], 0, .03, .18);
   function rumble(t0, dur, vol, freq) {
     const a = audio(); if (!a) return;
     const b = a.createBuffer(1, Math.floor(a.sampleRate * dur), a.sampleRate), d = b.getChannelData(0);
@@ -273,7 +275,7 @@
   function lava() { el.classList.toggle("lava-on"); click(); }
   function disk() {
     const real = sample("disk");
-    for (let i = 0; i < 7; i++) setTimeout(() => { blink(".rm-pc .hdd", 70); if (!real) tone([90 + Math.random() * 60], 0, .03, .5, "square"); }, i * 110 + Math.random() * 60);
+    for (let i = 0; i < 7; i++) setTimeout(() => { blink(".rm-pc .hdd", 70); if (!real) tone([90 + Math.random() * 60], 0, .03, .3, "triangle"); }, i * 110 + Math.random() * 60);
     const S = R ? R.S : null; if (!S) return;
     say(`C:\\> mem · ${S.blocks.length} blocks kept on this page · ${S.mempool.length} tx waiting · ${S.validators.length || "?"} validators`);
   }
@@ -437,7 +439,7 @@
         const p = el.querySelector(".rm-lcd"), pb = el.querySelector(".rm-hot.rm-pager");
         p.classList.add("lit"); setTimeout(() => p.classList.remove("lit"), 1800);
         if (!REDUCED) for (const n of [p, pb]) { n.classList.remove("buzz"); void n.offsetWidth; n.classList.add("buzz"); }
-        sample("pager", { gain: .7, pan: -.3 }); if (RS()) RS().block();
+        sample("pager", { gain: .8, pan: -.3 }); if (RS()) RS().block();
         blink('.rm-leds [data-l="RD"]', 420); blink(".rm-pc .hdd", 260); setTimeout(() => blink(".rm-pc .hdd", 180), 340);
         const g = el.querySelector(".rm-glow.left"); g.classList.remove("pulse"); void g.offsetWidth; g.classList.add("pulse");
       }
@@ -455,7 +457,7 @@
   function ring(u) {
     st.ring = u; el.classList.add("ringing"); const ph = el.querySelector(".rm-hot.rm-phone"); if (!REDUCED) ph.classList.add("ring");
     clearInterval(st.ringT); let n = 0; ringSound(); if (RS()) RS().mood("ring");
-    st.ringT = setInterval(() => { if (++n >= 4 || !on) { stopRing(); return; } ringSound(); }, 2600);
+    st.ringT = setInterval(() => { if (++n >= 3 || !on) { stopRing(); return; } ringSound(); }, 4200);   // three calm rings, then it waits for you
   }
   function stopRing() { if (RS() && !sh.call) RS().mood("night"); clearInterval(st.ringT); st.ringT = null; el.classList.remove("ringing"); el.querySelector(".rm-hot.rm-phone").classList.remove("ring"); }
   function answer() {
@@ -548,7 +550,7 @@
     if (REDUCED) return done();
     wr(`tracing ${what} `, "muted"); let k = 0;
     const hex = () => Array.from({ length: 24 }, () => "0123456789abcdef"[Math.random() * 16 | 0]).join("");
-    const t = setInterval(() => { if (!on) return clearInterval(t); if (++k > 4) { clearInterval(t); done(); return; } wr(`  ${hex()} … ${k * 25}%`, "muted"); tone([900 + k * 120], 0, .03, .2, "square"); }, 140);
+    const t = setInterval(() => { if (!on) return clearInterval(t); if (++k > 4) { clearInterval(t); done(); return; } wr(`  ${hex()} … ${k * 25}%`, "muted"); tone([900 + k * 120], 0, .04, .12); }, 140);
   }
   function run(cmd) {
     const [c, ...a] = cmd.trim().split(/\s+/); if (!c) return;
@@ -575,7 +577,7 @@
     else return;
     e.preventDefault(); sh.last = performance.now();
     st.gesture = true; soundUp();
-    if (k.length === 1 || k === "Backspace" || k === "Enter") { if (RS() && RS().running) RS().key(k); else tone([180 + Math.random() * 80], 0, .018, .35, "square"); }
+    if (k.length === 1 || k === "Backspace" || k === "Enter") { if (RS() && RS().running) RS().key(k); else tone([180 + Math.random() * 80], 0, .025, .3, "triangle"); }
     if (view && view !== "main" && k === "Enter") lean("main");
     renderMain();
   }

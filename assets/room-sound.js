@@ -55,8 +55,8 @@
     if (buf[name]) return Promise.resolve(buf[name]);
     if (wait[name]) return wait[name];
     return (wait[name] = (async () => {
-      await info();
-      for (const u of (server.includes(name) ? [SERVER, LOCAL] : [LOCAL])) {
+      await info();   // "drawn" in list.json: ours on purpose (the phone, the pager, the tube), never swapped
+      for (const u of (server.includes(name) && !(meta[name] && meta[name].drawn) ? [SERVER, LOCAL] : [LOCAL])) {
         try { const r = await fetch(u + name + ".mp3"); if (!r.ok) continue; return (buf[name] = await decode(await r.arrayBuffer())); } catch (e) {}
       }
       return null;
@@ -92,8 +92,8 @@
   };
   const MOODS = {
     night: { prog: ["Dmaj9", "Bm9", "Gmaj9", "A13s", "Dmaj9", "Bm9", "Em9", "A13", "Fsm7", "Bm9", "Gmaj9", "Gm6", "Dmaj9", "Fsm7", "Em9", "A13s"], drums: 1, bass: "walk", lead: 0.55 },
-    call: { prog: ["Bm9", "Gmaj7s11", "Em9", "Fs7b9"], drums: 0, bass: "hold", lead: 0.25, pad: 1 },
-    ring: { prog: ["Bm9", "Gmaj7s11", "Em9", "Fs7b9"], drums: 0.5, bass: "pulse", lead: 0, pad: 1 },
+    call: { prog: ["Bm9", "Gmaj9", "Em9", "A13s"], drums: 0, bass: "hold", lead: 0.25, pad: 1 },   // curious, never tense
+    ring: { prog: ["Gmaj9", "A13", "Fsm7", "Bm9"], drums: 0, bass: "hold", lead: 0, pad: 1 },
     awake: { prog: ["Gmaj9", "A13", "Dmaj9", "Dmaj9"], drums: 0, bass: "hold", lead: 0.9, pad: 1, then: "night" },
   };
   const SCALE = [62, 64, 66, 69, 71, 74, 76, 78, 81, 83];   // D major pentatonic, over two octaves
