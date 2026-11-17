@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-wfit="one" data-wfit-in=".list, aside">
 <head>
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
@@ -185,9 +185,13 @@ details.ans .fix { margin: 0; }
   main { order: 0; }
   aside > .panel:not(#verdictPanel) { order: 2; }
 }
+/* wide screens (2560 × 1440, ultrawide): the whole width, zoomed until the answers fill the screen (assets/widefit.js) */
+html.wfit .wrap { max-width: none; zoom: var(--z); height: var(--wfH); }
+html.wfit .cols { grid-template-columns: minmax(0, 1fr) 440px; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/widefit.js" defer></script>
 </head>
 <body>
 <div class="wrap">
