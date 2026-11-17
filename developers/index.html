@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-wfit="one" data-wfit-in=".panel">
 <head>
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
@@ -135,9 +135,12 @@ footer a { color: var(--dim); }
 }
 /* running text stays readable: about 70 characters a line, whatever the screen width */
 p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .cards p, .cards li p, li > p, .how li, .howto, .quiet, .empty { max-width: 76ch; }
+/* wide screens (2560 × 1440, ultrawide): the whole width, zoomed until the page fills the screen (assets/widefit.js) */
+html.wfit .wrap { max-width: none; zoom: var(--z); height: var(--wfH); }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/widefit.js" defer></script>
 </head>
 <body>
 <div class="wrap">
