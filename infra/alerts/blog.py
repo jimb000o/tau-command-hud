@@ -61,6 +61,9 @@ RETRY_AFTER = 2 * 3600
 # title and summary. One post with a link costs $0.20 instead of $0.015 (a few articles a month); X refuses a post with
 # an uploaded picture AND a link (403, 3 November), so it goes without upload, and on a refusal once more the old way.
 X_BLOG_LINK = os.environ.get("X_BLOG_LINK", "true").lower() in ("1", "true", "yes")
+# 17 Nov 2026 (Kilian): one blog post a week covers all cruises (testnet_week.py, Sunday); no article per call any more.
+# BLOG_CRUISE_DRAFTS=1 brings the per-call drafts back; up blog draft <visit> still writes one by hand.
+CRUISE_DRAFTS = os.environ.get("BLOG_CRUISE_DRAFTS", "0").strip().lower() in ("1", "true", "yes", "on")
 AUTO_PUBLISH_HOURS = float(os.environ.get("BLOG_AUTO_PUBLISH_HOURS", "0") or 0)
 # The article's one post on Telegram and X goes out only while its call is news: at most this many hours after the call
 # began. A later publish (a draft written anew, auto-publish switched back on, a draft left waiting) puts the article on
@@ -939,6 +942,8 @@ def due(entries: list[dict], now: float) -> bool:
 
 
 def tick(now: float | None = None) -> None:
+    if not CRUISE_DRAFTS:
+        return   # the week's cruises go into Sunday's weekly post
     now = now or time.time()
     st = state()
     if not AI_KEY or now - st["failed_at"] < RETRY_AFTER:
