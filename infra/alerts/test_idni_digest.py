@@ -119,9 +119,15 @@ check(tg.startswith("🛠 <b>IDNI testnet progress · 5 Nov</b>") and "<b>Why it
       and all(f"\n\n• {p}" in tg for p in d["points"])
       and "Our node does not run it yet; its code is from 3 Nov." in tg and "github.com/IDNI/tau-testnet/commits/main" in tg,
       "Telegram: the day, the points, why it matters, what our node runs, the links, not affiliated")
-x = alerts.x_post(idg.x_lines(d), foot=idg.X_FOOT, keep=2)
+x = alerts.x_post(idg.x_lines(d), foot=idg.X_FOOT)
 check(alerts.x_len(x) <= 280 and "http" not in x and x.startswith("🛠 IDNI testnet: Block makers") and x.endswith("#TauNet"),
       "X: no link, under 280, the headline first, the tags last")
+long = dict(d, title="Tau Net testnet now checks every block's proof before adopting a fork",
+            x_text="IDNI merged a fix so Tau Net testnet nodes check the proof of every block they ingest, and block proofs are now checked in about 2 ms instead of far longer.",
+            why="A node no longer adopts a fork it has not proven block by block.")
+x = alerts.x_post(idg.x_lines(long), foot=idg.X_FOOT)
+check(alerts.x_len(x) <= 280 and "…" not in x and "A node no longer adopts a fork" in x and "inste" not in x,
+      "a gist too long for X (17 Nov 2026, '…inste…'): the why line in whole sentences instead, never cut mid-word")
 
 bad = dict(GOOD, why="IDNI finally fixed what was broken for 12 days!")
 d2 = idg.write(g, paths, at("2026-11-04T00:00:00Z"), at("2026-11-07T10:00:00Z"), None, at("2026-11-07T10:01:00Z"), fake(bad))
