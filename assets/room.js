@@ -10,8 +10,8 @@
      click on it prints the line state. The lamp switches on and off. Click a screen to lean in, again or Esc to sit back.
    - Way in: the ▣ button beside the settings, Explore → "The room · 1999", or ?room=1. Esc or "Stand up" leaves it.
      It needs a window 900 px wide and wider than tall; below that the button is hidden.
-   - Start: the main screen fills the window, the PC boots (a short POST, then it dials the node and says CONNECT or NO
-     CARRIER for what the HUD really shows), and the camera sits back to show the room. Return visits are shorter; a
+   - Start: the whole room shows at once, lights low; the main screen boots (a short POST, then it dials the node and says CONNECT or NO
+     CARRIER for what the HUD really shows), then the lights come up and the other two tubes switch on. Return visits are shorter; a
      click or key skips it; no boot with prefers-reduced-motion.
    - Sound (dial tone and handshake at the start, the phone's ring) only after a click and only while "Sound" is on;
      remembered in localStorage (tauhud-room-sound).
@@ -29,12 +29,12 @@
 
   /* the room's few words in Chinese and Japanese, so the page's dictionaries stay untouched */
   const L = {
-    zh: { "Stand up": "起身", "Sound on": "声音 开", "Sound off": "声音 关", "Full screen": "全屏",
+    zh: { "Stand up": "起身", "Sound on": "声音 开", "Sound off": "声音 关", "Music on": "音乐 开", "Music off": "音乐 关", "Full screen": "全屏",
       "Click a screen to lean in. The phone rings when someone proposes a rule change; the pager buzzes at every block.": "点击屏幕凑近看。有人提出规则变更时电话会响；每出一个区块，寻呼机就会震动。",
-      "click or any key: skip": "点击或按任意键跳过", "The room, 1999": "1999 年的房间", "The room needs a wider window (900 px and up, wider than tall).": "这个房间需要更宽的窗口（900 px 以上，横向）。" },
-    ja: { "Stand up": "立ち上がる", "Sound on": "音 オン", "Sound off": "音 オフ", "Full screen": "全画面",
+      "click or any key: skip": "点击或按任意键跳过", "Type help and press Enter. Click a screen to lean in; the phone rings at each rule change, the pager buzzes at every block.": "输入 help 并按回车。点击屏幕凑近看；每次规则变更电话会响，每出一个区块寻呼机就会震动。", "The room, 1999": "1999 年的房间", "The room needs a wider window (900 px and up, wider than tall).": "这个房间需要更宽的窗口（900 px 以上，横向）。" },
+    ja: { "Stand up": "立ち上がる", "Sound on": "音 オン", "Sound off": "音 オフ", "Music on": "音楽 オン", "Music off": "音楽 オフ", "Full screen": "全画面",
       "Click a screen to lean in. The phone rings when someone proposes a rule change; the pager buzzes at every block.": "画面をクリックすると近づきます。ルール変更が提案されると電話が鳴り、ブロックごとにポケベルが震えます。",
-      "click or any key: skip": "クリックまたは任意のキーでスキップ", "The room, 1999": "1999 年の部屋", "The room needs a wider window (900 px and up, wider than tall).": "この部屋には広い画面が必要です（幅 900 px 以上、横長）。" },
+      "click or any key: skip": "クリックまたは任意のキーでスキップ", "Type help and press Enter. Click a screen to lean in; the phone rings at each rule change, the pager buzzes at every block.": "help と入力して Enter を押してください。画面をクリックすると近づきます。ルール変更のたびに電話が鳴り、ブロックごとにポケベルが震えます。", "The room, 1999": "1999 年の部屋", "The room needs a wider window (900 px and up, wider than tall).": "この部屋には広い画面が必要です（幅 900 px 以上、横長）。" },
   };
   const T = s => ((L[window.TauI18n && TauI18n.lang] || {})[s] || s);
 
@@ -66,7 +66,7 @@
   const fits = () => innerWidth >= 900 && innerHeight >= 480 && innerWidth / innerHeight >= 1.2;
 
   let el = null, cam = null, scr = {}, view = null, on = false, booting = false, R = null, timer = null, hintT = null;
-  const st = { h: 0, mem: 0, lastLog: null, seenU: null, ring: null, ringT: null, typing: [], sound: get("tauhud-room-sound") !== "off", gesture: false };
+  const st = { h: 0, mem: 0, lastLog: null, seenU: null, ring: null, ringT: null, typing: [], sound: get("tauhud-room-sound") !== "off", music: get("tauhud-room-music") !== "off", gesture: false };
 
   const mk = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -108,7 +108,7 @@
     const pc = mk("div", "rm-pc", '<i class="pw on"></i><i class="hdd"></i>'); cam.append(pc);
     /* the things you can touch */
     /* in the painting each one is cut from the picture itself, so it can shake, ring and light up on hover */
-    const DO = { lamp: () => { el.classList.toggle("lamp-off"); click(); }, phone: () => answer(), pager: () => lean("left"), modem: () => modemSays(),
+    const DO = { lamp: () => lampSwitch(), phone: () => answer(), pager: () => lean("left"), modem: () => modemSays(),
       window: () => thunder(), cat: () => purr(), lava: () => lava(), tower: () => disk() };
     const svgImg = f => `<img alt="" src="${BASE}${f}" style="width:100%;height:100%;display:block">`;
     for (const k of ["window", "lava", "tower", "cat", "lamp", "modem", "pager", "phone"]) {
@@ -126,16 +126,18 @@
     /* page px */
     const ui = mk("div", "rm-ui");
     const bs = mk("button", "", ""); bs.type = "button"; const sl = () => { bs.textContent = T(st.sound ? "Sound on" : "Sound off"); bs.setAttribute("aria-pressed", st.sound); };
-    sl(); bs.addEventListener("click", e => { e.stopPropagation(); st.sound = !st.sound; put("tauhud-room-sound", st.sound ? "on" : "off"); sl(); if (!st.sound) hush(); });
+    sl(); bs.addEventListener("click", e => { e.stopPropagation(); st.sound = !st.sound; put("tauhud-room-sound", st.sound ? "on" : "off"); sl(); if (!st.sound) hush(); else soundUp(); });
+    const bm = mk("button", "", ""); bm.type = "button"; const ml = () => { bm.textContent = T(st.music ? "Music on" : "Music off"); bm.setAttribute("aria-pressed", st.music); };
+    ml(); bm.addEventListener("click", e => { e.stopPropagation(); st.music = !st.music; put("tauhud-room-music", st.music ? "on" : "off"); ml(); if (RS()) RS().set({ music: st.music }); });
     const bf = mk("button", "", "⛶"); bf.type = "button"; bf.title = T("Full screen"); bf.setAttribute("aria-label", T("Full screen"));
     bf.addEventListener("click", e => { e.stopPropagation(); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else if (root.requestFullscreen) root.requestFullscreen().catch(() => {}); });
     if (!(document.fullscreenEnabled && root.requestFullscreen)) bf.hidden = true;
     const bx = mk("button", "", T("Stand up") + " ✕"); bx.type = "button"; bx.addEventListener("click", e => { e.stopPropagation(); leave(); });
-    ui.append(bs, bf, bx); el.append(ui);
-    el.append(mk("div", "rm-hint gone", esc(T("Click a screen to lean in. The phone rings when someone proposes a rule change; the pager buzzes at every block."))));
+    ui.append(bs, bm, bf, bx); el.append(ui);
+    el.append(mk("div", "rm-hint gone", esc(T("Type help and press Enter. Click a screen to lean in; the phone rings at each rule change, the pager buzzes at every block."))));
     el.append(mk("div", "rm-skip", esc(T("click or any key: skip"))));
     el.addEventListener("click", () => { if (view) lean(null); });
-    el.addEventListener("pointerdown", () => { st.gesture = true; }, true);
+    el.addEventListener("pointerdown", () => { st.gesture = true; soundUp(); }, true);
     document.body.append(el);
     layout();
   }
@@ -157,6 +159,11 @@
         maskImage: mu, webkitMaskImage: mu, maskSize: "100% 100%", webkitMaskSize: "100% 100%", maskComposite: "intersect", webkitMaskComposite: "source-in" });
     }
     if (!VAR) return;
+    /* each screen takes the exact shape of its painted glass (glass-*.png, traced from the picture) */
+    for (const k in scr) {
+      const g = (VAR.glass || {})[k], gu = g ? `url("${BASE + g}")` : "";
+      Object.assign(scr[k].style, { maskImage: gu, webkitMaskImage: gu, maskSize: "100% 100%", webkitMaskSize: "100% 100%", borderRadius: g ? "0" : "" });
+    }
     for (const k of ["main", "left", "right"]) {
       const [x, y, w, h] = GEO.scr[k], f = k === "main" ? 1.9 : 2.1;
       place(cam.querySelector(".rm-glow." + k), [x + w / 2 - w * f / 2, y + h / 2 - h * f * .55, w * f, h * f * 1.15]);
@@ -203,14 +210,19 @@
   }
   function frame() { if (!on || booting) return; shoot(view ? onScreen(view) : fitBox(), false); }
 
-  /* ---------------- sound: made here, nothing to load ---------------- */
+  /* ---------------- sound: the room, its music and the samples live in assets/room-sound.js (TauRoomSound); the small
+     tones here (the modem's handshake, clicks) go through the same mixer, and stand in where a sample has not loaded ---------------- */
+  const RS = () => window.TauRoomSound || null;
   let ac = null, out = null;
   function audio() {
     if (!st.sound || !st.gesture) return null;
+    if (RS()) { ac = RS().ctx(); if (!out && ac) { out = ac.createGain(); out.gain.value = .14; out.connect(RS().bus()); } return ac; }
     try { if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); out = ac.createGain(); out.gain.value = .14; out.connect(ac.destination); }
       if (ac.state === "suspended") ac.resume(); return ac; } catch (e) { return null; }
   }
-  function hush() { if (ac) { try { ac.close(); } catch (e) {} ac = null; out = null; } }
+  function soundUp() { if (on && st.sound && st.gesture && RS()) { RS().set({ music: st.music }); RS().start(); } }
+  function hush() { if (RS()) RS().stop(); else if (ac) { try { ac.close(); } catch (e) {} ac = null; out = null; } }
+  const sample = (n, o) => !!(RS() && RS().running && RS().play(n, Object.assign({ late: false }, o)));
   function tone(fs, t0, dur, vol = 1, type = "sine") {
     const a = audio(); if (!a) return;
     const g = a.createGain(); g.gain.setValueAtTime(0, a.currentTime + t0); g.gain.linearRampToValueAtTime(vol, a.currentTime + t0 + .01);
@@ -232,7 +244,7 @@
     "5550199".split("").forEach((c, i) => tone(D[c], .65 + i * .1, .07, .5));
     const t = 1.5; tone([2100], t, .45, .35); tone([1650, 1850], t + .5, .35, .3, "square"); noise(t + .5, .9, .5); tone([980, 1180], t + .9, .45, .25, "sawtooth");
   }
-  const ringSound = () => { for (let i = 0; i < 2; i++) tone([440, 480], i * .5, .4, .45); };
+  const ringSound = () => { if (!sample("ring")) for (let i = 0; i < 2; i++) tone([440, 480], i * .5, .4, .45); };
   const click = () => tone([2400], 0, .02, .25, "square");
   function rumble(t0, dur, vol, freq) {
     const a = audio(); if (!a) return;
@@ -247,18 +259,21 @@
   function thunder() {
     poke(cam.querySelector(".rm-flash"), "go", 1600);
     if (REDUCED) return;
-    setTimeout(() => rumble(0, 2.6, 1.6, 140), 450);
+    if (!sample("thunder", { delay: .45 })) setTimeout(() => rumble(0, 2.6, 1.6, 140), 450);
   }
   function purr() {
     poke(cam.querySelector(".rm-purr"), "go", 2400);
+    if (sample("purr")) return;
     const a = audio(); if (!a) return;
     const r = rumble(0, 2.2, 1.1, 110); if (!r) return;
     const lfo = a.createOscillator(), lg = a.createGain(); lfo.frequency.value = 24; lg.gain.value = .9; lfo.connect(lg); lg.connect(r.g.gain);
     lfo.start(); lfo.stop(a.currentTime + 2.2);
   }
+  function lampSwitch() { el.classList.toggle("lamp-off"); click(); if (RS()) RS().lamp(el.classList.contains("lamp-off")); }
   function lava() { el.classList.toggle("lava-on"); click(); }
   function disk() {
-    for (let i = 0; i < 7; i++) setTimeout(() => { blink(".rm-pc .hdd", 70); tone([90 + Math.random() * 60], 0, .03, .5, "square"); }, i * 110 + Math.random() * 60);
+    const real = sample("disk");
+    for (let i = 0; i < 7; i++) setTimeout(() => { blink(".rm-pc .hdd", 70); if (!real) tone([90 + Math.random() * 60], 0, .03, .5, "square"); }, i * 110 + Math.random() * 60);
     const S = R ? R.S : null; if (!S) return;
     say(`C:\\> mem · ${S.blocks.length} blocks kept on this page · ${S.mempool.length} tx waiting · ${S.validators.length || "?"} validators`);
   }
@@ -270,7 +285,9 @@
     booting = true; el.classList.add("booting"); st.skip = false;
     const skip = e => { if (e.type === "keydown" && e.key === "Escape") return; st.skip = true; };
     addEventListener("keydown", skip, true); el.addEventListener("pointerdown", skip, true);
-    shoot(onScreen("main", true), false);
+    /* the whole room from the first frame, lights low, only the main tube awake; nothing zooms */
+    shoot(fitBox(), false);
+    const art = cam.querySelector(".rm-art"); try { if (!art.complete) await Promise.race([art.decode(), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
     main.classList.remove("off"); main.classList.add("on");
     box.innerHTML = '<div class="rm-term rm-post"></div>'; const term = box.firstChild;
     const line = (t, cls) => { const p = mk("p", cls || "", esc(t)); term.append(p); return p; };
@@ -302,14 +319,15 @@
     main.classList.add("glitch"); setTimeout(() => main.classList.remove("glitch"), 360);
     removeEventListener("keydown", skip, true); el.removeEventListener("pointerdown", skip, true);
     put("tauhud-room-seen", "1");
-    booting = false; el.classList.remove("booting");
+    booting = false; el.classList.add("waking"); el.classList.remove("booting"); setTimeout(() => el.classList.remove("waking"), 1800);
     st.lastLog = null; st.term = null;
     render(true);
-    shoot(fitBox(), true);
+    shoot(fitBox(), false);
     setTimeout(() => powerOn("left"), 650); setTimeout(() => powerOn("right"), 900);
-    hint();
+    hint(); welcome();
   }
-  function powerOn(k) { const s = scr[k]; if (!s || !on) return; s.classList.remove("off"); s.classList.add("on"); render(true); }
+  function welcome() { setTimeout(() => { if (on) { say("type help and press Enter · this shell only reads the chain, nothing you type can break anything", "sys"); sh.last = performance.now() - 45000; } }, 1200); }
+  function powerOn(k) { const s = scr[k]; if (!s || !on) return; sample("crt", { gain: .5, pan: k === "left" ? -.5 : .5 }); s.classList.remove("off"); s.classList.add("on"); render(true); }
   function hint() {
     const h = el.querySelector(".rm-hint"); if (!h || get("tauhud-room-hint") === "3") return;
     put("tauhud-room-hint", String((+get("tauhud-room-hint") || 0) + 1));
@@ -331,6 +349,7 @@
     let i = st.lastLog ? LOG.lastIndexOf(st.lastLog) : -1, add;
     add = i >= 0 ? LOG.slice(i + 1) : LOG.slice(-14);
     if (LOG.length) st.lastLog = LOG[LOG.length - 1];
+    if (!force && sh.busy()) return;   // while you type, the node log waits; it comes back after a minute of quiet
     for (const e of add) st.term.push({ t: e.t, txt: plain(e.msg), cls: CLS(e.cls || ""), fresh: !force && i >= 0 });
     if (st.term.length > 40) st.term.splice(0, st.term.length - 40);
   }
@@ -341,11 +360,12 @@
     const s = status(), box = scr.main.querySelector(".rm-in");
     let term = box.querySelector(".rm-term");
     if (!term || !box.querySelector(".h")) {
-      box.innerHTML = head("TAU TESTNET ALPHA · node log", s) + '<div class="rm-term"></div><p class="rm-prompt">root@tau:~# <span class="rm-cur"></span></p>';
+      box.innerHTML = head("TAU TESTNET ALPHA · node log", s) + '<div class="rm-term"></div><p class="rm-prompt">root@tau:~# <span class="rm-typed"></span><span class="rm-cur"></span></p>';
       term = box.querySelector(".rm-term"); term.dataset.n = "0";
     }
     const hd = box.querySelector(".h"), want = `<span>TAU TESTNET ALPHA · #${num(R.S.height || 0)}</span>${TAG[s]}`;
     if (hd.innerHTML !== want) hd.innerHTML = want;
+    const typed = box.querySelector(".rm-typed"); if (typed && typed.textContent !== sh.line) typed.textContent = sh.line;
     const have = +term.dataset.n || 0, list = st.term || [];
     if (have > list.length) { term.innerHTML = ""; term.dataset.n = "0"; return renderMain(); }
     for (let k = have; k < list.length; k++) {
@@ -411,11 +431,13 @@
     if (st.seenU == null) st.seenU = new Set(S.updates.map(u => u.id));
     if (S.height !== st.h) {
       const first = !st.h; st.h = S.height; st.newBlock = !first;
+      if (!first && !booting && sh.watch) { const b = S.blocks[S.blocks.length - 1]; if (b) say(`#${b.n} ${ts(b)} · ${(b.txs || []).length} tx · sealed by ${R.short(b.proposer || "") || "?"}`, ""); }
       if (!first && !booting) {
         for (const k of ["left"]) { scr[k].classList.remove("flash"); void scr[k].offsetWidth; scr[k].classList.add("flash"); }
         const p = el.querySelector(".rm-lcd"), pb = el.querySelector(".rm-hot.rm-pager");
         p.classList.add("lit"); setTimeout(() => p.classList.remove("lit"), 1800);
         if (!REDUCED) for (const n of [p, pb]) { n.classList.remove("buzz"); void n.offsetWidth; n.classList.add("buzz"); }
+        sample("pager", { gain: .7, pan: -.3 }); if (RS()) RS().block();
         blink('.rm-leds [data-l="RD"]', 420); blink(".rm-pc .hdd", 260); setTimeout(() => blink(".rm-pc .hdd", 180), 340);
         const g = el.querySelector(".rm-glow.left"); g.classList.remove("pulse"); void g.offsetWidth; g.classList.add("pulse");
       }
@@ -432,10 +454,10 @@
 
   function ring(u) {
     st.ring = u; el.classList.add("ringing"); const ph = el.querySelector(".rm-hot.rm-phone"); if (!REDUCED) ph.classList.add("ring");
-    clearInterval(st.ringT); let n = 0; ringSound();
+    clearInterval(st.ringT); let n = 0; ringSound(); if (RS()) RS().mood("ring");
     st.ringT = setInterval(() => { if (++n >= 4 || !on) { stopRing(); return; } ringSound(); }, 2600);
   }
-  function stopRing() { clearInterval(st.ringT); st.ringT = null; el.classList.remove("ringing"); el.querySelector(".rm-hot.rm-phone").classList.remove("ring"); }
+  function stopRing() { if (RS() && !sh.call) RS().mood("night"); clearInterval(st.ringT); st.ringT = null; el.classList.remove("ringing"); el.querySelector(".rm-hot.rm-phone").classList.remove("ring"); }
   function answer() {
     const S = R ? R.S : null; if (!S) return;
     const u = st.ring || S.updates.filter(x => x.status === "voting" || x.status === "scheduled").slice(-1)[0];
@@ -452,6 +474,147 @@
     else say("ATI · NO CARRIER · this browser runs the simulation (see Live / Simulation in the HUD's header)", "warn");
   }
 
+
+  /* ---------------- the shell: you type, the chain answers ----------------
+     A small 1999 shell on the main screen. Every answer is read from the HUD on this page (read only: nothing typed
+     here is signed or sent). The node log pauses while you type and comes back after a minute of quiet. */
+  const sh = {
+    line: "", hist: [], hi: 0, last: 0, n: 0, watch: false, call: null,
+    busy() { return performance.now() - this.last < 60000 || this.watch; },
+  };
+  const pad = (v, n) => String(v).padEnd(n);
+  const ts = b => { const t = Number(b && b.ts); return t > 1.5e9 ? new Date(t * 1000).toTimeString().slice(0, 8) : "--:--:--"; };
+  const amt = t => t.amount ? ` ${num(t.amount)} AGRS` : (t.transfers && t.transfers.length ? ` ${t.transfers.length} transfer${t.transfers.length > 1 ? "s" : ""}` : "");
+  const txLine = t => `  ${pad(R.short(t.id || ""), 13)} ${pad(t.type || "tx", 22)} from ${R.short(t.sender || "") || "?"}${amt(t)}`;
+  const wr = (txt, cls) => say(txt, cls || "");
+  const why = txt => say("  › " + txt, "muted");   // the plain-words line for beginners
+  const CMDS = {
+    help() {
+      wr("commands (read only, nothing is sent):", "sys");
+      wr("  block [n]    trace a block: hash, state, proposer, its transactions");
+      wr("  blocks       the last blocks · pending   what waits to be sealed");
+      wr("  tx <id>      find a transaction by the start of its id");
+      wr("  rules        the rules in force · changes   open rule changes");
+      wr("  validators   who seals the blocks · status   the line to the node");
+      wr("  watch        follow the chain block by block (any key stops)");
+      wr("  whoami · lamp · clear · exit");
+      why("new here? start with: blocks, then block, then rules. Each answer says in plain words what it means.");
+    },
+    status() { modemSays(); },
+    whoami() { wr("guest@node.tauhud.com · you read the chain, you sign nothing. Real moves are made with a wallet, in No Memo for one."); },
+    blocks() { const b = R.S.blocks.slice(-8).reverse(); if (!b.length) return wr("no blocks yet", "warn"); b.forEach(x => wr(`#${pad(x.n, 7)} ${ts(x)}  ${pad((x.txs || []).length + " tx", 6)} sealed by ${R.short(x.proposer || "") || "?"}`));
+      why("a block is one page of the shared record. Every few seconds a validator seals the next page; nobody can change a sealed page."); },
+    block(a) {
+      const S = R.S, n = a ? Number(String(a).replace("#", "")) : S.height, b = S.byHeight.get(n) || S.blocks.find(x => x.n === n);
+      if (!b) return wr(`#${a} is not on this page (it keeps the last ${S.blocks.length} blocks; ${S.blocks[0] ? "#" + S.blocks[0].n + " to #" + S.height : "none yet"})`, "warn");
+      trace(`block #${b.n}`, () => {
+        wr(`#${b.n} · sealed ${ts(b)} by ${R.short(b.proposer || "") || "?"}`, "sys");
+        wr(`  hash  ${b.hash || "?"}`); wr(`  prev  ${b.prev || (S.byHeight.get(b.n - 1) || {}).hash || "?"}`); wr(`  state ${b.state || "?"}`);
+        const t = b.txs || []; wr(`  ${t.length} transaction${t.length === 1 ? "" : "s"}`); t.slice(0, 6).forEach(x => wr(txLine(x))); if (t.length > 6) wr(`  … ${t.length - 6} more`, "muted");
+        why("hash = this page's fingerprint, prev = the page before it, so the pages form a chain. state = the fingerprint of every balance and rule after this page.");
+      });
+    },
+    pending() { const m = R.S.mempool; if (!m.length) wr("nothing waits · every sent transaction is sealed"); else { wr(`${m.length} waiting:`, "sys"); m.slice(-8).forEach(x => wr(txLine(x))); }
+      why("a sent transaction first passes the rules at the door, then waits here until a validator seals it into the next block."); },
+    tx(a) {
+      if (!a || a.length < 4) return wr("tx <first 4+ characters of the id>", "warn");
+      const k = a.toLowerCase(); let hit = null, where = "";
+      for (const b of R.S.blocks.slice().reverse()) { const t = (b.txs || []).find(x => String(x.id || "").toLowerCase().startsWith(k)); if (t) { hit = t; where = "sealed in #" + b.n; break; } }
+      if (!hit) { hit = R.S.mempool.find(x => String(x.id || "").toLowerCase().startsWith(k)); where = hit ? "waiting, not sealed yet" : ""; }
+      if (!hit) return wr(`no transaction ${a}… on this page`, "warn");
+      trace("tx " + a, () => { wr(`${hit.id}`, "sys"); wr(`  ${hit.type} · ${where}`); wr(`  from ${hit.sender || "?"}`); if (hit.to) wr(`  to   ${hit.to}`); if (hit.amount) wr(`  amount ${num(hit.amount)} AGRS`); wr(`  fee ${hit.fee}`); });
+    },
+    rules() {
+      const S = R.S, N = S.validators.length;
+      wr(`validators ${N || "?"} · votes needed ${N ? R.threshold() : "?"} · fee ${S.fee} per step · spec revision ${S.specRev} · personal rules ${S.clauses.size}`);
+      why("on Tau Net the rules themselves live on the chain, written in the Tau language. Validators change them by vote; anyone can add a personal rule for their own wallet.");
+    },
+    changes() {
+      const u = R.S.updates.filter(x => x.status === "voting" || x.status === "scheduled").slice(-4);
+      why("a rule change is a proposal to rewrite part of the network's rules. It takes effect only when enough validators vote for it.");
+      if (!u.length) return wr("no open rule change");
+      u.forEach(x => wr(`"${String(x.title || "rule change").slice(0, 50)}" · ${x.votes.size}/${R.threshold()} ${x.status === "scheduled" ? "agreed, takes effect at #" + num(x.activateAt) : "voting"}`));
+    },
+    validators() { const v = R.S.validators; if (!v.length) return wr("no validator list yet", "warn"); v.forEach((x, i) => wr(`  ${i + 1}. ${R.short(x)}`));
+      why("validators take turns sealing blocks and vote on rule changes. Each one is a wallet, shown by the start of its key."); },
+    watch() { sh.watch = true; wr("watching the chain · any key stops", "sys"); },
+    lamp() { lampSwitch(); },
+    clear() { st.term = []; const t = scr.main.querySelector(".rm-term"); if (t) { t.innerHTML = ""; t.dataset.n = "0"; } },
+    exit() { leave(); },
+  };
+  CMDS["?"] = CMDS.help; CMDS.ls = CMDS.help; CMDS.mempool = CMDS.pending; CMDS.wait = CMDS.pending; CMDS.cls = CMDS.clear; CMDS.quit = CMDS.exit;
+  /* a trace prints a short search before the answer: the feeling of finding it yourself */
+  function trace(what, done) {
+    if (REDUCED) return done();
+    wr(`tracing ${what} `, "muted"); let k = 0;
+    const hex = () => Array.from({ length: 24 }, () => "0123456789abcdef"[Math.random() * 16 | 0]).join("");
+    const t = setInterval(() => { if (!on) return clearInterval(t); if (++k > 4) { clearInterval(t); done(); return; } wr(`  ${hex()} … ${k * 25}%`, "muted"); tone([900 + k * 120], 0, .03, .2, "square"); }, 140);
+  }
+  function run(cmd) {
+    const [c, ...a] = cmd.trim().split(/\s+/); if (!c) return;
+    wr(`root@tau:~# ${cmd}`, "sys");
+    sh.hist.push(cmd); sh.hi = sh.hist.length; sh.n++;
+    blink(".rm-pc .hdd", 120);
+    if (!R) return wr("no carrier", "bad");
+    const f = CMDS[c.toLowerCase()];
+    if (sh.call && sh.call.wait) return callAnswer(cmd);
+    if (f) f(a.join(" ")); else wr(`${c}: not a command here · type help`, "warn");
+    if (sh.n === 3 && !get("tauhud-room-call")) setTimeout(nightCall, 2400);
+  }
+  function key(e) {
+    if (!on || booting || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target && e.target.closest && e.target.closest("input, textarea, [contenteditable]")) return;
+    const k = e.key;
+    if (sh.watch && k !== "Escape") { sh.watch = false; wr("stopped watching", "muted"); e.preventDefault(); return; }
+    if (k === "Enter") { const c = sh.line; sh.line = ""; run(c); }
+    else if (k === "Backspace") sh.line = sh.line.slice(0, -1);
+    else if (k === "ArrowUp") { sh.hi = Math.max(0, sh.hi - 1); sh.line = sh.hist[sh.hi] || ""; }
+    else if (k === "ArrowDown") { sh.hi = Math.min(sh.hist.length, sh.hi + 1); sh.line = sh.hist[sh.hi] || ""; }
+    else if (k === "Tab") { const m = Object.keys(CMDS).filter(x => x.startsWith(sh.line.toLowerCase())); if (m.length === 1) sh.line = m[0] + " "; }
+    else if (k.length === 1 && sh.line.length < 60) sh.line += k;
+    else return;
+    e.preventDefault(); sh.last = performance.now();
+    st.gesture = true; soundUp();
+    if (k.length === 1 || k === "Backspace" || k === "Enter") { if (RS() && RS().running) RS().key(k); else tone([180 + Math.random() * 80], 0, .018, .35, "square"); }
+    if (view && view !== "main" && k === "Enter") lean("main");
+    renderMain();
+  }
+  addEventListener("keydown", key);
+
+  /* ---------------- the night call: someone on the line tests whether you can read the chain ----------------
+     Three questions, answered from the live screens. Right answers light the room; it happens once per browser. */
+  function nightCall() {
+    if (!on || booting || !R) return;
+    const S = R.S, N = S.validators.length;
+    const Q = [
+      { q: "how many validators seal the blocks right now? (right screen)", a: () => String(N) },
+      { q: "what does one step cost, the fee? (same screen)", a: () => String(S.fee) },
+      { q: "and the newest block, its number? (left screen, the big digits)", a: () => String(S.height), near: 2 },
+    ];
+    sh.call = { Q, i: 0, wait: true, ok: 0 }; if (RS()) RS().mood("call");
+    ringSound(); el.classList.add("ringing"); setTimeout(() => el.classList.remove("ringing"), 1600);
+    wr("", ""); wr("*** talk request from nobody@0.0.0.0 ***", "warn");
+    wr("nobody: you're up late. reading the chain by hand?", "warn");
+    wr("nobody: let's see if you can. answer here.", "warn");
+    setTimeout(() => wr("nobody: " + Q[0].q, "warn"), 900);
+  }
+  function callAnswer(txt) {
+    const c = sh.call, q = c.Q[c.i], want = q.a(), got = txt.trim().replace(/[#,.\s]/g, "");
+    const ok = q.near ? Math.abs(Number(got) - Number(want)) <= q.near : got === want;
+    if (ok) { c.ok++; wr("nobody: right.", "warn"); if (RS()) RS().good(); } else { wr(`nobody: no. ${want}. look at the screens.`, "warn"); if (RS()) RS().bad(); }
+    c.i++;
+    if (c.i < c.Q.length) { setTimeout(() => wr("nobody: " + c.Q[c.i].q, "warn"), 700); return; }
+    c.wait = false; sh.call = null; put("tauhud-room-call", "1"); if (RS()) RS().mood(c.ok === c.Q.length ? "awake" : "night");
+    if (c.ok === c.Q.length) {
+      setTimeout(() => { wr("nobody: you read it like plain text. most people only see the lights.", "warn"); wr("nobody: the rest is on the chain. *** connection closed ***", "warn"); awaken(); }, 800);
+    } else setTimeout(() => { wr(`nobody: ${c.ok} of 3. come back when you can read it. *** connection closed ***`, "warn"); }, 800);
+  }
+  function awaken() {
+    for (const k in scr) { scr[k].classList.remove("flash"); void scr[k].offsetWidth; scr[k].classList.add("flash"); }
+    thunder(); el.classList.add("lava-on");
+    el.classList.add("waking", "booting"); setTimeout(() => el.classList.remove("booting"), 260); setTimeout(() => el.classList.remove("waking"), 2000);
+  }
+
   /* ---------------- in and out ---------------- */
   function enter(withClick) {
     if (on) return;
@@ -464,17 +627,18 @@
     R = window.TauRoom || null;
     if (!q.has("room")) { try { const u = new URL(location.href); u.searchParams.set("room", "1"); history.replaceState(history.state, "", u); } catch (e) {} }
     for (const k in scr) { scr[k].classList.add("off"); scr[k].classList.remove("on", "big"); scr[k].querySelector(".rm-in").innerHTML = ""; delete scr[k].querySelector(".rm-in").dataset.k; }
+    setTimeout(soundUp, 0);
     st.h = R ? R.S.height : 0; st.mem = R ? R.S.mempool.length : 0; st.seenU = null;
     clearInterval(timer); timer = setInterval(tick, 400); tick();
     if (REDUCED || q.get("intro") === "0" || navigator.webdriver && q.get("intro") !== "1") {
       booting = false; el.classList.remove("booting"); for (const k in scr) { scr[k].classList.remove("off"); }
-      render(true); shoot(fitBox(), false); hint();
+      render(true); shoot(fitBox(), false); hint(); welcome();
     } else boot();
-    el.querySelector(".rm-ui button:last-child").focus({ preventScroll: true });
+    el.tabIndex = -1; el.focus({ preventScroll: true });   // keys go to the shell, not to a button
   }
   function leave() {
     if (!on) return;
-    on = false; st.skip = true; clearInterval(timer); stopRing(); hush();
+    on = false; st.skip = true; clearInterval(timer); stopRing(); hush(); out = null;
     el.hidden = true; root.classList.remove("room-on");
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     try { const u = new URL(location.href); u.searchParams.delete("room"); history.replaceState(history.state, "", u); } catch (e) {}

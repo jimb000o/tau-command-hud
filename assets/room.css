@@ -178,3 +178,6 @@ html.room-on, html.room-on body { overflow: hidden !important; }
   #room.painted .rm-hot.cut.ring, #room.painted .rm-hot.cut.buzz, .rm-flash.go, #room.lava-on .rm-lavaglow, .rm-purr.go { animation: none !important; }
   #room.lava-on .rm-lavaglow { opacity: .7; }
 }
+/* the start: the room in half light while the PC boots, then the lights come up */
+#room.waking .rm-art, #room.waking .rm-hot.cut { transition: filter 1.6s ease; }
+#room.booting .rm-art, #room.booting .rm-hot.cut { filter: brightness(.42) saturate(.85); }
