@@ -15,8 +15,10 @@
      click or key skips it; no boot with prefers-reduced-motion.
    - Sound (dial tone and handshake at the start, the phone's ring) only after a click and only while "Sound" is on;
      remembered in localStorage (tauhud-room-sound).
-   - assets/room/room.json may later name a painted room ({src, w, h, rects in room px}); until then the drawn
-     room-1999.svg is the room. */
+   - The room is a painting (assets/room/room.json: a 16:9 picture and a 21:9 one for ultrawide windows, with the
+     screens, the pager's display, the modem's lamps and the things you can click as fractions of the picture). The
+     window flashes with lightning, the cat purrs, the lava lamp wakes, the tower's disk works. Without room.json the
+     drawn room-1999.svg is the room. room.json's "live" will hold the moving clips laid over the painting. */
 (() => {
   const root = document.documentElement, $ = id => document.getElementById(id);
   const q = new URLSearchParams(location.search);
@@ -40,8 +42,27 @@
   const GEO = {
     art: "room-1999.svg", w: 1600, h: 900, frame: [110, 150, 1490, 850],
     scr: { main: [568, 266, 464, 348], left: [222, 402, 256, 192], right: [1122, 402, 256, 192] },
-    lamp: [30, 500, 170, 300], phone: [1170, 720, 210, 105], pager: [484, 786, 92, 48], modem: [288, 708, 196, 58],
+    spots: { lamp: [30, 500, 170, 300], phone: [1170, 720, 210, 105], pager: [484, 786, 92, 48], modem: [288, 708, 196, 58] },
   };
+  /* the painted room: room.json, one picture per window shape */
+  let PAINT = null, VAR = null;
+  const loadPaint = () => PAINT !== null ? Promise.resolve(PAINT) : fetch(BASE + "room.json", { cache: "no-cache" })
+    .then(r => r.ok ? r.json() : null).catch(() => null).then(j => (PAINT = j && Array.isArray(j.variants) && j.variants.length ? j : false));
+  function pick() {
+    if (!PAINT) return null;
+    const a = innerWidth / innerHeight; let best = PAINT.variants[0];
+    for (const v of PAINT.variants) if (a >= (v.minAspect || 0) && (v.minAspect || 0) >= (best.minAspect || 0)) best = v;
+    return best;
+  }
+  function useVariant(v) {
+    VAR = v; const W = 1600, H = Math.round(W * v.h / v.w);
+    const bx = f => [f[0] * W, f[1] * H, (f[2] - f[0]) * W, (f[3] - f[1]) * H].map(Math.round);
+    const spots = {}; for (const k in v.spots || {}) spots[k] = bx(v.spots[k]);
+    Object.assign(GEO, { art: v.src, w: W, h: H, frame: [0, 0, W, H], spots, scr: { main: bx(v.screens.main), left: bx(v.screens.left), right: bx(v.screens.right) },
+      lcd: v.lcd ? bx(v.lcd) : null, rain: v.rain ? bx(v.rain) : null, leds: v.leds || null, pc: v.pc ? [v.pc[0] * W, v.pc[1] * H] : null });
+  }
+  const LABEL = { lamp: "Desk lamp", phone: "Telephone", pager: "Pager: the block height", modem: "Modem: the line to the node", window: "The window",
+    cat: "The cat", lava: "Lava lamp", tower: "The PC", mug: "Coffee", picture: "The picture", cables: "Cables" };
   const fits = () => innerWidth >= 900 && innerHeight >= 480 && innerWidth / innerHeight >= 1.2;
 
   let el = null, cam = null, scr = {}, view = null, on = false, booting = false, R = null, timer = null, hintT = null;
@@ -67,13 +88,15 @@
     cam = mk("div", "rm-cam");
     const art = mk("img", "rm-art"); art.alt = ""; art.decoding = "async"; art.src = BASE + GEO.art;
     cam.append(art);
-    const rain = mk("i", "rm-rain"); cam.append(rain);
+    if (VAR) el.classList.add("painted");
+    cam.append(mk("i", "rm-dark"));
     cam.append(mk("i", "rm-glow main"), mk("i", "rm-glow left"), mk("i", "rm-glow right"));
     for (const k of ["main", "left", "right"]) {
       const s = mk("div", "rm-scr off " + (k === "main" ? "main" : "side"), '<div class="rm-in"></div>');
       s.dataset.k = k; place(s, GEO.scr[k]); s.addEventListener("click", e => { e.stopPropagation(); lean(k); }); cam.append(s); scr[k] = s;
     }
-    cam.append(mk("i", "rm-light"), mk("i", "rm-dark"));
+    cam.append(mk("i", "rm-light"));
+    if (!VAR) {
     /* the calendar: this month, laid out as it fell in 1999, today ringed */
     const now = new Date(), m = now.getMonth(), first = (new Date(1999, m, 1).getDay() + 6) % 7, days = new Date(1999, m + 1, 0).getDate();
     const MON = "JANUARY FEBRUARY MARCH APRIL MAY JUNE JULY AUGUST SEPTEMBER OCTOBER NOVEMBER DECEMBER".split(" ")[m];
@@ -81,18 +104,23 @@
     for (let d = 1; d <= days; d++) g += `<b${d === now.getDate() ? ' class="today"' : ""}>${d}</b>`;
     cam.append(mk("div", "rm-cal", `<div class="pic"></div><div class="mo">${MON} 1999</div><div class="g">${g}</div>`));
     cam.append(mk("div", "rm-note", ""));
+    }
     const pc = mk("div", "rm-pc", '<i class="pw on"></i><i class="hdd"></i>'); cam.append(pc);
     /* the things you can touch */
-    const hot = (k, label, inner) => { const b = mk("button", "rm-hot rm-" + k, inner || ""); b.type = "button"; b.setAttribute("aria-label", label); place(b, GEO[k]); cam.append(b); return b; };
-    hot("lamp", "Desk lamp").addEventListener("click", e => { e.stopPropagation(); el.classList.toggle("lamp-off"); click(); });
-    const ph = hot("phone", "Telephone", `<img alt="" src="${BASE}phone.svg" style="width:100%;height:100%;display:block">`);
-    ph.addEventListener("click", e => { e.stopPropagation(); answer(); });
+    /* in the painting each one is cut from the picture itself, so it can shake, ring and light up on hover */
+    const DO = { lamp: () => { el.classList.toggle("lamp-off"); click(); }, phone: () => answer(), pager: () => lean("left"), modem: () => modemSays(),
+      window: () => thunder(), cat: () => purr(), lava: () => lava(), tower: () => disk() };
+    const svgImg = f => `<img alt="" src="${BASE}${f}" style="width:100%;height:100%;display:block">`;
+    for (const k of ["window", "lava", "tower", "cat", "lamp", "modem", "pager", "phone"]) {
+      if (!VAR && !["lamp", "phone", "pager", "modem"].includes(k)) continue;
+      const b = mk("button", "rm-hot rm-" + k + (VAR ? " cut" : ""), VAR ? "" : k === "phone" ? svgImg("phone.svg") : k === "pager" ? svgImg("pager.svg") : "");
+      b.type = "button"; b.dataset.k = k; b.setAttribute("aria-label", LABEL[k]); b.title = LABEL[k];
+      b.addEventListener("click", e => { e.stopPropagation(); st.gesture = true; DO[k](); }); cam.append(b);
+    }
     cam.append(mk("i", "rm-bell", "RING"));
-    const pg = hot("pager", "Pager: the block height", `<img alt="" src="${BASE}pager.svg" style="width:100%;height:100%;display:block">`);
-    pg.addEventListener("click", e => { e.stopPropagation(); lean("left"); });
-    const lcd = mk("div", "rm-lcd"); cam.append(lcd);
-    hot("modem", "Modem: the line to the node").addEventListener("click", e => { e.stopPropagation(); modemSays(); });
-    const leds = mk("div", "rm-leds", "MR HS AA CD OH RD SD TR".split(" ").map(k => `<i data-l="${k}"></i>`).join("")); cam.append(leds);
+    cam.append(mk("div", "rm-lcd"));
+    cam.append(mk("div", "rm-leds", "MR HS AA CD OH RD SD TR".split(" ").map(k => `<i data-l="${k}"></i>`).join("")));
+    cam.append(mk("i", "rm-rain"), mk("i", "rm-flash"), mk("i", "rm-lavaglow"), mk("i", "rm-purr", "prrr"));
     cam.append(mk("i", "rm-vig"));
     el.append(cam);
     /* page px */
@@ -109,6 +137,42 @@
     el.addEventListener("click", () => { if (view) lean(null); });
     el.addEventListener("pointerdown", () => { st.gesture = true; }, true);
     document.body.append(el);
+    layout();
+  }
+  /* everything in room px follows GEO: the SVG room keeps its CSS places, the painting sets them here */
+  function layout() {
+    if (!cam) return;
+    const art = cam.querySelector(".rm-art"); if (!art.src.endsWith("/" + GEO.art)) art.src = BASE + GEO.art;
+    Object.assign(cam.style, { width: GEO.w + "px", height: GEO.h + "px" }); Object.assign(art.style, { width: GEO.w + "px", height: GEO.h + "px" });
+    for (const k in scr) place(scr[k], GEO.scr[k]);
+    for (const b of cam.querySelectorAll(".rm-hot")) {
+      const r = GEO.spots[b.dataset.k]; b.hidden = !r; if (!r) continue;
+      place(b, r);
+      if (!VAR) continue;
+      /* where a thing stands in front of a screen, its mask lets the screen's glass through */
+      /* and a soft edge, so a lit or shaking thing never shows the corners of its cut */
+      const m = (VAR.masks || {})[b.dataset.k], soft = "radial-gradient(ellipse 50% 50% at 50% 50%, #000 62%, transparent 100%)";
+      const mu = m ? `url("${BASE + m}"), ${soft}` : soft;
+      Object.assign(b.style, { backgroundImage: `url("${BASE + GEO.art}")`, backgroundSize: `${GEO.w}px ${GEO.h}px`, backgroundPosition: `${-r[0]}px ${-r[1]}px`,
+        maskImage: mu, webkitMaskImage: mu, maskSize: "100% 100%", webkitMaskSize: "100% 100%", maskComposite: "intersect", webkitMaskComposite: "source-in" });
+    }
+    if (!VAR) return;
+    for (const k of ["main", "left", "right"]) {
+      const [x, y, w, h] = GEO.scr[k], f = k === "main" ? 1.9 : 2.1;
+      place(cam.querySelector(".rm-glow." + k), [x + w / 2 - w * f / 2, y + h / 2 - h * f * .55, w * f, h * f * 1.15]);
+    }
+    const hide = (sel, r) => { const n = cam.querySelector(sel); n.hidden = !r; if (r) place(n, r); return n; };
+    hide(".rm-rain", GEO.rain);
+    const fl = hide(".rm-flash", GEO.spots.window), fm = (VAR.masks || {}).window ? `url("${BASE + VAR.masks.window}")` : "";
+    Object.assign(fl.style, { maskImage: fm, webkitMaskImage: fm, maskSize: "100% 100%", webkitMaskSize: "100% 100%" }); hide(".rm-lavaglow", GEO.spots.lava);
+    const c = GEO.spots.cat; hide(".rm-purr", c && [c[0] + c[2] * .2, c[1] - c[3] * .2, c[2] * .6, c[3] * .4]);
+    const p = GEO.spots.phone; hide(".rm-bell", p && [p[0] + p[2] * .2, p[1] - 22, p[2] * .6, 18]);
+    const lcd = hide(".rm-lcd", GEO.lcd); if (GEO.lcd) lcd.style.fontSize = (GEO.lcd[3] * .78).toFixed(1) + "px";
+    const L = GEO.leds, d = L ? L.d * GEO.w : 0;
+    const leds = hide(".rm-leds", L && [L.x0 * GEO.w - d / 2, L.y * GEO.h - d / 2, (L.x1 - L.x0) * GEO.w + d, d]); if (L) leds.style.setProperty("--d", d.toFixed(1) + "px");
+    hide(".rm-pc", GEO.pc && [GEO.pc[0] - 3.5, GEO.pc[1] - 3.5, 8, 22]);
+    place(cam.querySelector(".rm-vig"), [-40, -40, GEO.w + 80, GEO.h + 80]);
+    place(cam.querySelector(".rm-dark"), [0, 0, GEO.w, GEO.h]);
   }
 
   /* ---------------- the camera ---------------- */
@@ -170,6 +234,34 @@
   }
   const ringSound = () => { for (let i = 0; i < 2; i++) tone([440, 480], i * .5, .4, .45); };
   const click = () => tone([2400], 0, .02, .25, "square");
+  function rumble(t0, dur, vol, freq) {
+    const a = audio(); if (!a) return;
+    const b = a.createBuffer(1, Math.floor(a.sampleRate * dur), a.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 1.6);
+    const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(); s.buffer = b; f.type = "lowpass"; f.frequency.value = freq || 160;
+    g.gain.value = vol; s.connect(f); f.connect(g); g.connect(out); s.start(a.currentTime + t0); return { s, g };
+  }
+
+  /* ---------------- the things in the room ---------------- */
+  function poke(n, cls, ms) { if (!n) return; n.classList.remove(cls); void n.offsetWidth; n.classList.add(cls); clearTimeout(n._t); n._t = setTimeout(() => n.classList.remove(cls), ms); }
+  function thunder() {
+    poke(cam.querySelector(".rm-flash"), "go", 1600);
+    if (REDUCED) return;
+    setTimeout(() => rumble(0, 2.6, 1.6, 140), 450);
+  }
+  function purr() {
+    poke(cam.querySelector(".rm-purr"), "go", 2400);
+    const a = audio(); if (!a) return;
+    const r = rumble(0, 2.2, 1.1, 110); if (!r) return;
+    const lfo = a.createOscillator(), lg = a.createGain(); lfo.frequency.value = 24; lg.gain.value = .9; lfo.connect(lg); lg.connect(r.g.gain);
+    lfo.start(); lfo.stop(a.currentTime + 2.2);
+  }
+  function lava() { el.classList.toggle("lava-on"); click(); }
+  function disk() {
+    for (let i = 0; i < 7; i++) setTimeout(() => { blink(".rm-pc .hdd", 70); tone([90 + Math.random() * 60], 0, .03, .5, "square"); }, i * 110 + Math.random() * 60);
+    const S = R ? R.S : null; if (!S) return;
+    say(`C:\\> mem · ${S.blocks.length} blocks kept on this page · ${S.mempool.length} tx waiting · ${S.validators.length || "?"} validators`);
+  }
 
   /* ---------------- the boot ---------------- */
   const sleep = ms => new Promise(r => { const t0 = performance.now(), tick = () => (st.skip || performance.now() - t0 >= ms) ? r() : setTimeout(tick, 16); tick(); });
@@ -285,7 +377,7 @@
   function renderRight() {
     const S = R.S, s = status(), box = scr.right.querySelector(".rm-in");
     const N = S.validators.length, thr = N ? R.threshold() : "—";
-    const open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled").slice(-3).reverse();
+    const open = S.updates.filter(u => u.status === "voting" || u.status === "scheduled").slice(-2).reverse();
     const kv = [["validators", N || "—"], ["votes needed", thr], ["fee / step", S.fee], ["spec revision", S.specRev], ["personal rules", S.clauses.size], ["waiting", S.mempool.length + " tx"]]
       .map(([k, v]) => `<span class="muted">${k}</span><span>${esc(v)}</span>`).join("");
     const ch = open.length ? open.map(u => `<div>${esc(String(u.title || "rule change").slice(0, 30))}</div><div class="muted"><span class="rm-bar">${bar(u.votes.size, N ? R.threshold() : 1)}</span> ${u.votes.size}/${thr} ${u.status === "scheduled" ? "agreed" : "voting"}</div>`).join("")
@@ -303,9 +395,9 @@
     if (!scr.right.classList.contains("off")) renderRight();
     /* desk */
     const lcd = el.querySelector(".rm-lcd"), ht = S.height ? "#" + String(S.height).slice(-6) : "----";
-    if (lcd.textContent !== ht) lcd.textContent = ht;
+    if (lcd.textContent !== ht) { lcd.textContent = ht; if (GEO.lcd) lcd.style.fontSize = Math.min(GEO.lcd[3] * .78, GEO.lcd[2] / (ht.length * .62)).toFixed(1) + "px"; }
     const note = el.querySelector(".rm-note"), nt = `node.tauhud.com\nfee ${S.fee}/step\n${S.validators.length || "?"} validators`;
-    if (note.textContent !== nt) { note.textContent = nt; note.style.whiteSpace = "pre"; }
+    if (note && note.textContent !== nt) { note.textContent = nt; note.style.whiteSpace = "pre"; }
     const led = (k, v) => { const i = el.querySelector(`.rm-leds [data-l="${k}"]`); if (i) i.classList.toggle("on", !!v); };
     led("MR", true); led("TR", true); led("HS", s === "live"); led("CD", s === "live"); led("OH", s !== "sim"); led("AA", false);
   }
@@ -365,6 +457,8 @@
     if (on) return;
     if (!fits()) { flash(T("The room needs a wider window (900 px and up, wider than tall).")); return; }
     if (withClick) st.gesture = true;
+    if (PAINT === null) { loadPaint().then(() => enter(withClick)); return; }
+    const v = pick(); if (v && v !== VAR) { useVariant(v); layout(); }
     if (!el) build();
     on = true; root.classList.add("room-on"); el.hidden = false; view = null;
     R = window.TauRoom || null;
@@ -396,7 +490,11 @@
     e.preventDefault(); if (booting) { st.skip = true; return; }
     if (view) lean(null); else leave();
   });
-  addEventListener("resize", () => { if (on && !fits()) leave(); else frame(); });
+  addEventListener("resize", () => {
+    if (!on) return; if (!fits()) { leave(); return; }
+    const v = pick(); if (v && v !== VAR) { useVariant(v); layout(); }
+    frame();
+  });
   document.addEventListener("visibilitychange", () => { if (on && !document.hidden) render(false); });
 
   /* the way in: a button beside the settings, the menu entry (no reload on this page), and ?room=1 */
