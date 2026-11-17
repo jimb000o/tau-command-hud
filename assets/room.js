@@ -164,6 +164,14 @@
       const mu = m ? `url("${BASE + m}"), ${soft}` : soft;
       Object.assign(b.style, { backgroundImage: `url("${BASE + GEO.art}")`, backgroundSize: `${GEO.w}px ${GEO.h}px`, backgroundPosition: `${-r[0]}px ${-r[1]}px`,
         maskImage: mu, webkitMaskImage: mu, maskSize: "100% 100%", webkitMaskSize: "100% 100%", maskComposite: "intersect", webkitMaskComposite: "source-in" });
+      /* a screen always wins: where a thing's box reaches over a screen, that part is cut out of it (a mask does not stop
+         clicks), so clicking or hovering a screen never switches the lamp; the painting below still shows the thing */
+      let holes = "";
+      for (const k in GEO.scr) {
+        const [sx, sy, sw, sh2] = GEO.scr[k], x0 = Math.max(sx, r[0]) - r[0], y0 = Math.max(sy, r[1]) - r[1], x1 = Math.min(sx + sw, r[0] + r[2]) - r[0], y1 = Math.min(sy + sh2, r[1] + r[3]) - r[1];
+        if (x1 > x0 && y1 > y0) holes += ` M${x0.toFixed(1)} ${y0.toFixed(1)} H${x1.toFixed(1)} V${y1.toFixed(1)} H${x0.toFixed(1)} Z`;
+      }
+      b.style.clipPath = holes ? `path(evenodd, "M0 0 H${r[2].toFixed(1)} V${r[3].toFixed(1)} H0 Z${holes}")` : "";
     }
     if (!VAR) return;
     /* each screen takes the exact shape of its painted glass (glass-*.png, traced from the picture) */
@@ -510,7 +518,7 @@
     hello: { say() { return [pick1(["hi. i'm the line into this node.", "hey. good to have company on the night shift.", "hello. the node is awake, so am i."]),
         "i read the chain live and say what it means. ask in plain words, or try: what is a block?"]; },
       more() { return TOPIC.me.say(); } },
-    me: { say() { return ["i'm a small program in this room, not a big language model. i only know this chain, but i know it live.", "ask me about blocks, rules, transactions or who keeps it all running."]; },
+    me: { say() { return ["i'm a small program in this room. what i know by heart comes from the live chain; a question i don't know, i pass to a language model for a moment.", "ask me about blocks, rules, transactions or who keeps it all running."]; },
       more() { return ["everything i say comes from the same feed as the screens. if the node goes quiet, so do i."]; } },
     help: { say() { return ["just ask, in your own words. good first questions:", "what is a block? · who seals them? · what are the rules? · show me a transaction"]; },
       more() { return ["the old commands work too: blocks, block 12, tx a1fe, pending, rules, changes, validators, watch, lamp, clear, exit."]; } },
@@ -562,35 +570,62 @@
     status: { say() { const s = status(); return [s === "live" ? `the line is live: node.tauhud.com, block #${num(R.S.height)}.` : s === "off" ? "the node doesn't answer right now. the page keeps trying." : "this browser runs a simulation right now, not the live chain.", "the modem's CD lamp says the same."]; }, more() { return TOPIC.blocks.say(); } },
   };
   /* what you wrote → what it is about. Plain words in English (and a few in German), the old commands still work. */
-  const INTENT = [
-    [/^(hi|hey|hello|hallo|moin|yo|good (evening|night|morning))\b/, "hello"],
-    [/(who|what) are you|are you (an? )?(ai|bot|llm|human|real)|wer bist du/, "me"],
-    [/^(help|\?|ls|commands?|hilfe)$|what can (i|you)|how does this work/, "help"],
-    [/thank|thx|danke|cheers/, "thanks"],
-    [/^tx\b|transaction|payment|transfer|überweisung/, "tx"],
-    [/^(pending|mempool|wait)\b|waiting|queue|warte/, "pending"],
-    [/^changes?\b|rule change|proposal|vote|abstimm|änderung/, "changes"],
-    [/^rules?\b|regel|law/, "rules"],
-    [/validator|who (seals|makes|signs|runs)|proposer|\bwer\b/, "validators"],
-    [/fee|cost|gebühr|kost/, "fee"],
-    [/^blocks$|last blocks|recent/, "blocks"],
-    [/^block\b|block|height|newest|latest|chain|page|block/, "block"],
-    [/\btau\b|tau net|tau language|what is this/, "tau"],
-    [/wallet|start|begin|play|how do i|sign|send/, "start"],
-    [/^status$|online|live|connect|node/, "status"],
+  const INTENT = [   // first match wins: the specific before the general; words anywhere in the question
+    [/^(hi|hey|hello|hallo|moin|yo|sup|good (evening|night|morning|afternoon))\b[\s!.?]*$/, "hello"],
+    [/\b(who|what) are you\b|\bare you (an? )?(ai|bot|llm|human|real|alive)\b|\bwer bist du\b|\byour name\b/, "me"],
+    [/^(help|\?|ls|commands?|hilfe|menu)$|\bwhat can (i|you)\b|\bhow does this work\b|\bwhat (do|should) i (do|ask)\b/, "help"],
+    [/\b(thanks?|thx|danke|cheers|ty)\b/, "thanks"],
+    [/\brule ?changes?\b|\bchanges?\b|\bproposals?\b|\bpropos|\bvot(e|es|ing)\b|\babstimm|\bänderung|\bgovernance\b|\bamend/, "changes"],
+    [/\bfees?\b|\bcosts?\b|\bprice of a step\b|\bgebühr|\bkostet?\b/, "fee"],
+    [/\btx\b|\btxs\b|\btransactions?\b|\bpayments?\b|\btransfers?\b|\büberweisung/, "tx"],
+    [/^(pending|mempool|wait)$|\bwaiting\b|\bqueue\b|\bmempool\b|\bpending\b|\bwarte/, "pending"],
+    [/\bvalidators?\b|\bwho (seals|makes|signs|runs|keeps|validates|produces)\b|\bproposers?\b|\bwer\b|\bseal(s|ed|ing)?\b/, "validators"],
+    [/\brules?\b|\bregeln?\b|\blaws?\b|\bspec\b|\bpolic(y|ies)\b|\bin force\b/, "rules"],
+    [/^blocks$|\b(last|recent|newest|latest) (\d+ )?blocks\b|\bblocks so far\b/, "blocks"],
+    [/\bblocks?\b|\bheight\b|\bnewest\b|\blatest\b|\bchain\b|\bpages?\b|\bhash\b|^#?\d+$/, "block"],
+    [/\btau\b|\bwhat is this\b|\bwhere am i\b|\bwhat('s| is) this (place|room)\b/, "tau"],
+    [/\bwallets?\b|\bhow do i (start|begin|send|play)\b|\bget started\b|\bplay\b|\bno memo\b/, "start"],
+    [/^status$|\bonline\b|\bconnected?\b|\bconnection\b|\bnode\b|\blive\b/, "status"],
   ];
   const MORE = /^(more|yes|y|ja|why|warum|go on|and|ok|okay|tell me more|open it|inside|weiter|mehr|explain|how)\b/;
   function think(txt) {
     const s = txt.trim().toLowerCase(), [w, ...rest] = s.split(/\s+/), arg = rest.join(" ");
-    if (w === "clear" || w === "cls") { CMDS.clear(); return null; }
-    if (w === "exit" || w === "quit") { leave(); return null; }
+    if (w === "clear" || w === "cls") { CMDS.clear(); return []; }
+    if (w === "exit" || w === "quit") { leave(); return []; }
     if (w === "lamp") { lampSwitch(); return [el.classList.contains("lamp-off") ? "lamp off. the screens are brighter now." : "lamp on. cosier."]; }
     if (w === "watch") { sh.watch = true; return ["watching the chain with you. every new block lands here. any key stops."]; }
-    if (MORE.test(s) && sh.topic) return TOPIC[sh.topic].more(arg);
-    for (const [re, k] of INTENT) if (re.test(s)) { sh.topic = k; return TOPIC[k].say(k === "block" ? (/\d/.test(s) ? s : "") : k === "tx" ? (/^tx\s/.test(s) ? arg : "") : arg); }
+    const hit = INTENT.find(([re]) => re.test(s));
+    if (sh.topic && MORE.test(s) && !hit) return TOPIC[sh.topic].more(arg);   // a follow-up: deeper on the same topic
+    for (const [re, k] of hit ? [hit] : []) { sh.topic = k; return TOPIC[k].say(k === "block" ? (/\d/.test(s) ? s : "") : k === "tx" ? (/^tx\s/.test(s) ? arg : "") : arg); }
     if (/^#?\d+$/.test(s)) { sh.topic = "block"; return TOPIC.block.say(s); }
-    return [pick1(["hm, that one's outside what i can see.", "i only know this chain, and that's not on it.", "not sure i follow."]), "try: what is a block? · who seals them? · what are the rules?"];
+    return null;   // not mine: ask the line (roomline.py on the relay), or say so
   }
+  const NOT_MINE = () => [pick1(["hm, that one's outside what i can see.", "i only know this chain, and that's not on it.", "not sure i follow."]), "try: what is a block? · who seals them? · what are the rules?"];
+  /* the chain as the page sees it, in one line, for the line's harder questions */
+  function facts() {
+    const S = R.S, b = S.byHeight.get(S.height) || S.blocks[S.blocks.length - 1], N = S.validators.length, [t, tb] = lastTx();
+    const u = S.updates.filter(x => x.status === "voting" || x.status === "scheduled").slice(-1)[0];
+    return [`mode ${status()}`, `newest block #${S.height}${b ? ", sealed " + ago2(b) + " by " + R.short(b.proposer || "") + ", " + (b.txs || []).length + " tx" : ""}`,
+      `${N} validators, ${N ? R.threshold() : "?"} votes needed`, `fee ${S.fee} per step`, `spec revision ${S.specRev}`, `${S.clauses.size} personal rules`,
+      `${S.mempool.length} tx waiting`, u ? `open rule change "${String(u.title || "").slice(0, 60)}" ${u.votes.size}/${R.threshold()} ${u.status}` : "no open rule change",
+      t ? `newest tx: ${tx1(t)} in #${tb.n}` : "no tx on this page"].join(" · ");
+  }
+  const LINE = { ws: null, open: null, wait: null };
+  function askLine(q) {
+    return new Promise(done => {
+      let fin = false; const end = v => { if (fin) return; fin = true; clearTimeout(to); LINE.wait = null; done(v); };
+      const to = setTimeout(() => end(null), 7000);
+      const send = ws => { LINE.wait = end; try { ws.send("roomask " + encodeURIComponent(JSON.stringify({ q, f: facts(), h: (sh.talk || []).slice(-2) }))); } catch (e) { end(null); } };
+      if (LINE.ws && LINE.ws.readyState === 1) return send(LINE.ws);
+      try {
+        const ws = LINE.ws = new WebSocket("wss://node.tauhud.com");
+        ws.onopen = () => { ws.send("hello version=1"); send(ws); };
+        ws.onmessage = ev => { let m; try { m = JSON.parse(String(ev.data)); } catch (e) { return; } if (m && m.command === "roomask" && LINE.wait) LINE.wait(m.data && m.data.lines); };
+        ws.onclose = ws.onerror = () => { if (LINE.ws === ws) LINE.ws = null; if (LINE.wait) LINE.wait(null); };
+      } catch (e) { end(null); }
+    });
+  }
+  function remember(q, a) { if (!a || !a.length) return; (sh.talk = sh.talk || []).push([q, a.join(" ")]); if (sh.talk.length > 4) sh.talk.shift(); }
   /* an answer arrives like someone typing it: a short pause to think, then line after line */
   function reply(lines) {
     if (!lines || !lines.length) return;
@@ -616,7 +651,9 @@
     CMDS.clear(); say(cmd, "you");   // each exchange gets the whole screen
     if (!R) return say("no carrier. the line is dead right now.", "bad");
     if (sh.call && sh.call.wait) return callAnswer(cmd);
-    reply(think(cmd));
+    const mine = think(cmd);
+    if (mine !== null || !navigator.onLine) { reply(mine === null ? NOT_MINE() : mine); remember(cmd, mine); }
+    else { sh.think = true; renderMain(); askLine(cmd).then(l => { sh.think = false; const a = l && l.length ? l : NOT_MINE(); reply(a); remember(cmd, a); }); }
     if (sh.n === 4 && !get("tauhud-room-call")) setTimeout(nightCall, 5200);
   }
   function key(e) {
