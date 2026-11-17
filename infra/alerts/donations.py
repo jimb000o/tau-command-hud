@@ -36,6 +36,7 @@ from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
 
 from alerts import SITE, Telegram, X, write_atomic, x_post
+import xgate
 
 log = logging.getLogger("tau-donations")
 
@@ -311,7 +312,10 @@ class Donations:
             posted = self.state["posted"].setdefault(d["key"], {})
             for o in self.outlets:
                 got = posted.get(o.name)
-                if not o.enabled() or got == "ok" or (isinstance(got, int) and got >= 3):
+                if not o.enabled() or got in ("ok", "skip") or (isinstance(got, int) and got >= 3):
+                    continue
+                if o.name == "x" and not xgate.allow("donation", "hud")[0]:
+                    posted[o.name] = "skip"   # an owner's posting plan keeps it off X for now; Telegram still thanks
                     continue
                 text = thanks_text(d, donors, nth) if o.name == "telegram" else thanks_x(d, donors)
                 ok, _, err = o.send_text(text)

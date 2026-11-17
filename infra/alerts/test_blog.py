@@ -20,6 +20,7 @@ os.environ.update(BLOG_ART=ART, BLOG_SHIPS=SHIPS, PUBLIC_DIR=TMP, BLOG_STATE=os.
                   TELEGRAM_BOT_TOKEN="", X_API_KEY="")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import blog  # noqa: E402
+blog.CRUISE_DRAFTS = True   # the per-call drafts (off by default since 17 Nov 2026) are tested here
 
 failed = 0
 
@@ -218,7 +219,26 @@ check(qf["compared with the ship before"]["minutes in port"] == [34, 90], "side 
 m = qf["what the numbers mean"]
 check(m["share of the planned stops that went through"] == "70%" and m["sends a minute the node's answer time allows, one at a time"] == 8.8
       and m["share of the planned time in port"] == "100%", f"what the numbers mean {m}")
-check(blog.unknown_numbers("the slowest answer took 20.0 seconds, the median 6.8", qf) == [], "20.0 seconds is a known number")
+check(blog.unknown_numbers("the slowest answer took 6.8 seconds, the median 6.8", qf) == [], "6.8 seconds is a known number")
+at = qf["our node's answer time to a send, seconds"]
+check(at["slowest"] == 6.8 and at["sends timed"] == 409, f"answer times only from answered sends, never the 20 s wait of a timeout {at}")
+# 17 Nov 2026, Black Sequence: the testnet restarted 8 minutes in; six timeouts, the pace lesson told once, the draft waits
+P17 = "2026-11-17-pirates"
+plog = [{"t": T0, "visit": P17, "ship": "pirates", "kind": "landed", "verdict": "calm", "plan": 104, "trial": []}]
+plog += [{"t": T0 + 60 + i * 30, "visit": P17, "kind": "pay", "ok": True, "verdict": "calm", "ms": 900} for i in range(3)]
+plog += [{"t": T0 + 200 + i * 30, "visit": P17, "kind": "pay", "ok": None, "note": "no answer from the node to sendtx", "verdict": "calm", "ms": 20000} for i in range(6)]
+plog.append({"t": T0 + 480, "visit": P17, "kind": "left", "note": "the testnet restarted during the call, so the call was cut short"})
+psum = {"id": P17, "ship": "pirates", "name": "Black Sequence", "t0": T0, "landed": True, "end": T0 + 480, "sent": {"pay": 3},
+        "refused": {}, "unanswered": 6, "skipped": 95, "passengers": 20,
+        "changed": [{"what": "transactions a minute", "from": 12, "to": 11, "because": "6 sends got no answer from our node in time"}]}
+plog.append({"t": T0 + 5400, "visit": P17, "kind": "visit over", "summary": psum})
+pf = blog.facts_of(plog, [])
+pf["the ship changed for its next call"] = psum["changed"]
+pn = blog.numbers_of(pf)
+check(sum("no answer" in n for n in pn) == 1, f"the timeouts are told once, with the pace change {pn}")
+check(any("11 transactions a minute instead of 12" in n for n in pn), f"the pace change is in the timeout line {pn}")
+check(pf["our node's answer time to a send, seconds"]["slowest"] == 0.9, "a call with timeouts: answer times from the three answers")
+check(blog.restart_hit({"facts": pf}) and not blog.restart_hit({"facts": qf}), "a call the restart ended waits for a read, a full one does not")
 check(blog_pics.visit_stats(qf)[0] == ("90/90", "minutes in port (ship before: 34)"), f"the first tile reads against the ship before {blog_pics.visit_stats(qf)[0]}")
 qfigs = blog_pics.visit_charts(qf, os.path.join(TMP, "queen"))
 check(any(p.endswith("-before.png") for p, _ in qfigs) and all(os.path.exists(p) for p, _ in qfigs), f"a chart against the ship before {[p for p, _ in qfigs]}")

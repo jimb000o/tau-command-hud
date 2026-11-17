@@ -68,6 +68,8 @@ services:
       CHAT_AI_KEY: ${CHAT_AI_KEY:-}   # Anthropic API key for the troll box's AI moderator (relay/chatai.py); empty: off
       CHAT_AI_MODEL: ${CHAT_AI_MODEL:-claude-haiku-5-5}
       CHAT_AI_DAILY: ${CHAT_AI_DAILY:-3000}   # at most this many AI checks per UTC day
+      ROOM_AI: ${ROOM_AI:-1}   # the room's line asks Claude what its script does not understand (relay/roomline.py); 0: script only
+      ROOM_AI_DAILY: ${ROOM_AI_DAILY:-300}   # at most this many such answers per UTC day, for everyone
       ROADMAP_ENABLED: ${ROADMAP_ENABLED:-1}   # comments on tauhud.com/roadmap/ (relay/roadmap.py, moderated with the troll box); 0 closes them, reading stays
       CRUISE_EXTRA: ${CRUISE_EXTRA:-}   # calls outside the timetable, "2026-11-22 15 queen; 2026-11-25 17 dryrun" (German day and hour)
       CRUISE_ENABLED: ${CRUISE_ENABLED:-1}   # cruise ships at White Rabbit Key (relay/cruise.py): simulated passengers, real test transactions; 0 keeps them away

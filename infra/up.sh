@@ -99,7 +99,7 @@ ln -sf "$(pwd)/up.sh" /usr/local/bin/up 2>/dev/null && chmod +x up.sh 2>/dev/nul
 # cache is below 6 GB; never the tau-lang stage of the node image (building that again takes hours).
 [ "${1:-}" = "cache" ] || (setsid nohup python3 buildcache/buildcache.py daily >/dev/null 2>&1 &) || true
 if [ "$1" != "--pulled" ]; then
-  git -C .. pull --ff-only
+  git -C .. pull --ff-only >&2   # on stderr: what up prints on stdout can go into a file (ssh … up <sub> csv > file.csv)
   exec sh "$(pwd)/up.sh" --pulled "$@"
 fi
 shift
@@ -198,7 +198,18 @@ fi
 if [ "${1:-}" = "restartwatch" ]; then
   when=$(TZ=Europe/Berlin date +%u%H)
   case "$when" in 216|217|218|219|315|316|317|410|411|613|614|615|616)
-    if [ "${2:-}" != "--now" ]; then
+    # 17 Nov 2026: a call a testnet restart ended early still blocked the whole window. Inside a cruise window the relay
+    # is asked: when today's call is over (ended within the last 3 hours), no ship is in port and none is due within
+    # 30 minutes, it goes ahead; any doubt (relay silent, hack replay hours) keeps the old refusal.
+    over=$(case "$when" in 41*) echo no ;; *) docker compose exec -T relay python -c 'import json,time,urllib.request
+s=json.load(urllib.request.urlopen("http://127.0.0.1:8080/cruise", timeout=10)); t=time.time(); v=s.get("now") or {}
+busy=bool(v) and v.get("phase")!="gone" and not v.get("why") and float(v.get("end") or 0)>t
+due=float((s.get("next") or {}).get("t0") or 0)-t
+ended=any(t-3*3600<float(b[1])<=t for b in s.get("bands") or [])
+print("yes" if ended and not busy and not 0<due<1800 else "no")' 2>/dev/null || echo no ;; esac)
+    if [ "${2:-}" != "--now" ] && [ "$over" = "yes" ]; then
+      echo "today's call is already over and no ship is due: the relay is rebuilt now"
+    elif [ "${2:-}" != "--now" ]; then
       echo "a cruise ship or the hack replay is due or under way now (German time $(TZ=Europe/Berlin date +%a\ %H:%M)); the relay stays as it is."
       echo "try again after the visit, or: up restartwatch --now"; exit 1
     fi ;;
@@ -235,17 +246,13 @@ fi
 # alone, safe any time: up x  both services built and started with the code just pulled, then every draft and what it
 # waits for; up x send <id>  posts it (caps, 2 h room and ship hours first; --now sets room and ship hours aside),
 # up x drop <id>, up x film <id>  filmed again, up x text <id> "new words"  (\n for a line break), up x week  this week's
-# posts, up x check  the plan read against the rules, up x stats [run|csv]  what the posts did (read daily, ~$1/month). Drafts come to the owner's Telegram by themselves (up owner).
+# posts, up x check  the plan read against the rules. Drafts come to the owner's Telegram by themselves (up owner).
 if [ "${1:-}" = "x" ]; then
   shift
   if [ -z "${1:-}" ]; then
     docker compose up -d --build --no-deps xfeatures films >/dev/null 2>&1 || docker compose up -d --build --no-deps xfeatures films
   else
     docker compose up -d --no-deps xfeatures films >/dev/null 2>&1 || true
-  fi
-  if [ "${1:-}" = "stats" ] && [ "${2:-}" = "csv" ]; then   # plain CSV, for: ssh … > x-stats.csv
-    docker compose exec -T xfeatures python xfeatures.py stats csv
-    exit $?
   fi
   echo "---------------- copy from here into the chat ----------------"
   [ $# -gt 0 ] || set -- list

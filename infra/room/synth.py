@@ -89,7 +89,7 @@ def thunder():
     sec = 6.0; t = t_(sec)
     crack = biquad(noise(0.3), "hp", 300) * env(int(0.3 * SR), 0.005, 0.08)
     roll = onepole_lp(noise(sec, "brown"), 160) * np.exp(-t / 2.2) * (1 + 0.5 * np.sin(2 * np.pi * 1.3 * t) ** 2)
-    x = place(roll, crack, 0.0, 0.3)
+    x = place(roll, onepole_lp(crack, 2200), 0.0, 0.22)
     return room(x, 0.5, 1.2)
 
 
@@ -101,20 +101,30 @@ def purr():
 
 
 def ring():
-    """a 1999 desk phone: an electronic warble, twice."""
-    x = np.zeros(int(2.4 * SR))
-    for at in (0.0, 0.5):
-        d = 0.4; tt = t_(d)
-        w = osc(np.where(np.sin(2 * np.pi * 20 * tt) > 0, 1100, 880), d, "square") * 0.5
-        place(x, biquad(w, "lp", 3000) * env(len(tt), 0.005, 1.0), at)
-    return room(x, 0.25, 0.5)
+    """the phone, made friendly: a warm, rounded double purr in A (a major third, A4 and C#5), soft on, soft off,
+    heard from across a small carpeted room. No square waves, nothing above 2 kHz worth hearing: it calls, it never startles."""
+    x = np.zeros(int(1.9 * SR))
+    for at in (0.0, 0.62):
+        d = 0.42; tt = t_(d)
+        trem = 0.72 + 0.28 * np.sin(2 * np.pi * 16 * tt)                 # a gentle flutter, never on/off
+        tone_ = (np.sin(2 * np.pi * 440 * tt) + 0.75 * np.sin(2 * np.pi * 554.37 * tt)
+                 + 0.12 * np.sin(2 * np.pi * 880 * tt) + 0.08 * np.sin(2 * np.pi * 1108.7 * tt))
+        e = np.minimum(1, tt / 0.07) * np.minimum(1, (d - tt) / 0.16)       # 70 ms in, 160 ms out
+        place(x, onepole_lp(tone_ * trem * e, 1800), at)
+        place(x, bell(880, 1.1, 0.5, 0.15) * 0.12, at + d - 0.05)          # a small bell-like afterglow
+    return room(x, 0.3, 0.7)
 
 
 def pager():
-    sec = 0.9; t = t_(sec)
-    gate = (np.sin(2 * np.pi * 3.2 * t) > -0.2).astype(float)
-    x = biquad(osc(160, sec, "square"), "lp", 600) * gate * 0.8
-    return fades(place(x, click(0.02, 3000), 0.0, 0.2), 0.002, 0.04)
+    """the pager on the wooden desk: two short, soft hums against the wood, no beep (the music answers a block)."""
+    x = np.zeros(int(0.75 * SR))
+    for at in (0.0, 0.3):
+        d = 0.17; tt = t_(d)
+        hum = np.tanh(1.6 * np.sin(2 * np.pi * 118 * tt))                  # the motor, rounded
+        wood = biquad(noise(d), "bp", 700, 1.2) * (0.5 + 0.5 * np.sin(2 * np.pi * 59 * tt)) * 0.25
+        e = np.minimum(1, tt / 0.025) * np.minimum(1, (d - tt) / 0.05)
+        place(x, onepole_lp((hum + wood) * e, 450), at)
+    return room(x, 0.15, 0.4)
 
 
 def disk():
@@ -126,11 +136,12 @@ def disk():
 
 
 def crt():
-    """a tube switching on: the degauss thunk and the rising whine."""
-    sec = 1.6; t = t_(sec)
+    """a tube switching on: a soft degauss thunk and a low warm hum settling in (no high whine)."""
+    sec = 1.4; t = t_(sec)
     thunk = thump(90, 40, 0.5, 0.15) + onepole_lp(noise(0.5, "brown"), 200) * env(int(0.5 * SR), 0.002, 0.1)
-    whine = osc(7000 + 8700 * (1 - np.exp(-t / 0.4)), sec) * 0.05 * np.minimum(1, t / 0.3)
-    return place(whine, thunk, 0.0, 1.0)
+    hum = (np.sin(2 * np.pi * 60 * t) + 0.3 * np.sin(2 * np.pi * 120 * t)) * 0.12 * np.minimum(1, t / 0.4) * np.exp(-t / 0.9)
+    static = onepole_lp(noise(sec), 2500) * 0.03 * np.exp(-t / 0.3)
+    return place(hum + static, thunk, 0.0, 1.0)
 
 
 def key(v):

@@ -28,6 +28,10 @@ def page(idx):   # the same compare page, with the room's name on it
     finally:
         base.rico.page = real
 base.page = page
+_print = print
+def _say(*a, **k):   # the No Memo helper names its own page; here it is the room's
+    _print(*(str(x).replace("rico/nomemo-sfx/", "rico/room-sfx/").replace("the game takes them", "the room takes them") for x in a), **k)
+base.print = _say
 
 
 def main():

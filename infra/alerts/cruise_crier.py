@@ -389,7 +389,7 @@ def post(t: dict, pic: str) -> list[str]:
     else:
         said.append("telegram: not set up")
     if t.get("on_x") is False or not t.get("x"):
-        said.append("x: not for this ship (its one X post is the blog's)")
+        said.append("x: " + (t.get("x_kept") or "not for this ship (its one X post is the blog's)"))
     elif alerts.X().enabled():
         try:
             said.append("x: " + post_image.x_photo(pic, t["x"]))
@@ -430,6 +430,9 @@ def announce(now: float, cruise: dict | None, st: dict) -> str | None:
     if vid in st["announced"]:
         return None
     t = compose(ship, t0)
+    import xgate
+    if t.get("on_x") is not False and t.get("x") and not xgate.allow("ship", "hud", now)[0]:
+        t["on_x"], t["x_kept"] = False, "kept off X by the posting plan"
     pic = picture(t, f"/tmp/cruise-{ship}.jpg")   # a failure here is tried again in 10 minutes
     clip = ship_clip(vid, t, pic)   # the same picture as a video, when Kling's clip of it is there (kling.py)
     st["announced"][vid] = {"at": round(now), "result": "posting"}
@@ -503,7 +506,7 @@ def clip_post(t: dict, video: str) -> list[str]:
     import kling
     said = kling.post_video(video, clip_texts(t))
     if t.get("on_x") is False or not t.get("x"):
-        said.append("x: not for this ship (its one X post is the blog's)")
+        said.append("x: " + (t.get("x_kept") or "not for this ship (its one X post is the blog's)"))
     return [s + " (video)" for s in said]
 
 
@@ -511,7 +514,10 @@ def clip_post(t: dict, video: str) -> list[str]:
 def report_text(f: dict) -> str:
     lines = [f"{f.get('ship')}, {f.get('date')}: the visit is over"] + ["• " + n for n in blog.numbers_of(f)]
     if isinstance(f.get("landed"), dict):
-        lines.append(f"• planned {f['landed'].get('transactions planned')}, skipped {f.get('stops skipped', 0)}, first send {f.get('first send')}, last {f.get('last send')}")
+        cut = f.get("left early") or f.get("call cut short by the restart")
+        lines.append(f"• planned {f['landed'].get('transactions planned')}, "
+                     + (f"not sent {f.get('stops skipped', 0)} (most because the call ended early)" if cut else f"skipped {f.get('stops skipped', 0)}")
+                     + f", first send {f.get('first send')}, last {f.get('last send')}")
     a = f.get("our node's answer time to a send, seconds")
     if a:
         lines.append(f"• our node's answer time: median {a['median']} s, 8 of 10 within {a.get('8 of 10 within', '?')} s, slowest tenth from {a['slowest tenth from']} s, slowest {a['slowest']} s")
@@ -527,9 +533,12 @@ def report_text(f: dict) -> str:
                      + (f", {tr['refused with another answer']} with another answer" if tr.get("refused with another answer") else "")
                      + (f", {tr['held back']} HELD BACK (see the separate message)" if tr.get("held back") else ""))
     for c in f.get("the ship changed for its next call") or []:
+        if not c.get("held") and f.get("sends our node did not answer in time (not refusals)") and "no answer" in str(c.get("because")):
+            continue   # already said with the timeouts (blog.numbers_of)
         lines.append("• learned: " + ("a pirate trick, held back" if c.get("held") else f"{c['what']} {c['from']} → {c['to']} ({c['because']})"))
     lines += [f"Logbook: {LOGBOOK}?visit={f.get('visit')}",
-              "The blog draft follows within 3 hours, I tell you here.",
+              "The blog draft follows within 3 hours, I tell you here." if blog.CRUISE_DRAFTS
+              else "On the blog in Sunday's weekly post, with the week's other calls.",
               "All numbers: " + UP.format(f"cruise {f.get('visit')}")]
     return "\n".join(lines)
 
