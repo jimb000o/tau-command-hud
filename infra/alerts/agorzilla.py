@@ -66,6 +66,12 @@ X_TAG = "#TauNet"   # every Agorzilla post on X carries it, once, at the end ($A
 SHOTS = os.environ.get("AGORZILLA_SHOTS", "/shots").strip()
 SHOTS_WAIT = float(os.environ.get("AGORZILLA_SHOTS_WAIT", 1500))
 LATE = float(os.environ.get("AGORZILLA_LATE_HOURS", 6)) * 3600   # an evening owed for longer (a restart) is not posted late
+# 17.11.2026 (evening 19 said Ball on Telegram, Drum on the page an hour later): an evening is posted only once its result
+# has been read the same on two passes at least SETTLE apart (agorzilla.com's archive runs every 10 minutes), and a posted
+# evening whose result latest.json later tells differently is reported to the owner privately, never corrected on its own:
+# `python agorzilla.py --correct N` posts the correction once the owner has checked which one is right.
+SETTLE = float(os.environ.get("AGORZILLA_SETTLE_SECONDS", 600))
+WATCH = 2 * 86400   # how long a posted evening is compared with latest.json
 FONTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
 
 
@@ -613,6 +619,79 @@ def grow(latest: dict, state: dict, send_x=None, now: float | None = None) -> st
     return msg
 
 
+def result_of(r: dict) -> list:
+    """What an evening decided, as compared between passes: winner, tally, tie, kept."""
+    return [r.get("winner"), list(r.get("tally") or []), bool(r.get("tie")), bool(r.get("kept"))]
+
+
+def settled(r: dict, state: dict, now: float) -> bool:
+    """True when this evening's result has been read the same for at least SETTLE seconds (the first reading starts it)."""
+    seen = state.setdefault("settle", {})
+    k, res = str(r["n"]), result_of(r)
+    if not seen.get(k) or seen[k][0] != res:
+        seen[k] = [res, now]
+        if SETTLE > 0:
+            log.info("evening %s: result read, posted once it reads the same in %.0f min", r["n"], SETTLE / 60)
+    return now - seen[k][1] >= SETTLE
+
+
+def tally_text(r: dict) -> str:
+    return " / ".join(f"{o} {v}" for o, v in zip(r.get("options") or [], r.get("tally") or []))
+
+
+def correction(r: dict, was: list) -> str:
+    """The channel's correction of a posted evening, from latest.json as it stands now."""
+    now_said = f"{esc(r['category'])} became <b>{esc(r['winner'])}</b>" if r.get("winner") and not r.get("kept") else \
+        (f"{esc(r['category'])} stays <b>{esc(r['winner'])}</b>" if r.get("winner") else "nobody voted")
+    tie = ", a tie settled by the state hash" if r.get("tie") else ""
+    return (f"🦍 Correction, Agorzilla evening {r['n'] + 1}: {now_said} ({esc(tally_text(r))}{tie}), "
+            f"not {esc(was[0] or 'nothing')} as posted before. agorzilla.com")
+
+
+def watch(latest: dict, state: dict, now: float, tell=None) -> list[str]:
+    """Posted evenings compared with latest.json for WATCH seconds: a result that reads differently for SETTLE seconds is
+    told to the owner privately once (with the command that corrects it); returns those notes."""
+    posted, notes = state.setdefault("posted", {}), []
+    by_n = {str(r["n"]): r for r in latest.get("rounds") or []}
+    for k in list(posted):
+        p = posted[k]
+        if now - p["at"] > WATCH:
+            del posted[k]
+            continue
+        r = by_n.get(k)
+        if not r or result_of(r) == p["result"]:
+            p.pop("differs", None)
+            continue
+        if p.get("differs", [None])[0] != result_of(r):
+            p["differs"] = [result_of(r), now]
+        if now - p["differs"][1] < SETTLE or p.get("told") == result_of(r):
+            continue
+        p["told"] = result_of(r)
+        note = (f"Agorzilla evening {r['n'] + 1}: the channel said {p['result'][0] or 'nothing'} "
+                f"({tally_text({**r, 'tally': p['result'][1]})}), agorzilla.com now says {r.get('winner') or 'nothing'} "
+                f"({tally_text(r)}). Check which one is right; to post a correction: "
+                f"docker compose exec -T agorzilla python agorzilla.py --correct {r['n'] + 1}")
+        log.warning("posted evening differs: %s", note)
+        (tell or tell_owner)(esc(note))
+        notes.append(note)
+    return notes
+
+
+def tell_owner(text: str) -> bool:
+    import tickerwatch
+    chat = tickerwatch.owner()
+    if not (chat and TOKEN):
+        return False
+    body = json.dumps({"chat_id": chat, "text": text, "parse_mode": "HTML", "link_preview_options": {"is_disabled": True}}).encode()
+    try:
+        with urllib.request.urlopen(urllib.request.Request(f"https://api.telegram.org/bot{TOKEN}/sendMessage", body,
+                                                           {"Content-Type": "application/json"}), timeout=20) as r:
+            return bool(json.load(r).get("ok"))
+    except Exception as e:  # noqa: BLE001
+        log.warning("owner note failed: %s", e)
+        return False
+
+
 def fetch() -> dict:
     req = urllib.request.Request(URL, headers={"User-Agent": "tauhud-agorzilla/1 (+https://tauhud.com)", "Cache-Control": "no-cache"})
     with urllib.request.urlopen(req, timeout=20) as r:
@@ -686,6 +765,8 @@ def step(latest: dict, state: dict, send=post, send_x=post_x, now: float | None 
             if is_rule(r) and r.get("winner"):
                 known[r["rule"]] = r["winner"]
             continue
+        if not settled(r, state, now):
+            break                      # read again on the next pass before anything is said about it
         png = picture(r)
         if not png and r.get("winner") and not is_rule(r) and not is_way(r) and r.get("t") and now - r["t"] < SHOTS_WAIT:
             break                      # its photographs are being made; next pass
@@ -704,6 +785,7 @@ def step(latest: dict, state: dict, send=post, send_x=post_x, now: float | None 
                 tg_failed = True       # try again next pass; the X copy below goes all the same
             else:
                 state["last"] = r["n"]
+                state.setdefault("posted", {})[str(r["n"])] = {"result": result_of(r), "at": now}
                 sent.append(msg)
                 if "no value" in msg:
                     state["foot_at"] = now
@@ -733,6 +815,25 @@ def main():
                                             foot=X_FOOT, tag=X_TAG))
         print("x: sent, look at the profile" if ok else "x: FAILED " + err)
         sys.exit(0 if ok else 1)
+    if "--correct" in sys.argv:         # the owner checked: post evening N's correction from latest.json as it stands
+        n = int(sys.argv[sys.argv.index("--correct") + 1]) - 1
+        latest, state = fetch(), load()
+        r = next((x for x in latest.get("rounds") or [] if x["n"] == n), None)
+        p = (state.get("posted") or {}).get(str(n))
+        if not r or not p:
+            print(f"evening {n + 1}: not in latest.json or not posted by this service")
+            sys.exit(1)
+        if result_of(r) == p["result"]:
+            print(f"evening {n + 1}: latest.json says what was posted ({r.get('winner')}); nothing to correct")
+            sys.exit(0)
+        msg = correction(r, p["result"])
+        ok = post(msg)
+        if ok:
+            p.update(result=result_of(r), at=time.time())
+            p.pop("differs", None)
+            save(state)
+        print(("posted: " if ok else "FAILED: ") + msg)
+        sys.exit(0 if ok else 1)
     if "--repost" in sys.argv:          # post evening N again on the running service's next pass (it reads the state each pass)
         n = int(sys.argv[sys.argv.index("--repost") + 1])
         state = load()
@@ -750,6 +851,7 @@ def main():
             latest = fetch()
             for msg in step(latest, state):
                 log.info("posted: %s", msg.splitlines()[0])
+            watch(latest, state, time.time())
             if grow(latest, state):
                 log.info("growth: %s", latest.get("stage_name"))
             if countdown(latest, state):

@@ -6,6 +6,8 @@ import unittest
 
 import agorzilla as A
 
+A.SETTLE = 0   # the tests below read each evening once; Settled tests the wait itself
+
 LATEST = {"stage_name": "Little one", "lived": 2,
           "open": {"n": 2, "category": "Aura", "options": ["Gold", "Pearl", "Ice"]},
           "rounds": [{"n": 0, "category": "Pendant light", "options": ["White", "Rose", "Blue"], "tally": [4, 9, 2], "winner": "Rose", "tie": False, "feeders": 7},
@@ -367,3 +369,58 @@ class WayTest(unittest.TestCase):
     def test_card_is_the_ballot(self):
         png = A.evening_card(self.R)
         self.assertTrue(png is None or png[:4] == b"\x89PNG")
+
+
+class Settled(unittest.TestCase):
+    """17.11.2026: evening 19 went out as Ball, the page later said Drum. Read twice before posting; a later change is told to
+    the owner privately, never corrected on the channel by itself."""
+    R = {"n": 18, "t": 1000, "category": "Toy", "options": ["None yet", "Drum", "Ball"], "tally": [0, 2, 2], "winner": "Ball", "tie": True, "feeders": 4}
+
+    def setUp(self):
+        self.old, A.SETTLE = A.SETTLE, 600
+
+    def tearDown(self):
+        A.SETTLE = self.old
+
+    def run_step(self, r, s, now, out):
+        return A.step({**LATEST, "rounds": [r]}, s, send=lambda m, png=None: out.append(m) or True,
+                      send_x=lambda m, st, png=None: True, now=now, picture=lambda r: b"PNG")
+
+    def test_waits_for_a_second_reading(self):
+        s, out = {"last": 17}, []
+        self.run_step(self.R, s, 1100, out)
+        self.assertEqual(out, [])
+        self.run_step(self.R, s, 1100 + 599, out)
+        self.assertEqual(out, [])
+        self.run_step(self.R, s, 1100 + 600, out)
+        self.assertEqual(len(out), 1)
+        self.assertIn("Ball", out[0])
+
+    def test_a_changed_result_starts_the_wait_again(self):
+        s, out = {"last": 17}, []
+        self.run_step(self.R, s, 1100, out)
+        drum = {**self.R, "tally": [0, 2, 1], "winner": "Drum", "tie": False}
+        self.run_step(drum, s, 1700, out)
+        self.assertEqual(out, [])
+        self.run_step(drum, s, 2300, out)
+        self.assertEqual(len(out), 1)
+        self.assertIn("Drum", out[0])
+
+    def test_a_posted_evening_that_changes_is_told_privately_once(self):
+        s, out, told = {"last": 17}, [], []
+        self.run_step(self.R, s, 1100, out)
+        self.run_step(self.R, s, 1700, out)
+        drum = {**self.R, "tally": [0, 2, 1], "winner": "Drum", "tie": False}
+        latest = {**LATEST, "rounds": [drum]}
+        self.assertEqual(A.watch(latest, s, 3000, tell=told.append), [])   # first seen: waits SETTLE
+        notes = A.watch(latest, s, 3600, tell=told.append)
+        self.assertEqual(len(told), 1)
+        self.assertIn("said Ball", notes[0])
+        self.assertIn("--correct 19", notes[0])
+        self.assertEqual(A.watch(latest, s, 4300, tell=told.append), [])   # once
+        self.assertEqual(len(out), 1)                                      # nothing more on the channel
+
+    def test_correction_text(self):
+        drum = {**self.R, "tally": [0, 2, 1], "winner": "Drum", "tie": False}
+        msg = A.correction(drum, ["Ball", [0, 2, 2], True, False])
+        self.assertIn("Correction, Agorzilla evening 19: Toy became <b>Drum</b> (None yet 0 / Drum 2 / Ball 1), not Ball", msg)

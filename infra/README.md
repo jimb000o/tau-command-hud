@@ -497,6 +497,11 @@ in as that account, as `AGORZILLA_X_API_KEY`, `AGORZILLA_X_API_SECRET`,
 `AGORZILLA_X_ACCESS_TOKEN`, `AGORZILLA_X_ACCESS_SECRET` in `.env`; then
 `docker compose up -d --build agorzilla` and
 `docker compose run --rm agorzilla python agorzilla.py --x-test` (one test post on X only).
+An evening goes out only after its result read the same on two passes at least 10 minutes apart
+(`AGORZILLA_SETTLE_SECONDS`, 600). For two days after, the service compares each posted evening with
+latest.json; if the result there changes, it tells the owner privately (never the channel) with the
+command that posts a correction once checked:
+`docker compose exec -T agorzilla python agorzilla.py --correct <evening>`.
 
 **Agorzilla's archive and summary**: service `agorzilla-latest` runs the agorilla repo's
 `tools/archive.cjs --live` every 10 minutes from the site checkout in `/opt/sites/agorilla`
