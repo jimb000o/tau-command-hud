@@ -91,5 +91,29 @@ alerts.note_public_post("x_agorzilla", now)
 check(len(xgate.recent("x_agorzilla")) == 1 and len(alerts.recent_posts("x")) == 3, "Agorzilla's posts are counted apart")
 check(alerts.post_gap_left("x", now + 10) == 0, "the times list leaves the room between posts alone")
 
+# a picture with a link refused (403): the picture stays, the link goes
+class Refuses(alerts.X):
+    def __init__(self):
+        super().__init__({"X_API_KEY": "k", "X_API_SECRET": "s", "X_ACCESS_TOKEN": "t", "X_ACCESS_SECRET": "a"})
+        self.tries = []
+
+    def upload(self, png, name="picture.png"):
+        return "m1", None, ""
+
+    def send_text(self, text, media_id=None):
+        self.tries.append((text, media_id))
+        bad = media_id and "https://" in text
+        return (False, None, "HTTP 403: not permitted") if bad else (True, None, "")
+
+
+r = Refuses()
+alerts.X_PICTURES = True
+alerts.fetch_picture = lambda url: b"\x89PNG\r\n\x1a\n" + b"0" * 100
+post = alerts.x_post(["Head", "Body"], "https://tauhud.com/nodes/", with_link=True)
+ok = r.send_with_picture(post, "https://tauhud.com/og/hud.png")[0]
+check(ok and len(r.tries) == 2 and r.tries[1][1] == "m1" and "http" not in r.tries[1][0] and " · #TauNet" in r.tries[1][0]
+      and "· ·" not in r.tries[1][0], f"refused with picture and link: again with the picture, without the link ({r.tries[-1][0]!r})")
+check(alerts.without_links("words\n\nhttps://tauhud.com/ · #TauNet") == "words\n\n#TauNet", "a link first in the foot goes too")
+
 print("all ok" if not failed else f"{failed} failed")
 sys.exit(1 if failed else 0)

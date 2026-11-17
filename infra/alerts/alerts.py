@@ -2341,8 +2341,10 @@ class X(Outlet):
             log.info("x: picture %s not uploaded, posting the text alone", picture)
         res = self.send_text(text, media_id)
         if media_id and not res[0] and res[2].startswith("HTTP 403") and re.search(r"https?://", text):
-            log.info("x: picture with a link refused (403), posting the text with its link card instead")   # seen 3 Nov 2026
-            res = self.send_text(text, None)
+            # a picture with a link refused (seen 3 Nov 2026): the picture stays, the link goes; every post keeps the
+            # picture made for it (16 Nov 2026: a text alone showed the linked page's old card)
+            log.info("x: picture with a link refused (403), posting the picture without the link")
+            res = self.send_text(without_links(text), media_id)
         return res
 
     ME = "https://api.x.com/2/users/me"
@@ -2389,6 +2391,13 @@ class X(Outlet):
 
     def send(self, item):
         return self.send_with_picture(x_text(item), item_picture(item))
+
+
+def without_links(text: str) -> str:
+    """The post without its links: "foot · https://… · #TauNet" becomes "foot · #TauNet"."""
+    t = re.sub(r" · https?://\S+", "", text)
+    t = re.sub(r"https?://\S+ · ", "", t)
+    return re.sub(r"[ \t]*https?://\S+", "", t).strip()
 
 
 def fetch_picture(url: str) -> bytes | None:
