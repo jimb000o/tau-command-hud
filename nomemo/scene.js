@@ -67,12 +67,14 @@
   function place(v, W, H, Y0) {
     const AW = W, AH = H - Y0, [x0, y0, x1, y1] = v.screen, sw = (x1 - x0) * v.w, sh = (y1 - y0) * v.h;
     const cover = Math.max(W / v.w, H / v.h);
-    const need = Math.max(Math.min(1040, AW - 24) / sw, Math.min(520, AH - 24) / sh);
+    const wide = W >= 1600 && v.keys, minW = wide ? 960 : 1040, minH = wide ? 480 : 520;   // a big monitor: the camera sits back so the keyboard (and your hands) show
+    const need = Math.max(Math.min(minW, AW - 24) / sw, Math.min(minH, AH - 24) / sh);
     const most = Math.min((AW - 8) / sw, (AH - 8) / sh);
     const s = Math.min(Math.max(cover, need), most), iw = v.w * s, ih = v.h * s;
     let left = AW / 2 - (x0 + x1) / 2 * iw, top = Y0 + AH / 2 - (y0 + y1) / 2 * ih;
     if (iw >= W) left = Math.min(0, Math.max(W - iw, left)); else left = (W - iw) / 2;
     if (ih >= H) top = Math.min(0, Math.max(H - ih, top));
+    if (wide) top = Math.max(H - ih, Math.min(top, H - 6 - Math.min(1, v.keys[3]) * ih));   // the keyboard's lower edge inside the window
     const gy = top + y0 * ih;                          // the screen must stay below the header and inside the window
     if (gy < Y0 + 4) top += Y0 + 4 - gy;
     const gb = top + y1 * ih; if (gb > H - 4) top -= gb - (H - 4);
@@ -107,10 +109,29 @@
       Object.assign(i.style, { left: w[0] * 100 + "%", top: w[1] * 100 + "%", width: (w[2] - w[0]) * 100 + "%", height: (w[3] - w[1]) * 100 + "%" });
       sway.append(i);
     }
+    bell(v, sway);
     const lamp = el.querySelector(".cab-lamp");
     lamp.style.left = v.lamp[0] * 100 + "%"; lamp.style.top = v.lamp[1] * 100 + "%";
     lamp.style.width = 36 * v.h / v.w + "%";
     live(v);
+  }
+
+  /* the ship's bell (cabin.json bell): the bell and its rope cut from the painting, so bell.js can swing them; the rope's
+     own place is covered with the wall beside it, so a swinging rope leaves no second rope behind */
+  function bell(v, sway) {
+    sway.querySelectorAll(".cab-bell, .cab-rope, .cab-rope-wall").forEach(n => n.remove());
+    const b = v.bell; if (!b) return;
+    const cut = (cls, box, piv, dx) => {
+      const [x0, y0, x1, y1] = box, w = x1 - x0, h = y1 - y0, i = document.createElement("i"); i.className = cls;
+      Object.assign(i.style, { left: x0 * 100 + "%", top: y0 * 100 + "%", width: w * 100 + "%", height: h * 100 + "%",
+        backgroundImage: "url(" + BASE + v.src + ")", backgroundSize: 100 / w + "% " + 100 / h + "%",
+        backgroundPosition: ((x0 + (dx || 0)) / (1 - w)) * 100 + "% " + (y0 / (1 - h)) * 100 + "%",
+        transformOrigin: piv ? ((piv[0] - x0) / w) * 100 + "% " + ((piv[1] - y0) / h) * 100 + "%" : "" });
+      sway.append(i); return i;
+    };
+    cut("cab-rope-wall", b.rope.box, null, b.patch);
+    cut("cab-rope", b.rope.box, b.rope.pivot);
+    cut("cab-bell", b.box, b.pivot);
   }
 
   /* the painted loops over the painting; each fades in once it can play, so a slow line shows the still picture */

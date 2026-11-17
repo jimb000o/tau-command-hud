@@ -492,6 +492,7 @@
     const newBlock = CHAIN.tip != null && tip > CHAIN.tip;
     if (CHAIN.tip == null || tip !== CHAIN.tip) { CHAIN.tip = tip; CHAIN.tipAt = t; }
     setState(true); instruments(); topbar(newBlock);
+    if (newBlock) bellHeard();
     if (newBlock) { if (S.taken || S.job) { snd.block(); snd.tick(traceFrac() < 0.25); } else snd.tension(false); deliverMail(); }
     if (S.taken && S.deadline != null && tip > S.deadline && !RUN.busy) traced();
     if (S.job && S.deadline != null && tip > S.deadline && !RUN.busy) jobTraced();
@@ -1015,6 +1016,53 @@
     say("step", F("signed in this browser (BLS, sequence {n}), sent", { n: tx.sequence_number }), s.hash ? explorer(s.hash) : null, el("span", { class: "sys", text: " · " + F("{n} ms", { n: s.ms }) }));
   }
   const refusedEarly = s => { snd.no(); snd.say("v-refused"); flash("bad"); slotFail(codeOf(s.r) || T("refused")); say("no", F("Refused before the mempool: {x}", { x: codeOf(s.r) || plain(s.r) })); fail(T("The payment did not go out. Type run to try again.")); };
+  /* ---------- the ship's bell: a real transaction you can hear. 1 test AGRS from your wallet to the bell's own wallet
+     (nobody spends from it: its balance counts how often the bell has rung). It strikes at once, before the network;
+     the node's answer glints, the block rings it twice (bell.js plays it all). Once in 30 s per browser it goes on chain;
+     in between the bell still swings and sounds, nothing is sent. Another player's ring is heard when the bell wallet's
+     balance grows on a new block. Not part of any contract, the board or standing. ---------- */
+  const BELL = "83ca4edff3e8d5c20513b2ed2dc7da4502d29b4ac9273b707e016947056362ee4d9973169869b8bb0590e77e5824ec2f", BELL_GAP = 30000;
+  const BELLS = { count: null, mine: 0, busy: false, at: 0 };
+  const bellFx = stage => document.dispatchEvent(new CustomEvent("nomemo:bell-fx", { detail: { stage } }));
+  async function bellCount() { const b = await ask("getbalance " + BELL, 8000); return b && b.status === "ok" ? Number((b.data || {}).balance) || 0 : null; }
+  async function bellHeard() {   // on a new block, at most every 20 s: did the bell's balance grow by more than our own rings?
+    if (Date.now() - BELLS.at < 20000 || BELLS.busy) return; BELLS.at = Date.now();
+    const n = await bellCount(); if (n == null) return;
+    if (BELLS.count != null && n > BELLS.count) {
+      const theirs = n - BELLS.count - BELLS.mine; BELLS.mine = 0;
+      if (theirs > 0) { bellFx("far"); say("sys", theirs === 1 ? F("Somewhere on the ship another player rang the bell · block {n}", { n: fmt(CHAIN.tip) }) : F("Another {k} rings of the bell from other players · block {n}", { k: theirs, n: fmt(CHAIN.tip) })); }
+    }
+    BELLS.count = n;
+  }
+  async function bell() {
+    snd.wake();
+    const last = Number(store.get("tauhud-nomemo-bell") || 0), wait = BELL_GAP - (Date.now() - last);
+    if (BELLS.busy || wait > 0) { bellFx("idle"); say("sys", BELLS.busy ? T("The bell is still ringing out; its transaction is on its way.") : F("The bell is still humming. The next ring goes on chain in {n} s.", { n: Math.ceil(wait / 1000) })); return; }
+    if (RUN.busy) { bellFx("idle"); say("sys", T("A contract is under way; the bell rings on chain once its answer is in.")); return; }
+    if (!B) { bellFx("idle"); return; }
+    if (!SIM && CHAIN.ok === false) { bellFx("idle"); say("no", T("The node is out of reach; the bell sounds, but nothing was sent."), btn("reboot", "reboot")); return; }
+    bellFx("pull"); store.set("tauhud-nomemo-bell", String(Date.now()));
+    BELLS.busy = true; RUN.busy = true; chips(); slot(T("the ship’s bell"));
+    let s = null, tx = null;
+    try {
+      const k = myKey(true);
+      say("step", F("ringing the ship’s bell: 1 test AGRS from your wallet to the bell {h}", { h: short(BELL) }));
+      tx = await payment(k, BELL, 1);
+      s = await sendtx(tx);
+    } catch (e) { s = null; }
+    RUN.busy = false; chips();
+    if (!s || !s.r) { BELLS.busy = false; slotFail(T("no answer")); bellFx("refused"); say("no", T("No answer from the node; the bell sounded, nothing was sent.")); return; }
+    if (!s.hash) { BELLS.busy = false; slotFail(codeOf(s.r) || T("refused")); bellFx("refused"); say("no", F("The chain held the bell: {x}", { x: codeOf(s.r) || plain(s.r) })); return; }
+    bellFx("node"); sent(tx, s); BELLS.mine++;
+    say("step", T("the ring is in the mempool, waiting for a block …"));
+    const w = await sealed(s.hash, null, s.way);
+    BELLS.busy = false;
+    if (!w.in) { bellFx("refused"); say("no", F("The ring did not land: {x}", { x: w.why })); return; }
+    bellFx("sealed"); flash("ok");
+    const n = await bellCount(); if (n != null) BELLS.count = n, BELLS.mine = 0, BELLS.at = Date.now();
+    say("ok", n === 1 ? F("The bell rang in block {n}: the first ring since it was hung.", { n: fmt(w.block) }) : n != null ? F("The bell rang in block {n}. It has rung {k} times since it was hung.", { n: fmt(w.block), k: fmt(n) }) : F("The bell rang in block {n}.", { n: fmt(w.block) }), explorer(s.hash));
+  }
+
   /* a payment that must land */
   async function pay(c, k, amount, race) {
     say("step", F("building a payment: {n} test AGRS to the drop {h}", { n: fmt(amount), h: short(DROP) }));
@@ -2519,7 +2567,7 @@
     ["Story", [["jobs", "the twelve contracts"], ["take <n>", "take one"], ["run", "build, sign, send"], ["back", "retract a payment"], ["drop", "put it back"], ["claim [n]", "the chapter’s share"], ["chapter <n>", "the chapter’s card"]]],
     ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["probe · name · final", "intel contracts"], ["why [topic]", "what just happened"], ["archive · history", "your record"], ["daily · unguard", "the day’s order · your rule off"], ["cosign", "sign a friend’s request"]]],
     ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail · mail <n>", "letters; some bring special orders"], ["crew", "who is who"], ["scan · blocks · dry", "gear for rank"]]],
-    ["Tools", [["tutorial", "the first steps"], ["briefing", "how a contract works, as a film"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["showcase · when <s>", "real wallet rules, read them"], ["vaults · drain · crack", "empty a vault with the right rule"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"], ["upkeep", "who pays the node"]]],
+    ["Tools", [["tutorial", "the first steps"], ["briefing", "how a contract works, as a film"], ["bell", "ring the ship’s bell: a real transaction"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["showcase · when <s>", "real wallet rules, read them"], ["vaults · drain · crack", "empty a vault with the right rule"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"], ["upkeep", "who pays the node"]]],
     ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · reboot · clear", "reboot: dial the node again"], ["scene · transmission on|off", "the cabin; the crew on screen"]]],
   ];
   function help() {
@@ -2986,6 +3034,7 @@
     if (c === "jobs" || c === "contracts" || c === "board" && args[0] === "jobs") { for (const ch of CH) { say("sys", F("Chapter {n}: {x}", { n: ch.n, x: ch.name }) + (chapterOpen(ch) ? "" : " · " + T("locked"))); cols(ch.ids.map(id => byId(id)).map(x => [String(num(x)).padStart(2, " ") + (S.done[x.id] ? " ✓" : S.taken === x.id ? " ●" : "  "), T(x.name) + " · " + T(x.task)])); } const nx = CONTRACTS.find(y => !S.done[y.id]); return say("sys", T("take <n> takes one."), nx ? btn(F("take {n}", { n: num(nx) }), "take " + num(nx)) : null); }
     if (c === "take") { const n = parseInt(args[0], 10), x = args[0] === "next" || !args[0] ? CONTRACTS.find(y => !S.done[y.id]) : n >= 1 && n <= CONTRACTS.length ? CONTRACTS[n - 1] : byId(args[0]); return x ? take(x, args[1] === "again") : say("sys", T("take <n>: a number from the board, or take next.")); }
     if (c === "briefing" || c === "brief") return briefing(false);
+    if (c === "bell" || c === "ring") return bell();
     if (c === "tutorial" || c === "tut" || c === "run" && args[0] === "tutorial") return tutorial(c === "run" ? args[1] : args[0]);
     if (c === "what" && /^what (is )?(this|it|no memo|nomemo|this game|the game)\??$/.test(s.toLowerCase())) return about();
     if (c === "what" && args.length && !/^(do|should|now|next|to)$/.test(args[0])) return what(s.slice(4));
@@ -3180,6 +3229,7 @@
     $("mtabs").addEventListener("click", e => { const b = e.target.closest("button[data-pane]"); if (!b) return; for (const x of $("mtabs").querySelectorAll("button")) x.classList.toggle("on", x === b); const map = { jobs: "paneJobs", term: "paneTerm", stat: "paneStat" }; for (const k in map) $(map[k]).classList.toggle("show", k === b.dataset.pane); });
     $("screenWrap").addEventListener("click", e => { if (!e.target.closest("a") && !e.target.closest("button") && !window.getSelection().toString()) input.focus({ preventScroll: true }); });
     $("ptabs").addEventListener("click", e => { const b = e.target.closest("button[data-p]"); if (!b) return; S.pane = b.dataset.p; save(); jobs(); });
+    document.addEventListener("nomemo:bell", () => run("bell"));
     $("mailBtn").addEventListener("click", () => run("mail")); $("mailClose").addEventListener("click", () => $("mailWin").classList.remove("show"));
     $("sndBtn").addEventListener("click", () => { S.snd = !S.snd; save(); topbar(); if (S.snd) { snd.wake(); snd.ok(); } else snd.ambience(); });
     document.addEventListener("pointerdown", () => snd.wake(), { once: true }); $("fsBtn").addEventListener("click", () => full()); $("rebootBtn").addEventListener("click", () => run("reboot"));
