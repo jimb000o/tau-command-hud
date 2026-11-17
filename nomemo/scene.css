@@ -96,5 +96,6 @@ html.cab-intro .cab-shade { background: radial-gradient(ellipse at 50% 45%, tran
 .cab-hands.on { opacity: 1; }
 .cab-hands img { position: absolute; display: block; user-select: none; }
 .cab-hands .cab-hands-rest { inset: 0; width: 100%; height: 100%; }
-.cab-hands img[data-f] { opacity: 0; }
-.cab-hands img[data-f].down { opacity: 1; }
+.cab-hands img[data-f] { transform-origin: 50% 100%; transition: transform .05s ease-out; }
+.cab-hands img[data-f].down { transform: translateY(3.5%) scaleY(.97); transition-duration: .03s; }
+.cab-hands .cab-hands-rest { transition: transform .08s ease-out; }
