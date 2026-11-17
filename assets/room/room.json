@@ -230,6 +230,7 @@
         "window": "mask-21x9-window.png",
         "cables": "mask-21x9-cables.png"
       },
+      "quad": { "left": [[-0.001, 0.019], [0.981, -0.01], [1.004, 0.925], [0.029, 1.014]], "right": [[0.013, 0], [0.997, 0], [0.971, 1.016], [-0.006, 0.929]] },
       "glass": {
         "main": "glass-21x9-main.png",
         "left": "glass-21x9-left.png",

@@ -23,7 +23,7 @@
       if (!ctx) {
         ctx = new (window.AudioContext || window.webkitAudioContext)();
         const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 3;
-        master = ctx.createGain(); master.gain.value = 0.9; master.connect(comp).connect(ctx.destination);
+        master = ctx.createGain(); master.gain.value = 0.38; master.connect(comp).connect(ctx.destination);   // a room in the background, never loud
         bed = ctx.createGain(); bed.gain.value = 0.8; bed.connect(master);
         sfx = ctx.createGain(); sfx.gain.value = 0.9; sfx.connect(master);
         /* the music: through a low-pass (the lamp) and a soft room */
@@ -172,7 +172,7 @@
     if (!ctx) return;
     const t = ctx.currentTime; mus.gain.cancelScheduledValues(t); mus.gain.setValueAtTime(mus.gain.value, t);
     if (onOff) {
-      mus.gain.linearRampToValueAtTime(0.8, t + 4);
+      mus.gain.linearRampToValueAtTime(0.5, t + 4);
       if (!tick) { nextT = ctx.currentTime + 0.3; bar = 0; tick = setInterval(() => { while (nextT < ctx.currentTime + 0.6) { playBar(nextT); nextT += BEAT * 4; } }, 120); }
       if (!dust) dust = crackle();
     } else {
