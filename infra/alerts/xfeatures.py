@@ -35,6 +35,7 @@ a cruise ship is due or in port (Tue 16-20, Wed 14-18, Sat 12-17 German time, on
   python xfeatures.py send <id> [--now]   python xfeatures.py drop <id>   python xfeatures.py film <id>
   python xfeatures.py text <id> <new text>          python xfeatures.py check   the plan's posts read against the rules
   python xfeatures.py week [2026-W47]               the week's feature posts, for the Sunday testnet post
+  python xfeatures.py stats [run|csv] [--days N]    what the posts did on X (xstats.py; read once a day by itself)
 """
 import json
 import logging
@@ -396,6 +397,12 @@ def loop() -> None:
             for line in step(time.time(), specs(updates, plan), d):
                 log.info(line)
             save(d)
+            try:
+                import xstats
+                for line in xstats.maybe_run(time.time()):
+                    log.info("stats: %s", line)
+            except Exception as e:  # noqa: BLE001 - the numbers never stop the drafts
+                log.warning("stats: %s", e)
         except Exception as e:  # noqa: BLE001 - the loop never dies
             log.exception("round failed: %s", e)
         time.sleep(EVERY)
@@ -453,6 +460,9 @@ def main(argv: list[str]) -> int:
     if cmd == "loop":
         loop()
         return 0
+    if cmd == "stats":   # what the posts did (xstats.py): up x stats [run|csv] [--days N]
+        import xstats
+        return xstats.main(["xstats"] + argv[2:])
     d = load()
     if cmd == "week":
         if len(argv) > 2:
