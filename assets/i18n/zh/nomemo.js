@@ -1479,6 +1479,7 @@ TauI18n.add({ strings: {
   /* 17.11.2026: the ship's bell (nomemo/bell.js) */
   "ring the ship’s bell: a real transaction": "敲响船钟：一笔真实交易",
   "the ship’s bell": "船钟",
+  "bell": "钟",
   "Somewhere on the ship another player rang the bell · block {n}": "船上某处，另一位玩家敲响了钟 · 区块 {n}",
   "Another {k} rings of the bell from other players · block {n}": "其他玩家又敲了 {k} 次钟 · 区块 {n}",
   "The bell is still ringing out; its transaction is on its way.": "钟声还在回荡；它的交易正在路上。",

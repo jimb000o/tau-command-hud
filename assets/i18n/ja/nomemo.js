@@ -1479,6 +1479,7 @@ TauI18n.add({ strings: {
   /* 17.11.2026: the ship's bell (nomemo/bell.js) */
   "ring the ship’s bell: a real transaction": "船の鐘を鳴らす：本物のトランザクション",
   "the ship’s bell": "船の鐘",
+  "bell": "鐘",
   "Somewhere on the ship another player rang the bell · block {n}": "船のどこかで、別のプレイヤーが鐘を鳴らした · ブロック {n}",
   "Another {k} rings of the bell from other players · block {n}": "他のプレイヤーがさらに {k} 回鐘を鳴らした · ブロック {n}",
   "The bell is still ringing out; its transaction is on its way.": "鐘はまだ鳴り響いている。そのトランザクションは移動中。",
