@@ -459,4 +459,10 @@ TauI18n.add({ strings: {
   "a day": "1日あたり",
   "Click for its chart over time.": "クリックで推移のグラフを表示。",
   "Average visitors per day over the last 7 full days,\ncompared with the 7 days before.\nClick for its chart over time.": "直近の丸7日の1日あたり平均訪問者数、\nその前の7日との比較。\nクリックで推移のグラフを表示。",
+  "24H avg": "24時間平均",
+  "7D avg": "7日平均",
+  "Average over": "平均の期間",
+  "visitors that day": "その日の訪問者",
+  "Its line is the white one in the Growth panel.": "その線は「成長」パネルの白い線です。",
+  "Average visitors per day over the last 7 full days,\ncompared with the 7 days before.\nIts line is the white one in the Growth panel.": "直近の丸7日の1日あたり平均訪問者数、\nその前の7日との比較。\nその線は「成長」パネルの白い線です。",
 } });
