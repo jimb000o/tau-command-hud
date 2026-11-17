@@ -787,7 +787,7 @@
     tw7: "Tau word of the day: t minus one. It means the step before. A rule can look back and ask what happened last time.",
     tw8: "Today's Tau word is a small mark: the apostrophe. In Tau it means the complement: everything the thing is not.",
     tw9: "The Tau word of the day is silence. A rule that says nothing answers 0, and 0 stops the payment. So say what you let through.",
-    tw10: "Today's Tau word: bv eight. A number with eight bits, from zero up to two hundred fifty-five. Rico's coconut count fits easily.",
+    tw10: "Today's Tau word: bv eight. A number with eight bits, from zero to two hundred and fifty-five. Rico's coconut count fits easily.",
     twMore: "Want more? The lessons are free on tauhud.com, under learn.",
     rcNomemo: "Who's up? A player in No Memo already sent a transaction this morning. The hackers are awake.",
     rcHud: "Who's up? Somebody sent a transaction from the Tau HUD wallet in the last few blocks. Good morning to you.",

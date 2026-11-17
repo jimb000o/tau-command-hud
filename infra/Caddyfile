@@ -53,6 +53,9 @@
 		}
 		reverse_proxy guardian:8075
 	}
+	# Server-local, login-protected pages on this domain: snippets in /opt/sites/node.d on the host, written there by
+	# the private parts of the stack (/opt/private/*), never in this repository; none at all is fine.
+	import /srv/sites/node.d/*.caddy
 	# Everything else is the relay.
 	handle {
 		reverse_proxy relay:8080

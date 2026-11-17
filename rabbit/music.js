@@ -302,11 +302,27 @@
     try { localStorage.setItem("radio-coco-first", id); } catch (e) {}
     return PLAYLIST.indexOf(id);
   };
-  const PL0 = firstSong();
-  const S = { place: "island", placeT: "island", song: PLAYLIST[PL0], pl: PL0, ctx: null, on: false, want: true, master: null, music: null, amb: null, rev: null, radio: null, mvol: 1, tense: false, bar: 0, step: 0, next: 0, timer: 0, noise: null, sea: null };
+  /* a page change is the same programme going on (Kilian 17.11): the tab remembers the song and the bar it was playing
+     (sessionStorage, written as the page goes), and the next page of the site carries on from that bar instead of
+     picking a new first song. A break between two songs carries on with the next song from the top. Kept 30 minutes. */
+  const POS = "radio-coco-pos";
+  const saved = (() => { try { const v = JSON.parse(sessionStorage.getItem(POS) || "null");
+    return v && Date.now() - v.t < 30 * 60000 && PLAYLIST.includes(v.song) && PLAYLIST[v.pl % PLAYLIST.length] === v.song ? v : null; } catch (e) { return null; } })();
+  const PL0 = saved ? saved.pl : firstSong();
+  const S = { place: "island", placeT: "island", song: PLAYLIST[PL0 % PLAYLIST.length], pl: PL0, ctx: null, on: false, want: true, master: null, music: null, amb: null, rev: null, radio: null, mvol: 1, tense: false, bar: 0, step: 0, next: 0, timer: 0, noise: null, sea: null };
   /* the island's sound is on when the game opens (the site's own rule: sound on by default); a player who turns it off is
      remembered for this tab only (sessionStorage), so a new visit starts with the sound again. The site's radio switch
      (assets/radio.js) does not reach in here: an island with the sound off is not what a visitor came for. */
+  if (saved) { S.bar = Math.max(0, Math.min(31, saved.bar | 0)); S.step = 0; if (saved.place === "radio") S.place = S.placeT = "radio"; }
+  /* only a song that was really heard is remembered; a page where the radio waited for a click leaves the last one as it was */
+  const keep = () => {
+    if (!S.ctx || !S.on || S.ctx.state !== "running" || (STYLES[S.place] || {}).s) return;   // a place with its own tune is not the programme
+    const v = S.gap ? { pl: S.pl + 1, song: PLAYLIST[(S.pl + 1) % PLAYLIST.length], bar: 0 } : { pl: S.pl, song: S.song, bar: S.bar };
+    v.place = S.place; v.t = Date.now();
+    try { sessionStorage.setItem(POS, JSON.stringify(v)); } catch (e) {}
+  };
+  addEventListener("pagehide", keep);
+  addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") keep(); });
   const MEM = "tauhud-rabbit-sound";
   try { S.want = sessionStorage.getItem(MEM) !== "off"; } catch (e) {}
 

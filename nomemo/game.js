@@ -937,7 +937,11 @@
   /* ---------- running a contract ---------- */
   const RUN = { busy: false, ret: null };
   const fail = (why) => { throw Object.assign(new Error(why), { soft: true }); };
+  /* the briefing (briefing.js): how a contract works, once before the first contract, and with `briefing` */
+  const briefed = () => S.seen.brief || S.done.mark || !window.NoMemoBriefing;
+  function briefing(start) { S.seen.brief = 1; save(); return window.NoMemoBriefing ? NoMemoBriefing.play({ start }) : Promise.resolve(); }
   function take(c, again) {
+    if (c.id === "mark" && !briefed() && !RUN.busy && !S.job) { briefing(true).then(() => take(c, again)); return; }
     if (S.done[c.id] && !again) { say("sys", F("Contract {n} is settled already. To play it again anyway: take {n} again (it counts once).", { n: num(c) }), nextChip()); return; }
     if (S.taken === c.id) { say("sys", F("Contract {n} is yours already. Type run.", { n: num(c) }), btn("run", "run")); return; }
     if (RUN.busy) { say("warn", T("A contract is under way; wait for the chain’s answer.")); return; }
@@ -2515,7 +2519,7 @@
     ["Story", [["jobs", "the twelve contracts"], ["take <n>", "take one"], ["run", "build, sign, send"], ["back", "retract a payment"], ["drop", "put it back"], ["claim [n]", "the chapter’s share"], ["chapter <n>", "the chapter’s card"]]],
     ["Inbox", [["inbox", "new work, always"], ["read · accept · decline <j>", ""], ["tx", "your draft"], ["set <field> <value>", "change it"], ["send", "sign and send"], ["hint", "costs a point"], ["predict <CODE>", "your bet"], ["probe · name · final", "intel contracts"], ["why [topic]", "what just happened"], ["archive · history", "your record"], ["daily · unguard", "the day’s order · your rule off"], ["cosign", "sign a friend’s request"]]],
     ["Ship", [["case", "the week’s case file"], ["pick a|b · answer <n>", ""], ["hunt · mark a|b", "the Tracer’s dust"], ["op", "live ops, Tuesdays"], ["board", "wallets by standing"], ["mail · mail <n>", "letters; some bring special orders"], ["crew", "who is who"], ["scan · blocks · dry", "gear for rank"]]],
-    ["Tools", [["tutorial", "the first steps"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["showcase · when <s>", "real wallet rules, read them"], ["vaults · drain · crack", "empty a vault with the right rule"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"], ["upkeep", "who pays the node"]]],
+    ["Tools", [["tutorial", "the first steps"], ["briefing", "how a contract works, as a film"], ["what <word>", "a word explained"], ["rule", "the chain’s rule, in Tau"], ["showcase · when <s>", "real wallet rules, read them"], ["vaults · drain · crack", "empty a vault with the right rule"], ["tau <line>", "a line of Tau, checked"], ["status", "node, wallet, rank"], ["peek <cmd> <hex>", "ask the node"], ["trace <blocks>", "your own deadline"], ["findings", "what must not be"], ["feedback <text>", "tell us"], ["upkeep", "who pays the node"]]],
     ["Terminal", [["sound · ambience on|off", ""], ["fx · voice on|off", ""], ["full · reboot · clear", "reboot: dial the node again"], ["scene · transmission on|off", "the cabin; the crew on screen"]]],
   ];
   function help() {
@@ -2981,6 +2985,7 @@
     if (c === "help" || c === "?") return help();
     if (c === "jobs" || c === "contracts" || c === "board" && args[0] === "jobs") { for (const ch of CH) { say("sys", F("Chapter {n}: {x}", { n: ch.n, x: ch.name }) + (chapterOpen(ch) ? "" : " · " + T("locked"))); cols(ch.ids.map(id => byId(id)).map(x => [String(num(x)).padStart(2, " ") + (S.done[x.id] ? " ✓" : S.taken === x.id ? " ●" : "  "), T(x.name) + " · " + T(x.task)])); } const nx = CONTRACTS.find(y => !S.done[y.id]); return say("sys", T("take <n> takes one."), nx ? btn(F("take {n}", { n: num(nx) }), "take " + num(nx)) : null); }
     if (c === "take") { const n = parseInt(args[0], 10), x = args[0] === "next" || !args[0] ? CONTRACTS.find(y => !S.done[y.id]) : n >= 1 && n <= CONTRACTS.length ? CONTRACTS[n - 1] : byId(args[0]); return x ? take(x, args[1] === "again") : say("sys", T("take <n>: a number from the board, or take next.")); }
+    if (c === "briefing" || c === "brief") return briefing(false);
     if (c === "tutorial" || c === "tut" || c === "run" && args[0] === "tutorial") return tutorial(c === "run" ? args[1] : args[0]);
     if (c === "what" && /^what (is )?(this|it|no memo|nomemo|this game|the game)\??$/.test(s.toLowerCase())) return about();
     if (c === "what" && args.length && !/^(do|should|now|next|to)$/.test(args[0])) return what(s.slice(4));
@@ -3181,10 +3186,12 @@
     for (const id of ["card", "mailWin"]) $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).classList.remove("show"); });
     document.addEventListener("keydown", e => { if (e.key === "Escape") for (const id of ["card", "mailWin"]) $(id).classList.remove("show"); });
     let first = null;
-    if (!S.booted) first = await door(); else if (q.get("boot")) await bootScreen();
+    const power = window.NoMemoPower || Promise.resolve();   // poweron.js: the door and the boot screen wait until the terminal has switched on
+    if (!S.booted) { await power; first = await door(); } else if (q.get("boot")) { await power; await bootScreen(); }
     await hello();
     jobs(); instruments(); chips(); topbar(); watch(); world(); boardLoad(); deliverMail();
     for (const n of [1, 2, 3]) if (S.chap[n] && !S.chap[n].paid) watchPayback(n);
+    if (first === "take 1" && !briefed()) await briefing(true);
     if (first) run(first);
     /* "First contract" at the door is the decision: contract 1 (1 test AGRS to the drop) runs by itself after the crew's line,
        so the first sealed block comes about 5 s sooner (24 s median in the 9.11 run, 20 s is the aim) */

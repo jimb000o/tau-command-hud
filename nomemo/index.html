@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script src="../assets/i18n.js"></script>
+<script src="poweron.js"></script>
 <script src="../assets/sim.js"></script>
 <script src="transmission.js" defer></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -290,9 +291,11 @@ footer p { margin: 0; }
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <link rel="stylesheet" href="scene.css">
+<link rel="stylesheet" href="poweron.css">
 <script src="../assets/nav.js" defer></script>
 </head>
 <body>
+<div id="power" aria-hidden="true"></div>
 <div class="wrap">
   <header>
     <a class="brand" href="/"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25"/><path class="pulse" d="M13 33 H23 L27.5 24 L34.5 43 L39 33 H51"/></svg><h1>Tau HUD</h1><span>No Memo</span></a>
@@ -340,6 +343,7 @@ footer p { margin: 0; }
 <div class="over" id="card" role="dialog" aria-label="Chapter"><div class="win"><div class="pic" id="cardPic"><h3 id="cardTitle"></h3></div><div class="body" id="cardBody"></div></div></div>
 <div class="over" id="mailWin" role="dialog" aria-label="Post"><div class="win"><div class="body"><h3 id="mailTitle" style="margin:0 0 8px;font:600 11px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)"></h3><ul class="post" id="mailList"></ul><div class="row"><button type="button" class="ghost" id="mailClose">close</button></div></div></div></div>
 <script src="../wallet/vendor/tau-bls.min.js"></script>
+<script src="briefing.js" defer></script>
 <script src="game.js" defer></script>
 <script src="scene.js" defer></script>
 </body>

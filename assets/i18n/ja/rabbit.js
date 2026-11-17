@@ -3252,7 +3252,7 @@ TauI18n.add({ strings: {
   "Tau word of the day: t minus one. It means the step before. A rule can look back and ask what happened last time.": "今日の Tau ワード：t マイナス 1。ひとつ前のステップのこと。ルールは振り返って、前回何があったかを聞ける。",
   "Today's Tau word is a small mark: the apostrophe. In Tau it means the complement: everything the thing is not.": "今日の Tau ワードは小さな記号：アポストロフィ。Tau では補元を表す。それではないもの全部。",
   "The Tau word of the day is silence. A rule that says nothing answers 0, and 0 stops the payment. So say what you let through.": "今日の Tau ワードは沈黙。何も言わないルールは 0 と答え、0 は支払いを止める。だから通すものを言おう。",
-  "Today's Tau word: bv eight. A number with eight bits, from zero up to two hundred fifty-five. Rico's coconut count fits easily.": "今日の Tau ワード：bv 8。8 ビットの数で、0 から 255 まで。Rico のココナツの数なら楽に収まる。",
+  "Today's Tau word: bv eight. A number with eight bits, from zero to two hundred and fifty-five. Rico's coconut count fits easily.": "今日の Tau ワード：bv 8。8 ビットの数で、0 から 255 まで。Rico のココナツの数なら楽に収まる。",
   "Want more? The lessons are free on tauhud.com, under learn.": "もっと知りたい？tauhud.com の learn に無料のレッスンがあるよ。",
   "Who's up? A player in No Memo already sent a transaction this morning. The hackers are awake.": "誰が起きてる？No Memo のプレイヤーが、今朝もうトランザクションを送った。ハッカーたちはお目覚めだ。",
   "Who's up? Somebody sent a transaction from the Tau HUD wallet in the last few blocks. Good morning to you.": "誰が起きてる？ここ数ブロックで、誰かが Tau HUD のウォレットからトランザクションを送った。おはよう。",
