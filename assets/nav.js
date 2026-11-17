@@ -67,6 +67,7 @@
     vote:       { t: "Vote for real", d: "Vote on the real testnet yourself: node, key, ready commands, practised first", i: "✔", h: "vote/" },
     card:       { t: "My Tau card", d: "Your wallet on one picture: rules written, votes, Agorzilla meals, café stamps; ready to post", i: "▣", h: "card/" },
     rabbit:     { t: "White Rabbit Key", d: "An island election game: laws, pacts, rumours and a Book nobody can edit; your vote can go on the testnet", i: `<img src="${ROOT}assets/rabbit-key.webp" alt="">`, h: "rabbit/", live: true, play: "rabbit" },
+    room:       { t: "The room · 1999", d: "The HUD on three tube monitors in a late-90s room at night: the phone rings at each rule change, the pager buzzes at each block", i: "▣", h: "?room=1" },
     nomemo:     { t: "No Memo", d: "A terminal game: twelve contracts from the crew of the Black Sequence, each a real transaction from your test wallet; make the chain say no for the right reason", i: "▮", h: "nomemo/", live: true },
     taulang:    { t: "Learn Tau Language", d: "Type a formula and a real Tau engine answers, eight short lessons, then install tau yourself", i: "⌨", h: "learn/" },
     hearts:     { t: "What you love most", d: "Every heart on Tau HUD is a real testnet transaction; which parts visitors love most, read from the chain", i: "♥", h: "hearts/" },
@@ -111,7 +112,7 @@
        and Déjà stay reachable from their pages and from search */
     /* 12 Nov: one entry per question, tabs inside (TABS). My Tau card is a tab of the Wallet (most of its visitors came
        by the menu, so it keeps a place there), Tau facts sits with the other things to reuse under About */
-    { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "services"]], ["The testnet", ["health", "road", "nodes"]]], tab: "≋" },
+    { k: "explore", t: "Explore", groups: [["The chain now", ["explorer", "proposals", "services", "room"]], ["The testnet", ["health", "road", "nodes"]]], tab: "≋" },
     { k: "learn", t: "Learn", groups: [["First steps", ["start", "taulang"]], ["Read and watch", ["read", "tau"]]], tab: "▸" },
     { k: "play", t: "Playground", groups: [["Your wallet", ["wallet", "wrules", "guardian"]], ["Practise · simulated", ["practise"]], ["Games on the live testnet", ["rabbit", "nomemo", "agorzilla"]]], id: "btnPlayground", tab: "◇", short: "Play" },
     { k: "about", t: "About", util: true, groups: [["Support and reuse", ["support", "shop", "reuse"]], ["This site", ["about", "share", "meta", "hearts", "legal"]]], tab: "i" },

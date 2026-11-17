@@ -27,14 +27,16 @@
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#09090a">
 <meta property="og:title" content="Tau HUD">
-<meta property="og:description" content="Where the rules change by agreement. Unofficial community view of the Tau Testnet Alpha.">
-<meta property="og:image" content="https://tauhud.com/assets/og/hud.png">
+<meta property="og:description" content="Watch Tau Net's testnet live, give a test wallet its own rules, learn Tau and play games on the chain. No sign-up. Unofficial community project, not run by IDNI.">
+<meta property="og:image" content="https://tauhud.com/assets/og/hud.png?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Tau HUD. Your wallet. Your rules. The chain enforces them. Seen on Tau Testnet Alpha: a wallet rule says nothing above 1,000 leaves; a payment of 5,000 is refused, one of 500 is sent.">
 <meta property="og:url" content="https://tauhud.com/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@TauHUDcom">
-<meta name="twitter:image" content="https://tauhud.com/assets/og/hud.png">
+<meta name="twitter:image" content="https://tauhud.com/assets/og/hud.png?v=2">
+<meta name="twitter:image:alt" content="Tau HUD. Your wallet. Your rules. The chain enforces them. Seen on Tau Testnet Alpha: a wallet rule says nothing above 1,000 leaves; a payment of 5,000 is refused, one of 500 is sent.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="assets/nav.css">
 <script src="assets/nav.js" defer></script>
@@ -46,6 +48,8 @@
 <script src="assets/ticker.js" defer></script>
 <script src="assets/cruisebar.js" defer></script>
 <script src="assets/hearts.js" defer></script>
+<link rel="stylesheet" href="assets/room.css">
+<script src="assets/room.js" defer></script>
 <link rel="stylesheet" href="assets/agz-look.css">
 </head>
 <body>
@@ -5300,6 +5304,8 @@ pollNext(); setInterval(() => { if (!document.hidden) pollNext(); }, 60000); set
   });
   $("fbForm").addEventListener("submit", e => { e.preventDefault(); link.click(); });
 })();
+/* the 1999 room (assets/room.js) reads the chain from here: read only, it never changes the HUD */
+window.TauRoom = { S, LOG, LIVE, PRESENCE, liveChain, offline, threshold, short, fmt };
 
 })();
 

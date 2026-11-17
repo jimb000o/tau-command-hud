@@ -13,7 +13,7 @@
 <meta name="theme-color" content="#09090a">
 <meta property="og:title" content="Tau HUD · Is Tau GxP-ready?">
 <meta property="og:description" content="What an auditor would ask before a pharma company could rely on Tau, what the public sources show today, and what would change the answer.">
-<meta property="og:image" content="https://tauhud.com/og.png">
+<meta property="og:image" content="https://tauhud.com/assets/og/gxp.png?v=2">
 <meta property="og:url" content="https://tauhud.com/gxp/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@TauHUDcom">
@@ -366,7 +366,7 @@ function routeHtml(d) {
   d.route.forEach((s, i) => {
     const mv = open.filter(x => x.step === s.id);
     left -= mv.length;
-    h += step(s.id, String(i + 1), "", pick(s.t), T(EFFORT[s.effort] || ""), pick(s.d), s.do || [], mv,
+    h += step(s.id, String(i + 1), "", pick(s.t), `${T("Done by IDNI")} · ${T(EFFORT[s.effort] || "")}`, pick(s.d), s.do || [], mv,
       `<button type="button" class="lnk" data-copy="${esc(s.id)}">${esc(T("Copy this step as a checklist"))}</button>`);
   });
   return h + `<p class="intro">${esc(T("The shortest route we see from today's public sources to answers a quality unit can accept. Tau HUD's proposal, not IDNI's plan; the effort is our estimate. A step moves an answer up; whether a use is approved stays the decision of the company that relies on it."))}</p></div>`;

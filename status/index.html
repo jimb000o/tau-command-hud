@@ -14,13 +14,13 @@
 <meta name="theme-color" content="#09090a">
 <meta property="og:title" content="Tau HUD · Status">
 <meta property="og:description" content="Uptime of the Tau HUD node and relay, sync gaps and testnet restarts over the last 30 days.">
-<meta property="og:image" content="https://tauhud.com/assets/og/status.png">
+<meta property="og:image" content="https://tauhud.com/assets/og/status.png?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:url" content="https://tauhud.com/status/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@TauHUDcom">
-<meta name="twitter:image" content="https://tauhud.com/assets/og/status.png">
+<meta name="twitter:image" content="https://tauhud.com/assets/og/status.png?v=2">
 <link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
 <style>
 /* Same tokens as the HUD: black and white, phosphor green as the one accent, amber only for "in progress". */
@@ -139,38 +139,72 @@ footer p { margin: 0; }
 .known p { margin: 3px 0 0; color: var(--dim); font-size: 12px; }
 .known p a { color: #fff; }
 
-/* testnet health score: one number, what it is made of, 30 days of it */
-.health { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: auto minmax(0, 1fr) 200px; align-items: center; gap: 4px 16px; width: min(640px, 100%); background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; }
-.health:hover, .health:focus-visible { border-color: var(--hair); background: rgba(255,255,255,.05); }
-.h-num { font: 700 38px/1 var(--display); color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.h-num small { font: 500 13px var(--display); color: var(--dim); margin-left: 3px; }
-.h-num.healthy { color: var(--ok); } .h-num.degraded { color: var(--behind); } .h-num.down { color: var(--bad); }
-.h-meta { display: grid; gap: 4px; min-width: 0; }
-.h-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font: 600 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
-.h-top b { color: #fff; letter-spacing: .14em; }
+/* testnet health score: one big number, what it is made of, and its history with a time range */
+.hband { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 12px 22px; align-items: stretch; }
+.health { all: unset; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; gap: 6px; min-width: 0; border-right: 1px solid var(--line); padding: 2px 20px 2px 0; border-radius: 0; }
+.health:hover .h-more, .health:focus-visible .h-more { color: #fff; }
+.health:focus-visible { outline: 1px solid var(--hair); outline-offset: 4px; }
+.h-num { font: 700 76px/.95 var(--display); color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -.02em; }
+.h-num small { font: 500 20px var(--display); color: var(--dim); margin-left: 6px; letter-spacing: 0; }
+.h-num.healthy { color: var(--ok); text-shadow: 0 0 28px rgba(57,255,138,.25); } .h-num.degraded { color: var(--behind); } .h-num.down { color: var(--bad); }
+.h-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font: 600 12px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.h-top b { color: #fff; letter-spacing: .16em; }
 .h-top b.healthy { color: var(--ok); } .h-top b.degraded { color: var(--behind); } .h-top b.down { color: var(--bad); }
-.h-segs { display: flex; gap: 3px; height: 8px; }
+.h-segs { display: flex; gap: 3px; height: 10px; }
 .h-segs i { position: relative; display: block; border-radius: 2px; background: #2a2a30; overflow: hidden; }
 .h-segs i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--f); background: #d8d8de; }
-.h-why { color: var(--dim); font-size: 12px; line-height: 1.35; }
-.h-spark { width: 200px; height: 44px; display: block; overflow: visible; }
+.h-why { color: var(--dim); font-size: 12px; line-height: 1.4; }
+.h-more { color: var(--dim); font: 600 11px var(--display); letter-spacing: .14em; text-transform: uppercase; margin-top: auto; }
+.h-more::after { content: " →"; }
+.h-hist { display: flex; flex-direction: column; min-width: 0; }
+.h-hist h2 { margin-bottom: 4px; }
+.h-hist .range { margin-left: auto; display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.range button { font: 600 11px var(--display); letter-spacing: .12em; background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 0 12px; min-height: 26px; cursor: pointer; }
+.range button:hover { color: #fff; border-color: var(--hair); }
+.range button[aria-pressed="true"] { color: #000; background: #fff; border-color: #fff; }
+/* the chart (assets/linechart.js): the same look as the "In numbers" page */
+.lc { position: relative; flex: 1 1 auto; min-height: 170px; }
+.lc svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
+.lc text { fill: var(--dim); font: 11px var(--mono); }
+.lc .grid { stroke: var(--line); }
+.lc .line { fill: none; stroke: var(--ok); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.lc .line.open { stroke-dasharray: 3 4; }
+.lc .line.fine { stroke-width: 1.6; }
+.lc .band { fill: rgba(255,255,255,.07); }
+.lc .band-l { stroke: rgba(255,255,255,.18); stroke-width: 6; }
+.lc .thr { stroke: rgba(255,255,255,.16); stroke-dasharray: 3 4; }
+.lc .thr-t { fill: rgba(255,255,255,.4); font-size: 10px; }
+.lc .pt { fill: var(--void); stroke: var(--ok); stroke-width: 2; }
+.lc .pt.end { fill: var(--ok); stroke: var(--void); stroke-width: 2; }
+.lc .pt.end.open { fill: var(--void); stroke: var(--ok); }
+.lc .before { fill: rgba(255,255,255,.025); }
+.lc .before-t { fill: var(--dim); font-size: 11px; }
+.lc .xh { stroke: rgba(255,255,255,.35); stroke-width: 1; }
+.lc .hov { fill: var(--ok); stroke: var(--void); stroke-width: 2; }
+.lc .ov { fill: transparent; cursor: crosshair; }
+.lc .empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 0 12px; text-align: center; }
+.ctip { position: absolute; z-index: 5; pointer-events: none; background: #050506; border: 1px solid var(--hair); border-radius: 6px; padding: 7px 10px; font: 12px/1.5 var(--mono); color: var(--dim); white-space: nowrap; }
+.ctip b { color: #fff; font: 600 13px var(--display); }
+.ctip .d { color: var(--text); }
+html.fit .panel.hband { padding: 10px 16px; display: grid; grid-template-rows: minmax(0, 1fr); }
+html.fit .health { gap: 4px; overflow: hidden; }
+html.fit .h-num { font-size: 64px; }
+html.fit .h-why { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+html.fit .lc { min-height: 0; }
+html.fit .h-hist { min-height: 0; }
+@media (max-width: 760px) {
+  .hband { grid-template-columns: 1fr; }
+  .health { border-right: 0; border-bottom: 1px solid var(--line); padding: 0 0 12px; }
+  .h-num { font-size: 64px; }
+  .h-hist .range { margin-left: 0; width: 100%; }
+  .range button { min-height: 44px; padding: 0 10px; }
+  .lc { min-height: 200px; }
+}
 .spark .th { stroke: rgba(255,255,255,.12); stroke-dasharray: 3 3; stroke-width: 1; }
 .spark .lo { fill: rgba(255,255,255,.07); }
 .spark .av { fill: none; stroke: #d8d8de; stroke-width: 1.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .spark .now { stroke: none; }
 .spark .now.healthy { fill: var(--ok); } .spark .now.degraded { fill: var(--behind); } .spark .now.down { fill: var(--bad); }
-.h-spark-w { display: grid; gap: 2px; }
-.h-spark-w span { display: flex; justify-content: space-between; color: var(--dim); font-size: 11px; }
-html.fit .top { flex-wrap: nowrap; align-items: center; }
-html.fit .top > div { flex: 1 1 auto; min-width: 0; }
-html.fit .health { flex: 0 1 600px; min-width: 470px; padding: 6px 12px; grid-template-columns: auto minmax(0, 1fr) 150px; }
-html.fit .h-spark { width: 150px; height: 36px; }
-@media (max-width: 700px) {
-  .health { grid-template-columns: auto minmax(0, 1fr); }
-  .h-spark-w { grid-column: 1 / -1; }
-  .h-spark { width: 100%; }
-  .h-top { font-size: 11px; }
-}
 /* the breakdown in the detail sheet */
 .ftab { width: 100%; border-collapse: collapse; font-size: 13px; }
 .ftab th { text-align: left; font: 600 11px var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 4px 8px 4px 0; border-bottom: 1px solid var(--line); }
@@ -200,7 +234,19 @@ html.fit .panel { display: flex; flex-direction: column; min-height: 0; overflow
 html.fit .panel > * { flex: none; }
 html.fit .panel > .scroll { flex: 1 1 0; min-height: 0; overflow: auto; padding-right: 2px; }
 html.fit .p-days .rows { flex: none; gap: 8px; }   /* the four bar rows keep their natural height on every screen; Known issues gives way instead */
-html.fit .p-days .bars { height: 26px; }
+html.fit .p-days .bars { height: 20px; }
+html.fit .p-days .legend { margin-top: 6px; }
+html.fit .p-days .rows { gap: 6px; }
+html.fit .hband { flex: none; height: 196px; }
+/* one row on top: the answer, then the two lines of what this page is */
+html.fit .top > div { display: flex; align-items: center; gap: 8px 28px; }
+html.fit .top .lead { flex: none; max-width: 60%; }
+html.fit .top .sub { flex: 1 1 0; min-width: 0; margin: 0; max-width: none; }
+/* the 30-day bars take the left column; Incidents and Known issues share the right one, each scrolls inside */
+html.fit .main { grid-template-rows: minmax(0, 1.5fr) minmax(0, 1fr); }
+html.fit .p-days { grid-row: 1 / span 2; }
+html.fit .p-inc { grid-row: auto; }
+html.fit .p-known .known { grid-template-columns: 1fr; }
 html.fit .tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
 html.fit .lead { font-size: 22px; margin: 0; }
 html.fit .sub { font-size: 12px; margin: 2px 0 0; }
@@ -234,6 +280,7 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/linechart.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -250,16 +297,25 @@ p.sub, .sub, p.note, .note, p.src, .lead, .step, .news li, .inc li, .list li, .c
       <p class="lead" id="lead">Is the live chain up right now?</p>
       <p class="sub">Our node follows the Tau Testnet Alpha, our relay serves it to every page of tauhud.com. Here is how both did over the last 30 days, every outage and testnet restart, and the bugs we know about.</p>
     </div>
-    <button class="health" id="health" type="button" aria-label="Testnet health score. Click for the breakdown.">
-      <span class="h-num" id="hNum">—<small>/100</small></span>
-      <span class="h-meta">
-        <span class="h-top">Testnet health <b id="hState">Checking</b></span>
-        <span class="h-segs" id="hSegs"></span>
-        <span class="h-why" id="hWhy">One number for “does the testnet run?”</span>
-      </span>
-      <span class="h-spark-w"><svg class="h-spark spark" id="hSpark" viewBox="0 0 200 44" preserveAspectRatio="none" aria-hidden="true"></svg><span><span>30 days</span><span>now</span></span></span>
-    </button>
   </div>
+
+  <section class="panel hband" aria-label="Testnet health">
+    <button class="health" id="health" type="button" aria-label="Testnet health score. Click for the breakdown.">
+      <span class="h-top">Testnet health <b id="hState">Checking</b></span>
+      <span class="h-num" id="hNum">—<small>/100</small></span>
+      <span class="h-segs" id="hSegs"></span>
+      <span class="h-why" id="hWhy">One number for “does the testnet run?”</span>
+      <span class="h-more">Click for the breakdown</span>
+    </button>
+    <div class="h-hist">
+      <h2>Health over time <small id="hcNote">line: daily average · band: down to the lowest hour · healthy from 80, down below 50</small>
+        <span class="range" id="hRange" role="group" aria-label="Time range">
+          <button type="button" data-r="1">24H</button><button type="button" data-r="7">7D</button><button type="button" data-r="30">30D</button><button type="button" data-r="90">90D</button><button type="button" data-r="365">1Y</button><button type="button" data-r="0">All</button>
+        </span>
+      </h2>
+      <div class="lc" id="hChart"></div>
+    </div>
+  </section>
 
   <div class="tiles" id="tiles"></div>
 
@@ -591,7 +647,8 @@ function renderHealth() {
   if (!H) {
     num.className = "h-num"; num.innerHTML = "—<small>/100</small>";
     st.className = ""; st.textContent = reach === false ? "No data" : "Coming soon";
-    $("hSegs").innerHTML = ""; $("hSpark").innerHTML = "";
+    $("hSegs").innerHTML = "";
+    $("hChart").innerHTML = `<p class="empty">${esc(reach === false ? "The relay does not answer." : "The history appears here with the next server update.")}</p>`;
     $("hWhy").textContent = reach === false ? "The relay does not answer." : "The score starts with the next server update.";
     return;
   }
@@ -601,8 +658,61 @@ function renderHealth() {
   const lost = H.factors.filter(f => f.weight - f.points >= 1).sort((a, b) => (b.weight - b.points) - (a.weight - a.points));
   $("hWhy").textContent = lost.length ? "Points lost: " + lost.slice(0, 2).map(f => `${Math.round(f.weight - f.points)} for ${SHORT[f.key] || f.key} (${fval(f)})`).join(", ") + (lost.length > 2 ? ", more in the details" : "")
     : "Every factor at full points.";
-  $("hSpark").innerHTML = sparkSvg(healthDays(), 200, 44, "", false);
+  drawHealthChart();
 }
+/* the score over time: 24H and 7D hour by hour, longer ranges one point per UTC day (the relay keeps days forever,
+   hours for 31 days). A relay from before the day rows: days are made from the hours it still holds. */
+let hRange = 30;
+try { const r = localStorage.getItem("tauhud-status-health-range"); if (r != null && [0, 1, 7, 30, 90, 365].includes(+r)) hRange = +r; } catch (e) {}
+const HOUR = 3600;
+function healthDayRows() {
+  if (Array.isArray(H?.days) && H.days.length) return H.days;
+  const by = new Map();
+  for (const [t, avg, lo] of H?.hours || []) {
+    const d = t - t % DAY, row = by.get(d) || [d, 0, 100, null, 0];
+    row[1] += avg; row[2] = Math.min(row[2], lo); row[4]++; by.set(d, row);
+  }
+  return [...by.values()].sort((a, b) => a[0] - b[0]).map(r => [r[0], Math.round(r[1] / r[4] * 10) / 10, r[2], null]);
+}
+function drawHealthChart() {
+  const box = $("hChart");
+  document.querySelectorAll("#hRange button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.r === hRange)));
+  if (!H) return;
+  const now = Date.now() / 1000, hourly = hRange === 1 || hRange === 7;
+  const rows = hourly ? (H.hours || []) : healthDayRows();
+  const step = hourly ? HOUR : DAY, end = Math.floor(now / step) * step;
+  if (!rows.length) { box.innerHTML = `<p class="empty">${esc("The history starts now; the relay records the score once a minute.")}</p>`; return; }
+  const first = rows[0][0];
+  const start = hourly ? end - (hRange * 24 - 1) * HOUR : hRange ? end - (hRange - 1) * DAY : Math.min(first, end - 6 * DAY);
+  const by = new Map(rows.map(r => [r[0], r])), pts = [];
+  for (let t = start; t <= end; t += step) {
+    const r = by.get(t);
+    pts.push(r ? { t: t * 1000, v: r[1], lo: r[2], sync: r[3], open: t === end } : { t: t * 1000, v: null });
+  }
+  // the newest point is the score right now when the relay has not written this hour or day yet
+  if (pts[pts.length - 1].v == null && H.score != null) Object.assign(pts[pts.length - 1], { v: H.score, lo: H.score, open: true, now: true });
+  $("hcNote").textContent = (hourly ? "line: hourly average · band: down to the lowest minute" : "line: daily average · band: down to the lowest hour") + " · healthy from 80, down below 50";
+  const words = { healthy: "healthy", degraded: "degraded", down: "down" };
+  const stateOf = v => v >= (H.thresholds?.healthy ?? 80) ? "healthy" : v >= (H.thresholds?.degraded ?? 50) ? "degraded" : "down";
+  TauLineChart.draw(box, pts, {
+    start: start * 1000, end: end * 1000, step: step * 1000, first: first * 1000, label: "Testnet health over time",
+    ticks: [0, 50, 80, 100], fmt: String, before: "before the score began",
+    thresholds: [{ v: H.thresholds?.healthy ?? 80 }, { v: H.thresholds?.degraded ?? 50 }],
+    tip: p => {
+      const t = p.t / 1000;
+      const when = hourly ? `${fmtDay(t)} · ${fmtTime(t).slice(0, 5)}–${fmtTime(t + HOUR).slice(0, 5)} UTC` : fmtDay(t) + (t === end ? " · today" : "");
+      return `<div class="d">${esc(when)}${p.open ? " · " + esc(p.now ? "right now" : "still counting") : ""}</div><b>${Math.round(p.v)}</b> / 100 ${esc(words[stateOf(p.v)])}`
+        + (p.now ? "" : `<br>lowest ${esc(String(p.lo))}`) + (p.sync != null ? ` · in sync ${esc(pct(p.sync))}` : "");
+    },
+  });
+}
+document.querySelectorAll("#hRange button").forEach(b => b.addEventListener("click", () => {
+  hRange = +b.dataset.r;
+  try { localStorage.setItem("tauhud-status-health-range", String(hRange)); } catch (e) {}
+  drawHealthChart();
+}));
+let hResize = 0;
+addEventListener("resize", () => { clearTimeout(hResize); hResize = setTimeout(drawHealthChart, 120); });
 function openHealth() {
   if (!H) return;
   tip.hidden = true;
@@ -642,6 +752,9 @@ function sampleHealth() {
   return {
     generated_at: now, at: now - 20, score: 86, state: "healthy", label: "Healthy", expected_block_seconds: 62,
     thresholds: { healthy: 80, degraded: 50 }, hours,
+    days: (() => { const out = [], by = new Map(); for (const [t, a, lo] of hours) { const d = t - t % DAY, r = by.get(d) || [d, 0, 100, 0]; r[1] += a; r[2] = Math.min(r[2], lo); r[3]++; by.set(d, r); }
+      for (let d = now - now % DAY - 70 * DAY; d < now - now % DAY - 26 * DAY; d += DAY) out.push([d, Math.round((84 + rnd() * 12) * 10) / 10, Math.round(55 + rnd() * 25), 0.97 + rnd() * .03]);
+      return out.concat([...by.values()].map(r => [r[0], Math.round(r[1] / r[3] * 10) / 10, r[2], 0.98 + rnd() * .02])); })(),
     factors: [
       { key: "node", label: "Node answering", weight: 20, points: 20, value: "yes", note: "" },
       { key: "sync", label: "In sync with the network", weight: 15, points: 15, value: "in sync", note: "" },

@@ -125,5 +125,6 @@ TauI18n.add({ strings: {
   "These answers are usable today with a condition. They close when the company that uses Tau writes each condition into its own procedure (SOP) and validated system. Its quality unit does this, not IDNI, and it can start before IDNI does anything.": "これらの答えは、条件付きで今日から使えます。Tau を使う企業が各条件を自社の手順書（SOP）とバリデート済みシステムに書き込めば、解消します。これを行うのは企業の品質部門で、IDNI ではありません。IDNI が何かをする前に始められます。",
   "In your own records, not on GitHub": "自社の記録にあり、GitHub にはない",
   "Written into your own procedure (SOP) and validated system; no IDNI needed.": "自社の手順書（SOP）とバリデート済みシステムに書き込む。IDNI は不要。",
-  "Step 0": "ステップ 0"
+  "Step 0": "ステップ 0",
+  "Done by IDNI": "IDNI が行う"
 } });

@@ -14,13 +14,13 @@
 <meta name="theme-color" content="#09090a">
 <meta property="og:title" content="Tau HUD in numbers">
 <meta property="og:description" content="Visitors per day, growth and the most visited pages of Tau HUD, counted without cookies.">
-<meta property="og:image" content="https://tauhud.com/assets/og/meta.png">
+<meta property="og:image" content="https://tauhud.com/assets/og/meta.png?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:url" content="https://tauhud.com/meta/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@TauHUDcom">
-<meta name="twitter:image" content="https://tauhud.com/assets/og/meta.png">
+<meta name="twitter:image" content="https://tauhud.com/assets/og/meta.png?v=2">
 <link rel="stylesheet" href="../assets/fonts/sora-jetbrainsmono.css">
 <style>
 /* Same tokens as the HUD and /stats: black and white, phosphor green as the one accent. */
@@ -55,6 +55,22 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .kpi { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--dim); font-size: 12px; white-space: nowrap; background: rgba(16,16,18,.86); }
 .kpi b { color: #fff; font: 600 13px var(--display); margin-right: 4px; font-variant-numeric: tabular-nums; }
 .kpi.up b { color: var(--ok); }
+/* the 7-day chip opens its own chart (the Growth panel's "7-day average" view) */
+.kpi.go { cursor: pointer; }
+.kpi.go:hover, .kpi.go:focus-visible { border-color: var(--hair); color: #fff; outline: none; }
+.chart .line2 { fill: none; stroke: rgba(255,255,255,.8); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.chart .line2.open { stroke-dasharray: 3 4; }
+.chart .axis2 { fill: rgba(255,255,255,.55); }
+.gavg { color: var(--dim); white-space: nowrap; }
+#pGrowth h2 { flex-wrap: nowrap; min-height: 24px; }
+#pGrowth h2 .aside { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gavg i { display: inline-block; width: 14px; height: 2px; background: rgba(255,255,255,.8); vertical-align: 3px; margin-right: 6px; }
+.gavg b { color: #fff; font-weight: 600; }
+.awin { display: inline-flex; gap: 3px; vertical-align: 1px; }
+.awin button { font: 600 10px var(--display); letter-spacing: .1em; background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; min-height: 22px; cursor: pointer; text-transform: uppercase; }
+.awin button:hover { color: #fff; border-color: var(--hair); }
+.awin button[aria-pressed="true"] { color: #000; background: rgba(255,255,255,.85); border-color: transparent; }
+#pGrowth.flash { border-color: rgba(57,255,138,.6); transition: border-color .2s; }
 .main { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
 .col { display: grid; gap: 14px; min-width: 0; align-content: start; }
 .panel { background: rgba(16,16,18,.86); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; display: flex; flex-direction: column; }
@@ -269,7 +285,7 @@ html.fit.wide .col.side { display: contents; }
       </section>
       <div class="row2">
         <section class="panel" id="pGrowth">
-          <h2><span id="growthTitle">Growth</span> <span class="aside" id="growthNote"></span></h2>
+          <h2><span id="growthTitle">Growth</span> <span class="gavg" id="growthAvg" hidden></span> <span class="aside" id="growthNote"></span></h2>
           <div class="chart small" id="cGrowth"></div>
         </section>
         <section class="panel who">
@@ -516,18 +532,21 @@ const monthDate = t => new Date(t).toLocaleDateString(LOC || "en-GB", { month: "
    number (no axis of its own), hairline grid, a crosshair and a small card on hover.
    pts: [{t, v, vol?, open?}] in time order; opts: {label, lo0, avg, onPick, tip(pt) -> html} */
 function lineChart(box, pts, opts) {
-  const { start, end, first, step } = domain();
+  const { start, end, first, step } = opts.dom || domain();
   const w = Math.max(box.clientWidth, 10), h = Math.max(box.clientHeight, 10);
   const vals = pts.map(p => p.v), hi = Math.max(opts.bars ? 1 : 1, ...vals), lo = opts.lo0 ? 0 : Math.min(...vals);
   const tk = ticks(opts.lo0 ? 0 : lo - (hi - lo) * .15, hi + (hi - lo || hi) * .12);
   const yMin = tk[0], yMax = tk[tk.length - 1];
-  const lab = Math.max(...tk.map(v => fmt(v).length)) * 7 + 14, L = lab, R = 10, top = 10, B = 22, cw = w - L - R, ch = h - top - B;
+  // a second line with its own scale on the right (opts.y2: [{t, v, open?}])
+  const y2pts = (opts.y2 || []).filter(p => p.v != null), tk2 = y2pts.length ? ticks(0, Math.max(1, ...y2pts.map(p => p.v)) * 1.1) : null;
+  const lab = Math.max(...tk.map(v => fmt(v).length)) * 7 + 14, L = lab, R = tk2 ? Math.max(...tk2.map(v => fmt(v).length)) * 7 + 14 : 10, top = 10, B = 22, cw = w - L - R, ch = h - top - B;
   const x = t => L + (end === start ? cw / 2 : cw * (t - start) / (end - start));
   const y = v => top + ch - ch * (v - yMin) / (yMax - yMin || 1);
+  const yR = tk2 ? v => top + ch - ch * v / (tk2[tk2.length - 1] || 1) : null;
   const uid = box.id, f = n => n.toFixed(1);
   /* a monotone curve through the points (Fritsch–Carlson): smooth, but it never swings above or below a real value */
-  const path = arr => {
-    const X = arr.map(p => x(p.t)), Y = arr.map(p => y(p.v)), n = arr.length;
+  const path = (arr, yf = y) => {
+    const X = arr.map(p => x(p.t)), Y = arr.map(p => yf(p.v)), n = arr.length;
     if (n < 3) return arr.map((p, i) => (i ? "L" : "M") + f(X[i]) + " " + f(Y[i])).join(" ");
     const d = [], m = [];
     for (let i = 0; i < n - 1; i++) d.push((Y[i + 1] - Y[i]) / (X[i + 1] - X[i] || 1));
@@ -592,6 +611,12 @@ function lineChart(box, pts, opts) {
     }
   }
   if (opts.avg && opts.avg.length > 1) s += `<path class="avg" d="${path(opts.avg)}"/>`;
+  if (tk2) {
+    for (const v of tk2) s += `<text class="axis axis2" x="${w - R + 8}" y="${(yR(v) + 4).toFixed(1)}">${fmt(v)}</text>`;
+    const closed = y2pts.filter(p => !p.open), last = y2pts[y2pts.length - 1];
+    if (closed.length > 1) s += `<path class="line2" d="${path(closed, yR)}"/>`;
+    if (last && last.open && closed.length) s += `<path class="line2 open" d="${path([closed[closed.length - 1], last], yR)}"/>`;
+  }
   // no dot on every point (the hover shows each one): only the newest value and the picked day; a history of
   // three points or fewer keeps its dots so it still reads as data
   if (!opts.bars) {
@@ -739,14 +764,46 @@ function drawNodesVs(box) {
   $("growthNote").textContent = `${T("Tau HUD launch")}: ${dayLabel(dayKey(LAUNCH))}, 16:45 UTC`;
 }
 
+/* visitors of one of our sites (Tau HUD or Agorzilla), where the 7-day chip means visitors a day */
+const VIS = () => !NET() && !NM() && !RB() && !ND();
+/* the 7-day chip's number for every day: average visitors a day over that day and the six before it (null in the first
+   six days of counting). Drawn as a white line with its own scale over the visits added up in the Growth panel. */
+let avgWin = 7;   // days the white line averages over: 1 (the day itself) or 7 (the chip's number)
+try { if (localStorage.getItem("tauhud-meta-avgwin") === "1") avgWin = 1; } catch (e) {}
+function weekAvgAt(t, w = avgWin) {
+  const keys = Object.keys(data.days).sort();
+  if (!keys.length || t < Date.parse(keys[0] + "T00:00:00Z") + (w - 1) * DAY) return null;
+  let sum = 0; for (let i = 0; i < w; i++) sum += (data.days[dayKey(t - i * DAY)] || [0])[0];
+  return sum / w;
+}
+/* full days only, like the chip: each window's value sits at the midnight that closes it, so the line ends at the
+   start of today with the last full window (a half-counted today would pull it down) */
+function weekAvgLine() {
+  const { start, end } = domain(), out = [], today = Date.parse(data.today + "T00:00:00Z");
+  for (let t = Math.floor(start / DAY) * DAY - DAY; t < today && t + DAY <= end + DAY; t += DAY) {
+    const a = weekAvgAt(t); out.push({ t: Math.min(end, Math.max(t + DAY, start)), v: a == null ? null : Math.round(a * 10) / 10 });
+  }
+  return out;
+}
+const avgTip = k => { const t = Math.min(Date.parse(k + "T00:00:00Z"), Date.parse(data.today + "T00:00:00Z") - DAY), a = weekAvgAt(t), b = weekAvgAt(t - avgWin * DAY); if (a == null) return "";
+  const c = b ? Math.round(100 * (a - b) / b) : null;
+  return `<br><b>${fmt(Math.round(a * 10) / 10)}</b> ${esc(T(avgWin === 7 ? "visitors a day, 7-day average" : "visitors that day"))}${c == null ? "" : ` (${c >= 0 ? "▲" : "▼"}${Math.abs(c)}%)`}`; };
 function drawGrowth() {
   const box = $("cGrowth"), days = rangeDays(), all = Object.keys(data.days).sort(), net = NET() || NM();
   box.classList.remove("vsbox");
+  $("growthAvg").hidden = true;
   if (RB()) return drawRabbitGrowth(box, days, all);
   if (ND()) return drawNodesVs(box);
   $("growthTitle").textContent = T(net ? (hourly() ? "Transactions added up" : "Wallets reached") : "Growth");
   if (net) return drawNetGrowth(box, days, all);
   if (!days.length || !days.some(d => d[1][0])) { box.innerHTML = `<p class="empty">${esc(T("The climb starts with the first visitors."))}</p>`; $("growthNote").textContent = ""; return; }
+  {
+    // the white line: the 7-day chip's number over time, with its own scale on the right
+    const y = Date.parse(data.today + "T00:00:00Z") - DAY, a = weekAvgAt(y), b = weekAvgAt(y - avgWin * DAY), c = a != null && b ? Math.round(100 * (a - b) / b) : null;
+    $("growthAvg").hidden = false;
+    $("growthAvg").innerHTML = `<i></i><span class="awin" role="group" aria-label="${esc(T("Average over"))}">${[1, 7].map(w => `<button type="button" data-w="${w}" aria-pressed="${w === avgWin}">${esc(T(w === 1 ? "24H avg" : "7D avg"))}</button>`).join("")}</span>`
+      + (a == null ? "" : ` <b>${fmt(Math.round(a))}</b> ${esc(T("a day"))}${c == null ? "" : ` ${c >= 0 ? "▲" : "▼"}${Math.abs(c)}%`}`);
+  }
   if (range !== 1 && hourly()) {
     // several days hour by hour: each day's visits spread over its hours by when people came, so the line climbs
     // smoothly and still ends each day on that day's real total
@@ -762,8 +819,8 @@ function drawGrowth() {
     });
     pts.forEach(p => { p.v = Math.round(p.v); });
     lineChart(box, pts, {
-      label: T("Visits added up"), lo0: !range || before === 0 || kind === "bar", bars: kind === "bar",
-      tip: p => `<div class="d">${esc(dayLabel(p.k))} · ${T("until")} ${hourLabel(p.t + p.step)} UTC</div><b>≈ ${fmt(p.v)}</b> ${esc(T("visits in total"))}`,
+      label: T("Visits added up"), lo0: !range || before === 0 || kind === "bar", bars: kind === "bar", y2: weekAvgLine(),
+      tip: p => `<div class="d">${esc(dayLabel(p.k))} · ${T("until")} ${hourLabel(p.t + p.step)} UTC</div><b>≈ ${fmt(p.v)}</b> ${esc(T("visits in total"))}${avgTip(p.k)}`,
       onPick: p => { sel = p.k; render(); },
     });
     $("growthNote").textContent = `+${fmt(Math.round(run - before))} ${T("visits in this range")} · ${fmt(Math.round(run))} ${T("in total")}`;
@@ -773,8 +830,8 @@ function drawGrowth() {
     let run = 0;
     const pts = rangeHours().map(p => { run += p.v || 0; return { ...p, add: p.v || 0, v: run }; });
     lineChart(box, pts, {
-      label: T("Visits added up"), lo0: true, bars: kind === "bar",
-      tip: p => `<div class="d">${esc(dayLabel(p.k))} · ${T("until")} ${hourLabel(p.t + p.step)} UTC</div><b>${fmt(p.v)}</b> ${esc(T("visits in the last 24 hours"))}${p.step === HOUR ? `<br>+${fmt(p.add)} ${esc(T("that hour"))}` : ""}`,
+      label: T("Visits added up"), lo0: true, bars: kind === "bar", y2: weekAvgLine(),
+      tip: p => `<div class="d">${esc(dayLabel(p.k))} · ${T("until")} ${hourLabel(p.t + p.step)} UTC</div><b>${fmt(p.v)}</b> ${esc(T("visits in the last 24 hours"))}${p.step === HOUR ? `<br>+${fmt(p.add)} ${esc(T("that hour"))}` : ""}${avgTip(p.k)}`,
       onPick: p => { sel = p.k; render(); },
     });
     $("growthNote").textContent = `+${fmt(run)} ${T("visits in the last 24 hours")}`;
@@ -785,8 +842,8 @@ function drawGrowth() {
   let run = before;
   const pts = days.map(([k, d]) => { run += d[0]; return { k, t: Date.parse(k + "T00:00:00Z"), v: run, add: d[0], open: k === data.today }; });
   lineChart(box, pts, {
-    label: T("Visits added up"), lo0: !range || before === 0 || kind === "bar", bars: kind === "bar",
-    tip: p => `<div class="d">${esc(dayLabel(p.k, true))}</div><b>${fmt(p.v)}</b> ${esc(T("visits in total"))}<br>+${fmt(p.add)} ${esc(T("that day"))}`,
+    label: T("Visits added up"), lo0: !range || before === 0 || kind === "bar", bars: kind === "bar", y2: weekAvgLine(),
+    tip: p => `<div class="d">${esc(dayLabel(p.k, true))}</div><b>${fmt(p.v)}</b> ${esc(T("visits in total"))}<br>+${fmt(p.add)} ${esc(T("that day"))}${avgTip(p.k)}`,
     onPick: p => { sel = p.k; render(); },
   });
   $("growthNote").textContent = range ? `+${fmt(run - before)} ${T("visits in this range")} · ${fmt(run)} ${T("in total")}` : `${fmt(run)} ${T("visits since counting began")}`;
@@ -1256,6 +1313,7 @@ function nodesKpis() {
 
 function kpis() {
   drawPlaying();
+  const wk = $("kWeekBox"); wk.classList.remove("go"); wk.removeAttribute("tabindex"); wk.removeAttribute("role");
   if (NET()) return netKpis();
   if (ND()) return nodesKpis();
   if (RB()) return rabbitKpis();
@@ -1273,6 +1331,8 @@ function kpis() {
   $("kWeekBox").hidden = w1 == null;
   if (w1 != null) $("kWeek").textContent = fmt(Math.round(w1)) + (w0 ? ` ${w1 >= w0 ? "▲" : "▼"}${Math.abs(Math.round(100 * (w1 - w0) / w0))}%` : "");
   $("kWeekBox").classList.toggle("up", !!(w0 && w1 > w0));
+  $("kWeekBox").classList.add("go"); $("kWeekBox").tabIndex = 0; $("kWeekBox").setAttribute("role", "button");
+  $("kWeekBox").dataset.tip = "Average visitors per day over the last 7 full days,\ncompared with the 7 days before.\nIts line is the white one in the Growth panel.";
   $("kAll").textContent = fmt(Object.values(data.days).reduce((a, d) => a + d[0], 0));
   const best = Object.entries(data.days).sort((a, b) => b[1][0] - a[1][0])[0];
   $("kBest").textContent = best && best[1][0] ? `${fmt(best[1][0])} · ${dayLabel(best[0])}` : "–";
@@ -1331,6 +1391,20 @@ async function load() {
 }
 
 document.querySelectorAll(".kind button").forEach(b => b.addEventListener("click", () => { kind = b.dataset.kind; render(); }));
+$("growthAvg").addEventListener("click", e => { const b = e.target.closest("button[data-w]"); if (!b) return; avgWin = +b.dataset.w; try { localStorage.setItem("tauhud-meta-avgwin", String(avgWin)); } catch (er) {} render(); });
+// a chart box that changes size after it was drawn (the panels settle, the Growth header grows) is drawn again
+if (window.ResizeObserver) {
+  const sizes = new Map(); let queued = 0;
+  const ro = new ResizeObserver(entries => {
+    let moved = false;
+    for (const e of entries) { const k = Math.round(e.contentRect.width) + "x" + Math.round(e.contentRect.height); if (sizes.get(e.target) !== k) { if (sizes.has(e.target)) moved = true; sizes.set(e.target, k); } }
+    if (moved && data && !queued) queued = requestAnimationFrame(() => { queued = 0; drawDaily(); drawGrowth(); });
+  });
+  ro.observe($("cDaily")); ro.observe($("cGrowth"));
+}
+// the 7-day chip points at its line in the Growth panel (and switches it to the 7-day average)
+$("kWeekBox").addEventListener("click", () => { if (!VIS()) return; if (avgWin !== 7) { avgWin = 7; try { localStorage.setItem("tauhud-meta-avgwin", "7"); } catch (er) {} render(); } const g = $("pGrowth"); if (!document.documentElement.classList.contains("fit")) g.scrollIntoView({ behavior: "smooth", block: "nearest" }); g.classList.add("flash"); setTimeout(() => g.classList.remove("flash"), 1400); });
+$("kWeekBox").addEventListener("keydown", e => { if (VIS() && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); $("kWeekBox").click(); } });
 document.querySelectorAll(".sites button").forEach(b => b.addEventListener("click", () => {
   site = b.dataset.site; sel = null; pickSite(); render();
   const u = new URL(location.href); u.searchParams.delete("site"); u.searchParams.set("view", VIEW_OF[site]); history.replaceState(null, "", u);

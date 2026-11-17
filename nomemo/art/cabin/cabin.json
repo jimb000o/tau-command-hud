@@ -1,5 +1,5 @@
 {
- "about": "The cabin of the Black Sequence around No Memo's screen. Fractions of the picture: screen = x0,y0,x1,y1 of the black glass; lamp = the lantern flame; windows = where the sea is. live = short painted loops (made with Kling from crops of the painting) that play over it through a soft mask: box = x0,y0,x1,y1 of the clip; rough = the sea during the Tuesday op. bell = the ship's bell: box and pivot (where it hangs) of the bell, rope = its lanyard, patch = where the wall behind the rope is borrowed from (a shift in picture widths). keys = the painted keyboard (on a monitor 1600 px and wider the camera sits back so it shows), hands = the part the painted hands (art/hands/) cover.",
+ "about": "The cabin of the Black Sequence around No Memo's screen. Fractions of the picture: screen = x0,y0,x1,y1 of the black glass; lamp = the lantern flame; windows = where the sea is. live = short painted loops (made with Kling from crops of the painting) that play over it through a soft mask: box = x0,y0,x1,y1 of the clip; rough = the sea during the Tuesday op. once = plays one time and stays on its last frame (the hourglass runs out over a minute); turn = a click on it starts it again (turns the hourglass). bell = the ship's bell: box and pivot (where it hangs) of the bell, rope = its lanyard, patch = where the wall behind the rope is borrowed from (a shift in picture widths). keys = the painted keyboard (on a monitor 1600 px and wider the camera sits back so it shows), hands = the part the painted hands (art/hands/) cover.",
  "variants": [
   {
    "src": "cabin-16x9.webp",
@@ -165,7 +165,9 @@
       0.6367,
       0.8894,
       0.9204
-     ]
+     ],
+     "once": true,
+     "turn": true
     }
    ],
    "bell": {
