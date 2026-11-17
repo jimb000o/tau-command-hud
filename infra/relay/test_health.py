@@ -101,6 +101,22 @@ data = json.loads(r.health_json())
 row = data["hours"][-1]
 check(row[0] == now - now % 3600 and row[2] < row[1], f"/health-score hour row {row}")
 check(data["state"] == "down" and data["thresholds"] == {"healthy": 80, "degraded": 50}, "/health-score current state")
+d = data["days"][-1]
+check(data["day_fields"] == ["day", "average", "lowest", "in_sync"] and d[0] == now - now % 86400 and d[2] <= d[1], f"/health-score day row {d}")
+# day rows outlive the hours: an hour older than UPTIME_DAYS is trimmed, its day stays
+old_day = str(now - now % 86400 - 60 * 86400)
+r.uptime["days"][old_day] = [60, 60, 60, 5400, 80, 60]
+r.sample_uptime(now + 120)
+r.health_text = None
+check(json.loads(r.health_json())["days"][0][:3] == [int(old_day), 90.0, 80], "a day older than the hours is kept")
+# an uptime.json from before the day rows is filled once from its hours
+h0 = now - now % 86400
+r.uptime = {"hours": {str(h0): [60, 60, 60, 6000, 90, 60], str(h0 + 3600): [60, 30, 30, 3000, 20, 60], str(h0 - 86400): [60, 60, 60]}, "incidents": []}
+import relay as relay_mod
+with open(relay_mod.UPTIME_PATH, "w") as fh:
+    json.dump(r.uptime, fh)
+loaded = r._load_uptime()
+check(loaded["days"][str(h0)] == [120, 90, 90, 9000, 20, 120] and loaded["days"][str(h0 - 86400)] == [60, 60, 60, 0, 100, 0], f"days filled from hours {loaded['days']}")
 st = r.status()["health"]
 check(set(st) == {"score", "state", "label"} and st["state"] == "down", f"/status carries the score {st}")
 sys.exit(1 if failed else 0)

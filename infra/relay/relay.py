@@ -872,6 +872,13 @@ class Relay:
         state.setdefault("hours", {})
         state.setdefault("incidents", [])
         state.setdefault("last_beat", None)
+        if not isinstance(state.get("days"), dict):
+            # per UTC day, kept forever (hours go after UPTIME_DAYS): the same six numbers as an hour row.
+            # A relay from before this field fills it once from the hours it still holds.
+            days: dict[str, list] = {}
+            for h, v in sorted(state["hours"].items(), key=lambda kv: int(kv[0])):
+                self._add_day(days, int(h), v)
+            state["days"] = days
         now = round(time.time())
         last = state.get("last_beat")
         # still-open outages ended when the relay stopped; the time it was away is a relay outage
@@ -883,6 +890,18 @@ class Relay:
         state.pop("open", None)
         self.uptime_open: dict[str, dict] = {}  # kind -> the incident still going on
         return state
+
+    @staticmethod
+    def _add_day(days: dict, t: int, v: list):
+        """Add an hour row (or one sample as a row) [samples, node_ok, synced, score_sum, score_min, score_samples]
+        to its UTC day row in `days`."""
+        row = days.setdefault(str(t - t % 86400), [0, 0, 0, 0, 100, 0])
+        for i in (0, 1, 2):
+            row[i] += v[i] if len(v) > i else 0
+        if len(v) >= 6 and v[5]:
+            row[4] = v[4] if not row[5] else min(row[4], v[4])
+            row[3] += v[3]
+            row[5] += v[5]
 
     def _save_uptime(self):
         tmp = UPTIME_PATH + ".tmp"
@@ -915,6 +934,7 @@ class Relay:
         bucket[4] = score if not bucket[5] else min(bucket[4], score)
         bucket[3] += score
         bucket[5] += 1
+        self._add_day(self.uptime.setdefault("days", {}), now, [1, int(node_ok), int(synced), score, score, 1])
         opened = self.uptime_open
         for kind, bad, detail in (("node", not node_ok, None),
                                   ("sync", node_ok and not synced, {"canonical": canon, "tip": tip})):
@@ -1101,10 +1121,14 @@ class Relay:
             return self.health_text
         hours = sorted((int(h), round(v[3] / v[5], 1), v[4]) for h, v in self.uptime["hours"].items()
                        if len(v) >= 6 and v[5])
+        # every day since the score began, kept forever: average, lowest hour-minute, share of checks live and in sync
+        days = sorted((int(d), round(v[3] / v[5], 1), v[4], round(v[2] / v[0], 4) if v[0] else None)
+                      for d, v in self.uptime.get("days", {}).items() if len(v) >= 6 and v[5])
         self.health_text = json.dumps({
             "generated_at": round(now), **self.health(now),
             "thresholds": {"healthy": HEALTH_OK, "degraded": HEALTH_DEGRADED},
             "fields": ["hour", "average", "lowest"], "hours": hours,
+            "day_fields": ["day", "average", "lowest", "in_sync"], "days": days,
         }, separators=(",", ":"))
         self.health_at = now
         return self.health_text
