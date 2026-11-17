@@ -381,7 +381,10 @@ counts = [sum(x["trick"] == k for x in tr) for k in cruise.TRICKS]
 check({a["trick"] for a in tr} == set(cruise.TRICKS) and 1 <= min(counts) and max(counts) <= cruise.TRICK_START and max(counts) - min(counts) <= 1,
       f"every one of the {len(cruise.TRICKS)} tricks is tried, the keenest up to {cruise.TRICK_START} times, as many as fit between landing and leaving")
 check(all(b["t"] - a["t"] >= cruise.TRICK_GAP for a, b in zip(tr, tr[1:])), f"at most one trick every {cruise.TRICK_GAP} s")
-check(min(a["t"] for a in tr) >= TUE + (cruise.landing("pirates") + 1) * 60, "the first trick only after every pirate has paid the pier")
+check(min(a["t"] for a in tr if not a.get("early")) >= TUE + (cruise.landing("pirates") + 1) * 60, "the other tricks only after every pirate has paid the pier")
+_e = [a for a in tr if a.get("early")]
+_pier = [a for a in PP if a["kind"] == "pay" and a["to"] == "pier" and a["p"] == _e[0]["p"]]
+check(len(_e) == 1 and _pier and _e[0]["t"] >= _pier[0]["t"] + 60, "the early trick's pirate paid the pier a minute before it")
 check(cruise.where(PP, TUE + 40 * 60, TUE + 80 * 60, "pirates") == {}, "the pirates stay aboard: no group stands on the island")
 check(len(cruise.plan("pirates", TUE, set(), {"trick"}, {k: 1 for k in cruise.TRICKS})) < len(PP), "fewer tricks when it learned so")
 check(C.next_call(TUE - 3600)[1] == "pirates" and C.next_call(TUE - 3600, surprise=False)[1] == "dryrun",
@@ -770,6 +773,48 @@ far = QT + 2 * 86400
 L6 = C6.lenders(far)
 check(len(L6) == 120 and L6[0][0] == "queen-0" and L6[0][2] == C6.pk["queen-0"] and L6[0][1] == C6.sk["queen-0"],
       "far from every call the Queen's 120 passengers may lend No Memo's drop")
+
+# ---------- 17 Nov 2026, Kilian's three picks after Black Sequence's call ended by a restart ----------
+T17 = cruise.berlin_t(dt.date(2026, 11, 17), 18)
+pp17 = cruise.plan("pirates", T17, set(), {"trick"})
+tr17 = [a for a in pp17 if a["kind"] == "trick"]
+check(tr17 and tr17[0]["t"] <= T17 + 4 * 60 and tr17[0]["trick"] in cruise.FIRST_TRICKS,
+      f"the first pirate trick goes in the first minutes, not after the landing's 11 {tr17[:1]}")
+check(cruise.plan("pirates", T17, set(), {"trick"}) == pp17, "and the same visit still plans the same day")
+check(not any(a["kind"] == "trick" and a["t"] < T17 + 600 for a in cruise.plan("queen", cruise.berlin_t(dt.date(2026, 11, 21), 14), set(), set())),
+      "other ships send no early trick")
+MK = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s17"), "log_path": os.path.join(d, "l17"), "incidents_path": os.path.join(d, "i17")},
+                   clock=clock, enabled=True, verdict=lambda: "calm", background=False)
+cruise.MAKEUP.clear()
+v17 = {"id": "2026-11-17-pirates", "ship": "pirates", "t0": T17, "landed": True}
+got = MK.makeup_after(v17, T17 + 7 * 60, T17 + 10 * 60)
+check(got == (T17 + 2 * 3600, "pirates") and (T17 + 2 * 3600, "pirates") in cruise.calls_near(T17),
+      f"a restart 7 minutes in: the ship comes back at 20:00, after her own window and an hour after the chain is back {got}")
+check(cruise.visit_id(T17 + 2 * 3600, "pirates") == "2026-11-17-pirates-makeup" and cruise.visit_id(T17, "pirates") == "2026-11-17-pirates",
+      "the make-up call has its own logbook name")
+check(MK.call_at(T17 + 89 * 60)[0] == T17 and MK.call_at(T17 + 95 * 60)[0] == T17 + 2 * 3600, "the two windows do not overlap")
+check(MK.makeup_after(v17, T17 + 8 * 60) is None and len(cruise.MAKEUP) == 1, "at most one make-up call a day")
+check(MK.makeup_after({**v17, "id": "2026-11-17-pirates-makeup", "t0": T17 + 7200}, T17 + 7300) is None, "a make-up call gets none of its own")
+MK2 = cruise.Cruise(**{**paths, "state_path": os.path.join(d, "s17"), "log_path": os.path.join(d, "l17b"), "incidents_path": os.path.join(d, "i17b")},
+                    clock=clock, enabled=True, verdict=lambda: "calm", background=False)
+check(list(cruise.MAKEUP) == [("2026-11-17", 20, "pirates")], f"the make-up call survives a relay restart {cruise.MAKEUP}")
+cruise.MAKEUP.clear()
+late = {"id": "2026-11-21-queen", "ship": "queen", "t0": cruise.berlin_t(dt.date(2026, 11, 21), 20), "landed": True}
+check(MK.makeup_after(late, late["t0"] + 300) is None and not cruise.MAKEUP, "too late in the evening: no make-up call")
+v18 = {"id": "x", "ship": "dryrun", "t0": cruise.berlin_t(dt.date(2026, 11, 18), 16), "landed": True, "left": None,
+       "sent": {k: 0 for k in cruise.KINDS}, "refused": {k: 0 for k in cruise.KINDS}}
+MK.hold_until = 0
+for i in range(cruise.QUIET_RUN):
+    MK.write({"t": T17, "visit": "x", "kind": "pay", "ok": None, "height": 1475})
+    MK.quiet_run(v18, T17 + i, True)
+warn = [e for e in MK.logbook if e.get("kind") == "restart warning"]
+check(len(warn) == 1 and MK.hold_until >= T17 + cruise.QUIET_WAIT and "1475" in warn[0]["note"],
+      "three sends without an answer at one block height: one warning, and the ship waits")
+MK.quiet_run(v18, T17 + 10, True)
+check(len([e for e in MK.logbook if e.get("kind") == "restart warning"]) == 1, "told once a run")
+MK.quiet_run(v18, T17 + 20, False)
+check("quiet_run" not in v18, "an answer ends the run")
+cruise.MAKEUP.clear()
 
 print()
 print("all good" if not failed else f"{failed} failed")

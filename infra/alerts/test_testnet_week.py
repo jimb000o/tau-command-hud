@@ -56,6 +56,14 @@ raw = {"missing": [], "uptime": uptime, "health": {"expected_block_seconds": 60}
        "x": [{"account": "tauhud", "handle": "TauHUDcom", "headline": "Wallet walkers [live]", "url": "https://x.com/TauHUDcom/status/123", "at": T0},
              {"account": "tauhud", "handle": "TauHUDcom", "headline": "bad link", "url": "https://evil.example/x", "at": T0}]}
 
+V2 = "2026-11-03-pirates"   # a call a testnet restart ended (17 Nov 2026: one post a week tells every call)
+P0 = MON + 86400 + 17 * 3600
+plog = [{"t": P0, "visit": V2, "ship": "pirates", "kind": "landed", "verdict": "calm", "plan": 104}]
+plog += [{"t": P0 + 60 + i * 30, "visit": V2, "kind": "pay", "ok": True, "verdict": "calm", "ms": 800} for i in range(3)]
+plog.append({"t": P0 + 480, "visit": V2, "kind": "left", "note": "the testnet restarted during the call, so the call was cut short"})
+plog.append({"t": P0 + 5400, "visit": V2, "kind": "visit over", "summary": {"id": V2, "name": "Black Sequence", "t0": P0, "landed": True,
+             "sent": {"pay": 3}, "refused": {}, "passengers": 20}})
+raw["visits"][V2] = plog
 f = w.week_facts(raw, MON, SUN18)
 e = w.text(f)
 b = e["body"]
@@ -69,6 +77,9 @@ check("1 of them came while one of our cruise ships was sending" in b and "not r
 check("ended at block 1457, during or shortly after the visit of our cruise ship Queen Mempool" in b, "the restart next to its visit")
 check(b.count("during or shortly after") == 1, "the other restart is not tied to a ship")
 check("Our cruise ships are paused for now." in b, "ships paused said")
+check("Black Sequence: 3 accepted, 0 refused; in port 8 of 90 minutes, a testnet restart ended the call" in b.replace("none", "0")
+      or "in port 8 of 90 minutes, a testnet restart ended the call" in b, "a call cut short: minutes in port and the restart")
+check(not any("Queen Mempool" in ln and "in port" in ln for ln in b.splitlines() if ln.startswith("- ")), "a full call: no minutes line")
 check("- Users of [Agorzilla](https://agorzilla.com/): 21" in b and "- Users of [Tau HUD](/): 14" in b and "- Players in [No Memo](/nomemo/): 7" in b
       and "IDNI uses for testing (not counted as users): 700" in b and "999" not in b,
       "sources of this week's days only, labels as on the site")
@@ -95,7 +106,8 @@ tones = {t[1]: t[2] for t in e["stats"]}
 check(tones == {"blocks this week": "ok", "chain restarts, cause not clear yet": "amber", "transactions by users of our apps": "amber", "our node in sync": "ok"},
       f"each tile's tone fits its number ({tones})")
 check(w.text(w.week_facts(quiet, MON, SUN18))["stats"][1][2] == "ok", "no restart: a green tile")
-check(f["visits"][0]["ship"] == "Queen Mempool" and f["visits"][0]["day"] == "Sat 7 Nov", "ship by its own name, day of the call")
+qv = next(v for v in f["visits"] if v["id"] == V)
+check(qv["ship"] == "Queen Mempool" and qv["day"] == "Sat 7 Nov", "ship by its own name, day of the call")
 raw_q = dict(raw, visits={V: log, "2026-11-01-dryrun": log})
 check([v["id"] for v in w.week_facts(raw_q, MON, SUN18)["visits"]] == [V], "a call of the week before is left out")
 w.CONTEXT["2026-w45"] = ["On 7 November IDNI said that an update is under way."]

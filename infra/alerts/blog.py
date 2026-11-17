@@ -61,6 +61,9 @@ RETRY_AFTER = 2 * 3600
 # title and summary. One post with a link costs $0.20 instead of $0.015 (a few articles a month); X refuses a post with
 # an uploaded picture AND a link (403, 3 November), so it goes without upload, and on a refusal once more the old way.
 X_BLOG_LINK = os.environ.get("X_BLOG_LINK", "true").lower() in ("1", "true", "yes")
+# 17 Nov 2026 (Kilian): one blog post a week covers all cruises (testnet_week.py, Sunday); no article per call any more.
+# BLOG_CRUISE_DRAFTS=1 brings the per-call drafts back; up blog draft <visit> still writes one by hand.
+CRUISE_DRAFTS = os.environ.get("BLOG_CRUISE_DRAFTS", "0").strip().lower() in ("1", "true", "yes", "on")
 AUTO_PUBLISH_HOURS = float(os.environ.get("BLOG_AUTO_PUBLISH_HOURS", "0") or 0)
 # The article's one post on Telegram and X goes out only while its call is news: at most this many hours after the call
 # began. A later publish (a draft written anew, auto-publish switched back on, a draft left waiting) puts the article on
@@ -233,6 +236,12 @@ def facts_of(entries: list[dict], incidents: list[dict], cruise: dict | None = N
                 if not left:
                     f["minutes in port"] = m
                     f["call cut short by the restart"] = True
+    warn = [e for e in rows if e.get("kind") == "restart warning"]
+    if warn:   # relay/cruise.py quiet_run, since 17 Nov 2026: no answer and no new block, the ship waited
+        f["restart warnings: no answer and no new block, the ship waited"] = {"first at": clock(warn[0]["t"]), "times": len(warn)}
+    mk = next((e for e in rows if e.get("kind") == "make-up call"), None)
+    if mk:   # relay/cruise.py makeup_after, since 17 Nov 2026
+        f["make-up call"] = {"at": clock(mk["at"]) if mk.get("at") else None, "note": mk.get("note")}
     f["sent and accepted"] = {k: v for k, v in (s.get("sent") or {}).items() if v} or \
         dict(Counter(e["kind"] for e in sends if e.get("ok") is True))
     refused = {k: v for k, v in (s.get("refused") or {}).items() if v} or \
@@ -939,6 +948,8 @@ def due(entries: list[dict], now: float) -> bool:
 
 
 def tick(now: float | None = None) -> None:
+    if not CRUISE_DRAFTS:
+        return   # the week's cruises go into Sunday's weekly post
     now = now or time.time()
     st = state()
     if not AI_KEY or now - st["failed_at"] < RETRY_AFTER:
@@ -1121,7 +1132,13 @@ def numbers_of(f: dict) -> list[str]:
         if old and "refus" in why and ref <= 0:
             why = "its brake took the missing answers for refusals"
         out.append(f"the ship left after {left['minutes in port']} minutes: {why}")
-    elif f.get("landed") is False:
+    w = f.get("restart warnings: no answer and no new block, the ship waited")
+    if w:
+        out.append(f"from {w['first at']} our node did not answer and no new block came: the ship waited, a restart might be coming")
+    mk = f.get("make-up call")
+    if mk and mk.get("at"):
+        out.append(f"the ship comes back for a make-up call at {mk['at']}")
+    if f.get("landed") is False and not (isinstance(left, dict) and left.get("minutes in port") is not None):
         out.append("the ship did not land" + (f": {f['why not landed']}" if f.get("why not landed") else ""))
     if f.get("incidents"):
         out.append(f"{len(f['incidents'])} incident report{'s' if len(f['incidents']) != 1 else ''} written during the visit")

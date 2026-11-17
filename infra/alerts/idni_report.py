@@ -184,7 +184,9 @@ def facts(raw: dict, t0: float, t1: float) -> dict:
             "answers": v.get("refusal answers") or {}, "time": v.get("our node's answer time to a send, seconds"),
             "left": v.get("left early"), "incidents": len(v.get("incidents") or []),
             "heights": v.get("block heights"), "over": any(e.get("kind") == "visit over" for e in entries),
-            "new wallets": v.get(blog.NEW_WALLET_FACT)})
+            "new wallets": v.get(blog.NEW_WALLET_FACT), "minutes": v.get("minutes in port"),
+            "restart": bool(blog.restart_hit({"facts": v})), "tricks": v.get("pirate tricks") or {},
+            "changed": [c for c in v.get("the ship changed for its next call") or [] if not c.get("held")]})
     p = raw.get("pulse") or {}
     y = p.get("sync") or {}
     if y:

@@ -20,6 +20,7 @@ os.environ.update(BLOG_ART=ART, BLOG_SHIPS=SHIPS, PUBLIC_DIR=TMP, BLOG_STATE=os.
                   TELEGRAM_BOT_TOKEN="", X_API_KEY="")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import blog  # noqa: E402
+blog.CRUISE_DRAFTS = True   # the per-call drafts (off by default since 17 Nov 2026) are tested here
 
 failed = 0
 

@@ -537,7 +537,8 @@ def report_text(f: dict) -> str:
             continue   # already said with the timeouts (blog.numbers_of)
         lines.append("• learned: " + ("a pirate trick, held back" if c.get("held") else f"{c['what']} {c['from']} → {c['to']} ({c['because']})"))
     lines += [f"Logbook: {LOGBOOK}?visit={f.get('visit')}",
-              "The blog draft follows within 3 hours, I tell you here.",
+              "The blog draft follows within 3 hours, I tell you here." if blog.CRUISE_DRAFTS
+              else "On the blog in Sunday's weekly post, with the week's other calls.",
               "All numbers: " + UP.format(f"cruise {f.get('visit')}")]
     return "\n".join(lines)
 
