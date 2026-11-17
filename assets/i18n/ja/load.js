@@ -93,4 +93,6 @@ TauI18n.add({ strings: {
   "Saturday": "土曜日",
   "Sunday": "日曜日",
   "🛳 {x} left early: the node refused its passengers’ transactions. The logbook has each answer.": "🛳 {x} は早めに出航しました：ノードが乗客の取引を拒否しました。航海日誌にノードの返答がすべて残っています。",
+  "Why it matters": "なぜ大事か",
+  "One validator seals every block on the testnet today. How it holds up when many people play shows, in the open, where the limits are before Tau Net carries anything real.": "現在、テストネットのブロックはすべて一つのバリデーターが封じています。多くの人が遊ぶときにどこまで耐えられるかが、Tau Net が本物の価値を運ぶ前に、限界がどこにあるかを公開の場で示します。",
 }});

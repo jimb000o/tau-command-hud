@@ -402,13 +402,20 @@ def first_sentence(t: str) -> str:
     return re.split(r"(?<=[.!?])\s+(?=[A-Z“\"(])", t or "")[0]
 
 
+def first_clause(t: str) -> str:
+    """The first sentence up to its first ";", as a sentence of its own ("A; b." → "A.")."""
+    head = first_sentence(t).split(";")[0].rstrip(" ,:")
+    return head if head.endswith((".", "!", "?")) else head + "." if head else ""
+
+
 X_FOOT = "🛠 Tau HUD build watch, not run by IDNI"
 
 
 def x_lines(d: dict) -> list:
     """Headline, the gist, why it matters: the gist as whole sentences only (a longer one gives way to its first sentence or
-    to the why line, never cut mid-word: 17 Nov 2026), then why it matters where there is room."""
-    gist = [d["x_text"], first_sentence(d["x_text"]), d["why"], first_sentence(d["why"])]
+    to the why line, then to a point, each also as its first clause before a ";"; never cut mid-word: 17 Nov 2026), then why
+    it matters where there is room."""
+    gist = [v for t in [d["x_text"], d["why"], *(d.get("points") or [])] for v in (t, first_sentence(t), first_clause(t))]
     return [f"🛠 IDNI testnet: {d['title']}", list(dict.fromkeys(g for g in gist if g)), "Why it matters: " + d["why"]]
 
 

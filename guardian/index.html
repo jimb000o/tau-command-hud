@@ -108,7 +108,9 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
 .note { border: 1px solid rgba(255,177,59,.35); color: var(--text); border-radius: 8px; padding: 10px 14px; }
 .note b { color: var(--amber); font-weight: 500; }
 [hidden] { display: none !important; }
-@media (min-width: 2200px) and (min-height: 1200px) { body { zoom: 1.3; } }
+/* wide screens (2560 × 1440, ultrawide): the whole width, zoomed until the page fills the screen (assets/widefit.js) */
+html.wfit .wrap { max-width: none; zoom: var(--z); }
+html.wfit .sub { max-width: 120ch; }
 @media (max-width: 1000px) { .main { grid-template-columns: minmax(0, 1fr); } .main.payFirst .col:last-child { display: contents; } .main.payFirst #pPay { order: -1; } }
 #howD summary { cursor: pointer; }
 #howD h2 .cnt { color: var(--dim); font: 11px var(--mono); letter-spacing: 0; text-transform: none; margin-left: 10px; } #howD[open] h2 .cnt { display: none; }
@@ -116,9 +118,13 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
 /* a laptop (1366 × 768): everything on one screen */
 @media (min-width: 1001px) and (max-height: 820px) { body { font-size: 12px; padding-top: 6px; padding-bottom: 4px; } .wrap { gap: 8px; } .lead { font-size: 21px; } .panel { padding: 8px 16px; } .main, .col { gap: 8px; } .how { gap: 2px; } .how li, .holders, .modes, .sub { font-size: 11.5px; } .lead { font-size: 19px; margin-top: 0; } .modes { gap: 3px; margin: 4px 0 0; } .modes input[type=number] { min-height: 26px; font-size: 12px; } .fine { margin-top: 3px; } .list li { padding: 5px 0; } .panel p { margin-bottom: 5px; } .panel h2 { margin-bottom: 5px; } .row { margin-top: 4px; gap: 6px; } .hint { margin-top: 4px; } .holders { margin-top: 2px; display: flex; flex-wrap: wrap; gap: 0 14px; } .note { padding: 5px 12px; } .sim .sub { display: none; } .qr { margin: 4px 0 2px; } .qr .img, .qr { grid-template-columns: 110px minmax(0, 1fr); } .qr .img { width: 110px; height: 110px; } .busy #payHint { display: none; } }
 @media (max-width: 700px) { .b, input { min-height: 44px; } .qr { grid-template-columns: minmax(0, 1fr); justify-items: start; } .list li { grid-template-columns: minmax(0, 1fr); } }
+.why { margin: 6px 0 0; color: var(--text); font-size: 12.5px; max-width: 110ch; }
+.why b { color: var(--ok); font-weight: 600; margin-right: 6px; }
+@media (min-width: 1001px) and (max-height: 820px) { .why { display: none; } }   /* a laptop keeps its one screen; the page says it again further down */
 </style>
 <link rel="stylesheet" href="../assets/nav.css">
 <script src="../assets/nav.js" defer></script>
+<script src="../assets/widefit.js" defer></script>
 <script src="../assets/win.js" defer></script>
 </head>
 <body>
@@ -130,6 +136,7 @@ input:focus, .b:focus-visible { outline: 1px solid var(--ok); outline-offset: 1p
   <div>
     <p class="lead">A second key for your test wallet: a code from your phone before a payment goes out.</p>
     <p class="sub">Your account's own rule says <b>"the Guardian co-signs my payments"</b>. Small ones up to a daily allowance it signs by itself; for the rest you type the 6-digit code from your Authenticator app here, and it co-signs on Tau Testnet Alpha. <b>It can say yes to your payment, never send one</b>, and it holds no key of yours. Test AGRS have no value.</p>
+      <p class="why"><b>Why it matters</b>With one key, whoever copies it can empty the wallet. With the Guardian and a rule lock, a copied key alone can no longer send more than your daily allowance, and changing the rule takes your code or 1,000 blocks in which you can cancel it.</p>
   </div>
   <p class="note" id="simNote" hidden><b>Simulation is on: a demo with play values.</b> Scan the demo QR code with your app, or use the play code 123456. Nothing goes on the chain and nothing leaves your browser; on Live the same steps act on Tau Testnet Alpha.</p>
   <main class="main">
@@ -442,7 +449,7 @@ function render() {
   const appOk = live && have && !!G.info && G.info.enabled !== false;
   $("pApp").classList.toggle("done", enrolled);
   /* the fine print waits, folded to one line, until step 1 is done: a first visit shows the three steps first. One click opens it at any time. */
-  if (!howTouched && matchMedia("(min-width: 1001px)").matches) $("howD").open = enrolled || document.documentElement.dataset.level === "pro";   // an expert reads it from the start
+  if (!howTouched && matchMedia("(min-width: 1001px)").matches) $("howD").open = enrolled || document.documentElement.dataset.level === "pro" || matchMedia("(min-width: 1701px) and (min-height: 1000px)").matches;   // an expert reads it from the start; a big screen has the room to show it before anyone connects
   $("stApp").textContent = enrolled ? T("connected") : ""; $("stApp").className = "st" + (enrolled ? " ok" : "");
   $("btnQr").hidden = enrolled || !!shown; $("btnQr").disabled = !appOk;
   $("qrBox").hidden = !shown || enrolled; document.body.classList.toggle("qrOpen", !!shown && !enrolled);

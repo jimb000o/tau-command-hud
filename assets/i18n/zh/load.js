@@ -93,4 +93,6 @@ TauI18n.add({ strings: {
   "Saturday": "星期六",
   "Sunday": "星期日",
   "🛳 {x} left early: the node refused its passengers’ transactions. The logbook has each answer.": "🛳 {x} 提前离开：节点拒绝了乘客的交易。航海日志记录了节点的每一次答复。",
+  "Why it matters": "为什么重要",
+  "One validator seals every block on the testnet today. How it holds up when many people play shows, in the open, where the limits are before Tau Net carries anything real.": "如今测试网上的每个区块都由一个验证者封装。很多人同时玩时它能否撑住，会在 Tau Net 承载任何真实价值之前，公开地显示出极限在哪里。",
 }});
