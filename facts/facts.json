@@ -7,7 +7,7 @@
       "date": "2026-11-17"
     },
     "IDNI/tau-lang": {
-      "sha": "c7d80dccf6646df8e458e2bb0ea0a07ada1d15c8",
+      "sha": "e598c48441153e706b3ceedbab7e05ec2ad222dc",
       "date": "2026-11-19"
     }
   },
@@ -66,7 +66,7 @@
       "src": [
         [
           "tau-lang README, introduction",
-          "https://github.com/IDNI/tau-lang/blob/c7d80dccf6646df8e458e2bb0ea0a07ada1d15c8/README.md#L67-L92"
+          "https://github.com/IDNI/tau-lang/blob/e598c48441153e706b3ceedbab7e05ec2ad222dc/README.md#L79-L104"
         ]
       ]
     },
