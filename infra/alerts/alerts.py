@@ -33,8 +33,9 @@ nothing whose block is older than POST_MAX_AGE_SECONDS, so a fresh volume or
 a long outage never floods the channel with old news.
 
 It also posts firsts (firsts.py): the first returnable, co-signed or time-locked
-payment the real chain carries, once each, so the HUD's "Money with terms" card
-lights up and the channels hear of it the day it happens.
+payment the real chain carries, once each and once ever (a restart that replays the
+same kinds is no news), so the HUD's "Money with terms" card lights up and the
+channels hear of it the day it happens.
 
 It also keeps watch over the HUD's news line (tickerwatch.py): every half hour it reads the line the way a visitor's
 page does and tells the owner, in a private Telegram chat and never on the channel, when nothing new has come onto it
@@ -123,6 +124,7 @@ import xgate
 import fixwatch
 import recap
 import rulefacts
+import rulenews
 import tickerwatch
 
 try:
@@ -514,6 +516,7 @@ def eta_txt(blocks_left: int, pace: float | None) -> str:
 
 
 RESTART_HEADLINE = "The Tau Net testnet restarted"
+COUNT_WORDS = {2: "second", 3: "third", 4: "fourth", 5: "fifth", 6: "sixth", 7: "seventh", 8: "eighth", 9: "ninth", 10: "tenth"}
 # What a restart means for a reader's own test wallet, only what the chain itself makes true: the key lives in the
 # browser and still signs; balance and rules lived on the old chain, which is gone.
 RESTART_FOR_YOU = ("For you: a test wallet made on Tau HUD keeps its key in your browser and can sign again on the new chain, "
@@ -525,10 +528,14 @@ def describe(ev: dict, p: dict | None, head: int, pace: float | None) -> dict:
     matters, the facts, a plain one-paragraph body (feed, page, X) and a link."""
     k = ev["kind"]
     if k == "restart":
-        old = ev.get("old_tip")
+        old, n7 = ev.get("old_tip"), int(ev.get("n7") or 1)
         why = "The test network started over: balances, rules and history begin again from the starting state."
         facts = ([f"The old chain ended at block #{fmt_n(old)}."] if old else []) + ["Tau HUD follows the new chain from block 1.",
                  RESTART_FOR_YOU]
+        if n7 >= 2:   # 16 to 18 Nov 2026: three posts in three days, word for word; the count is the news, the rest was said
+            why = (f"The test network started over again, the {COUNT_WORDS.get(n7, str(n7) + 'th')} time in 7 days: "
+                   "balances, rules and history begin again from the starting state.")
+            facts = facts[:-1]
         return {"headline": RESTART_HEADLINE, "what": [], "why": why, "why_title": "What happened", "facts": facts,
                 "body": why + " " + " ".join(facts), "link": f"{SITE}/stats/"}
     x = (p or {}).get("explain") or {"title": (p or {}).get("title", "a rule change"), "changes": [], "why": ""}
@@ -1337,7 +1344,7 @@ def today_why(r: dict, short: bool = False) -> str | None:
     steady = bool(r["blocks"]) and pace is not None and pace <= 90 and not r.get("slow")
     if not r["blocks"]:
         return None   # the quiet lines say it
-    rules = [h for h in r["events"] if h != RESTART_HEADLINE]
+    rules = not_restarts(r["events"])
     if rules:
         return "A rule change on Tau is proposed, voted on and in force, no fork, no restart." if short else \
             "A rule change on Tau is proposed, voted on and in force without a fork or a restart; today's is above."
@@ -1381,12 +1388,29 @@ def quiet_lines(r: dict) -> list[str]:
     return out
 
 
+def restarts_in(events: list[str]) -> int:
+    """How many restarts the day's events hold ("2× The Tau Net testnet restarted" counts two)."""
+    n = 0
+    for h in events:
+        m = re.fullmatch(r"(?:(\d+)× )?" + re.escape(RESTART_HEADLINE), h)
+        if m:
+            n += int(m.group(1) or 1)
+    return n
+
+
+def not_restarts(events: list[str]) -> list[str]:
+    """The day's events without the restart, which the lead already tells (19 Nov 2026: said twice in one post)."""
+    return [h for h in events if not restarts_in([h])]
+
+
 def today_lead(r: dict) -> str | None:
     """The one thing the day is about, told first (7 November 2026: the post read like a list of numbers); None on an
     ordinary day. Only facts the numbers below carry."""
-    rules = [h for h in r["events"] if h != RESTART_HEADLINE]
-    if RESTART_HEADLINE in r["events"]:
-        return "The testnet started over today, and the chain runs again from block 1."
+    rules = not_restarts(r["events"])
+    n = restarts_in(r["events"])
+    if n:
+        times = "" if n == 1 else " twice" if n == 2 else f" {n} times"
+        return f"The testnet started over{times} today, and the chain runs again from block 1."
     if rules:
         return f"The day's news: {rules[0]}."
     w = r.get("wallets") or {}
@@ -1422,7 +1446,7 @@ def today_text(r: dict) -> str:
         out.append(f"• slowest hour from {findings.hm(sl['at'])}: only {plural(sl['blocks'], 'block')}, about {sl['usual']} are usual")
     if not r["txs"] and not r["practice"]:
         out += [e(x) for x in quiet_lines(r)]
-    for h in r["events"]:
+    for h in not_restarts(r["events"]) if lead and restarts_in(r["events"]) else r["events"]:
         out.append(f"• {e(h)}")
     if r["practice"]:
         n = r["practice"]
@@ -1457,7 +1481,8 @@ def today_x(r: dict) -> str:
         out += ([blocks] if blocks else []) + (["Why it matters: " + why] if why else [])
     if not r["txs"] and not r["practice"]:
         out += quiet_lines(r)[:2]
-    out += [f"• {h}" for h in r["events"]]
+    told = bool(why) and restarts_in(r["events"]) and not not_restarts(r["events"])   # the why line says the restart
+    out += [f"• {h}" for h in (not_restarts(r["events"]) if told else r["events"])]
     if r["practice"] and not (w and w["total"]):
         out.append(f"• {plural(r['practice'], 'practice vote')}, the rules stay as they are")
     out += [f"Coming up: {c['title']} at block #{fmt_n(c['at'])}{c['eta']}." for c in r["coming"][:1]]
@@ -1721,6 +1746,47 @@ def deepdive_x(p: dict) -> str:
     return x_post(list(p.get("x") or [p.get("title", ""), p.get("text", "")]), foot=DEEPDIVE_FOOT)
 
 
+def page_candidates(entries: list[dict] | None) -> list[dict]:
+    """Pages the Updates log announced as new (a "major" with a page of its own, not skipped), oldest first, one per
+    page, as closer looks in the log's own words. Blog articles, the front page and links with a query or a part (#…)
+    are no page of their own. So the closer looks and the poll keep up with the site (Kilian, 19 Nov 2026)."""
+    out, seen = [], set()
+    for e in entries or []:   # the log is oldest first
+        m = e.get("major") if isinstance(e, dict) else None
+        if not isinstance(m, dict) or m.get("skip") or not m.get("link"):
+            continue
+        link = site_link(str(m["link"]))
+        u, k = urllib.parse.urlsplit(link), page_key(link)
+        if not k or u.query or u.fragment or k in seen:
+            continue
+        seen.add(k)
+        title = re.sub(r"^New( game| page)?:\s*", "", str(m.get("title") or site_area(e))).strip()
+        out.append({"id": "page" + k.rstrip("/").replace("/", "-"), "title": title[:1].upper() + title[1:],
+                    "text": str(m.get("text") or sentences(plain(e.get("html")), 2)), "link": k, "auto": True})
+    return out
+
+
+def deepdive_pool(st: dict) -> list[dict]:
+    """Every closer look there is: assets/deepdives.json in its order, then the pages the log announced that it does not
+    cover yet (page_candidates)."""
+    posts = list(st.get("posts") or [])
+    have = {page_key(site_link(q.get("link"))) for q in posts}
+    return posts + [q for q in st.get("extra") or [] if page_key(site_link(q.get("link"))) not in have]
+
+
+def poll_options(st: dict, cands: list[dict], now: float, n: int = 4) -> list[dict]:
+    """This week's poll options from the pages still to come. A page offered once stays out until every other page
+    still to come has been offered (Kilian, 19 Nov 2026: the poll asked about the same pages again while the site kept
+    growing); then a new round begins, the pages offered longest ago first."""
+    offered = st.setdefault("offered", {})
+    since = st.get("round_since", 0)
+    fresh = [q for q in cands if offered.get(q["id"], -1) < since]
+    if len(fresh) < 2 and len(cands) >= 2:
+        st["round_since"] = now
+        fresh = sorted(cands, key=lambda q: offered.get(q["id"], -1))
+    return fresh[:n]
+
+
 # ---------------- the Key Crier: the shared island's day (relay /isle) ----------------
 # Names as rabbit/game.js gives them (CANDS and LAWS there; the relay keeps the keys only)
 ISLAND_CANDS = {"marisol": "Marisol", "tobias": "Tobias", "baako": "Baako", "hana": "Hana"}
@@ -1951,7 +2017,8 @@ def multipart(fields: dict[str, str], files: dict[str, tuple[str, bytes, str]]) 
 # (/visits/channel) show which kinds of post people open; maybe_clicks reads them each Sunday.
 TG_KINDS = [("what it costs", "costs"), ("Testnet today", "today"), ("weekly recap", "recap"), ("a closer look", "deepdive"), ("worth a look", "deepdive"),
             ("new on the site", "site"), ("smaller site updates", "digest"), ("Key Crier", "island"), ("RULE CHALLENGE", "challenge"),
-            ("First on the testnet", "firsts"), ("Firsts on the testnet", "firsts"), ("joined the Tau testnet", "nodes"),
+            ("First on the testnet", "firsts"), ("Firsts on the testnet", "firsts"), ("new rule on the testnet", "rules"), ("new rules on the testnet", "rules"),
+            ("joined the Tau testnet", "nodes"),
             ("restarted", "restart"), ("health", "health"), ("IDNI", "idni"), ("blog", "blog"), ("Daily Consensus", "gazette"),
             ("White Rabbit Key", "rabbit"), ("TESTNET ALPHA", "chain")]
 SITE_LINK_RE = re.compile(r"https://(?:www\.)?tauhud\.com(/[^\s\"'<>]*)?")
@@ -2189,6 +2256,12 @@ def channel_air(body: bytes) -> bytes:
     return body if t == msg["text"] else json.dumps({**msg, "text": t}).encode()
 
 
+def sent_unanswered(err: str) -> bool:
+    """True for a failure after the whole request was sent (urllib raises those as they are: a read timeout, a dropped
+    connection); False for one before it went out (urllib wraps those in URLError) and for any answer Telegram gave."""
+    return bool(err) and err not in ("URLError", "not ok") and not err.startswith("HTTP")
+
+
 class Telegram(Outlet):
     name = "telegram"
 
@@ -2223,6 +2296,11 @@ class Telegram(Outlet):
         if method in ("sendMessage", "editMessageText") and ctype == "application/json":
             body = channel_air(body)
         res = self.call_raw(method, body, ctype)
+        if not res[0] and method.startswith("send") and sent_unanswered(res[2]):
+            # the whole request reached Telegram and only the answer got lost: Telegram has almost surely posted it, and a
+            # second try would post it twice (18 Nov 2026: one restart, two posts two minutes apart)
+            log.warning("telegram %s: sent, but no answer came back (%s); counted as posted, never sent twice", method, res[2])
+            res = (True, None, "", {})
         note_send(self.name, res[0], res[2])
         if res[0] and method.startswith("send"):
             note_public_post("telegram")
@@ -2653,9 +2731,14 @@ class Watcher:
     def chain_restart(self, known: dict, new_b1: str):
         log.warning("chain restart: old chain ended at #%s", known.get("head"))
         self.blocks.clear()
-        ev = {"kind": "restart", "h": 0, "ts": time.time(), "old_tip": known.get("head"),
-              "key": f"restart:{known.get('block1_hash', '')[:16]}:{new_b1[:16]}"}
-        self.add_item(ev, None, 0, None, chain=new_b1)
+        now = time.time()
+        # one restart per chain that ended (18 Nov 2026: the same restart, "ended at block #1,372", was posted twice when
+        # the new chain's first block changed before ours had read it); the 7-day count makes a repeat say less
+        n7 = 1 + sum(1 for it in self.state["items"] if it["kind"] == "restart" and now - (it.get("seen") or 0) < 7 * 86400)
+        ev = {"kind": "restart", "h": 0, "ts": now, "old_tip": known.get("head"), "n7": n7,
+              "key": f"restart:{known.get('block1_hash', '')[:16]}"}
+        if self.add_item(ev, None, 0, None, chain=new_b1):
+            self.state.setdefault("findings", findings.fresh_state())["restart_at"] = now   # what follows a restart is no finding
 
     def add_item(self, ev: dict, p: dict | None, head: int, pace: float | None, chain: str) -> bool:
         key = ev.get("key") or f"{chain[:16]}:{ev['kind']}:{ev['id']}"
@@ -2998,12 +3081,17 @@ class Watcher:
         if not firsts.FIRSTS_ON or not self.blocks:
             return
         st = self.state.setdefault("firsts", firsts.fresh_state())
+        firsts.ever_of(st)
         fresh = firsts.scan(st, self.blocks, chain)
+        now = time.time()
         if not st["primed"]:
             st["primed"] = True
+            firsts.told(st, fresh, "history at the first run", now)
             return
-        now = time.time()
         for f in fresh:
+            if f not in firsts.news(st, [f]):
+                log.info("first on this chain, told before on an earlier one, not again: %s in block %s", f["key"], f["h"])
+                continue
             log.info("first on the chain: %s in block %s", f["key"], f["h"])
             st["pending"].append({**f, "found": now})
 
@@ -3016,7 +3104,7 @@ class Watcher:
         if not st or not st.get("pending") or st.get("pause_until", 0) > now:
             return
         tg = [o for o in self.outlets if o.name == "telegram" and o.enabled()]
-        due = firsts.take(st, now, POST_MAX_AGE)
+        due = firsts.news(st, firsts.take(st, now, POST_MAX_AGE))
         if not due:
             self.save_state()
             return
@@ -3037,6 +3125,8 @@ class Watcher:
                 st["tries"] = st.get("tries", 0) + 1
                 if st["tries"] >= MAX_TRIES:
                     st["pending"], st["tries"] = [], 0
+                    if st.get("x_keys") == x_keys:
+                        firsts.told(st, due, "on X only", now)
                     log.warning("firsts post failed %s times (%s); given up", MAX_TRIES, err)
                 else:
                     st["pause_until"] = now + (retry or 60 * st["tries"])
@@ -3047,6 +3137,7 @@ class Watcher:
                 self.save_state()
                 return
         st["tries"] = 0
+        firsts.told(st, due, "posted", now)   # never again, on any chain to come
         if tg:
             log.info("posted %s", what)
         else:
@@ -3287,13 +3378,19 @@ class Watcher:
             return None
         return [p for p in data.get("posts", []) if isinstance(p, dict) and p.get("id")] if isinstance(data, dict) else None
 
+    def deepdive_state(self) -> dict:
+        st = self.state.setdefault("deepdives", {})
+        for k, v in (("posted", {}), ("x_posted", {}), ("posts", []), ("n", 0)):
+            st.setdefault(k, v)
+        return st
+
     async def maybe_deepdive(self, now: float | None = None, posts: list | None = None):
         """One closer look a day, the file's next one not yet posted, at DEEPDIVE_HOUR UTC (or within 3 h after it):
         Telegram with the page's picture and a button, X for every DEEPDIVE_X_EVERY-th one; X never waits for Telegram."""
         if not DEEPDIVE_ON:
             return
         now = now if now is not None else time.time()
-        st = self.state.setdefault("deepdives", {"posted": {}, "x_posted": {}, "posts": [], "n": 0})
+        st = self.deepdive_state()
         if now - st.get("checked", 0) >= SITE_EVERY or posts is not None:
             st["checked"] = now
             posts = posts if posts is not None else await asyncio.to_thread(self.fetch_deepdives)
@@ -3319,9 +3416,10 @@ class Watcher:
             return   # the poll day: the poll about the next closer look is the day's post
         tg = self.tg_on()
         # the day's post: the one started this slot (Telegram or X went first), else the file's next unposted one
-        p = next((q for q in st["posts"] if q["id"] == st.get("current") and st.get("current_slot") == slot), None) \
-            or next((q for q in st["posts"] if q["id"] == st.get("voted") and q["id"] not in st["posted"]), None) \
-            or next((q for q in st["posts"] if q["id"] not in st["posted"] and q["id"] not in st["x_posted"]
+        pool = deepdive_pool(st)
+        p = next((q for q in pool if q["id"] == st.get("current") and st.get("current_slot") == slot), None) \
+            or next((q for q in pool if q["id"] == st.get("voted") and q["id"] not in st["posted"]), None) \
+            or next((q for q in pool if q["id"] not in st["posted"] and q["id"] not in st["x_posted"]
                      and not page_recent(self.state, q.get("link"), now)), None)
         if not p:
             return
@@ -3358,6 +3456,49 @@ class Watcher:
         if pid in st["posted"] and pid in st["x_posted"]:
             st["slot"] = slot
         self.save_state()
+
+    # ---------- rules people write on the chain (rulenews.py) ----------
+    async def maybe_rules(self, now: float | None = None, wall: list | None = None):
+        """Every rule text a person wrote that the testnet never carried before: Telegram once a day with that day's new
+        ones, X once a week with the count and the one most taken. A rule text is news once, ever (rulenews.py)."""
+        if not rulenews.ON:
+            return
+        now = now if now is not None else time.time()
+        st = self.state.setdefault("rules", rulenews.fresh_state())
+        if wall is not None or now - st.get("checked", 0) >= rulenews.EVERY:
+            st["checked"] = now
+            if wall is None:
+                got = await asyncio.to_thread(self.relay_json, "/rulewall")
+                wall = got.get("rules") if isinstance(got, dict) else None
+            new = rulenews.scan(st, wall, now)
+            if new:
+                log.info("rules: %d rule text(s) by people the testnet never carried before", len(new))
+            self.save_state()
+        due = rulenews.day_due(st, now)
+        tg = self.tg_on()
+        if due and tg and st.get("pause_until", 0) <= now:
+            day = int(now // 86400)
+            whys = rulenews.WHY[day % len(rulenews.WHY):] + rulenews.WHY[:day % len(rulenews.WHY)]
+            why = next((w for w in whys if not said_often(self.state, w, now)), None)
+            text = rulenews.telegram_text(due, REAL_LINE, why)
+            for o in tg:
+                ok, retry, err = await asyncio.to_thread(o.send_text, text, rulenews.buttons())
+                if not ok:
+                    st["pause_until"] = now + (retry or 300)
+                    log.warning("rules: the day's post failed (%s); trying again later", err)
+                    break
+            else:
+                st["day"], st["day_at"] = datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%d"), now
+                if why:
+                    remember_said(self.state, why, now)
+                log.info("rules: posted %d new rule(s)", len(due))
+            self.save_state()
+        week = rulenews.week_due(st, now)
+        if week and self.x_on() and not post_gap_left("x", now):
+            st["week"] = datetime.fromtimestamp(now, timezone.utc).strftime("%G-W%V")
+            self.save_state()
+            await self.post_x(x_post(rulenews.x_lines(week), rulenews.WALL, keep=2), "rules of the week", now,
+                              post_picture(None, rulenews.WALL), kind="rules_week")
 
     # ---------- IDNI's progress of the day, one post (idni_digest.py) ----------
     async def maybe_idni(self, now: float | None = None, digests: list | None = None, hold: dict | None = None):
@@ -3671,6 +3812,7 @@ class Watcher:
             entries = entries if entries is not None else await asyncio.to_thread(self.fetch_updates)
             if entries is not None:
                 self.take_updates(entries, now)
+                self.deepdive_state()["extra"] = page_candidates(entries)   # new pages join the closer looks and the poll
             self.save_state()
         tg = self.tg_on()
         await self.maybe_digest(now, tg)
@@ -4077,7 +4219,8 @@ class Watcher:
 
     async def maybe_poll(self, now: float | None = None):
         """Wednesday POLL_HOUR UTC: a native Telegram poll in the channel, which of the next closer looks comes next. The
-        first closer look after POLL_OPEN closes it (close_poll) and posts the winner; no vote, the usual order."""
+        first closer look after POLL_OPEN closes it (close_poll) and posts the winner; no vote, the usual order. The
+        options rotate (poll_options): a page offered once comes back only after every other page still to come."""
         if not POLL_ON or not DEEPDIVE_ON:
             return
         now = now if now is not None else time.time()
@@ -4087,7 +4230,14 @@ class Watcher:
         if d.weekday() != POLL_WEEKDAY or not POLL_HOUR <= d.hour < POLL_HOUR + 3 or st.get("week") == week or st.get("open"):
             return
         dd = self.state.get("deepdives") or {}
-        nxt = [q for q in dd.get("posts") or [] if q["id"] not in (dd.get("posted") or {})][:4]
+        if "offered" not in st:   # the first time: the options of the poll still open (18 Nov 2026) count as offered
+            last = st.get("open") or {}
+            st["offered"] = {i: last.get("at") or round(now) for i in last.get("ids") or []}
+        done = set(dd.get("posted") or {}) | set(dd.get("x_posted") or {}) | ({dd["voted"]} if dd.get("voted") else set())
+        # pages still to come; none a post showed lately (18 Nov 2026: Missions got a spotlight, then was a poll option
+        # two hours later)
+        cands = [q for q in deepdive_pool(dd) if q["id"] not in done and not page_recent(self.state, q.get("link"), now)]
+        nxt = poll_options(st, cands, now)
         tg = self.tg_on()
         st["week"] = week
         if len(nxt) < 2 or not tg:
@@ -4099,6 +4249,8 @@ class Watcher:
         note_send("telegram", ok, err)
         if ok:
             st["open"] = {"msg": (reply.get("result") or {}).get("message_id"), "ids": [q["id"] for q in nxt], "at": round(now)}
+            for q in nxt:
+                st["offered"][q["id"]] = round(now)   # had its turn: not offered again before every other page has been
             note_kind("poll", now)
             log.info("poll: asked which closer look comes next (%s)", ", ".join(st["open"]["ids"]))
         else:
@@ -4113,6 +4265,8 @@ class Watcher:
             return
         tg = self.tg_on()
         st.pop("open", None)
+        for i in op.get("ids") or []:   # each option had its turn (poll_options), voted next or not
+            st.setdefault("offered", {}).setdefault(i, op.get("at") or round(now))
         if not tg or not op.get("msg"):
             self.save_state()
             return
@@ -4411,6 +4565,7 @@ class Watcher:
                         await self.maybe_challenge()
                         await self.maybe_findings()
                         await self.maybe_firsts()
+                        await self.maybe_rules()
                         await self.maybe_health()
                         await self.maybe_newnodes()
                         await self.maybe_sim()

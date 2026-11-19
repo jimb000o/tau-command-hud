@@ -1,6 +1,7 @@
 """The pirates' clip: after each Tuesday call of Black Sequence (relay/cruise.py, ship "pirates"), a clip of about 22
 seconds made from that visit's logbook, every trick the pirates tried and what the chain answered, posted once to
-Telegram and X by the blog service (cruise_crier.step calls step() here).
+Telegram by the blog service (cruise_crier.step calls step() here); on X it goes with the fleet's week post on Saturday
+evening (cruise_crier.week_post; 19 November 2026, no X post per ship any more; CRUISE_X_EACH=true posts it right away).
 
   intro     the ship at anchor off the island (the live painting and the painted ship, as cruise_pic.py draws them)
   8 x 2 s   one pirate of the crew sheet (rabbit/art/ships/crew-pirate.*, k01..k08, each holding the prop of its trick),
@@ -46,6 +47,7 @@ FONTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
 SHIP = "pirates"
 FRESH = 12 * 3600       # a visit that ended longer ago gets no clip by itself (the first run after a deploy)
 X_LEAVE = 1             # X posts of the day left for the real chain's news
+X_EACH = os.environ.get("CRUISE_X_EACH", "false").lower() in ("1", "true", "yes")   # 19 Nov 2026: on X in the week's post
 
 # the order of the crew sheet (k01..k08, the Codex prompt of 7 November 2026) and each trick's name on screen
 ORDER = ["overspend", "replay", "expired", "stale", "forged", "impostor", "freeride", "giant"]
@@ -436,7 +438,9 @@ def post(path: str, t: dict) -> list[str]:
             said.append(f"telegram: {e}")
     else:
         said.append("telegram: not set up")
-    if not alerts.X().enabled():
+    if not X_EACH:
+        said.append("x: in the week's post of the fleet on Saturday evening (cruise_crier.week_post)")
+    elif not alerts.X().enabled():
         said.append("x: not set up")
     elif not x_room():
         said.append("x: left out (today's X posts are at the cap)")

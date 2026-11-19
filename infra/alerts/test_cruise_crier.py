@@ -279,5 +279,67 @@ calls = []
 blog.get = lambda path: calls.append(path) or {}
 blog.tick(0)
 check(not calls, "one post a week: no per-call draft is written")
+# ---------- 19 Nov 2026: no X post per ship; the week's calls as one X post on Saturday evening ----------
+check(not cc.EACH_ON_X and posted[0].get("on_x") is False and "week's post" in posted[0].get("x_kept", ""),
+      "each call goes to Telegram only, X gets the week")
+import alerts  # noqa: E402
+import post_video  # noqa: E402
+import trick_clip  # noqa: E402
+check("week's post" in " ".join(trick_clip.post("/nonexistent.mp4", {"telegram": "t", "x": "x"})), "the pirates' clip waits for the week on X")
+SAT = QUEEN + 14 * 86400 + 4 * 3600   # Saturday 21 November 2026, 18:00 German time
+check(blog.local(SAT).weekday() == 5 and blog.clock(SAT) == "18:00", "Saturday 21 November 18:00 German time")
+os.makedirs(cc.REPORTS, exist_ok=True)
+for n in os.listdir(cc.REPORTS):
+    os.remove(os.path.join(cc.REPORTS, n))
+queen = {"ship": "Queen Mempool", "visit": "2026-11-21-queen", "landed": {"at": "14:02"}, "accepted in all": 640,
+         "call cut short by the restart": True, "the testnet started over": {"noticed at": "15:01"}}
+for vid, fx in (("2026-11-10-pirates", pf), ("2026-11-17-pirates", {**pf, "visit": "2026-11-17-pirates"}),
+                ("2026-11-18-dryrun", {**f, "visit": "2026-11-18-dryrun"}), ("2026-11-21-queen", queen)):
+    blog.write_json(os.path.join(cc.REPORTS, vid + ".json"), fx)
+xs, made = [], []
+
+
+class FakeX:
+    def enabled(self):
+        return True
+
+    def send_text(self, text):
+        xs.append(("text", text))
+        return True, None, ""
+
+
+alerts.X = FakeX
+post_video.x_video = lambda path, text: xs.append((path, text)) or "42"
+import post_image  # noqa: E402
+post_image.x_photo = lambda path, text: xs.append((path, text)) or "posted"
+trick_clip.make = lambda fx, out, *a: made.append(fx) or out
+trick_clip.x_room = lambda: True
+blog.gap_left = lambda now=None: 0
+told.clear()
+st = cc.state()
+st["clipped"] = {"2026-11-17-pirates": {"result": ["telegram: posted", "x: in the week's post"]}}
+check(cc.week_post(SAT - 3600, st) is None and not xs, "not before Saturday 18:00")
+check(cc.week_post(SAT + 60, st) == "2026-W47" and len(xs) == 1, f"the week's post on Saturday evening {xs}")
+wx = xs[0][1] if xs else ""
+check("a public test of how it holds up: 3 calls, 802 real transactions from simulated passengers accepted" in wx and
+      "Black Sequence's pirates tried 20 tricks: the chain refused every one." in wx, f"why, this week's calls, what they showed: {wx}")
+check("cut short when the testnet started over" in cc.week_x([{**queen, "_ship": "queen"}]), "a call cut short is said, plainly")
+check(alerts.x_len(wx) <= 280 and wx.rstrip().endswith("#TauNet") and not blog.HYPE.search(wx) and not blog.BLAME.search(wx), "fits, honest, tagged")
+check(xs[0][0] == "/tmp/trick-clip-2026-11-17-pirates.mp4" and made, "with the week's pirate clip, made again from the logbook")
+check(told and "The fleet's week on X" in told[-1], "the owner hears it went out")
+check(cc.week_post(SAT + 900, cc.state()) is None and len(xs) == 1, "once a week")
+check(any("week on X 2026-W47" in s for s in cc.status_lines(SAT + 1000)), "the up block says how the week's post went")
+held_st = {"week_x": {}, "clipped": {}}
+blog.write_json(os.path.join(cc.REPORTS, "2026-11-28-queen.json"), {**queen, "visit": "2026-11-28-queen"})
+blog.write_json(os.path.join(cc.REPORTS, "2026-11-24-pirates.json"),
+                {**pf, "visit": "2026-11-24-pirates", "pirate tricks": {**pf["pirate tricks"], "held back": 1}})
+cc.week_post(SAT + 7 * 86400 + 60, held_st)
+check(len(xs) == 2 and "2 calls" in xs[1][1] and "pirates" not in xs[1][1] and "trick" not in xs[1][1],
+      f"a trick held back is never hinted at, nor counted: {xs[-1][1]}")
+check(xs[1][0] == "/tmp/cruise-queen.jpg", "no clip that week: the picture of the last announcement")
+empty = {"week_x": {}}
+check(cc.week_post(SAT + 21 * 86400 + 60, empty) and "no call" in empty["week_x"]["2026-W50"]["result"] and len(xs) == 2,
+      "a week without a call: no post")
+
 print("all ok" if not failed else f"{failed} FAILED")
 sys.exit(1 if failed else 0)

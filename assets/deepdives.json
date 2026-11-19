@@ -1,5 +1,5 @@
 {
-  "about": "A closer look at one page of Tau HUD a day, in this order, each once. The alerts service (infra/alerts/alerts.py, maybe_deepdive) reads this file from the site every 10 minutes and posts the next one not yet posted at 13:00 UTC on Telegram; every second one also goes to X. Add new pages at the end; an id is posted once, ever. Texts are plain (no HTML; the bot escapes them); x = the lines of the X post, trimmed to 280 by the bot, which adds the footer and #TauNet. Nothing here is run by IDNI; test AGRS have no value.",
+  "about": "A closer look at one page of Tau HUD a day, in this order, each once. The alerts service (infra/alerts/alerts.py, maybe_deepdive) reads this file from the site every 10 minutes and posts the next one not yet posted at 13:00 UTC on Telegram; every second one also goes to X. Add new pages at the end; an id is posted once, ever. A page the Updates log announced as new (a \"major\" with its own page) and that has no entry here is added by the bot itself, with the log's own title and text, so the closer looks and the weekly poll keep up with the site. Texts are plain (no HTML; the bot escapes them); x = the lines of the X post, trimmed to 280 by the bot, which adds the footer and #TauNet. Nothing here is run by IDNI; test AGRS have no value.",
   "posts": [
     {
       "id": "start",
@@ -270,6 +270,96 @@
       "link": "/donate/",
       "button": "🙏 Donate",
       "image": "/assets/og/donate.png"
+    },
+    {
+      "id": "builder",
+      "title": "The rule builder: see what your rule really does before you sign",
+      "text": "Say in plain words what your wallet may do, for example a limit per payment, a co-signer above a sum, nothing before a date, and the rule builder writes it as a rule in Tau. Then it checks the rule the way the chain will: every possible payment gets one answer, a part that can never matter is named, and the testnet's own Tau engine is asked whether it takes the rule.\nA rule that would lock its own wallet is caught before you sign it. One more click hands the rule to your wallet, and from then on the chain itself checks it on every payment.",
+      "try": "write one sentence of what your wallet may do, and read what the builder says about it.",
+      "x": ["🔎 A closer look: the rule builder", "Say in plain words what your wallet may do. The builder writes the Tau rule, checks every possible payment against it and asks the testnet's own Tau engine, then hands it to your wallet to sign."],
+      "link": "/builder/",
+      "button": "🧱 Rule builder",
+      "image": "/assets/shots/builder.png"
+    },
+    {
+      "id": "nomemo",
+      "title": "No Memo: a terminal game on the live testnet",
+      "text": "The crew of Black Sequence, the pirate ship that tests the chain every Tuesday, hands out contracts. Each one is a real transaction from the test wallet in your browser, and the chain itself is the judge: make it say no for the right reason, take a payment back before its release, race the block clock.\nA Tau transaction has no memo field, so you say it in the amount. The players are real people, and every contract ends with what the chain answered and what that answer means.",
+      "try": "take the first contract; it starts with a test wallet made for you.",
+      "x": ["🔎 A closer look: No Memo", "A terminal game on the live Tau Net testnet: every contract is a real transaction from your test wallet, and the chain is the judge. No memo field on Tau, so you say it in the amount."],
+      "link": "/nomemo/",
+      "button": "🖥 Play No Memo",
+      "image": "/assets/shots/nomemo.png"
+    },
+    {
+      "id": "guardian",
+      "title": "The Guardian: a second key for your test wallet",
+      "text": "The Guardian co-signs your bigger payments with a code from your own Authenticator app. Above the limit you choose, a payment waits for that code; below it, nothing changes. Since IDNI added a rule lock to the testnet, you can also lock your rule, so that changing or removing it waits for the Guardian too, or for 1,000 blocks in which you can cancel it.\nIt guards against a mistaken or tricked payment, not against a stolen key. In the simulation the whole way can be tried with play values first.",
+      "try": "play it through in the simulation, then set it up for your test wallet.",
+      "x": ["🔎 A closer look: the Guardian", "A second key for your test wallet: bigger payments wait for a code from your own Authenticator app, and your rule can be locked so a change waits too. Made for mistaken or tricked payments, not a stolen key."],
+      "link": "/guardian/",
+      "button": "🛡 Guardian",
+      "image": "/assets/og/guardian.png"
+    },
+    {
+      "id": "cruise",
+      "title": "The cruise logbook: what our ships asked the testnet, and what it answered",
+      "text": "Three ships call at White Rabbit Key each week: the pirates of Black Sequence on Tuesday, MS Dry Run on Wednesday, Queen Mempool on Saturday. Their passengers are made up; their transactions are real, at most 12 a minute, and only when the testnet is calm.\nThe logbook keeps every one of them with the chain's answer: what went through, what was refused and why, which pirate trick the chain caught. After each call a ship adjusts its next one by fixed rules and writes down what it changed and why.",
+      "try": "open the last pirate call and read what the chain refused.",
+      "x": ["🔎 A closer look: the cruise logbook", "Made-up passengers, real transactions on Tau Testnet Alpha: every payment our three ships sent, with the chain's answer, including each pirate trick it refused."],
+      "link": "/cruise/",
+      "button": "🚢 Logbook",
+      "image": "/assets/shots/cruise-pirates.jpg"
+    },
+    {
+      "id": "facts",
+      "title": "Tau facts for your AI assistant",
+      "text": "AI assistants often answer about Tau from old training data. This page lists what is true about Tau and the Tau Net testnet today, in English, Chinese and Japanese, each fact linked to the exact lines in IDNI's own code it was read from, next to the live chain numbers.\nWhen IDNI changes a file a fact was read from, the fact is marked to be read again until a person has checked it. Paste one sentence before your question and your assistant reads the facts first.",
+      "try": "ask your assistant one question about Tau with the sentence in front, and once without.",
+      "x": ["🔎 A closer look: Tau facts for your AI", "What is true about Tau today, each fact linked to the lines in IDNI's own code it was read from. Paste one sentence before your question and your AI assistant reads it first."],
+      "link": "/facts/",
+      "button": "📚 Tau facts",
+      "image": "/assets/shots/facts.png"
+    },
+    {
+      "id": "load",
+      "title": "Testnet load: how hard the chain is working right now",
+      "text": "Minute by minute for the last six hours: transactions sealed, how many wait, how long a transaction waits for its block, and the gaps between blocks. One word on top says calm, busy, strained or stalled.\nIt is counted by our relay from our own node, and the page says plainly where our own limits sit, so a slow minute on our side is not mistaken for the testnet's.",
+      "try": "look at it while a ship is at the island, and once on a quiet morning.",
+      "x": ["🔎 A closer look: testnet load", "How hard Tau Testnet Alpha is working, minute by minute: transactions sealed, how many wait, how long until a block. Calm, busy, strained or stalled at a glance."],
+      "link": "/load/",
+      "button": "📈 Testnet load",
+      "image": "/assets/shots/load.png"
+    },
+    {
+      "id": "services",
+      "title": "Services on the testnet: who serves other wallets",
+      "text": "A directory of what runs on Tau Testnet Alpha. Nobody signs up: an account appears once the chain shows it serving other wallets, as a co-signer others name, as the giver of a rule others take, or as an account many different wallets pay.\nEvery number comes straight from the blocks, so the list grows by itself as people build on the testnet.",
+      "try": "look for the rule givers, then take one of their rules on the rules wall.",
+      "x": ["🔎 A closer look: services on the testnet", "Nobody signs up: an account appears once the chain shows it serving other wallets, as a co-signer, a rule others take, or an account many wallets pay. Straight from the blocks."],
+      "link": "/services/",
+      "button": "🧭 Services",
+      "image": "/assets/og/services.png"
+    },
+    {
+      "id": "learn",
+      "title": "Learn Tau Language: the math under Tau in plain words",
+      "text": "Tau rules rest on Boolean algebras. The Learn page explains the ideas that matter for a rule, each in everyday words or, for people who like logic, in the exact terms, and most come with a question you can put to the real Tau engine.\nTwo lessons go further: until (a rule that waits for a moment) and since (a rule with a memory).",
+      "try": "pick Simple, read one idea, then ask the engine its question.",
+      "x": ["🔎 A closer look: Learn Tau Language", "The math under Tau's rules in plain words, or in exact terms for logic people, and most ideas come with a question for the real Tau engine."],
+      "link": "/learn/",
+      "button": "🎓 Learn",
+      "image": "/assets/og/learn.png"
+    },
+    {
+      "id": "hearts",
+      "title": "Hearts: which part of Tau HUD you love most",
+      "text": "Every panel of the HUD has a ♥. A heart is a real testnet transaction from the test wallet in your browser to a box with no key behind it, so we learn which parts people love most and build those first, without tracking anyone.\nThe counts are public, split by beginners, intermediate and experts; a second click takes a heart back, and many clicks still count once.",
+      "try": "give a heart to the panel you would miss most.",
+      "x": ["🔎 A closer look: hearts", "A ♥ on every panel of Tau HUD is a real testnet transaction to a box with no key behind it. We learn what people love most and build that first, without tracking."],
+      "link": "/hearts/",
+      "button": "♥ Hearts",
+      "image": "/assets/og/hearts.png"
     }
   ]
 }

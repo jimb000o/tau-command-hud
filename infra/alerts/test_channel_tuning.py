@@ -71,6 +71,52 @@ w3.state = {"poll": {"open": {"msg": 5, "ids": ["a", "b", "c"], "at": 0}}, "deep
 asyncio.run(w3.close_poll(alerts.POLL_OPEN + 1))
 check(w3.state["deepdives"]["voted"] == "b" and "open" not in w3.state["poll"], "poll: most votes goes next")
 
+# the poll rotates (Kilian, 19 Nov 2026: the same pages again while the site kept growing)
+class PollTG(FakeTG):
+    def __init__(self):
+        self.asked = []
+    def call_raw(self, method, body, ctype="application/json"):
+        if method == "stopPoll":
+            return True, None, "", {"result": {"options": [{"voter_count": 0}] * 4}}
+        self.asked.append([o["text"] for o in json.loads(body)["options"]])
+        return True, None, "", {"result": {"message_id": 7}}
+pages = [{"id": c, "title": c.upper(), "link": f"/{c}/"} for c in "abcdefghij"]
+w4 = alerts.Watcher.__new__(alerts.Watcher)
+tg4 = PollTG()
+w4.outlets, w4.save_state = [tg4], (lambda: None)
+WED = datetime(2026, 11, 25, 16, 5, tzinfo=timezone.utc).timestamp()
+w4.state = {"poll": {"open": {"ids": ["a", "b"], "at": WED - 7 * 86400}}, "pages": {"/c/": WED - 3600},
+            "deepdives": {"posts": pages[:8], "posted": {"d": 1}, "x_posted": {}, "voted": "e",
+                          "extra": [{"id": "page-k", "title": "K", "link": "/k/", "auto": True},
+                                    {"id": "page-a", "title": "A again", "link": "/a/", "auto": True}]}}
+w4.state["poll"].pop("open")
+w4.state["poll"]["offered"] = {"a": WED - 7 * 86400, "b": WED - 7 * 86400}
+asyncio.run(w4.maybe_poll(WED))
+check(tg4.asked == [["F", "G", "H", "K"]],
+      f"poll: offered pages, the posted one, the voted one and one shown an hour ago stay out; a new page joins: {tg4.asked}")
+for wk in range(1, 3):
+    w4.state["poll"].pop("open", None)
+    w4.state["pages"] = {}
+    asyncio.run(w4.maybe_poll(WED + wk * 7 * 86400))
+check(tg4.asked[1] == ["C", "A", "B", "F"],
+      f"poll: one page left, so a new round: the page never offered first, then the ones offered longest ago: {tg4.asked[1]}")
+check(tg4.asked[2] == ["G", "H", "K"], f"poll: the next week asks the pages this round has not offered yet: {tg4.asked[2]}")
+# the poll open at the deploy (18 Nov 2026): closing it marks its options as offered
+first = alerts.Watcher.__new__(alerts.Watcher)
+tg5 = PollTG()
+first.outlets, first.save_state = [tg5], (lambda: None)
+first.state = {"poll": {"open": {"ids": ["a", "b", "c", "d"], "at": WED - 7 * 86400, "msg": 3}}, "deepdives": {"posts": pages}}
+asyncio.run(first.close_poll(WED - 5 * 86400))
+asyncio.run(first.maybe_poll(WED))
+check(tg5.asked == [["E", "F", "G", "H"]], f"poll: the options of the poll open at the deploy are not asked again: {tg5.asked}")
+cands = alerts.page_candidates([{"on": "x", "tag": "Load", "html": "x", "major": {"id": "load", "title": "New: Testnet load", "text": "How hard.", "link": "/load/"}},
+                                {"on": "x", "tag": "Blog", "html": "x", "major": {"id": "b", "title": "An article", "link": "/blog/?p=x"}},
+                                {"on": "x", "tag": "Sim", "html": "x", "major": {"id": "s", "title": "Sim", "link": "/?mode=sim"}},
+                                {"on": "x", "tag": "Gazette", "html": "x", "major": {"id": "g", "title": "New: paper", "link": "/gazette/", "skip": "by hand"}},
+                                {"on": "x", "tag": "Load", "html": "x", "major": {"id": "load2", "title": "Load again", "link": "/load/"}}])
+check([(c["id"], c["title"]) for c in cands] == [("page-load", "Testnet load")],
+      f"new pages from the log: one per page, its first announcement, no article, no front page, nothing skipped: {cands}")
+
 # costs
 # a fixed list (the real assets/costs.json changes with every bill): one euro bill, one dollar bill, one not in yet
 costs = {"items": [{"t": "Server", "amount": 6, "cur": "EUR"}, {"t": "AI assistant", "amount": 200, "cur": "USD"},
