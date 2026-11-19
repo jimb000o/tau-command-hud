@@ -86,6 +86,8 @@ local["checked_against"] = {"IDNI/tau-testnet": {"sha": base, "date": "2026-11-0
 local["files"] = {"IDNI/tau-testnet": ["README.md", "docs/retractable.md", "docs/approvals.md"]}
 for f in local["facts"]:
     f["src"] = [[lab, url.replace(facts["checked_against"]["IDNI/tau-testnet"]["sha"], base)] for lab, url in f["src"]]
+    if f["id"] == "o5-slots":   # read at its own later commit, after the change
+        f["src"] = [[lab, url.replace(base, git("rev-parse", "HEAD"))] for lab, url in f["src"]]
 st = kn.facts_state(local, {"IDNI/tau-testnet": bare}, {"IDNI/tau-testnet": "main"})
 check(st["changed"]["IDNI/tau-testnet"] == {"docs/approvals.md": 1}, f"the changed IDNI file is found: {st['changed']}")
 check(set(st["stale"]) == {"approvals"}, f"only the fact read from that file is marked, not one read at its own later commit: {sorted(st['stale'])}")

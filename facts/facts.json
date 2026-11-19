@@ -1,14 +1,14 @@
 {
   "v": 1,
-  "checked": "2026-11-07",
+  "checked": "2026-11-19",
   "checked_against": {
     "IDNI/tau-testnet": {
-      "sha": "668fbf4762f2eeb76b39975157d2e75af788d240",
-      "date": "2026-11-05"
+      "sha": "c2b8c47e07342dee01ac27f1380872374e3bf6ff",
+      "date": "2026-11-17"
     },
     "IDNI/tau-lang": {
-      "sha": "6244544a2bf4f036a02e3e0d9d68ab7428c55600",
-      "date": "2026-11-06"
+      "sha": "c7d80dccf6646df8e458e2bb0ea0a07ada1d15c8",
+      "date": "2026-11-19"
     }
   },
   "note": "Each fact was read in IDNI's own public repositories at the commits above and links the exact lines. Nothing here comes from memory, chat or guesses. When IDNI changes one of these files, tauhud.com/facts/ marks the fact 'check again' until a person reads it anew.",
@@ -66,7 +66,7 @@
       "src": [
         [
           "tau-lang README, introduction",
-          "https://github.com/IDNI/tau-lang/blob/6244544a2bf4f036a02e3e0d9d68ab7428c55600/README.md#L58-L84"
+          "https://github.com/IDNI/tau-lang/blob/c7d80dccf6646df8e458e2bb0ea0a07ada1d15c8/README.md#L67-L92"
         ]
       ]
     },
@@ -79,11 +79,11 @@
       "src": [
         [
           "tau-testnet README, top",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L5-L10"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L5-L10"
         ],
         [
           "Consensus boundary",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L392-L398"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L413-L423"
         ]
       ]
     },
@@ -96,7 +96,7 @@
       "src": [
         [
           "tau-testnet README, status",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L12-L14"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L12-L14"
         ]
       ]
     },
@@ -109,11 +109,11 @@
       "src": [
         [
           "tau-testnet README, features",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L8"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L8"
         ],
         [
           "Node roles",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L69-L70"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L67-L70"
         ]
       ]
     },
@@ -126,7 +126,7 @@
       "src": [
         [
           "Security & risk model",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L764"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L822"
         ]
       ]
     },
@@ -139,11 +139,11 @@
       "src": [
         [
           "Join the Tau Testnet",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L130-L132"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L130-L132"
         ],
         [
           "networks/tau-testnet-v2",
-          "https://github.com/IDNI/tau-testnet/tree/668fbf4762f2eeb76b39975157d2e75af788d240/networks/tau-testnet-v2"
+          "https://github.com/IDNI/tau-testnet/tree/c2b8c47e07342dee01ac27f1380872374e3bf6ff/networks/tau-testnet-v2"
         ]
       ]
     },
@@ -156,24 +156,24 @@
       "src": [
         [
           "genesis.json",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/networks/tau-testnet-v2/genesis.json#L20-L46"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/networks/tau-testnet-v2/genesis.json#L20-L47"
         ]
       ]
     },
     {
       "id": "faucet",
       "topic": "accounts",
-      "en": "The tau-testnet-v2 join profile switches on an automatic faucet: a new account receives 100,000 test tokens on its first transaction. (A network made with IDNI's genesis script has no faucet unless it is set.)",
-      "zh": "tau-testnet-v2 的加入配置开启了自动水龙头：新账户在第一笔交易时收到 100,000 个测试代币。（用 IDNI 的创世脚本创建的网络，除非设置，否则没有水龙头。）",
-      "ja": "tau-testnet-v2 の参加プロファイルでは自動フォーセットが有効です。新しいアカウントは最初の取引で 100,000 のテストトークンを受け取ります。（IDNI のジェネシススクリプトで作ったネットワークは、設定しない限りフォーセットはありません。）",
+      "en": "The tau-testnet-v2 genesis sets a faucet of 100,000 test tokens: each new account gets it once, at the first transaction that touches it, as sender or as recipient. An account that spends down to 0 gets nothing more, and no node setting or vote changes the amount.",
+      "zh": "tau-testnet-v2 的创世文件设定了 100,000 个测试代币的水龙头：每个新账户在第一笔涉及它的交易中（无论作为发送方还是接收方）获得一次。花到 0 的账户不会再获得，任何节点设置或投票都不能改变这个数额。",
+      "ja": "tau-testnet-v2 のジェネシスには 100,000 テストトークンのフォーセットが設定されています。新しいアカウントは、送信者または受取人として最初に関わる取引で一度だけ受け取ります。残高を 0 まで使っても再びもらえることはなく、ノードの設定や投票でこの額を変えることはできません。",
       "src": [
         [
-          "networks/tau-testnet-v2/env",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/networks/tau-testnet-v2/env#L22-L24"
+          "genesis.json, faucet",
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/networks/tau-testnet-v2/genesis.json#L47"
         ],
         [
-          "Operating a network",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L325-L327"
+          "Operating a network, faucet",
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L349"
         ]
       ]
     },
@@ -186,11 +186,11 @@
       "src": [
         [
           "Cryptography & signatures",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L464"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L490"
         ],
         [
           "Operating a network",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L325"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L348"
         ]
       ]
     },
@@ -203,11 +203,11 @@
       "src": [
         [
           "Transaction signing fields",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/consensus/tx_signing.py#L115-L135"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/consensus/tx_signing.py#L52-L69"
         ],
         [
           "Amount cap",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L327"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L350"
         ]
       ]
     },
@@ -220,7 +220,7 @@
       "src": [
         [
           "Transaction fees",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L479-L483"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L501-L509"
         ]
       ]
     },
@@ -233,7 +233,7 @@
       "src": [
         [
           "Mempool policy",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L612"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L647"
         ]
       ]
     },
@@ -246,7 +246,7 @@
       "src": [
         [
           "Consensus boundary, o5",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L396-L398"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L421-L423"
         ]
       ]
     },
@@ -259,28 +259,32 @@
       "src": [
         [
           "docs/approvals.md, Limits",
-          "https://github.com/IDNI/tau-testnet/blob/5ad1bb7f4ff4f2e408447159f19951f350889511/docs/approvals.md#L303-L305"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/docs/approvals.md#L510"
         ],
         [
-          "docs/approvals.md, how a clause judges",
-          "https://github.com/IDNI/tau-testnet/blob/5ad1bb7f4ff4f2e408447159f19951f350889511/docs/approvals.md#L280-L286"
+          "Where an accepted rule lives",
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L557"
         ]
       ]
     },
     {
       "id": "rule-sharing",
       "topic": "rules",
-      "en": "One user can offer a Tau rule to another, who checks it and accepts or rejects it. Offer, accept and reject are transactions and pay fees. An accepted rule cannot be withdrawn, only replaced by accepting another rule for the same output.",
-      "zh": "一个用户可以把一条 Tau 规则提供给另一个用户，对方检查后接受或拒绝。提供、接受、拒绝都是交易，需要付手续费。已接受的规则不能撤回，只能通过接受同一输出的另一条规则来替换。",
-      "ja": "ユーザーは別のユーザーに Tau のルールを提案でき、相手は確かめてから受け入れるか断ります。提案・受け入れ・拒否はどれも取引で手数料がかかります。受け入れたルールは取り消せず、同じ出力の別のルールを受け入れて置き換えるしかありません。",
+      "en": "One user can offer a Tau rule to another, who checks it and accepts or rejects it. Offer, accept and reject are transactions and pay fees. An accepted rule becomes the acceptor's own clause and replaces the one they held for that output; a transfer rule (o5) can be removed again by sending the neutral rule.",
+      "zh": "一个用户可以把一条 Tau 规则提供给另一个用户，对方检查后接受或拒绝。提供、接受、拒绝都是交易，需要付手续费。已接受的规则成为接受者自己的规则，并替换其在同一输出上原有的规则；转账规则（o5）可以通过发送中性规则再次移除。",
+      "ja": "ユーザーは別のユーザーに Tau のルールを提案でき、相手は確かめてから受け入れるか断ります。提案・受け入れ・拒否はどれも取引で手数料がかかります。受け入れたルールは受け入れた人自身のルールになり、同じ出力に持っていたルールを置き換えます。送金ルール（o5）は中立のルールを送れば再び取り除けます。",
       "src": [
         [
           "Rule sharing",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L507-L509"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L533-L543"
         ],
         [
-          "Caveats",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L549"
+          "Where an accepted rule lives",
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L557"
+        ],
+        [
+          "Revoking",
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L580"
         ]
       ]
     },
@@ -293,7 +297,7 @@
       "src": [
         [
           "docs/approvals.md",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/docs/approvals.md#L3-L12"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/docs/approvals.md#L3-L12"
         ]
       ]
     },
@@ -306,11 +310,11 @@
       "src": [
         [
           "Retractable transfers",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L594-L597"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L613-L629"
         ],
         [
-          "docs/retractable.md",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/docs/retractable.md"
+          "docs/retractable.md, limits",
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/docs/retractable.md#L180-L189"
         ]
       ]
     },
@@ -323,7 +327,11 @@
       "src": [
         [
           "Governance",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L490-L502"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L516-L518"
+        ],
+        [
+          "Quorum",
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L528"
         ]
       ]
     },
@@ -336,11 +344,11 @@
       "src": [
         [
           "Governance lifecycle",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L503-L505"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L529-L531"
         ],
         [
           "consensus/engine.py",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/consensus/engine.py#L1984-L1987"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/consensus/engine.py#L2076-L2101"
         ]
       ]
     },
@@ -353,11 +361,11 @@
       "src": [
         [
           "Quickstart",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L35-L37"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L35-L37"
         ],
         [
           "RPC / WebSocket exposure",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L774"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L832"
         ]
       ]
     },
@@ -370,19 +378,19 @@
       "src": [
         [
           "Quickstart",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L20-L26"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L20-L26"
         ],
         [
           "Windows",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L74"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L16"
         ],
         [
           "Run from source",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L95"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L95"
         ],
         [
           "Node roles",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L69-L70"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L67-L70"
         ]
       ]
     },
@@ -395,7 +403,7 @@
       "src": [
         [
           "Web wallet",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L293"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L294-L299"
         ]
       ]
     },
@@ -408,7 +416,7 @@
       "src": [
         [
           "Cryptography & signatures",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L471"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L497"
         ]
       ]
     },
@@ -421,24 +429,26 @@
       "src": [
         [
           "Status",
-          "https://github.com/IDNI/tau-testnet/blob/668fbf4762f2eeb76b39975157d2e75af788d240/README.md#L14"
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L14"
+        ],
+        [
+          "Security & risk model",
+          "https://github.com/IDNI/tau-testnet/blob/c2b8c47e07342dee01ac27f1380872374e3bf6ff/README.md#L834"
         ]
       ]
     }
   ],
   "files": {
+    "IDNI/tau-lang": [
+      "README.md"
+    ],
     "IDNI/tau-testnet": [
       "README.md",
-      "networks/tau-testnet-v2/env",
       "networks/tau-testnet-v2/genesis.json",
       "consensus/tx_signing.py",
-      "consensus/approvals.py",
       "docs/approvals.md",
       "docs/retractable.md",
       "consensus/engine.py"
-    ],
-    "IDNI/tau-lang": [
-      "README.md"
     ]
   }
 }
