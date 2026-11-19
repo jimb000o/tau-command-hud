@@ -1178,8 +1178,15 @@ class Relay:
                 if who not in r["users"]:
                     r["users"].append(who)
                 r["last"] = h
-        out = sorted(rules.values(), key=lambda r: (-len(r["users"]), -r["last"]))
-        return out[:RULEWALL_MAX]
+        out = sorted(rules.values(), key=lambda r: (-len(r["users"]), -r["last"]))[:RULEWALL_MAX]
+        # who wrote it and what it checks, for the channel's rule posts (alerts/rulenews.py): our own server's wallets
+        # and IDNI's genesis accounts are told apart from people's, as /rules/numbers counts them (ruledays.py)
+        who = self.rule_who()
+        for r in out:
+            r["by"] = who(r["author"])
+            r["people"] = sum(1 for u in r["users"] if who(u) == "people")
+            r["kinds"] = rule_kinds(r["text"])["kinds"]
+        return out
 
     def rulewall_json(self) -> str:
         now = time.time()

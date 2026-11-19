@@ -292,6 +292,8 @@ async def main():
             wall = json.loads(body)["rules"]
             check(ctype == "application/json" and len(wall) == 1 and wall[0]["author"] == BOB and wall[0]["users"] == [BOB] and wall[0]["first"] == 8,
                   f"/rulewall lists BOB's rule once {wall}")
+            check(wall[0]["by"] == "people" and wall[0]["people"] == 1 and wall[0]["kinds"],
+                  f"/rulewall says who wrote a rule and what it checks, for the channel's rule posts {wall}")
             # the fair turns on the two rule places are retired: nothing is kept, nothing is sent for anyone
             free = {"tx_type": "user_tx", "sender_pubkey": BOB, "sequence_number": 7, "expiration_time": int(time.time()) + 3 * 86400,
                     "fee_limit": "50", "expire_at_height": 9000, "operations": {"0": "always ( (o5[t]:bv[24] = { #x000001 }:bv[24]) )."}, "signature": "ef" * 96}

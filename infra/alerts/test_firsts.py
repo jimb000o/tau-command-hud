@@ -1,4 +1,5 @@
-"""Unit test of the firsts (no network): what the chain holds at the first run is history, each kind is posted once,
+"""Unit test of the firsts (no network): what the chain holds at the first run is history, each kind is posted once ever
+(a restart that replays it is no news),
 firsts close together go out as one post, a first in an old block is shown on the HUD but never posted, the HUD gets
 them in proposals.json, removing a rule with the neutral clause is no first.
 
@@ -111,13 +112,25 @@ async def main():
     await w.maybe_firsts(time.time() + 9000)
     check(len(tg.sent) == 1 and "cosign_vote" in st["seen"], "an old first is recorded, not posted late")
 
-    # a new chain starts the record over
-    w.blocks = {1: block(1, [{"sender_pubkey": A, "tx_type": "retractable_transfer"}])}
+    # a new chain (a testnet restart): the HUD shows its firsts, the channels never hear of a kind a second time
+    w.blocks = {1: block(1, [{"sender_pubkey": A, "tx_type": "retractable_transfer"}, pay(operations={"0": POLICY})])}
     w.blocks[1]["block_hash"] = "f" * 64
     w.state["chain"] = {"block1_hash": "f" * 64}
     w.process()
-    check(list(st["seen"]) == ["returnable"] and [f["key"] for f in st["pending"]] == ["returnable"], "a new chain has its own firsts")
-    check(firsts.headline(st["pending"]) == "First on the testnet: a returnable payment", "one first has its own headline")
+    check(sorted(st["seen"]) == ["cosign_rule", "returnable", "time_lock"], "a new chain shows its own firsts on the HUD")
+    check(not st["pending"], "a restart that replays told kinds posts nothing (19 Nov 2026: the same first four days running)")
+    await w.maybe_firsts(time.time() + 99999)
+    check(len(tg.sent) == 1, "nothing told again after the restart")
+    check(sorted(st["ever"]) == sorted(k for k, *_ in firsts.KINDS), "every kind told or found is kept across chains")
+    check(firsts.headline([{"key": "returnable"}]) == "First on the testnet: a returnable payment", "one first has its own headline")
+
+    # the first deploy of `ever`: what was posted before (16 to 19 Nov 2026) and what this chain holds count as told
+    old = {"chain": "x", "seen": {"cosign_request": {"h": 9}}, "pending": [], "primed": True}
+    ev = firsts.ever_of(old)
+    check(set(firsts.TOLD_BEFORE) <= set(ev) and "cosign_request" in ev and "cosign_vote" not in ev,
+          "the kinds told before and the ones on the chain now are seeded, the rest still to come")
+    check([f["key"] for f in firsts.news(old, [{"key": "cosign_vote"}, {"key": "returnable"}])] == ["cosign_vote"],
+          "only a kind never told is news")
     w = "ab" * 48
     f1 = {"key": "returnable", "h": 2141, "tx": "7FFF88", "from": w}
     check(firsts.who(f1, {w: "rabbit"}) == "a White Rabbit Key player", "a wallet's tag names who it is")

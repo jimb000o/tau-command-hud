@@ -4,10 +4,13 @@ The testnet supports payments with terms (tau-testnet 539d1e2: retractable trans
 that read the block time), but until someone uses them they are only promises in the docs. The first block that carries
 one is news: one post on Telegram and X, and the HUD's "Money with terms" tile lights up with a link to that transaction.
 
-alerts.py hands scan() the blocks it holds after each sync. Each kind is posted once per chain. Firsts that land close
-together (someone trying several in a row) wait until QUIET seconds pass without another, or at most HOLD seconds, and go
-out as one post. The first run is silent: what the chain already holds then is history, not news. A first whose block is
-older than alerts.py's POST_MAX_AGE (a long outage) is recorded and shown on the HUD, never posted late.
+alerts.py hands scan() the blocks it holds after each sync. Each kind is posted once, ever (Kilian, 19 November 2026:
+after every testnet restart our ships did the same things again and the channel told the same "first" four times in four
+days; a first is news only the first time, however often the chain starts over). The HUD still shows each kind's first
+transaction on the chain running now (`seen`, per chain); what was told lives in `ever` and survives restarts. Firsts
+that land close together (someone trying several in a row) wait until QUIET seconds pass without another, or at most HOLD
+seconds, and go out as one post. The first run is silent: what the chain already holds then is history, not news. A first
+whose block is older than alerts.py's POST_MAX_AGE (a long outage) is recorded and shown on the HUD, never posted late.
 """
 from __future__ import annotations
 
@@ -66,7 +69,33 @@ LINES = {k: line for k, _, _, line in KINDS}
 
 
 def fresh_state() -> dict:
-    return {"chain": "", "seen": {}, "pending": [], "primed": False}
+    return {"chain": "", "seen": {}, "pending": [], "primed": False, "ever": {}}
+
+
+# Told on the channels before `ever` existed (the posts of 16 to 19 November 2026), so the first deploy never tells them again
+TOLD_BEFORE = {"time_lock": "2026-11-16", "cosign_rule": "2026-11-16", "returnable": "2026-11-16", "taken_back": "2026-11-19"}
+
+
+def ever_of(st: dict) -> dict:
+    """kind -> when it was first told (or found as history), across every chain; made once from what was told before."""
+    if "ever" not in st:
+        st["ever"] = {k: {"at": d, "how": "told before 19 Nov 2026"} for k, d in TOLD_BEFORE.items()}
+        for k in st.get("seen") or {}:
+            st["ever"].setdefault(k, {"at": "", "how": "on the chain when this was added"})
+    return st["ever"]
+
+
+def told(st: dict, fs: list[dict], how: str, now: float | None = None) -> None:
+    """These firsts count as told from now on, on every chain to come."""
+    ev = ever_of(st)
+    for f in fs:
+        ev.setdefault(f["key"], {"at": round(now) if now else "", "how": how, "h": f.get("h"), "tx": f.get("tx")})
+
+
+def news(st: dict, fs: list[dict]) -> list[dict]:
+    """The firsts of `fs` never told on any chain before; the rest happened again after a restart and are no news."""
+    ev = ever_of(st)
+    return [f for f in fs if f["key"] not in ev]
 
 
 def ts_of(b: dict) -> int | None:

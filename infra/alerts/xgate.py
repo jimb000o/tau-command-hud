@@ -12,7 +12,8 @@ What a plan module may define (each optional; anything missing or failing counts
   text_problems(text, account) -> list[str]         what the plan does not want in a hand-written post's words
 
 Kinds the posters pass: chain (a rule change), finding, restart, newnode, first, today, deepdive, idni, fixed, island,
-plan, site, digest, sim, recap, article, idni_feature, ship, hack, donation, agorzilla_evening, agorzilla_growth.
+plan, site, digest, sim, recap, article, idni_feature, ship, cruise_week, rules_week, hack, donation, agorzilla_evening,
+agorzilla_growth.
 """
 import importlib.util
 import logging

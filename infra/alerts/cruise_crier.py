@@ -4,13 +4,14 @@ what `up post cruise-… send` and `up cruise` did by hand:
 
   before the call   ANNOUNCE minutes before the ship is due (CRUISE_ANNOUNCE_MINUTES, 150 = Saturday 11:30 and
                     Wednesday 13:30), and never later than LATEST minutes before it: the announcement picture made
-                    from the live island painting with the painted ship at anchor, posted once to Telegram and X
+                    from the live island painting with the painted ship at anchor, posted once to Telegram
                     (the same picture and helpers as `up post`). The texts: a hand-written file on the site,
                     assets/share/cruise-<ship>.json, when its "date" is that day; else written here from the timetable
                     and the ship's last call as the public logbook counts it (blog.facts_of), so each week's post is
                     new and every number in it comes from the logbook.
-  after the pirates' call  a clip of every trick the chain refused, to Telegram and X (trick_clip.py; none when a
+  after the pirates' call  a clip of every trick the chain refused, to Telegram (trick_clip.py; none when a
                     trick got through)
+  Saturday evening  the week's calls as one post on X (week_post; 19 November 2026: no X post per ship any more)
   after the call    the visit in numbers (the same facts the blog draft is written from) once to the owner's private
                     Telegram chat (tickerwatch.tell; `up owner` sets it), never to the channel, and kept in
                     /state/cruise-reports/<visit>.json; the blog draft, once written, is told there too, with the
@@ -52,6 +53,14 @@ LOGBOOK = f"{blog.NODE}/cruise/log"
 GAME = f"{blog.SITE}/rabbit/"
 UP = 'ssh root@node.tauhud.com "sh /opt/tau-command-hud/infra/up.sh {}"'
 FOOT = "White Rabbit Key · community project, not run by IDNI"
+# 19 Nov 2026 (Kilian): no X post per ship any more. Every call is still told on Telegram, where the community follows
+# the island; on X one post on Saturday evening covers the week's calls (week_post): three ship posts a week drew about
+# 116 views and almost no clicks each, and X shows fewer posts of an account that posts often. CRUISE_X_EACH=true
+# brings the X post of each call back (and the pirates' clip on X right after their call, trick_clip.py).
+EACH_ON_X = os.environ.get("CRUISE_X_EACH", "false").lower() in ("1", "true", "yes")
+WEEK_POST = os.environ.get("CRUISE_WEEK_POST", "true").lower() in ("1", "true", "yes")
+WEEK_DAY = int(os.environ.get("CRUISE_WEEK_DAY", 5))       # 0 = Monday: Saturday, German time
+WEEK_HOUR = int(os.environ.get("CRUISE_WEEK_HOUR", 18))    # German time: after Queen Mempool's call (14:00, 90 minutes)
 
 # what each ship is, as the timetable has it (relay/cruise.py SHIPS); the words of the posts of 4 and 7 November 2026
 SHIPS = {
@@ -431,6 +440,8 @@ def announce(now: float, cruise: dict | None, st: dict) -> str | None:
         return None
     t = compose(ship, t0)
     import xgate
+    if t.get("on_x") is not False and t.get("x") and not EACH_ON_X:
+        t["on_x"], t["x_kept"] = False, "on X in the week's post on Saturday evening"
     if t.get("on_x") is not False and t.get("x") and not xgate.allow("ship", "hud", now)[0]:
         t["on_x"], t["x_kept"] = False, "kept off X by the posting plan"
     pic = picture(t, f"/tmp/cruise-{ship}.jpg")   # a failure here is tried again in 10 minutes
@@ -570,6 +581,127 @@ def report(now: float, st: dict) -> str | None:
         return vid
     save(st)
     return None
+
+
+# ---------- the week's calls on X, one post ----------
+def week_calls(now: float) -> list[dict]:
+    """The facts of this week's calls (German days from Sunday to today) as report() kept them, oldest first."""
+    today = blog.local(now).date()
+    first = (today - dt.timedelta(days=(today.weekday() + 1) % 7)).isoformat()
+    out = []
+    try:
+        names = sorted(os.listdir(REPORTS))
+    except OSError:
+        return []
+    for n in names:
+        m = re.match(r"(\d{4}-\d{2}-\d{2})-(\w+)\.json$", n)
+        if not m or not first <= m.group(1) <= today.isoformat():
+            continue
+        f = blog.read_json(os.path.join(REPORTS, n), None)
+        if isinstance(f, dict):
+            out.append({**f, "_day": m.group(1), "_ship": m.group(2)})
+    return out
+
+
+def call_note(f: dict) -> str | None:
+    """What one call showed beyond its count, from its facts, or None. A pirate trick held back for the owner is never
+    hinted at."""
+    s = SHIPS.get(f.get("_ship")) or {}
+    name = f.get("ship") or s.get("name") or f.get("_ship")
+    if not f.get("landed"):
+        return f"{name} did not land."
+    tr = f.get("pirate tricks") or {}
+    if tr.get("tried") and not tr.get("held back"):
+        n, right = tr["tried"], tr.get("refused with the expected answer", 0) + tr.get("refused with another answer", 0)
+        return f"{name}'s pirates tried {n} tricks: " + ("the chain refused every one." if right == n else f"the chain refused {right}.")
+    if f.get("call cut short by the restart"):
+        return f"{name}'s call was cut short when the testnet started over."
+    return None
+
+
+def week_x(calls: list[dict]) -> str:
+    """The week's calls in one X post: why they sail (a public test of how the testnet holds up), the count of calls and
+    accepted transactions, what a call showed (the pirates' tricks, a call cut short)."""
+    import alerts
+    landed = [c for c in calls if c.get("landed")]
+    acc = sum(int(c.get("accepted in all") or 0) for c in landed)
+    n = len(landed)
+    head = (f"🚢 Our ships' week on Tau Testnet Alpha, a public test of how it holds up: {n} call{'s' if n != 1 else ''}, "
+            f"{acc:,} real transactions from simulated passengers accepted.")
+    notes = [x for x in (call_note(c) for c in calls) if x]
+    return alerts.x_post([head] + ([[" ".join(notes), notes[0]]] if notes else []), f"{blog.SITE}/cruise/", foot="")
+
+
+def week_media(calls: list[dict], st: dict) -> str | None:
+    """The week's pirate clip when it was made and posted (made again from the logbook: /tmp does not outlive a
+    restart), else the picture of the week's last announcement while it is there, else nothing."""
+    for c in calls:
+        vid = c.get("visit") or f"{c['_day']}-{c['_ship']}"
+        if isinstance((st.get("clipped") or {}).get(vid, {}).get("result"), list):
+            out = f"/tmp/trick-clip-{vid}.mp4"
+            if os.path.exists(out):
+                return out
+            try:
+                import trick_clip
+                return trick_clip.make(trick_clip.tally(blog.get(f"/cruise/log?visit={vid}&n=2000").get("entries") or []), out)
+            except Exception as e:  # noqa: BLE001 - the picture instead
+                log.warning("week post: pirate clip %s not made again: %s", vid, e)
+    for c in reversed(calls):
+        pic = f"/tmp/cruise-{c['_ship']}.jpg"
+        if os.path.exists(pic):
+            return pic
+    return None
+
+
+def week_post(now: float, st: dict) -> str | None:
+    """Saturday from WEEK_HOUR German time (3 hours long): the week's calls as one X post, once a week; nothing in a
+    week without a call. Telegram had each call already."""
+    if not WEEK_POST or EACH_ON_X:
+        return None
+    d = blog.local(now)
+    wk = d.strftime("%G-W%V")
+    done = st.setdefault("week_x", {})
+    if d.weekday() != WEEK_DAY or not WEEK_HOUR <= d.hour < WEEK_HOUR + 3 or wk in done:
+        return None
+    import alerts
+    import trick_clip
+    import xgate
+    calls = week_calls(now)
+    why = ("no call this week" if not any(c.get("landed") for c in calls) else "x: not set up" if not alerts.X().enabled()
+           else None)
+    if not why and blog.gap_left(now):
+        return None   # the channels posted lately: waits for the room (alerts.POST_GAP_MINUTES)
+    if not why:
+        ok, plan = xgate.allow("cruise_week", "hud", now)
+        why = None if ok else "kept off X by the posting plan" + (f" ({plan})" if plan else "")
+    if not why and not trick_clip.x_room():
+        why = "left out (today's X posts are at the cap)"
+    if why:
+        done[wk] = {"at": round(now), "result": why}
+        save(st)
+        log.info("week post %s: %s", wk, why)
+        return wk
+    text = week_x(calls)
+    done[wk] = {"at": round(now), "result": "posting"}
+    save(st)   # before posting: a crash while posting never posts twice
+    media = week_media(calls, st)
+    try:
+        if media and media.endswith(".mp4"):
+            import post_video
+            said = "x: posted with the pirates' clip https://x.com/TauHUDcom/status/" + post_video.x_video(media, text)
+        elif media:
+            import post_image
+            said = "x: " + post_image.x_photo(media, text)
+        else:
+            ok, _, err = alerts.X().send_text(text)
+            said = "x: posted" if ok else f"x: {err}"
+    except Exception as e:  # noqa: BLE001
+        said = f"x: {e}"
+    done[wk] = {"at": round(now), "result": said, "calls": [c.get("visit") for c in calls]}
+    save(st)
+    log.info("week post %s: %s", wk, said)
+    tell(f"The fleet's week on X, by itself:\n{said}\n\n{text}")
+    return wk
 
 
 # ---------- a finding held back: only to the owner, never posted ----------
@@ -712,11 +844,15 @@ def step(now: float | None = None) -> None:
         held(now, st)
     except Exception as e:  # noqa: BLE001
         log.warning("held findings: %s", e)
-    try:   # the pirates' clip after their Tuesday call: every refused trick, to Telegram and X (trick_clip.py)
+    try:   # the pirates' clip after their Tuesday call: every refused trick, to Telegram (trick_clip.py)
         import trick_clip
         trick_clip.step(now, st, save, lambda text: tell(text))
     except Exception as e:  # noqa: BLE001 - tried again in 10 minutes; marked before posting, never posted twice
         log.warning("pirate clip: %s", e)
+    try:   # the week's calls as one X post, Saturday evening
+        week_post(now, st)
+    except Exception as e:  # noqa: BLE001 - marked before posting, never posted twice
+        log.warning("week post: %s", e)
 
 
 def status_lines(now: float | None = None) -> list[str]:
@@ -742,6 +878,12 @@ def status_lines(now: float | None = None) -> list[str]:
         out.append(f"         pirate clip {vid}: " + ("; ".join(r) if isinstance(r, list) else str(r)))
     elif os.environ.get("TRICK_CLIP", "true").lower() in ("1", "true", "yes"):
         out.append("         pirate clip: by itself after each Tuesday call (look first: up clip)")
+    if st.get("week_x"):
+        wk = max(st["week_x"])
+        r = st["week_x"][wk].get("result")
+        out.append(f"         week on X {wk}: {r}")
+    elif WEEK_POST and not EACH_ON_X:
+        out.append(f"         X: no post per ship; the week's calls as one post, Saturday {WEEK_HOUR}:00")
     if st["reported"]:
         vid = max(st["reported"])
         out.append(f"         last report {vid}: {st['reported'][vid].get('told')}")

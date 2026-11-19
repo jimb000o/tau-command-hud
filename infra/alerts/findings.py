@@ -38,6 +38,12 @@ STORM_AT = int(os.environ.get("FINDINGS_STORM_AT", 4))          # this many star
 STORM_HOURS = float(os.environ.get("FINDINGS_STORM_HOURS", 6))  # …within this many hours: collect instead of posting
 CALM = float(os.environ.get("FINDINGS_CALM_SECONDS", 2 * 3600))
 SUMMARY_HOUR = int(os.environ.get("FINDINGS_SUMMARY_HOUR", 21))  # UTC
+# What starts within this long after a testnet restart (alerts.py sets st["restart_at"]) is what a restart looks like:
+# the waiting list emptied, the first blocks slow, the bootnode coming back. The restart has its own post; these are no
+# finding and never fill a busy stretch (16 to 18 Nov 2026: three evenings in a row the same "busy stretch" after a restart).
+# A stall (no block at all) still counts.
+RESTART_SHADOW = float(os.environ.get("FINDINGS_RESTART_SHADOW_SECONDS", 5400))
+SHADOWED = ("drops", "slow", "peers", "ghost", "reorg", "behind")
 STALL_MIN = float(os.environ.get("FINDINGS_STALL_SECONDS", 1200))
 VOTES_BURST = int(os.environ.get("FINDINGS_VOTES_BURST", 5))  # the same proposal this often within an hour
 OUTBOX_MAX_AGE = 2 * 3600
@@ -385,6 +391,9 @@ def observe(st: dict, snap: dict, now: float) -> list[dict]:
         inc["start"] = now
         if not st["primed"] or inc.get("old"):
             inc["quiet"] = True
+            return
+        if key in SHADOWED and 0 <= now - st.get("restart_at", -1e12) < RESTART_SHADOW:
+            inc["quiet"] = True   # part of the restart, which had its own post
             return
         st["log"].append(now)
         cooled = now - st["last_end"].get(key, -1e12) < d["cooldown"]
